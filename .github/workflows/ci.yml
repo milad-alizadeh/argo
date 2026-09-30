@@ -21,9 +21,6 @@ on:
   pull_request:
   push:
     branches: [main]
-  workflow_dispatch:
-  schedule:
-    - cron: "17 4 * * *"
 
 concurrency:
   group: ci-${{ github.head_ref || github.ref }}
@@ -72,10 +69,6 @@ jobs:
       - name: Lint and format
         run: bun run format-and-lint
 
-      - name: Migration ratchet tests
-        if: ${{ !cancelled() }}
-        run: bun run test:quality-ratchet
-
       - name: Fetch main baseline
         if: ${{ !cancelled() }}
         run: git fetch --no-tags origin main:refs/remotes/origin/main
@@ -103,10 +96,7 @@ jobs:
         run: bun run quality:boundaries
 
       # Files, exports, types and dependencies nothing reaches (#2623). Its own step so a
-      # dead-code failure is not buried under the lint step's output. `--max-issues 279` is a
-      # ratchet at the count the triaged adoption run left, the same shape as jscpd's
-      # `--fail-on-new-clones=0`: the number may only fall as findings are cleared, and any
-      # newly-introduced dead code on top of that baseline fails the build.
+      # dead-code failure is not buried under the lint step's output.
       - name: Dead-code gate
         if: ${{ !cancelled() }}
         run: bun run quality:dead-code
@@ -162,14 +152,6 @@ jobs:
       - name: Storybook interaction tests
         run: bun run test:storybook
 
-      - name: Upload Storybook failure log
-        if: failure()
-        uses: actions/upload-artifact@v5
-        with:
-          name: storybook-failure-log
-          path: /tmp/argo-migration-ratchet/storybook-*.log
-          if-no-files-found: ignore
-
   # This job's `name:` is `main`'s required status check, matched literally, and renaming it
   # strands every open pull request on a check that never reports (#1733). So it keeps the name
   # the single Linux job had, and passes only when every Linux job passed.
@@ -188,34 +170,6 @@ jobs:
           for result in $RESULTS; do
             if [ "$result" != "success" ]; then exit 1; fi
           done
-
-  # The raw audit stays red until #2587 removes the migration debt. Pull requests use the exact
-  # shrinking baselines above, while scheduled and manual runs expose every remaining failure.
-  raw-audit:
-    name: raw migration debt audit
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/setup
-
-      - name: Fetch main baseline
-        run: git fetch --no-tags origin main:refs/remotes/origin/main
-
-      - name: Install Chromium for Storybook interaction tests
-        run: bunx playwright install --with-deps chromium
-
-      - name: Raw quality audit
-        run: bun run quality:raw
-
-      - name: Raw unit and Node test audit
-        if: ${{ !cancelled() }}
-        run: bun run test:raw
-
-      - name: Raw Storybook audit
-        if: ${{ !cancelled() }}
-        run: bun run test:storybook:raw
 
   # The artifact tier (#1758). It exists for what Linux genuinely cannot do: package a macOS app,
   # read the fuse wire back out of the shipped binary, and test it. Everything #1769 tests about

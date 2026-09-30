@@ -10,10 +10,7 @@
         "prototypes/codex-transport/channel.ts",
         "prototypes/codex-transport/prove.ts"
       ],
-      "project": ["scripts/**/*.mts", "prototypes/codex-transport/**/*.ts"],
-      // Run as `bunx depcruise` from a string in scripts/quality/migration-ratchet-commands.mts,
-      // which Knip does not read as a binary call.
-      "ignoreDependencies": ["dependency-cruiser"]
+      "project": ["scripts/**/*.mts", "prototypes/codex-transport/**/*.ts"]
     },
     "packages/argo-skills": {
       "entry": ["bin/*.mts", "skills/**/hooks/*.mts"],
