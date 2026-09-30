@@ -122,10 +122,9 @@ function SessionMetadata({ now, session }: { now: number; session: RowSession })
   const ticketKey = session.ticket?.key ?? null
   const minutes = sessionAge(session, now)
   const plan = session.plan ?? null
-  if (session.subagents.length === 0 && ticketKey === null && minutes === null && plan === null)
-    return null
+  // The line keeps its height when empty, so a row does not shrink as its age hides.
   return (
-    <span className="mt-1 flex items-center gap-2 type-meta text-faint [&_svg]:size-(--size-icon-metadata)">
+    <span className="mt-1 flex min-h-lh items-center gap-2 type-meta text-faint [&_svg]:size-(--size-icon-metadata)">
       {minutes === null || session.updatedAt === null ? null : (
         <SessionAge minutes={minutes} updatedAt={session.updatedAt} />
       )}
