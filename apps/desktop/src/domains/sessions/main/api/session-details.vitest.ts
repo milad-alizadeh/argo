@@ -24,6 +24,7 @@ const twoEffortCatalog = harnessCatalogSchema.parse({
   harnesses: [
     unavailable('claude'),
     { ...available, models: [{ ...model, efforts: [openingEffort, 'deep'] }] },
+    unavailable('claude-acp'),
   ],
 })
 
