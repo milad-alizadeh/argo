@@ -12,7 +12,6 @@ import {
 const database = {} as Database
 const claudeDiscovery: SessionDiscovery = async () => ({ records: [], skipped: 0 })
 const codexDiscovery: SessionDiscovery = async () => ({ records: [], skipped: 0 })
-const readHistory = async () => []
 const fetchingStatus = {
   phase: 'fetching' as const,
   processed: 0,
@@ -28,7 +27,6 @@ type SyncEvent =
       status: ReturnType<SessionSyncStatusStore['current']>
     }
   | { type: 'SyncCommitted'; harness: 'claude' | 'codex' }
-  | { type: 'SyncStored'; harness: 'claude' | 'codex' }
   | { type: 'SyncCompleted'; harness: 'claude' | 'codex' }
   | { type: 'SyncFailed'; harness: 'claude' | 'codex' }
 
@@ -58,8 +56,8 @@ test('dispatches registered Session discovery functions and runs a Refresh that 
     input: {
       database,
       harnesses: {
-        claude: { sessionDiscovery: claudeDiscovery, readHistory },
-        codex: { sessionDiscovery: codexDiscovery, readHistory },
+        claude: { sessionDiscovery: claudeDiscovery },
+        codex: { sessionDiscovery: codexDiscovery },
       },
       status: { claude: status, codex: new SessionSyncStatusStore(undefined, 'codex') },
     },
@@ -103,7 +101,7 @@ test('dispatches only discovery functions selected by the Harness registry', () 
     {
       input: {
         database,
-        harnesses: { claude: { sessionDiscovery: claudeDiscovery, readHistory } },
+        harnesses: { claude: { sessionDiscovery: claudeDiscovery } },
         status: { claude: new SessionSyncStatusStore(undefined, 'claude') },
       },
     },

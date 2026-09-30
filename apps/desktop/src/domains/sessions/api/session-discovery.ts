@@ -10,6 +10,8 @@ export type SessionDiscoveryResult = {
 
 export type SessionDiscoveryInput = {
   knownNativeIds: readonly string[]
+  // Read this one Session and skip the listing.
+  nativeId?: string
 }
 
 export type SessionDiscovery = (input: SessionDiscoveryInput) => Promise<SessionDiscoveryResult>

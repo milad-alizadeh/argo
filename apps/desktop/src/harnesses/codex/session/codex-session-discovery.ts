@@ -98,19 +98,24 @@ async function readKnownCodexSessions(input: {
 export async function readCodexSessions(input: {
   request: CodexRequest
   knownNativeIds: readonly string[]
+  listed?: boolean
   reportMalformed: () => void
 }): Promise<CodexSessionRecord[]> {
-  const records = await readListedCodexSessions(input.request, input.reportMalformed)
+  const records =
+    input.listed === false
+      ? new Map<string, CodexSessionRecord>()
+      : await readListedCodexSessions(input.request, input.reportMalformed)
   await readKnownCodexSessions({ ...input, records })
   return [...records.values()]
 }
 
 export function createCodexSessionDiscovery(request: CodexRequest): SessionDiscovery {
-  return async ({ knownNativeIds }) => {
+  return async ({ knownNativeIds, nativeId }) => {
     let skipped = 0
     const records = await readCodexSessions({
       request,
-      knownNativeIds,
+      knownNativeIds: nativeId === undefined ? knownNativeIds : [nativeId],
+      listed: nativeId === undefined,
       reportMalformed: () => {
         skipped += 1
       },

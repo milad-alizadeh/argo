@@ -79,9 +79,10 @@ function parseClaudeSession(raw: unknown): ClaudeSessionRecord | null {
 async function readClaudeSessions(request: {
   reader: ClaudeSessionReader
   knownNativeIds: readonly string[]
+  listed: boolean
   reportMalformed: (raw: unknown) => void
 }): Promise<ClaudeSessionRecord[]> {
-  const listed = await request.reader.list()
+  const listed = request.listed ? await request.reader.list() : []
   const records = new Map<string, ClaudeSessionRecord>()
   for (const raw of listed) {
     const record = parseClaudeSession(raw)
@@ -105,7 +106,8 @@ export async function discoverClaudeSessions(
   let skipped = 0
   const records = await readClaudeSessions({
     reader: input.reader ?? proofClaudeSessionReader() ?? systemClaudeSessionReader(),
-    knownNativeIds: input.knownNativeIds,
+    knownNativeIds: input.nativeId === undefined ? input.knownNativeIds : [input.nativeId],
+    listed: input.nativeId === undefined,
     reportMalformed: () => {
       skipped += 1
     },

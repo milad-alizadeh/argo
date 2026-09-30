@@ -4,9 +4,9 @@ import { test } from 'vitest'
 import { databaseFrom } from '@/database/database'
 import {
   observeSessionSync,
+  type SessionSyncEvent,
   type SessionSyncStatus,
   SessionSyncStatusStore,
-  type SessionSyncStoreEvent,
 } from './session-sync-status'
 
 test('persists completed results while live phases remain in memory', () => {
@@ -68,7 +68,7 @@ test('persists completed results while live phases remain in memory', () => {
 
 test('subscribers receive current status and a separate committed signal', () => {
   const store = new SessionSyncStatusStore(undefined, 'claude')
-  const events: SessionSyncStoreEvent[] = []
+  const events: SessionSyncEvent[] = []
   const unsubscribe = store.subscribe((event) => events.push(event))
   store.committed()
   unsubscribe()
@@ -90,7 +90,7 @@ const idle: SessionSyncStatus = {
 test('one observer reports every Harness scan as one status and forwards each commit', () => {
   const first = new SessionSyncStatusStore(undefined, 'claude')
   const second = new SessionSyncStatusStore(undefined, 'codex')
-  const events: SessionSyncStoreEvent[] = []
+  const events: SessionSyncEvent[] = []
   const stop = observeSessionSync([first, second], (event) => events.push(event))
   first.update({
     ...idle,

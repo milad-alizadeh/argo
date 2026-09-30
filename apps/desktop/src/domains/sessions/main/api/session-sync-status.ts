@@ -22,9 +22,6 @@ export const sessionSyncEventSchema = z.discriminatedUnion('type', [
 ])
 
 export type SessionSyncEvent = z.infer<typeof sessionSyncEventSchema>
-// A pass stored more rows. The roster reads them; an open Feed has nothing to refetch, so this
-// never crosses to the renderer.
-export type SessionSyncStoreEvent = SessionSyncEvent | { type: 'stored' }
 const initialSessionSyncStatus: SessionSyncStatus = {
   phase: 'idle',
   processed: 0,
@@ -68,7 +65,7 @@ function completedStatus(database: Database, harness: string): SessionSyncStatus
 
 export class SessionSyncStatusStore {
   #status: SessionSyncStatus
-  #listeners = new Set<(event: SessionSyncStoreEvent) => void>()
+  #listeners = new Set<(event: SessionSyncEvent) => void>()
   private readonly database: Database | undefined
   private readonly harness: Harness
 
@@ -123,17 +120,13 @@ export class SessionSyncStatusStore {
     this.emit({ type: 'committed' })
   }
 
-  stored(): void {
-    this.emit({ type: 'stored' })
-  }
-
-  subscribe(listener: (event: SessionSyncStoreEvent) => void): () => void {
+  subscribe(listener: (event: SessionSyncEvent) => void): () => void {
     this.#listeners.add(listener)
     listener({ type: 'status', status: this.#status })
     return () => this.#listeners.delete(listener)
   }
 
-  private emit(event: SessionSyncStoreEvent): void {
+  private emit(event: SessionSyncEvent): void {
     for (const listener of this.#listeners) listener(event)
   }
 }
@@ -168,11 +161,11 @@ function combinedStatus(statuses: readonly SessionSyncStatus[]): SessionSyncStat
 
 export function observeSessionSync(
   stores: readonly SessionSyncStatusStore[],
-  listener: (event: SessionSyncStoreEvent) => void,
+  listener: (event: SessionSyncEvent) => void,
 ): () => void {
   let subscribed = false
-  const report = (event: SessionSyncStoreEvent) => {
-    if (event.type === 'committed' || event.type === 'stored') listener(event)
+  const report = (event: SessionSyncEvent) => {
+    if (event.type === 'committed') listener(event)
     else if (subscribed)
       listener({ type: 'status', status: combinedStatus(stores.map((store) => store.current())) })
   }
@@ -188,10 +181,6 @@ const t = initTRPC.create()
 
 export function sessionSyncStatusProcedure(stores: readonly SessionSyncStatusStore[]) {
   return t.procedure.subscription(() =>
-    observable<SessionSyncEvent>((emit) =>
-      observeSessionSync(stores, (event) => {
-        if (event.type !== 'stored') emit.next(event)
-      }),
-    ),
+    observable<SessionSyncEvent>((emit) => observeSessionSync(stores, (event) => emit.next(event))),
   )
 }
