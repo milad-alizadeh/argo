@@ -20,8 +20,6 @@ export const sessionTable = sqliteTable(
     listOrderAt: integer('list_order_at').notNull().default(0),
     // The last activity line a Feed read, as JSON, so an idle row keeps it with no Feed reader.
     activity: text('activity'),
-    // The `activityAt` whose history the stored Subagents were read from.
-    subagentsReadAt: integer('subagents_read_at'),
     ...timestampColumns(),
   },
   (table) => [

@@ -3,8 +3,8 @@ import { test } from 'vitest'
 import { createActor, type EventFrom, fromPromise, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
 import type {
-  SessionDiscoveryResult,
   SessionSummaryList,
+  SessionSummaryListResult,
 } from '@/domains/sessions/api/session-discovery'
 import { SESSION_SYNC_BATCH_SIZE, sessionSyncMachine } from './session-sync-machine'
 
@@ -15,7 +15,7 @@ const twoBatchRecords = Array.from({ length: SESSION_SYNC_BATCH_SIZE + 1 }, (_va
 const listSessionSummaries: SessionSummaryList = async () => ({ records: [], skipped: 0 })
 const input = { harness: 'claude' as const, knownNativeIds: [], listSessionSummaries }
 const fetchTwoBatchRecords = fromPromise<
-  SessionDiscoveryResult,
+  SessionSummaryListResult,
   { knownNativeIds: string[]; listSessionSummaries: SessionSummaryList }
 >(async () => ({
   records: twoBatchRecords,
@@ -60,7 +60,7 @@ test('fails after three fetch attempts', async () => {
     sessionSyncMachine.provide({
       actors: {
         fetch: fromPromise<
-          SessionDiscoveryResult,
+          SessionSummaryListResult,
           { knownNativeIds: string[]; listSessionSummaries: SessionSummaryList }
         >(async () => {
           attempts += 1

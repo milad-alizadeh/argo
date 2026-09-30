@@ -185,28 +185,30 @@ const sessionDiscoverActor = fromCallback<
   let stopped = false
   let timer: ReturnType<typeof setTimeout> | undefined
   const attempt = async (retry: number): Promise<void> => {
-    let summary = null
+    let stored = false
     try {
-      summary = await getSessionSummary(nativeId)
+      const summary = await getSessionSummary(nativeId)
+      if (stopped) return
+      if (summary !== null) {
+        saveSessionBatch(
+          database,
+          harness,
+          matchSessionsToProjects(database, [
+            summary,
+          ]),
+        )
+        sendBack({
+          type: 'SyncCommitted',
+          harness,
+        })
+        stored = true
+      }
     } catch (error) {
-      console.warn(`${harness} could not read the Session summary for ${nativeId}.`, error)
-    }
-    if (stopped) return
-    if (summary !== null) {
-      saveSessionBatch(
-        database,
-        harness,
-        matchSessionsToProjects(database, [
-          summary,
-        ]),
-      )
-      sendBack({
-        type: 'SyncCommitted',
-        harness,
-      })
+      if (stopped) return
+      console.warn(`${harness} could not store the Session summary for ${nativeId}.`, error)
     }
     const delay = DISCOVERY_RETRY_DELAYS_MS[retry]
-    if (summary !== null || delay === undefined)
+    if (stored || delay === undefined)
       return sendBack({
         type: 'DiscoverFinished',
         harness,
@@ -297,7 +299,7 @@ export const sessionSyncSupervisorMachine = setup({
     status: sessionSyncStatusActor,
   },
   actions: {
-    dispatchSessionDiscoveries: enqueueActions(({ context, event, enqueue }) => {
+    dispatchSyncs: enqueueActions(({ context, event, enqueue }) => {
       const harnesses =
         event.type === 'ReplayRefresh'
           ? [
@@ -421,7 +423,7 @@ export const sessionSyncSupervisorMachine = setup({
     Running: {
       on: {
         Refresh: {
-          actions: 'dispatchSessionDiscoveries',
+          actions: 'dispatchSyncs',
         },
         Discover: {
           actions: 'discoverSession',
@@ -430,7 +432,7 @@ export const sessionSyncSupervisorMachine = setup({
           actions: 'releaseDiscovery',
         },
         ReplayRefresh: {
-          actions: 'dispatchSessionDiscoveries',
+          actions: 'dispatchSyncs',
         },
         SyncStatus: {
           actions: 'reportStatus',

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type {
-  DiscoveredSession,
+  SessionSummary,
   SessionSummaryList,
   SessionSummaryReader,
 } from '@/domains/sessions/api/session-discovery'
@@ -22,7 +22,7 @@ const pageSchema = z.strictObject({
   backwardsCursor: z.string().nullable().optional(),
 })
 const readSchema = z.strictObject({ thread: z.unknown() })
-type CodexSessionRecord = DiscoveredSession
+type CodexSessionRecord = SessionSummary
 
 function rememberRecord(records: Map<string, CodexSessionRecord>, record: CodexSessionRecord) {
   records.set(record.nativeId, { ...records.get(record.nativeId), ...record })

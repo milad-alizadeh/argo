@@ -1,8 +1,8 @@
 import { assign, fromPromise, setup } from 'xstate'
 import type {
-  DiscoveredSession,
-  SessionDiscoveryResult,
+  SessionSummary,
   SessionSummaryList,
+  SessionSummaryListResult,
 } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
 export const SESSION_SYNC_BATCH_SIZE = 50
@@ -18,7 +18,7 @@ export const sessionSyncMachine = setup({
       harness: Harness
       knownNativeIds: string[]
       listSessionSummaries: SessionSummaryList
-      records: DiscoveredSession[]
+      records: SessionSummary[]
       processed: number
       skipped: number
       failure: string | null
@@ -35,7 +35,7 @@ export const sessionSyncMachine = setup({
         }
       | {
           type: 'xstate.done.actor.fetch'
-          output: SessionDiscoveryResult
+          output: SessionSummaryListResult
         }
       | {
           type: 'xstate.error.actor.fetch'
@@ -52,7 +52,7 @@ export const sessionSyncMachine = setup({
   },
   actors: {
     fetch: fromPromise<
-      SessionDiscoveryResult,
+      SessionSummaryListResult,
       {
         knownNativeIds: string[]
         listSessionSummaries: SessionSummaryList
@@ -65,7 +65,7 @@ export const sessionSyncMachine = setup({
     save: fromPromise<
       void,
       {
-        records: DiscoveredSession[]
+        records: SessionSummary[]
       }
     >(async () => {
       throw new Error('The session sync saver is not configured.')

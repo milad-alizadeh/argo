@@ -4,7 +4,7 @@ import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { workspace } from '@/database/workspace/schema'
-import type { DiscoveredSession } from '@/domains/sessions/api/session-discovery'
+import type { SessionSummary } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
 import { createSessionUpsert } from '../database/session-upsert'
 
@@ -66,10 +66,7 @@ function sessionRoots(database: Database): SessionRoot[] {
   ]
 }
 
-function withProjectMatch(
-  roots: readonly SessionRoot[],
-  record: DiscoveredSession,
-): DiscoveredSession {
+function withProjectMatch(roots: readonly SessionRoot[], record: SessionSummary): SessionSummary {
   if (record.cwd == null) return record
   const root = matchRoot(roots, record.cwd)
   return {
@@ -81,8 +78,8 @@ function withProjectMatch(
 
 export function matchSessionsToProjects(
   database: Database,
-  records: readonly DiscoveredSession[],
-): DiscoveredSession[] {
+  records: readonly SessionSummary[],
+): SessionSummary[] {
   const roots = sessionRoots(database)
   return records.map((record) => withProjectMatch(roots, record))
 }
@@ -90,7 +87,7 @@ export function matchSessionsToProjects(
 export function saveSessionBatch(
   database: Database,
   harness: Harness,
-  records: readonly DiscoveredSession[],
+  records: readonly SessionSummary[],
 ): void {
   const upsert = createSessionUpsert(database)
   database.$client.exec('BEGIN IMMEDIATE')
