@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next'
-import type { ShellState } from '../model/models'
+import type { ShellState } from '@/domains/sessions/api/session-shell-command'
 import { durationText, spentTokens, type WorkState, workDuration } from './session-work'
 
 export type WorkPresentation = { title: string; state: string; facts: string }

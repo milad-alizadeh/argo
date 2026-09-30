@@ -2,7 +2,8 @@
 // between them in the same shape: a name, a state, and the two facts (#1582). Flattening both into
 // one entry here keeps the menu from branching on which kind it is drawing.
 import type { TFunction } from 'i18next'
-import type { SessionShellCommand, SessionSubagent } from '../model/models'
+import type { SessionShellCommand } from '@/domains/sessions/api/session-shell-command'
+import type { SessionSubagent } from '../model/models'
 import { elapsedDuration, subagentWorkState, WORK_STATE_MARKS } from './session-work'
 import type { SubagentUsageFacts } from './types'
 import { workPresentation } from './work-presentation'

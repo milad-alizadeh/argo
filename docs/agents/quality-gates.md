@@ -30,8 +30,8 @@ Two shapes cost this repo real time and apply to whatever gates `apps/desktop` n
 - **A gate is priced per tree, and a review changes the tree.** Verifying before the review buys
   bytes nobody ships, so the order is: focused checks while building, one review, every finding
   fixed in one batch, the final commit, then the full gate once on that committed tree.
-- **A ratio gate passes by dilution.** jscpd goes green when un-cloned lines are added around a
-  clone, so read the clone count, not the percentage.
+- **A ratio gate passes by dilution.** A nonzero jscpd threshold goes green when un-cloned lines
+  are added around a clone, so `.jscpd.json` holds it at 0.
 
 ## What covers `apps/desktop`, and what does not
 
@@ -236,19 +236,19 @@ config file .jscpd.json line 1: expected value
 ```
 
 and exits non-zero, instead of quietly running unconfigured. **Dropping that flag restores the
-fail-open.** The command compares the branch with `origin/main` and fails on a new clone. CI
-fetches that ref before it runs the gate.
+fail-open.** `.jscpd.json` sets `"threshold": 0`, so one clone fails the gate.
 
 ## Never prove the config by exit code
 
-`jscpd … -t 0` exits **1 in both states** on this repo:
+An unconfigured run fails, but so does a healthy run with one clone, and a config that ignores
+too much passes:
 
 | State | Result |
 |---|---|
-| healthy | 1 clone in 211 files |
-| silently unconfigured | 16 clones in 312 files |
+| healthy | 0 clones in 1067 files |
+| silently unconfigured | 441 clones in 3898 files |
 
-The exit code cannot tell them apart — **the analysed file count is the only signal.**
+**The analysed file count is the signal**, not the exit code.
 
 Prove a config change by effect, one of:
 

@@ -29,9 +29,13 @@ const passiveChannelMethods = {
   close: () => {},
 }
 
-function actorDelivering(delivered: string[]) {
+function actorDelivering(
+  delivered: string[],
+  services: Omit<Parameters<typeof testMachine>[0], 'send'> = {},
+) {
   return createActor(
     testMachine({
+      ...services,
       send: async (prompt) => {
         delivered.push(prompt)
       },
@@ -176,22 +180,16 @@ test('queues later sends until persistence, then delivers them in order', async 
   let releaseStart!: (nativeId: string) => void
   let releasePersist!: (argoId: string) => void
   const delivered: string[] = []
-  const actor = createActor(
-    testMachine({
-      start: () =>
-        new Promise((resolve) => {
-          releaseStart = resolve
-        }),
-      persist: () =>
-        new Promise((resolve) => {
-          releasePersist = resolve
-        }),
-      send: async (prompt) => {
-        delivered.push(prompt)
-      },
-    }),
-    { input: first },
-  ).start()
+  const actor = actorDelivering(delivered, {
+    start: () =>
+      new Promise((resolve) => {
+        releaseStart = resolve
+      }),
+    persist: () =>
+      new Promise((resolve) => {
+        releasePersist = resolve
+      }),
+  })
   actor.send({ type: 'Send', command: { ...first, commandId: 'second', prompt: 'second' } })
   actor.send({ type: 'Send', command: { ...first, commandId: 'third', prompt: 'third' } })
   await Promise.resolve()
@@ -370,17 +368,11 @@ test('fails when the Harness send fails', async () => {
 
 test('leaves queued turns unsent when persistence fails', async () => {
   const delivered: string[] = []
-  const actor = createActor(
-    testMachine({
-      persist: async () => {
-        throw new Error('disk failed')
-      },
-      send: async (prompt) => {
-        delivered.push(prompt)
-      },
-    }),
-    { input: first },
-  ).start()
+  const actor = actorDelivering(delivered, {
+    persist: async () => {
+      throw new Error('disk failed')
+    },
+  })
   actor.send({ type: 'Send', command: { ...first, commandId: 'second', prompt: 'second' } })
   const failed = await waitFor(actor, (snapshot) => snapshot.matches('Failed'))
   assert.match(failed.context.failure ?? '', /disk failed/)
