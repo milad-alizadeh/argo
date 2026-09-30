@@ -50,6 +50,7 @@ const toolPresentationSchema = z.strictObject({
   label: z.string(),
   agentDescription: z.boolean().optional(),
 })
+export type ToolPresentation = z.infer<typeof toolPresentationSchema>
 
 export const feedContentSchema = z.discriminatedUnion('kind', [
   base.extend({

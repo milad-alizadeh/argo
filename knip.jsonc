@@ -61,7 +61,9 @@
         // The Codex CLI, run by tools/generate-codex-protocol.mts on the developer's PATH.
         "codex",
         // A macOS system binary run by tools/sessions/feed-memory-sample.ts to read process memory.
-        "footprint"
+        "footprint",
+        // The SQLite CLI, run by tools/sessions/measure-session-list.ts to query the Session index.
+        "sqlite3"
       ],
       "ignoreDependencies": [
         // Native-module build-time header for node-pty; nothing imports it from TypeScript.

@@ -72,7 +72,7 @@ const sessionTicketSchema = z.strictObject({
   createdAt: z.iso.datetime(),
 })
 
-const sessionListRowSchema = z.strictObject({
+export const sessionListRowSchema = z.strictObject({
   id: z.string().uuid(),
   retiredIds: z.array(z.string().uuid()),
   harness: z.string().min(1),
