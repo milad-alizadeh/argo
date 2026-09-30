@@ -135,9 +135,9 @@ function reasoning(id: string, text: string | null): FeedContent {
 const activityOf = (reading: FeedReading | undefined) =>
   reading?.entries.find(({ row }) => row.shape === 'activity')?.row
 
-test('a multi-activity Turn publishes its latest activity to the Feed and the roster', async () => {
+test('a multi-activity Turn publishes its latest activity to the Feed and keeps it for the roster', async () => {
   let rosterChanges = 0
-  const activities = new SessionActivities(() => {
+  const activities = new SessionActivities(database, () => {
     rosterChanges += 1
   })
   const history = historyReads()
@@ -174,8 +174,8 @@ test('a multi-activity Turn publishes its latest activity to the Feed and the ro
   expect(activityOf(feed.latest())).toMatchObject({ activity: { ...latest, open: false } })
   const changesBeforeClose = rosterChanges
   feed.subscription.unsubscribe()
-  expect(activities.activityOf(sessionId)).toBeNull()
-  expect(rosterChanges).toBe(changesBeforeClose + 1)
+  expect(activities.activityOf(sessionId)).toMatchObject({ ...latest, open: false })
+  expect(rosterChanges).toBe(changesBeforeClose)
 })
 
 test('names the waiting Question and Permission', async () => {

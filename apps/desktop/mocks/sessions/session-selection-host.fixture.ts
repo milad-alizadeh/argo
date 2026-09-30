@@ -1,5 +1,5 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import { sessionListWindowPathKey } from '@/domains/sessions/renderer/session-list/session-list-window'
+import { sessionRosterPathKey } from '@/domains/sessions/renderer/session-list/session-roster'
 import { sessionDetailsPathKey } from '@/domains/sessions/renderer/session-queries'
 import type { Session } from '@/domains/sessions/renderer/types'
 import {
@@ -163,7 +163,7 @@ function clearSelectionQueries() {
   for (const release of heldDraftReads.values()) release()
   heldDraftReads.clear()
   forgetHeldSessionDetails()
-  queryClient.removeQueries({ queryKey: sessionListWindowPathKey })
+  queryClient.removeQueries({ queryKey: sessionRosterPathKey })
   queryClient.removeQueries({ queryKey: sessionDetailsPathKey })
   queryClient.removeQueries({ queryKey: trpc.projectList.pathKey() })
   queryClient.removeQueries({ queryKey: trpc.projectOpen.pathKey() })

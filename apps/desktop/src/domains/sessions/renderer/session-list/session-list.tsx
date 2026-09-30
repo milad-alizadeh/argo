@@ -2,7 +2,7 @@ import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Progress } from '@/platform/renderer/components/ui/progress'
 import { useObservedFeedReading } from '../feed/use-feed-reading'
-import type { Session, SessionId, SessionListRetainedWindow } from '../types'
+import type { Session, SessionId } from '../types'
 import { useArchivedSection } from './archived/use-archived-section'
 import { useSessionListStatus } from './hooks/use-session-list-filter-store'
 import { RenameDialog } from './rename/rename-dialog'
@@ -19,8 +19,6 @@ import { useSessionList } from './use-session-list'
 
 export type { SessionListActions } from './rows'
 
-const NO_WINDOW: SessionListRetainedWindow = { total: 0, offset: 0, sessions: [] }
-
 function useSessionListRows(options: {
   read: ReturnType<typeof useSessionList>
   searching: boolean
@@ -28,7 +26,6 @@ function useSessionListRows(options: {
   visible: readonly Session[]
 }) {
   const { read, searching, selectedSessionId, visible } = options
-  const active = read.sessionList ?? NO_WINDOW
   const visibleSessionIds = useMemo(() => visible.map((session) => session.id), [visible])
   const status = useSessionListStatus()
   const archived = useArchivedSection(
@@ -39,13 +36,23 @@ function useSessionListRows(options: {
   const rows = useMemo(
     () =>
       sessionListRows({
-        active,
+        active: visible,
         archived,
+        hasMoreSessions: read.hasMoreSessions,
+        isFetchingMoreSessions: read.isFetchingMoreSessions,
         searching,
         showArchive: read.sessionList !== null,
         status,
       }),
-    [active, archived, read.sessionList, searching, status],
+    [
+      archived,
+      read.hasMoreSessions,
+      read.isFetchingMoreSessions,
+      read.sessionList,
+      searching,
+      visible,
+      status,
+    ],
   )
   return {
     rows,
@@ -103,8 +110,7 @@ function useUnavailableSessionIds(selectedSessionId: SessionId | null) {
 
 function sessionListData(read: ReturnType<typeof useSessionList>, sessionCount: number) {
   return {
-    'data-offset': read.sessionList?.offset,
-    'data-retained': read.sessionList?.sessions.length,
+    'data-page-count': read.loadedSessionPages,
     'data-state': sessionListState(read.sessionList, read.sessionListError, sessionCount),
     'data-total': read.sessionList?.total,
   }
@@ -210,12 +216,12 @@ export function SessionList({ actions, projectId, selectedSessionId }: SessionLi
         label="Sessions"
         unavailableSessionIds={useUnavailableSessionIds(selectedSessionId)}
         onArchive={sessions.archive}
+        onFetchMoreSessions={read.fetchMoreSessions}
         onFetchNextPage={sessions.onFetchNextPage}
         onFocus={sessions.focus.setFocusedSessionId}
         onOpenTicket={actions.onOpenTicket}
         onRename={setRenameTarget}
         onSelect={sessions.select}
-        onShowRange={read.showRange}
         onToggleSelect={sessions.selection.toggle}
         renamedTitles={sessions.renamedTitles}
         rows={sessions.rows}

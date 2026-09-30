@@ -7,6 +7,7 @@ const serverOwnedSessionFields = {
   updatedAt: true,
   subagentsReadAt: true,
   listOrderAt: true,
+  activity: true,
 } as const
 
 export const sessionSelectSchema = createSelectSchema(sessionTable)

@@ -7,10 +7,9 @@ import { feedSubagents, subagentCompletionRows } from '@/domains/sessions/api/fe
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
-import { sessionListWindowPathKey } from '@/domains/sessions/renderer/session-list/session-list-window'
+import { sessionRosterPathKey } from '@/domains/sessions/renderer/session-list/session-roster'
 import { sessionDetailsPathKey } from '@/domains/sessions/renderer/session-queries'
-import type { Session, SessionListWindow } from '@/domains/sessions/renderer/types'
-import type { RouterInputs } from '@/platform/renderer/trpc-client'
+import type { Session } from '@/domains/sessions/renderer/types'
 import { queryClient } from '@/platform/renderer/trpc-client'
 
 type Subscribe = typeof window.argo.trpcSubscribe
@@ -71,53 +70,34 @@ function sessionDetailsReply(
   })
 }
 
-type WindowInput = Pick<RouterInputs['sessionListWindow'], 'anchor' | 'before' | 'after'>
-
-// The window main would read from `rows`, taken in the order given.
-export function sessionListWindowOf(
-  rows: readonly Session[],
-  input: WindowInput,
-): SessionListWindow {
-  const before = input.before ?? 0
-  const after = input.after ?? 30
-  const last = Math.max(rows.length - 1, 0)
-  const { anchor } = input
-  const found = anchor.kind === 'key' ? rows.findIndex((row) => row.id === anchor.id) : -1
-  const position = {
-    start: 0,
-    end: last,
-    index: anchor.kind === 'index' ? Math.min(anchor.index, last) : 0,
-    key: found === -1 ? 0 : found,
-  }[anchor.kind]
-  const offset = anchor.kind === 'start' ? 0 : Math.max(position - before, 0)
-  return {
-    total: rows.length,
-    offset,
-    rows: rows.slice(offset, position + after),
-  }
-}
-
-// The rows the story's list host serves, read by the base Storybook `sessionListWindow` handler.
-let listedSessions: () => readonly Session[] = () => []
-
-export function storySessionListWindow(input: WindowInput): SessionListWindow {
-  return sessionListWindowOf(listedSessions(), input)
-}
-
-// Serves `sessions` as the Session List, and tells every open list view to read again whenever the
-// story announces a change.
 export function sessionListSubscribe(
   subscribe: Subscribe,
   sessions: () => readonly Session[],
 ): Subscribe {
-  queryClient.removeQueries({ queryKey: sessionListWindowPathKey })
+  queryClient.removeQueries({ queryKey: sessionRosterPathKey })
   queryClient.removeQueries({ queryKey: sessionDetailsPathKey })
-  listedSessions = sessions
   return async (request, listener) => {
     if (request.path === 'sessionDetails') return sessionDetailsReply(request, listener, sessions)
-    if (request.path !== 'sessionListChanges') return subscribe(request, listener)
-    const send = () =>
-      listener({ id: request.id, type: 'data', result: { data: { type: 'invalidated' } } })
+    if (request.path !== 'sessionList') return subscribe(request, listener)
+    const input = request.input as { pages?: number; pageSize?: number }
+    const pages = input.pages ?? 1
+    const pageSize = input.pageSize ?? 30
+    const send = () => {
+      const rows = sessions()
+      listener({
+        id: request.id,
+        type: 'data',
+        result: {
+          data: {
+            type: 'list',
+            pages,
+            pageSize,
+            total: rows.length,
+            rows: rows.slice(0, pages * pageSize),
+          },
+        },
+      })
+    }
     openReaders.add(send)
     queueMicrotask(send)
     return () => openReaders.delete(send)

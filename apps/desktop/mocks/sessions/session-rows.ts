@@ -7,7 +7,6 @@ import { DEFAULT_HARNESS } from '@/harnesses/harness'
 function listedSession(overrides: Partial<Session> = {}): Session {
   return {
     id: 'session-one',
-    listOrderAt: 0,
     retiredIds: [],
     harness: DEFAULT_HARNESS,
     posture: 'live',

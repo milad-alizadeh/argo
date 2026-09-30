@@ -1,5 +1,4 @@
 import { sessionRow } from '@/mocks/sessions/session-rows'
-import { storySessionListWindow } from '@/mocks/sessions/session-story-host'
 import { storybookAutoCompactProcedures } from './storybook-auto-compact'
 import { subscribeToStorybookCommands } from './storybook-commands'
 import { storybookHarnessSignInProcedures } from './storybook-harness-signin'
@@ -32,7 +31,6 @@ const procedureHandlers = (): StorybookProcedureHandlers => {
       projectId: input.projectId,
       connection: null,
     }),
-    sessionListWindow: storySessionListWindow,
     'sessions.list': (input: { page: number; pageSize: number }) => ({
       page: input.page,
       pageSize: input.pageSize,

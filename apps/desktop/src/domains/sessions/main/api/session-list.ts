@@ -1,6 +1,6 @@
 import { initTRPC } from '@trpc/server'
 import { observable } from '@trpc/server/observable'
-import { and, asc, count, desc, eq, inArray, not, or, type SQL, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, not, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
@@ -12,38 +12,19 @@ import {
   type LiveSessionSupervisorActor,
   liveSessionActorFor,
 } from '../live/live-session-supervisor-machine'
-import type { SessionActivities } from './session-activities'
+import { storedActivity } from './session-activities'
 import type { SessionRosterChanges } from './session-roster-changes'
 import type { WatchedSessionStatus } from './watched-session-status'
 
 const t = initTRPC.create()
 
-// The largest window one read returns on each side of its anchor.
-export const SESSION_LIST_WINDOW_SIDE = 60
-
-// One bounded window of a Session List view, sought around an anchor in list order. `view` names
-// the renderer's list view, whose temporary Feed readers follow its latest window.
-const sessionListAnchorSchema = z.discriminatedUnion('kind', [
-  z.strictObject({ kind: z.literal('start') }),
-  z.strictObject({ kind: z.literal('end') }),
-  z.strictObject({
-    kind: z.literal('key'),
-    listOrderAt: z.number().int(),
-    id: z.string().uuid(),
-  }),
-  z.strictObject({ kind: z.literal('index'), index: z.number().int().nonnegative() }),
-])
-
-const sessionListWindowInputSchema = z.strictObject({
+// The roster reads the newest `pages` pages; loading more asks for one page more.
+export const sessionListInputSchema = z.strictObject({
   projectId: z.string().min(1),
   search: z.string().trim().max(500).default(''),
-  view: z.string().uuid(),
-  anchor: sessionListAnchorSchema,
-  before: z.number().int().min(0).max(SESSION_LIST_WINDOW_SIDE).default(0),
-  after: z.number().int().min(1).max(SESSION_LIST_WINDOW_SIDE).default(30),
+  pages: z.number().int().min(1).max(1_000).default(1),
+  pageSize: z.number().int().min(1).max(100).default(30),
 })
-
-const sessionListChangesInputSchema = z.strictObject({ view: z.string().uuid() })
 
 const identifierSchema = z.string().min(1)
 const countSchema = z.number().int().nonnegative()
@@ -93,7 +74,6 @@ const sessionTicketSchema = z.strictObject({
 
 export const sessionListRowSchema = z.strictObject({
   id: z.string().uuid(),
-  listOrderAt: z.number().int(),
   retiredIds: z.array(z.string().uuid()),
   harness: z.string().min(1),
   posture: z.enum(['live', 'external']).nullable(),
@@ -141,16 +121,19 @@ export const sessionListRowSchema = z.strictObject({
   }),
 })
 
-// `offset` is the list position of the first row.
-const sessionListWindowSchema = z.strictObject({
+const sessionListSchema = z.strictObject({
+  pages: z.number().int().min(1),
+  pageSize: z.number().int().min(1),
   total: z.number().int().nonnegative(),
-  offset: z.number().int().nonnegative(),
   rows: z.array(sessionListRowSchema),
 })
 
-// Something a list view shows may have changed, so it reads its window again. The first is sent
-// once the listener is attached, so a commit before the first read is never missed.
-export const sessionListChangeSchema = z.strictObject({ type: z.literal('invalidated') })
+// The whole list first, and again whenever the rows or their order change; otherwise each row
+// that changed on its own.
+export const sessionListUpdateSchema = z.discriminatedUnion('type', [
+  sessionListSchema.extend({ type: z.literal('list') }),
+  z.strictObject({ type: z.literal('row'), row: sessionListRowSchema }),
+])
 
 type StoredSessionTitle = {
   customTitle: string | null
@@ -163,16 +146,12 @@ export type SessionListContext = {
   supervisor: LiveSessionSupervisorActor
   roster: SessionRosterChanges
   watchedStatus: Pick<WatchedSessionStatus, 'statusOf'>
-  // The activity an observed Feed published; it outranks the live channel's own.
-  activities?: SessionActivities
 }
 
-// The Feed's activity names no tool or target, so the row keeps its kind as the tool.
-function observedActivity(
-  context: SessionListContext,
-  sessionId: string,
-): z.infer<typeof feedActivitySchema> | null {
-  const activity = context.activities?.activityOf(sessionId) ?? null
+// The Feed's activity names no tool or target, so the row keeps its kind as the tool. It outranks
+// the live channel's own.
+function observedActivity(stored: string | null): z.infer<typeof feedActivitySchema> | null {
+  const activity = storedActivity(stored)
   return activity === null ? null : { ...activity, tool: activity.kind, target: null }
 }
 
@@ -227,7 +206,7 @@ export function sessionListRow(
     cwd: string | null
     workspaceId: string | null
     activityAt: number | null
-    listOrderAt: number
+    activity: string | null
     updatedAt: number
     ticket: {
       projectId: string
@@ -247,7 +226,6 @@ export function sessionListRow(
     row.ticket === null ? null : { ...row.ticket, state: ticketStateOf(row.ticket.state) }
   return {
     id: row.id,
-    listOrderAt: row.listOrderAt,
     retiredIds: [],
     harness: row.harness,
     posture: live?.posture ?? null,
@@ -260,7 +238,7 @@ export function sessionListRow(
     branch: null,
     updatedAt: new Date(row.activityAt ?? row.updatedAt).toISOString(),
     turnStartedAt: null,
-    activity: observedActivity(context, row.id) ?? live?.activity ?? null,
+    activity: observedActivity(row.activity) ?? live?.activity ?? null,
     plan: null,
     subagents: subagents.map((subagent) => ({ ...subagent, startedAt: null, endedAt: null })),
     shell: [],
@@ -282,7 +260,7 @@ export const storedSessionColumns = {
   cwd: sessionTable.cwd,
   workspaceId: sessionTable.workspaceId,
   activityAt: sessionTable.activityAt,
-  listOrderAt: sessionTable.listOrderAt,
+  activity: sessionTable.activity,
   updatedAt: sessionTable.updatedAt,
   ticket: {
     projectId: sessionTicketLink.projectId,
@@ -321,9 +299,13 @@ function storedSessionRows(database: Database) {
     .leftJoin(sessionTicketLink, eq(sessionTicketLink.sessionId, sessionTable.argoId))
 }
 
-export function sessionListFilter(input: { projectId: string; search: string }): SQL | undefined {
-  return and(
-    eq(sessionTable.projectId, input.projectId),
+function readSessionList(
+  context: SessionListContext,
+  input: z.infer<typeof sessionListInputSchema>,
+): z.infer<typeof sessionListSchema> {
+  const projectFilter = eq(sessionTable.projectId, input.projectId)
+  const filter = and(
+    projectFilter,
     not(sessionIsArchived),
     input.search === ''
       ? undefined
@@ -332,97 +314,19 @@ export function sessionListFilter(input: { projectId: string; search: string }):
           sql<boolean>`instr(lower(coalesce(${sessionTable.preview}, '')), lower(${input.search})) > 0`,
         ),
   )
-}
-
-type ListKey = { listOrderAt: number; id: string }
-
-// The list runs newest first: a larger key is earlier. Both seeks walk `session_list_order`.
-const listKey = sql`(${sessionTable.listOrderAt}, ${sessionTable.argoId})`
-const earlierThan = (key: ListKey) => sql`${listKey} > (${key.listOrderAt}, ${key.id})`
-const atOrLaterThan = (key: ListKey) => sql`${listKey} <= (${key.listOrderAt}, ${key.id})`
-
-// One list view's rows: the database and the filter every seek and count in a read shares.
-type ListScope = { database: Database; filter: SQL | undefined }
-
-function countWhere({ database, filter }: ListScope, condition?: SQL): number {
-  return (
-    database.select({ value: count() }).from(sessionTable).where(and(filter, condition)).get()
-      ?.value ?? 0
-  )
-}
-
-// Exported for its query plan test.
-export function seekLaterQuery(
-  { database, filter }: ListScope,
-  key: ListKey | null,
-  limit: number,
-) {
-  return storedSessionRows(database)
-    .where(key === null ? filter : and(filter, atOrLaterThan(key)))
-    .orderBy(desc(sessionTable.listOrderAt), desc(sessionTable.argoId))
-    .limit(limit)
-}
-
-function seekEarlier({ database, filter }: ListScope, key: ListKey, limit: number) {
-  if (limit === 0) return []
-  return storedSessionRows(database)
-    .where(and(filter, earlierThan(key)))
-    .orderBy(asc(sessionTable.listOrderAt), asc(sessionTable.argoId))
-    .limit(limit)
+  const stored = storedSessionRows(context.database)
+    .where(filter)
+    .orderBy(desc(sessionTable.listOrderAt), asc(sessionTable.argoId))
+    .limit(input.pages * input.pageSize)
     .all()
-    .reverse()
-}
-
-// A position jump, from a scrollbar drag or End, reads only index keys up to that position.
-function keyAtIndex({ database, filter }: ListScope, index: number): ListKey | null {
-  return (
-    database
-      .select({ listOrderAt: sessionTable.listOrderAt, id: sessionTable.argoId })
-      .from(sessionTable)
-      .where(filter)
-      .orderBy(desc(sessionTable.listOrderAt), desc(sessionTable.argoId))
-      .limit(1)
-      .offset(index)
-      .get() ?? null
-  )
-}
-
-function anchorKey(
-  scope: ListScope,
-  anchor: z.infer<typeof sessionListAnchorSchema>,
-  total: number,
-): ListKey | null {
-  const last = Math.max(total - 1, 0)
-  switch (anchor.kind) {
-    case 'start':
-      return null
-    case 'end':
-      return keyAtIndex(scope, last)
-    case 'key':
-      return { listOrderAt: anchor.listOrderAt, id: anchor.id }
-    case 'index':
-      return keyAtIndex(scope, Math.min(anchor.index, last))
-  }
-}
-
-function readSessionListWindow(
-  context: SessionListContext,
-  input: z.infer<typeof sessionListWindowInputSchema>,
-): z.infer<typeof sessionListWindowSchema> {
-  const scope = { database: context.database, filter: sessionListFilter(input) }
-  const total = countWhere(scope)
-  const key = anchorKey(scope, input.anchor, total)
-  const earlier = key === null ? [] : seekEarlier(scope, key, input.before)
-  const later = seekLaterQuery(scope, key, input.after).all()
-  const stored = [...earlier, ...later]
-  const first = stored[0]
-  const offset = first === undefined ? total : countWhere(scope, earlierThan(first))
   const subagents = storedSessionSubagents(
     context.database,
     stored.map((row) => row.id),
   )
   const rows = stored.map((row) => sessionListRow(context, row, subagents.get(row.id) ?? []))
-  return sessionListWindowSchema.parse({ total, offset, rows })
+  const total =
+    context.database.select({ value: count() }).from(sessionTable).where(filter).get()?.value ?? 0
+  return sessionListSchema.parse({ pages: input.pages, pageSize: input.pageSize, total, rows })
 }
 
 export function rowsForSessionIds(
@@ -443,73 +347,68 @@ export function rowsForSessionIds(
   )
 }
 
-// The temporary Feed readers a list view holds: only its latest window's rows, released with it.
-// Shared readers are counted, so releasing a row never closes the Feed a reader has open.
-export class SessionListFeedObservers {
-  readonly #views = new Map<string, Map<string, () => void>>()
-  readonly #observeFeed: ((sessionId: string) => () => void) | undefined
-
-  constructor(observeFeed?: (sessionId: string) => () => void) {
-    this.#observeFeed = observeFeed
-  }
-
-  attach(view: string): () => void {
-    const observed = new Map<string, () => void>()
-    this.#views.set(view, observed)
-    return () => {
-      if (this.#views.get(view) === observed) this.#views.delete(view)
-      for (const stop of observed.values()) stop()
-      observed.clear()
-    }
-  }
-
-  retain(view: string, sessionIds: readonly string[]): void {
-    const observed = this.#views.get(view)
-    if (observed === undefined || this.#observeFeed === undefined) return
-    const retained = new Set(sessionIds)
-    for (const [sessionId, stop] of observed)
-      if (!retained.has(sessionId)) {
-        observed.delete(sessionId)
-        stop()
-      }
-    for (const sessionId of retained)
-      if (!observed.has(sessionId)) observed.set(sessionId, this.#observeFeed(sessionId))
-  }
-
-  get size(): number {
-    let size = 0
-    for (const observed of this.#views.values()) size += observed.size
-    return size
-  }
+function sameOrder(
+  left: z.infer<typeof sessionListSchema>,
+  right: z.infer<typeof sessionListSchema>,
+): boolean {
+  return (
+    left.total === right.total &&
+    left.rows.length === right.rows.length &&
+    left.rows.every((row, index) => row.id === right.rows[index]?.id)
+  )
 }
 
-export function sessionListProcedures(
+const workingStatuses = new Set(['starting', 'running', 'permission', 'asking'])
+
+// Only a working Session has an activity line to read, so idle rows open no Feed reader.
+function observeWorkingFeeds(
+  observed: Map<string, () => void>,
+  rows: readonly z.infer<typeof sessionListRowSchema>[],
+  observeFeed: ((sessionId: string) => () => void) | undefined,
+): void {
+  const working = new Set(
+    rows.filter((row) => workingStatuses.has(row.status)).map((row) => row.id),
+  )
+  for (const [sessionId, stop] of observed)
+    if (!working.has(sessionId)) {
+      observed.delete(sessionId)
+      stop()
+    }
+  for (const sessionId of working)
+    if (!observed.has(sessionId) && observeFeed !== undefined)
+      observed.set(sessionId, observeFeed(sessionId))
+}
+
+export function sessionListProcedure(
   context: SessionListContext,
-  observers: SessionListFeedObservers = new SessionListFeedObservers(),
+  observeFeed?: (sessionId: string) => () => void,
 ) {
-  return {
-    sessionListWindow: t.procedure.input(sessionListWindowInputSchema).query(({ input }) => {
-      const window = readSessionListWindow(context, input)
-      observers.retain(
-        input.view,
-        window.rows.map((row) => row.id),
-      )
-      return window
+  return t.procedure.input(sessionListInputSchema).subscription(({ input }) =>
+    observable<z.infer<typeof sessionListUpdateSchema>>((emit) => {
+      let sent = readSessionList(context, input)
+      emit.next({ type: 'list', ...sent })
+      const observed = new Map<string, () => void>()
+      const { changed, stop } = coalescedChanges(() => {
+        const next = readSessionList(context, input)
+        if (!sameOrder(sent, next)) emit.next({ type: 'list', ...next })
+        else
+          next.rows.forEach((row, index) => {
+            if (JSON.stringify(row) !== JSON.stringify(sent.rows[index]))
+              emit.next({ type: 'row', row })
+          })
+        sent = next
+        observeWorkingFeeds(observed, next.rows, observeFeed)
+      })
+      const unsubscribeRoster = context.roster.subscribe(changed)
+      const statusChanges = context.supervisor.on('Session status changed', changed)
+      observeWorkingFeeds(observed, sent.rows, observeFeed)
+      return () => {
+        stop()
+        unsubscribeRoster()
+        statusChanges.unsubscribe()
+        for (const stop of observed.values()) stop()
+        observed.clear()
+      }
     }),
-    sessionListChanges: t.procedure.input(sessionListChangesInputSchema).subscription(({ input }) =>
-      observable<z.infer<typeof sessionListChangeSchema>>((emit) => {
-        const { changed, stop } = coalescedChanges(() => emit.next({ type: 'invalidated' }))
-        const detach = observers.attach(input.view)
-        const unsubscribeRoster = context.roster.subscribe(changed)
-        const statusChanges = context.supervisor.on('Session status changed', changed)
-        emit.next({ type: 'invalidated' })
-        return () => {
-          stop()
-          unsubscribeRoster()
-          statusChanges.unsubscribe()
-          detach()
-        }
-      }),
-    ),
-  }
+  )
 }

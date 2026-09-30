@@ -102,8 +102,7 @@ test('accepts a Session sync refresh', async () => {
 test('registers Session procedures directly on the global router', () => {
   const paths = Object.keys(testRouter({} as never)._def.procedures)
   for (const path of [
-    'sessionListWindow',
-    'sessionListChanges',
+    'sessionList',
     'sessionFeed',
     'sessionFeedRefresh',
     'sessionRename',

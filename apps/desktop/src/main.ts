@@ -412,7 +412,7 @@ function attachWindowTrpc({
 }): () => void {
   const roster = new SessionRosterChanges()
   const watchedStatus = new WatchedSessionStatus(() => roster.changed())
-  const activities = new SessionActivities(() => roster.changed())
+  const activities = new SessionActivities(database, () => roster.changed())
   const router = routerForWindow({
     actors,
     domains,

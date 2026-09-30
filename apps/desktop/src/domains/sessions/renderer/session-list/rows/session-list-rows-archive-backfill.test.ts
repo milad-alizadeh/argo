@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'vitest'
 import {
   archivedSoFarStillIndexing,
+  archiveFetchingMore,
   archiveStillIndexing,
   kindsOf,
+  loadingArchive,
 } from './session-list-rows-test-fixtures'
 
 describe('building the Session list rows for the Archive while backfill runs (#2374)', () => {
@@ -26,5 +28,31 @@ describe('building the Session list rows for the Archive while backfill runs (#2
         status: 'archived',
       }),
     ).toEqual(['session', 'archivedSentinel'])
+  })
+})
+
+describe('deduplicating the paging spinner between the Session list and the Archive (#2412)', () => {
+  test('shows one spinner, not two, while the Session list and the Archive are both loading', () => {
+    expect(
+      kindsOf({
+        archived: loadingArchive,
+        hasMoreSessions: true,
+        isFetchingMoreSessions: true,
+        showArchive: true,
+        status: 'all',
+      }),
+    ).toEqual(['session', 'session', 'sessionListSentinel', 'sessionListLoadingMore'])
+  })
+
+  test('shows one spinner, not two, while the Session list is paging and the Archive is paging too', () => {
+    expect(
+      kindsOf({
+        archived: archiveFetchingMore,
+        hasMoreSessions: true,
+        isFetchingMoreSessions: true,
+        showArchive: true,
+        status: 'all',
+      }),
+    ).toEqual(['session', 'session', 'sessionListSentinel', 'sessionListLoadingMore', 'session'])
   })
 })

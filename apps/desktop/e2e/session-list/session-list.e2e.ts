@@ -12,11 +12,9 @@ function savedSessions() {
   return Array.from({ length: 31 }, (_, index) => {
     const pagePosition = index + 1
     const argoId = `00000000-0000-4000-8000-${String(pagePosition).padStart(12, '0')}`
-    const listOrderAt = 1_000 - pagePosition
     if (pagePosition === 1) {
       return {
         argoId,
-        listOrderAt,
         harness: 'claude',
         nativeId: 'shared-native-id',
         projectId: 'project-1',
@@ -28,7 +26,6 @@ function savedSessions() {
     if (pagePosition === 2) {
       return {
         argoId,
-        listOrderAt,
         harness: 'codex',
         nativeId: 'shared-native-id',
         projectId: 'project-1',
@@ -38,7 +35,6 @@ function savedSessions() {
     }
     return {
       argoId,
-      listOrderAt,
       harness: 'claude',
       nativeId: `native-${pagePosition}`,
       projectId: 'project-1',
@@ -55,7 +51,6 @@ function addSavedSession(userData: string) {
       argoId: '00000000-0000-4000-8000-000000000000',
       harness: 'claude',
       nativeId: 'newly-saved',
-      listOrderAt: 2_000,
       projectId: 'project-1',
       firstPrompt: 'New saved Session',
     })
@@ -104,7 +99,7 @@ function seedSessionList(userData: string, beta: string) {
   database.$client.close()
 }
 
-test('shows the saved Session window and keeps Argo-ID selection', async ({
+test('shows saved numbered pages and keeps Argo-ID selection', async ({
   root,
   applicationUnderTest,
   performanceProfile,
@@ -128,18 +123,15 @@ test('shows the saved Session window and keeps Argo-ID selection', async ({
     await expect(page.getByRole('button', { name: /Linked Ticket title/ })).toBeVisible()
     await expect(page.getByRole('button', { name: /First prompt/ })).toBeVisible()
     await expect(page.getByRole('button', { name: /Other Project Session/ })).toHaveCount(0)
-    await expect(sessionList).toHaveAttribute('data-offset', '0')
+    await expect(sessionList).toHaveAttribute('data-page-count', '1')
     await expect(sessionList).toHaveAttribute('data-total', '31')
     await verifyTitleSearch(page, sessionList)
     await page.locator('[data-slot="session-list-scroll"]').evaluate((element) => {
       element.scrollTop = element.scrollHeight
     })
     await expect(page.getByRole('button', { name: /Saved Session 31/ })).toBeVisible()
-    await expect(sessionList).toHaveAttribute('data-retained', '31')
+    await expect(sessionList).toHaveAttribute('data-page-count', '2')
     await expect(sessionList).toHaveAttribute('data-total', '31')
-    await page.locator('[data-slot="session-list-scroll"]').evaluate((element) => {
-      element.scrollTop = 0
-    })
 
     await page.getByRole('button', { name: /Custom title/ }).click()
     await expect(page).toHaveURL(new RegExp(`/sessions/${SELECTED_ID}$`))

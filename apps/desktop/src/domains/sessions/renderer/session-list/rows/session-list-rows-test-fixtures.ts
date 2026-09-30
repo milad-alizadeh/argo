@@ -29,17 +29,14 @@ export const archiveFetchingMore = { ...someArchived, isFetchingNextPage: true }
 export const archiveStillIndexing = { ...noArchive, historyComplete: false }
 export const archivedSoFarStillIndexing = { ...someArchived, historyComplete: false }
 
-export function activeSessionList(count: number, total = count, offset = 0) {
-  return {
-    total,
-    offset,
-    sessions: Array.from({ length: count }, (_, index) => ({ id: `session-${index}` }) as Session),
-  }
+export function activeSessionList(count: number) {
+  return Array.from({ length: count }, (_, index) => ({ id: `session-${index}` }) as Session)
 }
 
 export function kindsOf(options: {
-  active?: ReturnType<typeof activeSessionList>
   archived?: typeof noArchive
+  hasMoreSessions?: boolean
+  isFetchingMoreSessions?: boolean
   searching?: boolean
   showArchive?: boolean
   status?: SessionListStatus
@@ -47,6 +44,8 @@ export function kindsOf(options: {
   return sessionListRows({
     active: activeSessionList(2),
     archived: noArchive,
+    hasMoreSessions: false,
+    isFetchingMoreSessions: false,
     searching: false,
     showArchive: false,
     status: 'active',

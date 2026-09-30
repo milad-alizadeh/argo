@@ -159,8 +159,6 @@ class FeedReader {
     this.#follower = null
     this.#cancelText()
     this.#observers.clear()
-    // An unobserved Feed publishes nothing more, so its activity would only go stale.
-    if (this.#parent === null) this.#context.activities?.publish(this.#chain.sessionId, null)
   }
 
   #attachLive(): void {

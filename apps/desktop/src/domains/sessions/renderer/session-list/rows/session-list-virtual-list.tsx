@@ -1,6 +1,7 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { type RefObject, useRef } from 'react'
+import { useRef } from 'react'
 import type { SessionId } from '../../types'
+import { moveFocus } from './session-list-arrow-keys'
 import {
   rowPlace,
   SESSION_LIST_ROW_HEIGHT,
@@ -10,37 +11,22 @@ import {
 } from './session-list-rows'
 import { SessionRowContextMenu } from './session-row-context-menu'
 import { SessionRowView } from './session-row-view'
-import { useActiveRange, useListFocus, useScrollAnchor } from './use-session-list-scrolling'
 import { useSentinelFetch } from './use-session-list-sentinel-fetch'
 
-// Rows mounted beyond the visible range on each side; keyboard focus moves by list position.
-const OVERSCAN = 10
-
-function useRowVirtualizer(
-  rows: readonly SessionListRow[],
-  scrollRef: RefObject<HTMLDivElement | null>,
-) {
-  return useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => scrollRef.current,
-    getItemKey: (index) => {
-      const row = rows[index]
-      return row === undefined ? index : sessionListRowKey(row)
-    },
-    estimateSize: () => SESSION_LIST_ROW_HEIGHT,
-    overscan: OVERSCAN,
-  })
-}
+// Overscan generous enough to keep a sessionList's realistic session count fully mounted, so arrow-key
+// navigation (which walks the mounted buttons) behaves the same as the flat list it replaces;
+// windowing still kicks in for a Session list large enough to exceed it.
+const OVERSCAN = 30
 
 export function SessionListVirtualList({
   label,
   onArchive,
+  onFetchMoreSessions,
   onFetchNextPage,
   onFocus,
   onOpenTicket,
   onRename,
   onSelect,
-  onShowRange,
   onToggleSelect,
   renamedTitles,
   rows,
@@ -51,7 +37,6 @@ export function SessionListVirtualList({
 }: SessionListRowHandlers & {
   label: string
   onFetchNextPage: () => void
-  onShowRange: (start: number, end: number) => void
   renamedTitles: Record<string, string>
   rows: readonly SessionListRow[]
   selectedIds: ReadonlySet<SessionId>
@@ -60,14 +45,21 @@ export function SessionListVirtualList({
   unavailableSessionIds: ReadonlySet<SessionId>
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
-  const virtualizer = useRowVirtualizer(rows, scrollRef)
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    getItemKey: (index) => {
+      const row = rows[index]
+      return row === undefined ? index : sessionListRowKey(row)
+    },
+    estimateSize: () => SESSION_LIST_ROW_HEIGHT,
+    overscan: OVERSCAN,
+  })
   const items = virtualizer.getVirtualItems()
   // Read after the items: computing them is what settles the visible range.
   const range = virtualizer.range
+  useSentinelFetch({ rows, kind: 'sessionListSentinel', range, onFetch: onFetchMoreSessions })
   useSentinelFetch({ rows, kind: 'archivedSentinel', range, onFetch: onFetchNextPage })
-  useActiveRange(rows, range, onShowRange)
-  useScrollAnchor(virtualizer, rows)
-  const onKeyDown = useListFocus(virtualizer, rows, scrollRef)
 
   return (
     <div
@@ -85,7 +77,7 @@ export function SessionListVirtualList({
         <nav aria-label={label} className="min-w-0">
           <ul
             className="relative flex min-w-0 flex-col px-3"
-            onKeyDown={onKeyDown}
+            onKeyDown={moveFocus}
             style={{ height: virtualizer.getTotalSize() }}
           >
             {items.map((item) => {

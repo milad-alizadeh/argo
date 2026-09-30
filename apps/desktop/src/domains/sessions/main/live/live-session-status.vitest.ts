@@ -9,31 +9,33 @@ import {
   start,
   supervisorFor,
 } from '@/mocks/sessions/live-session-supervisor.fixture'
-import { sessionListProcedures } from '../api/session-list'
+import { sessionListProcedure } from '../api/session-list'
 import { SessionRosterChanges } from '../api/session-roster-changes'
 import type { LiveSessionSupervisorActor } from './live-session-supervisor-machine'
 
 // The status of the first row the roster lists first.
 function firstListedStatus(database: Database, supervisor: LiveSessionSupervisorActor) {
-  const caller = initTRPC
+  const list = initTRPC
     .create()
-    .router(
-      sessionListProcedures({
+    .router({
+      list: sessionListProcedure({
         database,
         supervisor,
         roster: new SessionRosterChanges(),
         watchedStatus: { statusOf: () => null },
       }),
-    )
-    .createCaller({})
-  return async () => {
-    const window = await caller.sessionListWindow({
-      projectId: 'project-1',
-      view: '00000000-0000-4000-8000-0000000000aa',
-      anchor: { kind: 'start' },
-      after: 10,
     })
-    return window.rows[0]?.status
+    .createCaller({}).list
+  return async () => {
+    const statuses: string[] = []
+    const stream = await list({ projectId: 'project-1', pageSize: 10 })
+    stream
+      .subscribe({
+        next: (update) =>
+          update.type === 'list' && statuses.push(...update.rows.map(({ status }) => status)),
+      })
+      .unsubscribe()
+    return statuses[0]
   }
 }
 

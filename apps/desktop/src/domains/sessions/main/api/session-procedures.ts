@@ -17,11 +17,7 @@ import {
   type SessionInteractionContext,
   sessionInteractionProcedures,
 } from './session-interactions'
-import {
-  type SessionListContext,
-  SessionListFeedObservers,
-  sessionListProcedures,
-} from './session-list'
+import { type SessionListContext, sessionListProcedure } from './session-list'
 import { type SessionRefreshContext, sessionRefreshProcedure } from './session-refresh'
 import { sessionRenameProcedure } from './session-rename'
 import { type SessionProcedureContext, sessionSubmitProcedure } from './session-submit'
@@ -45,11 +41,8 @@ export function sessionProcedures(context: SessionApiContext) {
     composerDraftRead: composerDraftReadProcedure(context.database),
     composerDraftSave: composerDraftSaveProcedure(context.database),
     sessionSubmit: sessionSubmitProcedure(context),
-    ...sessionListProcedures(
-      context,
-      new SessionListFeedObservers((sessionId) =>
-        readers.observe({ sessionId, subagentId: null }, () => {}),
-      ),
+    sessionList: sessionListProcedure(context, (sessionId) =>
+      readers.observe({ sessionId, subagentId: null }, () => {}),
     ),
     sessionDetails: sessionDetailsProcedure(context),
     ...sessionFeedProcedures(context, readers),

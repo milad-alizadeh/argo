@@ -3,7 +3,7 @@ import type { SessionId } from '../../types'
 import type { SelectionModifier } from '../hooks/session-list-selection'
 import { ArchivedSectionRow } from './archived-status-row'
 import { renamedSession, type SessionListRow, sameSessionListRow } from './session-list-rows'
-import { SessionListLoadingRow } from './session-list-status-row'
+import { SessionListLoadingMoreRow } from './session-list-status-row'
 import { SessionRow } from './session-row'
 
 // The row reads its own place in the list as three booleans rather than the ids they come from: an
@@ -51,8 +51,10 @@ export const SessionRowView = memo(function SessionRowView({
   tabbable,
   unavailable,
 }: SessionRowViewProps) {
-  if (row.kind === 'archivedSentinel') return <div aria-hidden="true" />
-  if (row.kind === 'sessionPlaceholder') return <SessionListLoadingRow />
+  if (row.kind === 'archivedSentinel' || row.kind === 'sessionListSentinel') {
+    return <div aria-hidden="true" />
+  }
+  if (row.kind === 'sessionListLoadingMore') return <SessionListLoadingMoreRow />
   if (row.kind !== 'session') return <ArchivedSectionRow row={row} />
   const { session, archived } = row
   const selectable = !archived

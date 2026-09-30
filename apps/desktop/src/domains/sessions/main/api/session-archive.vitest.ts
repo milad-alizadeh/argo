@@ -4,7 +4,7 @@ import { initTRPC } from '@trpc/server'
 import { test } from 'vitest'
 import { databaseFrom } from '@/database/database'
 import { sessionArchiveProcedures } from './session-archive'
-import { sessionListProcedures } from './session-list'
+import { sessionListProcedure } from './session-list'
 import { SessionRosterChanges } from './session-roster-changes'
 
 const PROJECT = '00000000-0000-4000-8000-000000000011'
@@ -24,6 +24,7 @@ function caller() {
     cwd TEXT,
     activity_at INTEGER,
     list_order_at INTEGER NOT NULL DEFAULT 0,
+    activity TEXT,
     subagents_read_at INTEGER,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
@@ -67,18 +68,22 @@ function caller() {
     .create()
     .router({
       ...sessionArchiveProcedures(context),
-      ...sessionListProcedures(context),
+      sessionList: sessionListProcedure(context),
     })
     .createCaller({})
 }
 
 async function activeIds(api: ReturnType<typeof caller>) {
-  const window = await api.sessionListWindow({
-    projectId: PROJECT,
-    view: '00000000-0000-4000-8000-0000000000ff',
-    anchor: { kind: 'start' },
-  })
-  return window.rows.map((row) => row.id)
+  const ids: string[] = []
+  const stream = await api.sessionList({ projectId: PROJECT })
+  stream
+    .subscribe({
+      next: (update) => {
+        if (update.type === 'list') ids.push(...update.rows.map((row) => row.id))
+      },
+    })
+    .unsubscribe()
+  return ids
 }
 
 test('archiving moves a Session off the active roster and an unknown id fails', async () => {

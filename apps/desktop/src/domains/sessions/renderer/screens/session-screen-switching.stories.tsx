@@ -360,8 +360,8 @@ export const FailuresToastWithoutMovingTheComposer: Story = {
   },
 }
 
-// The last Session sits beyond the first window, and opens by ID all the same: its title heads the
-// screen and its composer opens on its own Harness (#2935).
+// The roster loads one page of 30, and the 31st Session opens by ID all the same: its title heads
+// the screen and its composer opens on its own Harness (#2935).
 const BEYOND_THE_WINDOW = sessionRow({
   id: 'codex-beyond-the-window',
   harness: 'codex',
@@ -372,7 +372,7 @@ const BEYOND_THE_WINDOW = sessionRow({
   updatedAt: '2026-09-01T09:00:00Z',
 })
 const LONG_ROSTER = [
-  ...Array.from({ length: 60 }, (_, index) =>
+  ...Array.from({ length: 30 }, (_, index) =>
     sessionRow({
       id: `claude-${index}`,
       posture: null,
