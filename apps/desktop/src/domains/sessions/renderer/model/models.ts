@@ -103,14 +103,3 @@ const sessionTurnConfigurationSchema = z.strictObject({
   mode: z.string().nullable(),
 })
 export type SessionTurnConfiguration = z.infer<typeof sessionTurnConfigurationSchema>
-
-export function currentSessionId<Session extends { id: string; retiredIds: string[] }>(
-  sessions: readonly Session[],
-  rememberedId: string,
-): string | null {
-  return (
-    sessions.find(
-      (session) => session.id === rememberedId || session.retiredIds.includes(rememberedId),
-    )?.id ?? null
-  )
-}

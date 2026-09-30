@@ -2,10 +2,10 @@ import { useTranslation } from 'react-i18next'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import type { Session } from '../../types'
 
-export type SessionStatusVariant = 'active' | 'attention' | 'failed' | 'idle' | 'unknown' | 'unread'
+export type SessionStatusVariant = 'active' | 'attention' | 'failed' | 'idle' | 'unknown'
 
-// A working Session outranks its unread result; `starting` keeps its idle mark until a Turn works.
-export function statusVariantOf(session: Pick<Session, 'status' | 'unread'>): SessionStatusVariant {
+// `starting` keeps its idle mark until a Turn works.
+export function statusVariantOf(session: Pick<Session, 'status'>): SessionStatusVariant {
   switch (session.status) {
     case 'running':
       return 'active'
@@ -20,7 +20,7 @@ export function statusVariantOf(session: Pick<Session, 'status' | 'unread'>): Se
     case 'unknown':
       return 'unknown'
     case 'idle':
-      return session.unread ? 'unread' : 'idle'
+      return 'idle'
   }
 }
 

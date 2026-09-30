@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import { waitFor } from 'xstate'
+import { sessionTable } from '@/database/session/schema'
 import {
   claudeCatalog,
   claudeFirst,
@@ -105,16 +106,23 @@ test('resumes a persisted Codex Session after its live channel fails', async () 
 
 test('the first Send after restart resumes the stored Codex thread before starting its Turn', async () => {
   const calls: Array<{ method: string; threadId: string | undefined; sandbox?: string }> = []
-  const { root, supervisor, client } = await supervisorFor(async (method, params, parse) => {
-    const requestParams = params as { threadId?: string; sandbox?: string }
-    calls.push({
-      method,
-      threadId: requestParams.threadId,
-      ...(requestParams.sandbox === undefined ? {} : { sandbox: requestParams.sandbox }),
-    })
-    if (method === 'thread/resume') return parse({ thread: { id: requestParams.threadId } })
-    return parse({ turn: { id: 'turn-1' } })
-  })
+  const { root, supervisor, database, client } = await supervisorFor(
+    async (method, params, parse) => {
+      const requestParams = params as { threadId?: string; sandbox?: string }
+      calls.push({
+        method,
+        threadId: requestParams.threadId,
+        ...(requestParams.sandbox === undefined ? {} : { sandbox: requestParams.sandbox }),
+      })
+      if (method === 'thread/resume') return parse({ thread: { id: requestParams.threadId } })
+      return parse({ turn: { id: 'turn-1' } })
+    },
+  )
+  // The Session row a previous run stored, which the restarted supervisor has no actor for.
+  database
+    .insert(sessionTable)
+    .values({ argoId: 'session-1', harness: 'codex', nativeId: 'native-1' })
+    .run()
   try {
     await assert.doesNotReject(
       send(supervisor, {

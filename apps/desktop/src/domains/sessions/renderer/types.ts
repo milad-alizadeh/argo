@@ -16,12 +16,7 @@ export type SessionFeed = {
   rows: SessionFeedRow[]
 }
 
-export type { SessionError }
-export type SessionListPage = Pick<SessionListResult, 'total'> & {
-  sessions: Session[]
-  historyComplete: boolean
-}
-export type { SessionFeedRow }
+export type { SessionError, SessionFeedRow }
 
 export type SessionDiagramEvidence = {
   shape: 'diagram'

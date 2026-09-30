@@ -1,19 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Skeleton } from '@/platform/renderer/components/ui/skeleton'
-import { sessionFailureState } from '../../session-failure-state'
-import type { SessionError, SessionListPage } from '../../types'
 import { SESSION_LIST_ROW_HEIGHT } from './session-list-rows'
-
-export function sessionListState(
-  sessionList: SessionListPage | null,
-  sessionListError: SessionError | null,
-  count: number,
-) {
-  if (sessionListError !== null) return sessionFailureState(sessionListError.code)
-  if (sessionList === null) return 'loading'
-  return count === 0 ? 'empty' : 'ready'
-}
 
 // The one spinner every Session list load-more state draws, so the active Session list and the Archive read the
 // same at the point where the list is still growing. It takes one row's height, the height of the

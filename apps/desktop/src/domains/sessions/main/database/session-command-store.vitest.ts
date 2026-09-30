@@ -1,14 +1,15 @@
-import { DatabaseSync } from 'node:sqlite'
 import { expect, test } from 'vitest'
-import { databaseFrom } from '@/database/database'
+import { sessionTable } from '@/database/session/schema'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { createSessionCommandStore } from './session-command-store'
 
 test('reserves a command once and retains its bound Session and outcome', () => {
-  const client = new DatabaseSync(':memory:')
-  client.exec(
-    "CREATE TABLE session (argo_id TEXT PRIMARY KEY); CREATE TABLE session_command (command_id TEXT PRIMARY KEY, intent_id TEXT, session_id TEXT REFERENCES session(argo_id), harness TEXT, native_id TEXT, turn_id TEXT, cwd TEXT, status TEXT NOT NULL, created_at INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL DEFAULT 0); INSERT INTO session (argo_id) VALUES ('argo-1');",
-  )
-  const commands = createSessionCommandStore(databaseFrom(client))
+  const database = migratedDatabase()
+  database
+    .insert(sessionTable)
+    .values({ argoId: 'argo-1', harness: 'codex', nativeId: 'native-1' })
+    .run()
+  const commands = createSessionCommandStore(database)
   expect(commands.reserve('command-1', null)).toEqual({ reserved: true, sessionId: null })
   expect(commands.reserve('command-1', null)).toEqual({
     reserved: false,
@@ -29,5 +30,5 @@ test('reserves a command once and retains its bound Session and outcome', () => 
   commands.record('command-1', 'completed')
   commands.record('command-1', 'uncertain')
   expect(commands.reserve('command-1', null)).toMatchObject({ status: 'completed' })
-  client.close()
+  database.$client.close()
 })

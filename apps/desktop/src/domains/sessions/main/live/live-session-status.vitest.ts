@@ -51,9 +51,6 @@ test('session.list projects the latest live status event and announces each chan
       return { submit: async () => {}, ...passiveChannelMethods }
     },
   )
-  client.exec(
-    'CREATE TABLE session_ticket_link (session_id TEXT PRIMARY KEY, project_id TEXT NOT NULL, ticket_key TEXT NOT NULL, title TEXT NOT NULL, state TEXT NOT NULL, created_at TEXT NOT NULL, updated_at INTEGER NOT NULL DEFAULT 1);',
-  )
   const statusOf = firstListedStatus(databaseFrom(client), supervisor)
   const announced: string[] = []
   const subscription = supervisor.on('Session status changed', ({ sessionId }) =>

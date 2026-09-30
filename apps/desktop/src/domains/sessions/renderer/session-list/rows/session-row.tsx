@@ -31,7 +31,6 @@ function ActivityLine({ session }: { session: Session }) {
   const line = useLiveActivityText({
     activity: session.activity,
     running: session.status === 'running',
-    compacting: (session.compactionStartedAt ?? null) !== null,
   })
   return (
     <span className="mt-0.5 block min-h-lh truncate type-meta text-faint">
@@ -147,16 +146,8 @@ export function SessionRow({
               </span>
             ) : null}
             <SessionBlockedBadge session={session} />
-            {session.unread ? (
-              <span className="sr-only">{t('sessionListStatusUnread')}</span>
-            ) : null}
           </span>
           <ActivityLine session={session} />
-          {session.searchExcerpt === null || session.searchExcerpt === undefined ? null : (
-            <span className="mt-0.5 block truncate type-meta text-faint">
-              {session.searchExcerpt}
-            </span>
-          )}
           <SessionMetadata session={session} />
         </span>
       </button>

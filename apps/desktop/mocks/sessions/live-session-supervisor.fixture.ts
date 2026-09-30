@@ -1,7 +1,6 @@
 // The live Session supervisor under a real catalog and an in-memory database, for its unit tests.
-import { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync } from 'node:sqlite'
 import { type ActorRefFrom, createActor, fromPromise, waitFor, setup as xstateSetup } from 'xstate'
-import { databaseFrom } from '@/database/database'
 import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
 import {
   createLiveSessionSupervisorMachine,
@@ -16,6 +15,7 @@ import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { createHarnessRegistry } from '@/harnesses/registry'
+import { insertWorkspace, migratedDatabase } from '@/mocks/database/migrated-database'
 import { harnessCatalogMachine } from '@/platform/main/harness-catalog/harness-catalog-machine'
 import { codexModelCatalogFixture } from './codex-model-catalog.fixture'
 
@@ -98,11 +98,9 @@ export async function supervisorFor(
   catalogValue = catalog,
   openClaude?: NonNullable<HarnessRegistration<'claude'>['openLiveSession']>,
 ) {
-  const client = new DatabaseSync(':memory:')
-  client.exec(
-    'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, workspace_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, activity_at INTEGER, sort_order INTEGER NOT NULL DEFAULT 0, activity TEXT, status TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id); CREATE TABLE session_command (command_id TEXT PRIMARY KEY, intent_id TEXT, session_id TEXT, harness TEXT, native_id TEXT, turn_id TEXT, cwd TEXT, status TEXT NOT NULL, created_at INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL DEFAULT 0); CREATE UNIQUE INDEX session_command_intent ON session_command (intent_id); CREATE TABLE session_subagent (session_id TEXT NOT NULL, subagent_id TEXT NOT NULL, label TEXT, state TEXT NOT NULL, PRIMARY KEY (session_id, subagent_id)); CREATE TABLE session_archive (session_id TEXT PRIMARY KEY);',
-  )
-  const database = databaseFrom(client)
+  const database = migratedDatabase()
+  const client = database.$client
+  insertWorkspace(database, first.workspaceId, first.projectId)
   const notifications = new Set<(message: WireMessage) => boolean | undefined>()
   const codexClient = codexClientFor(request, notifications)
   const registry = createHarnessRegistry(codexClient)
@@ -148,6 +146,7 @@ export async function supervisorFor(
   return {
     root,
     supervisor,
+    database,
     client,
     notify(message: WireMessage) {
       for (const listener of notifications) listener(message)

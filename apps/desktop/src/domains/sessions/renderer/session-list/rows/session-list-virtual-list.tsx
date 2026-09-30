@@ -1,17 +1,11 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useRef } from 'react'
-import type { SessionId } from '../../types'
+import { useEffect, useRef } from 'react'
+import type { Session, SessionId } from '../../types'
 import { moveFocus } from './session-list-arrow-keys'
-import {
-  rowPlace,
-  SESSION_LIST_ROW_HEIGHT,
-  type SessionListRow,
-  type SessionListRowHandlers,
-  sessionListRowKey,
-} from './session-list-rows'
+import { SESSION_LIST_ROW_HEIGHT, type SessionListRowHandlers } from './session-list-rows'
+import { SessionListLoadingMoreRow } from './session-list-status-row'
 import { SessionRowContextMenu } from './session-row-context-menu'
 import { SessionRowView } from './session-row-view'
-import { useSentinelFetch } from './use-session-list-sentinel-fetch'
 
 // Overscan generous enough to keep a sessionList's realistic session count fully mounted, so arrow-key
 // navigation (which walks the mounted buttons) behaves the same as the flat list it replaces;
@@ -19,44 +13,47 @@ import { useSentinelFetch } from './use-session-list-sentinel-fetch'
 const OVERSCAN = 30
 
 export function SessionListVirtualList({
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
   label,
   onArchive,
-  onFetchMoreSessions,
   onFocus,
   onOpenTicket,
   onRename,
   onSelect,
   onToggleSelect,
-  renamedTitles,
-  rows,
   selectedIds,
   selectedSessionId,
+  sessions,
   tabStop,
   unavailableSessionIds,
 }: SessionListRowHandlers & {
+  fetchNextPage: () => unknown
+  hasNextPage: boolean
+  isFetchingNextPage: boolean
   label: string
-  renamedTitles: Record<string, string>
-  rows: readonly SessionListRow[]
   selectedIds: ReadonlySet<SessionId>
   selectedSessionId: SessionId | null
+  sessions: readonly Session[]
   tabStop: SessionId | null
   unavailableSessionIds: ReadonlySet<SessionId>
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const virtualizer = useVirtualizer({
-    count: rows.length,
+    count: sessions.length,
     getScrollElement: () => scrollRef.current,
-    getItemKey: (index) => {
-      const row = rows[index]
-      return row === undefined ? index : sessionListRowKey(row)
-    },
+    getItemKey: (index) => sessions[index]?.id ?? index,
     estimateSize: () => SESSION_LIST_ROW_HEIGHT,
     overscan: OVERSCAN,
   })
   const items = virtualizer.getVirtualItems()
-  // Read after the items: computing them is what settles the visible range.
-  const range = virtualizer.range
-  useSentinelFetch({ rows, kind: 'sessionListSentinel', range, onFetch: onFetchMoreSessions })
+  // The visible range, not the overscanned items, says whether the reader reached the end (#2277).
+  const lastVisibleIndex = virtualizer.range?.endIndex ?? -1
+  useEffect(() => {
+    if (sessions.length === 0 || lastVisibleIndex < sessions.length - 1) return
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage()
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, lastVisibleIndex, sessions.length])
 
   return (
     <div
@@ -68,8 +65,7 @@ export function SessionListVirtualList({
         onArchive={onArchive}
         onOpenTicket={onOpenTicket}
         onRename={onRename}
-        renamedTitles={renamedTitles}
-        rows={rows}
+        sessions={sessions}
       >
         <nav aria-label={label} className="min-w-0">
           <ul
@@ -78,7 +74,7 @@ export function SessionListVirtualList({
             style={{ height: virtualizer.getTotalSize() }}
           >
             {items.map((item) => {
-              const row = rows[item.index]
+              const session = sessions[item.index]
               return (
                 <li
                   className="absolute inset-x-3 top-0 pb-1"
@@ -87,23 +83,23 @@ export function SessionListVirtualList({
                   ref={virtualizer.measureElement}
                   style={{ transform: `translateY(${item.start}px)` }}
                 >
-                  {row === undefined ? null : (
+                  {session === undefined ? null : (
                     <SessionRowView
+                      checked={!session.archived && selectedIds.has(session.id)}
                       onFocus={onFocus}
                       onSelect={onSelect}
                       onToggleSelect={onToggleSelect}
-                      renamedTitles={renamedTitles}
-                      row={row}
-                      unavailable={
-                        row.kind === 'session' && unavailableSessionIds.has(row.session.id)
-                      }
-                      {...rowPlace(row, { selectedIds, selectedSessionId, tabStop })}
+                      selected={session.id === selectedSessionId}
+                      session={session}
+                      tabbable={session.id === tabStop}
+                      unavailable={unavailableSessionIds.has(session.id)}
                     />
                   )}
                 </li>
               )
             })}
           </ul>
+          {isFetchingNextPage ? <SessionListLoadingMoreRow /> : null}
         </nav>
       </SessionRowContextMenu>
     </div>

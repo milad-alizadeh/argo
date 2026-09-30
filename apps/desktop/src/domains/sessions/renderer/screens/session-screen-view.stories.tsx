@@ -30,9 +30,7 @@ const SESSION_ROSTER = [
     title: { text: 'Finish Session composer review', source: 'first-prompt' },
     status: 'running',
     cwd: '/workspace/argo/.claude/worktrees/ticket-1846-composer',
-    branch: 'argo/#1846-composer',
     updatedAt: '2026-09-13T15:50:00Z',
-    turnStartedAt: '2026-09-13T15:42:00Z',
     activity: {
       label: 'Ran bun run quality',
       kind: 'command',
@@ -56,9 +54,7 @@ const SESSION_ROSTER = [
       }),
     ],
     shell: [sessionShellCommand({ id: 'quality', command: 'bun run quality' })],
-    pullRequest: { number: 1846, url: 'https://example.com/pull/1846', repository: 'argo' },
     contextTokens: 54_000,
-    spentTokens: 11_200,
   }),
   sessionRow({
     id: 'shortcut-review',
@@ -67,11 +63,9 @@ const SESSION_ROSTER = [
     title: { text: 'Add Markdown typing shortcuts', source: 'summarised' },
     status: 'idle',
     cwd: '/workspace/argo',
-    branch: 'argo/#1847-inline-references',
     updatedAt: '2026-09-13T15:28:00Z',
     shell: [sessionShellCommand({ id: 'codex-command', command: 'bun run typecheck' })],
     contextTokens: 21_000,
-    spentTokens: 4_600,
   }),
   sessionRow({
     id: 'feed-review',
@@ -80,7 +74,6 @@ const SESSION_ROSTER = [
     status: 'permission',
     cwd: '/workspace/argo',
     updatedAt: '2026-09-13T15:18:00Z',
-    turnStartedAt: '2026-09-13T15:15:00Z',
     activity: {
       label: 'Read feed-document.tsx',
       kind: 'read',
@@ -89,7 +82,6 @@ const SESSION_ROSTER = [
       target: 'feed-document.tsx',
     },
     contextTokens: 18_000,
-    spentTokens: 2_900,
   }),
 ] satisfies Session[]
 
@@ -158,7 +150,7 @@ const NOOP_SESSION_LIST_ACTIONS: SessionListActions = {
   onArchiveSelected: () => {},
   onNew: () => {},
   onOpenTicket: () => {},
-  onRename: async (_session, name) => name,
+  onRename: async () => {},
   onSelect: () => {},
 }
 

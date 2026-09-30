@@ -4,7 +4,11 @@ import { and, asc, count, desc, eq, inArray, not, or, type SQL, sql } from 'driz
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable, WORKING_SESSION_STATUSES } from '@/database/session/schema'
-import { type SessionStatus, sessionStatusSchema } from '@/database/session/validation'
+import {
+  type SessionStatus,
+  sessionSelectSchema,
+  sessionStatusSchema,
+} from '@/database/session/validation'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import { feedActivitySchema } from '@/domains/sessions/api/feed-activity'
 import { sessionTitleSchema } from '@/domains/sessions/api/session-title'
@@ -60,11 +64,6 @@ const sessionShellCommandSchema = z.strictObject({
   outputPath: z.string().nullable(),
   result: z.string().nullable(),
 })
-const sessionPullRequestSchema = z.strictObject({
-  number: countSchema,
-  url: z.string(),
-  repository: z.string().nullable(),
-})
 const sessionTicketSchema = z.strictObject({
   projectId: identifierSchema,
   key: z.string().min(1),
@@ -73,40 +72,35 @@ const sessionTicketSchema = z.strictObject({
   createdAt: z.iso.datetime(),
 })
 
+// The stored columns a row carries unchanged.
+const storedSessionSchema = sessionSelectSchema.pick({
+  harness: true,
+  projectId: true,
+  sortOrder: true,
+  customTitle: true,
+  preview: true,
+  cwd: true,
+  workspaceId: true,
+})
+
+// The Session screen reads `plan`, `shell`, the context sizes and the handoff links through
+// `sessionDetails`, which shares this schema.
 export const sessionListRowSchema = z.strictObject({
+  ...storedSessionSchema.shape,
   id: z.string().uuid(),
-  retiredIds: z.array(z.string().uuid()),
-  harness: z.string().min(1),
-  projectId: z.string().min(1).nullable(),
   createdAt: z.iso.datetime(),
-  sortOrder: z.number().int(),
   posture: z.enum(['live', 'external']).nullable(),
-  customTitle: z.string().nullable(),
-  preview: z.string().nullable(),
   title: sessionTitleSchema.nullable(),
   status: sessionStatusSchema,
-  cwd: z.string().nullable(),
-  workspaceId: z.string().min(1).nullable(),
-  branch: z.string().nullable(),
   updatedAt: z.string().nullable(),
-  turnStartedAt: z.string().nullable(),
   activity: feedActivitySchema.nullable(),
   plan: sessionPlanSchema.nullable(),
   subagents: z.array(sessionSubagentSchema),
   shell: z.array(sessionShellCommandSchema),
-  pullRequest: sessionPullRequestSchema.nullable(),
   ticket: sessionTicketSchema.nullable(),
   archived: z.boolean(),
-  unread: z.boolean(),
-  searchExcerpt: z.string().optional(),
   contextTokens: countSchema.nullable().optional(),
   contextWindowTokens: countSchema.nullable().optional(),
-  spentTokens: countSchema.nullable().optional(),
-  compactionStartedAt: z.string().datetime().nullable().optional(),
-  compactionPercentage: z.number().int().min(0).max(100).nullable().optional(),
-  compactionTokens: z.string().nullable().optional(),
-  handoffStartedAt: z.string().datetime().nullable().optional(),
-  handoffFailure: z.string().nullable().optional(),
   handoffTo: identifierSchema.nullable().optional(),
   handoffFrom: identifierSchema.nullable().optional(),
   turnConfiguration: z.strictObject({
@@ -214,7 +208,6 @@ function sessionListRow(
     row.ticket === null ? null : { ...row.ticket, state: ticketStateOf(row.ticket.state) }
   return {
     id: row.id,
-    retiredIds: [],
     harness: row.harness,
     projectId: row.projectId,
     createdAt: new Date(row.createdAt).toISOString(),
@@ -226,17 +219,13 @@ function sessionListRow(
     status: liveStatus ?? row.status ?? 'unknown',
     cwd: row.cwd,
     workspaceId: row.workspaceId,
-    branch: null,
     updatedAt: new Date(row.activityAt ?? row.updatedAt).toISOString(),
-    turnStartedAt: null,
     activity: observedActivity(row.activity) ?? live?.activity ?? null,
     plan: null,
     subagents: subagents.map((subagent) => ({ ...subagent, startedAt: null, endedAt: null })),
     shell: [],
-    pullRequest: null,
     ticket,
     archived: row.archived,
-    unread: false,
     turnConfiguration: live?.turnConfiguration ?? { model: null, effort: null, mode: null },
   }
 }

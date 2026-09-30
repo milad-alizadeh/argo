@@ -58,11 +58,6 @@
   background-color: var(--color-danger);
 }
 
-.session-list-session-status[data-variant="unread"] {
-  background-color: var(--color-plan);
-  box-shadow: var(--shadow-unread-glow);
-}
-
 .session-list-session-status[data-variant="unknown"] {
   background-color: transparent;
   box-shadow: var(--shadow-state-outline);

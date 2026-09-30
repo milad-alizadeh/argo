@@ -1,52 +1,28 @@
-import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Progress } from '@/platform/renderer/components/ui/progress'
 import { useObservedFeedReading } from '../feed/use-feed-reading'
-import type { SessionId } from '../types'
-import { useSessionListStatus } from './hooks/use-session-list-filter-store'
+import type { Session, SessionId } from '../types'
+import {
+  type SessionListStatus,
+  useSessionListStatus,
+  useSetSessionListStatus,
+} from './hooks/use-session-list-filter-store'
 import { useSettledSearch } from './hooks/use-settled-search'
 import { RenameDialog } from './rename/rename-dialog'
 import { useRenameDialog } from './rename/use-rename-dialog'
 import type { SessionListActions } from './rows/session-list-actions'
-import { SessionListOutcome } from './rows/session-list-outcome'
-import { sessionListRows } from './rows/session-list-rows'
-import { sessionListState } from './rows/session-list-status-row'
+import { SessionListOutcome, type SessionListState } from './rows/session-list-outcome'
 import { SessionListVirtualList } from './rows/session-list-virtual-list'
+import { useSessionListQuery } from './session-list-query'
 import { sessionSyncProgress } from './session-sync-progress'
 import { SessionsSidebarHeader } from './sidebar/sessions-sidebar-chrome'
 import { useSidebarSessionList } from './sidebar/use-sidebar-session-list'
-import { useSessionList } from './use-session-list'
+import { useSessionSync } from './use-session-sync'
 
 export type { SessionListActions } from './rows'
 
-function useSessionListSessions(options: {
-  actions: SessionListActions
-  read: ReturnType<typeof useSessionList>
-  search: string
-  selectedSessionId: SessionId | null
-  sidebar: RefObject<HTMLElement | null>
-}) {
-  const { actions, read, search, selectedSessionId, sidebar } = options
-  const sessions = useSidebarSessionList({
-    onArchiveSelected: actions.onArchiveSelected,
-    onSelect: actions.onSelect,
-    search,
-    sessionList: read.sessionList,
-    sessionListError: read.sessionListError,
-    selectedSessionId,
-    sidebar,
-  })
-  const rows = useMemo(
-    () =>
-      sessionListRows({
-        sessions: sessions.visible,
-        hasMoreSessions: read.hasMoreSessions,
-        isFetchingMoreSessions: read.isFetchingMoreSessions,
-      }),
-    [read.hasMoreSessions, read.isFetchingMoreSessions, sessions.visible],
-  )
-  return { ...sessions, rows }
-}
+const NO_SESSIONS: Session[] = []
 
 function useUnavailableSessionIds(selectedSessionId: SessionId | null) {
   const reading = useObservedFeedReading(selectedSessionId)
@@ -70,12 +46,13 @@ function useUnavailableSessionIds(selectedSessionId: SessionId | null) {
   return unavailableSessionIds
 }
 
-function sessionListData(read: ReturnType<typeof useSessionList>, sessionCount: number) {
-  return {
-    'data-page-count': read.loadedSessionPages,
-    'data-state': sessionListState(read.sessionList, read.sessionListError, sessionCount),
-    'data-total': read.sessionList?.total,
-  }
+function sessionListState(
+  query: { isError: boolean; data: unknown },
+  count: number,
+): SessionListState {
+  if (query.isError) return 'error'
+  if (query.data === undefined) return 'loading'
+  return count === 0 ? 'empty' : 'ready'
 }
 
 // The sidebar header, outcome and rows, under one named record of row actions (#2284).
@@ -85,37 +62,37 @@ type SessionListProps = {
   selectedSessionId: SessionId | null
 }
 
+// The header's controls, and the History sync the Refresh control starts.
 function SessionListHeader({
-  actions,
-  read,
+  onNew,
   search,
-  sessions,
   setSearch,
+  status,
 }: {
-  actions: SessionListActions
-  read: ReturnType<typeof useSessionList>
+  onNew: () => void
   search: string
-  sessions: ReturnType<typeof useSessionListSessions>
   setSearch: (search: string) => void
+  status: SessionListStatus
 }) {
+  const setStatus = useSetSessionListStatus()
+  const sync = useSessionSync()
   return (
-    <SessionsSidebarHeader
-      onNew={actions.onNew}
-      onRefresh={read.refreshSessions}
-      onSearch={setSearch}
-      onStatusChange={sessions.setStatus}
-      refreshing={read.refreshingSessions}
-      search={search}
-      status={sessions.status}
-    />
+    <>
+      <SessionsSidebarHeader
+        onNew={onNew}
+        onRefresh={sync.refresh}
+        onSearch={setSearch}
+        onStatusChange={setStatus}
+        refreshing={sync.refreshing}
+        search={search}
+        status={status}
+      />
+      <SessionSyncFeedback status={sync.status} />
+    </>
   )
 }
 
-function SessionSyncFeedback({
-  status,
-}: {
-  status: ReturnType<typeof useSessionList>['syncStatus']
-}) {
+function SessionSyncFeedback({ status }: { status: ReturnType<typeof useSessionSync>['status'] }) {
   const { t } = useTranslation('sessions')
   if (status === null || (status.phase !== 'fetching' && status.phase !== 'saving')) return null
   const message =
@@ -140,57 +117,53 @@ function SessionSyncFeedback({
 }
 
 export function SessionList({ actions, projectId, selectedSessionId }: SessionListProps) {
+  const { t } = useTranslation('sessions')
   const sidebar = useRef<HTMLElement>(null)
   const [search, setSearch] = useState('')
   // The rows and the search state follow the text the list was last read with.
   const settledSearch = useSettledSearch(search)
-  const read = useSessionList({
-    projectId,
-    filter: useSessionListStatus(),
-    search: settledSearch,
-  })
-  const sessions = useSessionListSessions({
-    actions,
-    read,
-    search: settledSearch,
-    selectedSessionId,
-    sidebar,
-  })
-  const { renameTarget, setRenameTarget, handleRename } = useRenameDialog(
-    sessions.rename,
-    sessions.clearRename,
-    actions.onRename,
+  const status = useSessionListStatus()
+  const query = useSessionListQuery(
+    { projectId: projectId ?? '', filter: status, search: settledSearch },
+    projectId !== null,
   )
+  const pages = query.isError ? undefined : query.data?.pages
+  const sessions = useMemo(() => pages?.flatMap((page) => page.rows) ?? NO_SESSIONS, [pages])
+  const list = useSidebarSessionList({ actions, sessions, selectedSessionId, sidebar })
+  const { renameTarget, setRenameTarget, handleRename } = useRenameDialog(actions.onRename)
+  const state = sessionListState(query, sessions.length)
   return (
     <aside
-      aria-label={useTranslation('sessions').t('sidebarLabel')}
+      aria-label={t('sidebarLabel')}
       className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-sidebar"
-      {...sessionListData(read, sessions.sessionCount)}
+      data-page-count={query.data?.pages.length ?? 0}
+      data-state={state}
+      data-total={pages?.[0]?.total}
       ref={sidebar}
     >
-      <SessionListHeader {...{ actions, read, search, sessions, setSearch }} />
-      <SessionSyncFeedback status={read.syncStatus} />
-      <SessionListOutcome
-        count={sessions.sessionCount}
-        searching={sessions.searching}
-        sessionList={read.sessionList}
-        sessionListError={read.sessionListError}
+      <SessionListHeader
+        onNew={actions.onNew}
+        search={search}
+        setSearch={setSearch}
+        status={status}
       />
+      <SessionListOutcome searching={settledSearch.trim() !== ''} state={state} />
       <SessionListVirtualList
+        fetchNextPage={query.fetchNextPage}
+        hasNextPage={query.hasNextPage}
+        isFetchingNextPage={query.isFetchingNextPage}
         label="Sessions"
         unavailableSessionIds={useUnavailableSessionIds(selectedSessionId)}
-        onArchive={sessions.archive}
-        onFetchMoreSessions={read.fetchMoreSessions}
-        onFocus={sessions.focus.setFocusedSessionId}
+        onArchive={list.archive}
+        onFocus={list.focus.setFocusedSessionId}
         onOpenTicket={actions.onOpenTicket}
         onRename={setRenameTarget}
-        onSelect={sessions.select}
-        onToggleSelect={sessions.selection.toggle}
-        renamedTitles={sessions.renamedTitles}
-        rows={sessions.rows}
-        selectedIds={sessions.selection.selectedIds}
+        onSelect={list.select}
+        onToggleSelect={list.selection.toggle}
+        selectedIds={list.selection.selectedIds}
         selectedSessionId={selectedSessionId}
-        tabStop={sessions.focus.tabStop}
+        sessions={sessions}
+        tabStop={list.focus.tabStop}
       />
       <RenameDialog onRename={handleRename} session={renameTarget} setSession={setRenameTarget} />
     </aside>

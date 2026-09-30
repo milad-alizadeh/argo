@@ -57,13 +57,12 @@ export function SessionMetadata({ session }: { session: Session }) {
     return () => window.clearInterval(timer)
   }, [])
   const timing = sessionTiming(session, now)
-  // An asserted link outranks the key the branch or worktree carries (CONTEXT.md L1 · Session → Ticket).
-  const ticketKey = session.ticket?.key ?? ticketKeyInPlace(session.branch, session.cwd)
+  // An asserted link outranks the key the worktree carries (CONTEXT.md L1 · Session → Ticket).
+  const ticketKey = session.ticket?.key ?? ticketKeyInPlace(null, session.cwd)
   const hasMetadata =
     session.plan?.state === 'available' ||
     session.plan?.state === 'malformed' ||
     session.subagents.length > 0 ||
-    session.pullRequest !== null ||
     ticketKey !== null ||
     timing !== null
   if (!hasMetadata) return null
@@ -76,11 +75,6 @@ export function SessionMetadata({ session }: { session: Session }) {
         <span className="inline-flex items-center gap-1">
           <Icon name="ticket" />
           <span>{ticketKey}</span>
-        </span>
-      ) : null}
-      {session.pullRequest !== null ? (
-        <span className="inline-flex" data-slot="session-pull-request">
-          <Icon name="pull-request-linked" />
         </span>
       ) : null}
       {session.subagents.length > 0 ? (

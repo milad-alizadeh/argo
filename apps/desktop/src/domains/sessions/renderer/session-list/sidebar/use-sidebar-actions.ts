@@ -1,9 +1,7 @@
-import { useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { COMPOSER_FOCUS_STATE } from '../../composer-focus-state'
-import { markSessionRead } from '../../session-queries'
 import type { Session, SessionId } from '../../types'
 
 // What a row's menu and a row's click do, each with one identity for as long as its inputs hold. The
@@ -13,7 +11,6 @@ export function useSidebarActions() {
   const navigate = useNavigate()
   const location = useLocation()
   const { projectId } = useParams()
-  const queryClient = useQueryClient()
 
   return {
     openNew: useCallback(() => {
@@ -29,19 +26,14 @@ export function useSidebarActions() {
     ),
 
     rename: useCallback(async (session: Session, name: string) => {
-      const renamed = await trpcClient.sessionUpdate.mutate({
-        sessionId: session.id,
-        title: name,
-      })
-      return renamed.customTitle ?? name
+      await trpcClient.sessionUpdate.mutate({ sessionId: session.id, title: name })
     }, []),
 
     select: useCallback(
-      (selectedSessionId: SessionId, retiredIds: SessionId[] = []) => {
+      (selectedSessionId: SessionId) => {
         navigate(`/projects/${projectId}/sessions/${selectedSessionId}${location.search}`)
-        markSessionRead(queryClient, selectedSessionId, retiredIds)
       },
-      [location.search, navigate, projectId, queryClient],
+      [location.search, navigate, projectId],
     ),
   }
 }

@@ -10,30 +10,15 @@ import {
   ContextMenuTrigger,
 } from '@/platform/renderer/components/ui/context-menu'
 import type { Session } from '../../types'
-import {
-  renamedSession,
-  type SessionListMenuHandlers,
-  type SessionListRow,
-  sessionName,
-} from './session-list-rows'
-
-type SessionRowMenuTarget = { session: Session; archived: boolean }
+import { type SessionListMenuHandlers, sessionName } from './session-list-rows'
 
 // One element, because base-ui reads `render` as a prop: a fresh one each render is a changed prop.
 const TRIGGER = <div />
 
-function targetOf(
-  element: EventTarget | null,
-  rows: readonly SessionListRow[],
-  renamedTitles: Record<string, string>,
-): SessionRowMenuTarget | null {
+function targetOf(element: EventTarget | null, sessions: readonly Session[]): Session | null {
   const row = element instanceof Element ? element.closest('[data-session-id]') : null
   const sessionId = row?.getAttribute('data-session-id') ?? null
-  for (const entry of rows) {
-    if (entry.kind !== 'session' || entry.session.id !== sessionId) continue
-    return { archived: entry.archived, session: renamedSession(entry.session, renamedTitles) }
-  }
-  return null
+  return sessions.find((session) => session.id === sessionId) ?? null
 }
 
 // One menu for the whole list, opened on the row under the pointer, rather than one menu per row. A
@@ -44,27 +29,25 @@ export function SessionRowContextMenu({
   onArchive,
   onOpenTicket,
   onRename,
-  renamedTitles,
-  rows,
+  sessions,
 }: SessionListMenuHandlers & {
   children: ReactNode
-  renamedTitles: Record<string, string>
-  rows: readonly SessionListRow[]
+  sessions: readonly Session[]
 }) {
   const { t } = useTranslation('sessions')
-  const [target, setTarget] = useState<SessionRowMenuTarget | null>(null)
+  const [target, setTarget] = useState<Session | null>(null)
   const [open, setOpen] = useState(false)
   // A ref beside the state, because the trigger opens the menu in the same event that names the row:
   // the state has not landed yet when it asks whether to open.
-  const pointed = useRef<SessionRowMenuTarget | null>(null)
+  const pointed = useRef<Session | null>(null)
   // The rows are read at click time, through a ref. A Session list read rebuilds them several times a
   // second while a Session runs, and a handler that closed over them changed the trigger's props
   // every time, for a menu nobody had opened (#2386).
-  const list = useRef({ renamedTitles, rows })
-  list.current = { renamedTitles, rows }
+  const list = useRef(sessions)
+  list.current = sessions
 
   const readTarget = useCallback((event: MouseEvent) => {
-    const found = targetOf(event.target, list.current.rows, list.current.renamedTitles)
+    const found = targetOf(event.target, list.current)
     pointed.current = found
     setTarget(found)
   }, [])
@@ -78,22 +61,22 @@ export function SessionRowContextMenu({
       {target === null ? null : (
         <ContextMenuContent
           aria-label={t('contextMenu.actions', {
-            title: sessionName(target.session, t('newSession')),
+            title: sessionName(target, t('newSession')),
           })}
         >
           <ContextMenuGroup>
-            <ContextMenuItem onClick={() => onRename(target.session)}>
+            <ContextMenuItem onClick={() => onRename(target)}>
               {t('contextMenu.rename')}
             </ContextMenuItem>
-            {target.session.ticket !== null ? (
-              <ContextMenuItem onClick={() => onOpenTicket(target.session)}>
+            {target.ticket !== null ? (
+              <ContextMenuItem onClick={() => onOpenTicket(target)}>
                 {t('contextMenu.openTicket')}
               </ContextMenuItem>
             ) : null}
             {target.archived ? null : (
               <>
                 <ContextMenuSeparator />
-                <ContextMenuItem onClick={() => onArchive(target.session.id)}>
+                <ContextMenuItem onClick={() => onArchive(target.id)}>
                   <Icon name="archive-session" />
                   {t('bulkSelect.archive')}
                 </ContextMenuItem>

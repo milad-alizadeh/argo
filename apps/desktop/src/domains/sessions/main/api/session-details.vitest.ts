@@ -42,9 +42,6 @@ async function detailsAroundSecondSend(
       ? secondTurn()
       : recording.request(method, params, parse)
   const { root, supervisor, client, notify } = await supervisorFor(request, twoEffortCatalog)
-  client.exec(
-    'CREATE TABLE session_ticket_link (session_id TEXT PRIMARY KEY, project_id TEXT NOT NULL, ticket_key TEXT NOT NULL, title TEXT NOT NULL, state TEXT NOT NULL, created_at TEXT NOT NULL, updated_at INTEGER NOT NULL DEFAULT 1);',
-  )
   const details = initTRPC
     .create()
     .router({

@@ -96,10 +96,6 @@ async function reportStalledResume({ error, page, sessionId, transcripts }) {
 
 async function waitForCompactionFeed(page, sessionId) {
   await waitFor(async () => {
-    const [session] = await rosterRow(page, sessionId)
-    return session?.compactionStartedAt !== null
-  }, 60_000)
-  await waitFor(async () => {
     const rows = await page
       .locator(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
       .allTextContents()

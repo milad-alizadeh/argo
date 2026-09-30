@@ -2,8 +2,9 @@ import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/platform/renderer/components/ui/empty'
-import type { SessionError, SessionListPage } from '../../types'
 import { SessionListLoading } from './session-list-status-row'
+
+export type SessionListState = 'error' | 'loading' | 'empty' | 'ready'
 
 function NoSessionsFound() {
   const { t } = useTranslation('sessions')
@@ -19,7 +20,7 @@ function NoSessionsFound() {
   )
 }
 
-function SessionListErrorAlert({ error }: { error: SessionError }) {
+function SessionListErrorAlert() {
   const { t } = useTranslation('sessions')
   return (
     <Alert
@@ -28,7 +29,7 @@ function SessionListErrorAlert({ error }: { error: SessionError }) {
     >
       <Icon name="triangle-alert" />
       <AlertTitle>{t('unableToLoadSessions')}</AlertTitle>
-      <AlertDescription>{error.message}</AlertDescription>
+      <AlertDescription>{t('sessionListReadFailure')}</AlertDescription>
     </Alert>
   )
 }
@@ -36,18 +37,20 @@ function SessionListErrorAlert({ error }: { error: SessionError }) {
 // What the list says instead of rows: the read failed, the first read has not landed, or there are
 // no Sessions to show.
 export function SessionListOutcome({
-  count,
   searching,
-  sessionList,
-  sessionListError,
+  state,
 }: {
-  count: number
   searching: boolean
-  sessionList: SessionListPage | null
-  sessionListError: SessionError | null
+  state: SessionListState
 }) {
-  if (sessionListError !== null) return <SessionListErrorAlert error={sessionListError} />
-  if (sessionList === null) return searching ? null : <SessionListLoading />
-  if (count === 0) return <NoSessionsFound />
-  return null
+  switch (state) {
+    case 'error':
+      return <SessionListErrorAlert />
+    case 'loading':
+      return searching ? null : <SessionListLoading />
+    case 'empty':
+      return <NoSessionsFound />
+    case 'ready':
+      return null
+  }
 }

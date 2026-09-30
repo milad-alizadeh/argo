@@ -1,19 +1,15 @@
 import type { Session } from '../../types'
 
-type TimingSource = 'turnStartedAt' | 'updatedAt'
-
-const TIMING_BY_STATUS: Record<
-  Session['status'],
-  { label: string; source: TimingSource; style: 'elapsed' | 'recency' }
-> = {
-  asking: { label: 'Asking', source: 'turnStartedAt', style: 'elapsed' },
-  ended: { label: 'Updated', source: 'updatedAt', style: 'recency' },
-  idle: { label: 'Updated', source: 'updatedAt', style: 'recency' },
-  permission: { label: 'Waiting', source: 'turnStartedAt', style: 'elapsed' },
-  running: { label: 'Running', source: 'turnStartedAt', style: 'elapsed' },
-  starting: { label: 'Starting', source: 'turnStartedAt', style: 'elapsed' },
-  stopped: { label: 'Updated', source: 'updatedAt', style: 'recency' },
-  unknown: { label: 'Updated', source: 'updatedAt', style: 'recency' },
+// A settled Session shows how long ago it last changed; a working one shows no time.
+const SHOWS_RECENCY: Record<Session['status'], boolean> = {
+  asking: false,
+  ended: true,
+  idle: true,
+  permission: false,
+  running: false,
+  starting: false,
+  stopped: true,
+  unknown: true,
 }
 
 function elapsedMinutes(timestamp: string, now: number) {
@@ -31,15 +27,11 @@ function compactDuration(minutes: number) {
 }
 
 export function sessionTiming(session: Session, now: number) {
-  const timing = TIMING_BY_STATUS[session.status]
-  const timestamp = session[timing.source]
-  if (timestamp === null) return null
+  const timestamp = session.updatedAt
+  if (!SHOWS_RECENCY[session.status] || timestamp === null) return null
   const minutes = elapsedMinutes(timestamp, now)
   if (minutes === null) return null
   const duration = compactDuration(minutes)
-  if (timing.style === 'elapsed') {
-    return { dateTime: timestamp, label: `${timing.label} ${duration}`, text: duration }
-  }
   return {
     dateTime: timestamp,
     label: minutes < 1 ? 'Updated just now' : `Updated ${duration} ago`,

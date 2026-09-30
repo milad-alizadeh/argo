@@ -1,28 +1,35 @@
 import assert from 'node:assert/strict'
-import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
 import { createActor, fromPromise, waitFor } from 'xstate'
-import { databaseFrom } from '@/database/database'
+import { project } from '@/database/project/schema'
+import { workspace } from '@/database/workspace/schema'
 import type {
   SessionSummaryList,
   SessionSummaryListResult,
 } from '@/domains/sessions/api/session-discovery'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { sessionSyncMachine } from './session-sync-machine'
 import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
 
 const ID = '00000000-0000-4000-8000-000000000001'
 
 function createDatabase() {
-  const client = new DatabaseSync(':memory:')
-  client.exec(`CREATE TABLE project (id TEXT PRIMARY KEY, path TEXT NOT NULL, common_directory TEXT NOT NULL, created_at INTEGER, updated_at INTEGER);
-    CREATE TABLE workspace (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, kind TEXT NOT NULL, display_name TEXT NOT NULL, path TEXT NOT NULL, created_at INTEGER, updated_at INTEGER);
-    CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, workspace_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, activity_at INTEGER, sort_order INTEGER NOT NULL DEFAULT 0, activity TEXT, status TEXT, created_at INTEGER NOT NULL DEFAULT 1, updated_at INTEGER NOT NULL DEFAULT 1);
-    CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);`)
-  client.exec("INSERT INTO project VALUES ('project-1', '/repo', '/repo/.git', 1, 1);")
-  client.exec(
-    "INSERT INTO workspace VALUES ('workspace-1', 'project-1', 'imported', 'feature', '/repo/worktree', 1, 1);",
-  )
-  return { client, database: databaseFrom(client) }
+  const database = migratedDatabase()
+  database
+    .insert(project)
+    .values({ id: 'project-1', path: '/repo', commonDirectory: '/repo/.git' })
+    .run()
+  database
+    .insert(workspace)
+    .values({
+      id: 'workspace-1',
+      projectId: 'project-1',
+      kind: 'imported',
+      displayName: 'feature',
+      path: '/repo/worktree',
+    })
+    .run()
+  return { client: database.$client, database }
 }
 
 test('matches cwd to the deepest registered Project root and keeps sparse metadata', () => {

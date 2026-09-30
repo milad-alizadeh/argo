@@ -9,7 +9,12 @@ import {
   sessionFeedSubscribe,
   storySessionPage,
 } from '@/mocks/sessions/session-story-host'
-import { queryClient, type RouterInputs, type RouterOutputs } from '@/platform/renderer/trpc-client'
+import {
+  queryClient,
+  type RouterInputs,
+  type RouterOutputs,
+  trpcClient,
+} from '@/platform/renderer/trpc-client'
 import { replaceComposerCommands } from '../../composer/references/composer-command-registry'
 import { useFeedReading } from '../../feed/use-feed-reading'
 import type { Session, SessionError, SessionId, SessionListResult } from '../../types'
@@ -157,6 +162,7 @@ function withSessionsHost(initialSessions: readonly Session[]) {
       const updated = {
         ...current,
         customTitle: title ?? current.customTitle,
+        title: title === undefined ? current.title : { text: title, source: 'custom' as const },
         archived: archived ?? current.archived,
       }
       store([updated])
@@ -171,6 +177,11 @@ function withSessionsHost(initialSessions: readonly Session[]) {
     },
     restore,
   }
+}
+
+// The rename the sidebar sends: one Session update, which the host stores and announces.
+async function renameThroughSessionUpdate(renamed: Session, name: string) {
+  await trpcClient.sessionUpdate.mutate({ sessionId: renamed.id, title: name })
 }
 
 type SessionListHarnessArgs = SessionListActions & { selectedSessionId: SessionId | null }
@@ -237,7 +248,7 @@ const meta = {
     onArchiveSelected: fn(),
     onNew: fn(),
     onOpenTicket: fn(),
-    onRename: fn(async (_session, name) => name),
+    onRename: fn(renameThroughSessionUpdate),
     onSelect: fn(),
     selectedSessionId: null,
   },
@@ -306,6 +317,13 @@ function expectOnlySecondSession(canvas: ReturnType<typeof within>, first: RegEx
 
 export const Discovered: Story = {
   render: (args) => <RoutedSessionList {...args} />,
+  beforeEach: () => {
+    sessionsHost = withSessionsHost(listed)
+    return () => {
+      sessionsHost?.restore()
+      sessionsHost = null
+    }
+  },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     const search = canvas.getByRole('textbox', { name: 'Search Sessions' })
@@ -339,7 +357,7 @@ export const Discovered: Story = {
     await userEvent.type(input, '  Keep the Session list stable\n')
     await userEvent.keyboard('{Enter}')
     await expect(
-      canvas.getByRole('button', { name: /Keep the Session list stable/ }),
+      await canvas.findByRole('button', { name: /Keep the Session list stable/ }),
     ).toBeInTheDocument()
     await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
       '/sessions/second-session',
@@ -597,7 +615,6 @@ export const SessionListStructure: Story = {
           target: 'RTK_DISABLED=1 gh pr checks 2062 --watch',
         },
         status: 'running',
-        turnStartedAt: '2026-09-14T03:30:00Z',
         plan: {
           state: 'available',
           entries: [
@@ -605,7 +622,6 @@ export const SessionListStructure: Story = {
             { content: 'Match the layout', position: 1, status: 'in_progress' },
           ],
         },
-        pullRequest: { number: 2062, repository: 'argo', url: 'https://example.com/pull/2062' },
         title: { text: 'Codex session names displaying as ID', source: 'first-prompt' },
       },
     ]),
@@ -613,15 +629,7 @@ export const SessionListStructure: Story = {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Watch PR checks')).toBeVisible()
     await expect(canvas.queryByText(/Bash RTK_DISABLED=1 gh pr checks 2062/)).toBeNull()
-    await expect(
-      canvasElement.querySelector('[data-slot="session-pull-request"] svg'),
-    ).not.toBeNull()
-    await expect(canvas.queryByText('#2062')).toBeNull()
     await expect(canvas.getByLabelText('1 of 2 steps completed')).toBeVisible()
-    const timing = canvas.getByTitle(/^Running /)
-    await expect(timing).toBeVisible()
-    await expect(timing.parentElement?.firstElementChild).toBe(timing)
-    await expect(canvas.getByText(/^(?:<1m|\d+[mhd])$/)).toBeVisible()
   },
 }
 
@@ -671,9 +679,8 @@ export const StatusTransitions: Story = {
       },
       {
         ...session,
-        id: 'unread-session',
-        unread: true,
-        title: { text: 'Read the unread Session', source: 'first-prompt' },
+        id: 'idle-session',
+        title: { text: 'Read the idle Session', source: 'first-prompt' },
       },
       {
         ...session,
@@ -690,7 +697,7 @@ export const StatusTransitions: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const waiting = await canvas.findByRole('button', { name: /Approve the command/ })
-    const unread = canvas.getByRole('button', { name: /Read the unread Session/ })
+    const idle = canvas.getByRole('button', { name: /Read the idle Session/ })
     const starting = canvas
       .getAllByRole('button')
       .find((button) => button.dataset.sessionId === 'starting-session')
@@ -699,9 +706,9 @@ export const StatusTransitions: Story = {
       'data-variant',
       'attention',
     )
-    await expect(unread.querySelector('[data-slot="session-status"]')).toHaveAttribute(
+    await expect(idle.querySelector('[data-slot="session-status"]')).toHaveAttribute(
       'data-variant',
-      'unread',
+      'idle',
     )
     await expect(starting.querySelector('[data-slot="session-status"]')).toHaveAttribute(
       'data-variant',
@@ -715,10 +722,9 @@ export const StatusTransitions: Story = {
       { ...session, id: 'waiting-for-permission', status: 'idle' },
       {
         ...session,
-        id: 'unread-session',
+        id: 'idle-session',
         status: 'running',
-        title: { text: 'Read the unread Session', source: 'first-prompt' },
-        unread: true,
+        title: { text: 'Read the idle Session', source: 'first-prompt' },
       },
     ])
     await waitFor(async () => {
@@ -726,7 +732,7 @@ export const StatusTransitions: Story = {
         'data-variant',
         'idle',
       )
-      await expect(unread.querySelector('[data-slot="session-status"]')).toHaveAttribute(
+      await expect(idle.querySelector('[data-slot="session-status"]')).toHaveAttribute(
         'data-variant',
         'active',
       )
@@ -953,36 +959,6 @@ export const SkillMentionTitle: Story = {
 
 let sessionsHost: ReturnType<typeof withSessionsHost> | null = null
 
-export const RenameSurvivesSessionListPoll: Story = {
-  beforeEach: () => {
-    sessionsHost = withSessionsHost(listed)
-    return () => {
-      sessionsHost?.restore()
-      sessionsHost = null
-    }
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const row = await canvas.findByRole('button', { name: /Read the Session transcript/ })
-    await userEvent.pointer({ keys: '[MouseRight]', target: row })
-    const rename = await within(document.body).findByRole('menuitem', { name: 'Rename' })
-    await userEvent.click(rename)
-    const dialog = within(document.body).getByRole('dialog', { name: 'Rename Session' })
-    const input = within(dialog).getByRole('textbox', { name: 'Name' })
-    await userEvent.clear(input)
-    await userEvent.type(input, 'Keep the rename after a poll\n')
-    await userEvent.keyboard('{Enter}')
-    await expect(
-      canvas.getByRole('button', { name: /Keep the rename after a poll/ }),
-    ).toBeInTheDocument()
-    // A change that still carries the old title must not revert the pending rename.
-    sessionsHost?.announce(listed)
-    await expect(
-      canvas.getByRole('button', { name: /Keep the rename after a poll/ }),
-    ).toBeInTheDocument()
-  },
-}
-
 export const FocusRecovery: Story = {
   beforeEach: () => {
     sessionsHost = withSessionsHost(listed)
@@ -1065,7 +1041,6 @@ export const ArchivedRowsCanBeOpened: Story = {
     showingSessions([
       {
         ...archivedSession,
-        retiredIds: ['archived-parent'],
         title: { text: 'Open the archived transcript', source: 'first-prompt' },
       },
     ]),
@@ -1075,7 +1050,7 @@ export const ArchivedRowsCanBeOpened: Story = {
     await userEvent.click(
       await canvas.findByRole('button', { name: /Open the archived transcript/ }),
     )
-    await expect(args.onSelect).toHaveBeenCalledWith('archived-session', ['archived-parent'])
+    await expect(args.onSelect).toHaveBeenCalledWith('archived-session')
   },
 }
 
@@ -1158,10 +1133,8 @@ export const Failure: Story = {
   },
 }
 
-// The list reads its next offset page when the reader reaches the bottom of what is loaded, and at
-// no other time. The sentinel row is what "reached" means, and it is mounted well before it is
-// visible: the virtualizer keeps 30 rows of overscan, so a sentinel below the fold used to count as
-// reached and the Session list grew a page before the reader had scrolled at all (#2277).
+// The list reads its next offset page when the reader sees its last loaded row, and at no other
+// time. The virtualizer mounts 30 rows of overscan, so a mounted last row is not a seen one (#2277).
 const manySessions: Session[] = Array.from({ length: 80 }, (_unused, row) => ({
   ...session,
   id: `session-${String(row).padStart(2, '0')}`,
@@ -1183,7 +1156,7 @@ export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
     await expect(listSessions).toHaveBeenCalledTimes(1)
     scroll.scrollTop = scroll.scrollHeight
     scroll.dispatchEvent(new Event('scroll'))
-    // One arrival of the sentinel asks for one page, at the offset of the rows already loaded.
+    // Reaching the last row asks for one page, at the offset of the rows already loaded.
     await waitFor(() => expect(listSessions).toHaveBeenCalledTimes(2))
     await expect(listSessions).toHaveBeenLastCalledWith({
       projectId: 'project-1',
@@ -1197,8 +1170,8 @@ export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
   },
 }
 
-// A page shorter than the viewport leaves the sentinel visible with nothing to scroll, so it is
-// reached once and asks once, rather than growing the Session list page after page on its own.
+// A page shorter than the viewport leaves its last row visible with nothing to scroll, so it asks
+// once, rather than growing the Session list page after page on its own.
 export const AsksOnceWhenTheWindowDoesNotFillTheViewport: Story = {
   beforeEach: () => {
     const third = { ...session, id: 'third-session' }
@@ -1215,8 +1188,8 @@ export const AsksOnceWhenTheWindowDoesNotFillTheViewport: Story = {
   },
 }
 
-// The spinner stands where the rows it waits for will be: one Session row tall, at the bottom of the
-// list, with the spinner centered in it and no border of its own.
+// The spinner stands where the rows it waits for will be: one Session row tall, after the list, with
+// the spinner centered in it and no border of its own.
 export const GrowingTheWindow: Story = {
   beforeEach: () =>
     withSessionListHost((read) =>
@@ -1236,19 +1209,12 @@ export const GrowingTheWindow: Story = {
     await expect(spinner.getBoundingClientRect().height).toBe(56)
     await expect(spinner.querySelector('[data-slot="loader"]')).toBeNull()
     await expect(spinner.querySelector('svg.animate-spin')).not.toBeNull()
-    const rows = [...canvas.getByRole('navigation', { name: 'Sessions' }).querySelectorAll('li')]
-    await expect(rows.indexOf(spinner.closest('li') as HTMLLIElement)).toBe(rows.length - 1)
-  },
-}
-
-// A story-level fact declared once, and only tested here, so no other story is left to default it
-// away by omission: with every row already loaded, the sentinel never mounts at all (#2284).
-export const NoSentinelWhenTheWindowIsComplete: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await canvas.findByRole('button', { name: /Read the Session transcript/ })
-    const scroll = sessionListScroll(canvasElement)
-    await expect(scroll.querySelectorAll('div[aria-hidden="true"]')).toHaveLength(0)
+    const lastRow = [
+      ...canvas.getByRole('navigation', { name: 'Sessions' }).querySelectorAll('li'),
+    ].at(-1)
+    await expect(spinner.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+      lastRow?.getBoundingClientRect().bottom ?? Number.POSITIVE_INFINITY,
+    )
   },
 }
 

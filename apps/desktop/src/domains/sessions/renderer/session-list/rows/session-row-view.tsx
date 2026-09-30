@@ -1,8 +1,6 @@
 import { memo } from 'react'
-import type { SessionId } from '../../types'
+import type { Session, SessionId } from '../../types'
 import type { SelectionModifier } from '../hooks/session-list-selection'
-import { renamedSession, type SessionListRow, sameSessionListRow } from './session-list-rows'
-import { SessionListLoadingMoreRow } from './session-list-status-row'
 import { SessionRow } from './session-row'
 
 // The row reads its own place in the list as three booleans rather than the ids they come from: an
@@ -10,62 +8,39 @@ import { SessionRow } from './session-row'
 type SessionRowViewProps = {
   checked: boolean
   onFocus: (sessionId: SessionId) => void
-  onSelect: (sessionId: SessionId, retiredIds?: SessionId[]) => void
+  onSelect: (sessionId: SessionId) => void
   onToggleSelect: (sessionId: SessionId, modifier: SelectionModifier) => void
-  renamedTitles: Record<string, string>
-  row: SessionListRow
   selected: boolean
+  session: Session
   tabbable: boolean
   unavailable: boolean
 }
 
-// Everything but the row is compared by identity, and each of those is held stable by the hook that
-// owns it. The row itself is rebuilt on every read, so it is the one prop compared by content.
-function sameRowView(left: SessionRowViewProps, right: SessionRowViewProps): boolean {
-  return (
-    sameSessionListRow(left.row, right.row) &&
-    left.checked === right.checked &&
-    left.onFocus === right.onFocus &&
-    left.onSelect === right.onSelect &&
-    left.onToggleSelect === right.onToggleSelect &&
-    left.renamedTitles === right.renamedTitles &&
-    left.selected === right.selected &&
-    left.tabbable === right.tabbable &&
-    left.unavailable === right.unavailable
-  )
-}
-
-// Memoized, because a read of the open Session re-renders an ancestor the Session list shares with it, and
-// without this every mounted row re-rendered with it: 185291 renders in a 13-second idle recording,
-// when those reads still polled at 500ms. Nothing re-reads on a timer now (#2299, #2303), so the
-// reads are a Harness's writes, but a Session being driven writes several times a second.
+// Memoized, because a Harness driving a Session writes several times a second, and each read
+// rebuilds the list. A Session the read did not touch keeps its identity through the query's
+// structural sharing, so its row draws nothing.
 export const SessionRowView = memo(function SessionRowView({
   checked,
   onFocus,
   onSelect,
   onToggleSelect,
-  renamedTitles,
-  row,
   selected,
+  session,
   tabbable,
   unavailable,
 }: SessionRowViewProps) {
-  if (row.kind === 'sessionListSentinel') return <div aria-hidden="true" />
-  if (row.kind === 'sessionListLoadingMore') return <SessionListLoadingMoreRow />
-  const { session, archived } = row
-  const selectable = !archived
   return (
     <SessionRow
-      archived={archived}
+      archived={session.archived}
       checked={checked}
       onFocus={() => onFocus(session.id)}
-      onSelect={() => onSelect(session.id, session.retiredIds)}
+      onSelect={() => onSelect(session.id)}
       onToggleSelect={(modifier) => onToggleSelect(session.id, modifier)}
-      selectable={selectable}
+      selectable={!session.archived}
       selected={selected}
-      session={renamedSession(session, renamedTitles)}
+      session={session}
       tabIndex={tabbable ? 0 : -1}
       unavailable={unavailable}
     />
   )
-}, sameRowView)
+})

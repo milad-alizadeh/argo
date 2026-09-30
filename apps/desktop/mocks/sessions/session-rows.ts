@@ -7,7 +7,6 @@ import { DEFAULT_HARNESS } from '@/harnesses/harness'
 function listedSession(overrides: Partial<Session> = {}): Session {
   return {
     id: 'session-one',
-    retiredIds: [],
     harness: DEFAULT_HARNESS,
     projectId: 'project-1',
     createdAt: '2026-09-30T10:00:00.000Z',
@@ -19,17 +18,13 @@ function listedSession(overrides: Partial<Session> = {}): Session {
     status: 'idle',
     cwd: null,
     workspaceId: null,
-    branch: null,
     updatedAt: null,
-    turnStartedAt: null,
     activity: null,
     plan: null,
     subagents: [],
     shell: [],
-    pullRequest: null,
     ticket: null,
     archived: false,
-    unread: false,
     turnConfiguration: { model: null, effort: null, mode: null },
     ...overrides,
   }
@@ -60,5 +55,5 @@ export function sessionSubagent(
 export function sessionRow(
   overrides: Partial<Session> & Pick<Session, 'id' | 'cwd' | 'posture' | 'status' | 'title'>,
 ): Session {
-  return listedSession({ branch: 'main', ...overrides })
+  return listedSession(overrides)
 }

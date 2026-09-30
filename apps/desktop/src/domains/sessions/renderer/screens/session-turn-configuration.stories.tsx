@@ -13,8 +13,6 @@ import type { SessionTurnConfiguration } from '../model/models'
 import { SessionScreenView } from './session-screen-view'
 
 const SESSION_ID = 'live-turn-configuration'
-const OPENING_TURN = '2026-09-13T10:00:00.000Z'
-const NEXT_TURN = '2026-09-13T10:01:00.000Z'
 
 // A live Claude Session whose next Turn runs on whatever `reply` says the Harness used.
 function liveRow() {
@@ -24,7 +22,6 @@ function liveRow() {
     title: { text: 'Turn turnConfiguration Session', source: 'first-prompt' },
     status: 'idle',
     cwd: '/storybook/argo',
-    turnStartedAt: OPENING_TURN,
     turnConfiguration: { model: 'claude-opus-5', effort: 'medium', mode: 'default' },
   })
 }
@@ -44,7 +41,7 @@ function withBridge(reply: SessionTurnConfiguration) {
         trpc: (async (request) => {
           if (request.path !== 'sessionSubmit') return hosted.trpc(request)
           sent.push(request.input)
-          Object.assign(row, { turnStartedAt: NEXT_TURN, turnConfiguration: reply })
+          Object.assign(row, { turnConfiguration: reply })
           announceSessionListChange()
           return { id: request.id, result: { data: { sessionId: SESSION_ID } } }
         }) as typeof window.argo.trpc,

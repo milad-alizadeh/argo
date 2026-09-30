@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict'
-import { DatabaseSync } from 'node:sqlite'
 import { initTRPC } from '@trpc/server'
 import { test } from 'vitest'
-import { databaseFrom } from '@/database/database'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
 import {
   observeSessionSync,
   type SessionSyncEvent,
@@ -16,20 +15,9 @@ const ID = '00000000-0000-4000-8000-000000000001'
 const OTHER_ID = '00000000-0000-4000-8000-000000000002'
 
 test('persists completed results while live phases remain in memory', () => {
-  const client = new DatabaseSync(':memory:')
+  const database = migratedDatabase()
+  const client = database.$client
   try {
-    client.exec(`CREATE TABLE session_sync_status (
-      harness TEXT PRIMARY KEY,
-      phase TEXT NOT NULL,
-      processed INTEGER NOT NULL,
-      total INTEGER,
-      skipped INTEGER NOT NULL,
-      last_successful_sync_at INTEGER,
-      failure TEXT,
-      created_at INTEGER NOT NULL DEFAULT 1,
-      updated_at INTEGER NOT NULL DEFAULT 1
-    )`)
-    const database = databaseFrom(client)
     const first = new SessionSyncStatusStore(database, 'claude')
     const completed: SessionSyncStatus = {
       phase: 'ready',

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
-import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
-import { databaseFrom } from '@/database/database'
+import { sessionTable } from '@/database/session/schema'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { SessionRosterChanges } from './session-roster-changes'
 import { clearWorkingStatuses, updateSession } from './session-update'
 
@@ -11,20 +11,16 @@ const IDS = [
   '00000000-0000-4000-8000-000000000003',
 ] as const
 
-function sessionsWithStatuses(statuses: readonly (string | null)[]) {
-  const client = new DatabaseSync(':memory:')
-  client.exec(`CREATE TABLE session (
-    argo_id TEXT PRIMARY KEY,
-    custom_title TEXT,
-    activity TEXT,
-    status TEXT,
-    updated_at INTEGER NOT NULL DEFAULT 1
-  );
-  CREATE TABLE session_archive (session_id TEXT PRIMARY KEY);`)
+type SessionTableStatus = typeof sessionTable.$inferInsert.status
+
+function sessionsWithStatuses(statuses: readonly SessionTableStatus[]) {
+  const database = migratedDatabase()
+  const client = database.$client
   for (const [index, status] of statuses.entries())
-    client
-      .prepare('INSERT INTO session (argo_id, status) VALUES (?, ?)')
-      .run(IDS[index] ?? '', status)
+    database
+      .insert(sessionTable)
+      .values({ argoId: IDS[index] ?? '', harness: 'claude', nativeId: `native-${index}`, status })
+      .run()
   const roster = new SessionRosterChanges()
   const announced: (readonly string[])[] = []
   roster.subscribe((sessionIds) => announced.push(sessionIds))
@@ -33,7 +29,7 @@ function sessionsWithStatuses(statuses: readonly (string | null)[]) {
       .prepare('SELECT status FROM session ORDER BY argo_id')
       .all()
       .map((row) => row.status)
-  return { client, database: databaseFrom(client), roster, announced, statusesNow }
+  return { client, database, roster, announced, statusesNow }
 }
 
 test('stores a status and announces only that Session', () => {
