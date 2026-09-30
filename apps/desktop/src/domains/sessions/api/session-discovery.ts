@@ -8,10 +8,12 @@ export type SessionDiscoveryResult = {
   skipped: number
 }
 
-export type SessionDiscoveryInput =
-  // A sync: list every Session, and also read these stored ones the listing may omit.
-  | { knownNativeIds: readonly string[]; nativeId?: never }
-  // A Session the history watcher saw first: read only it, with no listing.
-  | { nativeId: string; knownNativeIds?: never }
+export type SessionDiscoveryInput = {
+  // Stored Sessions the listing may omit, read one by one after it.
+  knownNativeIds: readonly string[]
+}
 
-export type SessionDiscovery = (input: SessionDiscoveryInput) => Promise<SessionDiscoveryResult>
+export type SessionSummaryList = (input: SessionDiscoveryInput) => Promise<SessionDiscoveryResult>
+
+// One Session's summary, or null while the Harness does not list it.
+export type SessionSummaryReader = (nativeId: string) => Promise<DiscoveredSession | null>

@@ -11,7 +11,10 @@ import {
   openClaudeHistoryReader,
 } from './session/claude-history-lines'
 import { claudeSessionChannelOpener } from './session/claude-session-channel'
-import { discoverClaudeSessions } from './session/claude-session-discovery'
+import {
+  getClaudeSessionSummary,
+  listClaudeSessionSummaries,
+} from './session/claude-session-discovery'
 import { readClaudeSessionHistory } from './session/claude-session-history'
 import { claudeSessionRenamer } from './session/claude-session-rename'
 import { readClaudeSkillCommands } from './session/claude-skill-commands'
@@ -21,7 +24,8 @@ export function createClaudeRegistration(): HarnessRegistration<'claude'> {
     process.env[SESSION_CLAUDE_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('claude')
   return {
     harness: 'claude',
-    sessionDiscovery: discoverClaudeSessions,
+    listSessionSummaries: listClaudeSessionSummaries,
+    getSessionSummary: (nativeId) => getClaudeSessionSummary(nativeId),
     checkReadiness: createSystemClaudeReadiness(),
     signIn: createClaudeSignInDriver(),
     readCatalog: () => readClaudeHarnessInfo(executable),

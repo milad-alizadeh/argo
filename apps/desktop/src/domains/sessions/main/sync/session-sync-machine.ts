@@ -1,8 +1,8 @@
 import { assign, fromPromise, setup } from 'xstate'
 import type {
   DiscoveredSession,
-  SessionDiscovery,
   SessionDiscoveryResult,
+  SessionSummaryList,
 } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
 export const SESSION_SYNC_BATCH_SIZE = 50
@@ -12,12 +12,12 @@ export const sessionSyncMachine = setup({
     input: {} as {
       harness: Harness
       knownNativeIds: string[]
-      sessionDiscovery: SessionDiscovery
+      listSessionSummaries: SessionSummaryList
     },
     context: {} as {
       harness: Harness
       knownNativeIds: string[]
-      sessionDiscovery: SessionDiscovery
+      listSessionSummaries: SessionSummaryList
       records: DiscoveredSession[]
       processed: number
       skipped: number
@@ -55,10 +55,10 @@ export const sessionSyncMachine = setup({
       SessionDiscoveryResult,
       {
         knownNativeIds: string[]
-        sessionDiscovery: SessionDiscovery
+        listSessionSummaries: SessionSummaryList
       }
     >(({ input }) =>
-      input.sessionDiscovery({
+      input.listSessionSummaries({
         knownNativeIds: input.knownNativeIds,
       }),
     ),
@@ -126,7 +126,7 @@ export const sessionSyncMachine = setup({
   context: ({ input }) => ({
     harness: input.harness,
     knownNativeIds: input.knownNativeIds,
-    sessionDiscovery: input.sessionDiscovery,
+    listSessionSummaries: input.listSessionSummaries,
     records: [],
     processed: 0,
     skipped: 0,
@@ -153,7 +153,7 @@ export const sessionSyncMachine = setup({
         src: 'fetch',
         input: ({ context }) => ({
           knownNativeIds: context.knownNativeIds,
-          sessionDiscovery: context.sessionDiscovery,
+          listSessionSummaries: context.listSessionSummaries,
         }),
         onDone: [
           {

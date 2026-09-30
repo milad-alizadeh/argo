@@ -4,8 +4,8 @@ import { test } from 'vitest'
 import { createActor, fromPromise, waitFor } from 'xstate'
 import { databaseFrom } from '@/database/database'
 import type {
-  SessionDiscovery,
   SessionDiscoveryResult,
+  SessionSummaryList,
 } from '@/domains/sessions/api/session-discovery'
 import { sessionSyncMachine } from './session-sync-machine'
 import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
@@ -146,7 +146,7 @@ test('keeps the first committed batch after the second batch exhausts retries', 
       actors: {
         fetch: fromPromise<
           SessionDiscoveryResult,
-          { knownNativeIds: string[]; sessionDiscovery: SessionDiscovery }
+          { knownNativeIds: string[]; listSessionSummaries: SessionSummaryList }
         >(async () => ({ records, skipped: 0 })),
         save: fromPromise(async ({ input }) => {
           if (input.records[0]?.nativeId === 'native-50') {
@@ -161,7 +161,7 @@ test('keeps the first committed batch after the second batch exhausts retries', 
       input: {
         harness: 'claude',
         knownNativeIds: [],
-        sessionDiscovery: async () => ({ records: [], skipped: 0 }),
+        listSessionSummaries: async () => ({ records: [], skipped: 0 }),
       },
     },
   ).start()

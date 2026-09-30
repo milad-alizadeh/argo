@@ -11,7 +11,10 @@ import {
   openCodexHistoryReader,
 } from './session/codex-history-lines'
 import { openCodexSessionChannel } from './session/codex-session-channel'
-import { createCodexSessionDiscovery } from './session/codex-session-discovery'
+import {
+  createCodexSessionSummaryList,
+  createCodexSessionSummaryReader,
+} from './session/codex-session-discovery'
 import { hasCodexSessionTurn, readCodexSessionHistory } from './session/codex-session-history'
 import { readCodexSkillCommands } from './session/codex-skill-commands'
 
@@ -22,7 +25,8 @@ export function createCodexRegistration(
   const codexHome = process.env.CODEX_HOME ?? path.join(os.homedir(), '.codex')
   return {
     harness: 'codex',
-    sessionDiscovery: createCodexSessionDiscovery(request),
+    listSessionSummaries: createCodexSessionSummaryList(request),
+    getSessionSummary: createCodexSessionSummaryReader(request),
     checkReadiness: createSystemCodexReadiness(),
     signIn: createCodexSignInDriver(),
     readCatalog: () => readCodexHarnessInfo(request),

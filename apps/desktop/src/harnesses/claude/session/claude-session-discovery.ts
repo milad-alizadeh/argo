@@ -79,10 +79,9 @@ function parseClaudeSession(raw: unknown): ClaudeSessionRecord | null {
 async function readClaudeSessions(request: {
   reader: ClaudeSessionReader
   knownNativeIds: readonly string[]
-  listed: boolean
   reportMalformed: (raw: unknown) => void
 }): Promise<ClaudeSessionRecord[]> {
-  const listed = request.listed ? await request.reader.list() : []
+  const listed = await request.reader.list()
   const records = new Map<string, ClaudeSessionRecord>()
   for (const raw of listed) {
     const record = parseClaudeSession(raw)
@@ -100,17 +99,28 @@ async function readClaudeSessions(request: {
   return [...records.values()]
 }
 
-export async function discoverClaudeSessions(
+export async function listClaudeSessionSummaries(
   input: SessionDiscoveryInput & { reader?: ClaudeSessionReader },
 ): Promise<SessionDiscoveryResult> {
   let skipped = 0
   const records = await readClaudeSessions({
     reader: input.reader ?? proofClaudeSessionReader() ?? systemClaudeSessionReader(),
-    knownNativeIds: input.nativeId === undefined ? input.knownNativeIds : [input.nativeId],
-    listed: input.nativeId === undefined,
+    knownNativeIds: input.knownNativeIds,
     reportMalformed: () => {
       skipped += 1
     },
   })
   return { records, skipped }
+}
+
+export async function getClaudeSessionSummary(
+  nativeId: string,
+  reader: ClaudeSessionReader = proofClaudeSessionReader() ?? systemClaudeSessionReader(),
+): Promise<ClaudeSessionRecord | null> {
+  const raw = await reader.get(nativeId)
+  if (raw === undefined) return null
+  const record = parseClaudeSession(raw)
+  if (record === null)
+    console.warn(`Rejected an unrecognised Claude Session summary for ${nativeId}.`)
+  return record
 }
