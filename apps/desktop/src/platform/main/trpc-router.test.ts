@@ -3,8 +3,7 @@ import { createActor, fromPromise } from 'xstate'
 import type { AccountProcedureContext } from '@/domains/accounts/main/account-procedures'
 import type { HarnessSignInProcedureContext } from '@/domains/harness-signin/main/harness-sign-in-procedures'
 import type { ProjectRegisterContext } from '@/domains/projects/main/api/project-register'
-import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster-changes'
-import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
+import { SessionListChanges } from '@/domains/sessions/main/api/session-list-changes'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import type { TicketProcedureContext } from '@/domains/tickets/main/api/ticket-procedures'
 import type { WorkspaceListContext } from '@/domains/workspaces/main/api/workspace-list'
@@ -41,17 +40,16 @@ function testRouter(
         id: 'test-workspace',
         path: '/tmp/argo-test-worktrees',
       }),
-      readHistory: async () => [],
       rename: async () => {},
-      roster: new SessionRosterChanges(),
+      changes: new SessionListChanges(),
+      ticketSource: async () => null,
       supervisor: sessionActor,
       acceptsAttachments: () => true,
       chooseAttachmentFiles: async () => [],
       refreshSessionSync,
-      sessionSyncStatus: [new SessionSyncStatusStore(undefined, 'claude')],
-      journal: {} as never,
+      sessionSync: {} as never,
+      readers: {} as never,
       interactions: {} as never,
-      hasLiveChannel: () => false,
     },
     tickets: {} as TicketProcedureContext,
     workspaces: {} as WorkspaceListContext,

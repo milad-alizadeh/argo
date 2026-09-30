@@ -129,7 +129,7 @@ export function foldSettledToolRuns(rows: SessionFeedRow[]): SessionFeedRow[] {
 }
 
 // The running Turn's latest call titles its tail group: the Feed then has one shimmering line,
-// the group's own, and the roster reads the same words.
+// the group's own, and the Session List reads the same words.
 export function withHeadline(row: SessionFeedRow, headline: LiveActivity): SessionFeedRow {
   return row.shape === 'tool-group' ? { ...row, headline } : row
 }

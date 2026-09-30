@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
+import type { Session } from '@/domains/sessions/renderer'
 import { FeedMarkdown } from '@/domains/sessions/renderer'
 import type { Ticket } from '@/domains/tickets/api/ticket'
 import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
 import { PageHeading } from '@/platform/renderer/components/page-heading'
 import { providerPresentation } from '@/providers/presentation-registry'
-import type { LinkedSession } from '../hooks/use-linked-sessions'
 import { TicketDetailEmpty } from './ticket-detail-empty'
 import { LinkedSessions } from './ticket-detail-linked-sessions'
 import type { Navigation } from './ticket-detail-links'
@@ -18,7 +18,7 @@ const detailMeasure =
 export type TicketDetailProps = {
   ticket: Ticket | null
   provider: Provider
-  linkedSessions: readonly LinkedSession[]
+  linkedSessions: readonly Session[]
   onBack: () => void
   onOpenSession: (id: string) => void
 } & Navigation &

@@ -39,7 +39,7 @@ function withActivity(
 }
 
 // The rows a Feed reading draws: its settled rows, and the current activity folded in while the
-// Turn is still running. `running` is the Session's own liveness, the fact the Roster reads too.
+// Turn is still running. `running` is the Session's own liveness, the fact the Session List reads too.
 export function feedReadingRows(
   entries: readonly FeedRowEntry[],
   { running }: { running: boolean },

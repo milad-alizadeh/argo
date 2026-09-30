@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { feedRows, sessionFeed, sessionRows } from '../page-trpc'
 
 export async function proveToolCalls(page) {
-  const roster = await sessionRows(page)
-  const session = roster.find((row) => row.id === 'toolCalls')
+  const listed = await sessionRows(page)
+  const session = listed.find((row) => row.id === 'toolCalls')
   assert.notEqual(session, undefined)
   const reply = await sessionFeed(page, session.id)
   assert.equal(reply.type, 'session.feed.reading', JSON.stringify(reply))

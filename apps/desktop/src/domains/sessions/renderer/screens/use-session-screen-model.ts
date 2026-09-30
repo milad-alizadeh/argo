@@ -12,7 +12,7 @@ import { useSessionPermission } from '../composer/hooks/use-session-permission'
 import { useSessionQuestion } from '../composer/hooks/use-session-question'
 import { useFeedReading } from '../feed/use-feed-reading'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
-import type { Session, SessionEvidence } from '../types'
+import type { Session, SessionEvidence, SessionExtras } from '../types'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work/use-session-work'
 import { sessionHarness } from './session-screen-state'
 import { pickedSubagent, sessionScreenSubagents } from './session-screen-subagents'
@@ -28,14 +28,14 @@ function useWorkInspector({
   workReveal,
   feedSubagents,
 }: {
-  session: Session | null
+  session: (Session & SessionExtras) | null
   selectedSessionId: string | null
   work: WorkSelection
   workReveal: ReturnType<typeof useWorkPick>['workReveal']
   feedSubagents: readonly FeedSubagent[]
 }) {
   const subagents = sessionScreenSubagents(feedSubagents, session?.subagents ?? [])
-  const shell = session?.shell.find((command) => command.id === work.shellId) ?? null
+  const shell = session?.shell?.find((command) => command.id === work.shellId) ?? null
   const delegation = pickedSubagent(subagents, work)
   const delegationFeed = useDelegationFeed(
     selectedSessionId,

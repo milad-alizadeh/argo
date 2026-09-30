@@ -1,4 +1,4 @@
-// The roster dot follows each Harness's live status events, pushed without a poll (#2850).
+// The Session List dot follows each Harness's live status events, pushed without a poll (#2850).
 import path from 'node:path'
 import { _electron as electron, type Page } from 'playwright-core'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
@@ -20,7 +20,7 @@ import { expect, test } from '../packaged-proof'
 import { prepare } from './fixtures/feed.fixture'
 import { chooseHarness, PERSISTED_ROW, TURN_CONFIGURATION } from './gestures'
 
-// Long enough for the roster to re-read while the Turn still runs.
+// Long enough for the Session List to re-read while the Turn still runs.
 const REPLY_DELAY_MS = 3_000
 
 async function launch(
@@ -65,13 +65,13 @@ async function startSession(page: Page, harness: SessionHarness, prompt: string)
 }
 
 for (const harness of ['claude', 'codex'] as const)
-  test(`the ${harness} roster dot is active while a Turn runs, then idle`, async ({
+  test(`the ${harness} Session List dot is active while a Turn runs, then idle`, async ({
     root,
     applicationUnderTest,
   }) => {
     const { application, page } = await launch(root, applicationUnderTest)
     try {
-      const dot = await startSession(page, harness, `Roster status for ${harness}`)
+      const dot = await startSession(page, harness, `Session List status for ${harness}`)
       await expect(dot).toHaveAttribute('data-variant', 'active')
       await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/, { timeout: 15_000 })
     } finally {
@@ -80,7 +80,7 @@ for (const harness of ['claude', 'codex'] as const)
   })
 
 for (const harness of ['claude', 'codex'] as const)
-  test(`the ${harness} roster and Feed show the newest activity`, async ({
+  test(`the ${harness} Session List and Feed show the newest activity`, async ({
     root,
     applicationUnderTest,
   }) => {
@@ -104,14 +104,14 @@ for (const harness of ['claude', 'codex'] as const)
 // Each mock asks for a permission on its first Turn: Codex on this prompt, Claude under this seed.
 const PERMISSION_TURNS = {
   claude: {
-    prompt: 'Roster permission for claude',
+    prompt: 'Session List permission for claude',
     environment: { [SESSION_MOCK_ADVERSARIAL_SEED_ENV]: 'ask' },
   },
   codex: { prompt: 'Need approval', environment: {} },
 } as const
 
 for (const harness of ['claude', 'codex'] as const)
-  test(`the ${harness} roster dot asks for attention while a permission waits`, async ({
+  test(`the ${harness} Session List dot asks for attention while a permission waits`, async ({
     root,
     applicationUnderTest,
   }) => {

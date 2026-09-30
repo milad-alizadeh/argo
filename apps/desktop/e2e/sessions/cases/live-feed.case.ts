@@ -9,7 +9,7 @@ import {
   viewportAnchor,
   waitForRevision,
 } from '../feed-selectors'
-import { openSession } from './roster.case'
+import { openSession } from './session-list.case'
 
 type LiveFixture = {
   transcripts: string

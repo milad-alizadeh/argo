@@ -1,21 +1,25 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { type ReactNode, useCallback, useState } from 'react'
-import { MemoryRouter, Navigate, Route, Routes } from 'react-router'
+import { MemoryRouter, Route, Routes, useParams } from 'react-router'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { sessionRow, sessionShellCommand, sessionSubagent } from '@/mocks/sessions/session-rows'
 import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fixture'
-import { sessionListSubscribe, sessionListTrpc } from '@/mocks/sessions/session-story-host'
+import { installSessionHost } from '@/mocks/sessions/session-story-host'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import { ComposerForm } from '../composer/layout/composer-form'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { SessionInspector } from '../inspector/session-inspector'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
-import type { SessionListActions } from '../session-list/rows/session-list-actions'
 import { SessionList } from '../session-list/session-list'
-import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
-import type { Session, SessionFeed, SessionShellCommand, SessionSubagent } from '../types'
+import type {
+  Session,
+  SessionExtras,
+  SessionFeed,
+  SessionShellCommand,
+  SessionSubagent,
+} from '../types'
 import { SessionWorkButtons } from '../work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import type { SessionShellOutput } from '../work/types'
@@ -83,9 +87,14 @@ const SESSION_ROSTER = [
     },
     contextTokens: 18_000,
   }),
-] satisfies Session[]
+] satisfies (Session & SessionExtras)[]
 
 const SESSION_HISTORY_LABEL = 'Session history'
+const sessionRoute = (projectId: string, sessionId = '') =>
+  `/projects/${projectId}/sessions/${sessionId}`
+// The review screens list the Storybook Project; the selection host answers `project-1`.
+const reviewRoute = (sessionId = 'composer-review') => sessionRoute('storybook-project', sessionId)
+const PRODUCTION_ROUTE = sessionRoute('project-1', 'composer-review')
 const JUMP_TO_LATEST_ROWS = Array.from({ length: 36 }, (_unused, index) => ({
   shape: 'prose' as const,
   id: `jump-to-latest-${index}`,
@@ -144,72 +153,13 @@ function delegationFeedFor(delegation: SessionSubagent) {
   } satisfies SessionFeed
 }
 
-// The Session list reads its own Sessions now (#2284), so a screen review stubs the read rather than
-// handing it a fixed roster prop.
-const NOOP_SESSION_LIST_ACTIONS: SessionListActions = {
-  onArchiveSelected: () => {},
-  onNew: () => {},
-  onOpenTicket: () => {},
-  onRename: async () => {},
-  onSelect: () => {},
-}
-
-function withListedSessions(sessions: Session[]) {
-  const before = window.argo
-  window.argo = {
-    ...before,
-    trpc: sessionListTrpc(before.trpc, () => sessions),
-    trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => sessions),
-  }
-  return () => {
-    window.argo = before
-  }
-}
-
 function ProductionSessionSelectionScreen() {
   return (
-    <Routes>
-      <Route
-        path="/projects/:projectId/sessions/:sessionId"
-        element={
-          <div className="h-dvh w-full">
-            <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionsSidebar />}>
-              <SessionScreenView />
-            </AppShell>
-          </div>
-        }
-      />
-      <Route
-        path="*"
-        element={<Navigate replace to="/projects/project-1/sessions/composer-review" />}
-      />
-    </Routes>
-  )
-}
-
-function ReviewSidebar({
-  onSelect,
-  selectedSessionId,
-  titleText,
-}: {
-  onSelect: (sessionId: string) => void
-  selectedSessionId: string
-  titleText?: string
-}) {
-  // Installed once, before the list's first read.
-  useState(() =>
-    withListedSessions(
-      SESSION_ROSTER.map((session) =>
-        sessionWithTitle(session, session.id === 'composer-review' ? titleText : undefined),
-      ),
-    ),
-  )
-  return (
-    <SessionList
-      actions={{ ...NOOP_SESSION_LIST_ACTIONS, onSelect }}
-      projectId="project-1"
-      selectedSessionId={selectedSessionId}
-    />
+    <div className="h-dvh w-full">
+      <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionList />}>
+        <SessionScreenView />
+      </AppShell>
+    </div>
   )
 }
 
@@ -271,8 +221,8 @@ function reviewInspectorReveal(
   )
 }
 
+// A hand-built Session screen over the real Session list; the route names the open Session.
 function ReviewScreen({
-  initialSessionId = 'composer-review',
   rows = null,
   shellOutput = { state: 'available', tail: 'Checked 187 files.\ncheck:design-tokens — clean.\n' },
   showPlan = true,
@@ -282,7 +232,6 @@ function ReviewScreen({
   workspaceId = null,
   workspaces = [],
 }: {
-  initialSessionId?: string
   rows?: SessionFeed['rows'] | null
   shellOutput?: SessionShellOutput
   showPlan?: boolean
@@ -292,7 +241,7 @@ function ReviewScreen({
   workspaceId?: string | null
   workspaces?: readonly ListedWorkspace[]
 }) {
-  const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId)
+  const selectedSessionId = useParams().sessionId ?? 'composer-review'
   const [jumpToLatest, setJumpToLatest] = useState<{
     action: () => void
     sessionId: string
@@ -320,14 +269,12 @@ function ReviewScreen({
       headerSession={headerSession}
       jumpToLatest={jumpToLatest?.action ?? null}
       onJumpToLatestChange={onJumpToLatestChange}
-      onSelectSessionId={setSelectedSessionId}
       pick={pick}
       picked={picked}
       selectedSessionId={selectedSessionId}
       session={session}
       shellOutput={shellOutput}
       showPlan={showPlan}
-      titleText={titleText}
       workspaceIdentity={workspaceIdentity}
     />
   )
@@ -340,14 +287,12 @@ function ReviewContent({
   headerSession,
   jumpToLatest,
   onJumpToLatestChange,
-  onSelectSessionId,
   pick,
   picked,
   selectedSessionId,
   session,
   shellOutput,
   showPlan,
-  titleText,
   workspaceIdentity,
 }: {
   composerRunning: boolean
@@ -356,24 +301,19 @@ function ReviewContent({
   headerSession: Session
   jumpToLatest: (() => void) | null
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
-  onSelectSessionId: (sessionId: string) => void
   pick: (id: string) => void
   picked: { id: string; count: number } | null
   selectedSessionId: string
-  session: Session
+  session: Session & SessionExtras
   shellOutput: SessionShellOutput
   showPlan: boolean
-  titleText: string | undefined
   workspaceIdentity: ReturnType<typeof sessionWorkspaceIdentity>
 }) {
   const delegation = session.subagents.find(({ id }) => id === picked?.id) ?? null
-  const shell = session.shell.find(({ id }) => id === picked?.id) ?? null
+  const shell = session.shell?.find(({ id }) => id === picked?.id) ?? null
 
   return (
-    <AppShell
-      leftHeader={<ProjectSwitcher />}
-      sidebar={reviewSidebar(selectedSessionId, onSelectSessionId, titleText)}
-    >
+    <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionList />}>
       <SessionShell
         activeEvidenceId={null}
         composer={
@@ -396,7 +336,7 @@ function ReviewContent({
             onSelectShell={pick}
             selectedDelegationId={delegation?.id ?? null}
             selectedShellId={shell?.id ?? null}
-            shell={session.shell}
+            shell={session.shell ?? []}
           />
         }
         jumpToLatest={jumpToLatest}
@@ -421,20 +361,6 @@ function ReviewContent({
   )
 }
 
-function reviewSidebar(
-  selectedSessionId: string,
-  onSelect: (sessionId: string) => void,
-  titleText: string | undefined,
-) {
-  return (
-    <ReviewSidebar
-      onSelect={onSelect}
-      selectedSessionId={selectedSessionId}
-      titleText={titleText}
-    />
-  )
-}
-
 function sessionWithTitle(session: Session, titleText: string | undefined): Session {
   return titleText === undefined
     ? session
@@ -442,23 +368,11 @@ function sessionWithTitle(session: Session, titleText: string | undefined): Sess
 }
 
 function NewSessionScreen() {
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
-  useState(() => withListedSessions([]))
+  // New Session's route id stands in for the optimistic id the Session screen draws while it starts.
+  const routeSessionId = useParams().sessionId
+  const selectedSessionId = routeSessionId === undefined ? null : `optimistic:${routeSessionId}`
   return (
-    <AppShell
-      leftHeader={<ProjectSwitcher />}
-      sidebar={
-        <SessionList
-          actions={{
-            ...NOOP_SESSION_LIST_ACTIONS,
-            onNew: () => setSelectedSessionId('optimistic:new-session'),
-            onSelect: setSelectedSessionId,
-          }}
-          projectId="project-1"
-          selectedSessionId={selectedSessionId}
-        />
-      }
-    >
+    <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionList />}>
       <SessionShell
         activeEvidenceId={null}
         answeringQuestionId={null}
@@ -718,18 +632,24 @@ async function expectShellReopensWithOutput(canvasElement: HTMLElement) {
 const meta = {
   title: 'Sessions/Screen',
   component: SessionScreenView,
-  parameters: {
-    layout: 'fullscreen',
-  },
+  parameters: { layout: 'fullscreen', route: reviewRoute() },
   decorators: [
-    (Story) => (
-      <MemoryRouter initialEntries={['/projects/project-1/sessions']}>
-        <div className="h-dvh w-full">
-          <Story />
-        </div>
+    (Story, { parameters }) => (
+      <MemoryRouter initialEntries={[parameters.route as string]}>
+        <Routes>
+          <Route
+            path="/projects/:projectId/sessions/:sessionId?"
+            element={
+              <div className="h-dvh w-full">
+                <Story />
+              </div>
+            }
+          />
+        </Routes>
       </MemoryRouter>
     ),
   ],
+  beforeEach: () => installSessionHost(SESSION_ROSTER),
 } satisfies Meta<typeof SessionScreenView>
 
 export default meta
@@ -841,6 +761,7 @@ export const Open: Story = {
 }
 
 export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
+  parameters: { route: PRODUCTION_ROUTE },
   beforeEach: () => sessionSelectionHost(SESSION_ROSTER),
   render: () => <ProductionSessionSelectionScreen />,
   play: async ({ canvasElement }) => {
@@ -885,6 +806,7 @@ export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
 // the reader already dismissed that reveal by collapsing it, and switching away and back names no
 // new one (#2852).
 export const SwitchingBackDoesNotReopenADismissedInspector: Story = {
+  parameters: { route: PRODUCTION_ROUTE },
   beforeEach: () => sessionSelectionHost(SESSION_ROSTER),
   render: () => <ProductionSessionSelectionScreen />,
   play: async ({ canvasElement }) => {
@@ -926,10 +848,17 @@ export const SwitchingBackDoesNotReopenADismissedInspector: Story = {
   },
 }
 
+const FORMATTED_TITLE =
+  '[$implement](/skills/implement/SKILL.md) [https://example.com/guide](https://example.com/guide)'
+
 export const FormattedHeaderTitle: Story = {
-  render: () => (
-    <ReviewScreen titleText="[$implement](/skills/implement/SKILL.md) [https://example.com/guide](https://example.com/guide)" />
-  ),
+  beforeEach: () =>
+    installSessionHost(
+      SESSION_ROSTER.map((session) =>
+        session.id === 'composer-review' ? sessionWithTitle(session, FORMATTED_TITLE) : session,
+      ),
+    ),
+  render: () => <ReviewScreen titleText={FORMATTED_TITLE} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const header = canvas.getByRole('heading', { name: /Implement/ })
@@ -942,9 +871,8 @@ export const FormattedHeaderTitle: Story = {
 }
 
 export const CodexShellWithoutOutputDoesNotRevealInspector: Story = {
-  render: () => (
-    <ReviewScreen initialSessionId="shortcut-review" shellOutput={{ state: 'absent' }} />
-  ),
+  parameters: { route: reviewRoute('shortcut-review') },
+  render: () => <ReviewScreen shellOutput={{ state: 'absent' }} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: /^Shell/ }))
@@ -971,6 +899,8 @@ export const ComposerStaysFixed: Story = {
 }
 
 export const NewSessionDoesNotStall: Story = {
+  parameters: { route: sessionRoute('storybook-project') },
+  beforeEach: () => installSessionHost([]),
   render: () => <NewSessionScreen />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -1003,14 +933,16 @@ export const JumpToLatestInExpandedComposerFade: Story = {
 }
 
 export const JumpToLatestInNormalComposerFade: Story = {
-  render: () => <ReviewScreen initialSessionId="shortcut-review" rows={JUMP_TO_LATEST_ROWS} />,
+  parameters: { route: reviewRoute('shortcut-review') },
+  render: () => <ReviewScreen rows={JUMP_TO_LATEST_ROWS} />,
   play: async ({ canvasElement }) => {
     await expectJumpToLatestInComposerFade(canvasElement)
   },
 }
 
 export const FeedEndsJustAboveComposer: Story = {
-  render: () => <ReviewScreen initialSessionId="shortcut-review" rows={JUMP_TO_LATEST_ROWS} />,
+  parameters: { route: reviewRoute('shortcut-review') },
+  render: () => <ReviewScreen rows={JUMP_TO_LATEST_ROWS} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expectFeedEndsOneSnugAboveComposer(canvasElement, { scrollToEnd: true })
@@ -1035,9 +967,9 @@ export const FeedEndsJustAboveComposer: Story = {
 
 // A pending permission request: the tray above the card is part of the composer's clearance.
 export const FeedEndsAbovePermissionPrompt: Story = {
+  parameters: { route: reviewRoute('shortcut-review') },
   render: () => (
     <ReviewScreen
-      initialSessionId="shortcut-review"
       rows={JUMP_TO_LATEST_ROWS}
       permissionPrompt={
         <PermissionPrompt
@@ -1059,9 +991,9 @@ export const FeedEndsAbovePermissionPrompt: Story = {
 }
 
 export const FeedEndsAboveStackedPrompts: Story = {
+  parameters: { route: reviewRoute('shortcut-review') },
   render: () => (
     <ReviewScreen
-      initialSessionId="shortcut-review"
       rows={JUMP_TO_LATEST_ROWS}
       permissionPrompt={['bun test', 'bun run quality', 'git status'].map((command, index) => (
         <PermissionPrompt
@@ -1096,7 +1028,8 @@ export const FeedEndsAboveStackedPrompts: Story = {
 }
 
 export const SharedCheckout: Story = {
-  render: () => <ReviewScreen initialSessionId="shortcut-review" />,
+  parameters: { route: reviewRoute('shortcut-review') },
+  render: () => <ReviewScreen />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(

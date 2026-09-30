@@ -1,16 +1,16 @@
 // Filler Sessions for the packaged pagination proof (#2239): enough of them, all older than every
-// other fixture, to push the roster's bounded window past ROSTER_PAGE_SIZE. Kept apart from
+// other fixture, to push the Session List's bounded window past its first page. Kept apart from
 // `feed.fixture.ts` so that file's own line count stays put.
 import { utimes, writeFile } from 'node:fs/promises'
 import { fixturePath } from '../../../mocks/sessions/mock-transcript-files'
 
-// One more than ROSTER_PAGE_SIZE, so the first Roster page always leaves at least one of these
+// One more than a page, so the first Session List page always leaves at least one of these
 // unread and the last one always sits outside it.
 export const WINDOW_FILLER_COUNT = 51
 export const FARTHEST_WINDOW_FILLER_ID = `windowFiller${WINDOW_FILLER_COUNT - 1}`
 
 // Written oldest-writes-last so `windowFiller0` is the most recently touched of the set and
-// `windowFiller<COUNT - 1>` the oldest, mirroring the recency order the Roster reads by.
+// `windowFiller<COUNT - 1>` the oldest, mirroring the recency order the Session List reads by.
 export async function writeWindowFillerSessions(transcripts: string, cwd: string) {
   const base = Date.parse('2020-01-01T00:00:00.000Z')
   for (let index = 0; index < WINDOW_FILLER_COUNT; index += 1) {

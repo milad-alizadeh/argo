@@ -25,8 +25,8 @@ import {
 } from '../composer/turn-configuration/turn-configuration'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import type { HarnessControl } from '../harness/harnesses'
-import { sessionName } from '../session-list/rows/session-list-rows'
-import type { Session } from '../types'
+import { sessionName } from '../session-name'
+import type { Session, SessionExtras } from '../types'
 import { draftTarget } from './session-draft-target'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
 import { useSessionDetails } from './use-session-details'
@@ -37,7 +37,7 @@ type SessionScreenDetailsProps = {
   >
   questionPending: boolean
   liveStatus: ReturnType<typeof import('../feed/use-feed-reading').useFeedReading>['liveStatus']
-  session: Session | null
+  session: (Session & SessionExtras) | null
   harness: HarnessControl
   selectedSessionId: string | null
   // Whether the selected Session's details have been read, so its composer can open on them.
@@ -72,7 +72,7 @@ function catalogFailureOf(
 function sessionComposerConfiguration(input: {
   selectedSessionId: string | null
   projectId: string | null
-  session: Session | null
+  session: (Session & SessionExtras) | null
   sessionLoaded: boolean
   catalogResult: CatalogReadResult | undefined
   catalogFailed: boolean

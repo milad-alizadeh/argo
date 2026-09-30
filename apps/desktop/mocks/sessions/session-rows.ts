@@ -2,30 +2,27 @@
 
 import type {
   Session,
+  SessionExtras,
   SessionShellCommand,
   SessionSubagent,
 } from '@/domains/sessions/renderer/types'
 import { DEFAULT_HARNESS } from '@/harnesses/harness'
 
-export function sessionRow(overrides: Partial<Session> = {}): Session {
+export function sessionRow(
+  overrides: Partial<Session & SessionExtras> = {},
+): Session & SessionExtras {
   return {
     id: 'session-one',
     harness: DEFAULT_HARNESS,
     projectId: 'project-1',
-    createdAt: '2026-09-30T10:00:00.000Z',
-    sortOrder: 0,
     posture: 'live',
-    customTitle: null,
-    preview: null,
     title: null,
     status: 'idle',
     cwd: null,
     workspaceId: null,
     updatedAt: null,
     activity: null,
-    plan: null,
     subagents: [],
-    shell: [],
     ticket: null,
     archived: false,
     turnConfiguration: { model: null, effort: null, mode: null },
@@ -52,5 +49,5 @@ export function sessionShellCommand(
 export function sessionSubagent(
   overrides: Partial<SessionSubagent> & Pick<SessionSubagent, 'id'>,
 ): SessionSubagent {
-  return { label: null, state: 'running', startedAt: null, endedAt: null, ...overrides }
+  return { label: null, state: 'running', ...overrides }
 }

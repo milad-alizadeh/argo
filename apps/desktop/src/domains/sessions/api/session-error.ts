@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
 
-// Codes a Harness cannot cause: reading the Roster, an untrusted caller, a stale contract version.
+// Codes a Harness cannot cause: reading the Session List, an untrusted caller, a stale contract version.
 const SHARED_SESSION_ERRORS = {
   'missing-session': 'This Session is unavailable from its Harness.',
   'invalid-request': 'The Session request is invalid.',

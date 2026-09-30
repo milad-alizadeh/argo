@@ -10,8 +10,8 @@ import {
 } from '@/platform/renderer/components/ui/dialog'
 import { Input } from '@/platform/renderer/components/ui/input'
 import { Label } from '@/platform/renderer/components/ui/label'
-import type { Session } from '../../types'
-import { sessionName } from '../rows/session-list-rows'
+import { sessionName } from '../session-name'
+import type { Session } from '../types'
 
 // A failed rename keeps the dialog open with the reason inline.
 export function SessionRenameDialog({

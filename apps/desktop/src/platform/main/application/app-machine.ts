@@ -1,6 +1,6 @@
 import { type ActorRefFrom, assertEvent, fromCallback, fromPromise, setup } from 'xstate'
 import type { Database } from '@/database/database'
-import type { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
+import type { SessionListChanges } from '@/domains/sessions/main/api/session-list-changes'
 import { createLiveSessionSupervisorMachine } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import type { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
 import type { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
@@ -13,7 +13,6 @@ import {
   type TicketSyncSupervisorInput,
   ticketSyncSupervisorMachine,
 } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
-import type { Harness } from '@/harnesses/harness'
 import type { HarnessCatalog } from '@/harnesses/harness-catalog'
 import {
   type HarnessRegistry,
@@ -24,7 +23,7 @@ import { harnessCatalogMachine } from '../harness-catalog/harness-catalog-machin
 
 type AppDependencies = {
   database: Database
-  sessionSyncStatus: Record<Harness, SessionSyncStatusStore>
+  sessionListChanges: SessionListChanges
   sessionEventJournal?: SessionEventJournal
   sessionInteractionBroker?: SessionInteractionBroker
   ticketSync: TicketSyncSupervisorInput
@@ -90,8 +89,8 @@ export function createAppMachine(registry: HarnessRegistry, dependencies: AppDep
           assertEvent(event, 'xstate.init')
           return {
             database: event.input.database,
+            changes: event.input.sessionListChanges,
             harnesses: registry,
-            status: event.input.sessionSyncStatus,
           }
         },
       },

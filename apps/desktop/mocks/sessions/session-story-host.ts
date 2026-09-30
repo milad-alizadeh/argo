@@ -9,16 +9,18 @@ import { sessionError } from '@/domains/sessions/api/session-error'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import type { SessionListInput } from '@/domains/sessions/renderer/session-list/session-list-query'
 import type { SessionSyncStatus } from '@/domains/sessions/renderer/session-list/use-session-sync'
-import type { Session, SessionError, SessionListResult } from '@/domains/sessions/renderer/types'
+import type {
+  SessionError,
+  SessionExtras,
+  SessionListResult,
+  Session as SessionRow,
+} from '@/domains/sessions/renderer/types'
 import { queryClient, type RouterInputs, type RouterOutputs } from '@/platform/renderer/trpc-client'
 
 type Subscribe = typeof window.argo.trpcSubscribe
-const openReaders = new Set<() => void>()
-
-// Announces every story row to each open change reader, as main does after a change.
-export function announceSessionListChange() {
-  for (const send of openReaders) send()
-}
+type Trpc = typeof window.argo.trpc
+// A story's rows may carry what the UI draws but no read reports yet.
+type Session = SessionRow & SessionExtras
 
 export function announceSessionFeedChange() {
   for (const feeds of openFeeds.values()) {
@@ -50,18 +52,6 @@ export function heldReads() {
 
 export const heldDetails = heldReads()
 
-// Answers a Session's details from the story's rows, found by ID as main reads them.
-async function sessionDetailsReply(sessionId: string, sessions: () => readonly Session[]) {
-  await heldDetails.wait(sessionId)
-  const session = sessions().find(({ id }) => id === sessionId)
-  return { result: { data: session === undefined ? null : structuredClone(session) } }
-}
-
-// Story rows belong to whichever Project the list last read, copied as IPC would copy them.
-let listedProjectId = 'project-1'
-const listedRows = (sessions: readonly Session[]) =>
-  sessions.map((session) => ({ ...session, projectId: listedProjectId }))
-
 const IDLE_SYNC_STATUS: SessionSyncStatus = {
   phase: 'idle',
   processed: 0,
@@ -79,14 +69,67 @@ export function publishSessionSyncStatus(status: Partial<SessionSyncStatus>) {
   for (const send of syncReaders) send()
 }
 
-// Answers the change subscription with every story row when a story announces one, and the sync
-// subscription with the status a story last published.
-export function sessionListSubscribe(
-  subscribe: Subscribe,
-  sessions: () => readonly Session[],
+type SessionListRead = SessionListInput & { offset: number; limit: number }
+type SessionUpdate = RouterInputs['sessionUpdate']
+
+// One page of the rows in the order given; main alone sorts and searches.
+export function storySessionPage(sessions: readonly Session[], read: SessionListRead) {
+  const listed = sessions.filter(
+    (session) => read.filter === 'all' || session.archived === (read.filter === 'archived'),
+  )
+  return { total: listed.length, rows: listed.slice(read.offset, read.offset + read.limit) }
+}
+
+type SessionHostOptions = {
+  // Replaces the page read from the host's rows; a Session error answers as a failed read.
+  list?: (read: SessionListRead) => Promise<SessionListResult | SessionError>
+  // Says which IDs an update changed, or throws; the host applies those and announces them.
+  update?: (update: SessionUpdate) => Promise<RouterOutputs['sessionUpdate']>
+  // The recorded history every Feed of the story reads.
+  feed?: FeedRead
+  live?: readonly SessionLiveEvent[]
+}
+
+// Called, it restores the window and clears the query cache, so a story's `beforeEach` returns it.
+export type SessionHost = (() => void) & {
+  // Every Session List read and Session update the host answered, in order.
+  reads: SessionListRead[]
+  updates: SessionUpdate[]
+  rows: () => readonly Session[]
+  // Main stores each changed row, adding any new one, then announces the change.
+  change: (changed: readonly Session[]) => void
+}
+
+// A read with main's defaults filled in, and no `ticketKey` unless the list sent one.
+function listRead(input: Partial<SessionListRead>): SessionListRead {
+  return {
+    projectId: input.projectId ?? 'project-1',
+    filter: input.filter ?? 'active',
+    search: input.search ?? '',
+    ...(input.ticketKey === undefined ? {} : { ticketKey: input.ticketKey }),
+    offset: input.offset ?? 0,
+    limit: input.limit ?? 30,
+  }
+}
+
+// The rows an update changed, with its title and archive applied.
+function updatedRows(rows: readonly Session[], input: SessionUpdate, sessionIds: string[]) {
+  return rows
+    .filter(({ id }) => sessionIds.includes(id))
+    .map((row) => ({
+      ...row,
+      title:
+        input.title === undefined ? row.title : { text: input.title, source: 'custom' as const },
+      archived: input.archived ?? row.archived,
+    }))
+}
+
+// Answers the sync subscription with the status a story last published, and the change
+// subscription with each change the host announces.
+function sessionSignals(
+  next: Subscribe,
+  changeReaders: Set<(sessionIds: string[]) => void>,
 ): Subscribe {
-  queryClient.clear()
-  syncStatus = IDLE_SYNC_STATUS
   return async (request, listener) => {
     if (request.path === 'sessionSyncStatus') {
       const send = () =>
@@ -99,71 +142,75 @@ export function sessionListSubscribe(
       send()
       return () => syncReaders.delete(send)
     }
-    if (request.path !== 'sessionListChanged') return subscribe(request, listener)
-    const send = () =>
-      listener({
-        id: request.id,
-        type: 'data',
-        result: { data: { sessionIds: sessions().map(({ id }) => id) } },
-      })
-    openReaders.add(send)
-    return () => openReaders.delete(send)
+    if (request.path !== 'sessionListChanged') return next(request, listener)
+    const send = (sessionIds: string[]) =>
+      listener({ id: request.id, type: 'data', result: { data: { sessionIds } } })
+    changeReaders.add(send)
+    return () => changeReaders.delete(send)
   }
 }
 
-export type SessionListRead = SessionListInput & { offset: number; limit: number }
-
-// Main's list query over story rows: the filter, a search, and main's order.
-export function storySessionPage(sessions: readonly Session[], input: SessionListRead) {
-  const needle = input.search.trim().toLowerCase()
-  const listed = sessions
-    .toSorted(
-      (left, right) =>
-        left.sortOrder - right.sortOrder ||
-        right.createdAt.localeCompare(left.createdAt) ||
-        left.id.localeCompare(right.id),
-    )
-    .filter(
-      (session) =>
-        (input.filter === 'all' || session.archived === (input.filter === 'archived')) &&
-        [session.customTitle, session.preview].some((text) =>
-          (text ?? '').toLowerCase().includes(needle),
-        ),
-    )
-  return { total: listed.length, rows: listed.slice(input.offset, input.offset + input.limit) }
-}
-
-type SessionListHost = {
-  // Replaces the page read from the story rows; a Session error answers as a failed read.
-  list?: (read: SessionListRead) => Promise<SessionListResult | SessionError>
-  update?: (update: RouterInputs['sessionUpdate']) => Promise<RouterOutputs['sessionUpdate']>
-}
-
-// Answers the Session List query, `sessionUpdate` and `sessionDetails` from the story's rows.
-export function sessionListTrpc(
-  next: typeof window.argo.trpc,
-  sessions: () => readonly Session[],
-  { list, update }: SessionListHost = {},
-): typeof window.argo.trpc {
-  return (async (request) => {
-    if (request.path === 'sessionDetails')
-      return sessionDetailsReply((request.input as { sessionId: string }).sessionId, sessions)
-    if (request.path === 'sessionUpdate' && update !== undefined)
-      return { result: { data: await update(request.input as RouterInputs['sessionUpdate']) } }
-    if (request.path !== 'sessionList') return next(request)
-    const input = request.input as Partial<SessionListRead>
-    listedProjectId = input.projectId ?? 'project-1'
-    const read = {
-      projectId: listedProjectId,
-      filter: input.filter ?? 'active',
-      search: input.search ?? '',
-      offset: input.offset ?? 0,
-      limit: input.limit ?? 30,
+// The story's main process for Sessions: the list, details, updates, change and sync signals, and
+// Feeds. Rows belong to whichever Project the list reads, copied as IPC would copy them.
+export function installSessionHost(
+  initial: readonly Session[],
+  { list, update, feed, live }: SessionHostOptions = {},
+): SessionHost {
+  const before = window.argo
+  queryClient.clear()
+  syncStatus = IDLE_SYNC_STATUS
+  let rows = [...initial]
+  const reads: SessionListRead[] = []
+  const updates: SessionUpdate[] = []
+  const changeReaders = new Set<(sessionIds: string[]) => void>()
+  const change = (changed: readonly Session[]) => {
+    const fresh = changed.filter((row) => !rows.some(({ id }) => id === row.id))
+    rows = [...rows.map((row) => changed.find(({ id }) => id === row.id) ?? row), ...fresh]
+    const sessionIds = changed.map(({ id }) => id)
+    for (const send of changeReaders) send(sessionIds)
+  }
+  const applyUpdate = async (input: SessionUpdate) => {
+    updates.push(input)
+    const known = rows.filter(({ id }) => input.sessionIds.includes(id)).map(({ id }) => id)
+    const { sessionIds } = (await update?.(input)) ?? { sessionIds: known }
+    change(updatedRows(rows, input, sessionIds))
+    return { sessionIds }
+  }
+  const readList = async (input: Partial<SessionListRead>) => {
+    const read = listRead(input)
+    reads.push(read)
+    const listed = rows.map((session) => ({ ...session, projectId: read.projectId }))
+    return structuredClone(await (list?.(read) ?? storySessionPage(listed, read)))
+  }
+  const trpc = (async (request) => {
+    switch (request.path) {
+      case 'sessionList': {
+        const page = await readList(request.input as Partial<SessionListRead>)
+        return 'type' in page ? { error: { message: page.message } } : { result: { data: page } }
+      }
+      case 'sessionDetails': {
+        const { sessionId } = request.input as { sessionId: string }
+        await heldDetails.wait(sessionId)
+        const session = rows.find(({ id }) => id === sessionId)
+        return { result: { data: session === undefined ? null : structuredClone(session) } }
+      }
+      case 'sessionUpdate':
+        return { result: { data: await applyUpdate(request.input as SessionUpdate) } }
+      default:
+        return before.trpc(request)
     }
-    const page = await (list?.(read) ?? storySessionPage(listedRows(sessions()), read))
-    if ('type' in page) return { error: { message: page.message } }
-    return { result: { data: page } }
-  }) as typeof window.argo.trpc
+  }) as Trpc
+  const subscribe = sessionSignals(before.trpcSubscribe, changeReaders)
+  window.argo = {
+    ...before,
+    trpc: sessionFeedRefreshTrpc(trpc),
+    trpcSubscribe: feed === undefined ? subscribe : sessionFeedSubscribe(subscribe, feed, live),
+  }
+  const restore = () => {
+    window.argo = before
+    queryClient.clear()
+  }
+  return Object.assign(restore, { reads, updates, rows: () => rows, change })
 }
 
 // A story's recorded vendor history for one chain, the same input main's reader takes.
@@ -182,7 +229,7 @@ function readFailure(error: unknown): { message: string; data?: { code?: unknown
 }
 
 // Answers the root Feed's Refresh by reading every open story Feed again.
-export function sessionFeedRefreshTrpc(next: typeof window.argo.trpc): typeof window.argo.trpc {
+function sessionFeedRefreshTrpc(next: typeof window.argo.trpc): typeof window.argo.trpc {
   return (async (request) => {
     if (request.path === 'sessionFeedRefresh') {
       const input = request.input as { sessionId: string; subagentId?: string | null }
@@ -216,7 +263,7 @@ async function chainEntries(
 
 // A chain's readings, as the main reader publishes them: loading, then each read's result,
 // keeping the rows a failed read already had.
-export function sessionFeedSubscribe(
+function sessionFeedSubscribe(
   subscribe: Subscribe,
   read: FeedRead,
   live: readonly SessionLiveEvent[] = [],

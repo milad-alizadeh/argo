@@ -316,9 +316,9 @@
     },
     {
       "type": "text",
-      "notNull": false,
+      "notNull": true,
       "autoincrement": false,
-      "default": null,
+      "default": "'unknown'",
       "generated": null,
       "name": "status",
       "entityType": "columns",
@@ -701,26 +701,6 @@
       "default": null,
       "generated": null,
       "name": "ticket_key",
-      "entityType": "columns",
-      "table": "session_ticket_link"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "title",
-      "entityType": "columns",
-      "table": "session_ticket_link"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "state",
       "entityType": "columns",
       "table": "session_ticket_link"
     },

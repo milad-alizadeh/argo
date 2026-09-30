@@ -1,8 +1,11 @@
+import { mkdirSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
 import type { BrowserContext, Locator, Page } from 'playwright-core'
 import { openDatabase } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
+import { saveReadTicket } from '@/domains/tickets/main/database/ticket-upsert'
 import { expect, finishRecording, startRecording, test } from '../packaged-proof'
 import { launch, prepare } from '../projects/fixtures/project.fixture'
 
@@ -60,12 +63,48 @@ function addSavedSession(userData: string) {
 
 async function verifyTitleSearch(page: Page, sessionList: Locator) {
   const search = page.getByRole('textbox', { name: 'Search Sessions' })
-  await search.fill('vendor preview')
+  // Search matches the title a row shows: the Ticket title here, not the preview it outranks.
+  await search.fill('linked ticket')
   await expect(page.getByRole('button', { name: /Linked Ticket title/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /Custom title/ })).toHaveCount(0)
   await expect(sessionList).toHaveAttribute('data-total', '1')
   await search.clear()
   await expect(sessionList).toHaveAttribute('data-total', '31')
+}
+
+// Connects project-1 to a GitHub scope and saves the linked Ticket's content there.
+function saveLinkedTicket(userData: string, database: ReturnType<typeof openDatabase>) {
+  const scope = { provider: 'github', scope: 'octocat/hello-world' } as const
+  const portable = path.join(userData, 'portable-v1')
+  mkdirSync(portable, { recursive: true })
+  const connection = {
+    projectId: 'project-1',
+    port: 'ticket',
+    accountId: 'github:1',
+    scope: scope.scope,
+  }
+  writeFileSync(
+    path.join(portable, 'connections.json'),
+    JSON.stringify({ version: 1, connections: [connection] }),
+  )
+  saveReadTicket(
+    database,
+    { ...scope, readAt: Date.now() },
+    {
+      key: '#2765',
+      url: null,
+      title: 'Linked Ticket title',
+      body: null,
+      state: 'open',
+      status: { id: 'open', name: 'Open', category: 'unstarted' },
+      priority: null,
+      createdAt: '2026-09-01T00:00:00Z',
+      labels: [],
+      type: null,
+      children: [],
+      blockedBy: null,
+    },
+  )
 }
 
 function seedSessionList(userData: string, beta: string) {
@@ -80,12 +119,11 @@ function seedSessionList(userData: string, beta: string) {
     .values({
       sessionId: '00000000-0000-4000-8000-000000000002',
       projectId: 'project-1',
-      ticketKey: '2765',
-      title: 'Linked Ticket title',
-      state: 'open',
+      ticketKey: '#2765',
       createdAt: '2026-09-26T00:00:00.000Z',
     })
     .run()
+  saveLinkedTicket(userData, database)
   database
     .insert(sessionTable)
     .values({

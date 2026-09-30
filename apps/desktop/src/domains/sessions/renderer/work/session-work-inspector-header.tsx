@@ -15,7 +15,11 @@ export function SessionWorkInspectorHeader({ work, now }: { work: SessionWork; n
         name: delegation.label,
         state: subagentWorkState(delegation),
         model: usage.model ?? null,
-        durationMs: elapsedDuration(delegation.startedAt, delegation.endedAt, currentTime),
+        durationMs: elapsedDuration(
+          delegation.startedAt ?? null,
+          delegation.endedAt ?? null,
+          currentTime,
+        ),
         tokens: usage.tokens ?? null,
       },
       t,

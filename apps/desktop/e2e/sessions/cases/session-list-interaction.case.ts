@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { expect } from '@playwright/test'
 import { deselectSession, openArchivedSessionByClick, openSessionByClick } from '../gestures'
-import { readRosterIds } from '../roster-facts'
+import { readSessionListIds } from '../session-list-facts'
 
 async function proveRetiredSelection(page, restart) {
   // No affordance writes the remembered selection directly, and this case needs it pointing at a
@@ -13,12 +13,12 @@ async function proveRetiredSelection(page, restart) {
 }
 
 async function proveFreshOrder(page, previousOrder) {
-  const refreshedOrder = await readRosterIds(page)
+  const refreshedOrder = await readSessionListIds(page)
   // Restarting discards the reader's remembered row order but never loses or revives an archive.
   assert.deepEqual([...refreshedOrder].sort(), [...previousOrder].sort())
 }
 
-export async function provePackagedRosterSelection(page) {
+export async function provePackagedSessionListSelection(page) {
   await deselectSession(page)
   const first = page.locator('nav[aria-label="Sessions"] button').first()
   await first.waitFor()
@@ -61,19 +61,19 @@ async function proveArchivedRestart(page, restart) {
   return archived
 }
 
-export async function provePackagedRosterRestart(page, { remove, restart }) {
+export async function provePackagedSessionListRestart(page, { remove, restart }) {
   await deselectSession(page)
   await openSessionByClick(page, 'prose')
   await page.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
   await page
     .locator('nav[aria-label="Sessions"] button[data-session-id="rollout-codexParent"]')
     .waitFor()
-  const rosterFacts = await readRosterIds(page)
+  const sessionListFacts = await readSessionListIds(page)
 
   const relaunched = await restart()
   await relaunched.waitForFunction(() => window.location.hash === '#/sessions/prose')
   await relaunched.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
-  await proveFreshOrder(relaunched, rosterFacts)
+  await proveFreshOrder(relaunched, sessionListFacts)
   await expect(
     relaunched.locator('nav[aria-label="Sessions"] button[data-session-id="prose"]'),
   ).toHaveAttribute('aria-current', 'page')

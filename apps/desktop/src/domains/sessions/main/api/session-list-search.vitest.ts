@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import type { Database } from '@/database/database'
-import { IDS, insertSession, sessionListCaller } from '@/mocks/sessions/session-list-caller'
+import {
+  IDS,
+  insertSession,
+  linkTicket,
+  saveTicket,
+  sessionListCaller,
+} from '@/mocks/sessions/session-list-caller'
 
 const manyId = (index: number) => `00000000-0000-4000-8000-2${String(index).padStart(11, '0')}`
 
@@ -45,7 +51,7 @@ test('searches past the first page of results in list order', async () => {
   }
 })
 
-test('matches custom title and preview without case, and never the first prompt', async () => {
+test('matches the shown title without case, and never a first prompt another title hides', async () => {
   const { client, database, list } = sessionListCaller()
   try {
     insertSession(database, {
@@ -79,6 +85,37 @@ test('matches custom title and preview without case, and never the first prompt'
       [IDS[1]],
     )
     assert.equal(prompt.total, 0)
+  } finally {
+    client.close()
+  }
+})
+
+test('finds a Session by the Ticket title or first prompt it shows', async () => {
+  const { client, database, list } = sessionListCaller()
+  try {
+    insertSession(database, {
+      id: IDS[0],
+      nativeId: 'native-1',
+      preview: 'Vendor summary',
+      createdAt: 20,
+    })
+    saveTicket(database, { key: '#2937', title: 'Page the archive' })
+    linkTicket(database, { sessionId: IDS[0], key: '#2937' })
+    insertSession(database, { id: IDS[1], nativeId: 'native-2', firstPrompt: 'Fix the badge' })
+
+    const ticket = await list({ projectId: 'project-1', search: 'archive' })
+    const prompt = await list({ projectId: 'project-1', search: 'badge' })
+    const hidden = await list({ projectId: 'project-1', search: 'vendor' })
+
+    assert.deepEqual(
+      ticket.rows.map(({ id }) => id),
+      [IDS[0]],
+    )
+    assert.deepEqual(
+      prompt.rows.map(({ id }) => id),
+      [IDS[1]],
+    )
+    assert.equal(hidden.total, 0)
   } finally {
     client.close()
   }

@@ -1,4 +1,4 @@
-// #2092 inside the SHIPPED app: a Claude Session Argo started is still in the Roster after a
+// #2092 inside the SHIPPED app: a Claude Session Argo started is still in the Session List after a
 // restart, its recorded Feed opens, and the next Turn resumes it into a new drive channel on the
 // same resume-chain. A Session Argo never started resumes the same way: origin does not decide
 // whether Argo can open a channel to a transcript it can read.
@@ -9,7 +9,7 @@ import { fixturePath, proofCwd, replaceInFile } from '../../../mocks/sessions/mo
 import { waitFor } from '../claude-proof-helpers'
 import { createSessionByClick, openSessionByClick } from '../gestures'
 import { sessionDetails } from '../page-trpc'
-import { waitForRosterSettled } from '../roster-facts'
+import { waitForSessionListSettled } from '../session-list-facts'
 
 async function sendFromComposer(page, text) {
   const composer = page.getByRole('combobox', { name: 'Message' })
@@ -30,7 +30,7 @@ export async function provePackagedResume(page, { backend, project, restart, tra
   // A fresh launch is still discovering the fixture pool off disk; a row that click resolves
   // before that settles can have another row's translateY shift onto it before the dispatched
   // click lands (#2650).
-  await waitForRosterSettled(relaunched)
+  await waitForSessionListSettled(relaunched)
   await openSessionByClick(relaunched, sessionId)
   await relaunched.waitForSelector(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
   await backend.waitForReply(relaunched, opened)
@@ -54,7 +54,7 @@ export async function provePackagedResume(page, { backend, project, restart, tra
 
   // The rewrite above touches disk under the same transcript tree; the resulting rescan can still
   // be shifting rows when the click below would otherwise fire (#2650).
-  await waitForRosterSettled(relaunched)
+  await waitForSessionListSettled(relaunched)
   await openSessionByClick(relaunched, '11111111-2222-4333-8444-555555555555')
   await relaunched.waitForSelector(
     '.feed__viewport[data-session="11111111-2222-4333-8444-555555555555"] [data-feed-row]',
@@ -76,7 +76,7 @@ export async function provePackagedResume(page, { backend, project, restart, tra
 // A refused resume (`held-elsewhere`, or any other Turn failure) swaps the composer for an Alert
 // rather than throwing here, so the plain timeout above names nothing useful. An empty alert list
 // still leaves open whether the Turn was ever delivered, whether the resumed process ever wrote
-// back, or whether the Roster read the write it made, so this reports all three.
+// back, or whether the Session List read the write it made, so this reports all three.
 async function reportStalledResume({ error, page, sessionId, transcripts }) {
   const alerted = await page.locator('[role="alert"]').allTextContents()
   const feedRows = await page
@@ -88,7 +88,7 @@ async function reportStalledResume({ error, page, sessionId, transcripts }) {
     'utf8',
   ).catch((readError) => `<unreadable: ${readError.message}>`)
   throw new Error(
-    `${error.message}\nRendered alert(s): ${JSON.stringify(alerted)}\nFeed rows: ${JSON.stringify(feedRows)}\nRoster row: ${JSON.stringify(row)}\nmock-claude/${sessionId}.jsonl: ${written}`,
+    `${error.message}\nRendered alert(s): ${JSON.stringify(alerted)}\nFeed rows: ${JSON.stringify(feedRows)}\nSessionList row: ${JSON.stringify(row)}\nmock-claude/${sessionId}.jsonl: ${written}`,
   )
 }
 

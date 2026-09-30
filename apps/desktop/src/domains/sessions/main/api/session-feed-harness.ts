@@ -15,9 +15,10 @@ import {
 } from '@/domains/sessions/api/feed/feed-reading'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import type { SessionFeedReaderContext } from '../feed/feed-reader'
+import { type SessionFeedReaderContext, SessionFeedReaders } from '../feed/feed-reader'
 import { SessionEventJournal } from '../live/session-event-journal'
 import { sessionFeedProcedures } from './session-feed'
+import { SessionListChanges } from './session-list-changes'
 
 export const sessionId = '00000000-0000-4000-8000-000000000001'
 
@@ -98,7 +99,17 @@ export async function observe(
 ) {
   const caller = initTRPC
     .create()
-    .router(sessionFeedProcedures({ database, journal, hasLiveChannel: () => true, ...context }))
+    .router(
+      sessionFeedProcedures(
+        new SessionFeedReaders({
+          database,
+          journal,
+          hasLiveChannel: () => true,
+          changes: new SessionListChanges(),
+          ...context,
+        }),
+      ),
+    )
     .createCaller({})
   const stream = await caller.sessionFeed({ sessionId: observedId, subagentId })
   return { caller, ...collect(stream) }
@@ -123,10 +134,10 @@ export function collect(stream: Observable<FeedReadingMessage, unknown>) {
 export async function expectFreshRead(
   feed: Awaited<ReturnType<typeof observe>>,
   history: ReturnType<typeof historyReads>,
-  trigger: () => void,
+  trigger: () => unknown,
 ) {
   await history.answer([message('m1', 'assistant', 'Before')])
-  trigger()
+  await trigger()
   await history.answer([message('m1', 'assistant', 'After')])
   expect(feed.latest()?.entries[0]?.row).toMatchObject({ text: 'After' })
   feed.subscription.unsubscribe()

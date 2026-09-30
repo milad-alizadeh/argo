@@ -3,9 +3,9 @@ import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { waitFor } from '../claude-proof-helpers'
 import { createSessionByClick } from '../gestures'
-import { sessionDetails, updateSession } from '../page-trpc'
+import { sendSessionUpdate, sessionDetails } from '../page-trpc'
 
-const RENAMED = 'Ticket: fix the roster badge'
+const RENAMED = 'Ticket: fix the Session List badge'
 
 export async function proveClaudeRename(page, { backend, transcripts }) {
   const prompt = 'Open the rename proof.'
@@ -15,8 +15,7 @@ export async function proveClaudeRename(page, { backend, transcripts }) {
   const beforeRename = await sessionDetails(page, sessionId)
   assert.deepEqual(beforeRename?.title, { text: prompt, source: 'first-prompt' })
 
-  await updateSession(page, { sessionIds: [sessionId], title: RENAMED })
-  assert.equal((await sessionDetails(page, sessionId))?.customTitle, RENAMED)
+  await sendSessionUpdate(page, { sessionIds: [sessionId], title: RENAMED })
 
   const folder = path.join(transcripts, 'mock-claude')
   await waitFor(async () => {

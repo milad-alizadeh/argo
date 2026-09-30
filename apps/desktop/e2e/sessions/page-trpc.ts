@@ -1,5 +1,7 @@
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
 import type { Page } from 'playwright-core'
 import type { Session } from '@/domains/sessions/renderer/types'
+import type { AppRouter } from '@/platform/main/trpc-router'
 
 type TrpcCall = {
   path: string
@@ -131,11 +133,11 @@ export async function sessionDetails(page: Page, sessionId: string): Promise<Ses
   })
 }
 
-export async function updateSession(
+export async function sendSessionUpdate(
   page: Page,
-  input: { sessionIds: string[]; title?: string; archived?: boolean },
+  input: inferRouterInputs<AppRouter>['sessionUpdate'],
 ) {
-  return trpcCall<{ sessionIds: string[] }>(page, {
+  return trpcCall<inferRouterOutputs<AppRouter>['sessionUpdate']>(page, {
     path: 'sessionUpdate',
     type: 'mutation',
     input,

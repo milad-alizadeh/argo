@@ -1,18 +1,7 @@
 import { initTRPC } from '@trpc/server'
 import { observable } from '@trpc/server/observable'
-import {
-  and,
-  asc,
-  count,
-  desc,
-  eq,
-  inArray,
-  isNotNull,
-  isNull,
-  or,
-  type SQL,
-  sql,
-} from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, isNotNull, isNull, type SQL, sql } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/sqlite-core'
 import { createSelectSchema } from 'drizzle-orm/zod'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
@@ -20,6 +9,11 @@ import { sessionTable } from '@/database/session/schema'
 import { sessionSelectSchema, sessionStatusSchema } from '@/database/session/validation'
 import { sessionArchive } from '@/database/session-archive/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
+import { ticketTable } from '@/database/ticket/schema'
+import type { TicketScopeTarget } from '@/database/ticket/validation'
+import { ticketContent } from '@/database/ticket-content/schema'
+import { ticketContentSelectSchema } from '@/database/ticket-content/validation'
+import { type LiveActivity, liveActivitySchema } from '@/domains/sessions/api/feed/feed-rows'
 import { feedActivitySchema } from '@/domains/sessions/api/feed-activity'
 import {
   isWorkingStatus,
@@ -32,8 +26,7 @@ import {
   type LiveSessionSupervisorActor,
   liveSessionActorFor,
 } from '../live/live-session-supervisor-machine'
-import { storedActivity } from './session-activities'
-import type { SessionRosterChanges } from './session-roster-changes'
+import type { SessionListChanges } from './session-list-changes'
 
 const t = initTRPC.create()
 
@@ -47,44 +40,19 @@ const sessionListInputSchema = z.strictObject({
   limit: z.number().int().min(1).max(100).default(30),
 })
 
-const countSchema = z.number().int().nonnegative()
-const sessionPlanSchema = z.discriminatedUnion('state', [
-  z.strictObject({
-    state: z.literal('available'),
-    entries: z.array(
-      z.strictObject({
-        content: z.string().trim().min(1),
-        position: countSchema,
-        status: z.enum(['pending', 'in_progress', 'completed']),
-      }),
-    ),
-  }),
-  z.strictObject({ state: z.literal('malformed') }),
-])
 const sessionSubagentSchema = z.strictObject({
   id: identifierSchema,
   label: z.string().nullable(),
   state: z.enum(['running', 'completed', 'failed', 'interrupted']),
-  startedAt: z.string().nullable(),
-  endedAt: z.string().nullable(),
-})
-const sessionShellCommandSchema = z.strictObject({
-  id: identifierSchema,
-  command: z.string().nullable(),
-  label: z.string().nullable(),
-  background: z.boolean(),
-  state: z.enum(['running', 'completed', 'failed', 'interrupted']),
-  startedAt: z.string().nullable(),
-  endedAt: z.string().nullable(),
-  outputPath: z.string().nullable(),
-  result: z.string().nullable(),
 })
 const storedTicketLink = createSelectSchema(sessionTicketLink).shape
+const savedTicket = ticketContentSelectSchema.shape
+// The linked Ticket's provider facts are null until its content is saved.
 const sessionTicketSchema = z.strictObject({
   projectId: storedTicketLink.projectId,
   key: storedTicketLink.ticketKey,
-  title: storedTicketLink.title,
-  state: storedTicketLink.state,
+  title: savedTicket.title.nullable(),
+  state: savedTicket.state.nullable(),
   createdAt: z.iso.datetime(),
 })
 
@@ -92,39 +60,27 @@ const sessionTicketSchema = z.strictObject({
 const passedSessionColumns = {
   harness: sessionTable.harness,
   projectId: sessionTable.projectId,
-  sortOrder: sessionTable.sortOrder,
-  customTitle: sessionTable.customTitle,
-  preview: sessionTable.preview,
   cwd: sessionTable.cwd,
   workspaceId: sessionTable.workspaceId,
 }
-const storedSessionSchema = sessionSelectSchema.pick(
-  Object.fromEntries(Object.keys(passedSessionColumns).map((key) => [key, true])) as Record<
-    keyof typeof passedSessionColumns,
-    true
-  >,
-)
+const storedSessionSchema = sessionSelectSchema.pick({
+  harness: true,
+  projectId: true,
+  cwd: true,
+  workspaceId: true,
+})
 
-// The Session screen reads `plan`, `shell`, the context sizes and the handoff links through
-// `sessionDetails`, which shares this schema.
 export const sessionListRowSchema = z.strictObject({
   ...storedSessionSchema.shape,
   id: z.string().uuid(),
-  createdAt: z.iso.datetime(),
   posture: z.literal('live').nullable(),
   title: sessionTitleSchema.nullable(),
   status: sessionStatusSchema,
   updatedAt: z.string().nullable(),
   activity: feedActivitySchema.nullable(),
-  plan: sessionPlanSchema.nullable(),
   subagents: z.array(sessionSubagentSchema),
-  shell: z.array(sessionShellCommandSchema),
   ticket: sessionTicketSchema.nullable(),
   archived: z.boolean(),
-  contextTokens: countSchema.nullable().optional(),
-  contextWindowTokens: countSchema.nullable().optional(),
-  handoffTo: identifierSchema.nullable().optional(),
-  handoffFrom: identifierSchema.nullable().optional(),
   turnConfiguration: z.strictObject({
     model: z.string().nullable(),
     effort: z.string().nullable(),
@@ -140,7 +96,27 @@ const sessionListSchema = z.strictObject({
 export type SessionListContext = {
   database: Database
   supervisor: LiveSessionSupervisorActor
-  roster: SessionRosterChanges
+  changes: SessionListChanges
+  // The provider scope a Project's Tickets are saved under; null with no Ticket Connection.
+  ticketSource: (projectId: string) => Promise<TicketScopeTarget | null>
+}
+
+type LinkedTicketSource = TicketScopeTarget & { projectId: string }
+
+async function linkedTicketSource(
+  context: SessionListContext,
+  projectId: string,
+): Promise<LinkedTicketSource | null> {
+  const source = await context.ticketSource(projectId)
+  return source === null ? null : { ...source, projectId }
+}
+
+export function storedActivity(stored: string | null): LiveActivity | null {
+  if (stored === null) return null
+  const parsed = liveActivitySchema.safeParse(JSON.parse(stored))
+  if (parsed.success) return parsed.data
+  console.warn('Rejected 1 unsupported stored Session activity.')
+  return null
 }
 
 // The Feed's activity names no tool or target, so the row keeps its kind as the tool. It outranks
@@ -150,73 +126,77 @@ function observedActivity(stored: string | null): z.infer<typeof feedActivitySch
   return activity === null ? null : { ...activity, tool: activity.kind, target: null }
 }
 
-function liveProjection(context: SessionListContext, sessionId: string) {
+function liveProjection(context: Pick<SessionListContext, 'supervisor'>, sessionId: string) {
   const actor = liveSessionActorFor(context.supervisor, sessionId)
   if (actor === undefined) return null
   const snapshot = actor.getSnapshot()
-  const stateProjection = {
-    Starting: { posture: 'live', status: 'starting' },
-    Persisting: { posture: 'live', status: 'starting' },
-    'Awaiting turn': { posture: 'live', status: 'starting' },
-    Draining: { posture: 'live', status: 'unknown' },
-    Sending: { posture: 'live', status: 'unknown' },
-    Ready: { posture: 'live', status: 'unknown' },
+  const statusByState = {
+    Starting: 'starting',
+    Persisting: 'starting',
+    'Awaiting turn': 'starting',
+    Draining: 'unknown',
+    Sending: 'unknown',
+    Ready: 'unknown',
     Failed: null,
     Closed: null,
-  } as const satisfies Record<
-    typeof snapshot.value,
-    { posture: 'live'; status: 'starting' | 'unknown' } | null
-  >
-  const projection = stateProjection[snapshot.value]
-  if (projection === null) return null
+  } as const satisfies Record<typeof snapshot.value, 'starting' | 'unknown' | null>
+  const status = statusByState[snapshot.value]
+  if (status === null) return null
   return {
-    posture: projection.posture,
-    status: snapshot.context.status ?? projection.status,
+    status: snapshot.context.status ?? status,
     activity: snapshot.context.activity?.activity ?? null,
     turnConfiguration: snapshot.context.turnConfiguration,
   }
 }
 
-function displayedTitle(row: StoredSessionRow): z.infer<typeof sessionTitleSchema> | null {
-  const { customTitle, preview } = row.passed
-  if (customTitle !== null) return { text: customTitle, source: 'custom' }
-  if (row.ticket !== null) return { text: row.ticket.title, source: 'ticket' }
-  if (preview !== null && preview !== row.firstPrompt)
-    return { text: preview, source: 'summarised' }
-  if (row.firstPrompt !== null) return { text: row.firstPrompt, source: 'first-prompt' }
-  return null
-}
-
 function sessionListRow(
   context: SessionListContext,
   row: StoredSessionRow,
-  subagents: readonly StoredSubagent[],
+  subagents: StoredSubagent[],
 ) {
   const live = liveProjection(context, row.id)
   const liveStatus = live?.status === 'unknown' ? null : live?.status
   return {
     ...row.passed,
     id: row.id,
-    createdAt: new Date(row.createdAt).toISOString(),
-    posture: live?.posture ?? null,
-    title: displayedTitle(row),
-    status: liveStatus ?? row.status ?? 'unknown',
+    posture: live === null ? null : ('live' as const),
+    title:
+      row.title === null || row.titleSource === null
+        ? null
+        : { text: row.title, source: row.titleSource },
+    status: liveStatus ?? row.status,
     updatedAt: new Date(row.activityAt ?? row.updatedAt).toISOString(),
     activity: observedActivity(row.activity) ?? live?.activity ?? null,
-    plan: null,
-    subagents: subagents.map((subagent) => ({ ...subagent, startedAt: null, endedAt: null })),
-    shell: [],
-    ticket: row.ticket,
+    subagents,
+    ticket: linkedTicket(row.ticket),
     archived: row.archived,
     turnConfiguration: live?.turnConfiguration ?? { model: null, effort: null, mode: null },
   }
 }
 
+// A Session with no link joins no row, so every link column is null.
+function linkedTicket({ projectId, key, createdAt, ...content }: StoredSessionRow['ticket']) {
+  return projectId === null || key === null || createdAt === null
+    ? null
+    : { projectId, key, createdAt, ...content }
+}
+
+// The title a row shows, strongest first; a preview that repeats the first prompt is that prompt.
+const shownTitle = sql<
+  string | null
+>`coalesce(${sessionTable.customTitle}, ${ticketContent.title}, ${sessionTable.preview}, ${sessionTable.firstPrompt})`
+const shownTitleSource = sql<z.infer<typeof sessionTitleSchema>['source'] | null>`case
+  when ${sessionTable.customTitle} is not null then 'custom'
+  when ${ticketContent.title} is not null then 'ticket'
+  when ${sessionTable.preview} is not null and ${sessionTable.preview} is not ${sessionTable.firstPrompt} then 'summarised'
+  when ${sessionTable.firstPrompt} is not null then 'first-prompt'
+end`
+
 const storedSessionColumns = {
   passed: passedSessionColumns,
   id: sessionTable.argoId,
-  createdAt: sessionTable.createdAt,
-  firstPrompt: sessionTable.firstPrompt,
+  title: shownTitle,
+  titleSource: shownTitleSource,
   activityAt: sessionTable.activityAt,
   activity: sessionTable.activity,
   status: sessionTable.status,
@@ -224,10 +204,11 @@ const storedSessionColumns = {
   ticket: {
     projectId: sessionTicketLink.projectId,
     key: sessionTicketLink.ticketKey,
-    title: sessionTicketLink.title,
-    state: sessionTicketLink.state,
+    title: ticketContent.title,
+    state: ticketContent.state,
     createdAt: sessionTicketLink.createdAt,
   },
+  archived: isNotNull(sessionArchive.sessionId).mapWith(Boolean),
 }
 
 const sessionListOrder = [
@@ -236,15 +217,38 @@ const sessionListOrder = [
   asc(sessionTable.argoId),
 ]
 
-// The stored Sessions `where` selects, with their Ticket link and archive mark.
-function storedSessionQuery(database: Database, where: SQL | undefined) {
+const keyedContent = alias(ticketContent, 'keyed_ticket_content')
+
+// The saved Ticket a link's key names in the Project's Ticket scope; the first if keys repeat.
+function linkedTicketId(database: Database, source: LinkedTicketSource | null): SQL {
+  if (source === null) return sql`null`
+  const found = database
+    .select({ id: ticketTable.argoId })
+    .from(ticketTable)
+    .innerJoin(keyedContent, eq(keyedContent.ticketId, ticketTable.argoId))
+    .where(
+      and(
+        eq(ticketTable.provider, source.provider),
+        eq(ticketTable.scope, source.scope),
+        eq(keyedContent.key, sessionTicketLink.ticketKey),
+        eq(sessionTicketLink.projectId, source.projectId),
+      ),
+    )
+    .limit(1)
+  return sql`(${found})`
+}
+
+// The stored Sessions `where` selects, with their linked Ticket, archive mark and match count.
+function storedSessionQuery(
+  database: Database,
+  where: SQL | undefined,
+  source: LinkedTicketSource | null,
+) {
   return database
-    .select({
-      ...storedSessionColumns,
-      archived: isNotNull(sessionArchive.sessionId).mapWith(Boolean),
-    })
+    .select({ ...storedSessionColumns, total: sql<number>`count(*) over ()`.mapWith(Number) })
     .from(sessionTable)
     .leftJoin(sessionTicketLink, eq(sessionTicketLink.sessionId, sessionTable.argoId))
+    .leftJoin(ticketContent, eq(ticketContent.ticketId, linkedTicketId(database, source)))
     .leftJoin(sessionArchive, eq(sessionArchive.sessionId, sessionTable.argoId))
     .where(where)
 }
@@ -262,38 +266,27 @@ function sessionListRows(
   return stored.map((row) => sessionListRow(context, row, subagents.get(row.id) ?? []))
 }
 
-// Runs `publish` once in the next microtask for any burst of `changed` calls, until stopped.
-function coalescedChanges(publish: () => void) {
-  let pending = false
-  let stopped = false
-  return {
-    changed() {
-      if (pending || stopped) return
-      pending = true
-      queueMicrotask(() => {
-        pending = false
-        if (!stopped) publish()
-      })
-    },
-    stop() {
-      stopped = true
-    },
-  }
-}
-
-// One saved Session's row, or null for an unknown ID.
-export function readSessionRow(
+async function readSessionRow(
   context: SessionListContext,
   sessionId: string,
-): z.infer<typeof sessionListRowSchema> | null {
-  const stored = storedSessionQuery(context.database, eq(sessionTable.argoId, sessionId)).all()
-  return sessionListRows(context, stored)[0] ?? null
+): Promise<z.infer<typeof sessionListRowSchema> | null> {
+  const link = context.database
+    .select({ projectId: sessionTicketLink.projectId })
+    .from(sessionTicketLink)
+    .where(eq(sessionTicketLink.sessionId, sessionId))
+    .get()
+  const source = link === undefined ? null : await linkedTicketSource(context, link.projectId)
+  const where = eq(sessionTable.argoId, sessionId)
+  return (
+    sessionListRows(context, storedSessionQuery(context.database, where, source).all())[0] ?? null
+  )
 }
 
-function readSessionList(
+async function readSessionList(
   context: SessionListContext,
   input: z.infer<typeof sessionListInputSchema>,
-): z.infer<typeof sessionListSchema> {
+): Promise<z.infer<typeof sessionListSchema>> {
+  const source = await linkedTicketSource(context, input.projectId)
   const filters = {
     active: isNull(sessionArchive.sessionId),
     archived: isNotNull(sessionArchive.sessionId),
@@ -310,23 +303,27 @@ function readSessionList(
         ),
     input.search === ''
       ? undefined
-      : or(
-          sql<boolean>`instr(lower(coalesce(${sessionTable.customTitle}, '')), lower(${input.search})) > 0`,
-          sql<boolean>`instr(lower(coalesce(${sessionTable.preview}, '')), lower(${input.search})) > 0`,
-        ),
+      : sql<boolean>`instr(lower(coalesce(${shownTitle}, '')), lower(${input.search})) > 0`,
   )
   // A Ticket's Sessions read most recently linked first.
   const order =
     input.ticketKey === undefined
       ? sessionListOrder
       : [desc(sessionTicketLink.createdAt), ...sessionListOrder]
-  const stored = storedSessionQuery(context.database, where)
+  const stored = storedSessionQuery(context.database, where, source)
     .orderBy(...order)
     .limit(input.limit)
     .offset(input.offset)
     .all()
-  const listed = storedSessionQuery(context.database, where).as('listed')
-  const total = context.database.select({ value: count() }).from(listed).get()?.value ?? 0
+  // A page past the end has no row to carry the count.
+  const total =
+    stored[0]?.total ??
+    (input.offset === 0
+      ? 0
+      : (context.database
+          .select({ value: count() })
+          .from(storedSessionQuery(context.database, where, source).as('listed'))
+          .get()?.value ?? 0))
   return { total, rows: sessionListRows(context, stored) }
 }
 
@@ -337,8 +334,27 @@ export function sessionListProcedure(context: SessionListContext) {
     .query(({ input }) => readSessionList(context, input))
 }
 
+// Stored facts come from SQLite and connection facts from the live supervisor; no history is read.
+export function sessionDetailsProcedure(context: SessionListContext) {
+  return t.procedure
+    .input(z.strictObject({ sessionId: identifierSchema }))
+    .output(sessionListRowSchema.nullable())
+    .query(({ input }) => readSessionRow(context, input.sessionId))
+}
+
+// Announces the saved Sessions a write or a live status changed; each Session List reads them again.
+export function sessionListChangedProcedure(context: SessionListContext) {
+  return t.procedure.subscription(() =>
+    observable<{ sessionIds: string[] }>((emit) =>
+      context.changes.subscribe((sessionIds) => emit.next({ sessionIds: [...sessionIds] })),
+    ),
+  )
+}
+
 // The Sessions working now: a live channel's status, or else the one the history watcher stored.
-function workingSessionIds(context: SessionListContext): Set<string> {
+function workingSessionIds(
+  context: Pick<SessionListContext, 'database' | 'supervisor'>,
+): Set<string> {
   const stored = context.database
     .select({ id: sessionTable.argoId })
     .from(sessionTable)
@@ -352,52 +368,32 @@ function workingSessionIds(context: SessionListContext): Set<string> {
   return working
 }
 
-// Only a working Session has an activity line to read, so idle rows open no Feed reader.
-function observeWorkingFeeds(
-  observed: Map<string, () => void>,
-  working: ReadonlySet<string>,
+// Announces each live status change, and keeps a Feed reader open for each working Session so its
+// row draws the Feed's activity line. Idle rows open no reader.
+export function watchSessionList(
+  context: Pick<SessionListContext, 'database' | 'supervisor' | 'changes'>,
   observeFeed: (sessionId: string) => () => void,
-): void {
-  for (const [sessionId, stop] of observed)
-    if (!working.has(sessionId)) {
-      observed.delete(sessionId)
-      stop()
-    }
-  for (const sessionId of working)
-    if (!observed.has(sessionId)) observed.set(sessionId, observeFeed(sessionId))
-}
-
-// Announces the saved Sessions a write changed; each Session List reads its pages again.
-export function sessionListChangedProcedure(
-  context: SessionListContext,
-  observeFeed: (sessionId: string) => () => void,
-) {
-  return t.procedure.subscription(() =>
-    observable<{ sessionIds: string[] }>((emit) => {
-      const observed = new Map<string, () => void>()
-      const changedIds = new Set<string>()
-      const { changed, stop } = coalescedChanges(() => {
-        const sessionIds = [...changedIds]
-        changedIds.clear()
-        emit.next({ sessionIds })
-        observeWorkingFeeds(observed, workingSessionIds(context), observeFeed)
-      })
-      const collect = (sessionIds: readonly string[]) => {
-        for (const sessionId of sessionIds) changedIds.add(sessionId)
-        changed()
-      }
-      const unsubscribeRoster = context.roster.subscribe(collect)
-      const statusChanges = context.supervisor.on('Session status changed', ({ sessionId }) =>
-        collect([sessionId]),
-      )
-      observeWorkingFeeds(observed, workingSessionIds(context), observeFeed)
-      return () => {
+): () => void {
+  const observed = new Map<string, () => void>()
+  const observeWorking = () => {
+    const working = workingSessionIds(context)
+    for (const [sessionId, stop] of observed)
+      if (!working.has(sessionId)) {
+        observed.delete(sessionId)
         stop()
-        unsubscribeRoster()
-        statusChanges.unsubscribe()
-        for (const stopObserving of observed.values()) stopObserving()
-        observed.clear()
       }
-    }),
+    for (const sessionId of working)
+      if (!observed.has(sessionId)) observed.set(sessionId, observeFeed(sessionId))
+  }
+  const statusChanges = context.supervisor.on('Session status changed', ({ sessionId }) =>
+    context.changes.changed([sessionId]),
   )
+  const unsubscribe = context.changes.subscribe(observeWorking)
+  observeWorking()
+  return () => {
+    statusChanges.unsubscribe()
+    unsubscribe()
+    for (const stop of observed.values()) stop()
+    observed.clear()
+  }
 }

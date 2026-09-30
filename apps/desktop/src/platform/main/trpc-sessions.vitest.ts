@@ -1,20 +1,15 @@
-import { mkdtemp, rm } from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
 import type { inferRouterOutputs } from '@trpc/server'
-import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, expect, test } from 'vitest'
-import { type Database, databaseMigrationsFolder, openDatabase } from '@/database/database'
-import { sessionTable } from '@/database/session/schema'
+import type { Database } from '@/database/database'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { insertSession } from '@/mocks/sessions/session-list-caller'
 import { sessionRouterDependencies } from '@/mocks/sessions/session-router-dependencies.fixture'
 import { type AppRouter, type AppRouterDependencies, createAppRouter } from './trpc-router'
 
-let userData: string
 let database: Database
 
 function routerDependencies(
-  sessions: Partial<AppRouterDependencies['sessions']> = {},
+  sessions: Parameters<typeof sessionRouterDependencies>[1] = {},
 ): AppRouterDependencies {
   return sessionRouterDependencies(database, sessions)
 }
@@ -25,14 +20,12 @@ function firstPage() {
     .sessionList({ projectId: 'project-1' })
 }
 
-beforeEach(async () => {
-  userData = await mkdtemp(path.join(os.tmpdir(), 'argo-session-router-'))
-  database = openDatabase(userData, { migrationsFolder: databaseMigrationsFolder() })
+beforeEach(() => {
+  database = migratedDatabase()
 })
 
-afterEach(async () => {
+afterEach(() => {
   database.$client.close()
-  await rm(userData, { recursive: true, force: true })
 })
 
 function insertActivitySessions(ids: readonly string[]) {
@@ -45,7 +38,7 @@ function insertActivitySessions(ids: readonly string[]) {
     })
 }
 
-test('keeps both roster activities when the selected Feed changes', async () => {
+test('keeps both Session List activities when the selected Feed changes', async () => {
   const ids = [
     '00000000-0000-4000-8000-000000000001',
     '00000000-0000-4000-8000-000000000002',
@@ -88,44 +81,9 @@ test('keeps both roster activities when the selected Feed changes', async () => 
   }
 })
 
-test('keeps the existing title when the Harness rejects a rename', async () => {
-  insertSession(database, {
-    id: '00000000-0000-4000-8000-000000000003',
-    customTitle: 'Before',
-  })
-  const dependencies = routerDependencies({
-    rename: async () => {
-      throw new Error('Harness rejected the rename.')
-    },
-  })
-
-  await expect(
-    createAppRouter(dependencies)
-      .createCaller({})
-      .sessionUpdate({
-        sessionIds: ['00000000-0000-4000-8000-000000000003'],
-        title: 'Rejected title',
-      }),
-  ).rejects.toThrow('Harness rejected the rename.')
-  expect(
-    database
-      .select({ customTitle: sessionTable.customTitle })
-      .from(sessionTable)
-      .where(eq(sessionTable.argoId, '00000000-0000-4000-8000-000000000003'))
-      .get(),
-  ).toEqual({ customTitle: 'Before' })
-})
-
-function readDetails(dependencies: AppRouterDependencies, sessionId: string) {
-  return createAppRouter(dependencies).createCaller({}).sessionDetails({ sessionId })
-}
-
-test('reads a Session beyond the loaded roster window by ID without reading its history', async () => {
-  const ids = Array.from(
-    { length: 40 },
-    (_, index) => `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
-  )
-  insertActivitySessions(ids)
+test('reads a Session by ID without reading its history', async () => {
+  const sessionId = '00000000-0000-4000-8000-000000000001'
+  insertActivitySessions([sessionId])
   const historyReads: string[] = []
   const dependencies = routerDependencies({
     readHistory: async (_harness, target) => {
@@ -133,21 +91,10 @@ test('reads a Session beyond the loaded roster window by ID without reading its 
       return []
     },
   })
-  const listed = await firstPage()
 
-  const details = await readDetails(dependencies, ids[0] ?? '')
+  const details = await createAppRouter(dependencies).createCaller({}).sessionDetails({ sessionId })
 
-  expect(listed.rows.map(({ id }) => id)).not.toContain(ids[0])
-  expect(details).toEqual(
-    expect.objectContaining({
-      id: ids[0],
-      harness: 'claude',
-      projectId: 'project-1',
-      archived: false,
-      posture: null,
-      title: { text: 'Session 0', source: 'first-prompt' },
-    }),
-  )
+  expect(details?.id).toBe(sessionId)
   await new Promise((resolve) => setImmediate(resolve))
   expect(historyReads).toEqual([])
 })

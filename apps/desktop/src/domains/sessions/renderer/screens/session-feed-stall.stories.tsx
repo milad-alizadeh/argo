@@ -3,14 +3,9 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { sessionRow } from '@/mocks/sessions/session-rows'
-import {
-  sessionFeedRefreshTrpc,
-  sessionFeedSubscribe,
-  sessionListSubscribe,
-  sessionListTrpc,
-} from '@/mocks/sessions/session-story-host'
+import { installSessionHost } from '@/mocks/sessions/session-story-host'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
+import { SessionList } from '../session-list/session-list'
 import { SessionScreenView } from './session-screen-view'
 
 // #2111: the Feed read that never answers. This fixture holds the supported vendor read open and
@@ -24,19 +19,7 @@ const stalled = sessionRow({
 })
 
 function stalledFeedHost() {
-  const before = window.argo
-  const read = () => new Promise<never>(() => {})
-  window.argo = {
-    ...before,
-    trpcSubscribe: sessionFeedSubscribe(
-      sessionListSubscribe(before.trpcSubscribe, () => [stalled]),
-      read,
-    ),
-    trpc: sessionListTrpc(sessionFeedRefreshTrpc(before.trpc), () => [stalled]),
-  }
-  return () => {
-    window.argo = before
-  }
+  return installSessionHost([stalled], { feed: () => new Promise<never>(() => {}) })
 }
 
 const meta = {
@@ -47,7 +30,7 @@ const meta = {
     (Story) => (
       <div className="h-dvh w-full">
         <MemoryRouter initialEntries={[`/sessions/${stalled.id}`]}>
-          <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionsSidebar />}>
+          <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionList />}>
             <Routes>
               <Route path="/sessions/:sessionId" element={<Story />} />
             </Routes>

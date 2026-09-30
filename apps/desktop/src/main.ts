@@ -13,8 +13,8 @@ import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/ma
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import { listComposerCommandsFor } from '@/domains/sessions/main/api/session-composer-commands'
-import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster-changes'
-import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
+import { watchSessionList } from '@/domains/sessions/main/api/session-list'
+import { SessionListChanges } from '@/domains/sessions/main/api/session-list-changes'
 import {
   clearWorkingStatuses,
   updateHarnessSession,
@@ -25,6 +25,7 @@ import {
   reconcileUnknownSessionCommands,
 } from '@/domains/sessions/main/database/session-command-outcomes'
 import { recordLiveSubagents } from '@/domains/sessions/main/database/session-subagents'
+import { SessionFeedReaders } from '@/domains/sessions/main/feed/feed-reader'
 import {
   type LiveSessionSupervisorActor,
   liveSessionActorFor,
@@ -32,7 +33,8 @@ import {
 import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
 import { SessionHistoryFollowers } from '@/domains/sessions/main/live/session-history-followers'
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
-import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
+import type { SessionSyncSupervisorActor } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
+import { projectTicketScope } from '@/domains/tickets/main/api/ticket-connection'
 import type {
   PriorityRequest,
   StatusRequest,
@@ -58,7 +60,7 @@ import {
 } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
 import { reportWindowVisibility } from '@/domains/tickets/main/sync/window-visibility'
 import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
-import { type Harness, harnessSchema } from '@/harnesses/harness'
+import { harnessSchema } from '@/harnesses/harness'
 import { tailSessionHistory, watchHistoryActivity } from '@/harnesses/host/history-watch'
 import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
 import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
@@ -213,42 +215,16 @@ function createDomainContexts(services: TicketServices, registry: HarnessRegistr
   }
 }
 
-function historyFollowersFor(
-  registry: HarnessRegistry,
-  hasLiveChannel: (sessionId: string) => boolean,
-): SessionHistoryFollowers {
-  return new SessionHistoryFollowers(
-    currentSessionEventJournal(),
-    (harness, target, changed) => {
-      const files = registry[harness].historyFiles
-      return files === undefined
-        ? () => {}
-        : tailSessionHistory(files, target.subagentId ?? target.nativeId, changed)
-    },
-    hasLiveChannel,
-  )
-}
-
 function routerForWindow(options: {
   window: BrowserWindow
   database: Database
   actors: WindowActors
-  sessionSyncStatus: readonly SessionSyncStatusStore[]
   domains: ReturnType<typeof createDomainContexts>
   registry: HarnessRegistry
-  roster: SessionRosterChanges
+  sessionServices: SessionServices
 }) {
-  const { window, database, actors, domains, sessionSyncStatus, registry, roster } = options
+  const { window, database, actors, domains, registry, sessionServices } = options
   const exclusive = createWriteQueue()
-  const hasLiveChannel = (sessionId: string) => {
-    const session = liveSessionActorFor(actors.sessions, sessionId)
-    return (
-      session !== undefined &&
-      !session.getSnapshot().matches('Failed') &&
-      !session.getSnapshot().matches('Closed')
-    )
-  }
-  const historyFollowers = historyFollowersFor(registry, hasLiveChannel)
   return createAppRouter({
     accounts: domains.accounts,
     autoCompactLimit: (harness) => registry[harness].autoCompactLimit,
@@ -270,23 +246,21 @@ function routerForWindow(options: {
             worktreeRoot: path.join(app.getPath('userData'), 'worktrees'),
           }),
         ),
-      readHistory: (harness, target) => registry[harness].readHistory(target),
-      followHistory: (followed, invalidate) => historyFollowers.follow(followed, invalidate),
       rename: ({ harness, nativeId, title }) => {
         const rename = registry[harness].rename
         if (rename === undefined) throw new Error(`${harness} Session renaming is unavailable.`)
         return rename(nativeId, title)
       },
       supervisor: actors.sessions,
-      roster,
+      changes: currentSessionListChanges(),
+      ticketSource: (projectId) => projectTicketScope(domains.connections, projectId),
+      readers: sessionServices.readers,
       acceptsAttachments: (harness) => registry[harness].acceptsAttachments,
       chooseAttachmentFiles: () => chooseAttachmentFiles(window),
-      journal: currentSessionEventJournal(),
       interactions: currentSessionInteractionBroker(),
-      hasLiveChannel,
       listComposerCommands: ({ harness, cwd }) => listComposerCommandsFor(registry[harness], cwd),
       refreshSessionSync: () => actors.sessionSync.send({ type: 'Refresh' }),
-      sessionSyncStatus,
+      sessionSync: actors.sessionSync,
     },
     tickets: ticketProcedureContext({ database, actors, domains }),
     workspaces: { database, exclusive },
@@ -318,11 +292,6 @@ function ticketProcedureContext({
   }
 }
 
-function currentSessionSyncStatus(): SessionSyncStatusStore[] {
-  if (sessionSyncStatus === undefined) throw new Error('Session sync status is unavailable.')
-  return Object.values(sessionSyncStatus)
-}
-
 function currentTicketServices(): TicketServices {
   if (ticketServices === undefined) throw new Error('Ticket services are unavailable.')
   return ticketServices
@@ -340,6 +309,11 @@ async function reconcileTicketWriteIntentsAtStartup(database: Database): Promise
   })
 }
 
+function currentSessionListChanges(): SessionListChanges {
+  if (sessionListChanges === undefined) throw new Error('Session List changes are unavailable.')
+  return sessionListChanges
+}
+
 function currentSessionEventJournal(): SessionEventJournal {
   if (sessionEventJournal === undefined) throw new Error('Session event journal is unavailable.')
   return sessionEventJournal
@@ -354,9 +328,7 @@ function currentSessionInteractionBroker(): SessionInteractionBroker {
 type WindowActors = {
   catalog: CatalogActor
   sessions: LiveSessionSupervisorActor
-  sessionSync: {
-    send: (event: SessionSyncSupervisorCommand) => void
-  }
+  sessionSync: SessionSyncSupervisorActor
   ticketSync: {
     send: (event: TicketSyncSupervisorCommand) => void
   }
@@ -366,11 +338,7 @@ type WindowActors = {
 function requireWindowActors(actor: AppActor): WindowActors {
   const catalog = actor.system.get('catalog') as CatalogActor | undefined
   const sessions = actor.system.get('sessions') as LiveSessionSupervisorActor | undefined
-  const sessionSync = actor.system.get('sessionSync') as
-    | {
-        send: (event: SessionSyncSupervisorCommand) => void
-      }
-    | undefined
+  const sessionSync = actor.system.get('sessionSync') as SessionSyncSupervisorActor | undefined
   const ticketSync = actor.system.get('ticketSync') as
     | {
         send: (event: TicketSyncSupervisorCommand) => void
@@ -397,6 +365,7 @@ function attachWindowTrpc({
   domains,
   database,
   registry,
+  sessionServices,
 }: {
   window: BrowserWindow
   rendererURL: string
@@ -404,55 +373,63 @@ function attachWindowTrpc({
   domains: ReturnType<typeof createDomainContexts>
   database: Database
   registry: HarnessRegistry
+  sessionServices: SessionServices
 }): () => void {
-  const roster = new SessionRosterChanges()
-  const watchedStatus = new WatchedSessionStatus((session, status) =>
-    updateHarnessSession({ database, roster }, session, { status }),
-  )
   const router = routerForWindow({
     actors,
     domains,
-    sessionSyncStatus: currentSessionSyncStatus(),
     window,
     database,
     registry,
-    roster,
+    sessionServices,
   })
-  const stopRosterSources = watchRosterSources({
-    database,
-    registry,
-    roster,
-    watchedStatus,
-    discover: (harness, nativeId) =>
-      actors.sessionSync.send({ type: 'Discover', harness, nativeId }),
-  })
-  const detach = attachTrpcTransport({ window, rendererURL, router, context: undefined })
-  return () => {
-    stopRosterSources()
-    watchedStatus.dispose()
-    detach()
-  }
+  return attachTrpcTransport({ window, rendererURL, router, context: undefined })
 }
 
-// Sync commits and writes to any Session's history file both move roster rows.
-function watchRosterSources({
-  database,
-  registry,
-  roster,
-  watchedStatus,
-  discover,
-}: {
-  database: Database
-  registry: HarnessRegistry
-  roster: SessionRosterChanges
-  watchedStatus: WatchedSessionStatus
-  discover: (harness: Harness, nativeId: string) => void
-}): () => void {
-  const stops = currentSessionSyncStatus().map((store) =>
-    store.subscribe((event) => {
-      if (event.type === 'committed') roster.changed(event.sessionIds)
-    }),
+// The app's one set of Feed readers, fed by history files and the live Session actors.
+function sessionFeedReaders(actors: WindowActors, database: Database, registry: HarnessRegistry) {
+  const hasLiveChannel = (sessionId: string) => {
+    const session = liveSessionActorFor(actors.sessions, sessionId)
+    return (
+      session !== undefined &&
+      !session.getSnapshot().matches('Failed') &&
+      !session.getSnapshot().matches('Closed')
+    )
+  }
+  const journal = currentSessionEventJournal()
+  const historyFollowers = new SessionHistoryFollowers(
+    journal,
+    (harness, target, changed) => {
+      const files = registry[harness].historyFiles
+      return files === undefined
+        ? () => {}
+        : tailSessionHistory(files, target.subagentId ?? target.nativeId, changed)
+    },
+    hasLiveChannel,
   )
+  return new SessionFeedReaders({
+    database,
+    journal,
+    hasLiveChannel,
+    readHistory: (harness, target) => registry[harness].readHistory(target),
+    followHistory: (followed, invalidate) => historyFollowers.follow(followed, invalidate),
+    changes: currentSessionListChanges(),
+  })
+}
+
+// The Session watchers the app runs once: every history write moves its Session's row, and each
+// working Session keeps a Feed reader open for its activity line.
+function startSessionServices(actors: WindowActors, database: Database, registry: HarnessRegistry) {
+  const readers = sessionFeedReaders(actors, database, registry)
+  const context = { database, changes: currentSessionListChanges() }
+  const watchedStatus = new WatchedSessionStatus((session) =>
+    updateHarnessSession(context, session, { status: 'unknown' }),
+  )
+  const stops = [
+    watchSessionList({ ...context, supervisor: actors.sessions }, (sessionId) =>
+      readers.observe({ sessionId, subagentId: null }, () => {}),
+    ),
+  ]
   for (const harness of harnessSchema.options) {
     const files = registry[harness].historyFiles
     if (files === undefined) continue
@@ -460,17 +437,25 @@ function watchRosterSources({
       watchHistoryActivity(files, (owner, turn, events) => {
         const at = Date.now()
         const session = { harness, nativeId: owner }
-        watchedStatus.record({ ...session, turn, at })
+        const status = watchedStatus.record({ ...session, turn, at })
         recordLiveSubagents(database, { ...session, events })
-        const saved = updateHarnessSession({ database, roster }, session, { activityAt: at })
-        if (!saved) discover(harness, owner)
+        if (!updateHarnessSession(context, session, { status, activityAt: at }))
+          actors.sessionSync.send({ type: 'Discover', harness, nativeId: owner })
       }),
     )
   }
-  return () => {
-    for (const stop of stops) stop()
+  return {
+    readers,
+    // Nothing watches once the database closes, so no stored working status can stay true.
+    stop: () => {
+      for (const stop of stops) stop()
+      watchedStatus.dispose()
+      clearWorkingStatuses(database)
+    },
   }
 }
+
+type SessionServices = ReturnType<typeof startSessionServices>
 
 function closeDesktopWindow({
   actor,
@@ -488,10 +473,21 @@ function closeDesktopWindow({
   domains.accounts.signIn.dispose()
   domains.harnessSignIn.signIn.dispose()
   actor.send({ type: 'Shutdown' })
+  sessionServices?.stop()
   database.$client.close()
 }
 
-function createWindow(actor: AppActor, database: Database, registry: HarnessRegistry): void {
+function createWindow({
+  actor,
+  database,
+  registry,
+  sessionServices,
+}: {
+  actor: AppActor
+  database: Database
+  registry: HarnessRegistry
+  sessionServices: SessionServices
+}): void {
   const actors = requireWindowActors(actor)
   actors.sessionSync.send({ type: 'Refresh' })
   const domains = createDomainContexts(currentTicketServices(), registry)
@@ -520,6 +516,7 @@ function createWindow(actor: AppActor, database: Database, registry: HarnessRegi
         domains,
         database,
         registry,
+        sessionServices,
       })
       attachAppearanceWatch(window)
       reportWindowVisibility(window, actors.ticketSync.send)
@@ -537,7 +534,8 @@ function createWindow(actor: AppActor, database: Database, registry: HarnessRegi
 }
 
 let applicationDatabase: Database | undefined
-let sessionSyncStatus: Record<Harness, SessionSyncStatusStore> | undefined
+let sessionListChanges: SessionListChanges | undefined
+let sessionServices: SessionServices | undefined
 let sessionEventJournal: SessionEventJournal | undefined
 let sessionInteractionBroker: SessionInteractionBroker | undefined
 let ticketServices: TicketServices | undefined
@@ -557,12 +555,7 @@ async function prepare() {
   const database = applicationDatabase
   const tickets = createTicketServices(database)
   ticketServices = tickets
-  sessionSyncStatus = Object.fromEntries(
-    harnessSchema.options.map((harness) => [
-      harness,
-      new SessionSyncStatusStore(database, harness),
-    ]),
-  ) as Record<Harness, SessionSyncStatusStore>
+  sessionListChanges = new SessionListChanges()
   sessionEventJournal = new SessionEventJournal()
   const liveEventProof = process.env[LIVE_EVENT_PROOF_ENV]
   if (PROOF_ENABLED && liveEventProof !== undefined) {
@@ -576,7 +569,7 @@ async function prepare() {
   harnessRegistry = createHarnessRegistry()
   return {
     database: applicationDatabase,
-    sessionSyncStatus,
+    sessionListChanges,
     sessionEventJournal,
     sessionInteractionBroker,
     ticketSync: {
@@ -602,8 +595,7 @@ async function ready(actor: AppActor): Promise<void> {
     const filePath = attachmentPathFromUrl(request.url)
     return filePath ? net.fetch(pathToFileURL(filePath).href) : new Response(null, { status: 400 })
   })
-  if (applicationDatabase === undefined || sessionSyncStatus === undefined)
-    throw new Error('Application services are unavailable.')
+  if (applicationDatabase === undefined) throw new Error('Application services are unavailable.')
   if (harnessRegistry === undefined) throw new Error('Harness registry is unavailable.')
   const registry = harnessRegistry
   void reconcileUnknownSessionCommands(
@@ -615,7 +607,8 @@ async function ready(actor: AppActor): Promise<void> {
   void reconcileTicketWriteIntentsAtStartup(applicationDatabase).catch((error) =>
     console.error('Ticket write intent recovery failed.', error),
   )
-  createWindow(actor, applicationDatabase, registry)
+  sessionServices = startSessionServices(requireWindowActors(actor), applicationDatabase, registry)
+  createWindow({ actor, database: applicationDatabase, registry, sessionServices })
 
   if (ACCEPTANCE_ENABLED) {
     // A window is open and a PTY may still be draining, so this run also stands as the app-shutdown

@@ -1,8 +1,7 @@
 // The one user-asserted `Session → Ticket` link (ADR-0017, CONTEXT.md L1 · Session → Ticket): a
 // fallback for a Session with no branch, hence no Delivery, hence no derivable link. Per-machine
 // owned state, never committed. A Session links to at most one Ticket, so the document is keyed
-// by sessionId; content (title, state) is a cached echo, never authoritative (CONTEXT.md L1 ·
-// Ticket), read fresh from the provider whenever a caller needs more than the cached fields.
+// by sessionId. The link holds only the Ticket's key; its content comes from the saved Ticket.
 
 import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -20,8 +19,6 @@ import { identifierSchema } from '@/shared/validation'
 const linkedTicketSchema = z.strictObject({
   projectId: identifierSchema,
   key: ticketKey,
-  title: z.string(),
-  state: z.enum(['open', 'closed']),
   createdAt: z.iso.datetime(),
 })
 type LinkedTicket = z.infer<typeof linkedTicketSchema>
@@ -43,17 +40,8 @@ export type SessionTicketLinkStore = {
 }
 
 const storedLinkSchema = sessionTicketLinkSelectSchema
-  .pick({
-    projectId: true,
-    ticketKey: true,
-    title: true,
-    state: true,
-    createdAt: true,
-  })
-  .extend({
-    state: z.enum(['open', 'closed']),
-    createdAt: z.iso.datetime(),
-  })
+  .pick({ projectId: true, ticketKey: true, createdAt: true })
+  .extend({ createdAt: z.iso.datetime() })
 
 function linkedTicket(record: unknown): LinkedTicket | null {
   if (record === null || record === undefined) return null
@@ -61,8 +49,6 @@ function linkedTicket(record: unknown): LinkedTicket | null {
   return {
     projectId: parsed.projectId,
     key: parsed.ticketKey,
-    title: parsed.title,
-    state: parsed.state,
     createdAt: parsed.createdAt,
   }
 }
@@ -108,8 +94,6 @@ export function createSessionTicketLinkStoreFromDatabase(
           .select({
             projectId: sessionTicketLink.projectId,
             ticketKey: sessionTicketLink.ticketKey,
-            title: sessionTicketLink.title,
-            state: sessionTicketLink.state,
             createdAt: sessionTicketLink.createdAt,
           })
           .from(sessionTicketLink)
@@ -131,8 +115,6 @@ export function createSessionTicketLinkStoreFromDatabase(
         sessionId,
         projectId: ticket.projectId,
         ticketKey: ticket.key,
-        title: ticket.title,
-        state: ticket.state,
         createdAt,
       }
       database

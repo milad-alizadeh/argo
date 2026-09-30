@@ -2,3 +2,5 @@
 export { FeedMarkdown } from './feed'
 export { HarnessLogo } from './harness'
 export { useSessionListQuery } from './session-list/session-list-query'
+export { sessionName } from './session-name'
+export type { Session } from './types'

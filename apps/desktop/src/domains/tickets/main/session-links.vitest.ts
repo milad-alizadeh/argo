@@ -19,7 +19,7 @@ test('keeps an asserted Session to Ticket link after the shared database reopens
   const links = createSessionTicketLinkStoreFromDatabase(first)
   await links.connect(
     'session-1',
-    { projectId: 'project-1', key: '#607', title: 'Ticket #607', state: 'open' },
+    { projectId: 'project-1', key: '#607' },
     '2026-09-14T00:00:00.000Z',
   )
   links.close()
@@ -30,8 +30,6 @@ test('keeps an asserted Session to Ticket link after the shared database reopens
   await expect(reopened.linkFor('session-1')).resolves.toEqual({
     projectId: 'project-1',
     key: '#607',
-    title: 'Ticket #607',
-    state: 'open',
     createdAt: '2026-09-14T00:00:00.000Z',
   })
   reopened.close()

@@ -9,7 +9,7 @@ import type {
   SessionSummaryList,
   SessionSummaryReader,
 } from '@/domains/sessions/api/session-discovery'
-import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
+import { SessionListChanges } from '@/domains/sessions/main/api/session-list-changes'
 import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import type { Harness } from '@/harnesses/harness'
 import { sessionRouterDependencies } from '@/mocks/sessions/session-router-dependencies.fixture'
@@ -54,17 +54,15 @@ function startSync(registrations: Partial<Record<Harness, Registration>>, readHi
       },
     ]),
   )
+  const changes = new SessionListChanges()
   const actor = createActor(sessionSyncSupervisorMachine, {
     input: {
       database,
+      changes,
       harnesses,
-      status: {
-        claude: new SessionSyncStatusStore(database, 'claude'),
-        codex: new SessionSyncStatusStore(database, 'codex'),
-      },
     },
   }).start()
-  const router = createAppRouter(sessionRouterDependencies(database))
+  const router = createAppRouter(sessionRouterDependencies(database, { changes }))
   return { actor, readHistory, router }
 }
 

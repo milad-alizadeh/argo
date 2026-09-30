@@ -43,7 +43,7 @@ function writeStateStore(codexTranscripts: string) {
   store.close()
 }
 
-async function rosterTitle(page: Page) {
+async function sessionListTitle(page: Page) {
   const rows = await sessionRows(page)
   const titled = rows.find(
     (session) => session.title?.text === 'Run Codex check' || session.title?.text === NAME,
@@ -53,13 +53,13 @@ async function rosterTitle(page: Page) {
 
 // ADR-0042: the packaged main process opens the store through Electron's own `node:sqlite`.
 export async function proveCodexThreadName(page: Page, codexTranscripts: string) {
-  assert.deepEqual(await rosterTitle(page), { text: 'Run Codex check', source: 'custom' })
+  assert.deepEqual(await sessionListTitle(page), { text: 'Run Codex check', source: 'custom' })
   writeStateStore(codexTranscripts)
   const deadline = Date.now() + 10_000
-  let title = await rosterTitle(page)
+  let title = await sessionListTitle(page)
   while (title?.text !== NAME && Date.now() < deadline) {
     await setTimeout(100)
-    title = await rosterTitle(page)
+    title = await sessionListTitle(page)
   }
   assert.deepEqual(title, { text: NAME, source: 'custom' })
 }

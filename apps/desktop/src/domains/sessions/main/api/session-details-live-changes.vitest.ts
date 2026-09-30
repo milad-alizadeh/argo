@@ -14,11 +14,13 @@ import {
   start,
   supervisorFor,
 } from '@/mocks/sessions/live-session-supervisor.fixture'
-import { IDS, insertSession, sessionListCaller } from '@/mocks/sessions/session-list-caller'
 import { liveSessionActorFor } from '../live/live-session-supervisor-machine'
-import { sessionDetailsProcedure } from './session-details'
-import { sessionListChangedProcedure } from './session-list'
-import { SessionRosterChanges } from './session-roster-changes'
+import {
+  sessionDetailsProcedure,
+  sessionListChangedProcedure,
+  watchSessionList,
+} from './session-list'
+import { SessionListChanges } from './session-list-changes'
 
 if (model === undefined) throw new Error('The Codex fixture needs a model.')
 const openingEffort = model.defaultEffort
@@ -44,12 +46,18 @@ async function detailsAroundSecondSend(
       ? secondTurn()
       : recording.request(method, params, parse)
   const { root, supervisor, client, notify } = await supervisorFor(request, twoEffortCatalog)
-  const context = { database: databaseFrom(client), supervisor, roster: new SessionRosterChanges() }
+  const context = {
+    database: databaseFrom(client),
+    supervisor,
+    changes: new SessionListChanges(),
+    ticketSource: async () => null,
+  }
+  const stopWatching = watchSessionList(context, () => () => {})
   const caller = initTRPC
     .create()
     .router({
       details: sessionDetailsProcedure(context),
-      changes: sessionListChangedProcedure(context, () => () => {}),
+      changes: sessionListChangedProcedure(context),
     })
     .createCaller({})
   const seen: Details[] = []
@@ -84,6 +92,7 @@ async function detailsAroundSecondSend(
     subscription.unsubscribe()
     return seen
   } finally {
+    stopWatching()
     root.send({ type: 'Shutdown' })
     client.close()
   }
@@ -111,16 +120,4 @@ test('refreshes selected details when the live channel fails', async () => {
   )
 
   expect(seen.at(-1)).toEqual({ posture: null, effort: null })
-})
-
-test('reads an archived Session by ID and says it is archived, and nothing for an unknown ID', async () => {
-  const { client, database, details } = sessionListCaller()
-  try {
-    insertSession(database, { id: IDS[0], createdAt: 10, archived: true })
-
-    expect(await details({ sessionId: IDS[0] })).toMatchObject({ id: IDS[0], archived: true })
-    expect(await details({ sessionId: IDS[1] })).toBeNull()
-  } finally {
-    client.close()
-  }
 })

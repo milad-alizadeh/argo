@@ -7,7 +7,7 @@ import {
   feedReadingChange,
 } from '@/domains/sessions/api/feed/feed-reading'
 import { identifierSchema } from '@/shared/validation'
-import { type SessionFeedReaderContext, SessionFeedReaders } from '../feed/feed-reader'
+import type { SessionFeedReaders } from '../feed/feed-reader'
 
 const t = initTRPC.create()
 const inputSchema = z.strictObject({
@@ -19,10 +19,7 @@ const refreshOutputSchema = z.strictObject({ accepted: z.boolean() })
 
 // Observe publishes each changed reading of a root Session's or a Subagent's Feed, whole and then
 // as changes to the one it sent before; Refresh starts a real read of the same chain.
-export function sessionFeedProcedures(
-  context: SessionFeedReaderContext,
-  readers = new SessionFeedReaders(context),
-) {
+export function sessionFeedProcedures(readers: SessionFeedReaders) {
   return {
     sessionFeed: t.procedure.input(inputSchema).subscription(({ input }) =>
       observable<FeedReadingMessage>((emit) => {

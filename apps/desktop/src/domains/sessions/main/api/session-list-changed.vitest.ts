@@ -14,13 +14,13 @@ function insertTwoSessions(database: Database) {
   insertSession(database, { id: IDS[1], harness: 'claude', nativeId: 'native-2', createdAt: 10 })
 }
 
-test('a roster announcement names the Sessions it changed', async () => {
-  const { client, database, changes, roster } = sessionListCaller()
+test('an announcement names the Sessions it changed', async () => {
+  const { client, database, changes, sessionListChanges } = sessionListCaller()
   try {
     insertTwoSessions(database)
     const { received, stop } = await changes()
 
-    roster.changed([IDS[1]])
+    sessionListChanges.changed([IDS[1]])
     await settled()
     stop()
 
@@ -30,7 +30,7 @@ test('a roster announcement names the Sessions it changed', async () => {
   }
 })
 
-test('a live status change names that Session without a roster announcement', async () => {
+test('a live status change names that Session', async () => {
   let status = 'running'
   const session = {
     getSnapshot: () => ({
@@ -56,14 +56,14 @@ test('a live status change names that Session without a roster announcement', as
 })
 
 test('a burst of announcements in one tick sends one change', async () => {
-  const { client, database, changes, roster, statusChanged } = sessionListCaller()
+  const { client, database, changes, sessionListChanges, statusChanged } = sessionListCaller()
   try {
     insertTwoSessions(database)
     const { received, stop } = await changes()
 
-    roster.changed([IDS[0]])
+    sessionListChanges.changed([IDS[0]])
     statusChanged(IDS[1])
-    roster.changed([IDS[0], IDS[2]])
+    sessionListChanges.changed([IDS[0], IDS[2]])
     await settled()
     stop()
 
@@ -73,13 +73,13 @@ test('a burst of announcements in one tick sends one change', async () => {
   }
 })
 
-test('opens a Feed reader only for working Sessions, and closes them on unsubscribe', async () => {
+test('opens a Feed reader only for working Sessions, and closes them when the watcher stops', async () => {
   const observed = new Map<string, number>()
   const observeFeed = (sessionId: string) => {
     observed.set(sessionId, (observed.get(sessionId) ?? 0) + 1)
     return () => observed.delete(sessionId)
   }
-  const { client, database, changes, roster } = sessionListCaller(
+  const { client, database, sessionListChanges, stopWatching } = sessionListCaller(
     { [IDS[0]]: liveSession('Ready', 'running') },
     observeFeed,
   )
@@ -92,11 +92,10 @@ test('opens a Feed reader only for working Sessions, and closes them on unsubscr
       status: 'idle',
       createdAt: 5,
     })
-    const { stop } = await changes()
     assert.deepEqual(observed, new Map([[IDS[0], 1]]))
 
     client.prepare("UPDATE session SET status = 'permission' WHERE argo_id = ?").run(IDS[1])
-    roster.changed([IDS[1]])
+    sessionListChanges.changed([IDS[1]])
     await settled()
     assert.deepEqual(
       observed,
@@ -107,11 +106,11 @@ test('opens a Feed reader only for working Sessions, and closes them on unsubscr
     )
 
     client.prepare("UPDATE session SET status = 'idle' WHERE argo_id = ?").run(IDS[1])
-    roster.changed([IDS[1]])
+    sessionListChanges.changed([IDS[1]])
     await settled()
     assert.deepEqual(observed, new Map([[IDS[0], 1]]))
 
-    stop()
+    stopWatching()
     assert.equal(observed.size, 0)
   } finally {
     client.close()

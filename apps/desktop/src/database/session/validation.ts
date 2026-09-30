@@ -13,5 +13,5 @@ const serverOwnedSessionFields = {
 export const sessionInsertSchema = createInsertSchema(sessionTable).omit(serverOwnedSessionFields)
 
 export const sessionSelectSchema = createSelectSchema(sessionTable)
-export const sessionStatusSchema = sessionSelectSchema.shape.status.unwrap()
+export const sessionStatusSchema = sessionSelectSchema.shape.status
 export type SessionStatus = z.infer<typeof sessionStatusSchema>

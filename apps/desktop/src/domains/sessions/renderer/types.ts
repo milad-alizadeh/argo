@@ -8,17 +8,39 @@ export type Session = SessionListResult['rows'][number]
 export type SessionId = Session['id']
 export type SessionPosture = NonNullable<Session['posture']>
 export type SessionActivity = NonNullable<Session['activity']>
-export type SessionPlan = NonNullable<Session['plan']>
-export type PlanEntryStatus = Extract<
-  SessionPlan,
-  { state: 'available' }
->['entries'][number]['status']
 export type SessionTicket = NonNullable<Session['ticket']>
-export type SessionShellCommand = Session['shell'][number]
-export type ShellState = SessionShellCommand['state']
 export type SessionTurnConfiguration = Session['turnConfiguration']
-// Only the Feed knows a Subagent's nickname; the roster never records one.
-export type SessionSubagent = Session['subagents'][number] & Pick<FeedSubagent, 'nickname'>
+export type PlanEntryStatus = 'pending' | 'in_progress' | 'completed'
+export type SessionPlan =
+  | {
+      state: 'available'
+      entries: { content: string; position: number; status: PlanEntryStatus }[]
+    }
+  | { state: 'malformed' }
+export type ShellState = 'running' | 'completed' | 'failed' | 'interrupted'
+export type SessionShellCommand = {
+  id: string
+  command: string | null
+  label: string | null
+  background: boolean
+  state: ShellState
+  startedAt: string | null
+  endedAt: string | null
+  outputPath: string | null
+  result: string | null
+}
+// What the UI draws when a Session carries it; no read reports these yet, so each is optional.
+export type SessionExtras = {
+  plan?: SessionPlan | null
+  shell?: SessionShellCommand[]
+  contextTokens?: number | null
+  contextWindowTokens?: number | null
+  handoffTo?: string | null
+  handoffFrom?: string | null
+}
+// Only the Feed knows a Subagent's nickname; the roster never records one, nor yet its times.
+export type SessionSubagent = Session['subagents'][number] &
+  Pick<FeedSubagent, 'nickname'> & { startedAt?: string | null; endedAt?: string | null }
 
 // One chain's Feed as the renderer draws it: main's reading, reduced to what a row needs. The
 // revision changes whenever the rows do, and a mounted row whose revision held draws nothing.

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { expect } from '@playwright/test'
-import { chooseRosterStatus, openSessionByClick, visibleArchiveMenuItem } from '../gestures'
+import { chooseSessionListStatus, openSessionByClick, visibleArchiveMenuItem } from '../gestures'
 import { sessionRows } from '../page-trpc'
-import { readRosterIds, waitForActiveSessions } from '../roster-facts'
+import { readSessionListIds, waitForActiveSessions } from '../session-list-facts'
 
 function archivedRow(sessionId: string) {
   return `nav[aria-label="Sessions"] button[data-session-id="${sessionId}"][data-archived="true"]`
@@ -35,7 +35,7 @@ async function proveVisibleNames(page) {
 async function proveUpdatedRowsStayPut(page, mutations) {
   await openSessionByClick(page, 'prose')
   await page.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
-  const before = await readRosterIds(page)
+  const before = await readSessionListIds(page)
   const focused = page.locator('nav[aria-label="Sessions"] button').nth(1)
   await focused.focus()
   const focusedId = await focused.getAttribute('data-session-id')
@@ -43,7 +43,7 @@ async function proveUpdatedRowsStayPut(page, mutations) {
   await page.waitForSelector(
     'nav[aria-label="Sessions"] button[data-session-id="prose"]:has-text("Prose renamed in place")',
   )
-  assert.deepEqual(await readRosterIds(page), before)
+  assert.deepEqual(await readSessionListIds(page), before)
   const rows = await sessionRows(page)
   const updated = rows.find((session) => session.title?.text === 'Prose renamed in place') ?? null
   assert.deepEqual(
@@ -74,27 +74,27 @@ async function proveUpdatedRowsStayPut(page, mutations) {
 }
 
 async function proveArchiveOrderAndFocus(page, withParent) {
-  await chooseRosterStatus(page, 'All')
+  await chooseSessionListStatus(page, 'All')
   await page.locator(archivedRow('plannedWork')).waitFor()
-  const archivedBefore = await readRosterIds(page, 'Archived')
+  const archivedBefore = await readSessionListIds(page, 'Archived')
   const askPending = page.locator('nav[aria-label="Sessions"] button[data-session-id="askPending"]')
   await askPending.click({ button: 'right' })
   await visibleArchiveMenuItem(page).click()
   const active = withParent.filter((sessionId) => sessionId !== 'askPending')
   await waitForActiveSessions(page, active)
   await expect(page.locator('nav[aria-label="Sessions"] button[tabindex="0"]')).toHaveCount(1)
-  await chooseRosterStatus(page, 'Archived')
+  await chooseSessionListStatus(page, 'Archived')
   const archivedAskPending = page.locator(archivedRow('askPending'))
   await expect(archivedAskPending).toBeVisible()
   await expect(archivedAskPending.locator('[data-slot="archived-session"]')).toHaveText('Archived')
-  const archivedAfter = await readRosterIds(page, 'Archived')
+  const archivedAfter = await readSessionListIds(page, 'Archived')
   assert.deepEqual(
     archivedAfter.filter((sessionId) => sessionId !== 'askPending'),
     archivedBefore,
   )
-  await chooseRosterStatus(page, 'All')
+  await chooseSessionListStatus(page, 'All')
   await expect(page.locator(archivedRow('askPending'))).toBeVisible()
-  await chooseRosterStatus(page, 'Active')
+  await chooseSessionListStatus(page, 'Active')
   const range = active.slice(0, 3)
   const first = page.locator(`nav[aria-label="Sessions"] button[data-session-id="${range[0]}"]`)
   const last = page.locator(`nav[aria-label="Sessions"] button[data-session-id="${range[2]}"]`)
@@ -109,16 +109,16 @@ async function proveArchiveOrderAndFocus(page, withParent) {
   await visibleArchiveMenuItem(page).click()
   const remaining = active.filter((sessionId) => !range.includes(sessionId))
   await waitForActiveSessions(page, remaining)
-  await chooseRosterStatus(page, 'Archived')
+  await chooseSessionListStatus(page, 'Archived')
   for (const sessionId of range) {
     await expect(page.locator(archivedRow(sessionId))).toBeVisible()
   }
-  await chooseRosterStatus(page, 'All')
+  await chooseSessionListStatus(page, 'All')
   for (const sessionId of range) {
     await expect(page.locator(archivedRow(sessionId))).toBeVisible()
   }
 }
-export async function proveStableRosterPolling(page, mutations) {
+export async function proveStableSessionListPolling(page, mutations) {
   await proveVisibleNames(page)
   const before = await proveUpdatedRowsStayPut(page, mutations)
   await mutations.addReplacementChild()

@@ -1,88 +1,242 @@
 import assert from 'node:assert/strict'
+import { TRPCError } from '@trpc/server'
 import { test } from 'vitest'
-import { sessionTable } from '@/database/session/schema'
+import type { SessionStatus } from '@/database/session/validation'
 import { migratedDatabase } from '@/mocks/database/migrated-database'
-import { SessionRosterChanges } from './session-roster-changes'
+import {
+  IDS,
+  insertSession,
+  sessionListCaller,
+  settled,
+} from '@/mocks/sessions/session-list-caller'
+import { SessionListChanges } from './session-list-changes'
 import { clearWorkingStatuses, updateHarnessSession, updateSession } from './session-update'
 
-const IDS = [
-  '00000000-0000-4000-8000-000000000001',
-  '00000000-0000-4000-8000-000000000002',
-  '00000000-0000-4000-8000-000000000003',
-] as const
-
-type SessionTableStatus = typeof sessionTable.$inferInsert.status
-
-function sessionsWithStatuses(statuses: readonly SessionTableStatus[]) {
+function sessionsWithStatuses(statuses: readonly SessionStatus[]) {
   const database = migratedDatabase()
   const client = database.$client
   for (const [index, status] of statuses.entries())
-    database
-      .insert(sessionTable)
-      .values({ argoId: IDS[index] ?? '', harness: 'claude', nativeId: `native-${index}`, status })
-      .run()
-  const roster = new SessionRosterChanges()
+    insertSession(database, { id: IDS[index] ?? '', nativeId: `native-${index}`, status })
+  const changes = new SessionListChanges()
   const announced: (readonly string[])[] = []
-  roster.subscribe((sessionIds) => announced.push(sessionIds))
+  changes.subscribe((sessionIds) => announced.push(sessionIds))
   const statusesNow = () =>
     client
       .prepare('SELECT status FROM session ORDER BY argo_id')
       .all()
       .map((row) => row.status)
-  return { client, database, roster, announced, statusesNow }
+  return { client, context: { database, changes }, announced, statusesNow }
 }
 
-test('stores a status and announces only that Session', () => {
-  const { client, database, roster, announced, statusesNow } = sessionsWithStatuses([null, null])
+test('stores a status and announces only that Session', async () => {
+  const { client, context, announced, statusesNow } = sessionsWithStatuses(['unknown', 'unknown'])
   try {
-    assert.equal(updateSession({ database, roster }, IDS[1], { status: 'running' }), true)
+    assert.equal(updateSession(context, IDS[1], { status: 'running' }), true)
 
-    assert.deepEqual(statusesNow(), [null, 'running'])
+    assert.deepEqual(statusesNow(), ['unknown', 'running'])
+    await settled()
     assert.deepEqual(announced, [[IDS[1]]])
   } finally {
     client.close()
   }
 })
 
-test('an unknown Session changes nothing and announces nothing', () => {
-  const { client, database, roster, announced, statusesNow } = sessionsWithStatuses([null])
+test('an unknown Session changes nothing and announces nothing', async () => {
+  const { client, context, announced, statusesNow } = sessionsWithStatuses(['unknown'])
   try {
-    assert.equal(updateSession({ database, roster }, IDS[2], { status: 'running' }), false)
+    assert.equal(updateSession(context, IDS[2], { status: 'running' }), false)
 
-    assert.deepEqual(statusesNow(), [null])
+    assert.deepEqual(statusesNow(), ['unknown'])
+    await settled()
     assert.deepEqual(announced, [])
   } finally {
     client.close()
   }
 })
 
-test('a restart clears working statuses and keeps settled ones', () => {
-  const { client, database, statusesNow } = sessionsWithStatuses(['permission', 'idle', null])
+test('a write that changes nothing announces nothing', async () => {
+  const { client, context, announced } = sessionsWithStatuses(['running'])
+  const activity = { label: 'Ran bun test', kind: 'command' as const, open: true }
   try {
-    clearWorkingStatuses(database)
+    updateSession(context, IDS[0], { activity, archived: true })
+    await settled()
+    announced.length = 0
 
-    assert.deepEqual(statusesNow(), ['unknown', 'idle', null])
+    assert.equal(updateSession(context, IDS[0], { status: 'running' }), true)
+    assert.equal(updateSession(context, IDS[0], { activity }), true)
+    assert.equal(updateSession(context, IDS[0], { archived: true }), true)
+    await settled()
+    assert.deepEqual(announced, [])
+    assert.equal(updateSession(context, IDS[0], { archived: false }), true)
+    await settled()
+    assert.deepEqual(announced, [[IDS[0]]])
   } finally {
     client.close()
   }
 })
 
-test('history activity moves a saved Session forward only, and reports one never saved', () => {
-  const { client, database, roster, announced } = sessionsWithStatuses([null])
+test('a restart clears working statuses and keeps settled ones', () => {
+  const { client, context, statusesNow } = sessionsWithStatuses(['permission', 'idle', 'unknown'])
+  try {
+    clearWorkingStatuses(context.database)
+
+    assert.deepEqual(statusesNow(), ['unknown', 'idle', 'unknown'])
+  } finally {
+    client.close()
+  }
+})
+
+test('history activity moves a saved Session forward only, and reports one never saved', async () => {
+  const { client, context, announced } = sessionsWithStatuses(['unknown'])
   const activityAt = () => client.prepare('SELECT activity_at FROM session').get()?.activity_at
-  const context = { database, roster }
   try {
     const saved = { harness: 'claude' as const, nativeId: 'native-0' }
     assert.equal(updateHarnessSession(context, saved, { activityAt: 20 }), true)
+    await settled()
     assert.equal(updateHarnessSession(context, saved, { activityAt: 10 }), true)
+    await settled()
     assert.equal(activityAt(), 20)
-    assert.deepEqual(announced, [[IDS[0]], [IDS[0]]])
+    assert.deepEqual(announced, [[IDS[0]]])
 
     assert.equal(
       updateHarnessSession(context, { harness: 'claude', nativeId: 'unsaved' }, { activityAt: 30 }),
       false,
     )
     assert.equal(activityAt(), 20)
+  } finally {
+    client.close()
+  }
+})
+
+const PROJECT = 'project-1'
+
+function callerWithOneSession(rename?: Parameters<typeof sessionListCaller>[2]) {
+  const fixture = sessionListCaller({}, undefined, rename)
+  insertSession(fixture.database, {
+    id: IDS[0],
+    harness: 'claude',
+    nativeId: 'native-1',
+    firstPrompt: 'hello',
+    createdAt: 10,
+  })
+  return fixture
+}
+
+async function idsIn(
+  list: ReturnType<typeof sessionListCaller>['list'],
+  filter: 'active' | 'archived' | 'all',
+) {
+  return (await list({ projectId: PROJECT, filter })).rows.map(({ id }) => id)
+}
+
+test('archiving moves a Session from the active filter to the archived one and returns its ID', async () => {
+  const { client, list, update, details } = callerWithOneSession()
+  try {
+    assert.deepEqual(await idsIn(list, 'active'), [IDS[0]])
+
+    assert.deepEqual(await update({ sessionIds: [IDS[0]], archived: true }), {
+      sessionIds: [IDS[0]],
+    })
+
+    assert.equal((await details({ sessionId: IDS[0] }))?.archived, true)
+    assert.deepEqual(await idsIn(list, 'active'), [])
+    assert.deepEqual(await idsIn(list, 'archived'), [IDS[0]])
+    assert.deepEqual(await idsIn(list, 'all'), [IDS[0]])
+  } finally {
+    client.close()
+  }
+})
+
+test('unarchiving puts a Session back on the active filter', async () => {
+  const { client, list, update, details } = callerWithOneSession()
+  try {
+    await update({ sessionIds: [IDS[0]], archived: true })
+    await update({ sessionIds: [IDS[0]], archived: false })
+
+    assert.equal((await details({ sessionId: IDS[0] }))?.archived, false)
+    assert.deepEqual(await idsIn(list, 'active'), [IDS[0]])
+    assert.deepEqual(await idsIn(list, 'archived'), [])
+  } finally {
+    client.close()
+  }
+})
+
+test('a rename goes to the Harness, then stores the custom title', async () => {
+  const { client, update, details, renames } = callerWithOneSession()
+  try {
+    await update({ sessionIds: [IDS[0]], title: 'Renamed' })
+
+    assert.deepEqual(renames, [{ harness: 'claude', nativeId: 'native-1', title: 'Renamed' }])
+    assert.deepEqual((await details({ sessionId: IDS[0] }))?.title, {
+      text: 'Renamed',
+      source: 'custom',
+    })
+  } finally {
+    client.close()
+  }
+})
+
+test('a title is stored with control characters and repeated spaces collapsed', async () => {
+  const { client, update, details, renames } = callerWithOneSession()
+  try {
+    await update({ sessionIds: [IDS[0]], title: '  Fix\tthe\n\nSession List  ' })
+
+    assert.equal(renames[0]?.title, 'Fix the Session List')
+    assert.equal((await details({ sessionId: IDS[0] }))?.title?.text, 'Fix the Session List')
+    await assert.rejects(update({ sessionIds: [IDS[0]], title: ' \u0007 ' }))
+  } finally {
+    client.close()
+  }
+})
+
+test('keeps the existing title when the Harness rejects a rename', async () => {
+  const { client, update, details } = callerWithOneSession(async () => {
+    throw new Error('Harness rejected the rename.')
+  })
+  try {
+    await assert.rejects(update({ sessionIds: [IDS[0]], title: 'Rejected title' }), {
+      message: 'Harness rejected the rename.',
+    })
+    assert.deepEqual((await details({ sessionId: IDS[0] }))?.title, {
+      text: 'hello',
+      source: 'first-prompt',
+    })
+  } finally {
+    client.close()
+  }
+})
+
+test('archiving several Sessions returns the known ones and skips an unknown ID', async () => {
+  const { client, list, update } = callerWithOneSession()
+  try {
+    assert.deepEqual(await update({ sessionIds: [IDS[0], IDS[1]], archived: true }), {
+      sessionIds: [IDS[0]],
+    })
+    assert.deepEqual(await idsIn(list, 'archived'), [IDS[0]])
+  } finally {
+    client.close()
+  }
+})
+
+test('a title for more than one Session is rejected before the Harness sees it', async () => {
+  const { client, update, renames } = callerWithOneSession()
+  try {
+    await assert.rejects(update({ sessionIds: [IDS[0], IDS[1]], title: 'Renamed' }))
+    assert.deepEqual(renames, [])
+  } finally {
+    client.close()
+  }
+})
+
+test('renaming an unknown Session is NOT_FOUND', async () => {
+  const { client, update, renames } = callerWithOneSession()
+  try {
+    await assert.rejects(update({ sessionIds: [IDS[1]], title: 'Renamed' }), (error) => {
+      assert.ok(error instanceof TRPCError)
+      assert.equal(error.code, 'NOT_FOUND')
+      return true
+    })
+    assert.deepEqual(renames, [])
   } finally {
     client.close()
   }

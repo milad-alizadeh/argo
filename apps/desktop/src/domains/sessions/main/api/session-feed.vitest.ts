@@ -5,7 +5,6 @@ import type { FeedReading } from '@/domains/sessions/api/feed/feed-reading'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { FEED_TEXT_COALESCE_MS } from '../feed/feed-reader'
 import { SessionEventJournal } from '../live/session-event-journal'
-import { storedActivity } from './session-activities'
 import {
   command,
   content,
@@ -21,8 +20,8 @@ import {
   rowIds,
   sessionId,
 } from './session-feed-harness'
-import { SessionRosterChanges } from './session-roster-changes'
-import { SessionSyncStatusStore } from './session-sync-status'
+import { storedActivity } from './session-list'
+import { SessionListChanges } from './session-list-changes'
 
 registerFeedDatabase()
 
@@ -137,7 +136,9 @@ function reasoning(id: string, text: string | null): FeedContent {
 const activityOf = (reading: FeedReading | undefined) =>
   reading?.entries.find(({ row }) => row.shape === 'activity')?.row
 
-const rosterActivity = () =>
+const settled = () => new Promise((resolve) => setImmediate(resolve))
+
+const sessionListActivity = () =>
   storedActivity(
     database
       .select({ activity: sessionTable.activity })
@@ -146,18 +147,18 @@ const rosterActivity = () =>
       .get()?.activity ?? null,
   )
 
-test('a multi-activity Turn publishes its latest activity to the Feed and keeps it for the roster', async () => {
-  let rosterChanges = 0
-  const roster = new SessionRosterChanges()
-  roster.subscribe(() => {
-    rosterChanges += 1
+test('a multi-activity Turn publishes its latest activity to the Feed and keeps it for the Session List', async () => {
+  let sessionListChanges = 0
+  const changes = new SessionListChanges()
+  changes.subscribe(() => {
+    sessionListChanges += 1
   })
   const history = historyReads()
-  const feed = await observe({ readHistory: history.readHistory, roster })
+  const feed = await observe({ readHistory: history.readHistory, changes })
   await history.answer([message('m1', 'user', 'Check it'), command('c1', 'bun test')])
   const first = { kind: 'command', label: 'Ran bun test', open: false }
   expect(activityOf(feed.latest())).toMatchObject({ activity: first })
-  expect(rosterActivity()).toMatchObject(first)
+  expect(sessionListActivity()).toMatchObject(first)
 
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   journal.append(sessionId, content(reasoning('r1', null)))
@@ -171,7 +172,7 @@ test('a multi-activity Turn publishes its latest activity to the Feed and keeps 
   journal.append(sessionId, content(running('c2', 'bun run typecheck')))
   const latest = { kind: 'command', label: 'Ran bun run typecheck', open: true }
   expect(activityOf(feed.latest())).toMatchObject({ activity: latest })
-  expect(rosterActivity()).toMatchObject(latest)
+  expect(sessionListActivity()).toMatchObject(latest)
   expect(feed.latest()?.entries.filter(({ row }) => row.shape === 'activity')).toHaveLength(1)
 
   journal.append(sessionId, content(command('c2', 'bun run typecheck')))
@@ -184,10 +185,12 @@ test('a multi-activity Turn publishes its latest activity to the Feed and keeps 
     message('m2', 'assistant', 'Both pass.'),
   ])
   expect(activityOf(feed.latest())).toMatchObject({ activity: { ...latest, open: false } })
-  const changesBeforeClose = rosterChanges
+  await settled()
+  const changesBeforeClose = sessionListChanges
   feed.subscription.unsubscribe()
-  expect(rosterActivity()).toMatchObject({ ...latest, open: false })
-  expect(rosterChanges).toBe(changesBeforeClose)
+  await settled()
+  expect(sessionListActivity()).toMatchObject({ ...latest, open: false })
+  expect(sessionListChanges).toBe(changesBeforeClose)
 })
 
 test('names the waiting Question and Permission', async () => {
@@ -332,19 +335,33 @@ test('an external Session reads history again when its file is rewritten', async
   await expectFreshRead(feed, history, () => rewrite())
 })
 
-test('a committed sync reads vendor history again', async () => {
+test('a write that moves the Session’s history reads it again', async () => {
   const history = historyReads()
-  const store = new SessionSyncStatusStore(undefined, 'claude')
-  const feed = await observe({ readHistory: history.readHistory, sessionSyncStatus: [store] })
-  await expectFreshRead(feed, history, () => store.committed([sessionId]))
+  const changes = new SessionListChanges()
+  const feed = await observe({ readHistory: history.readHistory, changes })
+  await expectFreshRead(feed, history, async () => {
+    database
+      .update(sessionTable)
+      .set({ cwd: '/moved' })
+      .where(eq(sessionTable.argoId, sessionId))
+      .run()
+    changes.changed([sessionId])
+    await settled()
+  })
 })
 
-test('a committed sync that names another Session reads nothing again', async () => {
+test('a write that leaves the history in place, such as the Feed’s own activity, reads nothing again', async () => {
   const history = historyReads()
-  const store = new SessionSyncStatusStore(undefined, 'claude')
-  const feed = await observe({ readHistory: history.readHistory, sessionSyncStatus: [store] })
-  await history.answer([message('m1', 'assistant', 'Before')])
-  store.committed(['00000000-0000-4000-8000-000000000099'])
+  const changes = new SessionListChanges()
+  let announced = 0
+  changes.subscribe(() => {
+    announced += 1
+  })
+  const feed = await observe({ readHistory: history.readHistory, changes })
+  await history.answer([message('m1', 'user', 'Check it'), command('c1', 'bun test')])
+  changes.changed([sessionId, '00000000-0000-4000-8000-000000000099'])
+  await settled()
+  expect(announced).toBe(2)
   expect(history.pending).toHaveLength(0)
   feed.subscription.unsubscribe()
 })

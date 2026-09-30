@@ -65,7 +65,7 @@ async function addRecentSession(transcripts) {
   )
 }
 
-async function updateProseRoster(transcripts) {
+async function updateProseSessionList(transcripts) {
   const title = JSON.stringify({ type: 'custom-title', customTitle: 'Prose renamed in place' })
   const answer = JSON.stringify({
     type: 'assistant',
@@ -90,9 +90,9 @@ async function updateProseRoster(transcripts) {
   await appendFile(fixturePath(transcripts, 'prose'), `${title}\n${answer}\n`)
 }
 
-export function rosterOrderMutations({ transcripts }) {
+export function sessionListOrderMutations({ transcripts }) {
   return {
-    update: () => updateProseRoster(transcripts),
+    update: () => updateProseSessionList(transcripts),
     addReplacementChild: () => addReplacementChild(transcripts),
     addReplacementParent: () => addReplacementParent(transcripts),
     addRecent: () => addRecentSession(transcripts),

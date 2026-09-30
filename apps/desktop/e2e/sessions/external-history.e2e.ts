@@ -1,4 +1,4 @@
-// A Session running outside Argo moves on the roster when its history file grows, with no Refresh.
+// A Session running outside Argo moves on the Session List when its history file grows, with no Refresh.
 import { appendFile, mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { _electron as electron, type Page } from 'playwright-core'
@@ -133,7 +133,7 @@ const rowTitled = (page: Page, title: string) =>
   page.locator(PERSISTED_ROW).filter({ hasText: title })
 
 for (const writer of [claude, codex])
-  test(`a ${writer.harness} history write keeps its roster row in place and shows its turn`, async ({
+  test(`a ${writer.harness} history write keeps its Session List row in place and shows its turn`, async ({
     root,
     applicationUnderTest,
   }) => {

@@ -10,10 +10,10 @@ import {
   supervisorFor,
 } from '@/mocks/sessions/live-session-supervisor.fixture'
 import { sessionListProcedure } from '../api/session-list'
-import { SessionRosterChanges } from '../api/session-roster-changes'
+import { SessionListChanges } from '../api/session-list-changes'
 import type { LiveSessionSupervisorActor } from './live-session-supervisor-machine'
 
-// The status of the first row the roster lists first.
+// The status of the first row the Session List lists first.
 function firstListedStatus(database: Database, supervisor: LiveSessionSupervisorActor) {
   const list = initTRPC
     .create()
@@ -21,7 +21,8 @@ function firstListedStatus(database: Database, supervisor: LiveSessionSupervisor
       list: sessionListProcedure({
         database,
         supervisor,
-        roster: new SessionRosterChanges(),
+        changes: new SessionListChanges(),
+        ticketSource: async () => null,
       }),
     })
     .createCaller({}).list

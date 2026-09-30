@@ -1,5 +1,6 @@
+import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { projectNames } from '@/domains/accounts/main'
-import type { TicketConnection } from '@/domains/connections/main'
+import type { ConnectionPort, TicketConnection } from '@/domains/connections/main'
 import { type TicketErrorCode, ticketError } from '@/domains/tickets/api/errors'
 import { connectionSummary } from '../connection-summary'
 import type { Call } from '../read-as'
@@ -33,6 +34,17 @@ export async function findConnection(call: Call) {
     return { ok: false, error: ticketError(STORAGE_ERRORS[read.reason], call.requestId) } as const
   const found = read.document.connections.find((entry) => entry.projectId === call.projectId)
   return { ok: true, connection: found } as const
+}
+
+// The provider scope a Project's Tickets are saved under; null when no Connection can be read.
+export async function projectTicketScope(
+  connections: ConnectionPort,
+  projectId: string,
+): Promise<TicketScopeTarget | null> {
+  const read = await connections.read()
+  if (!read.ok) return null
+  const found = read.document.connections.find((entry) => entry.projectId === projectId)
+  return found === undefined ? null : { provider: found.provider, scope: found.scope }
 }
 
 export async function writableConnection(call: Call) {

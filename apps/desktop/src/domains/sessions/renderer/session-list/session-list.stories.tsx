@@ -1,33 +1,21 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState } from 'react'
-import { MemoryRouter, useLocation, useNavigate } from 'react-router'
-import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { MemoryRouter, Route, Routes, useLocation, useNavigate, useParams } from 'react-router'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { sessionRow, sessionSubagent } from '@/mocks/sessions/session-rows'
 import {
-  announceSessionListChange,
-  type FeedRead,
+  installSessionHost,
   publishSessionSyncStatus,
-  type SessionListRead,
-  sessionFeedRefreshTrpc,
-  sessionFeedSubscribe,
-  sessionListSubscribe,
-  sessionListTrpc,
+  type SessionHost,
   storySessionPage,
 } from '@/mocks/sessions/session-story-host'
-import type { RouterInputs, RouterOutputs } from '@/platform/renderer/trpc-client'
-import { replaceComposerCommands } from '../../composer/references/composer-command-registry'
-import { useFeedReading } from '../../feed/use-feed-reading'
-import type { Session, SessionError, SessionId, SessionListResult } from '../../types'
-import type { SessionListActions } from '../rows/session-list-actions'
-import { SessionList } from '../session-list'
-import { useArchiveSelected } from './use-session-archive-mutation'
-import { useSidebarActions } from './use-sidebar-actions'
+import { replaceComposerCommands } from '../composer/references/composer-command-registry'
+import { useFeedReading } from '../feed/use-feed-reading'
+import type { Session, SessionError, SessionListResult } from '../types'
+import { SessionList } from './session-list'
 
 const session = sessionRow({
   id: 'prose',
   posture: null,
-  customTitle: 'Read the Session transcript',
-  preview: 'A transcript preview',
   title: { text: 'Read the Session transcript', source: 'first-prompt' },
   status: 'idle',
   cwd: '/workspace/argo',
@@ -37,8 +25,6 @@ const session = sessionRow({
 const secondSession: Session = {
   ...session,
   id: 'second-session',
-  customTitle: null,
-  preview: 'A second Session',
   title: { text: 'A second Session', source: 'summarised' },
 }
 
@@ -52,163 +38,75 @@ const readFailure = {
   message: 'Argo could not read these Sessions.',
 } satisfies SessionError
 
-type SessionListReply = (read: SessionListRead) => Promise<SessionListResult | SessionError>
-type SessionUpdateReply = (
-  update: RouterInputs['sessionUpdate'],
-) => Promise<RouterOutputs['sessionUpdate']>
+const SESSIONS_ROUTE = '/projects/storybook-project/sessions'
 
-// Every Session List read and Session update a story's host answered, in order.
-let sessionListReads = fn<SessionListReply>()
-let sessionUpdates = fn<SessionUpdateReply>()
-// The rows main holds for the story.
-let rows: Session[] = []
-
-// Main stores each changed row, then announces the change.
-function announce(changed: readonly Session[]) {
-  const fresh = changed.filter((row) => !rows.some(({ id }) => id === row.id))
-  rows = [...rows.map((row) => changed.find(({ id }) => id === row.id) ?? row), ...fresh]
-  announceSessionListChange()
+// The story's main process; each story installs a fresh one.
+let host: SessionHost
+function showing(...args: Parameters<typeof installSessionHost>) {
+  host = installSessionHost(...args)
+  return host
 }
 
-async function updateRows({ sessionIds, title, archived }: RouterInputs['sessionUpdate']) {
-  const updated = rows
-    .filter(({ id }) => sessionIds.includes(id))
-    .map((current) => ({
-      ...current,
-      customTitle: title ?? current.customTitle,
-      title: title === undefined ? current.title : { text: title, source: 'custom' as const },
-      archived: archived ?? current.archived,
-    }))
-  announce(updated)
-  return { sessionIds: updated.map(({ id }) => id) }
+// The Session screen reads the open Session's Feed; this stands in for it.
+function OpenSessionFeed() {
+  useFeedReading(useParams().sessionId ?? null)
+  return null
 }
 
-// The shared host over these rows; `list` replaces main's page read.
-function showingSessions(initial: readonly Session[], list?: SessionListReply) {
-  rows = [...initial]
-  sessionListReads = fn(list ?? (async (read) => storySessionPage(rows, read)))
-  sessionUpdates = fn(updateRows)
-  const before = window.argo
-  window.argo = {
-    ...before,
-    trpc: sessionListTrpc(before.trpc, () => rows, {
-      list: sessionListReads,
-      update: sessionUpdates,
-    }),
-    trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => rows),
-  }
-  return () => {
-    window.argo = before
-  }
-}
-
-type SessionListHarnessArgs = Omit<SessionListActions, 'onRename'> & {
-  projectId?: string
-  selectedSessionId: SessionId | null
-}
-
-// SessionList's own props, with the sidebar's real rename; a story tells lists apart by its host.
-function SessionListHarness({
-  projectId = 'project-1',
-  selectedSessionId,
-  ...actions
-}: SessionListHarnessArgs) {
-  const { onRename } = useSidebarActions(projectId)
-  return (
-    <SessionList
-      actions={{ ...actions, onRename }}
-      projectId={projectId}
-      selectedSessionId={selectedSessionId}
-    />
-  )
-}
-
-function SelectableSessionList(args: SessionListHarnessArgs) {
-  const [selectedSessionId, setSelectedSessionId] = useState(args.selectedSessionId)
-  useFeedReading(selectedSessionId)
-  return (
-    <SessionListHarness
-      {...args}
-      onSelect={(sessionId) => {
-        setSelectedSessionId(sessionId)
-        args.onSelect(sessionId)
-      }}
-      selectedSessionId={selectedSessionId}
-    />
-  )
-}
-
-function RoutedSessionList(args: SessionListHarnessArgs) {
+// A note, not an `output`: the stories count the list's status regions.
+function RouteOutput() {
   const location = useLocation()
-  const navigate = useNavigate()
-  const selectedSessionId = location.pathname.split('/').at(-1) ?? null
   return (
-    <>
-      <SessionListHarness
-        {...args}
-        onSelect={(sessionId) => {
-          navigate(`/sessions/${sessionId}`)
-          args.onSelect(sessionId)
-        }}
-        selectedSessionId={location.pathname === '/sessions' ? null : selectedSessionId}
-      />
-      <output aria-label="Session route">{location.pathname}</output>
-    </>
+    <p aria-label="Session route" className="sr-only" role="note">
+      {location.pathname + location.search}
+    </p>
   )
 }
 
 const meta = {
   title: 'Sessions/SessionList',
-  component: SessionListHarness,
-  parameters: { layout: 'fullscreen' },
+  component: SessionList,
+  parameters: { layout: 'fullscreen', route: SESSIONS_ROUTE },
   decorators: [
-    (Story) => (
-      <MemoryRouter initialEntries={['/sessions']}>
-        <div className="h-dvh w-80">
-          <Story />
-        </div>
+    (Story, { parameters }) => (
+      <MemoryRouter initialEntries={[parameters.route as string]}>
+        <Routes>
+          <Route
+            path="/projects/:projectId/sessions/:sessionId?"
+            element={
+              <>
+                <div className="h-dvh w-80">
+                  <Story />
+                </div>
+                <OpenSessionFeed />
+                <RouteOutput />
+              </>
+            }
+          />
+        </Routes>
       </MemoryRouter>
     ),
   ],
-  // Each story installs a fresh Session-list host and query result.
-  beforeEach: () => showingSessions(listed),
-  args: {
-    onArchiveSelected: fn(),
-    onNew: fn(),
-    onOpenTicket: fn(),
-    onSelect: fn(),
-    selectedSessionId: null,
-  },
-} satisfies Meta<typeof SessionListHarness>
+  beforeEach: () => showing(listed),
+} satisfies Meta<typeof SessionList>
 
 export default meta
-type Story = StoryObj<typeof SessionListHarness>
+type Story = StoryObj<typeof meta>
 
-let recoverMissingHistory = () => {}
+let historyAvailable = false
 
+// A Session whose history is missing keeps its badge while another is open, until a read finds it.
 export const UnavailableHistoryRecovers: Story = {
-  args: { selectedSessionId: session.id },
-  render: (args) => <SelectableSessionList {...args} />,
+  parameters: { route: `${SESSIONS_ROUTE}/${session.id}` },
   beforeEach: () => {
-    const before = window.argo
-    let historyAvailable = false
-    recoverMissingHistory = () => {
-      historyAvailable = true
-    }
-    const read: FeedRead = async (sessionId) => {
-      if (!historyAvailable && sessionId === session.id) {
-        throw Object.assign(new Error(readFailure.message), { data: { code: 'NOT_FOUND' } })
-      }
-      return []
-    }
-    window.argo = {
-      ...before,
-      trpcSubscribe: sessionFeedSubscribe(before.trpcSubscribe, read),
-      trpc: sessionFeedRefreshTrpc(before.trpc),
-    }
-    return () => {
-      window.argo = before
-    }
+    historyAvailable = false
+    return showing(listed, {
+      feed: async (sessionId) => {
+        if (!historyAvailable && sessionId === session.id)
+          throw Object.assign(new Error(readFailure.message), { data: { code: 'NOT_FOUND' } })
+        return []
+      },
+    })
   },
   play: async ({ canvasElement }) => {
     const row = await within(canvasElement).findByRole('button', {
@@ -220,7 +118,7 @@ export const UnavailableHistoryRecovers: Story = {
     await expect(row).toHaveTextContent('Unavailable')
     await userEvent.click(within(canvasElement).getByRole('button', { name: /A second Session/ }))
     await expect(row).toHaveAttribute('data-history-unavailable', 'true')
-    recoverMissingHistory()
+    historyAvailable = true
     await userEvent.click(row)
     await waitFor(() => expect(row).toHaveAttribute('data-history-unavailable', 'false'))
     await expect(row).not.toHaveTextContent('Unavailable')
@@ -236,16 +134,8 @@ function expectNewSessionIconAligned(canvas: ReturnType<typeof within>, row: HTM
   )
 }
 
-// The searched list holds the second Session and not the first; an in-flight read shows neither.
-function expectOnlySecondSession(canvas: ReturnType<typeof within>, first: RegExp) {
-  expect(canvas.getByRole('button', { name: /A second Session/ })).toBeVisible()
-  expect(canvas.queryByRole('button', { name: first })).toBeNull()
-}
-
 export const Discovered: Story = {
-  render: (args) => <RoutedSessionList {...args} />,
-  beforeEach: () => showingSessions(listed),
-  play: async ({ canvasElement, args }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const search = canvas.getByRole('textbox', { name: 'Search Sessions' })
     await expect(search).toHaveAttribute('placeholder', 'Search Sessions…')
@@ -254,7 +144,9 @@ export const Discovered: Story = {
     await expect(row).toHaveAccessibleName(/Idle/)
     await expect(row.querySelector('svg')).not.toBeNull()
     await userEvent.click(row)
-    await expect(args.onSelect).toHaveBeenCalledWith('prose')
+    await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
+      `${SESSIONS_ROUTE}/prose`,
+    )
     await expect(row).toHaveAttribute('aria-current', 'page')
     await expect(row).toHaveFocus()
     expect(getComputedStyle(row).outlineColor).toBe('rgba(0, 0, 0, 0)')
@@ -266,7 +158,7 @@ export const Discovered: Story = {
     await userEvent.keyboard('{Enter}')
     await expect(second).toHaveAttribute('aria-current', 'page')
     await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
-      '/sessions/second-session',
+      `${SESSIONS_ROUTE}/second-session`,
     )
     await userEvent.pointer({ keys: '[MouseRight]', target: row })
     const rename = await within(document.body).findByRole('menuitem', { name: 'Rename' })
@@ -280,15 +172,15 @@ export const Discovered: Story = {
     await expect(
       await canvas.findByRole('button', { name: /Keep the Session list stable/ }),
     ).toBeInTheDocument()
+    await expect(host.updates).toEqual([
+      { sessionIds: ['prose'], title: '  Keep the Session list stable' },
+    ])
     await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
-      '/sessions/second-session',
+      `${SESSIONS_ROUTE}/second-session`,
     )
     await expect(
       canvas.getAllByRole('button').filter((button) => button.dataset.sessionId),
     ).toHaveLength(2)
-    await userEvent.click(search)
-    await userEvent.keyboard('second')
-    await waitFor(() => expectOnlySecondSession(canvas, /Keep the Session list stable/))
   },
 }
 
@@ -302,7 +194,7 @@ export const CommandTitledSession: Story = {
         aliases: [],
       },
     ])
-    const restore = showingSessions([
+    const restore = showing([
       { ...session, title: { text: '/implement 1847', source: 'first-prompt' } },
     ])
     return () => {
@@ -320,7 +212,7 @@ export const CommandTitledSession: Story = {
 
 export const ActiveSessionSpinsItsHarnessLogo: Story = {
   beforeEach: () =>
-    showingSessions([
+    showing([
       {
         ...session,
         status: 'running',
@@ -346,7 +238,7 @@ export const ActiveSessionSpinsItsHarnessLogo: Story = {
 // Optional activity metadata must not present `unknown` status as an activity summary.
 export const MissingActivityKeepsStatusOutOfTheSubtitle: Story = {
   beforeEach: () =>
-    showingSessions([
+    showing([
       {
         ...session,
         activity: null,
@@ -367,7 +259,7 @@ export const MissingActivityKeepsStatusOutOfTheSubtitle: Story = {
 // reads "Ran" once the Session settles, whatever the transcript last said about it.
 export const OpenCommandReadsRunning: Story = {
   beforeEach: () =>
-    showingSessions([
+    showing([
       {
         ...session,
         id: 'running-command',
@@ -424,7 +316,7 @@ function concurrentActivityRows(activityBySession: Record<string, string>) {
 }
 
 export const ConcurrentActivityKeepsRowsStill: Story = {
-  beforeEach: () => showingSessions(concurrentActivityRows({})),
+  beforeEach: () => showing(concurrentActivityRows({})),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const alpha = await canvas.findByRole('button', { name: /Alpha session/ })
@@ -444,7 +336,7 @@ export const ConcurrentActivityKeepsRowsStill: Story = {
       )
       if (row === undefined) throw new Error(`Missing ${name} Session row`)
       const started = performance.now()
-      announce([row])
+      host.change([row])
       await expect(await canvas.findByText(`Running ${name.toLowerCase()} command`)).toBeVisible()
       const firstFrame = await new Promise<number>((resolve) => requestAnimationFrame(resolve))
       const secondFrame = await new Promise<number>((resolve) => requestAnimationFrame(resolve))
@@ -480,7 +372,7 @@ export const ConcurrentActivityKeepsRowsStill: Story = {
 // The agent's commentary draws its Markdown; a command's label stays literal.
 export const CommentaryActivityDrawsMarkdown: Story = {
   beforeEach: () =>
-    showingSessions([
+    showing([
       {
         ...session,
         id: 'commentary',
@@ -519,7 +411,7 @@ export const CommentaryActivityDrawsMarkdown: Story = {
 
 export const SessionListStructure: Story = {
   beforeEach: () =>
-    showingSessions([
+    showing([
       {
         ...session,
         activity: {
@@ -548,11 +440,29 @@ export const SessionListStructure: Story = {
   },
 }
 
+// A settled row says how long ago it last changed; a working one shows no time.
+export const SettledRowShowsItsAge: Story = {
+  beforeEach: () => {
+    const eightMinutesAgo = new Date(Date.now() - 8 * 60_000 - 1000).toISOString()
+    return showing([
+      { ...session, updatedAt: eightMinutesAgo },
+      { ...secondSession, status: 'running', updatedAt: eightMinutesAgo },
+    ])
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const settled = await canvas.findByRole('button', { name: /Read the Session transcript/ })
+    await expect(within(settled).getByText('8m')).toHaveAttribute('title', 'Updated 8m ago')
+    const working = canvas.getByRole('button', { name: /A second Session/ })
+    await expect(working.querySelector('time')).toBeNull()
+  },
+}
+
 // The dot beside a blocked Session is already `bg-warn` for both statuses; the badge names the
 // shared action the reader must take (#2509).
 export const PendingBadges: Story = {
   beforeEach: () =>
-    showingSessions([
+    showing([
       session,
       {
         ...session,
@@ -585,7 +495,7 @@ export const PendingBadges: Story = {
 
 export const StatusTransitions: Story = {
   beforeEach: () =>
-    showingSessions([
+    showing([
       {
         ...session,
         id: 'waiting-for-permission',
@@ -628,7 +538,7 @@ export const StatusTransitions: Story = {
       'data-active',
       'false',
     )
-    announce([
+    host.change([
       { ...session, id: 'waiting-for-permission', status: 'idle' },
       {
         ...session,
@@ -652,7 +562,7 @@ export const StatusTransitions: Story = {
 
 export const NeedsInputClearsAfterResolution: Story = {
   beforeEach: () =>
-    showingSessions([
+    showing([
       {
         ...session,
         id: 'waiting-for-permission',
@@ -664,14 +574,14 @@ export const NeedsInputClearsAfterResolution: Story = {
     const canvas = within(canvasElement)
     const waiting = await canvas.findByRole('button', { name: /Approve the command/ })
     await expect(within(waiting).getByText('Needs input')).toBeVisible()
-    announce([{ ...session, id: 'waiting-for-permission', status: 'idle' }])
+    host.change([{ ...session, id: 'waiting-for-permission', status: 'idle' }])
     await waitFor(() => expect(within(waiting).queryByText('Needs input')).toBeNull())
   },
 }
 
 export const NarrowSidebarWithLongSessionName: Story = {
   beforeEach: () =>
-    showingSessions([
+    showing([
       {
         ...session,
         title: {
@@ -696,10 +606,16 @@ export const NarrowSidebarWithLongSessionName: Story = {
 }
 
 // Refresh stays disabled while a sync runs, and its bar fills with the share saved.
+// The first read's rows, so a story acts on the list rather than on its loading skeleton.
+async function rowsShown(canvasElement: HTMLElement) {
+  await waitFor(() => expect(canvasElement.querySelector('[data-session-id]')).not.toBeNull())
+}
+
 export const RefreshProgressWhileSyncing: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const progress = () => canvas.getByRole('progressbar', { name: 'Session refresh progress' })
+    await rowsShown(canvasElement)
     publishSessionSyncStatus({ phase: 'fetching' })
     await waitFor(() => expect(progress()).not.toHaveAttribute('aria-valuenow'))
     await expect(canvas.getAllByRole('progressbar')).toHaveLength(1)
@@ -723,6 +639,7 @@ export const RefreshProgressWhileSyncing: Story = {
 export const PartialRefreshShowsOneToast: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await rowsShown(canvasElement)
     publishSessionSyncStatus({ phase: 'ready', skipped: 2 })
     const toast = await within(document.body).findByText(
       'Skipped 2 Sessions with unreadable metadata.',
@@ -737,6 +654,7 @@ export const PartialRefreshShowsOneToast: Story = {
 
 export const FailedRefreshShowsOneToast: Story = {
   play: async ({ canvasElement }) => {
+    await rowsShown(canvasElement)
     publishSessionSyncStatus({ phase: 'failed', failure: 'Reader unavailable.' })
     await waitFor(() => {
       const toastTitles = document.body.querySelectorAll('[data-slot="toast-title"]')
@@ -752,6 +670,7 @@ export const FailedRefreshShowsOneToast: Story = {
 export const CompletedRefreshFeedbackDisappears: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await rowsShown(canvasElement)
     publishSessionSyncStatus({ phase: 'saving', processed: 1, total: 2 })
     await canvas.findByRole('progressbar', { name: 'Session refresh progress' })
     publishSessionSyncStatus({
@@ -764,30 +683,33 @@ export const CompletedRefreshFeedbackDisappears: Story = {
   },
 }
 
-// The list re-sorts by activity, so a row that moves to a new index must carry its DOM node with
-// it instead of swapping content into whatever node sits at that index now (#2852): the swap is
-// what restarts the harness spin and status-dot transitions on unrelated rows, and it also drops
-// keyboard focus a reader was holding on a row that only moved, never disappeared.
+const alpha: Session = {
+  ...session,
+  id: 'alpha',
+  title: { text: 'Alpha session', source: 'first-prompt' },
+}
+const beta: Session = {
+  ...session,
+  id: 'beta',
+  title: { text: 'Beta session', source: 'first-prompt' },
+}
+let reordered = false
+
+// A row that moves carries its DOM node, so the reader keeps focus on it (#2852).
 export const ReorderKeepsRowFocus: Story = {
-  beforeEach: () =>
-    showingSessions([
-      { ...session, id: 'alpha', title: { text: 'Alpha session', source: 'first-prompt' } },
-      { ...session, id: 'beta', title: { text: 'Beta session', source: 'first-prompt' } },
-    ]),
+  beforeEach: () => {
+    reordered = false
+    return showing([alpha, beta], {
+      list: async (read) => storySessionPage(reordered ? [beta, alpha] : [alpha, beta], read),
+    })
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const beta = await canvas.findByRole('button', { name: /Beta session/ })
-    beta.focus()
-    await expect(beta).toHaveFocus()
-    // A lower sort order lists first, so beta moves above alpha.
-    announce([
-      {
-        ...session,
-        id: 'beta',
-        sortOrder: -1,
-        title: { text: 'Beta session', source: 'first-prompt' },
-      },
-    ])
+    const row = await canvas.findByRole('button', { name: /Beta session/ })
+    row.focus()
+    await expect(row).toHaveFocus()
+    reordered = true
+    host.change([beta])
     await waitFor(() => {
       const sessionButtons = canvas
         .getAllByRole('button')
@@ -802,7 +724,7 @@ export const ReorderKeepsRowFocus: Story = {
 // markdown-link brackets (#2049).
 export const SkillMentionTitle: Story = {
   beforeEach: () =>
-    showingSessions([
+    showing([
       {
         ...session,
         title: {
@@ -822,14 +744,14 @@ export const SkillMentionTitle: Story = {
 }
 
 export const FocusRecovery: Story = {
-  beforeEach: () => showingSessions(listed),
+  beforeEach: () => showing(listed),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const removed = await canvas.findByRole('button', { name: /A second Session/ })
     removed.focus()
     await expect(removed).toHaveFocus()
     // An archived row leaves the active list.
-    announce([{ ...secondSession, archived: true }])
+    host.change([{ ...secondSession, archived: true }])
     const survivor = canvas.getByRole('button', { name: /Read the Session transcript/ })
     await waitFor(async () => {
       await expect(survivor).toHaveFocus()
@@ -839,7 +761,7 @@ export const FocusRecovery: Story = {
 }
 
 export const Loading: Story = {
-  beforeEach: () => showingSessions([], () => new Promise(() => {})),
+  beforeEach: () => showing([], { list: () => new Promise(() => {}) }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('status', { name: 'Reading Sessions' })).toBeInTheDocument()
@@ -847,7 +769,7 @@ export const Loading: Story = {
   },
 }
 export const Empty: Story = {
-  beforeEach: () => showingSessions([]),
+  beforeEach: () => showing([]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('No Sessions found')).toBeInTheDocument()
@@ -867,15 +789,13 @@ async function chooseStatus(canvasElement: HTMLElement, name: string) {
 const archivedSession: Session = {
   ...session,
   id: 'archived-session',
-  customTitle: null,
-  preview: null,
   archived: true,
   title: { text: 'Read the archived transcript', source: 'first-prompt' },
 }
 
 // The archived filter is a filter on the one list query, so choosing it reads `filter: 'archived'`.
 export const WithArchive: Story = {
-  beforeEach: () => showingSessions([...listed, archivedSession]),
+  beforeEach: () => showing([...listed, archivedSession]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await canvas.findByRole('button', { name: /Read the Session transcript/ })
@@ -884,68 +804,54 @@ export const WithArchive: Story = {
     await expect(
       await canvas.findByRole('button', { name: /Read the archived transcript/ }),
     ).toBeVisible()
-    await expect(sessionListReads).toHaveBeenLastCalledWith(
-      expect.objectContaining({ projectId: 'project-1', filter: 'archived', offset: 0 }),
-    )
+    await expect(host.reads.at(-1)).toMatchObject({
+      projectId: 'storybook-project',
+      filter: 'archived',
+      offset: 0,
+    })
     await expect(canvas.queryByRole('button', { name: /Read the Session transcript/ })).toBeNull()
   },
 }
 
 export const ArchivedRowsCanBeOpened: Story = {
-  render: (args) => <SessionListHarness {...args} />,
   beforeEach: () =>
-    showingSessions([
+    showing([
       {
         ...archivedSession,
         title: { text: 'Open the archived transcript', source: 'first-prompt' },
       },
     ]),
-  play: async ({ canvasElement, args }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await chooseStatus(canvasElement, 'Archived')
     await userEvent.click(
       await canvas.findByRole('button', { name: /Open the archived transcript/ }),
     )
-    await expect(args.onSelect).toHaveBeenCalledWith('archived-session')
-  },
-}
-
-// An archived filter with no rows draws the list's own empty outcome.
-export const ArchiveEmpty: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await canvas.findByRole('button', { name: /Read the Session transcript/ })
-    await chooseStatus(canvasElement, 'Archived')
-    await expect(await canvas.findByText('No Sessions found')).toBeInTheDocument()
+    await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
+      `${SESSIONS_ROUTE}/archived-session?status=archived`,
+    )
   },
 }
 
 // Archiving lives on the row's context menu, with no bulk action bar footer (#2194 follow-up).
 export const ArchiveFromContextMenu: Story = {
-  args: { onArchiveSelected: fn() },
-  play: async ({ canvasElement, args }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const row = await canvas.findByRole('button', { name: /Read the Session transcript/ })
     await userEvent.pointer({ keys: '[MouseRight]', target: row })
     const archive = await within(document.body).findByRole('menuitem', { name: 'Archive' })
     await userEvent.click(archive)
-    await expect(args.onArchiveSelected).toHaveBeenCalledWith(['prose'])
+    await expect(host.updates).toEqual([{ sessionIds: ['prose'], archived: true }])
   },
-}
-
-function ArchivingSessionList(args: SessionListHarnessArgs) {
-  return <SessionListHarness {...args} onArchiveSelected={useArchiveSelected()} />
 }
 
 // A bulk archive and its Undo are one Session update per row, and the list reads its pages again.
 export const BulkArchiveAndUndoUpdateEachSession: Story = {
-  render: (args) => <ArchivingSessionList {...args} />,
-  beforeEach: () => showingSessions(listed),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const first = await canvas.findByRole('button', { name: /Read the Session transcript/ })
     const second = canvas.getByRole('button', { name: /A second Session/ })
-    const reads = sessionListReads.mock.calls.length
+    const reads = host.reads.length
     // One session keeps Meta held across both clicks.
     const user = userEvent.setup()
     await user.keyboard('{Meta>}')
@@ -955,7 +861,7 @@ export const BulkArchiveAndUndoUpdateEachSession: Story = {
     await userEvent.pointer({ keys: '[MouseRight]', target: first })
     await userEvent.click(await within(document.body).findByRole('menuitem', { name: 'Archive' }))
     await expect(await canvas.findByText('No Sessions found')).toBeInTheDocument()
-    await expect(sessionUpdates.mock.calls.map(([update]) => update)).toEqual([
+    await expect(host.updates).toEqual([
       { sessionIds: ['prose', 'second-session'], archived: true },
     ])
     await userEvent.click(await within(document.body).findByRole('button', { name: 'Undo' }))
@@ -963,15 +869,15 @@ export const BulkArchiveAndUndoUpdateEachSession: Story = {
       await canvas.findByRole('button', { name: /Read the Session transcript/ }),
     ).toBeVisible()
     await expect(canvas.getByRole('button', { name: /A second Session/ })).toBeVisible()
-    await expect(sessionUpdates.mock.calls.slice(1).map(([update]) => update)).toEqual([
+    await expect(host.updates.slice(1)).toEqual([
       { sessionIds: ['prose', 'second-session'], archived: false },
     ])
-    await expect(sessionListReads.mock.calls.length).toBeGreaterThan(reads)
+    await expect(host.reads.length).toBeGreaterThan(reads)
   },
 }
 
 export const Failure: Story = {
-  beforeEach: () => showingSessions([], async () => readFailure),
+  beforeEach: () => showing([], { list: async () => readFailure }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const alert = await canvas.findByRole('alert')
@@ -986,7 +892,6 @@ export const Failure: Story = {
 const manySessions: Session[] = Array.from({ length: 80 }, (_unused, row) => ({
   ...session,
   id: `session-${String(row).padStart(2, '0')}`,
-  customTitle: `Session number ${row}`,
   title: { text: `Session number ${row}`, source: 'first-prompt' as const },
 }))
 
@@ -997,25 +902,25 @@ function sessionListScroll(canvasElement: HTMLElement) {
 }
 
 export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
-  beforeEach: () => showingSessions(manySessions),
+  beforeEach: () => showing(manySessions),
   play: async ({ canvasElement }) => {
+    await rowsShown(canvasElement)
     const scroll = await waitFor(() => sessionListScroll(canvasElement))
-    const listSessions = sessionListReads
     await expect(scroll.scrollTop).toBe(0)
-    await expect(listSessions).toHaveBeenCalledTimes(1)
+    await expect(host.reads).toHaveLength(1)
     scroll.scrollTop = scroll.scrollHeight
     scroll.dispatchEvent(new Event('scroll'))
     // Reaching the last row asks for one page, at the offset of the rows already loaded.
-    await waitFor(() => expect(listSessions).toHaveBeenCalledTimes(2))
-    await expect(listSessions).toHaveBeenLastCalledWith({
-      projectId: 'project-1',
+    await waitFor(() => expect(host.reads).toHaveLength(2))
+    await expect(host.reads.at(-1)).toEqual({
+      projectId: 'storybook-project',
       filter: 'active',
       search: '',
       offset: 30,
       limit: 30,
     })
     await new Promise((resolve) => setTimeout(resolve, 300))
-    await expect(listSessions).toHaveBeenCalledTimes(2)
+    await expect(host.reads).toHaveLength(2)
   },
 }
 
@@ -1024,16 +929,16 @@ export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
 export const AsksOnceWhenTheWindowDoesNotFillTheViewport: Story = {
   beforeEach: () => {
     const third = { ...session, id: 'third-session' }
-    return showingSessions([], async ({ offset }) =>
-      offset === 0 ? { total: 3, rows: listed } : { total: 3, rows: [third] },
-    )
+    return showing([], {
+      list: async ({ offset }) =>
+        offset === 0 ? { total: 3, rows: listed } : { total: 3, rows: [third] },
+    })
   },
   play: async () => {
-    const listSessions = sessionListReads
-    await waitFor(() => expect(listSessions).toHaveBeenCalledTimes(2))
-    await expect(listSessions).toHaveBeenLastCalledWith(expect.objectContaining({ offset: 2 }))
+    await waitFor(() => expect(host.reads).toHaveLength(2))
+    await expect(host.reads.at(-1)).toMatchObject({ offset: 2 })
     await new Promise((resolve) => setTimeout(resolve, 300))
-    await expect(listSessions).toHaveBeenCalledTimes(2)
+    await expect(host.reads).toHaveLength(2)
   },
 }
 
@@ -1041,15 +946,17 @@ export const AsksOnceWhenTheWindowDoesNotFillTheViewport: Story = {
 // the spinner centered in it and no border of its own.
 export const GrowingTheWindow: Story = {
   beforeEach: () =>
-    showingSessions([], (read) =>
-      read.offset === 0
-        ? Promise.resolve(storySessionPage(manySessions, read))
-        : new Promise(() => {
-            // The second page never lands, so the Session list stays on its loading-more row.
-          }),
-    ),
+    showing([], {
+      list: (read) =>
+        read.offset === 0
+          ? Promise.resolve(storySessionPage(manySessions, read))
+          : new Promise(() => {
+              // The second page never lands, so the Session list stays on its loading-more row.
+            }),
+    }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await rowsShown(canvasElement)
     const scroll = await waitFor(() => sessionListScroll(canvasElement))
     scroll.scrollTop = scroll.scrollHeight
     scroll.dispatchEvent(new Event('scroll'))
@@ -1074,24 +981,16 @@ async function typeSearch(canvasElement: HTMLElement, query: string) {
   await userEvent.keyboard(query)
 }
 
-export const SearchNoMatches: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await typeSearch(canvasElement, 'nothing indexed holds this')
-    await expect(await canvas.findByText('No Sessions found')).toBeInTheDocument()
-    await expect(canvas.queryByText('No Sessions match your search')).toBeNull()
-  },
-}
-
 export const SearchDoesNotShowInitialSkeleton: Story = {
   beforeEach: () => {
     let resolveSearch: ((result: SessionListResult) => void) | null = null
     const pendingSearch = new Promise<SessionListResult>((resolve) => {
       resolveSearch = resolve
     })
-    const restore = showingSessions([], (read) =>
-      read.search === '' ? Promise.resolve(storySessionPage(listed, read)) : pendingSearch,
-    )
+    const restore = showing([], {
+      list: (read) =>
+        read.search === '' ? Promise.resolve(storySessionPage(listed, read)) : pendingSearch,
+    })
     return () => {
       resolveSearch?.({ total: 0, rows: [] })
       restore()
@@ -1101,9 +1000,7 @@ export const SearchDoesNotShowInitialSkeleton: Story = {
     const canvas = within(canvasElement)
     await canvas.findByRole('button', { name: /Read the Session transcript/ })
     await typeSearch(canvasElement, 'absent')
-    await waitFor(() =>
-      expect(sessionListReads).toHaveBeenCalledWith(expect.objectContaining({ search: 'absent' })),
-    )
+    await waitFor(() => expect(host.reads.at(-1)).toMatchObject({ search: 'absent' }))
     await expect(canvas.getByRole('button', { name: /Read the Session transcript/ })).toBeVisible()
     await expect(canvas.queryByRole('status', { name: 'Reading Sessions' })).toBeNull()
     await expect(canvasElement.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(0)
@@ -1116,20 +1013,22 @@ export const SearchWaitsForTypingToSettle: Story = {
     const canvas = within(canvasElement)
     await canvas.findByRole('button', { name: /Read the Session transcript/ })
     await typeSearch(canvasElement, 'second')
-    await waitFor(() => expectOnlySecondSession(canvas, /Read the Session transcript/))
-    await expect(sessionListReads.mock.calls.map(([read]) => read.search)).toEqual(['', 'second'])
+    await waitFor(() => expect(host.reads.at(-1)).toMatchObject({ search: 'second' }))
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    await expect(host.reads.map((read) => read.search)).toEqual(['', 'second'])
   },
 }
 
-function ProjectSwitchingSessionList(args: SessionListHarnessArgs) {
-  const [projectId, setProjectId] = useState('project-1')
+function OpenSecondProject() {
+  const navigate = useNavigate()
+  const { search } = useLocation()
   return (
-    <>
-      <button onClick={() => setProjectId('project-2')} type="button">
-        Open the second Project
-      </button>
-      <SessionListHarness {...args} projectId={projectId} />
-    </>
+    <button
+      onClick={() => navigate(`/projects/storybook-worktree/sessions${search}`)}
+      type="button"
+    >
+      Open the second Project
+    </button>
   )
 }
 
@@ -1141,8 +1040,6 @@ function projectSessions(projectId: string): Session[] {
       id: `${projectId}-${archived ? 'archived' : 'active'}`,
       projectId,
       archived,
-      customTitle: name,
-      preview: null,
       title: { text: name, source: 'first-prompt' },
     }
   })
@@ -1150,33 +1047,46 @@ function projectSessions(projectId: string): Session[] {
 
 // Another Project reads its own active and archived rows, keeping the search the reader typed.
 export const ProjectSwitchReadsThatProject: Story = {
-  render: (args) => <ProjectSwitchingSessionList {...args} />,
+  render: () => (
+    <>
+      <OpenSecondProject />
+      <SessionList />
+    </>
+  ),
   beforeEach: () =>
-    showingSessions([], async (read) => storySessionPage(projectSessions(read.projectId), read)),
+    showing([], { list: async (read) => storySessionPage(projectSessions(read.projectId), read) }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await chooseStatus(canvasElement, 'All')
-    await canvas.findByRole('button', { name: /Archived in project-1/ })
+    await canvas.findByRole('button', { name: /Archived in storybook-project/ })
     await typeSearch(canvasElement, 'active')
     await waitFor(() =>
-      expect(sessionListReads).toHaveBeenCalledWith(
-        expect.objectContaining({ projectId: 'project-1', filter: 'all', search: 'active' }),
-      ),
+      expect(host.reads.at(-1)).toMatchObject({
+        projectId: 'storybook-project',
+        filter: 'all',
+        search: 'active',
+      }),
     )
     await userEvent.click(canvas.getByRole('button', { name: 'Open the second Project' }))
-    await canvas.findByRole('button', { name: /Active in project-2/ })
-    await expect(sessionListReads).toHaveBeenLastCalledWith(
-      expect.objectContaining({ projectId: 'project-2', filter: 'all', search: 'active' }),
-    )
+    await canvas.findByRole('button', { name: /Active in storybook-worktree/ })
+    await expect(host.reads.at(-1)).toMatchObject({
+      projectId: 'storybook-worktree',
+      filter: 'all',
+      search: 'active',
+    })
     await userEvent.clear(canvas.getByRole('textbox', { name: 'Search Sessions' }))
-    await canvas.findByRole('button', { name: /Archived in project-2/ })
-    await expect(canvas.queryByRole('button', { name: /Archived in project-1/ })).toBeNull()
+    await canvas.findByRole('button', { name: /Archived in storybook-worktree/ })
+    await expect(canvas.queryByRole('button', { name: /Archived in storybook-project/ })).toBeNull()
   },
 }
 
 // Until the typed text settles, the list is still the unsearched one, archived rows included.
 export const UnsettledSearchKeepsTheArchive: Story = {
-  beforeEach: () => showingSessions([...listed, archivedSession]),
+  beforeEach: () =>
+    showing([...listed, archivedSession], {
+      list: async (read) =>
+        storySessionPage(read.search === '' ? [...listed, archivedSession] : listed, read),
+    }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await chooseStatus(canvasElement, 'All')

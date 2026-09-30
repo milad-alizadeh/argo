@@ -22,7 +22,7 @@ export const sessionTable = sqliteTable(
     // The last activity line a Feed read, as JSON, so an idle row keeps it with no Feed reader.
     activity: text('activity'),
     // The last status the history watcher saw; a live channel's own status outranks it.
-    status: text('status', { enum: SESSION_STATUSES }),
+    status: text('status', { enum: SESSION_STATUSES }).notNull().default('unknown'),
     ...timestampColumns(),
   },
   (table) => [

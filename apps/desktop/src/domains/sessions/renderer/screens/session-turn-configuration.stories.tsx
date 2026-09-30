@@ -7,7 +7,6 @@ import {
   savedSelectionDraft,
   sessionSelectionHost,
 } from '@/mocks/sessions/session-selection-host.fixture'
-import { announceSessionListChange } from '@/mocks/sessions/session-story-host'
 import { queryClient } from '@/platform/renderer/trpc-client'
 import type { SessionTurnConfiguration } from '../types'
 import { SessionScreenView } from './session-screen-view'
@@ -34,19 +33,18 @@ function withBridge(reply: SessionTurnConfiguration) {
     beforeEach: () => {
       sent.length = 0
       const row = liveRow()
-      const restoreHost = sessionSelectionHost([row])
+      const host = sessionSelectionHost([row])
       const hosted = window.argo
       window.argo = {
         ...hosted,
         trpc: (async (request) => {
           if (request.path !== 'sessionSubmit') return hosted.trpc(request)
           sent.push(request.input)
-          Object.assign(row, { turnConfiguration: reply })
-          announceSessionListChange()
+          host.change([{ ...row, turnConfiguration: reply }])
           return { id: request.id, result: { data: { sessionId: SESSION_ID } } }
         }) as typeof window.argo.trpc,
       }
-      return restoreHost
+      return host
     },
   }
 }

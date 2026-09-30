@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { sessionName } from './session-list-rows'
+import { sessionName } from './session-name'
 
 describe('naming a Session', () => {
   test.each([

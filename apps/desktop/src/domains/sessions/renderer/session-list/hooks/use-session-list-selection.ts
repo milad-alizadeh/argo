@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
 import type { Session, SessionId } from '../../types'
-import type { SessionListActions } from '../rows/session-list-actions'
 import {
   clickSessionListSelection,
   EMPTY_SESSION_LIST_SELECTION,
@@ -13,7 +12,13 @@ import {
 export function useSessionListSelection(
   sessions: readonly Session[],
   openSessionId: SessionId | null,
-  { onArchiveSelected, onSelect }: Pick<SessionListActions, 'onArchiveSelected' | 'onSelect'>,
+  {
+    onArchiveSelected,
+    onSelect,
+  }: {
+    onArchiveSelected: (sessionIds: SessionId[]) => void
+    onSelect: (sessionId: SessionId) => void
+  },
 ) {
   const [selection, setSelection] = useState(EMPTY_SESSION_LIST_SELECTION)
   // The list a click ranges over is read at click time, through a ref. A Session list read rebuilds
@@ -35,7 +40,9 @@ export function useSessionListSelection(
           clicked.current.openSessionId !== null
             ? { ...current, anchor: clicked.current.openSessionId }
             : current
-        const visibleIds = clicked.current.sessions.map((session) => session.id)
+        const visibleIds = clicked.current.sessions
+          .filter((session) => !session.archived)
+          .map((session) => session.id)
         return clickSessionListSelection(anchored, visibleIds, { id: sessionId, modifier })
       }),
     [],

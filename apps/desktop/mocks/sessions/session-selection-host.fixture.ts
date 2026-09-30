@@ -1,13 +1,12 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import type { Session } from '@/domains/sessions/renderer/types'
 import {
+  type FeedRead,
   heldDetails,
   heldReads,
-  sessionFeedSubscribe,
-  sessionListSubscribe,
-  sessionListTrpc,
+  installSessionHost,
 } from '@/mocks/sessions/session-story-host'
-import { queryClient } from '@/platform/renderer/trpc-client'
 import { claudeHarnessInfoFixture, codexHarnessInfoFixture } from './harness-catalog.fixture'
 
 // A story host that answers the production Session screen's tRPC reads, so a story can select
@@ -149,15 +148,14 @@ async function readFeed(sessionId: string): Promise<readonly FeedContent[]> {
   ]
 }
 
-function clearSelectionQueries() {
+function clearSelectionReads() {
   drafts.clear()
   failSelectionWrites({ draftSaves: false, sends: false })
   heldDraftReads.releaseAll()
   heldDetails.releaseAll()
-  queryClient.clear()
 }
 
-// Installs the host for one story and returns the story's cleanup. A saved draft is read back as
+// Installs the Session host with the screen's other reads, and returns it; calling it cleans up. A saved draft is read back as
 // stored; a held Session's draft read waits for `releaseDraftRead`, and its details read for
 // `releaseSessionDetails`.
 export function sessionSelectionHost(
@@ -166,10 +164,12 @@ export function sessionSelectionHost(
     savedDrafts?: Record<string, string>
     heldDraftReads?: string[]
     heldDetails?: string[]
+    feed?: FeedRead
+    live?: readonly SessionLiveEvent[]
   } = {},
 ) {
   const before = window.argo
-  clearSelectionQueries()
+  clearSelectionReads()
   for (const [sessionId, prompt] of Object.entries(options.savedDrafts ?? {}))
     draftReply({
       id: `selection-draft-${sessionId}`,
@@ -186,27 +186,28 @@ export function sessionSelectionHost(
   for (const sessionId of options.heldDetails ?? []) heldDetails.hold(sessionId)
   window.argo = {
     ...before,
-    trpc: sessionListTrpc(
-      (async (request) =>
-        projectReply(request) ??
-        composerReply(request) ??
-        // Screen stories open the shell inspector and read this tail. Production stays absent.
-        (request.path === 'sessionShellOutput'
-          ? {
-              id: request.id,
-              result: { data: { state: 'available' as const, tail: 'Checked 187 files.\n' } },
-            }
-          : null) ??
-        before.trpc(request)) satisfies typeof window.argo.trpc,
-      () => roster,
-    ),
-    trpcSubscribe: sessionFeedSubscribe(
-      sessionListSubscribe(before.trpcSubscribe, () => roster),
-      readFeed,
-    ),
+    trpc: (async (request) =>
+      projectReply(request) ??
+      composerReply(request) ??
+      // Screen stories open the shell inspector and read this tail. Production stays absent.
+      (request.path === 'sessionShellOutput'
+        ? {
+            id: request.id,
+            result: { data: { state: 'available' as const, tail: 'Checked 187 files.\n' } },
+          }
+        : null) ??
+      before.trpc(request)) satisfies typeof window.argo.trpc,
   }
-  return () => {
-    window.argo = before
-    clearSelectionQueries()
-  }
+  const host = installSessionHost(roster, {
+    feed: options.feed ?? readFeed,
+    live: options.live,
+  })
+  return Object.assign(
+    () => {
+      host()
+      window.argo = before
+      clearSelectionReads()
+    },
+    { reads: host.reads, updates: host.updates, rows: host.rows, change: host.change },
+  )
 }

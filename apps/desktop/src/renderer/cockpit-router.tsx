@@ -17,7 +17,7 @@ import { EmptyProjectScreen } from '@/domains/projects/renderer/screens/empty-pr
 import { DevelopmentIdentityBar } from '@/domains/sessions/renderer/composer/identity/development-identity-bar'
 import { SessionsPage } from '@/domains/sessions/renderer/pages/sessions-page'
 import { SessionScreenView } from '@/domains/sessions/renderer/screens'
-import { SessionsSidebar } from '@/domains/sessions/renderer/session-list/sidebar/sessions-sidebar'
+import { SessionList } from '@/domains/sessions/renderer/session-list/session-list'
 import { TicketsPage } from '@/domains/tickets/renderer/pages/tickets-page'
 import { TicketsScreenView } from '@/domains/tickets/renderer/screens/tickets-screen-view'
 import { TicketsSidebar } from '@/domains/tickets/renderer/sidebar/tickets-sidebar'
@@ -31,7 +31,7 @@ type CockpitRouteHandle = {
 
 const sidebarByPage = {
   atlas: <AtlasSidebar />,
-  sessions: <SessionsSidebar />,
+  sessions: <SessionList />,
   tickets: <TicketsSidebar />,
 } as const
 

@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import { createActor, fromPromise, waitFor } from 'xstate'
-import { project } from '@/database/project/schema'
-import { workspace } from '@/database/workspace/schema'
 import type {
   SessionSummaryList,
   SessionSummaryListResult,
 } from '@/domains/sessions/api/session-discovery'
-import { migratedDatabase } from '@/mocks/database/migrated-database'
+import {
+  insertProject,
+  insertWorkspace,
+  migratedDatabase,
+} from '@/mocks/database/migrated-database'
 import { sessionSyncMachine } from './session-sync-machine'
 import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
 
@@ -15,20 +17,8 @@ const ID = '00000000-0000-4000-8000-000000000001'
 
 function createDatabase() {
   const database = migratedDatabase()
-  database
-    .insert(project)
-    .values({ id: 'project-1', path: '/repo', commonDirectory: '/repo/.git' })
-    .run()
-  database
-    .insert(workspace)
-    .values({
-      id: 'workspace-1',
-      projectId: 'project-1',
-      kind: 'imported',
-      displayName: 'feature',
-      path: '/repo/worktree',
-    })
-    .run()
+  insertProject(database, 'project-1', '/repo')
+  insertWorkspace(database, 'workspace-1', 'project-1')
   return { client: database.$client, database }
 }
 
@@ -36,14 +26,14 @@ test('matches cwd to the deepest registered Project root and keeps sparse metada
   const { client, database } = createDatabase()
   try {
     const records = matchSessionsToProjects(database, [
-      { nativeId: ID, preview: 'Summary', activityAt: 1, cwd: '/repo/worktree/src' },
+      { nativeId: ID, preview: 'Summary', activityAt: 1, cwd: '/repo/project-1/workspace-1/src' },
     ])
     assert.deepEqual(records, [
       {
         nativeId: ID,
         activityAt: 1,
         preview: 'Summary',
-        cwd: '/repo/worktree/src',
+        cwd: '/repo/project-1/workspace-1/src',
         projectId: 'project-1',
         workspaceId: 'workspace-1',
       },

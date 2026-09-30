@@ -1,6 +1,6 @@
-// The merged roster list (#2194 follow-up) tells an active row from an archived one by
+// The merged Session List list (#2194 follow-up) tells an active row from an archived one by
 // `data-archived`, not by which `nav` it sits in: both share `nav[aria-label="Sessions"]`.
-export function readRosterIds(page, section: 'Sessions' | 'Archived' = 'Sessions') {
+export function readSessionListIds(page, section: 'Sessions' | 'Archived' = 'Sessions') {
   const selector =
     section === 'Archived'
       ? 'nav[aria-label="Sessions"] button[data-session-id][data-archived="true"]'
@@ -12,7 +12,7 @@ export function readRosterIds(page, section: 'Sessions' | 'Archived' = 'Sessions
 
 const ACTIVE_ROW = 'nav[aria-label="Sessions"] button[data-archived="false"]'
 
-// The order the roster settles on is the claim a caller waits for, so a timeout says what it read.
+// The order the Session List settles on is the claim a caller waits for, so a timeout says what it read.
 export async function waitForActiveSessions(page, expected: readonly string[]) {
   try {
     await page.waitForFunction(
@@ -23,8 +23,8 @@ export async function waitForActiveSessions(page, expected: readonly string[]) {
       { selector: ACTIVE_ROW, ids: expected },
     )
   } catch (cause) {
-    const read = (await readRosterIds(page)).join('|')
-    throw new Error(`Roster order: expected ${expected.join('|')}, read ${read}`, { cause })
+    const read = (await readSessionListIds(page)).join('|')
+    throw new Error(`Session List order: expected ${expected.join('|')}, read ${read}`, { cause })
   }
 }
 
@@ -32,15 +32,16 @@ export async function waitForActiveSessions(page, expected: readonly string[]) {
 // not a freshly-created one `waitForCreatedRow` already guards) still races the same virtualized
 // reflow: a row a background history rescan is still discovering shifts every row below it by one
 // translateY step, and a click Playwright already resolved lands on whichever row is there once
-// the shift commits. Two reads the same, a beat apart, is the roster no longer mid-shift.
-export async function waitForRosterSettled(page, timeout = 30_000) {
+// the shift commits. Two reads the same, a beat apart, is the Session List no longer mid-shift.
+export async function waitForSessionListSettled(page, timeout = 30_000) {
   const deadline = Date.now() + timeout
-  let last = (await readRosterIds(page)).join('|')
+  let last = (await readSessionListIds(page)).join('|')
   for (;;) {
     await new Promise((resolve) => setTimeout(resolve, 200))
-    const read = (await readRosterIds(page)).join('|')
+    const read = (await readSessionListIds(page)).join('|')
     if (read === last) return
-    if (Date.now() > deadline) throw new Error(`Roster order never settled, last read: ${read}`)
+    if (Date.now() > deadline)
+      throw new Error(`Session List order never settled, last read: ${read}`)
     last = read
   }
 }

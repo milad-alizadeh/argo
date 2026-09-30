@@ -24,7 +24,7 @@ async function markVendorActive(root: string, sessionId: string) {
   await writeFile(file, JSON.stringify(stored))
 }
 
-async function liveRosterRow(page: Page, sessionId: string, budgetMs: number) {
+async function liveSessionListRow(page: Page, sessionId: string, budgetMs: number) {
   const deadline = Date.now() + budgetMs
   while (Date.now() < deadline) {
     const row = await sessionDetails(page, sessionId)
@@ -62,13 +62,13 @@ export async function provePackagedCodexResume(
       const alerted = await relaunched.locator('[role="alert"]').allTextContents()
       const row = await sessionDetails(relaunched, sessionId)
       throw new Error(
-        `${error.message}\nFeed rows: ${JSON.stringify(rows)}\nAlerts: ${JSON.stringify(alerted)}\nRoster row: ${JSON.stringify(row)}`,
+        `${error.message}\nFeed rows: ${JSON.stringify(rows)}\nAlerts: ${JSON.stringify(alerted)}\nSessionList row: ${JSON.stringify(row)}`,
       )
     })
-  // The optimistic Turn row (#2099) shows the sent prompt in the Feed before the roster
-  // invalidation that follows a Send lands, so the Roster's posture catches up on its own poll
+  // The optimistic Turn row (#2099) shows the sent prompt in the Feed before the Session List
+  // invalidation that follows a Send lands, so the Session List's posture catches up on its own poll
   // rather than by the time the message is visible.
-  const resumed = await liveRosterRow(relaunched, sessionId, backend.budgetMs)
+  const resumed = await liveSessionListRow(relaunched, sessionId, backend.budgetMs)
   assert.deepEqual({ id: resumed.id, posture: resumed.posture }, { id: sessionId, posture: 'live' })
   return relaunched
 }

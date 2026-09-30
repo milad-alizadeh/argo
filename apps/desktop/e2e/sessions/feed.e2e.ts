@@ -1,4 +1,4 @@
-// Session Feed and Roster contracts over the packaged app's real preload (#1910).
+// Session Feed and Session List contracts over the packaged app's real preload (#1910).
 // One file, one `test`: `sessionBackend` (`session-proof-run.ts`) is the only difference between
 // a mock and a real Claude/Codex CLI, so a case that drives a live Turn just names the backend it
 // needs and lets the project (`sessions` or `real-sessions`, `playwright.config.ts`) decide which
@@ -24,14 +24,14 @@ import { proveSessionPlan } from './cases/plan.case'
 import { provePromptLatency } from './cases/prompt-latency.case'
 import { proveSessionQuestion } from './cases/question.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
-import { proveContract } from './cases/roster-contract.case'
-import {
-  provePackagedRosterRestart,
-  provePackagedRosterSelection,
-} from './cases/roster-interaction.case'
-import { proveStableRosterPolling } from './cases/roster-order.case'
-import { proveRosterWindow } from './cases/roster-window.case'
 import { proveSearchFindsABuriedSession } from './cases/search.case'
+import { proveContract } from './cases/session-list-contract.case'
+import {
+  provePackagedSessionListRestart,
+  provePackagedSessionListSelection,
+} from './cases/session-list-interaction.case'
+import { proveStableSessionListPolling } from './cases/session-list-order.case'
+import { proveSessionListWindow } from './cases/session-list-window.case'
 import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
 import { proveToolCalls } from './cases/tool-calls.case'
@@ -42,9 +42,9 @@ import {
 } from './cases/turn-configuration.case'
 import { appendProse, removeProse, streamProse } from './fixtures/feed.fixture'
 import { updatePlan } from './fixtures/plan.fixture'
-import { rosterOrderMutations } from './fixtures/roster-order.fixture'
-import { writeWindowFillerSessions } from './fixtures/roster-window.fixture'
 import { writeBuriedSearchTarget } from './fixtures/search-window.fixture'
+import { sessionListOrderMutations } from './fixtures/session-list-order.fixture'
+import { writeWindowFillerSessions } from './fixtures/session-list-window.fixture'
 import { openSessionByClick } from './gestures'
 import { sessionDetails } from './page-trpc'
 import { assertTranscriptFeedCorpus } from './real-harness/transcript-feed-corpus'
@@ -58,7 +58,7 @@ test.describe('with no Project selected', () => {
   })
 })
 
-test('session-roster-contract', async ({ session }) => {
+test('session-list-contract', async ({ session }) => {
   await proveContract(session.page())
 })
 
@@ -100,7 +100,7 @@ test.describe('session refresh progress', () => {
 })
 
 test('session-roster-selection', async ({ session }) => {
-  await provePackagedRosterSelection(session.page())
+  await provePackagedSessionListSelection(session.page())
 })
 
 test('session-tool-calls', async ({ session }) => {
@@ -161,15 +161,15 @@ test('session-live-codex-model-choices', async ({ session }) => {
   await proveLiveCodexModelChoices(session.page())
 })
 
-test('session-roster-stable-polling', async ({ session }) => {
-  await proveStableRosterPolling(
+test('session-list-stable-polling', async ({ session }) => {
+  await proveStableSessionListPolling(
     session.page(),
-    rosterOrderMutations({ transcripts: session.fixture.claudeTranscripts }),
+    sessionListOrderMutations({ transcripts: session.fixture.claudeTranscripts }),
   )
 })
 
-test('session-roster-restart', async ({ session }) => {
-  await provePackagedRosterRestart(session.page(), {
+test('session-list-restart', async ({ session }) => {
+  await provePackagedSessionListRestart(session.page(), {
     remove: () => removeProse(session.fixture.claudeTranscripts),
     restart: () => session.restart(),
   })
@@ -177,7 +177,7 @@ test('session-roster-restart', async ({ session }) => {
 
 test('session-roster-window', async ({ session }) => {
   await writeWindowFillerSessions(session.fixture.claudeTranscripts, session.fixture.project)
-  await proveRosterWindow(session.page())
+  await proveSessionListWindow(session.page())
 })
 
 test('session-search', async ({ session }) => {

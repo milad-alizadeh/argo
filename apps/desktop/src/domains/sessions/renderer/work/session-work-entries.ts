@@ -32,7 +32,7 @@ export function delegationEntries(
         name: delegation.label,
         state,
         model: usage[delegation.id]?.model ?? null,
-        durationMs: elapsedDuration(delegation.startedAt, delegation.endedAt, now),
+        durationMs: elapsedDuration(delegation.startedAt ?? null, delegation.endedAt ?? null, now),
         tokens: usage[delegation.id]?.tokens ?? null,
       },
       t,

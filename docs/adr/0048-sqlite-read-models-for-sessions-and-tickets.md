@@ -10,15 +10,21 @@ only the new lines. It appends their events to the live journal, unless the Sess
 channel. A rewritten, truncated or branched file still makes the Feed read the whole history.
 
 The Session List is one `sessionList` query. Its input is a Project, a filter (`active`,
-`archived` or `all`), a search over custom title and preview, and an offset and limit. It returns
-one page and the total. Rows are sorted by `sortOrder`, then newest `createdAt`, then Argo ID.
-Every `sortOrder` is 0 until drag and drop sets it. A Session found by sync takes its last
+`archived` or `all`), a search over the title each row shows, and an offset and limit. That title
+is the custom title, linked Ticket title, preview, then first prompt, chosen in SQL. A Session's
+Ticket link stores only the Ticket key. The row's Ticket title and state are joined from the saved
+Ticket in the Project's Ticket scope, so a provider change needs no link write; a Ticket with no
+saved content shows its key alone. The query returns one page and the total, counted by a window
+over the same query. Rows are sorted by `sortOrder`, then newest `createdAt`, then Argo ID. Every
+`sortOrder` is 0 until drag and drop sets it. A Session found by sync takes its last
 activity as `createdAt`, so a streaming turn never moves a row.
 
-Every write to a saved Session goes to SQLite first. Then the writer names the changed Session IDs:
-a sync commit, a stored Subagent read, a history write, a live status change, a rename, an archive,
-and a stored activity line. The `sessionListChanged` subscription sends those IDs, and the
-renderer reads its loaded list pages again. Only SQL filters, sorts and counts. TanStack Query
+Every write to a saved Session goes to SQLite first. Then the writer names the changed Session IDs
+on one app-level change signal: a sync save, a stored Subagent read, a history write, a live status
+change, a rename, an archive, and a stored activity line. A write that changes no stored value
+names nothing. The signal joins the IDs named in one tick into one change. The
+`sessionListChanged` subscription sends only those IDs, and the renderer reads its loaded list
+pages again. Only SQL filters, sorts and counts. TanStack Query
 keeps each unchanged row object, so an unchanged row does not draw again.
 Rename and archive go through one `sessionUpdate` mutation that returns the row.
 
@@ -26,12 +32,14 @@ A history write sets the row's `activityAt`. The watcher also tracks, in memory,
 file's current turn is open or closed. The newest opened turn is the current one. A close counts
 only when it names that turn or names no turn, so a late close for an earlier Codex turn leaves
 the newer turn open. The watcher stores `running` for an open turn and `idle` for a closed one on
-the Session row. An open turn whose file stays quiet for five minutes is stored as `unknown`,
-because a killed terminal writes nothing more, and a restart resets every working status to
-`unknown`. A live channel's own status outranks the stored one. The row's activity line is the
-last activity a Feed's main reading published, stored on the Session row. The subscription opens
-a Feed reader only for a Session that is starting, running, or waiting on the user, so an idle row
-keeps its stored line with no reader.
+the Session row, in the same write as `activityAt`. Every row has a status, `unknown` until
+something is known. An open turn whose file stays quiet for five minutes is stored as `unknown`,
+because a killed terminal writes nothing more, and a restart and a shutdown reset every working
+status to `unknown`. A live channel's own status outranks the stored one. The row's activity line
+is the last activity a Feed's main reading published, stored on the Session row. Main starts the
+history watchers, the status tracker and one set of Feed readers once for the app, not per window.
+It opens a Feed reader only for a Session that is starting, running, or waiting on the user, so an
+idle row keeps its stored line with no reader.
 
 ## Amendment · Harness registrations for sync · 2026-09-28
 
@@ -39,8 +47,9 @@ The sync supervisor reads each Harness's `sessionDiscovery` from its registratio
 same sync machine for every Harness. Codex discovery uses the shared client the app machine owns;
 no Codex app-server actor or readiness bridge remains. A Harness whose client cannot connect fails
 its own job, and the other Harnesses still sync. One status subscription combines every Harness's
-progress and forwards each commit; an active scan outranks a failure, and a failure outranks
-ready, so one failed Harness reports its own failure text.
+progress; an active scan outranks a failure, and a failure outranks ready, so one failed Harness
+reports its own failure text. Each saved batch names its Sessions on the Session List change
+signal itself.
 
 Live Feed replay is bounded. One memory journal keeps the newest 500 events and 2 MiB across all
 Sessions, and each launch starts a new generation. A cursor older than the journal, or from an
@@ -168,8 +177,8 @@ The existing Session list shows saved rows while sync runs. It shows indetermina
 the fetch knows the total, then processed count over total. Refresh stays disabled through sync
 and retry. After success, the list shows a relative last-synced time. A partial scan shows one
 toast with the skipped count. A terminal fetch or save failure shows one toast. A subscription
-sends current sync status on subscribe, then progress and committed-change signals. The committed
-rows reach the Session List as row changes.
+sends current sync status on subscribe, then progress. The saved rows reach the Session List as
+row changes.
 
 Codex metadata sync uses the same supervisor, worker entry, sync machine, batch saver, and Session
 upsert as Claude. The supervisor must confirm that the existing Codex app-server is ready before
@@ -254,7 +263,7 @@ Live status and events are reconciled with vendor history.
 Phase one removes the old operation tables, preload client maps, per-operation channels, and
 pass-through renderer hooks as their request-response operations move to tRPC. Named live-stream
 channels remain an explicit current boundary. Phase two moves those streams and change events to
-tRPC subscriptions. Live status transitions send the changed Session row; token and Feed events
+tRPC subscriptions. Live status transitions send the changed Session ID; token and Feed events
 do not.
 A committed Session or Ticket index change invalidates affected lists and selected detail after
 the transaction, never before it. Vendor history and live events use stable source event identity
@@ -321,4 +330,5 @@ machine boundary. The Session sync and live Session migrations remain separate w
 A root Session's Feed crosses IPC as one tRPC subscription of complete readings, with a Refresh
 mutation. Main reads the journal and vendor history, reconciles them, and publishes only a changed
 reading. The renderer no longer reads the root chain through the Feed history query or receives its
-raw live events. A committed Session sync makes an open reader read vendor history again.
+raw live events. An open reader reads vendor history again when a change names its Session and
+the stored Harness, native ID or working directory differs from the one it last read.

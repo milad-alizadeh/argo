@@ -3,17 +3,20 @@ import type { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionArchive } from '@/database/session-archive/schema'
-import { sessionDetailsProcedure } from '@/domains/sessions/main/api/session-details'
+import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import {
+  sessionDetailsProcedure,
   sessionListChangedProcedure,
   sessionListProcedure,
   type sessionListRowSchema,
+  watchSessionList,
 } from '@/domains/sessions/main/api/session-list'
-import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster-changes'
+import { SessionListChanges } from '@/domains/sessions/main/api/session-list-changes'
 import {
   type SessionUpdateProcedureContext,
   sessionUpdateProcedure,
-} from '@/domains/sessions/main/api/session-update-procedure'
+} from '@/domains/sessions/main/api/session-update'
+import { saveReadTicket } from '@/domains/tickets/main/database/ticket-upsert'
 import {
   insertProject,
   insertWorkspace,
@@ -30,6 +33,9 @@ export const IDS = [
 export type SessionListRow = z.infer<typeof sessionListRowSchema>
 type SessionListChange = inferRouterOutputs<AppRouter>['sessionListChanged']
 type RenameRequest = Parameters<SessionUpdateProcedureContext['rename']>[0]
+
+// The provider scope every test Project's Tickets are saved under.
+export const TICKET_SCOPE = { provider: 'github', scope: 'octocat/hello-world' } as const
 
 function mockSupervisor(sessions: Record<string, unknown>) {
   const statusListeners = new Set<(event: { sessionId: string }) => void>()
@@ -52,33 +58,38 @@ function mockSupervisor(sessions: Record<string, unknown>) {
   return { supervisor, statusChanged }
 }
 
+// The Session List procedures over an in-memory database, with the app-level watcher main starts.
 export function sessionListCaller(
   sessions: Record<string, unknown> = {},
   observeFeed: (sessionId: string) => () => void = () => () => {},
+  rename: (request: RenameRequest) => Promise<void> = async () => {},
 ) {
   const database = migratedDatabase()
   const client = database.$client
   const { supervisor, statusChanged } = mockSupervisor(sessions)
-  const roster = new SessionRosterChanges()
+  const changes = new SessionListChanges()
   const renames: RenameRequest[] = []
   const context = {
     database,
     supervisor: supervisor as never,
-    roster,
+    changes,
+    ticketSource: async () => TICKET_SCOPE,
     rename: async (request: RenameRequest) => {
       renames.push(request)
+      await rename(request)
     },
   }
+  const stopWatching = watchSessionList(context, observeFeed)
   const caller = initTRPC
     .create()
     .router({
       list: sessionListProcedure(context),
-      changed: sessionListChangedProcedure(context, observeFeed),
+      changed: sessionListChangedProcedure(context),
       update: sessionUpdateProcedure(context),
       details: sessionDetailsProcedure(context),
     })
     .createCaller({})
-  const changes = async () => {
+  const subscribeChanges = async () => {
     const received: SessionListChange[] = []
     const stream = await caller.changed()
     const subscription = stream.subscribe({ next: (change) => received.push(change) })
@@ -90,8 +101,9 @@ export function sessionListCaller(
     list: caller.list,
     update: caller.update,
     details: caller.details,
-    changes,
-    roster,
+    changes: subscribeChanges,
+    sessionListChanges: changes,
+    stopWatching,
     statusChanged,
     renames,
   }
@@ -136,4 +148,43 @@ export function insertSession(
     })
     .run()
   if (archived === true) database.insert(sessionArchive).values({ sessionId: id }).run()
+}
+
+// Saves the provider's facts for one Ticket in the test Ticket scope, as a read newer than any.
+export function saveTicket(
+  database: Database,
+  { key, title, state = 'open' }: { key: string; title: string; state?: 'open' | 'closed' },
+) {
+  saveReadTicket(
+    database,
+    { ...TICKET_SCOPE, readAt: Number.MAX_SAFE_INTEGER },
+    {
+      key,
+      url: null,
+      title,
+      body: null,
+      state,
+      status: { id: state, name: state, category: state === 'open' ? 'unstarted' : 'completed' },
+      priority: null,
+      createdAt: '2026-09-01T00:00:00Z',
+      labels: [],
+      type: null,
+      children: [],
+      blockedBy: null,
+    },
+  )
+}
+
+// Links a Session to a Ticket by key, as the user asserts it.
+export function linkTicket(
+  database: Database,
+  {
+    createdAt = '2026-09-26T10:00:00.000Z',
+    ...link
+  }: { sessionId: string; key: string; createdAt?: string },
+) {
+  database
+    .insert(sessionTicketLink)
+    .values({ sessionId: link.sessionId, projectId: 'project-1', ticketKey: link.key, createdAt })
+    .run()
 }

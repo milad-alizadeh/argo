@@ -11,12 +11,7 @@ async function store(context: TestContext) {
   return createSessionTicketLinkStore(path.join(root, 'portable-v1', 'session-tickets.json'))
 }
 
-const ticket = (key: string) => ({
-  projectId: 'project-1',
-  key,
-  title: `Ticket ${key}`,
-  state: 'open' as const,
-})
+const ticket = (key: string) => ({ projectId: 'project-1', key })
 
 test('a Session that was never linked reads no Ticket', async (context) => {
   const links = await store(context)

@@ -1,11 +1,11 @@
-// The Roster's bounded window, proved through the packaged app rather than the reader alone
+// The Session List's bounded window, proved through the packaged app rather than the reader alone
 // (#2239): scrolling the sentinel row into view grows the loaded window, and keyboard navigation
 // keeps walking cleanly across whatever it just loaded.
 
 import assert from 'node:assert/strict'
 import { expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
-import { FARTHEST_WINDOW_FILLER_ID } from '../fixtures/roster-window.fixture'
+import { FARTHEST_WINDOW_FILLER_ID } from '../fixtures/session-list-window.fixture'
 
 const ROW = 'nav[aria-label="Sessions"] button[data-session-id]'
 const SCROLL_ATTEMPTS = 40
@@ -15,7 +15,7 @@ const SCROLL_TIMEOUT_MS = 20_000
 // inside it, so the nav's parent is that wrapper and setting its scrollTop scrolls nothing.
 const SCROLLER = '[data-slot="roster-scroll"]'
 
-function scrollRosterToEnd(page: Page) {
+function scrollSessionListToEnd(page: Page) {
   return page.evaluate((selector) => {
     const scroller = document.querySelector(selector)
     if (scroller !== null) scroller.scrollTop = scroller.scrollHeight
@@ -27,7 +27,7 @@ async function scrollUntilVisible(page: Page, selector: string) {
   const deadline = Date.now() + SCROLL_TIMEOUT_MS
   for (let attempt = 0; attempt < SCROLL_ATTEMPTS; attempt += 1) {
     if ((await target.count()) > 0) return
-    await scrollRosterToEnd(page)
+    await scrollSessionListToEnd(page)
     await page.waitForTimeout(50)
     if (Date.now() > deadline) break
   }
@@ -36,7 +36,7 @@ async function scrollUntilVisible(page: Page, selector: string) {
   throw new Error(`The window stopped growing at ${rows} rows, without ${selector}.`)
 }
 
-export async function proveRosterWindow(page: Page) {
+export async function proveSessionListWindow(page: Page) {
   await page.reload()
   await page.locator(ROW).first().waitFor()
   const firstSessionId = await page.locator(ROW).first().getAttribute('data-session-id')

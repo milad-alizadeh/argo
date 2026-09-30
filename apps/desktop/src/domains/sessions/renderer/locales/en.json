@@ -11,8 +11,6 @@
   },
   "newSession": "New Session",
   "identity": {
-    "sessionId": "Session ID",
-    "workspace": "Workspace",
     "branch": "Branch"
   },
   "searchSessions": "Search Sessions",
@@ -27,11 +25,6 @@
       "live": "Argo tried to load the history for this Session, but the load did not finish.",
       "external": "This Session is external. Argo reads its history from a file it does not control, and the read is taking too long."
     },
-    "retry": "Retry"
-  },
-  "openElsewhere": {
-    "title": "This session is open in another app",
-    "description": "Close it there to continue it in Argo.",
     "retry": "Retry"
   },
   "question": {
@@ -60,43 +53,24 @@
   },
   "jumpToLatest": "Jump to latest",
   "composer": {
-    "label": "Session input",
     "cardLabel": "Message composer",
     "message": "Message",
     "plan": "Step {{current}}/{{total}}",
     "addContext": "Add context",
     "contextPicker": {
       "label": "Context picker",
-      "search": "Search context",
-      "searchPlaceholder": "Search Tickets",
-      "close": "Close context picker",
       "filesAndFolders": "Files & folders",
       "tickets": "Tickets",
       "goals": "Goals",
       "comingSoon": "Coming soon",
       "blocked": "Blocked",
-      "terminal": "Terminal · {{status}}",
-      "removeTicket": "Remove {{key}}",
-      "openTicket": "Open {{key}}",
-      "selectedTickets": "Selected Tickets",
-      "ticket": {
-        "sharedPicker": "Add a shared context picker to the Session composer",
-        "composerSync": "Keep the Composer draft in sync",
-        "refreshToken": "Store the refresh token",
-        "ticketsPrototype": "Prototype the Tickets room",
-        "open": "Open",
-        "inProgress": "In Progress",
-        "done": "Done",
-        "closed": "Closed"
-      }
+      "terminal": "Terminal · {{status}}"
     },
     "attachment": {
       "fileType": "{{extension}} file",
       "notFound": "Not found",
       "remove": "Remove {{title}}"
     },
-    "attach": "Attach a file",
-    "dictate": "Dictate",
     "send": "Send",
     "sendMessage": "Send message",
     "draftSaveFailed": "The draft could not be saved. Try again before closing this Session.",
@@ -105,11 +79,8 @@
     "sendFailed": "The Turn could not be sent. Your draft is still saved.",
     "sendUncertain": "Argo could not confirm whether the Turn was sent. Your draft is still saved.",
     "interrupt": "Interrupt",
-    "usage": "Usage",
-    "compact": "Compact the conversation",
     "compactAction": "Compact context",
     "compactShort": "Compact",
-    "handoff": "Hand off to a new Session",
     "context": "Context",
     "contextActions": "Context actions",
     "handoffAction": "Handoff Session",
@@ -130,10 +101,8 @@
       "current": "Current · {{count}}k tokens",
       "unreported": "This session did not report its context window.",
       "description": "At this level, older context can compete with the current task. Compact before starting another substantial phase.",
-      "smartZone": "Smart Zone",
       "smartZoneRange": "Smart Zone · 0–20%",
       "smartZoneDescription": "Focused context. Instructions and recent decisions remain easy to weigh.",
-      "dumbZone": "Dumb Zone",
       "dumbZoneRange": "Dumb Zone · 40%+",
       "dumbZoneDescription": "History still fits, but noise and stale decisions weaken attention.",
       "loadedContext": "Loaded context"
@@ -145,7 +114,6 @@
       "choosePermissionMode": "Choose permission mode: {{mode}}",
       "permissions": "{{harness}} permissions",
       "loadingModels": "Loading {{harness}} models…",
-      "modelCatalogError": "Argo could not load {{harness}} models.",
       "catalogFailure": {
         "not-installed": "{{harness}} is not installed.",
         "not-signed-in": "Sign in to {{harness}} to load its models.",
@@ -161,7 +129,6 @@
       "chooseLabel": "Work location: {{workspace}}",
       "label": "Work location",
       "newWorktree": "New worktree",
-      "mainCheckout": "Main checkout",
       "existingWorktrees": "Existing worktrees",
       "search": "Search worktrees",
       "noMatches": "No worktrees found",
@@ -181,26 +148,10 @@
       "emptyDescription": "The agent has not added any steps.",
       "open": "Open task plan"
     },
-    "queued": {
-      "steer": "Steer",
-      "reorder": "Queued turn. Drag it to reorder."
-    },
     "allowance": {
       "label": "Usage",
       "title": "{{harness}} plan usage",
       "description": "Account allowance, separate from context health"
-    },
-    "permission": "Allow this command?",
-    "question": "Question from the agent",
-    "deny": "Deny",
-    "allow": "Allow",
-    "skip": "Skip",
-    "answer": "Answer",
-    "unavailable": {
-      "label": "Session input",
-      "read-only": "Read-only. Argo did not start this Session.",
-      "orphaned": "This Session is disconnected.",
-      "ended": "This Session ended. There is nothing left to send."
     }
   },
   "rowUnreadable": "Part of this transcript is damaged, so Argo cannot show it.",
@@ -213,16 +164,6 @@
     "saving": "Saving…",
     "enterName": "Enter a name for this Session.",
     "failure": "Argo could not rename this Session."
-  },
-  "ticketLink": {
-    "title": "Link Ticket",
-    "renameTitle": "Rename Session?",
-    "search": "Search Tickets",
-    "searchPlaceholder": "Search Tickets…",
-    "cancel": "Cancel",
-    "renameDescription": "This Session has a name a person typed by hand. Replace it with “{{title}}”?",
-    "keepName": "Keep name",
-    "rename": "Rename"
   },
   "sessionList": {
     "planProgress": "{{completed}} of {{total}} steps completed",
@@ -247,9 +188,6 @@
   "handoff": {
     "label": "Session handoff",
     "title": "Handoff",
-    "inProgress": "Handing off to a new session…",
-    "complete": "Handed off to a new session.",
-    "open": "Open Session",
     "to": "Handed off to",
     "from": "Handed off from"
   },
@@ -287,16 +225,6 @@
   "sessionListStatusAll": "All",
   "readingSessions": "Reading Sessions",
   "needsInput": "Needs input",
-  "sessionStatus": {
-    "asking": "Asking",
-    "ended": "Ended",
-    "idle": "Idle",
-    "permission": "Waiting on permission",
-    "running": "Running",
-    "starting": "Starting",
-    "stopped": "Stopped",
-    "unknown": "Unknown"
-  },
   "bulkSelect": {
     "selected": "Selected",
     "archive": "Archive",
@@ -311,9 +239,7 @@
   "contextMenu": {
     "actions": "{{title}} actions",
     "rename": "Rename",
-    "openTicket": "Open Ticket",
-    "unlinkTicket": "Unlink Ticket",
-    "linkTicket": "Link Ticket…"
+    "openTicket": "Open Ticket"
   },
   "empty": {
     "blank": {
@@ -322,8 +248,6 @@
     }
   },
   "marks": {
-    "subagents": "Subagents",
-    "thought": "Thought",
     "compacting": "Compacting conversation…",
     "compacted": "Conversation compacted",
     "interrupted": "Interrupted"
@@ -439,7 +363,8 @@
     "done": "Done",
     "completed": "Completed",
     "failed": "Failed",
-    "interrupted": "Interrupted"
+    "interrupted": "Interrupted",
+    "finished": "Finished"
   },
   "skill": {
     "open": "Open the {{name}} skill",
@@ -472,18 +397,8 @@
     "copyDiff": "Copy diff"
   },
   "row": {
-    "activity": "Ran {{tool}} {{target}}",
-    "activityBare": "Ran {{tool}}",
-    "ago": "{{age}} ago",
-    "plan": "{{completed}} of {{total}} done",
-    "delegationRunning_one": "One Subagent running",
-    "delegationRunning_other": "{{count}} Subagents running",
-    "delegationFinished": "Every delegation finished",
     "updatedJustNow": "Updated just now",
     "updatedAgo": "Updated {{duration}} ago"
-  },
-  "facts": {
-    "placeUnknown": "working directory unknown"
   },
   "tools": {
     "failed": "Failed",
@@ -492,17 +407,6 @@
   },
   "feedLoading": "Loading this Session",
   "rail": {
-    "backgroundAgents": "Background agents",
-    "shellSection": "Shell",
-    "agents": "Background agents {{count}}",
-    "agentsUnknown": "Background agents",
-    "shell": "Shell {{count}}",
-    "shellBare": "a command with no text",
-    "shellInspector": "Background Shell",
-    "shellNoOutput": "This command recorded no output.",
-    "subagent": "Subagent {{index}}",
-    "finished": "{{count}} finished",
-    "unresolved_one": "One delegation, unresolved",
-    "unresolved_other": "{{count}} subagents, unresolved"
+    "shellInspector": "Background Shell"
   }
 }

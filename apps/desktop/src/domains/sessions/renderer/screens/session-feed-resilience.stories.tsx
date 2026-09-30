@@ -3,16 +3,10 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { sessionRow } from '@/mocks/sessions/session-rows'
-import {
-  type FeedRead,
-  sessionFeedRefreshTrpc,
-  sessionFeedSubscribe,
-  sessionListSubscribe,
-  sessionListTrpc,
-} from '@/mocks/sessions/session-story-host'
+import { type FeedRead, installSessionHost } from '@/mocks/sessions/session-story-host'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { trpcClient } from '@/platform/renderer/trpc-client'
-import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
+import { SessionList } from '../session-list/session-list'
 import { SessionScreenView } from './session-screen-view'
 
 const session = sessionRow({
@@ -29,104 +23,62 @@ let flakyFeedReads = 0
 // read stays on screen through that (#2053).
 function flakyFeedHost() {
   flakyFeedReads = 0
-  const before = window.argo
   const read: FeedRead = async () => {
     flakyFeedReads += 1
     if (flakyFeedReads === 2) throw new Error('Vendor history is unavailable.')
     return [{ kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read before the flake.' }]
   }
-  window.argo = {
-    ...before,
-    trpcSubscribe: sessionFeedSubscribe(
-      sessionListSubscribe(before.trpcSubscribe, () => [session]),
-      read,
-    ),
-    trpc: sessionListTrpc(sessionFeedRefreshTrpc(before.trpc), () => [session]),
-  }
-  return () => {
-    window.argo = before
-  }
+  return installSessionHost([session], { feed: read })
 }
 
 // The first read can fail before any history has reached the Feed (#2071).
 function flakyFirstOpenHost() {
   let reads = 0
-  const before = window.argo
   const read: FeedRead = async () => {
     reads += 1
     if (reads === 1) throw new Error('Vendor history is unavailable.')
     return [{ kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read after the flake.' }]
   }
-  window.argo = {
-    ...before,
-    trpcSubscribe: sessionFeedSubscribe(
-      sessionListSubscribe(before.trpcSubscribe, () => [session]),
-      read,
-    ),
-    trpc: sessionListTrpc(sessionFeedRefreshTrpc(before.trpc), () => [session]),
-  }
-  return () => {
-    window.argo = before
-  }
+  return installSessionHost([session], { feed: read })
 }
 
 let historyReady = false
 
 function missingHistoryHost(listed = true) {
   historyReady = false
-  const before = window.argo
   const read: FeedRead = async () => {
     if (!historyReady)
       throw Object.assign(new Error('Session is missing.'), { data: { code: 'NOT_FOUND' } })
     return [{ kind: 'message', id: 'recovered-row', role: 'assistant', text: 'History recovered.' }]
   }
-  window.argo = {
-    ...before,
-    trpcSubscribe: sessionFeedSubscribe(
-      sessionListSubscribe(before.trpcSubscribe, () => (listed ? [session] : [])),
-      read,
-    ),
-    trpc: sessionListTrpc(sessionFeedRefreshTrpc(before.trpc), () => (listed ? [session] : [])),
-  }
-  return () => {
-    window.argo = before
-  }
+  return installSessionHost(listed ? [session] : [], { feed: read })
 }
 
 const liveIdentity = { sessionId: session.id, commandId: null, turnId: null } as const
 
 // Main joins the read history with live work that history does not hold yet, in one reading.
 function liveFeedHost() {
-  const before = window.argo
   const read: FeedRead = async () => [
     { kind: 'message', id: 'history-row', role: 'user', text: 'Check the build.' },
   ]
-  window.argo = {
-    ...before,
-    trpcSubscribe: sessionFeedSubscribe(
-      sessionListSubscribe(before.trpcSubscribe, () => [session]),
-      read,
-      [
-        { ...liveIdentity, sequence: 1, type: 'status', vendorEventId: null, status: 'running' },
-        {
-          ...liveIdentity,
-          sequence: 2,
-          type: 'content',
-          vendorEventId: 'live-row',
-          content: {
-            kind: 'message',
-            id: 'live-row',
-            role: 'assistant',
-            text: 'The build is still running.',
-          },
+  return installSessionHost([session], {
+    feed: read,
+    live: [
+      { ...liveIdentity, sequence: 1, type: 'status', vendorEventId: null, status: 'running' },
+      {
+        ...liveIdentity,
+        sequence: 2,
+        type: 'content',
+        vendorEventId: 'live-row',
+        content: {
+          kind: 'message',
+          id: 'live-row',
+          role: 'assistant',
+          text: 'The build is still running.',
         },
-      ],
-    ),
-    trpc: sessionListTrpc(sessionFeedRefreshTrpc(before.trpc), () => [session]),
-  }
-  return () => {
-    window.argo = before
-  }
+      },
+    ],
+  })
 }
 
 const meta = {
@@ -137,7 +89,7 @@ const meta = {
     (Story) => (
       <div className="h-dvh w-full">
         <MemoryRouter initialEntries={[`/sessions/${session.id}`]}>
-          <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionsSidebar />}>
+          <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionList />}>
             <Routes>
               <Route path="/sessions/:sessionId" element={<Story />} />
             </Routes>

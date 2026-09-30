@@ -1,6 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { useEffect } from 'react'
-import { queryClient, type RouterInputs, trpc, trpcClient } from '@/platform/renderer/trpc-client'
+import { type RouterInputs, trpc, trpcClient } from '@/platform/renderer/trpc-client'
 import type { SessionListResult } from '../types'
 
 export type SessionListInput = Required<
@@ -10,15 +9,8 @@ export type SessionListInput = Required<
 
 const PAGE_SIZE = 30
 
-// Main announces each saved change, and every loaded list reads its pages again.
+// Read page by page; `SessionChanges` reads the loaded pages again when main announces a change.
 export function useSessionListQuery(input: SessionListInput, enabled: boolean) {
-  useEffect(() => {
-    if (!enabled) return
-    const subscription = trpcClient.sessionListChanged.subscribe(undefined, {
-      onData: () => queryClient.invalidateQueries({ queryKey: trpc.sessionList.pathKey() }),
-    })
-    return () => subscription.unsubscribe()
-  }, [enabled])
   return useInfiniteQuery({
     queryKey: [...trpc.sessionList.pathKey(), input],
     enabled,
@@ -30,9 +22,13 @@ export function useSessionListQuery(input: SessionListInput, enabled: boolean) {
         ? previous
         : undefined,
     initialPageParam: 0,
-    getNextPageParam: (last: SessionListResult, pages: SessionListResult[]) => {
-      const loaded = pages.reduce((sum, page) => sum + page.rows.length, 0)
-      return loaded < last.total ? loaded : undefined
+    getNextPageParam: (
+      last: SessionListResult,
+      _pages: SessionListResult[],
+      lastPageParam: number,
+    ) => {
+      const next = lastPageParam + last.rows.length
+      return last.rows.length > 0 && next < last.total ? next : undefined
     },
     queryFn: ({ pageParam }) =>
       trpcClient.sessionList.query({ ...input, offset: pageParam, limit: PAGE_SIZE }),

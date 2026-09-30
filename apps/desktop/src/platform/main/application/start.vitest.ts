@@ -1,7 +1,8 @@
 import { afterEach, expect, test, vi } from 'vitest'
-import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
+import { SessionListChanges } from '@/domains/sessions/main/api/session-list-changes'
 import { TICKET_SYNC_TIMING } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
 import type { HarnessRegistry } from '@/harnesses/registry'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
 
 const electron = vi.hoisted(() => ({
   app: {
@@ -32,12 +33,9 @@ const unreachable = async () => ({ ok: false as const, failure: 'github-unreacha
 
 function prepared() {
   return {
-    database: {} as never,
-    sessionSyncStatus: {
-      claude: new SessionSyncStatusStore(undefined, 'claude'),
-      codex: new SessionSyncStatusStore(undefined, 'codex'),
-      'claude-acp': new SessionSyncStatusStore(undefined, 'claude-acp'),
-    },
+    // The Session sync supervisor reads each Harness's saved scan status at start.
+    database: migratedDatabase(),
+    sessionListChanges: new SessionListChanges(),
     ticketSync: {
       database: {} as never,
       readPage: unreachable,
