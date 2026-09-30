@@ -22,6 +22,35 @@ const FIXTURES = fileURLToPath(
 )
 const previous = process.env.ARGO_CODEX_TRANSCRIPTS
 
+function userMessageThread(text: string): CodexRequest {
+  return (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse({
+      thread: {
+        id: 'codex-notice-thread',
+        turns: [
+          {
+            id: 'turn-1',
+            items: [{ type: 'userMessage', id: 'codex-notice', content: [{ type: 'text', text }] }],
+          },
+        ],
+      },
+    })) as CodexRequest
+}
+
+function streamedUserMessage(text: string): FeedContent[] {
+  const streamed = openCodexHistoryReader()([
+    JSON.stringify({
+      type: 'event_msg',
+      payload: {
+        type: 'item_completed',
+        item: { type: 'UserMessage', id: 'codex-notice', content: [{ type: 'text', text }] },
+      },
+    }),
+  ])
+  if (streamed.type !== 'appended') throw new Error('The rollout did not stream.')
+  return streamed.events.flatMap((event) => (event.type === 'content' ? [event.content] : []))
+}
+
 afterEach(() => {
   if (previous === undefined) delete process.env.ARGO_CODEX_TRANSCRIPTS
   else process.env.ARGO_CODEX_TRANSCRIPTS = previous
@@ -66,6 +95,48 @@ test('counts a line that is not a rollout record', () => {
     console.warn = warn
   }
   expect(warnings).toEqual(['Rejected 1 unsupported Codex rollout line(s).'])
+})
+
+test('reads a user task notification as the task a full thread read returns', async () => {
+  const text =
+    '<task-notification><task-id>t2</task-id><status>completed</status><summary>Task finished</summary></task-notification>'
+  const full = await readCodexSessionHistory(userMessageThread(text), 'codex-notice-thread')
+  const task = {
+    id: 'codex-notice',
+    kind: 'task' as const,
+    taskId: 't2',
+    callId: null,
+    status: 'completed' as const,
+    description: null,
+    summary: 'Task finished',
+  }
+  expect(full).toEqual([task])
+  expect(streamedUserMessage(text)).toEqual([task])
+})
+
+test('counts a task notification whose status is not one Codex publishes', async () => {
+  const text =
+    '<task-notification><task-id>t2</task-id><status>nope</status><summary>Task finished</summary></task-notification>'
+  const diagnostic = {
+    id: 'codex-notice',
+    kind: 'diagnostic' as const,
+    vendorType: 'task-notification',
+    detail: 'Unknown task status.',
+  }
+  const warnings: unknown[] = []
+  const warn = console.warn
+  console.warn = (message: unknown) => warnings.push(message)
+  try {
+    const full = await readCodexSessionHistory(userMessageThread(text), 'codex-notice-thread')
+    expect(full).toEqual([diagnostic])
+    expect(streamedUserMessage(text)).toEqual([diagnostic])
+  } finally {
+    console.warn = warn
+  }
+  expect(warnings).toEqual([
+    'Rejected 1 unsupported Codex task notification.',
+    'Rejected 1 unsupported Codex rollout line(s).',
+  ])
 })
 
 test('asks for a full read when a rollout completes a command', () => {
