@@ -8,7 +8,7 @@ import { feedStateSnapshot } from './feed-selectors'
 import { fixtureSession, readFixtureSessionsFrom } from './fixture-sessions'
 import { ARCHIVED_FIXTURES, CODEX_FIXTURES, FIXTURES, prepare } from './fixtures/feed.fixture'
 import { createPackagedSessionHarness, type PackagedSession } from './packaged-session-harness'
-import { archiveSet } from './page-trpc'
+import { sendSessionUpdate } from './page-trpc'
 import { createRealSessionHarnessBackend } from './real-harness/real-session-harness-backend'
 import type { SessionBackendOptions } from './session-backend-option'
 import type { SessionFixture, SessionHarnessBackend } from './session-harness-backend'
@@ -48,17 +48,18 @@ async function attachFailure(session: PackagedSession, testInfo: TestInfo) {
   })
 }
 
-// Codex lists its threads after Claude, so a case waits for every listed fixture before it reads the Roster.
+// Codex lists its threads after Claude, so a case waits for every listed fixture before it reads the Session List.
 const LISTED_FIXTURES = [
   ...FIXTURES.filter((name) => name !== 'unparseableBody'),
   ...CODEX_FIXTURES,
 ]
 
-// The reader archived these before the case begins, through the call the Roster's Archive makes.
+// The reader archived these before the case begins, through the call the Session List's Archive makes.
 async function archiveFixtures(page: Page) {
   await Promise.all(LISTED_FIXTURES.map(fixtureSession))
   const sessionIds = await Promise.all(ARCHIVED_FIXTURES.map(fixtureSession))
-  const { failed } = await archiveSet(page, sessionIds, true)
+  const archived = await sendSessionUpdate(page, { sessionIds, archived: true })
+  const failed = sessionIds.filter((id) => !archived.sessionIds.includes(id))
   if (failed.length > 0) throw new Error(`Could not archive ${failed.join(', ')}.`)
 }
 
