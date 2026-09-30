@@ -87,9 +87,7 @@ function messageEvents(payload: unknown, reject: () => void): SessionLiveEventBo
         kind: 'message',
         role: item.type === 'UserMessage' ? 'user' : 'assistant',
         text,
-        ...(item.type === 'AgentMessage'
-          ? { phase: messagePhase(item.phase) }
-          : {}),
+        ...(item.type === 'AgentMessage' ? { phase: messagePhase(item.phase) } : {}),
       },
     },
   ]

@@ -13,9 +13,9 @@ import { fileURLToPath } from 'node:url'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { latestTurn } from '@/harnesses/host/history-watch'
 import { scanRollouts } from '../../../../mocks/cli/codex/mock-codex-rollout-history.ts'
+import type { ThreadItem } from '../app-server'
 import type { CodexRequest } from '../app-server/codex-app-server-client'
 import { codexHistoryOwner, codexHistoryTurn, openCodexHistoryReader } from './codex-history-lines'
-import type { ThreadItem } from '../app-server'
 import { codexContentFromItems, readCodexSessionHistory } from './codex-session-history'
 
 const FIXTURES = fileURLToPath(
@@ -191,7 +191,11 @@ const workItems = [
       type: 'FileChange',
       id: 'edit-1',
       changes: {
-        '/repo/app.txt': { type: 'update', unified_diff: '@@ -1 +1 @@\n-beta\n+gamma\n', move_path: null },
+        '/repo/app.txt': {
+          type: 'update',
+          unified_diff: '@@ -1 +1 @@\n-beta\n+gamma\n',
+          move_path: null,
+        },
         '/repo/new.txt': { type: 'add', content: 'new\n' },
       },
       status: 'completed',

@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import type { Database } from '@/database/database'
-import { IDS, insertSession, sessionListCaller, settled } from '@/mocks/sessions/session-list-caller'
+import {
+  IDS,
+  insertSession,
+  sessionListCaller,
+  settled,
+} from '@/mocks/sessions/session-list-caller'
 
 function insertTwoSessions(database: Database) {
   insertSession(database, { id: IDS[0], harness: 'claude', nativeId: 'native-1', createdAt: 20 })

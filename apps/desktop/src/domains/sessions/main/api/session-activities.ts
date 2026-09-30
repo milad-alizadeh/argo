@@ -1,11 +1,14 @@
 import { FeedRowProjector, type LiveActivity } from '@/domains/sessions/api/feed'
-import type { SessionLiveEvent, SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
+import type {
+  SessionLiveEvent,
+  SessionLiveEventBody,
+} from '@/domains/sessions/api/session-live-event'
 import type { Harness } from '@/harnesses/harness'
 import type { HistoryActivityReading } from '@/harnesses/registration'
 import { type SessionUpdateContext, updateHarnessSession } from './session-update'
 
 // Each Session's activity line reaches SQLite at most once a window, as its newest value.
-export const ACTIVITY_WRITE_MS = 500
+const ACTIVITY_WRITE_MS = 500
 // The newest events a Session keeps once its current Turn's prompt lies further back.
 const RETAINED_EVENTS = 500
 
@@ -13,7 +16,9 @@ type HarnessSession = { harness: Harness; nativeId: string }
 type SessionTurn = { session: HarnessSession; events: SessionLiveEvent[]; sequence: number }
 
 function isPrompt(event: SessionLiveEventBody): boolean {
-  return event.type === 'content' && event.content.kind === 'message' && event.content.role === 'user'
+  return (
+    event.type === 'content' && event.content.kind === 'message' && event.content.role === 'user'
+  )
 }
 
 // The events of a Session's current Turn, from the newest prompt on, which is all the activity

@@ -8,7 +8,11 @@ export function mockCodexHistoryLines(): MockHistoryLines {
     count += 1
     return JSON.stringify({
       type: 'event_msg',
-      payload: { type: 'item_completed', turn_id: 'turn-1', item: { id: `item-${count}`, ...item } },
+      payload: {
+        type: 'item_completed',
+        turn_id: 'turn-1',
+        item: { id: `item-${count}`, ...item },
+      },
     })
   }
   return {

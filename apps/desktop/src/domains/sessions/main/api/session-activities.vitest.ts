@@ -6,9 +6,9 @@ import path from 'node:path'
 import { afterEach, describe, test } from 'vitest'
 import { watchHistoryActivity } from '@/harnesses/host/history-watch'
 import { createHarnessRegistry } from '@/harnesses/registry'
+import { codexClientFor } from '@/mocks/sessions/live-session-supervisor.fixture'
 import { MOCK_HISTORY_LINES, type MockHistoryLines } from '@/mocks/sessions/mock-history-lines'
 import { IDS, insertSession, sessionListCaller } from '@/mocks/sessions/session-list-caller'
-import { codexClientFor } from '@/mocks/sessions/live-session-supervisor.fixture'
 import { SessionActivities } from './session-activities'
 import { updateSession } from './session-update'
 
@@ -58,10 +58,13 @@ async function watchedSession(harness: keyof typeof MOCK_HISTORY_LINES) {
 
   let activities = new SessionActivities({ database, changes: sessionListChanges }, WRITE_MS)
   const owners = new Set<string>()
-  const stopHistory = watchHistoryActivity({ ...files, directory: root }, (owner, _turn, reading) => {
-    owners.add(owner)
-    activities.publish({ harness, nativeId: owner }, reading)
-  })
+  const stopHistory = watchHistoryActivity(
+    { ...files, directory: root },
+    (owner, _turn, reading) => {
+      owners.add(owner)
+      activities.publish({ harness, nativeId: owner }, reading)
+    },
+  )
   stops.push(() => {
     stopHistory()
     activities.stop()
