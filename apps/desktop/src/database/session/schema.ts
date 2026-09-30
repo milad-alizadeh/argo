@@ -3,6 +3,24 @@ import { project } from '@/database/project/schema'
 import { timestampColumns } from '@/database/timestamp-columns'
 import { workspace } from '@/database/workspace/schema'
 
+export const SESSION_STATUSES = [
+  'starting',
+  'running',
+  'permission',
+  'asking',
+  'idle',
+  'stopped',
+  'ended',
+  'unknown',
+] as const
+// The statuses of a Session with a Turn under way.
+export const WORKING_SESSION_STATUSES = [
+  'starting',
+  'running',
+  'permission',
+  'asking',
+] as const satisfies readonly (typeof SESSION_STATUSES)[number][]
+
 export const sessionTable = sqliteTable(
   'session',
   {
@@ -21,7 +39,7 @@ export const sessionTable = sqliteTable(
     // The last activity line a Feed read, as JSON, so an idle row keeps it with no Feed reader.
     activity: text('activity'),
     // The last status the history watcher saw; a live channel's own status outranks it.
-    status: text('status'),
+    status: text('status', { enum: SESSION_STATUSES }),
     ...timestampColumns(),
   },
   (table) => [

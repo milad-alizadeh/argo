@@ -3,14 +3,10 @@ import { observable } from '@trpc/server/observable'
 import { and, asc, count, desc, eq, inArray, not, or, type SQL, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
-import { sessionTable } from '@/database/session/schema'
+import { sessionTable, WORKING_SESSION_STATUSES } from '@/database/session/schema'
+import { type SessionStatus, sessionStatusSchema } from '@/database/session/validation'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import { feedActivitySchema } from '@/domains/sessions/api/feed-activity'
-import {
-  type SessionStatus,
-  sessionStatusSchema,
-  WORKING_SESSION_STATUSES,
-} from '@/domains/sessions/api/session-status'
 import { sessionTitleSchema } from '@/domains/sessions/api/session-title'
 import { type StoredSubagent, storedSessionSubagents } from '../database/session-subagents'
 import {
@@ -202,7 +198,7 @@ function sessionListRow(
     workspaceId: string | null
     activityAt: number | null
     activity: string | null
-    status: string | null
+    status: SessionStatus | null
     updatedAt: number
     ticket: {
       projectId: string
@@ -216,7 +212,6 @@ function sessionListRow(
   subagents: readonly StoredSubagent[],
 ) {
   const live = liveProjection(context, row.id)
-  const stored = sessionStatusSchema.safeParse(row.status)
   const liveStatus = live?.status === 'unknown' ? null : live?.status
   const ticket =
     row.ticket === null ? null : { ...row.ticket, state: ticketStateOf(row.ticket.state) }
@@ -231,7 +226,7 @@ function sessionListRow(
     customTitle: row.customTitle,
     preview: row.preview,
     title: displayedTitle({ ...row, ticketTitle: ticket?.title ?? null }),
-    status: liveStatus ?? (stored.success ? stored.data : 'unknown'),
+    status: liveStatus ?? row.status ?? 'unknown',
     cwd: row.cwd,
     workspaceId: row.workspaceId,
     branch: null,
