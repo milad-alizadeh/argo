@@ -18,7 +18,7 @@ export function sessionListState(
 // The one spinner every Session list load-more state draws, so the active Session list and the Archive read the
 // same at the point where the list is still growing. It takes one row's height, the height of the
 // Session row it stands in for, and centers the spinner in it.
-export function SessionListStatusRow({ label }: { label: string }) {
+function SessionListStatusRow({ label }: { label: string }) {
   return (
     <div
       aria-label={label}

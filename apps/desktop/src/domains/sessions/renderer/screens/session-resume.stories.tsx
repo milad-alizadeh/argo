@@ -4,7 +4,6 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
-import type { Session } from '@/domains/sessions/renderer/types'
 import { sessionRow } from '@/mocks/sessions/session-rows'
 import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fixture'
 import {
@@ -17,6 +16,7 @@ import {
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { queryClient } from '@/platform/renderer/trpc-client'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
+import type { Session } from '../types'
 import { SessionScreenView } from './session-screen-view'
 
 // #2092: a Session Argo held before a restart reads external, keeps its composer, and the next

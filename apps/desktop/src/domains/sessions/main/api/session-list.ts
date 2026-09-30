@@ -189,7 +189,7 @@ function ticketStateOf(value: string): 'open' | 'closed' {
   return z.enum(['open', 'closed']).parse(value)
 }
 
-export function sessionListRow(
+function sessionListRow(
   context: SessionListContext,
   row: StoredSessionTitle & {
     id: string
@@ -249,7 +249,7 @@ export function sessionListRow(
   }
 }
 
-export const storedSessionColumns = {
+const storedSessionColumns = {
   id: sessionTable.argoId,
   harness: sessionTable.harness,
   nativeId: sessionTable.nativeId,
@@ -274,7 +274,7 @@ export const storedSessionColumns = {
   },
 }
 
-export const sessionIsArchived = sql<boolean>`exists (select 1 from session_archive where session_archive.session_id = ${sessionTable.argoId})`
+const sessionIsArchived = sql<boolean>`exists (select 1 from session_archive where session_archive.session_id = ${sessionTable.argoId})`
 
 // Runs `publish` once in the next microtask for any burst of `changed` calls, until stopped.
 export function coalescedChanges(publish: () => void) {
@@ -307,13 +307,18 @@ export function readSessionRows(
     .leftJoin(sessionTicketLink, eq(sessionTicketLink.sessionId, sessionTable.argoId))
     .where(where)
     .orderBy(asc(sessionTable.sortOrder), desc(sessionTable.createdAt), asc(sessionTable.argoId))
-  const stored = page === undefined ? query.all() : query.limit(page.limit).offset(page.offset).all()
+  const stored =
+    page === undefined ? query.all() : query.limit(page.limit).offset(page.offset).all()
   const subagents = storedSessionSubagents(
     context.database,
     stored.map((row) => row.id),
   )
   return stored.map((row) =>
-    sessionListRow(context, { ...row, archived: Boolean(row.archived) }, subagents.get(row.id) ?? []),
+    sessionListRow(
+      context,
+      { ...row, archived: Boolean(row.archived) },
+      subagents.get(row.id) ?? [],
+    ),
   )
 }
 

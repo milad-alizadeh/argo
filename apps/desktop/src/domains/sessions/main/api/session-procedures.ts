@@ -24,7 +24,10 @@ import {
 import { type SessionRefreshContext, sessionRefreshProcedure } from './session-refresh'
 import { type SessionProcedureContext, sessionSubmitProcedure } from './session-submit'
 import { type SessionSyncStatusStore, sessionSyncStatusProcedure } from './session-sync-status'
-import { type SessionUpdateProcedureContext, sessionUpdateProcedure } from './session-update-procedure'
+import {
+  type SessionUpdateProcedureContext,
+  sessionUpdateProcedure,
+} from './session-update-procedure'
 import { sessionWorkReadProcedures } from './session-work-reads'
 
 export type SessionApiContext = SessionProcedureContext &

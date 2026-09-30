@@ -21,8 +21,7 @@ import {
 import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import {
   clearWorkingStatuses,
-  savedSessionId,
-  updateSession,
+  updateHarnessSession,
 } from '@/domains/sessions/main/api/session-update'
 import { WatchedSessionStatus } from '@/domains/sessions/main/api/watched-session-status'
 import {
@@ -414,10 +413,9 @@ function attachWindowTrpc({
   registry: HarnessRegistry
 }): () => void {
   const roster = new SessionRosterChanges()
-  const watchedStatus = new WatchedSessionStatus(({ harness, nativeId }, status) => {
-    const sessionId = savedSessionId(database, harness, nativeId)
-    if (sessionId !== undefined) updateSession({ database, roster }, sessionId, { status })
-  })
+  const watchedStatus = new WatchedSessionStatus((session, status) =>
+    updateHarnessSession({ database, roster }, session, { status }),
+  )
   const activities = new SessionActivities({ database, roster })
   const router = routerForWindow({
     actors,
@@ -474,8 +472,8 @@ function watchRosterSources({
         watchedStatus.record({ harness, nativeId: owner, turn, at })
         recordHistoryActivity(database, { harness, nativeId: owner, at })
         recordLiveSubagents(database, { harness, nativeId: owner, events })
-        const sessionId = savedSessionId(database, harness, owner)
-        if (sessionId !== undefined) roster.changed([sessionId])
+        // An empty update still announces the saved Session's new activity and Subagents.
+        updateHarnessSession({ database, roster }, { harness, nativeId: owner }, {})
       }),
     )
   }
