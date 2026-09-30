@@ -1,6 +1,5 @@
 import {
   assertEvent,
-  assign,
   createActor,
   enqueueActions,
   fromCallback,
@@ -40,6 +39,9 @@ export type SessionDiscoverActorInput = SessionSyncActorInput & {
   nativeId: string
 }
 
+// A Session the Harness never listed is not asked about again for this long.
+const UNLISTED_COOLDOWN_MS = 60_000
+
 // Waits between a targeted discovery's attempts, for a Harness that lists a Session late.
 const DISCOVERY_RETRY_DELAYS_MS = [
   500,
@@ -66,6 +68,10 @@ type SessionSyncEvent =
       type: 'SyncFailed'
       harness: Harness
     }
+
+function discoveryKey({ harness, nativeId }: { harness: Harness; nativeId: string }): string {
+  return `${harness}:${nativeId}`
+}
 
 type DiscoverFinished = {
   type: 'DiscoverFinished'
@@ -279,9 +285,9 @@ export const sessionSyncSupervisorMachine = setup({
       active: Partial<Record<Harness, true>>
       // A Refresh that found a Harness still syncing, run again once it finishes.
       pending: Partial<Record<Harness, true>>
-      // Targeted discoveries in flight, and the ones that gave up, as `<harness>:<nativeId>`.
+      // Targeted discoveries in flight, and when each one that gave up did, by `<harness>:<nativeId>`.
       discovering: Record<string, true>
-      unlisted: Record<string, true>
+      unlisted: Record<string, number>
       harnesses: RegisteredHarnesses
     },
     events: {} as SupervisorEvent,
@@ -330,11 +336,11 @@ export const sessionSyncSupervisorMachine = setup({
     discoverSession: enqueueActions(({ context, event, enqueue }) => {
       assertEvent(event, 'Discover')
       const registration = context.harnesses[event.harness]
-      const key = `${event.harness}:${event.nativeId}`
+      const key = discoveryKey(event)
       if (
         registration === undefined ||
         context.discovering[key] === true ||
-        context.unlisted[key] === true
+        Date.now() - (context.unlisted[key] ?? Number.NEGATIVE_INFINITY) < UNLISTED_COOLDOWN_MS
       )
         return
       enqueue.spawnChild('discover', {
@@ -355,7 +361,7 @@ export const sessionSyncSupervisorMachine = setup({
     }),
     releaseDiscovery: enqueueActions(({ event, enqueue }) => {
       assertEvent(event, 'DiscoverFinished')
-      const key = `${event.harness}:${event.nativeId}`
+      const key = discoveryKey(event)
       enqueue(stopChild(`session-discover-${key}`))
       enqueue.assign({
         discovering: ({ context: current }) => {
@@ -367,12 +373,9 @@ export const sessionSyncSupervisorMachine = setup({
             ? current.unlisted
             : {
                 ...current.unlisted,
-                [key]: true,
+                [key]: Date.now(),
               },
       })
-    }),
-    forgetUnlisted: assign({
-      unlisted: {},
     }),
     releaseSync: enqueueActions(({ context, event, enqueue }) => {
       if (event.type !== 'SyncCompleted' && event.type !== 'SyncFailed') return
@@ -432,10 +435,7 @@ export const sessionSyncSupervisorMachine = setup({
     Running: {
       on: {
         Refresh: {
-          actions: [
-            'forgetUnlisted',
-            'dispatchSessionDiscoveries',
-          ],
+          actions: 'dispatchSessionDiscoveries',
         },
         Discover: {
           actions: 'discoverSession',

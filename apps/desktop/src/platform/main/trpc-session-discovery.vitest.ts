@@ -125,7 +125,7 @@ test('retries with a growing delay until the Harness lists the Session', async (
   }
 })
 
-test('gives up on a Session the Harness never lists and stays quiet until a Refresh', async () => {
+test('gives up on a Session the Harness never lists, then asks again after a cooldown', async () => {
   let calls = 0
   const { actor } = startSync({
     claude: async () => {
@@ -135,12 +135,16 @@ test('gives up on a Session the Harness never lists and stays quiet until a Refr
   })
   try {
     actor.send({ type: 'Discover', harness: 'claude', nativeId: 'ghost' })
-    await vi.advanceTimersByTimeAsync(120_000)
+    await vi.advanceTimersByTimeAsync(25_000)
     const attempts = calls
     expect(attempts).toBeGreaterThan(1)
     actor.send({ type: 'Discover', harness: 'claude', nativeId: 'ghost' })
-    await vi.advanceTimersByTimeAsync(120_000)
+    await vi.advanceTimersByTimeAsync(1_000)
     expect(calls).toBe(attempts)
+    await vi.advanceTimersByTimeAsync(60_000)
+    actor.send({ type: 'Discover', harness: 'claude', nativeId: 'ghost' })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(calls).toBe(attempts + 1)
   } finally {
     actor.stop()
   }
