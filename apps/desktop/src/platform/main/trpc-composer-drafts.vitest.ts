@@ -84,6 +84,17 @@ async function createProjectDraft() {
   })
 }
 
+function submitCreated(
+  api: ReturnType<typeof caller>,
+  created: Awaited<ReturnType<typeof createProjectDraft>>,
+) {
+  return api.sessionSubmit({
+    draftId: created.id,
+    expectedRevision: created.revision,
+    commandId: 'command-1',
+  })
+}
+
 function addSession(sessionId: string, overrides: Partial<typeof sessionTable.$inferInsert> = {}) {
   database
     .insert(sessionTable)
@@ -205,13 +216,7 @@ test('resolves the Workspace path in main and deletes an accepted new-Session dr
     event.reply.resolve({ sessionId: 'session-1' })
   })
 
-  await expect(
-    api.sessionSubmit({
-      draftId: created.id,
-      expectedRevision: created.revision,
-      commandId: 'command-1',
-    }),
-  ).resolves.toEqual({ sessionId: 'session-1' })
+  await expect(submitCreated(api, created)).resolves.toEqual({ sessionId: 'session-1' })
   expect(submitted).toMatchObject({
     pendingId: `optimistic:${created.id}:${created.revision}`,
     input: { cwd: '/current/repo', projectId, workspaceId, prompt: content.prompt },
@@ -272,13 +277,7 @@ test('retains a newer draft revision when the accepted Session loses the delete 
     event.reply.resolve({ sessionId: 'session-1' })
   })
 
-  await expect(
-    api.sessionSubmit({
-      draftId: created.id,
-      expectedRevision: created.revision,
-      commandId: 'command-1',
-    }),
-  ).resolves.toEqual({ sessionId: 'session-1' })
+  await expect(submitCreated(api, created)).resolves.toEqual({ sessionId: 'session-1' })
   await expect(api.composerDraftRead(created.target)).resolves.toMatchObject({
     prompt: 'A newer thought.',
     revision: created.revision + 1,

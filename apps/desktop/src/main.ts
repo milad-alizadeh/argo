@@ -9,8 +9,10 @@ import { type Database, openDatabase } from '@/database/database'
 import { createAccountAccess, createAccountProcedureContext } from '@/domains/accounts/main'
 import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
 import { createConnectionPort } from '@/domains/connections/main'
-import { HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV } from '@/domains/harness-signin/contract/proof-protocol'
-import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/main'
+import {
+  createHarnessSignInProcedureContext,
+  harnessSignInTiming,
+} from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import {
@@ -202,18 +204,6 @@ function createTicketServices(database: Database) {
 
 type TicketServices = ReturnType<typeof createTicketServices>
 
-// A proof run may shorten the sign-in window; any other value is rejected, not guessed at.
-function proofSignInExpiresAfterMs(): number | undefined {
-  const raw = PROOF_ENABLED ? process.env[HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV] : undefined
-  if (raw === undefined) return undefined
-  const parsed = z.coerce.number().int().nonnegative().safeParse(raw)
-  if (parsed.success) return parsed.data
-  console.error(
-    `Ignored ${HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV}=${raw}: not a whole number of milliseconds.`,
-  )
-  return undefined
-}
-
 function createDomainContexts(services: TicketServices, registry: HarnessRegistry) {
   const { access, connections } = services
   return {
@@ -221,7 +211,7 @@ function createDomainContexts(services: TicketServices, registry: HarnessRegistr
     accounts: createAccountProcedureContext(access),
     connections,
     harnessSignIn: createHarnessSignInProcedureContext(Object.values(registry), {
-      expiresAfterMs: proofSignInExpiresAfterMs(),
+      expiresAfterMs: harnessSignInTiming(PROOF_ENABLED),
     }),
   }
 }

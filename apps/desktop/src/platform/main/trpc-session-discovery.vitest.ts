@@ -9,8 +9,8 @@ import type {
   SessionSummaryList,
   SessionSummaryReader,
 } from '@/domains/sessions/api/session-discovery'
-import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
-import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
+import { SessionSyncStatusStore } from '@/domains/sessions/main/session-sync-status'
+import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync'
 import type { Harness } from '@/harnesses/harness'
 import { sessionRouterDependencies } from '@/mocks/sessions/session-router-dependencies.fixture'
 import { createAppRouter } from './trpc-router'
