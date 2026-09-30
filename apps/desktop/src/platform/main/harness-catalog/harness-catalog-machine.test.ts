@@ -16,6 +16,7 @@ test('publishes a serializable catalog with Model-specific Efforts and defaults'
     harnesses: [
       claudeHarnessInfo(claudeModelCatalogFixture()),
       codexHarnessInfo(codexModelCatalogFixture()),
+      unavailable('claude-acp'),
     ],
   })
   const parsed = JSON.parse(JSON.stringify(catalog))
@@ -35,7 +36,11 @@ test('publishes a serializable catalog with Model-specific Efforts and defaults'
 
 test('keeps an available Harness visible when the other catalog is unavailable', () => {
   const catalog = harnessCatalogSchema.parse({
-    harnesses: [claudeHarnessInfo(claudeModelCatalogFixture()), codexHarnessInfo(null)],
+    harnesses: [
+      claudeHarnessInfo(claudeModelCatalogFixture()),
+      codexHarnessInfo(null),
+      unavailable('claude-acp'),
+    ],
   })
   expect(catalog.harnesses[0]?.availability).toBe('available')
   expect(catalog.harnesses[1]).toEqual(unavailable('codex'))
@@ -53,6 +58,7 @@ test('counts invalid vendor responses in the catalog actor', async () => {
                 supportedPermissionModes: ['manual'],
               }),
               codexHarnessInfo(null),
+              unavailable('claude-acp'),
             ],
           }),
         ),
@@ -77,7 +83,11 @@ test('loads on request and retries a failed catalog load', async () => {
         attempts += 1
         if (attempts === 1) throw new Error('temporary catalog failure')
         return harnessCatalogSchema.parse({
-          harnesses: [claudeHarnessInfo(claudeModelCatalogFixture()), codexHarnessInfo(null)],
+          harnesses: [
+            claudeHarnessInfo(claudeModelCatalogFixture()),
+            codexHarnessInfo(null),
+            unavailable('claude-acp'),
+          ],
         })
       }),
     },
@@ -94,7 +104,7 @@ test('loads on request and retries a failed catalog load', async () => {
 })
 
 const catalog = harnessCatalogSchema.parse({
-  harnesses: [claudeHarnessInfo(null), codexHarnessInfo(null)],
+  harnesses: [claudeHarnessInfo(null), codexHarnessInfo(null), unavailable('claude-acp')],
 })
 const modeledEvents = [
   { type: 'Catalog requested' as const },

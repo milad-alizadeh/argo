@@ -4,6 +4,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import asar from '@electron/asar'
 import {
+  MOCK_CLAUDE_ACP_PROCESS_TITLE,
   MOCK_CLAUDE_PROCESS_TITLE,
   MOCK_CODEX_PROCESS_TITLE,
 } from '../mocks/cli/mock-cli-process-titles.mts'
@@ -12,6 +13,7 @@ import { asarEntryList, resourcesDir } from './packaged-pty-checks.mts'
 const MOCK_CLIS = [
   { cli: 'claude', title: MOCK_CLAUDE_PROCESS_TITLE },
   { cli: 'codex', title: MOCK_CODEX_PROCESS_TITLE },
+  { cli: 'claude-agent-acp', title: MOCK_CLAUDE_ACP_PROCESS_TITLE },
 ]
 
 function* unpackedFiles(directory: string): Generator<string> {
