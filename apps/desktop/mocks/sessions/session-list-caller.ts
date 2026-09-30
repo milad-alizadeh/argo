@@ -55,7 +55,7 @@ export const IDS = [
 ] as const
 
 export type SessionListRow = z.infer<typeof sessionListRowSchema>
-export type SessionListChange = { rows: SessionListRow[] }
+export type SessionListChange = { sessionIds: string[] }
 type RenameRequest = { harness: Harness; nativeId: string; title: string }
 
 function mockSupervisor(sessions: Record<string, unknown>) {

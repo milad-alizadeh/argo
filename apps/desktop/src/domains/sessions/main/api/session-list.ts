@@ -121,9 +121,6 @@ const sessionListSchema = z.strictObject({
   rows: z.array(sessionListRowSchema),
 })
 
-// The saved Sessions a write changed, read again, for each Session List to place.
-const sessionListChangeSchema = z.strictObject({ rows: z.array(sessionListRowSchema) })
-
 type StoredSessionTitle = {
   customTitle: string | null
   preview: string | null
@@ -339,7 +336,7 @@ function readSessionList(
   const rows = readSessionRows(context, where, { limit: input.limit, offset: input.offset })
   const total =
     context.database.select({ value: count() }).from(sessionTable).where(where).get()?.value ?? 0
-  return sessionListSchema.parse({ total, rows })
+  return { total, rows }
 }
 
 export function sessionListProcedure(context: SessionListContext) {
@@ -381,20 +378,19 @@ function observeWorkingFeeds(
     if (!observed.has(sessionId)) observed.set(sessionId, observeFeed(sessionId))
 }
 
-// Sends each saved Session a write changed, read again, so the renderer places the rows itself.
+// Announces the saved Sessions a write changed; each Session List reads its pages again.
 export function sessionListChangedProcedure(
   context: SessionListContext,
   observeFeed: (sessionId: string) => () => void,
 ) {
   return t.procedure.subscription(() =>
-    observable<z.infer<typeof sessionListChangeSchema>>((emit) => {
+    observable<{ sessionIds: string[] }>((emit) => {
       const observed = new Map<string, () => void>()
       const changedIds = new Set<string>()
       const { changed, stop } = coalescedChanges(() => {
-        const ids = [...changedIds]
+        const sessionIds = [...changedIds]
         changedIds.clear()
-        const rows = readSessionRows(context, inArray(sessionTable.argoId, ids))
-        if (rows.length > 0) emit.next(sessionListChangeSchema.parse({ rows }))
+        emit.next({ sessionIds })
         observeWorkingFeeds(observed, workingSessionIds(context), observeFeed)
       })
       const collect = (sessionIds: readonly string[]) => {

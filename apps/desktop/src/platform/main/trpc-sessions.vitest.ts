@@ -128,9 +128,7 @@ test('keeps both roster activities when the selected Feed changes', async () => 
       'Ran native-0',
       'Ran native-1',
     ])
-    expect(new Set(changes.flatMap(({ rows }) => rows.map((row) => row.activity?.label)))).toEqual(
-      new Set(['Ran native-0', 'Ran native-1']),
-    )
+    expect(new Set(changes.flatMap(({ sessionIds }) => sessionIds))).toEqual(new Set(ids))
   } finally {
     secondSubscription.unsubscribe()
     changeSubscription.unsubscribe()

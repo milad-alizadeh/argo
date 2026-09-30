@@ -17,9 +17,9 @@ activity as `createdAt`, so a streaming turn never moves a row.
 
 Every write to a saved Session goes to SQLite first. Then the writer names the changed Session IDs:
 a sync commit, a stored Subagent read, a history write, a live status change, a rename, an archive,
-and a stored activity line. The `sessionListChanged` subscription reads those rows by ID and
-sends them. The renderer writes each row into its cached pages: it replaces it, adds it in order,
-or drops it when it leaves the Project, filter or search. It does not read the list again.
+and a stored activity line. The `sessionListChanged` subscription sends those IDs, and the
+renderer reads its loaded list pages again. Only SQL filters, sorts and counts. TanStack Query
+keeps each unchanged row object, so an unchanged row does not draw again.
 Rename and archive go through one `sessionUpdate` mutation that returns the row.
 
 A history write sets the row's `activityAt`. The watcher also tracks, in memory, whether the

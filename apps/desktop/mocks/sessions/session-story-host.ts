@@ -9,7 +9,6 @@ import { sessionError } from '@/domains/sessions/api/session-error'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import {
   type SessionListInput,
-  sessionListMatches,
   sessionListPathKey,
 } from '@/domains/sessions/renderer/session-list/session-list-query'
 import { sessionDetailsPathKey } from '@/domains/sessions/renderer/session-queries'
@@ -90,10 +89,33 @@ export function sessionListSubscribe(
     if (request.path === 'sessionDetails') return sessionDetailsReply(request, listener, sessions)
     if (request.path !== 'sessionListChanged') return subscribe(request, listener)
     const send = () =>
-      listener({ id: request.id, type: 'data', result: { data: { rows: listedRows(sessions()) } } })
+      listener({
+        id: request.id,
+        type: 'data',
+        result: { data: { sessionIds: sessions().map(({ id }) => id) } },
+      })
     openReaders.add(send)
     return () => openReaders.delete(send)
   }
+}
+
+// Main's list query over story rows: one Project, the filter, a search, and lower sort order first.
+export function storySessionPage(
+  sessions: readonly Session[],
+  input: SessionListInput & { offset: number; limit: number },
+) {
+  const needle = input.search.trim().toLowerCase()
+  const listed = sessions
+    .toSorted((left, right) => left.sortOrder - right.sortOrder)
+    .filter(
+      (session) =>
+        session.projectId === input.projectId &&
+        (input.filter === 'all' || session.archived === (input.filter === 'archived')) &&
+        [session.customTitle, session.preview].some((text) =>
+          (text ?? '').toLowerCase().includes(needle),
+        ),
+    )
+  return { total: listed.length, rows: listed.slice(input.offset, input.offset + input.limit) }
 }
 
 // Answers one page of the Session List query from the story's rows, in the story's order.
@@ -105,16 +127,14 @@ export function sessionListTrpc(
     if (request.path !== 'sessionList') return trpc(request)
     const input = request.input as Partial<SessionListInput> & { offset?: number; limit?: number }
     listedProjectId = input.projectId ?? 'project-1'
-    const listed = listedRows(sessions()).filter((session) =>
-      sessionListMatches(session, {
-        projectId: listedProjectId,
-        filter: input.filter ?? 'active',
-        search: input.search ?? '',
-      }),
-    )
-    const offset = input.offset ?? 0
-    const rows = listed.slice(offset, offset + (input.limit ?? 30))
-    return { result: { data: { total: listed.length, rows } } }
+    const page = storySessionPage(listedRows(sessions()), {
+      projectId: listedProjectId,
+      filter: input.filter ?? 'active',
+      search: input.search ?? '',
+      offset: input.offset ?? 0,
+      limit: input.limit ?? 30,
+    })
+    return { result: { data: page } }
   }) as typeof window.argo.trpc
 }
 

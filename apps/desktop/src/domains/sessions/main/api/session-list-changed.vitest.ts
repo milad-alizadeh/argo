@@ -5,7 +5,6 @@ import {
   IDS,
   insertSession,
   liveSession,
-  type SessionListChange,
   sessionListCaller,
   settled,
 } from '@/mocks/sessions/session-list-caller'
@@ -15,30 +14,23 @@ function insertTwoSessions(client: DatabaseSync) {
   insertSession(client, { id: IDS[1], harness: 'claude', nativeId: 'native-2', createdAt: 10 })
 }
 
-const idsOf = (received: SessionListChange[]) =>
-  received.map((change) => change.rows.map(({ id }) => id))
-
-test('a roster announcement sends just the rows it names, read again', async () => {
+test('a roster announcement names the Sessions it changed', async () => {
   const { client, changes, roster } = sessionListCaller()
   try {
     insertTwoSessions(client)
     const { received, stop } = await changes()
 
-    client.prepare("UPDATE session SET custom_title = 'Renamed' WHERE argo_id = ?").run(IDS[1])
     roster.changed([IDS[1]])
     await settled()
     stop()
 
-    assert.deepEqual(
-      received.map((change) => change.rows.map(({ id, customTitle }) => ({ id, customTitle }))),
-      [[{ id: IDS[1], customTitle: 'Renamed' }]],
-    )
+    assert.deepEqual(received, [{ sessionIds: [IDS[1]] }])
   } finally {
     client.close()
   }
 })
 
-test('a live status change sends that row without a roster announcement', async () => {
+test('a live status change names that Session without a roster announcement', async () => {
   let status = 'running'
   const session = {
     getSnapshot: () => ({
@@ -57,26 +49,7 @@ test('a live status change sends that row without a roster announcement', async 
     await settled()
     stop()
 
-    assert.deepEqual(
-      received.map((change) => change.rows.map(({ id, status }) => ({ id, status }))),
-      [[{ id: IDS[0], status: 'idle' }]],
-    )
-  } finally {
-    client.close()
-  }
-})
-
-test('an announcement of an unknown Session sends nothing', async () => {
-  const { client, changes, roster } = sessionListCaller()
-  try {
-    insertTwoSessions(client)
-    const { received, stop } = await changes()
-
-    roster.changed([IDS[2]])
-    await settled()
-    stop()
-
-    assert.deepEqual(received, [])
+    assert.deepEqual(received, [{ sessionIds: [IDS[0]] }])
   } finally {
     client.close()
   }
@@ -94,7 +67,7 @@ test('a burst of announcements in one tick sends one change', async () => {
     await settled()
     stop()
 
-    assert.deepEqual(idsOf(received), [[IDS[0], IDS[1]]])
+    assert.deepEqual(received, [{ sessionIds: [IDS[0], IDS[1], IDS[2]] }])
   } finally {
     client.close()
   }

@@ -1,10 +1,9 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import type { SessionId } from '../../types'
-import { applySessionListChange } from '../session-list-query'
 
 type ArchiveSetOutcome = { applied: SessionId[]; failed: SessionId[] }
 
@@ -16,7 +15,6 @@ const UNDO_TOAST_TIMEOUT_MS = 8000
 // One Session update per id, in both directions (#2194): `archived: true` is the bulk action and
 // `archived: false` its Undo. A Session that fails comes back in `failed`, so it never sinks the batch.
 function useSessionArchiveMutation() {
-  const queryClient = useQueryClient()
   return useMutation<ArchiveSetOutcome, Error, { sessionIds: SessionId[]; archived: boolean }>({
     mutationFn: async ({ sessionIds, archived }) => {
       const outcomes = await Promise.allSettled(
@@ -25,7 +23,6 @@ function useSessionArchiveMutation() {
       const rows = outcomes.flatMap((outcome) =>
         outcome.status === 'fulfilled' ? [outcome.value] : [],
       )
-      applySessionListChange(queryClient, rows)
       const applied = new Set(rows.map((row) => row.id))
       return {
         applied: sessionIds.filter((sessionId) => applied.has(sessionId)),

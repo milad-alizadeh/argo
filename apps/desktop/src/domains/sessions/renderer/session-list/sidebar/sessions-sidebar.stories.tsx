@@ -7,13 +7,14 @@ import {
   type FeedRead,
   sessionFeedRefreshTrpc,
   sessionFeedSubscribe,
+  storySessionPage,
 } from '@/mocks/sessions/session-story-host'
 import { queryClient, type RouterInputs, type RouterOutputs } from '@/platform/renderer/trpc-client'
 import { replaceComposerCommands } from '../../composer/references/composer-command-registry'
 import { useFeedReading } from '../../feed/use-feed-reading'
 import type { Session, SessionError, SessionId, SessionListResult } from '../../types'
 import { SessionList, type SessionListActions } from '../session-list'
-import { sessionListMatches, sessionListPathKey } from '../session-list-query'
+import { sessionListPathKey } from '../session-list-query'
 import { useArchiveSelected } from './use-session-archive-mutation'
 
 const session = sessionRow({
@@ -66,19 +67,11 @@ type Listener = Parameters<typeof window.argo.trpcSubscribe>[1]
 let sessionListReads = fn<SessionListHandler>()
 let sessionUpdates = fn<SessionUpdateHandler>()
 let publishSessionSyncEvent = (_event: SessionSyncEvent) => {}
-let announceSessionListChange = (_rows: readonly Session[]) => {}
+let announceSessionListChange = (_sessionIds: readonly SessionId[]) => {}
 
 // One offset page of these rows, as main's list query cuts it.
 function listPage(sessions: readonly Session[], read: SessionListRead): SessionListResult {
   return { total: sessions.length, rows: sessions.slice(read.offset, read.offset + read.limit) }
-}
-
-// The rows main's list query returns for this read's Project, filter and search.
-function matchingPage(sessions: readonly Session[], read: SessionListRead): SessionListResult {
-  return listPage(
-    sessions.filter((candidate) => sessionListMatches(candidate, read)),
-    read,
-  )
 }
 
 function missingUpdate(): Promise<Session> {
@@ -103,9 +96,9 @@ function withSessionListHost(
     for (const [id, listener] of syncListeners)
       listener({ id, type: 'data', result: { data: event } })
   }
-  announceSessionListChange = (rows) => {
+  announceSessionListChange = (sessionIds) => {
     for (const [id, listener] of changeListeners)
-      listener({ id, type: 'data', result: { data: { rows: [...rows] } } })
+      listener({ id, type: 'data', result: { data: { sessionIds: [...sessionIds] } } })
   }
   window.argo = {
     ...before,
@@ -142,7 +135,7 @@ function withSessionListHost(
 }
 
 function showingSessions(sessions: readonly Session[]) {
-  return withSessionListHost(async (read) => matchingPage(sessions, read))
+  return withSessionListHost(async (read) => storySessionPage(sessions, read))
 }
 
 function publishSyncStatus(status: SessionSyncStatus) {
@@ -157,7 +150,7 @@ function withSessionsHost(initialSessions: readonly Session[]) {
     sessions = [...sessions.map((row) => changed.find(({ id }) => id === row.id) ?? row), ...fresh]
   }
   const restore = withSessionListHost(
-    async (read) => matchingPage(sessions, read),
+    async (read) => storySessionPage(sessions, read),
     async ({ sessionId, title, archived }) => {
       const current = sessions.find(({ id }) => id === sessionId)
       if (current === undefined) throw new Error(`No Session ${sessionId}.`)
@@ -167,13 +160,14 @@ function withSessionsHost(initialSessions: readonly Session[]) {
         archived: archived ?? current.archived,
       }
       store([updated])
+      announceSessionListChange([sessionId])
       return updated
     },
   )
   return {
     announce(changed: readonly Session[]) {
       store(changed)
-      announceSessionListChange(changed)
+      announceSessionListChange(changed.map(({ id }) => id))
     },
     restore,
   }
@@ -868,7 +862,7 @@ export const CompletedRefreshFeedbackDisappears: Story = {
   },
 }
 
-export const CommittedRefreshUpdatesSessionList: Story = {
+export const CommittedRefreshRereadsSessionList: Story = {
   beforeEach: () => {
     sessionsHost = withSessionsHost(listed)
     return () => {
@@ -890,8 +884,8 @@ export const CommittedRefreshUpdatesSessionList: Story = {
     await expect(
       await canvas.findByRole('button', { name: /A Session found by Refresh/ }),
     ).toBeVisible()
-    // The announced row lands in the cached list; nothing reads the list again.
-    await expect(sessionListReads).toHaveBeenCalledTimes(reads)
+    // An announced change reads the loaded pages again.
+    await expect(sessionListReads.mock.calls.length).toBeGreaterThan(reads)
   },
 }
 
@@ -1112,8 +1106,7 @@ function ArchivingSessionList(args: SessionListHarnessArgs) {
   return <SessionListHarness {...args} onArchiveSelected={useArchiveSelected()} />
 }
 
-// A bulk archive and its Undo are one Session update per row; each returned row moves in the
-// cached list, so neither reads the list again.
+// A bulk archive and its Undo are one Session update per row, and the list reads its pages again.
 export const BulkArchiveAndUndoUpdateEachSession: Story = {
   render: (args) => <ArchivingSessionList {...args} />,
   beforeEach: () => {
@@ -1150,7 +1143,7 @@ export const BulkArchiveAndUndoUpdateEachSession: Story = {
       { sessionId: 'prose', archived: false },
       { sessionId: 'second-session', archived: false },
     ])
-    await expect(sessionListReads).toHaveBeenCalledTimes(reads)
+    await expect(sessionListReads.mock.calls.length).toBeGreaterThan(reads)
   },
 }
 

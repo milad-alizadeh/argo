@@ -312,15 +312,12 @@ function sqlMeasurements(userData: string) {
   const search = `SELECT ${listColumns} ${listFrom} WHERE ${active} AND ${matching} ${listOrder}`
   const archive = `SELECT ${listColumns} ${listFrom} WHERE ${inProject} AND ${archived} ${listOrder}`
   const count = `SELECT count(*) FROM session WHERE ${active}`
-  const byId = `SELECT ${listColumns} ${listFrom} WHERE session.argo_id = ?`
-  const changedId = String(database.prepare('SELECT argo_id FROM session LIMIT 1').get()?.argo_id)
   const queries = [
     { name: 'browse', sql: browse, arguments: [PROJECT_ID] },
     { name: 'search', sql: search, arguments: [PROJECT_ID, 'Needle', 'Needle'] },
     { name: 'search broad', sql: search, arguments: [PROJECT_ID, 'Session', 'Session'] },
     { name: 'count', sql: count, arguments: [PROJECT_ID] },
     { name: 'archive', sql: archive, arguments: [PROJECT_ID] },
-    { name: 'changed row', sql: byId, arguments: [changedId] },
   ]
   const measurements = queries.map((query) => {
     const statement = database.prepare(query.sql)
