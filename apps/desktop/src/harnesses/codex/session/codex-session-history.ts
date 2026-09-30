@@ -12,6 +12,7 @@ import {
   withNickname,
 } from './codex-subagent-content'
 import { readCodexNickname } from './codex-subagent-nicknames'
+import { codexTaskNotification } from './codex-task-notification'
 
 type ImageGenerationFailure = NonNullable<
   Extract<ThreadItem, { type: 'imageGeneration' }>['failure']
@@ -153,7 +154,12 @@ function messageItemContent(
   }
   const legacyText = 'text' in item && typeof item.text === 'string' ? item.text : ''
   const parts = userPromptParts(item.content ?? [])
-  return userPromptContents(item.id, { ...parts, text: parts.text || legacyText })
+  const text = parts.text || legacyText
+  const task = codexTaskNotification(item.id, text, () => {
+    console.warn('Rejected 1 unsupported Codex task notification.')
+  })
+  if (task !== null) return [task]
+  return userPromptContents(item.id, { ...parts, text })
 }
 
 function simpleItemContent(item: ThreadItem): FeedContent[] {
