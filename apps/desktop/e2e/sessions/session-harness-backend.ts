@@ -26,8 +26,8 @@ export type SessionHarnessLaunch = {
 export type SessionReply = { harness: SessionHarness; prompt: string }
 
 export type SessionHarnessRun = {
-  // 1. Which executables the app must run.
-  executables: { claude: string; codex: string }
+  // 1. Which executables the app must run. The real backend runs no ACP agent yet.
+  executables: { claude: string; codex: string; 'claude-acp'?: string }
   // 2. Which transcript roots the app must read. Null leaves it reading the machine's own.
   transcripts: { claude: string; codex: string } | null
   // What one launch adds to the app's environment.

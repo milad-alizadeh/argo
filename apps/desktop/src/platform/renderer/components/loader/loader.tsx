@@ -2,7 +2,7 @@ import { cn } from 'cn'
 import type * as React from 'react'
 import './loader.css'
 
-export type LoaderSize = 'meta' | 'control' | 'standard' | 'prominent'
+type LoaderSize = 'meta' | 'control' | 'standard' | 'prominent'
 
 type LoaderAccessibility =
   | { 'aria-hidden': true; 'aria-label'?: never }

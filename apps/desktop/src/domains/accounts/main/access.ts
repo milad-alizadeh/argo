@@ -4,7 +4,7 @@
 import path from 'node:path'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
-import { projectRegistrationSchema } from '@/database/project/validation'
+import { projectSelectSchema } from '@/database/project/validation'
 import type { AccountState } from '@/domains/accounts/contract/contract'
 import { createWriteQueue, portablePath } from '@/platform/main/storage/portable-file'
 import type { ProviderEndpoints } from '@/providers/endpoints'
@@ -64,7 +64,7 @@ export function createAccountAccess(options: {
 export async function projectNames(access: AccountAccess): Promise<Map<string, string>> {
   try {
     if (access.database === null) return new Map()
-    const projects = projectRegistrationSchema
+    const projects = projectSelectSchema
       .array()
       .parse(
         access.database

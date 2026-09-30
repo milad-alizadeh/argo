@@ -52,19 +52,5 @@ export const sessionLiveEventSchema = z.intersection(
   sessionLiveEventBodySchema,
 )
 
-export const sessionLiveUpdateSchema = z.discriminatedUnion('type', [
-  z.strictObject({
-    type: z.literal('ready'),
-    live: z.boolean(),
-    cursor: z.number().int().nonnegative(),
-    generation: identifierSchema,
-    replayExpired: z.boolean(),
-  }),
-  z.strictObject({ type: z.literal('event'), event: sessionLiveEventSchema }),
-  z.strictObject({ type: z.literal('expired'), cursor: z.number().int().nonnegative() }),
-  z.strictObject({ type: z.literal('invalidated') }),
-])
-
 export type SessionLiveEventBody = z.infer<typeof sessionLiveEventBodySchema>
 export type SessionLiveEvent = z.infer<typeof sessionLiveEventSchema>
-export type SessionLiveUpdate = z.infer<typeof sessionLiveUpdateSchema>

@@ -1,119 +1,74 @@
 import assert from 'node:assert/strict'
+import { randomUUID } from 'node:crypto'
 import { test } from 'node:test'
-import type { SessionProjection } from '@/domains/sessions/next/contract/session-projection-contract'
-import {
-  createAdapter,
-  createMockAdapter,
-  mockCodexExecutable,
-} from './mock-codex-session-adapter-support.ts'
+import { SESSION_MOCK_REPLY_DELAY_MS_ENV } from '@/harnesses/proof-protocol'
+import { mockStartInput } from './mock-codex-channel.ts'
+import { clientBackedByMock, mockCodexExecutable, waitFor } from './mock-codex-driver.ts'
+import { openLiveSession } from './mock-codex-live-session.ts'
 
 test('queues a follow-up Send until the active Turn settles', async () => {
-  const adapter = await createMockAdapter()
+  const client = clientBackedByMock(
+    await mockCodexExecutable({ [SESSION_MOCK_REPLY_DELAY_MS_ENV]: '200' }),
+  )
+  const session = openLiveSession(client)
   try {
-    const outcome = await adapter.execute({
-      type: 'session.start',
-      harness: 'codex',
-      prompt: 'Start the managed Session.',
-      workspace: { kind: 'main' },
-    })
-    assert.equal(outcome.kind, 'accepted')
-    if (outcome.kind === 'accepted') {
-      assert.equal(outcome.projection.session.harness, 'codex')
-      assert.equal(outcome.projection.turns.length, 1)
-      const followUp = await adapter.execute({
-        type: 'session.send',
-        session: outcome.projection.session,
-        prompt: 'Send while the first Turn is still running.',
-      })
-      assert.equal(followUp.kind, 'accepted')
-    }
+    await waitFor(() => session.has('turn.started'), 'the first Turn to start')
+    const followUp = { ...mockStartInput, commandId: randomUUID(), prompt: 'Send while running.' }
+    await session.channel.submit(followUp)
+    await waitFor(
+      () => session.events.filter((event) => event.type === 'turn.completed').length === 2,
+      'both Turns to complete',
+    )
+    const boundaries = session.events.flatMap((event) =>
+      event.type === 'turn.started' || event.type === 'turn.completed'
+        ? [`${event.type} ${event.commandId}`]
+        : [],
+    )
+    assert.deepEqual(boundaries, [
+      `turn.started ${mockStartInput.commandId}`,
+      `turn.completed ${mockStartInput.commandId}`,
+      `turn.started ${followUp.commandId}`,
+      `turn.completed ${followUp.commandId}`,
+    ])
   } finally {
-    await adapter.close()
+    session.channel.close()
+    client.shutdown()
   }
 })
 
 test('shares one app-server process across managed Session windows', async () => {
-  const executable = await mockCodexExecutable()
-  const first = createAdapter(executable)
-  const second = createAdapter(executable)
+  const client = clientBackedByMock(await mockCodexExecutable())
+  const first = openLiveSession(client, { ...mockStartInput, prompt: 'First Session.' })
+  const second = openLiveSession(client, { ...mockStartInput, prompt: 'Second Session.' })
   try {
-    const [one, two] = await Promise.all([
-      first.execute({
-        type: 'session.start',
-        harness: 'codex',
-        prompt: 'First Session.',
-        workspace: { kind: 'main' },
-      }),
-      second.execute({
-        type: 'session.start',
-        harness: 'codex',
-        prompt: 'Second Session.',
-        workspace: { kind: 'main' },
-      }),
-    ])
-    assert.equal(one.kind, 'accepted')
-    assert.equal(two.kind, 'accepted')
-    if (one.kind !== 'accepted' || two.kind !== 'accepted') return
-    assert.notEqual(one.projection.session.nativeId, two.projection.session.nativeId)
+    await waitFor(() => first.nativeId() !== undefined && second.nativeId() !== undefined)
+    assert.notEqual(first.nativeId(), second.nativeId())
   } finally {
-    await first.close()
-    await second.close()
+    first.channel.close()
+    second.channel.close()
+    client.shutdown()
   }
 })
 
-test('shows a managed Session as watched in a second window', async () => {
-  const executable = await mockCodexExecutable()
-  const owner = createAdapter(executable)
-  const observer = createAdapter(executable)
+test('projects an app-server tool call into the Feed', async () => {
+  const client = clientBackedByMock(await mockCodexExecutable())
+  const session = openLiveSession(client, { ...mockStartInput, prompt: 'PROJECT_TOOL_USAGE' })
   try {
-    const started = await owner.execute({
-      type: 'session.start',
-      harness: 'codex',
-      prompt: 'Observe this managed Session.',
-      workspace: { kind: 'main' },
-    })
-    assert.equal(started.kind, 'accepted')
-    if (started.kind !== 'accepted') return
-    const projection = await new Promise<SessionProjection>((resolve) => {
-      observer.subscribe(started.projection.session, resolve)
-    })
-    assert.equal(projection.posture, 'watched')
-    assert.equal(projection.session.nativeId, started.projection.session.nativeId)
+    const toolCalls = () =>
+      session
+        .feed()
+        .flatMap((body) =>
+          body.type === 'content' && body.content.kind === 'command'
+            ? [{ turnId: body.turnId, content: body.content }]
+            : [],
+        )
+    await waitFor(() => toolCalls().length > 0, 'the tool call to reach the Feed')
+    assert.equal(toolCalls().length, 1)
+    assert.equal(toolCalls()[0]?.content.command, 'rtk bun run typecheck')
+    assert.equal(toolCalls()[0]?.content.status, 'running')
+    assert.equal(toolCalls()[0]?.turnId?.startsWith('mock-turn-'), true)
   } finally {
-    await owner.close()
-    await observer.close()
-  }
-})
-
-test('projects app-server tool calls and cumulative token usage', async () => {
-  const adapter = await createMockAdapter()
-  try {
-    const outcome = await adapter.execute({
-      type: 'session.start',
-      harness: 'codex',
-      prompt: 'PROJECT_TOOL_USAGE',
-      workspace: { kind: 'main' },
-    })
-    assert.equal(outcome.kind, 'accepted')
-    if (outcome.kind !== 'accepted') return
-    const projection = await new Promise<SessionProjection>((resolve, reject) => {
-      const timeout = setTimeout(
-        () => reject(new Error('Timed out waiting for tool projection')),
-        1_000,
-      )
-      const unsubscribe = adapter.subscribe(outcome.projection.session, (next) => {
-        if (next.toolCalls.length === 0 || next.usage.inputTokens === 0) return
-        clearTimeout(timeout)
-        unsubscribe()
-        resolve(next)
-      })
-    })
-    assert.equal(projection.toolCalls.length, 1)
-    assert.equal(projection.toolCalls[0]?.turnId, projection.turns[0]?.id)
-    assert.equal(projection.toolCalls[0]?.name, 'rtk bun run typecheck')
-    assert.equal(projection.toolCalls[0]?.status, 'running')
-    assert.deepEqual(projection.usage, { inputTokens: 23, outputTokens: 5 })
-  } finally {
-    await adapter.close()
+    session.channel.close()
+    client.shutdown()
   }
 })

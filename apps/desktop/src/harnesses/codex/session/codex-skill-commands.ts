@@ -9,11 +9,11 @@ import {
 } from '@/domains/sessions/api/composer-commands'
 import { readSkillDirectoryRows, skillRoots } from '@/harnesses/skill-directories'
 
-export function codexSkillHome(codexHome?: string) {
+function codexSkillHome(codexHome?: string) {
   return codexHome ?? process.env.CODEX_HOME ?? path.join(os.homedir(), '.codex')
 }
 
-export function codexSkillRoots(cwd: string | null, codexHome: string): string[] {
+function codexSkillRoots(cwd: string | null, codexHome: string): string[] {
   return skillRoots(cwd, path.join(codexHome, 'skills'), path.join('.agents', 'skills'))
 }
 
@@ -57,7 +57,7 @@ export function followCodexSkillCommands(input: {
   }
 }
 
-export function watchCodexSkillCommands(input: {
+function watchCodexSkillCommands(input: {
   cwd: string | null
   codexHome?: string
   reject?: (shape: string) => void

@@ -8,11 +8,11 @@ import {
 import type { CodexRequest } from './app-server/codex-app-server-client'
 import copy from './locales/en.json'
 
-export const codexModelEffortSchema = z.object({
+const codexModelEffortSchema = z.object({
   reasoningEffort: z.string().min(1),
   description: z.string().nullable().optional(),
 })
-export const codexModelSchema = z
+const codexModelSchema = z
   .object({
     id: z.string().min(1),
     model: z.string().min(1),
@@ -36,7 +36,7 @@ export const codexModelSchema = z
       })
     }
   })
-export const codexModelCatalogSchema = z.object({
+const codexModelCatalogSchema = z.object({
   data: z.array(codexModelSchema),
   nextCursor: z.string().nullable().optional(),
 })

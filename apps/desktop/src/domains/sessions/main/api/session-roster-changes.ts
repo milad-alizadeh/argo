@@ -1,4 +1,4 @@
-import { and, eq, isNull, lt, or } from 'drizzle-orm'
+import { and, eq, isNull, lt, or, sql } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import type { Harness } from '@/harnesses/harness'
@@ -17,14 +17,23 @@ export class SessionRosterChanges {
   }
 }
 
-// A Harness wrote to this Session's history file, so the Session was active just now.
+// A Harness wrote to this Session's history file, so the Session was active just now. Only a Turn
+// transition moves it in the Session List order, so a streaming Turn does not reorder every write.
 export function recordHistoryActivity(
   database: Database,
-  { harness, nativeId, at }: { harness: Harness; nativeId: string; at: number },
+  {
+    harness,
+    nativeId,
+    at,
+    turnChanged,
+  }: { harness: Harness; nativeId: string; at: number; turnChanged: boolean },
 ): void {
   database
     .update(sessionTable)
-    .set({ activityAt: at })
+    .set({
+      activityAt: at,
+      ...(turnChanged ? { listOrderAt: sql`MAX(${sessionTable.listOrderAt}, ${at})` } : {}),
+    })
     .where(
       and(
         eq(sessionTable.harness, harness),

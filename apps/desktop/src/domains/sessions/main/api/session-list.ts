@@ -1,6 +1,6 @@
 import { initTRPC } from '@trpc/server'
 import { observable } from '@trpc/server/observable'
-import { and, asc, count, desc, eq, inArray, or, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, not, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
@@ -12,14 +12,14 @@ import {
   type LiveSessionSupervisorActor,
   liveSessionActorFor,
 } from '../live/live-session-supervisor-machine'
-import type { SessionActivities } from './session-activities'
+import { storedActivity } from './session-activities'
 import type { SessionRosterChanges } from './session-roster-changes'
 import type { WatchedSessionStatus } from './watched-session-status'
 
 const t = initTRPC.create()
 
 // The roster reads the newest `pages` pages; loading more asks for one page more.
-export const sessionListInputSchema = z.strictObject({
+const sessionListInputSchema = z.strictObject({
   projectId: z.string().min(1),
   search: z.string().trim().max(500).default(''),
   pages: z.number().int().min(1).max(1_000).default(1),
@@ -146,16 +146,12 @@ export type SessionListContext = {
   supervisor: LiveSessionSupervisorActor
   roster: SessionRosterChanges
   watchedStatus: Pick<WatchedSessionStatus, 'statusOf'>
-  // The activity an observed Feed published; it outranks the live channel's own.
-  activities?: SessionActivities
 }
 
-// The Feed's activity names no tool or target, so the row keeps its kind as the tool.
-function observedActivity(
-  context: SessionListContext,
-  sessionId: string,
-): z.infer<typeof feedActivitySchema> | null {
-  const activity = context.activities?.activityOf(sessionId) ?? null
+// The Feed's activity names no tool or target, so the row keeps its kind as the tool. It outranks
+// the live channel's own.
+function observedActivity(stored: string | null): z.infer<typeof feedActivitySchema> | null {
+  const activity = storedActivity(stored)
   return activity === null ? null : { ...activity, tool: activity.kind, target: null }
 }
 
@@ -182,7 +178,7 @@ function liveProjection(context: SessionListContext, sessionId: string) {
     posture: projection.posture,
     status: snapshot.context.status ?? projection.status,
     activity: snapshot.context.activity?.activity ?? null,
-    turnConfiguration: snapshot.context.first.turnConfiguration,
+    turnConfiguration: snapshot.context.turnConfiguration,
   }
 }
 
@@ -201,7 +197,7 @@ function ticketStateOf(value: string): 'open' | 'closed' {
   return z.enum(['open', 'closed']).parse(value)
 }
 
-function sessionListRow(
+export function sessionListRow(
   context: SessionListContext,
   row: StoredSessionTitle & {
     id: string
@@ -210,6 +206,7 @@ function sessionListRow(
     cwd: string | null
     workspaceId: string | null
     activityAt: number | null
+    activity: string | null
     updatedAt: number
     ticket: {
       projectId: string
@@ -241,7 +238,7 @@ function sessionListRow(
     branch: null,
     updatedAt: new Date(row.activityAt ?? row.updatedAt).toISOString(),
     turnStartedAt: null,
-    activity: observedActivity(context, row.id) ?? live?.activity ?? null,
+    activity: observedActivity(row.activity) ?? live?.activity ?? null,
     plan: null,
     subagents: subagents.map((subagent) => ({ ...subagent, startedAt: null, endedAt: null })),
     shell: [],
@@ -253,27 +250,51 @@ function sessionListRow(
   }
 }
 
+export const storedSessionColumns = {
+  id: sessionTable.argoId,
+  harness: sessionTable.harness,
+  nativeId: sessionTable.nativeId,
+  customTitle: sessionTable.customTitle,
+  preview: sessionTable.preview,
+  firstPrompt: sessionTable.firstPrompt,
+  cwd: sessionTable.cwd,
+  workspaceId: sessionTable.workspaceId,
+  activityAt: sessionTable.activityAt,
+  activity: sessionTable.activity,
+  updatedAt: sessionTable.updatedAt,
+  ticket: {
+    projectId: sessionTicketLink.projectId,
+    key: sessionTicketLink.ticketKey,
+    title: sessionTicketLink.title,
+    state: sessionTicketLink.state,
+    createdAt: sessionTicketLink.createdAt,
+  },
+}
+
+export const sessionIsArchived = sql<boolean>`exists (select 1 from session_archive where session_archive.session_id = ${sessionTable.argoId})`
+
+// Runs `publish` once in the next microtask for any burst of `changed` calls, until stopped.
+export function coalescedChanges(publish: () => void) {
+  let pending = false
+  let stopped = false
+  return {
+    changed() {
+      if (pending || stopped) return
+      pending = true
+      queueMicrotask(() => {
+        pending = false
+        if (!stopped) publish()
+      })
+    },
+    stop() {
+      stopped = true
+    },
+  }
+}
+
 function storedSessionRows(database: Database) {
   return database
-    .select({
-      id: sessionTable.argoId,
-      harness: sessionTable.harness,
-      nativeId: sessionTable.nativeId,
-      customTitle: sessionTable.customTitle,
-      preview: sessionTable.preview,
-      firstPrompt: sessionTable.firstPrompt,
-      cwd: sessionTable.cwd,
-      workspaceId: sessionTable.workspaceId,
-      activityAt: sessionTable.activityAt,
-      updatedAt: sessionTable.updatedAt,
-      ticket: {
-        projectId: sessionTicketLink.projectId,
-        key: sessionTicketLink.ticketKey,
-        title: sessionTicketLink.title,
-        state: sessionTicketLink.state,
-        createdAt: sessionTicketLink.createdAt,
-      },
-    })
+    .select(storedSessionColumns)
     .from(sessionTable)
     .leftJoin(sessionTicketLink, eq(sessionTicketLink.sessionId, sessionTable.argoId))
 }
@@ -283,10 +304,9 @@ function readSessionList(
   input: z.infer<typeof sessionListInputSchema>,
 ): z.infer<typeof sessionListSchema> {
   const projectFilter = eq(sessionTable.projectId, input.projectId)
-  const active = sql`not exists (select 1 from session_archive where session_archive.session_id = ${sessionTable.argoId})`
   const filter = and(
     projectFilter,
-    active,
+    not(sessionIsArchived),
     input.search === ''
       ? undefined
       : or(
@@ -296,10 +316,7 @@ function readSessionList(
   )
   const stored = storedSessionRows(context.database)
     .where(filter)
-    .orderBy(
-      desc(sql`coalesce(${sessionTable.activityAt}, ${sessionTable.updatedAt})`),
-      asc(sessionTable.argoId),
-    )
+    .orderBy(desc(sessionTable.listOrderAt), asc(sessionTable.argoId))
     .limit(input.pages * input.pageSize)
     .all()
   const subagents = storedSessionSubagents(
@@ -341,18 +358,23 @@ function sameOrder(
   )
 }
 
-function observeVisibleFeeds(
+const workingStatuses = new Set(['starting', 'running', 'permission', 'asking'])
+
+// Only a working Session has an activity line to read, so idle rows open no Feed reader.
+function observeWorkingFeeds(
   observed: Map<string, () => void>,
   rows: readonly z.infer<typeof sessionListRowSchema>[],
   observeFeed: ((sessionId: string) => () => void) | undefined,
 ): void {
-  const visible = new Set(rows.map((row) => row.id))
+  const working = new Set(
+    rows.filter((row) => workingStatuses.has(row.status)).map((row) => row.id),
+  )
   for (const [sessionId, stop] of observed)
-    if (!visible.has(sessionId)) {
+    if (!working.has(sessionId)) {
       observed.delete(sessionId)
       stop()
     }
-  for (const sessionId of visible)
+  for (const sessionId of working)
     if (!observed.has(sessionId) && observeFeed !== undefined)
       observed.set(sessionId, observeFeed(sessionId))
 }
@@ -366,11 +388,7 @@ export function sessionListProcedure(
       let sent = readSessionList(context, input)
       emit.next({ type: 'list', ...sent })
       const observed = new Map<string, () => void>()
-      let pending = false
-      let stopped = false
-      const publish = () => {
-        pending = false
-        if (stopped) return
+      const { changed, stop } = coalescedChanges(() => {
         const next = readSessionList(context, input)
         if (!sameOrder(sent, next)) emit.next({ type: 'list', ...next })
         else
@@ -379,18 +397,13 @@ export function sessionListProcedure(
               emit.next({ type: 'row', row })
           })
         sent = next
-        observeVisibleFeeds(observed, next.rows, observeFeed)
-      }
-      const changed = () => {
-        if (pending) return
-        pending = true
-        queueMicrotask(publish)
-      }
+        observeWorkingFeeds(observed, next.rows, observeFeed)
+      })
       const unsubscribeRoster = context.roster.subscribe(changed)
       const statusChanges = context.supervisor.on('Session status changed', changed)
-      observeVisibleFeeds(observed, sent.rows, observeFeed)
+      observeWorkingFeeds(observed, sent.rows, observeFeed)
       return () => {
-        stopped = true
+        stop()
         unsubscribeRoster()
         statusChanges.unsubscribe()
         for (const stop of observed.values()) stop()

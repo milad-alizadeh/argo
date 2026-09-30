@@ -46,7 +46,7 @@ const toolEvidenceSchema = z
   ])
   .nullable()
 
-export const toolCallKindSchema = toolPresentationKindSchema
+const toolCallKindSchema = toolPresentationKindSchema
 
 const toolCallSchema = z.strictObject({
   id: identifierSchema,

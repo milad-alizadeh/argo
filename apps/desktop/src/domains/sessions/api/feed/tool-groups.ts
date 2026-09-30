@@ -68,7 +68,7 @@ function toolGroupLabel(calls: ToolRow[]) {
 //
 // The optional set keeps this renderer-facing helper useful for ordinary row lists while the
 // transcript projectors retain the history information that disappears from those lists.
-export function groupedRowIndexes(
+function groupedRowIndexes(
   rows: SessionFeedRow[],
   breakBeforeIds: ReadonlySet<string> = new Set(),
 ): number[][] {

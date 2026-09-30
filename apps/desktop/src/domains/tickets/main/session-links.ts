@@ -24,7 +24,7 @@ const linkedTicketSchema = z.strictObject({
   state: z.enum(['open', 'closed']),
   createdAt: z.iso.datetime(),
 })
-export type LinkedTicket = z.infer<typeof linkedTicketSchema>
+type LinkedTicket = z.infer<typeof linkedTicketSchema>
 
 const linksDocumentSchema = z.record(z.string(), linkedTicketSchema)
 
@@ -72,27 +72,6 @@ async function readLinks(path: string): Promise<Record<string, LinkedTicket>> {
   if (!read.ok) return {}
   const parsed = linksDocumentSchema.safeParse(read.document)
   return parsed.success ? parsed.data : {}
-}
-
-// A caller that does not care about the Session → Ticket link at all — a single-Harness reader built
-// for a fixture or a test of unrelated behaviour — gets this rather than a required file path.
-export function createInMemorySessionTicketLinkStore(): SessionTicketLinkStore {
-  const links = new Map<string, LinkedTicket>()
-  return {
-    linkFor: async (sessionId) => links.get(sessionId) ?? null,
-    linkedSessions: async (projectId, key) =>
-      [...links.entries()]
-        .filter(([, link]) => link.projectId === projectId && link.key === key)
-        .sort(([, a], [, b]) => b.createdAt.localeCompare(a.createdAt))
-        .map(([sessionId]) => sessionId),
-    connect: async (sessionId, ticket, createdAt) => {
-      links.set(sessionId, { ...ticket, createdAt })
-    },
-    disconnect: async (sessionId) => {
-      links.delete(sessionId)
-    },
-    close: () => {},
-  }
 }
 
 export function createSessionTicketLinkStore(path: string): SessionTicketLinkStore {

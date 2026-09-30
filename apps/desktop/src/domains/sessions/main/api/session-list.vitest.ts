@@ -31,6 +31,8 @@ function sessionListCaller(
     first_prompt TEXT,
     cwd TEXT,
     activity_at INTEGER,
+    list_order_at INTEGER NOT NULL DEFAULT 0,
+    activity TEXT,
     subagents_read_at INTEGER,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
@@ -69,7 +71,7 @@ function sessionListCaller(
   }
   const roster = new SessionRosterChanges()
   const watchedStatus = new WatchedSessionStatus(() => roster.changed())
-  const activities = new SessionActivities(() => roster.changed())
+  const activities = new SessionActivities(database, () => roster.changed())
   const router = initTRPC.create().router({
     list: sessionListProcedure(
       {
@@ -77,7 +79,6 @@ function sessionListCaller(
         supervisor: supervisor as never,
         roster,
         watchedStatus,
-        activities,
       },
       observeFeed,
     ),
@@ -112,9 +113,7 @@ function liveSession(state: string, status: string | null = null) {
       matches: (candidate: string) => candidate === state,
       context: {
         status,
-        first: {
-          turnConfiguration: { model: 'claude-sonnet', effort: 'high', mode: 'default' },
-        },
+        turnConfiguration: { model: 'claude-sonnet', effort: 'high', mode: 'default' },
       },
     }),
   }
@@ -140,8 +139,8 @@ function insertSession(
     .prepare(
       `INSERT INTO session (
         argo_id, harness, native_id, project_id, workspace_id, custom_title, preview,
-        first_prompt, cwd, activity_at, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+        first_prompt, cwd, activity_at, list_order_at, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
     )
     .run(
       values.id,
@@ -154,6 +153,7 @@ function insertSession(
       values.firstPrompt ?? null,
       values.cwd ?? null,
       values.activityAt ?? null,
+      values.activityAt ?? values.updatedAt,
       values.updatedAt,
     )
 }
@@ -208,7 +208,7 @@ function insertTicketLink(
     )
 }
 
-test('returns the newest pages in activity order with an Argo ID tie-breaker', async () => {
+test('returns the newest pages in list order with an Argo ID tie-breaker', async () => {
   const { client, list } = sessionListCaller()
   try {
     insertSession(client, {
@@ -510,7 +510,7 @@ test('sends the whole list again when a change moves or adds rows', async () => 
   try {
     const { received, stop } = await updatesOfTwoSessions(client, updates)
 
-    client.prepare('UPDATE session SET activity_at = 30 WHERE argo_id = ?').run(IDS[1])
+    client.prepare('UPDATE session SET list_order_at = 30 WHERE argo_id = ?').run(IDS[1])
     roster.changed()
     await settled()
     insertSession(client, { id: IDS[2], harness: 'codex', nativeId: 'native-3', updatedAt: 40 })
@@ -639,27 +639,14 @@ test('draws the activity the Session’s Feed published under its title', async 
   }
 })
 
-test('keeps available activity for every visible Session while switching Feeds', async () => {
+test('reads the Feed of a working Session only, and an idle row keeps its stored activity', async () => {
   const active = new Map<string, number>()
-  let activities: SessionActivities
   const observeFeed = (sessionId: string) => {
     active.set(sessionId, (active.get(sessionId) ?? 0) + 1)
-    activities.publish(sessionId, {
-      label: `Activity for ${sessionId}`,
-      kind: 'thought',
-      open: true,
-    })
-    return () => {
-      const remaining = (active.get(sessionId) ?? 1) - 1
-      if (remaining === 0) {
-        active.delete(sessionId)
-        activities.publish(sessionId, null)
-      } else active.set(sessionId, remaining)
-    }
+    return () => active.delete(sessionId)
   }
-  const fixture = sessionListCaller({}, observeFeed)
-  activities = fixture.activities
-  const { client, updates } = fixture
+  const fixture = sessionListCaller({ [IDS[0]]: liveSession('Ready', 'running') }, observeFeed)
+  const { client, updates, activities } = fixture
   try {
     for (const [index, id] of IDS.slice(0, 2).entries())
       insertSession(client, {
@@ -668,18 +655,12 @@ test('keeps available activity for every visible Session while switching Feeds',
         nativeId: `native-${index}`,
         updatedAt: 20 - index,
       })
+    activities.publish(IDS[1], { label: 'Ran bun test', kind: 'command', open: false })
     const { received, stop } = await updates({ projectId: 'project-1', pageSize: 10 })
     await settled()
-    assert.deepEqual(active, new Map(IDS.slice(0, 2).map((id) => [id, 1])))
-    assert.deepEqual(
-      received
-        .filter((update) => update.type === 'row')
-        .map((update) => update.row.activity?.label),
-      IDS.slice(0, 2).map((id) => `Activity for ${id}`),
-    )
-    const leaveSelectedFeed = observeFeed(IDS[0])
-    leaveSelectedFeed()
-    assert.equal(activities.activityOf(IDS[0])?.label, `Activity for ${IDS[0]}`)
+    assert.deepEqual(active, new Map([[IDS[0], 1]]))
+    const [first] = received
+    assert.equal(first?.type === 'list' && first.rows[1]?.activity?.label, 'Ran bun test')
     stop()
     assert.equal(active.size, 0)
   } finally {

@@ -7,6 +7,7 @@ import { afterEach, beforeEach, expect, test } from 'vitest'
 import { type Database, databaseMigrationsFolder, openDatabase } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
+import { sessionArchive } from '@/database/session-archive/schema'
 import { SessionActivities } from '@/domains/sessions/main/api/session-activities'
 import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster-changes'
 import { recordLiveSubagents } from '@/domains/sessions/main/database/session-subagents'
@@ -83,6 +84,7 @@ function insertActivitySessions(ids: readonly string[]) {
         nativeId: `native-${index}`,
         projectId: 'project-1',
         firstPrompt: `Session ${index}`,
+        listOrderAt: index + 1,
       })
       .run()
 }
@@ -98,7 +100,7 @@ test('keeps both roster activities when the selected Feed changes', async () => 
   ] as const
   insertActivitySessions(ids)
   const roster = new SessionRosterChanges()
-  const activities = new SessionActivities(() => roster.changed())
+  const activities = new SessionActivities(database, () => roster.changed())
   const caller = createAppRouter(
     routerDependencies({
       roster,
@@ -290,4 +292,72 @@ test('accepts a later Harness sync that changes or clears a confirmed custom tit
       .where(eq(sessionTable.argoId, '00000000-0000-4000-8000-000000000004'))
       .get(),
   ).toEqual({ customTitle: null })
+})
+
+async function firstDetails(dependencies: AppRouterDependencies, sessionId: string) {
+  const updates: inferRouterOutputs<AppRouter>['sessionDetails'][] = []
+  const stream = await createAppRouter(dependencies).createCaller({}).sessionDetails({ sessionId })
+  stream.subscribe({ next: (update) => updates.push(update) }).unsubscribe()
+  return updates
+}
+
+test('reads a Session beyond the loaded roster window by ID without reading its history', async () => {
+  database
+    .insert(project)
+    .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
+    .run()
+  const ids = Array.from(
+    { length: 40 },
+    (_, index) => `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
+  )
+  insertActivitySessions(ids)
+  const historyReads: string[] = []
+  const dependencies = routerDependencies({
+    readHistory: async (_harness, target) => {
+      historyReads.push(target.nativeId)
+      return []
+    },
+  })
+  const listed = await firstRosterUpdates()
+
+  const updates = await firstDetails(dependencies, ids[0] ?? '')
+
+  expect(listed[0]?.type === 'list' && listed[0].rows.map(({ id }) => id)).not.toContain(ids[0])
+  expect(updates).toEqual([
+    {
+      sessionId: ids[0],
+      details: expect.objectContaining({
+        id: ids[0],
+        harness: 'claude',
+        projectId: 'project-1',
+        archived: false,
+        posture: null,
+        title: { text: 'Session 0', source: 'first-prompt' },
+      }),
+    },
+  ])
+  await new Promise((resolve) => setImmediate(resolve))
+  expect(historyReads).toEqual([])
+})
+
+test('reads an archived Session by ID and says it is archived', async () => {
+  const id = '00000000-0000-4000-8000-000000000009'
+  database
+    .insert(project)
+    .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
+    .run()
+  insertActivitySessions([id])
+  database.insert(sessionArchive).values({ sessionId: id }).run()
+
+  const updates = await firstDetails(routerDependencies(), id)
+
+  expect(updates).toEqual([
+    { sessionId: id, details: expect.objectContaining({ id, archived: true }) },
+  ])
+})
+
+test('reads no details for an unknown Session ID', async () => {
+  const id = '00000000-0000-4000-8000-00000000000f'
+
+  expect(await firstDetails(routerDependencies(), id)).toEqual([{ sessionId: id, details: null }])
 })

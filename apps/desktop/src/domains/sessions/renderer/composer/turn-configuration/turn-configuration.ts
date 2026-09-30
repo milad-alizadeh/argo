@@ -1,12 +1,10 @@
 import { z } from 'zod'
-
-import type { SessionTurnConfiguration } from '@/domains/sessions/renderer/model/models'
 import type { AvailableHarness, CatalogReading } from '@/harnesses/harness-catalog'
-import type { IconName } from '@/platform/renderer/components/icon/icon'
+import type { SessionTurnConfiguration } from '../../model/models'
 import type { ComposerIdentity } from '../identity/composer-identity'
 
 // The Model, Effort and Mode a composer sends with its next Turn (CONTEXT.md L2 · Model and Effort).
-export const turnConfigurationSchema = z.strictObject({
+const turnConfigurationSchema = z.strictObject({
   model: z.string(),
   effort: z.string(),
   mode: z.string(),
@@ -23,7 +21,6 @@ export type ConfigurationChoice = {
   supportedModes?: readonly string[]
   defaultEffort?: string
 }
-export type ModeChoice = ConfigurationChoice & { detail: string; icon: IconName }
 
 // What one adapter lets a person set; an adapter that declares none draws no control.
 export type TurnConfigurationChoices = Pick<
@@ -99,15 +96,14 @@ export function initialTurnConfiguration(
   choices: TurnConfigurationChoices,
   input: {
     identity: ComposerIdentity
-    rows: readonly { id: string; turnConfiguration: SessionTurnConfiguration }[]
+    // The selected Session's details; details for another Session say nothing about this one.
+    session: { id: string; turnConfiguration: SessionTurnConfiguration } | null
   },
 ) {
-  const { identity } = input
-  const row =
-    identity.kind === 'session' ? input.rows.find(({ id }) => id === identity.sessionId) : undefined
-  return row === undefined
-    ? choices.opening
-    : configurationFromReading(choices, row.turnConfiguration)
+  const { identity, session } = input
+  return identity.kind === 'session' && session?.id === identity.sessionId
+    ? configurationFromReading(choices, session.turnConfiguration)
+    : choices.opening
 }
 
 // A stored turnConfiguration can name a choice Argo no longer offers, and that one field takes the fallback.

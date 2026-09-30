@@ -3,12 +3,12 @@ import { eq } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import type { ProjectRegistration } from '@/database/project/validation'
-import { repositoryRoot } from '@/platform/main/git-repository-root'
+import { repositoryRoot } from '../git-repository-root'
 import type { DevelopmentInstance } from './instance'
 
 type Repository = Pick<ProjectRegistration, 'path' | 'commonDirectory'>
 
-export function selectDevelopmentProject(database: Database, repository: Repository): void {
+function selectDevelopmentProject(database: Database, repository: Repository): void {
   const existing = database
     .select({ id: project.id, path: project.path })
     .from(project)

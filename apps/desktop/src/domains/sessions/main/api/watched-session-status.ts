@@ -17,14 +17,20 @@ export class WatchedSessionStatus {
     this.#changed = changed
   }
 
-  // A write with no turn marker in reach still means a turn is under way.
-  record({ harness, nativeId, turn, at }: WatchedWrite): void {
+  // A write with no turn marker in reach still means a turn is under way. Says whether the Turn
+  // opened or closed with this write, counting a write after a quiet open turn as a new opening.
+  record({ harness, nativeId, turn, at }: WatchedWrite): boolean {
     const key = `${harness}\u0000${nativeId}`
-    this.#turns.set(key, { turn: turn ?? 'open', at })
+    const observed = turn ?? 'open'
+    const previous = this.#turns.get(key)
+    const changed =
+      previous?.turn !== observed ||
+      (observed === 'open' && at - previous.at >= WATCHED_TURN_QUIET_LIMIT_MS)
+    this.#turns.set(key, { turn: observed, at })
     const pending = this.#quietTimers.get(key)
     if (pending !== undefined) clearTimeout(pending)
     this.#quietTimers.delete(key)
-    if (turn === 'closed') return
+    if (turn === 'closed') return changed
     this.#quietTimers.set(
       key,
       setTimeout(() => {
@@ -32,6 +38,7 @@ export class WatchedSessionStatus {
         this.#changed()
       }, WATCHED_TURN_QUIET_LIMIT_MS),
     )
+    return changed
   }
 
   // The stored Harness column is plain text, so a read takes any Harness name.

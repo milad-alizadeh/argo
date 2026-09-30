@@ -17,6 +17,8 @@ function database() {
     first_prompt TEXT,
     cwd TEXT,
     activity_at INTEGER,
+    list_order_at INTEGER NOT NULL DEFAULT 0,
+    activity TEXT,
     subagents_read_at INTEGER,
     created_at INTEGER NOT NULL DEFAULT (CAST(unixepoch('subsec') * 1000 AS INTEGER)),
     updated_at INTEGER NOT NULL DEFAULT (CAST(unixepoch('subsec') * 1000 AS INTEGER))

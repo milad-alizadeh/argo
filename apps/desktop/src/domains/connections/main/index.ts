@@ -14,7 +14,7 @@ export type TicketConnection = {
   [key: string]: unknown
 }
 
-export type ConnectionDocument = {
+type ConnectionDocument = {
   connections: TicketConnection[]
   others: unknown[]
   other: Record<string, unknown>
@@ -78,10 +78,7 @@ export async function readConnections(connectionsPath: string): Promise<Connecti
   }
 }
 
-export function writeConnections(
-  connectionsPath: string,
-  document: ConnectionDocument,
-): Promise<boolean> {
+function writeConnections(connectionsPath: string, document: ConnectionDocument): Promise<boolean> {
   const { connections, others, other } = document
   const written = connections.map(({ provider: _provider, ...connection }) => connection)
   return writeDocument(connectionsPath, {

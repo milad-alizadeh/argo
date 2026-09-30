@@ -84,7 +84,7 @@ function claudeQueryOptions(
   }
 }
 
-export class ClaudeSessionChannel implements LiveSessionChannel {
+class ClaudeSessionChannel implements LiveSessionChannel {
   private prompts: Send[] = []
   private wake: (() => void) | null = null
   private session: Query | null = null

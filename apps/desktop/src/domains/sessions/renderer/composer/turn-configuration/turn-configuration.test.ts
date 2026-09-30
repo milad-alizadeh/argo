@@ -75,32 +75,26 @@ test('keeps each restored choice Argo still offers and replaces the rest', () =>
 
 test('starts a new draft from the catalog opening Turn configuration', () => {
   const identity = { kind: 'draft', projectId: 'project-1' } as const
-  expect(
-    initialTurnConfiguration(CLAUDE_TURN_CONFIGURATION, {
-      identity,
-      rows: [],
-    }),
-  ).toEqual(CLAUDE_TURN_CONFIGURATION.opening)
+  expect(initialTurnConfiguration(CLAUDE_TURN_CONFIGURATION, { identity, session: null })).toEqual(
+    CLAUDE_TURN_CONFIGURATION.opening,
+  )
 })
 
-test('starts a Session draft from its persisted roster configuration', () => {
+test('starts a Session draft from its selected details configuration', () => {
   const identity = { kind: 'session', sessionId: 'session-1' } as const
-  const rows = [
-    {
-      id: 'session-1',
-      turnConfiguration: { model: 'claude-opus-5', effort: 'max', mode: 'bypassPermissions' },
-    },
-  ]
+  const session = {
+    id: 'session-1',
+    turnConfiguration: { model: 'claude-opus-5', effort: 'max', mode: 'bypassPermissions' },
+  }
+  expect(initialTurnConfiguration(CLAUDE_TURN_CONFIGURATION, { identity, session })).toEqual({
+    model: 'opus',
+    effort: 'max',
+    mode: 'bypassPermissions',
+  })
   expect(
     initialTurnConfiguration(CLAUDE_TURN_CONFIGURATION, {
       identity,
-      rows,
-    }),
-  ).toEqual({ model: 'opus', effort: 'max', mode: 'bypassPermissions' })
-  expect(
-    initialTurnConfiguration(CLAUDE_TURN_CONFIGURATION, {
-      identity,
-      rows: [],
+      session: { ...session, id: 'session-2' },
     }),
   ).toEqual(CLAUDE_TURN_CONFIGURATION.opening)
 })

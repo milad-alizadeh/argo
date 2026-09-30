@@ -183,14 +183,10 @@ imports and 1 duplicate export. Working through that list found:
   the config file and its `schema` field as production entries on its own; adding the file to
   either `entry` or `ignore` only earns a configuration hint asking for it to be removed again.
 
-**What the gate does not do.** Adopting Knip and reaching a clean, triaged run is what this ticket
-covers. It does not act on the whole report: `quality:dead-code` runs `knip --max-issues 279`, a
-**RATCHET** at the exact count the triaged run left across unused exports and unused exported
-types (161 and 118). The number may only fall as that list is worked down in its own reviewed
-change; it never rises, because one more finding than the ceiling fails the build the same way a
-new jscpd clone does. A tool that reports nothing because it resolved nothing looks exactly like
-a clean repository, so the gate is proved by planting a deliberately orphaned file and confirming
-Knip reports it, then removing that file again.
+**The gate allows nothing.** `quality:dead-code` runs `knip --max-issues 0`, so one finding
+fails the build. A tool that reports nothing because it resolved nothing looks exactly like a
+clean repository, so prove the gate by planting a deliberately orphaned file and confirming Knip
+reports it, then removing that file again.
 
 ## What no gate can reach
 
@@ -262,7 +258,7 @@ apply to that category) or **RATCHET** (debt; the list may only shrink):
 |---|---|
 | `biome.jsonc` `overrides` | every lint cap, the line ceiling included |
 | `.jscpd.json` `ignore` | duplication — reasons in `scripts/jscpd-ignore-reasons.txt`, one per glob |
-| `knip.jsonc` `ignore`/`ignoreBinaries`/`ignoreDependencies`, and `quality:dead-code`'s `--max-issues` | dead code — each entry carries its own reason inline; `--max-issues` is the one RATCHET, at the triaged baseline |
+| `knip.jsonc` `ignore`/`ignoreBinaries`/`ignoreDependencies` | dead code — each entry carries its own reason inline |
 | `apps/desktop/.storybook/preview.ts` `a11y.options.rules` | Storybook axe rules — **KIND** only, named to the vendored element it exempts, never a rule waived on trust |
 
 Two rules have no linter and live in `AGENTS.md` prose only: a cast standing in for a

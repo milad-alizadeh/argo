@@ -16,7 +16,7 @@ export const sessionSyncStatusSchema = z.strictObject({
 })
 
 export type SessionSyncStatus = z.infer<typeof sessionSyncStatusSchema>
-export const sessionSyncEventSchema = z.discriminatedUnion('type', [
+const sessionSyncEventSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('status'), status: sessionSyncStatusSchema }),
   z.strictObject({ type: z.literal('committed') }),
 ])

@@ -4,17 +4,17 @@ export type TicketIndexedReply = RouterOutputs['ticketActive']
 export type TicketIndexed = Extract<TicketIndexedReply, { type: 'ticket.indexed' }>
 export type TicketSearchedReply = RouterOutputs['ticketSearch']
 export type TicketSearched = Extract<TicketSearchedReply, { type: 'ticket.searched' }>
-export type TicketSearchRequested = Extract<
+type TicketSearchRequested = Extract<
   RouterOutputs['ticketSearchProvider'],
   { type: 'ticket.search-requested' }
 >
 
 export type TicketError = Extract<RouterOutputs[keyof RouterOutputs], { type: 'ticket.error' }>
 export type TicketConnectedReply = RouterOutputs['ticketConnection']
-export type TicketConnected = Extract<TicketConnectedReply, { type: 'ticket.connected' }>
+type TicketConnected = Extract<TicketConnectedReply, { type: 'ticket.connected' }>
 export type ConnectionSummary = NonNullable<TicketConnected['connection']>
 export type TicketDiscoverReply = RouterOutputs['ticketDiscover']
-export type TicketDiscovered = Extract<TicketDiscoverReply, { type: 'ticket.discovered' }>
+type TicketDiscovered = Extract<TicketDiscoverReply, { type: 'ticket.discovered' }>
 export type TicketScope = TicketDiscovered['scopes'][number]
 export type TicketUpdated = Extract<RouterOutputs['ticketUpdateStatus'], { type: 'ticket.updated' }>
 export type TicketPrioritized = Extract<

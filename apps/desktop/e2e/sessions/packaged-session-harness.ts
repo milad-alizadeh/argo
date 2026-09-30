@@ -4,6 +4,7 @@ import {
   SESSION_CLAUDE_SYNC_FIXTURE_ENV,
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
 } from '@/harnesses/claude/proof-protocol'
+import { SESSION_CLAUDE_ACP_EXECUTABLE_ENV } from '@/harnesses/claude-acp/proof-protocol'
 import {
   SESSION_CODEX_EXECUTABLE_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
@@ -65,6 +66,9 @@ function launchEnvironment(run: SessionHarnessRun, launch: SessionHarnessLaunch,
     ...transcriptEnv(run.transcripts),
     [SESSION_CLAUDE_EXECUTABLE_ENV]: run.executables.claude,
     [SESSION_CODEX_EXECUTABLE_ENV]: run.executables.codex,
+    ...(run.executables['claude-acp'] === undefined
+      ? {}
+      : { [SESSION_CLAUDE_ACP_EXECUTABLE_ENV]: run.executables['claude-acp'] }),
     ...(syncFixture === undefined
       ? {}
       : { [SESSION_CLAUDE_SYNC_FIXTURE_ENV]: JSON.stringify(syncFixture) }),

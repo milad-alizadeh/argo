@@ -53,7 +53,7 @@ function SignInArea({ name, signIn }: { name: string; signIn: HarnessSignIn }) {
   )
 }
 
-export type HarnessReadinessRowProps = {
+type HarnessReadinessRowProps = {
   readiness: HarnessReadiness
   signIn: HarnessSignIn
 }
@@ -86,7 +86,7 @@ export function HarnessStateBody({
   return null
 }
 
-export function HarnessReadinessRow({ readiness, signIn }: HarnessReadinessRowProps) {
+function HarnessReadinessRow({ readiness, signIn }: HarnessReadinessRowProps) {
   const { t } = useTranslation('harnessSignIn')
   const { harness, state } = readiness
   const name = harnessShortLabel(harness)

@@ -41,13 +41,6 @@ const listing = {
 }
 export const accountListedSchema = message('account.listed', listing)
 
-export const accountConnectRequestSchema = message('account.connect', { provider })
-export const accountListRequestSchema = message('account.list', {})
-export const accountVerifyRequestSchema = message('account.verify', {})
-export const accountAwaitRequestSchema = message('account.await', {})
-export const accountCancelRequestSchema = message('account.cancel', {})
-export const accountDismissNoticeRequestSchema = message('account.dismiss-notice', {})
-
 // What the person needs to finish signing in, by the kind of step the provider asks for. A device
 // code is typed on the provider's page; browser consent needs nothing typed. The device code and the
 // authorization URL stay in the main process.
@@ -73,24 +66,12 @@ export const accountConnectedSchema = message('account.connected', {
   outcome: z.enum(['added', 'renewed']),
 }).refine((reply) => reply.accounts.some((account) => account.id === reply.accountId))
 
-export const accountDisconnectRequestSchema = message('account.disconnect', {
-  accountId: identifier,
-})
-
 export type AccountSummary = z.infer<typeof accountSummary>
 export type AccountConnection = AccountSummary['connections'][number]
 export type AccountState = AccountSummary['state']
 export type Provider = z.infer<typeof provider>
-export type AccountListRequest = z.infer<typeof accountListRequestSchema>
-export type AccountConnectRequest = z.infer<typeof accountConnectRequestSchema>
-export type AccountVerifyRequest = z.infer<typeof accountVerifyRequestSchema>
-export type AccountAwaitRequest = z.infer<typeof accountAwaitRequestSchema>
-export type AccountCancelRequest = z.infer<typeof accountCancelRequestSchema>
-export type AccountDismissNoticeRequest = z.infer<typeof accountDismissNoticeRequestSchema>
-export type AccountDisconnectRequest = z.infer<typeof accountDisconnectRequestSchema>
 export type AccountListed = z.infer<typeof accountListedSchema>
 export type AccountChallenge = z.infer<typeof accountChallengeSchema>
-export type AccountChallengeKind = AccountChallenge['kind']
 export type AccountConnected = z.infer<typeof accountConnectedSchema>
 
 export const ACCOUNT_ERRORS = {
@@ -123,7 +104,4 @@ export type AccountConnectReply = AccountConnected | AccountError
 
 export const accountError = errorFactory('account.error', ACCOUNT_ERRORS)
 export const accountErrorSchema = errorSchema('account.error', ACCOUNT_ERRORS)
-
-export const isAccountListReply = guard(z.union([accountListedSchema, accountErrorSchema]))
 export const isAccountChallengeReply = guard(z.union([accountChallengeSchema, accountErrorSchema]))
-export const isAccountConnectReply = guard(z.union([accountConnectedSchema, accountErrorSchema]))

@@ -25,7 +25,7 @@ const commandSchema = z.strictObject({
   attachments: z.array(sessionAttachmentInputSchema),
   turnConfiguration: draftTurnConfigurationSchema,
 })
-export const sessionStartInputSchema = commandSchema.extend({
+const sessionStartInputSchema = commandSchema.extend({
   harness: harnessSchema,
   projectId: identifierSchema,
   workspaceId: identifierSchema,
@@ -38,7 +38,7 @@ const sessionResumeSchema = z.strictObject({
   workspaceId: identifierSchema.nullable(),
   cwd: z.string().min(1),
 })
-export const sessionSendInputSchema = commandSchema.extend({
+const sessionSendInputSchema = commandSchema.extend({
   sessionId: identifierSchema,
   resume: sessionResumeSchema,
 })
@@ -52,7 +52,7 @@ const outputSchema = z.strictObject({ sessionId: identifierSchema })
 export type SessionStartInput = z.infer<typeof sessionStartInputSchema>
 export type SessionSendInput = z.infer<typeof sessionSendInputSchema>
 export type SessionLiveInput = SessionStartInput | SessionSendInput
-export type SessionSubmitInput = z.infer<typeof inputSchema>
+type SessionSubmitInput = z.infer<typeof inputSchema>
 export type SessionProcedureContext = SessionRenameContext & {
   database: Database
   supervisor: LiveSessionSupervisorActor

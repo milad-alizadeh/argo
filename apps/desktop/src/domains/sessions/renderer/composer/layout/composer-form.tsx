@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback } from 'react'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
-import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import type { HarnessControl } from '../../harness/harnesses'
+import type { SessionPlan } from '../../model/models'
 import type { Send } from '../hooks/use-send'
 import { useSessionComposerState } from '../hooks/use-session-composer-state'
 import type { TicketChoice } from '../references/context-picker/context-picker-contents'
@@ -12,13 +12,16 @@ import type {
 } from '../toolbar/turn-configuration-menu'
 import { WorkspaceMenu, type WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
 import { AttachmentTray } from '../tray/attachment-tray'
-import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
+import {
+  supportedConfiguration,
+  type TurnConfigurationChoices,
+} from '../turn-configuration/turn-configuration'
 import { ComposerCard } from './composer-card'
 import '../editor/composer-content.css'
 import type { ComposerEditing } from '../editing/composer-editing'
 import { ComposerEditingProvider, useComposerEditing } from '../editing/composer-editing-context'
 
-export const COMPOSER_COLUMN = 'mx-auto w-full max-w-(--size-session-column)'
+const COMPOSER_COLUMN = 'mx-auto w-full max-w-(--size-session-column)'
 
 export type ComposerFormProps = {
   contextTokens?: number | null
@@ -62,7 +65,9 @@ function editingTurnConfiguration(input: {
   const { supplied, choices, editing, onChange } = input
   if (choices === undefined) return supplied
   if (choices === null || editing.turnConfiguration === null) return null
-  return { choices, value: editing.turnConfiguration, onChange }
+  // A Harness switch keeps the last Harness's values; send and draw only what these choices offer.
+  const value = supportedConfiguration(choices, editing.turnConfiguration, choices.opening)
+  return { choices, value, onChange }
 }
 
 function useComposerListing(input: {

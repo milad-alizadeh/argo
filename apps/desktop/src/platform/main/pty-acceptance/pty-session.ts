@@ -2,8 +2,8 @@
 // acceptance harness (`pty-acceptance.ts`), which runs inside the PACKAGED app.
 import * as pty from 'node-pty'
 
-export const DEFAULT_COLS = 80
-export const DEFAULT_ROWS = 24
+const DEFAULT_COLS = 80
+const DEFAULT_ROWS = 24
 // node-pty's exit callback runs through a native ThreadSafeFunction; if `app.quit()`/`app.exit()`
 // fires before it does, the callback can land mid-Node-environment-teardown and abort the process
 // (#2494). `kill()` waits for it, bounded so a PTY that never reports exit cannot hang a quit.

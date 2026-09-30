@@ -2,13 +2,35 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { type RouterOutputs, trpc } from '@/platform/renderer/trpc-client'
-import messages from '../locales/en.json'
 
 export type ProjectSummary = RouterOutputs['projectList'][number]
-type ProjectErrorCode = keyof typeof messages.error
-const PROJECT_ERROR_CODES = Object.keys(messages.error) as ProjectErrorCode[]
+// The refusals a Project open can answer with; no other message makes the Cockpit refused.
+const PROJECT_ERROR_CODES = [
+  'missing-project',
+  'missing-workspace',
+  'access-denied',
+  'invalid-request',
+  'unsupported-version',
+  'project-unavailable',
+  'internal-error',
+  'storage-invalid',
+  'storage-unavailable',
+  'invalid-response',
+  'connection-lost',
+  'not-a-repository',
+  'already-registered',
+  'git-unavailable',
+  'storage-not-written',
+  'invalid-configuration',
+  'setup-unavailable',
+  'setup-network-unavailable',
+  'setup-document-invalid',
+  'onboarding-run-not-found',
+  'onboarding-harness-unavailable',
+] as const
+type ProjectErrorCode = (typeof PROJECT_ERROR_CODES)[number]
 
-export type CockpitStatus = 'loading' | 'empty' | 'selected' | 'refused'
+type CockpitStatus = 'loading' | 'empty' | 'selected' | 'refused'
 
 export type Cockpit = {
   status: CockpitStatus
@@ -23,7 +45,7 @@ export type ProjectActions = {
   open: () => void
 }
 
-export type ProjectCockpit = Cockpit
+type ProjectCockpit = Cockpit
 
 const IDLE = { project: null, projects: [], message: null, code: null, busy: false } as const
 const LOADING: ProjectCockpit = { status: 'loading', ...IDLE }

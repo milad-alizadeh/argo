@@ -6,7 +6,7 @@ import { trpcClient } from '@/platform/renderer/trpc-client'
 import { sessionArchivePathKey } from '../../session-queries'
 import type { SessionId } from '../../types'
 
-export type ArchiveSetOutcome = { applied: SessionId[]; failed: SessionId[] }
+type ArchiveSetOutcome = { applied: SessionId[]; failed: SessionId[] }
 
 // A short-lived Undo (#2194 follow-up): its close is what makes an id "gone" from this
 // component's perspective, and the manager fires that close for either reason interchangeably
@@ -16,7 +16,7 @@ const UNDO_TOAST_TIMEOUT_MS = 8000
 // One mutation for both directions (#2194): `archived: true` is the bulk action, `archived: false`
 // is what a short-lived Undo calls, on the same ids. Ids the store had no writable row for come
 // back in `failed` rather than throwing, so one unwritable Session never sinks the rest of a batch.
-export function useSessionArchiveMutation() {
+function useSessionArchiveMutation() {
   const queryClient = useQueryClient()
   return useMutation<ArchiveSetOutcome, Error, { sessionIds: SessionId[]; archived: boolean }>({
     mutationFn: ({ sessionIds, archived }) =>

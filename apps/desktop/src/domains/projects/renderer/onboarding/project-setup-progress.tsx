@@ -1,11 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import type {
-  ProjectSetupCommand,
-  ProjectSetupSnapshot,
-} from '@/domains/projects/renderer/onboarding/onboarding-presentation'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { RunningText } from '@/platform/renderer/components/running-text'
 import { Button } from '@/platform/renderer/components/ui/button'
+import type { ProjectSetupCommand, ProjectSetupSnapshot } from './onboarding-presentation'
 
 const PLANNING_TASKS = [
   'inspect-folder',

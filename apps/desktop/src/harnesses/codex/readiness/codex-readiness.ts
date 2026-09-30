@@ -5,7 +5,7 @@
 // reads as signed-out rather than a fabricated policy-blocked heuristic (#2579).
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
 
-export type CodexStatusResult = { stdout: string; stderr: string }
+type CodexStatusResult = { stdout: string; stderr: string }
 export type CodexStatusRunner = () => Promise<CodexStatusResult>
 
 export async function codexReadiness(deps: {

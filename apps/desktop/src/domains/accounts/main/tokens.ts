@@ -15,7 +15,7 @@ export type TokenFailure =
   // The provider could not be asked to renew: nothing is known about the grant, so nothing is marked.
   | { ok: false; reason: 'renewal-failed'; failure: 'rate-limited' | 'unreachable' }
 
-export type TokenRead = { ok: true; token: string; account: AccountRecord } | TokenFailure
+type TokenRead = { ok: true; token: string; account: AccountRecord } | TokenFailure
 
 const due = (grant: Grant) =>
   grant.renewal !== null && grant.renewal.expiresAt - RENEWAL_MARGIN_MILLISECONDS <= Date.now()
@@ -49,7 +49,7 @@ function renew(access: AccountAccess, account: AccountRecord, stale: string): Pr
 }
 
 // An expired or revoked Account is not called again until the person reconnects it.
-export async function tokenFor(access: AccountAccess, accountId: string): Promise<TokenRead> {
+async function tokenFor(access: AccountAccess, accountId: string): Promise<TokenRead> {
   const registry = await readAccounts(access.paths.accounts)
   if (!registry.ok) return { ok: false, reason: 'storage' }
   const account = registry.registry.accounts.find((candidate) => candidate.id === accountId)

@@ -1,12 +1,9 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import type {
-  ProjectSetupCommand,
-  ProjectSetupSnapshot,
-} from '@/domains/projects/renderer/onboarding/onboarding-presentation'
 import { FileDiffList } from '@/platform/renderer/components/file-diff-list'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { projectSetupDiffFiles } from './editor/project-setup-diff-files'
+import type { ProjectSetupCommand, ProjectSetupSnapshot } from './onboarding-presentation'
 import { projectSetupRecoveryText } from './project-setup-recovery-text'
 
 export function Recovery({

@@ -40,7 +40,7 @@ export type CodexLiveClient = {
 type Turn = ThreadReadResponse['thread']['turns'][number]
 type TurnNotice = { threadId: string; turn: Pick<Turn, 'id' | 'status'> }
 
-export class CodexSessionChannel implements LiveSessionChannel {
+class CodexSessionChannel implements LiveSessionChannel {
   private readonly client: CodexLiveClient
   private readonly controls: LiveSessionControls | undefined
   private readonly emit: (event: LiveSessionChannelEvent) => void

@@ -5,7 +5,7 @@
 // offering API billing for Claude.
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
 
-export type ClaudeStatusResult = { stdout: string }
+type ClaudeStatusResult = { stdout: string }
 export type ClaudeStatusRunner = () => Promise<ClaudeStatusResult>
 
 type ClaudeAuthStatus = {

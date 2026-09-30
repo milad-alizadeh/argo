@@ -3,6 +3,7 @@ import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-e
 import type { HistoryChange, HistoryTurn, HistoryTurnMarker } from '@/harnesses/registration'
 import type { SubAgentActivityKind } from '../app-server/protocol-generated/v2/sub-agent-activity-kind'
 import { codexSubagentContent } from './codex-subagent-content'
+import { codexTaskNotification } from './codex-task-notification'
 
 const turnOfEvent = new Map<unknown, HistoryTurn>([
   ['task_started', 'open'],
@@ -56,7 +57,7 @@ function completedItem(payload: unknown) {
   }
 }
 
-function messageEvents(payload: unknown): SessionLiveEventBody[] {
+function messageEvents(payload: unknown, reject: () => void): SessionLiveEventBody[] {
   const completed = completedItem(payload)
   if (completed === null) return []
   const { item, turnId } = completed
@@ -68,13 +69,14 @@ function messageEvents(payload: unknown): SessionLiveEventBody[] {
   })
   const text = texts.join(item.type === 'UserMessage' ? '\n' : '')
   if (text === '') return []
+  const task = item.type === 'UserMessage' ? codexTaskNotification(item.id, text, reject) : null
   return [
     {
       type: 'content',
       commandId: null,
       turnId,
       vendorEventId: item.id,
-      content: {
+      content: task ?? {
         id: item.id,
         kind: 'message',
         role: item.type === 'UserMessage' ? 'user' : 'assistant',
@@ -155,7 +157,7 @@ export function openCodexHistoryReader(): (lines: readonly string[]) => HistoryC
         return []
       }
       if (record.type !== 'event_msg') return []
-      return [...messageEvents(record.payload), ...subagentEvents(record.payload, reject)]
+      return [...messageEvents(record.payload, reject), ...subagentEvents(record.payload, reject)]
     })
     if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Codex rollout line(s).`)
     return lines.some(completesWork) ? { type: 'rewritten' } : { type: 'appended', events }

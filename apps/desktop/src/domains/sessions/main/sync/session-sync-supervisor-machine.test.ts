@@ -3,6 +3,7 @@ import { test } from 'vitest'
 import { createActor, fromCallback } from 'xstate'
 import type { Database } from '@/database/database'
 import type { SessionDiscovery } from '@/domains/sessions/api/session-discovery'
+import type { Harness } from '@/harnesses/harness'
 import { SessionSyncStatusStore } from '../api/session-sync-status'
 import {
   type SessionSyncActorInput,
@@ -23,12 +24,12 @@ const fetchingStatus = {
 type SyncEvent =
   | {
       type: 'SyncStatus'
-      harness: 'claude' | 'codex'
+      harness: Harness
       status: ReturnType<SessionSyncStatusStore['current']>
     }
-  | { type: 'SyncCommitted'; harness: 'claude' | 'codex' }
-  | { type: 'SyncCompleted'; harness: 'claude' | 'codex' }
-  | { type: 'SyncFailed'; harness: 'claude' | 'codex' }
+  | { type: 'SyncCommitted'; harness: Harness }
+  | { type: 'SyncCompleted'; harness: Harness }
+  | { type: 'SyncFailed'; harness: Harness }
 
 test('dispatches registered Session discovery functions and runs a Refresh that arrived mid-sync once after it', () => {
   const dispatched: string[] = []

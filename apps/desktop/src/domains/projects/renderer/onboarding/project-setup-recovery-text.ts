@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next'
-import type { ProjectSetupRecoveryCode } from '@/domains/projects/renderer/onboarding/model/project-setup-recovery'
+import type { ProjectSetupRecoveryCode } from './model/project-setup-recovery'
 
-export const PROJECT_SETUP_RECOVERY_KEYS = {
+const PROJECT_SETUP_RECOVERY_KEYS = {
   interrupted: 'setup.actor.recovery.interrupted',
   'application-drift': 'setup.actor.recovery.application-drift',
   cancelled: 'setup.actor.recovery.cancelled',

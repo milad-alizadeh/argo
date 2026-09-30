@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
+import type { Harness } from '@/harnesses/harness'
 import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { claudeChoices, codexHarnessInfoFixture } from '@/mocks/sessions/harness-catalog.fixture'
 import {
@@ -33,6 +34,7 @@ type Server = {
   draftReadFailures: number
   notify: () => void
   submittedTarget: DraftTarget | null
+  submittedTurnConfiguration: DraftValue['turnConfiguration'] | null
 }
 type MockInput = {
   target?: DraftTarget
@@ -78,7 +80,7 @@ function savedDraft(sessionId: string, prompt: string, now: number): DraftValue 
   }
 }
 
-function savedProjectDraft(harness: 'claude' | 'codex'): DraftValue {
+function savedProjectDraft(harness: Harness): DraftValue {
   return {
     ...savedDraft('project-1', 'Plan this change.', 3),
     id: 'draft-project-1',
@@ -173,6 +175,7 @@ async function submitDraftResult(request: {
   if (server.uncertainSubmit) throw new Error('The Send response was lost.')
   const submitted = [...drafts.entries()].find(([_, draft]) => draft.id === input.draftId)
   server.submittedTarget = submitted?.[1].target ?? null
+  server.submittedTurnConfiguration = submitted?.[1].turnConfiguration ?? null
   if (submitted !== undefined && submitted[1].revision === input.expectedRevision)
     drafts.delete(submitted[0])
   notify()
@@ -239,7 +242,7 @@ function createServer(input: {
   initialPrompt: string
   project: boolean
   projectDraftExists: boolean
-  savedProjectHarness: 'claude' | 'codex'
+  savedProjectHarness: Harness
   draftReadFailures: number
 }): Server {
   const {
@@ -281,6 +284,7 @@ function createServer(input: {
     draftReadFailures,
     notify,
     submittedTarget: null,
+    submittedTurnConfiguration: null,
   }
   server.trpc = createMockTrpc(server, notify)
   return server
@@ -425,7 +429,7 @@ function DurableDraftStory({
   initialPrompt?: string
   project?: boolean
   projectDraftExists?: boolean
-  savedProjectHarness?: 'claude' | 'codex'
+  savedProjectHarness?: Harness
   draftReadFailures?: number
 }) {
   const [serverVersion, setServerVersion] = useState(0)
@@ -473,9 +477,9 @@ function useRestoreProjectDraftStory(input: {
   project: boolean
   restoredProjectId: string | null
   loadedTarget: DraftTarget | null | undefined
-  harness: 'claude' | 'codex'
+  harness: Harness
   setWorkspaceId: (workspaceId: string) => void
-  setHarness: (harness: 'claude' | 'codex') => void
+  setHarness: (harness: Harness) => void
   setRestoredProjectId: (projectId: string) => void
 }) {
   const {
@@ -522,7 +526,7 @@ function DurableDraftScreen({
 }) {
   const [sessionId, setSessionId] = useState('session-a')
   const [workspaceId, setWorkspaceId] = useState('workspace-1')
-  const [harness, setHarness] = useState<'claude' | 'codex'>('claude')
+  const [harness, setHarness] = useState<Harness>('claude')
   const [composerVersion, setComposerVersion] = useState(0)
   const [restoredProjectId, setRestoredProjectId] = useState<string | null>(null)
   const target: DraftTarget = project
@@ -598,6 +602,9 @@ function DraftStoryDetails({
         {JSON.stringify(storedDraftSummaries(server.drafts))}
       </output>
       <output aria-label="Submitted target">{JSON.stringify(server.submittedTarget)}</output>
+      <output aria-label="Submitted Turn configuration">
+        {JSON.stringify(server.submittedTurnConfiguration)}
+      </output>
       <output aria-label="Send commands">{JSON.stringify(server.submissions)}</output>
       <output aria-label="Current save failure">{String(draft?.saveFailed ?? false)}</output>
       <output aria-label="Session A save rejected">{String(server.sessionASaveRejected)}</output>
@@ -616,7 +623,7 @@ function DurableDraftComposer({
   onRetry,
 }: {
   draft: NonNullable<ReturnType<typeof useDurableComposerDraft>>
-  harness: 'claude' | 'codex'
+  harness: Harness
   choices: TurnConfigurationChoices
   sessionId: string
   focusOnRetry: boolean
@@ -1036,6 +1043,23 @@ export const ProjectTargetChangesWithoutTextPersistForSend: Story = {
       ),
     )
     await expect(canvas.getByLabelText('Submitted target')).toHaveTextContent('"harness":"codex"')
+  },
+}
+
+export const HarnessSwitchSendsAConfigurationTheNewHarnessOffers: Story = {
+  args: { project: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent('Plan this change.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Harness Codex' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Current target')).toHaveTextContent('"harness":"codex"'),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    const submitted = canvas.getByLabelText('Submitted Turn configuration')
+    await waitFor(() => expect(submitted).not.toHaveTextContent('null'))
+    const { mode } = JSON.parse(submitted.textContent ?? 'null') as { mode: string }
+    await expect(codexChoices.modes.map(({ value }) => value)).toContain(mode)
   },
 }
 

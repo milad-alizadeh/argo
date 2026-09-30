@@ -1,4 +1,4 @@
-export const STORYBOOK_COMMAND_EVENT = 'argo:storybook-command'
+const STORYBOOK_COMMAND_EVENT = 'argo:storybook-command'
 
 const commandListeners = new Set<(command: string) => void>()
 

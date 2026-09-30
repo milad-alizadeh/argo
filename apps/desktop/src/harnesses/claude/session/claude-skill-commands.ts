@@ -8,11 +8,11 @@ import {
 } from '@/domains/sessions/api/composer-commands'
 import { readSkillDirectoryRows, skillRoots } from '@/harnesses/skill-directories'
 
-export function claudeConfigDir(configDir?: string) {
+function claudeConfigDir(configDir?: string) {
   return configDir ?? process.env.CLAUDE_CONFIG_DIR ?? path.join(os.homedir(), '.claude')
 }
 
-export function claudeSkillRoots(cwd: string | null, configDir: string): string[] {
+function claudeSkillRoots(cwd: string | null, configDir: string): string[] {
   return skillRoots(cwd, path.join(configDir, 'skills'), path.join('.claude', 'skills'))
 }
 

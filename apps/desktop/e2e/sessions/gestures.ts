@@ -12,10 +12,15 @@ import { sessionRows } from './page-trpc'
 // themselves live in the renderer's turn turnConfiguration (claude-turn-configuration.ts, codex-turn-configuration.ts), which
 // the driver bundle cannot import: the path there runs through the `@/` alias, and the bundler CI
 // runs leaves that unresolved.
-const HARNESS_TABS: Record<SessionHarness, string> = { claude: 'Claude Code', codex: 'Codex' }
+const HARNESS_TABS: Record<SessionHarness, string> = {
+  claude: 'Claude Code',
+  codex: 'Codex',
+  'claude-acp': 'Claude ACP',
+}
 const BUDGET_MODELS: Record<SessionHarness, RegExp> = {
   claude: /Haiku 4\.5/,
   codex: /Gpt 5\.6 Luna/,
+  'claude-acp': /sonnet/,
 }
 
 const ROW = 'nav[aria-label="Sessions"] button[data-session-id]'
@@ -37,14 +42,22 @@ export type CreateRequest = {
 
 type CreatedRow = { id: string; label: string; matchingRows: number }
 
+// A Session route sits under its Project: `#/projects/<id>/sessions/<route>`.
 async function waitForRoute(page: Page, route: string) {
-  await page.waitForFunction((hash) => window.location.hash === hash, `#/sessions/${route}`)
+  await page.waitForFunction(
+    (tail) =>
+      /^#\/projects\/[^/]+\/sessions\//.test(window.location.hash) &&
+      window.location.hash.endsWith(tail),
+    `/sessions/${route}`,
+  )
 }
 
 // A "+" click opens a fresh composer (#2109): with a Project open, that composer already carries
 // an optimistic Session id, so the route past the click is that id, not the literal `new`.
 async function waitForNewSessionRoute(page: Page) {
-  await page.waitForFunction(() => /^#\/sessions\/(new|optimistic:)/.test(window.location.hash))
+  await page.waitForFunction(() =>
+    /^#\/projects\/[^/]+\/sessions\/(new|optimistic:)/.test(window.location.hash),
+  )
 }
 
 // Opening a Session is a click on its Roster row, the way a person opens one.
@@ -182,6 +195,14 @@ async function waitForCreatedRow(
     if (Date.now() > deadline) throw new Error('Sending from the new Session composer made no row.')
     await new Promise((resolve) => setTimeout(resolve, POLL_MS))
   }
+}
+
+// Types into the open Composer and sends with Enter.
+export async function sendFromComposer(page: Page, text: string) {
+  const composer = page.getByRole('combobox', { name: 'Message' })
+  await composer.click()
+  await page.keyboard.type(text)
+  await page.keyboard.press('Enter')
 }
 
 // Clicks the plus control, picks the harness, types the prompt and sends it, then answers with the

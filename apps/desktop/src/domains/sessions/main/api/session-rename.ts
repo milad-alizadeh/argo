@@ -8,11 +8,11 @@ import { identifierSchema } from '@/shared/validation'
 import type { SessionRosterChanges } from './session-roster-changes'
 
 const t = initTRPC.create()
-export const sessionRenameInputSchema = z.strictObject({
+const sessionRenameInputSchema = z.strictObject({
   sessionId: identifierSchema,
   title: z.string().min(1),
 })
-export const sessionRenameOutputSchema = z.strictObject({ title: z.string().min(1) })
+const sessionRenameOutputSchema = z.strictObject({ title: z.string().min(1) })
 
 export type SessionRenameContext = {
   database: Database

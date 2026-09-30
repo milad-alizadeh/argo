@@ -26,7 +26,7 @@ function WorkButtons({ model }: { model: SessionScreenModel }) {
 }
 
 function Inspector({ model }: { model: SessionScreenModel }) {
-  const { evidence, navigate, sessionList, session, setEvidence } = model
+  const { evidence, navigate, session, setEvidence } = model
   return (
     <SessionInspector
       activeEvidenceId={evidence?.id ?? null}
@@ -35,9 +35,7 @@ function Inspector({ model }: { model: SessionScreenModel }) {
       delegationFeedError={model.delegationFeedError}
       evidence={evidence}
       sessionId={model.selectedSessionId}
-      handoff={
-        <SessionHandoffFacts onNavigate={navigate} sessionList={sessionList} session={session} />
-      }
+      handoff={<SessionHandoffFacts onNavigate={navigate} session={session} />}
       onOpenEvidence={setEvidence}
       onRetryDelegationFeed={model.retryDelegationFeed}
       shell={model.shell}
@@ -79,7 +77,7 @@ function composerFor(model: ReturnType<typeof useSessionScreenModel>) {
       session={model.session}
       harness={model.harness}
       selectedSessionId={model.selectedSessionId}
-      sessionList={model.sessionList}
+      sessionLoaded={model.sessionLoaded}
       cockpit={model.cockpit}
       workspaceActions={model.workspaceActions}
       workspaceCockpit={model.workspaceCockpit}

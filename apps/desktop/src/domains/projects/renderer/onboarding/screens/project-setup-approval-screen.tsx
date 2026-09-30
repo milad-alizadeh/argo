@@ -1,10 +1,7 @@
 import { useTranslation } from 'react-i18next'
-import type {
-  ProjectSetupCommand,
-  ProjectSetupSnapshot,
-} from '@/domains/projects/renderer/onboarding/onboarding-presentation'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import { Button } from '@/platform/renderer/components/ui/button'
+import type { ProjectSetupCommand, ProjectSetupSnapshot } from '../onboarding-presentation'
 
 type ApprovalScreenProps = {
   command: (command: ProjectSetupCommand) => Promise<void>

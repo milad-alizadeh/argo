@@ -52,7 +52,7 @@ function isStreamedText(event: SessionLiveEvent): boolean {
 }
 
 // Without a live channel, only what vendor history can also settle reaches the Feed.
-export function canDeliver(event: SessionLiveEvent, live: boolean): boolean {
+function canDeliver(event: SessionLiveEvent, live: boolean): boolean {
   if (live) return true
   switch (event.type) {
     case 'permission':
@@ -159,8 +159,6 @@ class FeedReader {
     this.#follower = null
     this.#cancelText()
     this.#observers.clear()
-    // An unobserved Feed publishes nothing more, so its activity would only go stale.
-    if (this.#parent === null) this.#context.activities?.publish(this.#chain.sessionId, null)
   }
 
   #attachLive(): void {

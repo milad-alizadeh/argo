@@ -14,10 +14,9 @@ import { PtySession } from './pty-session'
 
 const execFileAsync = promisify(execFile)
 
-export { CYCLES }
 // Anything a PTY leaks, it leaks once per cycle, so a real leak lands near 600 and not near 8.
 // The allowance is for the descriptors the runtime itself opens while this runs.
-export const ALLOWED_GROWTH = 8
+const ALLOWED_GROWTH = 8
 const CYCLE_TIMEOUT_MS = 15_000
 const SETTLE_MS = 500
 // A leaking process holds thousands of descriptors, so the `after` reading is the large one. The
@@ -27,7 +26,7 @@ const LSOF_MAX_BUFFER = 64 * 1024 * 1024
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-export async function openDescriptorCount(): Promise<number> {
+async function openDescriptorCount(): Promise<number> {
   // lsof exits 1 when some descriptor cannot be inspected, having still listed the rest — so its
   // exit code is not the signal, the output is. Every OTHER way of failing has to stay fatal: a
   // reading this silently truncates is a reading that reports a leak as flat.

@@ -7,7 +7,7 @@ const TAIL_THRESHOLD_PX = 80
 // A disclosure the reader opens resizes a row under their eyes, not the tail. While its motion
 // runs the Feed holds its start anchor, because TanStack's end anchor pins the bottom and slides
 // the pressed control up the screen. `onRelease` rereads the reader's place once it settles.
-export function useDisclosureHold(viewport: HTMLElement | null, onRelease: () => void) {
+function useDisclosureHold(viewport: HTMLElement | null, onRelease: () => void) {
   const [holding, setHolding] = useState(false)
   const release = useRef(onRelease)
   useEffect(() => {

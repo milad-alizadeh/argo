@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import type { Command } from './migration-ratchet.mts'
 
 export type GateName = 'types' | 'boundaries' | 'tests' | 'storybook'
-export type ParserConfiguration =
+type ParserConfiguration =
   | { kind: 'typescript'; workspace: string }
   | { kind: 'boundaries' }
   | { kind: 'bun-tests'; project: string }

@@ -81,7 +81,7 @@ export function driveSessionError(
   })
 }
 
-export function driveSessionErrorWithMessage(
+function driveSessionErrorWithMessage(
   code: DriveSessionErrorCode,
   { harness, requestId, message }: { harness: string; requestId: string | null; message: string },
 ): SessionError {
@@ -93,8 +93,4 @@ export function driveSessionErrorWithMessage(
     harness,
     message,
   }
-}
-
-export function isSessionError(value: unknown): value is SessionError {
-  return sessionErrorSchema.safeParse(value).success
 }

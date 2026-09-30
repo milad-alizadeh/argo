@@ -9,6 +9,7 @@ import {
   savedSelectionDraft,
   sessionSelectionHost,
 } from '@/mocks/sessions/session-selection-host.fixture'
+import { holdSessionDetails, releaseSessionDetails } from '@/mocks/sessions/session-story-host'
 import { cockpitRoutes } from '@/renderer/cockpit-router'
 import type { Session } from '../types'
 
@@ -43,10 +44,10 @@ const ROSTER = [
 const CARD_LABEL = 'Message composer'
 const MESSAGE_LABEL = 'Message'
 
-function CockpitSessionScreen() {
+function CockpitSessionScreen({ sessionId }: { sessionId: string }) {
   const [router] = useState(() =>
     createMemoryRouter(cockpitRoutes, {
-      initialEntries: ['/projects/project-1/sessions/claude-first'],
+      initialEntries: [`/projects/project-1/sessions/${sessionId}`],
     }),
   )
   return (
@@ -134,6 +135,7 @@ const meta = {
   title: 'Sessions/Screen/Switching',
   component: CockpitSessionScreen,
   parameters: { layout: 'fullscreen' },
+  args: { sessionId: 'claude-first' },
 } satisfies Meta<typeof CockpitSessionScreen>
 
 export default meta
@@ -357,3 +359,68 @@ export const FailuresToastWithoutMovingTheComposer: Story = {
     await expect(within(canvasElement.ownerDocument.body).queryByText(SAVE_FAILED)).toBeNull()
   },
 }
+
+// The roster loads one page of 30, and the 31st Session opens by ID all the same: its title heads
+// the screen and its composer opens on its own Harness (#2935).
+const BEYOND_THE_WINDOW = sessionRow({
+  id: 'codex-beyond-the-window',
+  harness: 'codex',
+  posture: null,
+  status: 'idle',
+  cwd: '/workspace/argo',
+  title: { text: 'Codex Session beyond the window', source: 'custom' },
+  updatedAt: '2026-09-01T09:00:00Z',
+})
+const LONG_ROSTER = [
+  ...Array.from({ length: 30 }, (_, index) =>
+    sessionRow({
+      id: `claude-${index}`,
+      posture: null,
+      status: 'idle',
+      cwd: '/workspace/argo',
+      title: { text: `Claude Session ${index}`, source: 'custom' },
+      updatedAt: `2026-09-13T${String(10 + (index % 10)).padStart(2, '0')}:00:00Z`,
+    }),
+  ),
+  BEYOND_THE_WINDOW,
+] satisfies Session[]
+
+export const OpensASessionBeyondTheLoadedRoster: Story = {
+  args: { sessionId: BEYOND_THE_WINDOW.id },
+  beforeEach: () => sessionSelectionHost(LONG_ROSTER),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      await canvas.findByRole('heading', { level: 1, name: 'Codex Session beyond the window' }),
+    ).toBeVisible()
+    await waitFor(() =>
+      expect(
+        canvas
+          .getByRole('button', { name: /^Choose Turn configuration:/ })
+          .getAttribute('aria-label'),
+      ).toMatch(/^Choose Turn configuration: Codex,/),
+    )
+    await expect(
+      canvas.queryByRole('button', { name: /Codex Session beyond the window/ }),
+    ).toBeNull()
+  },
+}
+
+// A reopened Session's pending details reply replaces the details it was left with (#2935).
+export const AReopenedSessionTakesItsCurrentDetails: Story = {
+  beforeEach: () => sessionSelectionHost(RENAMED_ROSTER),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await canvas.findByRole('heading', { level: 1, name: 'First Claude Session' })
+    await userEvent.click(canvas.getByRole('button', { name: /Second Codex Session/ }))
+    await canvas.findByRole('heading', { level: 1, name: 'Second Codex Session' })
+    Object.assign(RENAMED_ROSTER[0] ?? {}, { title: { text: 'Renamed first', source: 'custom' } })
+    holdSessionDetails('claude-first')
+    await userEvent.click(canvas.getByRole('button', { name: /First Claude Session/ }))
+    await canvas.findByRole('heading', { level: 1, name: 'First Claude Session' })
+    releaseSessionDetails('claude-first')
+    await canvas.findByRole('heading', { level: 1, name: 'Renamed first' })
+  },
+}
+
+const RENAMED_ROSTER = ROSTER.map((row) => ({ ...row }))

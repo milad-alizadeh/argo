@@ -4,7 +4,7 @@ import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionInsertSchema } from '@/database/session/validation'
 
-export type SessionUpsertInput = z.infer<typeof sessionInsertSchema>
+type SessionUpsertInput = z.infer<typeof sessionInsertSchema>
 
 export type SessionUpsert = (input: SessionUpsertInput) => string
 
@@ -36,12 +36,14 @@ export function createSessionUpsert(database: Database): SessionUpsert {
         firstPrompt: validatedInput.firstPrompt ?? null,
         cwd: validatedInput.cwd ?? null,
         activityAt: validatedInput.activityAt ?? null,
+        listOrderAt: validatedInput.activityAt ?? Date.now(),
       })
       .onConflictDoUpdate({
         target: [sessionTable.harness, sessionTable.nativeId],
         set: {
           ...metadata,
           harness: validatedInput.harness,
+          listOrderAt: sql`MAX(${sessionTable.listOrderAt}, coalesce(excluded.activity_at, 0))`,
           updatedAt: sql`MAX(CAST(unixepoch('subsec') * 1000 AS INTEGER), ${sessionTable.updatedAt} + 1)`,
         },
       })

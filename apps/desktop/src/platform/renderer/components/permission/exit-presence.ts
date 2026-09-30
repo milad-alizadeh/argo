@@ -5,7 +5,7 @@ export const ATTACHMENT_ENTER_MS = 320
 export const ATTACHMENT_EXIT_MS = 280
 
 // Reduced motion draws no collapse, so a leaving card goes at once rather than sitting inert.
-export function attachmentExitDelay(): number {
+function attachmentExitDelay(): number {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : ATTACHMENT_EXIT_MS
 }
 
@@ -22,7 +22,7 @@ export function useExitPresence<T>(value: T | null) {
   return { exiting, shown }
 }
 
-export function focusMessageField() {
+function focusMessageField() {
   document.querySelector<HTMLElement>('[aria-label="Message"]')?.focus()
 }
 
