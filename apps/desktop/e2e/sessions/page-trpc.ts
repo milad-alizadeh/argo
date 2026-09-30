@@ -59,41 +59,17 @@ export async function selectedProjectId(page: Page): Promise<string> {
   return projectId
 }
 
+// A view no change listener attached, so the read holds no temporary Feed readers.
+const E2E_LIST_VIEW = '00000000-0000-4000-8000-0000000000e2'
+
 export async function sessionRows(page: Page): Promise<SessionRow[]> {
   const projectId = await selectedProjectId(page)
-  return page.evaluate(async (projectId) => {
-    const id = Math.floor(Math.random() * 1_000_000_000)
-    const rows = await new Promise<SessionRow[]>((resolve, reject) => {
-      let unsubscribe = () => {}
-      const done = (error: unknown, value?: SessionRow[]) => {
-        unsubscribe()
-        if (error === undefined) resolve(value ?? [])
-        else reject(error instanceof Error ? error : new Error(String(error)))
-      }
-      void window.argo
-        .trpcSubscribe(
-          {
-            id,
-            path: 'sessionList',
-            type: 'subscription',
-            input: { projectId, search: '', pages: 1, pageSize: 100 },
-          },
-          (message) => {
-            if (message.id !== id || message.type !== 'data') {
-              if (message.id === id && message.type === 'error') done(message.error)
-              return
-            }
-            const data = message.result.data as { type?: string; rows?: SessionRow[] }
-            if (data.type === 'list') done(undefined, data.rows)
-          },
-        )
-        .then((stop) => {
-          unsubscribe = stop
-        })
-        .catch((error: unknown) => done(error))
-    })
-    return rows
-  }, projectId)
+  const window = await trpcCall<{ rows: SessionRow[] }>(page, {
+    path: 'sessionListWindow',
+    type: 'query',
+    input: { projectId, view: E2E_LIST_VIEW, anchor: { kind: 'start' }, after: 60 },
+  })
+  return window.rows
 }
 
 export async function sessionFeed(page: Page, sessionId: string): Promise<SessionFeedReading> {

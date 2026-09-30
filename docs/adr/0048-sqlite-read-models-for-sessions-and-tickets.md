@@ -9,9 +9,10 @@ appends, and which lines open or close a turn. When an open Feed's history file 
 only the new lines. It appends their events to the live journal, unless the Session has a live
 channel. A rewritten, truncated or branched file still makes the Feed read the whole history.
 
-The roster is one subscription. It sends the whole list first. After a sync commits, a live
-status changes, a rename, or a write to any history file, it sends each changed row, or the whole
-list again when the order or total changed. A history write sets the row's `activityAt` in SQLite.
+The roster is one small subscription. It sends one invalidation when it attaches, and one per
+burst after a sync commits, a live status changes, a rename, or a write to any history file. The
+renderer then reads its bounded window again. A history write sets the row's `activityAt` in
+SQLite, and moves the row in the list only when the write changes the turn.
 It also records, in memory, whether the file's current turn is open or closed. The newest opened
 turn is the current one. A close counts only when it names that turn or names no turn, so a late
 close for an earlier Codex turn leaves the newer turn open. A Session with no live actor shows
@@ -230,8 +231,11 @@ clients, the ProjectSetup actor, and the sign-in actors remain separate owners o
 
 Read operations query SQLite for lists, search, and indexed detail. The backend adds current live
 Session projections to those rows and returns one Argo-shaped response; the renderer does not merge
-sources. List operations expose numbered pages, page size, indexed total, and stable SQL order.
-Pages can shift when sync adds rows, so refresh preserves selection by Argo UUID. Pinned Sessions
+sources. The Session List reads one bounded window, seeked both ways from an anchor on a stored
+list-order clock plus Argo UUID, with the indexed total and the window's logical offset. The clock
+advances on discovery and Turn transitions, not on each activity write. Other list operations expose
+numbered pages, page size, indexed total, and stable SQL order. Rows can shift when sync adds them,
+so refresh preserves selection by Argo UUID. Pinned Sessions
 come from a separate query and do not appear in the ordinary Session pages. Vendor cursors and
 payload shapes stop at the Harness boundary. A separate Feed operation reads vendor history and
 transforms it into the same validated Feed shape as live events. Selecting a Session without a

@@ -10,7 +10,6 @@ import {
 } from '@/mocks/sessions/session-story-host'
 import { queryClient, trpc } from '@/platform/renderer/trpc-client'
 import type { SessionTurnConfiguration } from '../model/models'
-import { sessionRosterQueryKey } from '../session-list/session-roster'
 import { SessionScreenView } from './session-screen-view'
 
 const SESSION_ID = 'live-turn-configuration'
@@ -60,29 +59,6 @@ function withBridge(reply: SessionTurnConfiguration) {
       queryClient.removeQueries({
         queryKey: trpc.harnessCatalogRead.queryKey({ harness: 'claude' }),
       })
-      queryClient.setQueryData(
-        sessionRosterQueryKey({ projectId: 'storybook-project', search: '' }),
-        {
-          list: {
-            type: 'list',
-            pages: 1,
-            pageSize: 30,
-            total: 1,
-            rows: [
-              sessionRow({
-                id: SESSION_ID,
-                posture: 'live',
-                title: { text: 'Turn turnConfiguration Session', source: 'first-prompt' },
-                status: 'idle',
-                cwd: '/storybook/argo',
-                turnStartedAt: OPENING_TURN,
-                turnConfiguration: { model: 'claude-opus-5', effort: 'medium', mode: 'default' },
-              }),
-            ],
-          },
-          failed: false,
-        },
-      )
       const previous = window.argo
       window.argo = { ...previous, ...liveSession(reply, sent, previous.trpc) }
       return () => {

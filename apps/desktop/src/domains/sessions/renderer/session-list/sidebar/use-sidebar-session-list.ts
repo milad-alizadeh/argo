@@ -1,5 +1,5 @@
 import { type RefObject, useCallback, useEffect, useMemo, useState } from 'react'
-import type { Session, SessionError, SessionId, SessionListPage } from '../../types'
+import type { Session, SessionError, SessionId, SessionListRetainedWindow } from '../../types'
 import {
   useSessionListStatus,
   useSetSessionListStatus,
@@ -56,7 +56,7 @@ export function useSidebarSessionList({
   onArchiveSelected: (sessionIds: SessionId[]) => void
   onSelect: (sessionId: SessionId, retiredIds?: SessionId[]) => void
   search: string
-  sessionList: SessionListPage | null
+  sessionList: SessionListRetainedWindow | null
   sessionListError: SessionError | null
   selectedSessionId: SessionId | null
   sidebar: RefObject<HTMLElement | null>

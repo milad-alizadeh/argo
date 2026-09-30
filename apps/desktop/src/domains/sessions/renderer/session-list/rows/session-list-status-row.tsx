@@ -2,11 +2,11 @@ import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Skeleton } from '@/platform/renderer/components/ui/skeleton'
 import { sessionFailureState } from '../../session-failure-state'
-import type { SessionError, SessionListPage } from '../../types'
+import type { SessionError, SessionListRetainedWindow } from '../../types'
 import { SESSION_LIST_ROW_HEIGHT } from './session-list-rows'
 
 export function sessionListState(
-  sessionList: SessionListPage | null,
+  sessionList: SessionListRetainedWindow | null,
   sessionListError: SessionError | null,
   count: number,
 ) {
@@ -31,18 +31,17 @@ export function SessionListStatusRow({ label }: { label: string }) {
   )
 }
 
-// The bottom of the active Session list while the next window arrives.
-export function SessionListLoadingMoreRow() {
-  const { t } = useTranslation('sessions')
-  return <SessionListStatusRow label={t('loadingMoreSessions')} />
-}
-
 // A skeleton row previews the shape of the Session row it is about to become
 // (session-row.tsx): the same icon mark, gap and padding, at the same
-// SESSION_LIST_ROW_HEIGHT, so nothing reflows once real rows arrive.
-function SessionListLoadingRow() {
+// SESSION_LIST_ROW_HEIGHT, so nothing reflows once real rows arrive. A list position outside the
+// retained window draws one too, hidden from readers until its row is read.
+export function SessionListLoadingRow() {
   return (
-    <div className="flex items-start gap-2 px-2 py-2" style={{ height: SESSION_LIST_ROW_HEIGHT }}>
+    <div
+      aria-hidden="true"
+      className="flex items-start gap-2 px-2 py-2"
+      style={{ height: SESSION_LIST_ROW_HEIGHT }}
+    >
       <Skeleton className="mt-0.5 size-4 shrink-0 rounded-full" />
       <div className="min-w-0 flex-1">
         <Skeleton className="h-4 w-3/4" />

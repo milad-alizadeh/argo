@@ -1,5 +1,5 @@
 import type { SessionContractError } from '../../session-contract-error'
-import type { Session, SessionId } from '../../types'
+import type { Session, SessionId, SessionListRetainedWindow } from '../../types'
 import type { SelectionModifier } from '../hooks/session-list-selection'
 import {
   type SessionListStatus,
@@ -17,7 +17,6 @@ export type SessionListMenuHandlers = {
 // Every row-level handler the sessionList's render chain threads down, named once so no module between
 // SessionList and the row it reaches re-declares the shape (#2284).
 export type SessionListRowHandlers = SessionListMenuHandlers & {
-  onFetchMoreSessions: () => void
   onFocus: (sessionId: SessionId) => void
   onSelect: (sessionId: SessionId, retiredIds?: SessionId[]) => void
   onToggleSelect: (sessionId: SessionId, modifier: SelectionModifier) => void
@@ -45,8 +44,8 @@ export const SESSION_LIST_ROW_HEIGHT = 56
 
 export type SessionListRow =
   | { kind: 'session'; session: Session; archived: boolean }
-  | { kind: 'sessionListSentinel' }
-  | { kind: 'sessionListLoadingMore' }
+  // A list position outside the retained window: it holds the scroll extent until it is read.
+  | { kind: 'sessionPlaceholder'; index: number }
   | { kind: 'archivedLoading' }
   | { kind: 'archivedError'; error: SessionContractError }
   | { kind: 'archivedEmpty' }
@@ -59,22 +58,48 @@ export type SessionListRow =
 // (#2386). A Session that the read did not touch keeps its own identity, which is what makes this
 // comparison a pointer comparison rather than a walk.
 export function sameSessionListRow(left: SessionListRow, right: SessionListRow): boolean {
-  if (left.kind === 'session') {
-    return (
-      right.kind === 'session' && left.session === right.session && left.archived === right.archived
-    )
+  switch (left.kind) {
+    case 'session':
+      return (
+        right.kind === 'session' &&
+        left.session === right.session &&
+        left.archived === right.archived
+      )
+    case 'sessionPlaceholder':
+      return right.kind === 'sessionPlaceholder' && left.index === right.index
+    case 'archivedError':
+      return right.kind === 'archivedError' && left.error === right.error
+    case 'archivedLoading':
+    case 'archivedEmpty':
+    case 'archivedSentinel':
+    case 'archivedLoadingMore':
+    case 'archivedIndexing':
+      return left.kind === right.kind
   }
-  if (left.kind === 'archivedError') {
-    return right.kind === 'archivedError' && left.error === right.error
-  }
-  return left.kind === right.kind
 }
 
 // The virtualizer's key, read once per row so a Session that changes index (the list re-sorts by
 // activity) keeps its DOM node instead of swapping into whatever node the array's next index now
-// holds. Every other row kind stands at most once in the list, so its own kind is unique enough.
+// holds. A placeholder is keyed by its position; every other row kind stands at most once.
 export function sessionListRowKey(row: SessionListRow): string {
-  return row.kind === 'session' ? row.session.id : row.kind
+  switch (row.kind) {
+    case 'session':
+      return row.session.id
+    case 'sessionPlaceholder':
+      return `placeholder-${row.index}`
+    case 'archivedLoading':
+    case 'archivedError':
+    case 'archivedEmpty':
+    case 'archivedSentinel':
+    case 'archivedLoadingMore':
+    case 'archivedIndexing':
+      return row.kind
+  }
+}
+
+// An active list position, read or not; the Archive and status rows follow the run of these.
+export function isActiveListPosition(row: SessionListRow): boolean {
+  return row.kind === 'sessionPlaceholder' || (row.kind === 'session' && !row.archived)
 }
 
 // What a row is in the list right now: picked out in bulk, open, and holding the list's one tab stop.
@@ -103,14 +128,9 @@ type ArchivedSessionListState = {
   isLoading: boolean
 }
 
-// The Archive's own rows, once the active Session list has resolved once. `sessionListLoadingMoreShown` says
-// the active sessionList's own loader already stands at the bottom of the list, so the Archive's own
-// loader waits its turn rather than stacking a second, identical spinner under it (#2412).
-function archivedSessionListRows(
-  archived: ArchivedSessionListState,
-  sessionListLoadingMoreShown: boolean,
-): SessionListRow[] {
-  if (archived.isLoading) return sessionListLoadingMoreShown ? [] : [{ kind: 'archivedLoading' }]
+// The Archive's own rows, once the active Session list has resolved once.
+function archivedSessionListRows(archived: ArchivedSessionListState): SessionListRow[] {
+  if (archived.isLoading) return [{ kind: 'archivedLoading' }]
   if (archived.error !== null) return [{ kind: 'archivedError', error: archived.error }]
   if (archived.displayed.length === 0) {
     return [archived.historyComplete ? { kind: 'archivedEmpty' } : { kind: 'archivedIndexing' }]
@@ -121,18 +141,27 @@ function archivedSessionListRows(
     archived: true,
   }))
   if (archived.hasNextPage) rows.push({ kind: 'archivedSentinel' })
-  if (archived.isFetchingNextPage && !sessionListLoadingMoreShown)
-    rows.push({ kind: 'archivedLoadingMore' })
+  if (archived.isFetchingNextPage) rows.push({ kind: 'archivedLoadingMore' })
   // Reaching the end of what a source's index has backfilled so far is not reaching the end of the
   // Archive (#2374): say so rather than letting the list look exhaustive while it is only current.
-  if (
-    !archived.hasNextPage &&
-    !(archived.isFetchingNextPage && !sessionListLoadingMoreShown) &&
-    !archived.historyComplete
-  ) {
+  if (!archived.hasNextPage && !archived.isFetchingNextPage && !archived.historyComplete) {
     rows.push({ kind: 'archivedIndexing' })
   }
   return rows
+}
+
+// Every position of the active list, whether or not the retained window holds its row, so the
+// scroll extent is the list's and never the window's.
+function activeSessionListRows(active: SessionListRetainedWindow): SessionListRow[] {
+  return Array.from(
+    { length: Math.max(active.total, active.offset + active.sessions.length) },
+    (_, index) => {
+      const session = active.sessions[index - active.offset]
+      return session === undefined
+        ? { kind: 'sessionPlaceholder', index }
+        : { kind: 'session', session, archived: false }
+    },
+  )
 }
 
 // The status filter chooses which Sessions the one list carries. A search shows only the
@@ -140,33 +169,20 @@ function archivedSessionListRows(
 export function sessionListRows({
   active,
   archived,
-  hasMoreSessions,
-  isFetchingMoreSessions,
   searching,
   showArchive,
   status,
 }: {
-  active: readonly Session[]
+  active: SessionListRetainedWindow
   archived: ArchivedSessionListState
-  hasMoreSessions: boolean
-  isFetchingMoreSessions: boolean
   searching: boolean
   showArchive: boolean
   status: SessionListStatus
 }): SessionListRow[] {
-  const rows: SessionListRow[] = showsActive(status)
-    ? active.map((session) => ({ kind: 'session', session, archived: false }))
-    : []
+  const rows = showsActive(status) ? activeSessionListRows(active) : []
   if (searching) return rows
-  // Scrolling this row into view is the reader action that grows the active sessionList's own bounded
-  // window (#2239); it carries no loaded rows itself, so it is never mistaken for one.
-  if (showsActive(status) && hasMoreSessions) rows.push({ kind: 'sessionListSentinel' })
-  // The spinner is the bottom of the list while the next window arrives, standing where the rows it
-  // waits for will be, rather than a bar pinned under the list.
-  const sessionListLoadingMoreShown = showsActive(status) && isFetchingMoreSessions
-  if (sessionListLoadingMoreShown) rows.push({ kind: 'sessionListLoadingMore' })
   // The initial Session list load draws its own skeleton (session-list-status-row.tsx), so the Archive's
   // own outcome stays off the list until the Session list has resolved once (#2239).
   if (!showArchive || !showsArchived(status)) return rows
-  return [...rows, ...archivedSessionListRows(archived, sessionListLoadingMoreShown)]
+  return [...rows, ...archivedSessionListRows(archived)]
 }

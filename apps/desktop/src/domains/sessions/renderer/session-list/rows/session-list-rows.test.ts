@@ -4,6 +4,7 @@ import type { Session } from '../../types'
 import type { SessionListStatus } from '../hooks/use-session-list-filter-store'
 import { sameSessionListRow, sessionName } from './session-list-rows'
 import {
+  activeSessionList,
   archiveFetchingMore,
   archiveWithMorePages,
   failedArchive,
@@ -23,24 +24,25 @@ function readFailure(requestId: string, message: string) {
 }
 
 describe('building the Session list rows for a status filter', () => {
-  test('ends on the paging sentinel while a wider window is available', () => {
-    expect(kindsOf({ hasMoreSessions: true })).toEqual([
+  test('holds every list position outside the retained window as a placeholder', () => {
+    expect(kindsOf({ active: activeSessionList(2, 5, 1) })).toEqual([
+      'sessionPlaceholder',
       'session',
       'session',
-      'sessionListSentinel',
+      'sessionPlaceholder',
+      'sessionPlaceholder',
     ])
   })
 
-  test('carries no paging rows once every Session is inside the window', () => {
-    expect(kindsOf({ hasMoreSessions: false })).toEqual(['session', 'session'])
+  test('carries no placeholder once every Session is inside the window', () => {
+    expect(kindsOf({ active: activeSessionList(2) })).toEqual(['session', 'session'])
   })
 
-  test('ends on the spinner row while a wider window is being read', () => {
-    expect(kindsOf({ hasMoreSessions: true, isFetchingMoreSessions: true })).toEqual([
+  test('keeps the logical extent while searching', () => {
+    expect(kindsOf({ active: activeSessionList(1, 3), searching: true })).toEqual([
       'session',
-      'session',
-      'sessionListSentinel',
-      'sessionListLoadingMore',
+      'sessionPlaceholder',
+      'sessionPlaceholder',
     ])
   })
 
@@ -169,14 +171,19 @@ describe('deciding whether a Session list row is the same row across a rebuild',
   })
 
   test('reads two status rows of one kind as the same row', () => {
-    expect(
-      sameSessionListRow({ kind: 'sessionListSentinel' }, { kind: 'sessionListSentinel' }),
-    ).toBe(true)
+    expect(sameSessionListRow({ kind: 'archivedEmpty' }, { kind: 'archivedEmpty' })).toBe(true)
   })
 
   test('reads two status rows of different kinds as different rows', () => {
+    expect(sameSessionListRow({ kind: 'archivedEmpty' }, { kind: 'archivedLoading' })).toBe(false)
+  })
+
+  test('reads placeholders at different positions as different rows', () => {
     expect(
-      sameSessionListRow({ kind: 'sessionListSentinel' }, { kind: 'sessionListLoadingMore' }),
+      sameSessionListRow(
+        { kind: 'sessionPlaceholder', index: 1 },
+        { kind: 'sessionPlaceholder', index: 2 },
+      ),
     ).toBe(false)
   })
 

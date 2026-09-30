@@ -1,5 +1,8 @@
 import type { QueryClient } from '@tanstack/react-query'
-import { type SessionRosterState, sessionRosterPathKey } from './session-list/session-roster'
+import {
+  type SessionListWindowState,
+  sessionListWindowPathKey,
+} from './session-list/session-list-window'
 import type { SessionId } from './types'
 
 export const SESSION_REFRESH_MS = 500
@@ -33,18 +36,21 @@ export function markSessionRead(
   retiredIds: readonly SessionId[],
 ) {
   const identities = new Set([sessionId, ...retiredIds])
-  queryClient.setQueriesData<SessionRosterState>({ queryKey: sessionRosterPathKey }, (roster) => {
-    if (roster?.list == null) return roster
-    return {
-      ...roster,
-      list: {
-        ...roster.list,
-        rows: roster.list.rows.map((session) =>
-          identities.has(session.id) || session.retiredIds.some((id) => identities.has(id))
-            ? { ...session, unread: false }
-            : session,
-        ),
-      },
-    }
-  })
+  queryClient.setQueriesData<SessionListWindowState>(
+    { queryKey: sessionListWindowPathKey },
+    (state) => {
+      if (state?.window == null) return state
+      return {
+        ...state,
+        window: {
+          ...state.window,
+          rows: state.window.rows.map((session) =>
+            identities.has(session.id) || session.retiredIds.some((id) => identities.has(id))
+              ? { ...session, unread: false }
+              : session,
+          ),
+        },
+      }
+    },
+  )
 }

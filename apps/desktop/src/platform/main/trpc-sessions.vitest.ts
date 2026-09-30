@@ -13,6 +13,7 @@ import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster
 import { refreshSessionSubagents } from '@/domains/sessions/main/database/session-subagents'
 import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
 import { saveSessionBatch } from '@/domains/sessions/main/sync/session-sync-records'
+import { orderedSessionIds } from '@/mocks/sessions/session-list-caller.fixture'
 import { type AppRouter, type AppRouterDependencies, createAppRouter } from './trpc-router'
 
 let userData: string
@@ -45,13 +46,12 @@ function routerDependencies(
   } as unknown as AppRouterDependencies
 }
 
-async function firstRosterUpdates() {
-  const updates: inferRouterOutputs<AppRouter>['sessionList'][] = []
-  const stream = await createAppRouter(routerDependencies())
+const VIEW = '00000000-0000-4000-8000-0000000000aa'
+
+function firstWindow() {
+  return createAppRouter(routerDependencies())
     .createCaller({})
-    .sessionList({ projectId: 'project-1', pageSize: 30 })
-  stream.subscribe({ next: (update) => updates.push(update) }).unsubscribe()
-  return updates
+    .sessionListWindow({ projectId: 'project-1', view: VIEW, anchor: { kind: 'start' } })
 }
 
 beforeEach(async () => {
@@ -64,7 +64,7 @@ afterEach(async () => {
   await rm(userData, { recursive: true, force: true })
 })
 
-test('registers the Session roster subscription on the global router', async () => {
+test('registers the Session List window query on the global router', async () => {
   database
     .insert(project)
     .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
@@ -79,12 +79,9 @@ test('registers the Session roster subscription on the global router', async () 
       firstPrompt: 'Open the saved Session',
     })
     .run()
-  const updates = await firstRosterUpdates()
-  expect(updates[0]).toMatchObject({
-    type: 'list',
-    pages: 1,
-    pageSize: 30,
+  expect(await firstWindow()).toMatchObject({
     total: 1,
+    offset: 0,
     rows: [
       {
         id: '00000000-0000-4000-8000-000000000001',
@@ -140,9 +137,11 @@ test('keeps both roster activities when the selected Feed changes', async () => 
       ],
     }),
   ).createCaller({})
-  const updates: inferRouterOutputs<AppRouter>['sessionList'][] = []
-  const rosterStream = await caller.sessionList({ projectId: 'project-1' })
-  const rosterSubscription = rosterStream.subscribe({ next: (update) => updates.push(update) })
+  const changes = await caller.sessionListChanges({ view: VIEW })
+  const changeSubscription = changes.subscribe({ next: () => {} })
+  const window = () =>
+    caller.sessionListWindow({ projectId: 'project-1', view: VIEW, anchor: { kind: 'start' } })
+  await window()
   const firstStream = await caller.sessionFeed({ sessionId: ids[0] })
   const firstSubscription = firstStream.subscribe({ next: () => {} })
   const secondStream = await caller.sessionFeed({ sessionId: ids[1] })
@@ -155,16 +154,81 @@ test('keeps both roster activities when the selected Feed changes', async () => 
       'Ran native-0',
       'Ran native-1',
     ])
-    expect(
-      new Set(
-        updates
-          .filter((update) => update.type === 'row')
-          .map((update) => update.row.activity?.label),
-      ),
-    ).toEqual(new Set(['Ran native-0', 'Ran native-1']))
+    expect(new Set((await window()).rows.map((row) => row.activity?.label))).toEqual(
+      new Set(['Ran native-0', 'Ran native-1']),
+    )
   } finally {
     secondSubscription.unsubscribe()
-    rosterSubscription.unsubscribe()
+    changeSubscription.unsubscribe()
+  }
+})
+
+function insertOrderedSessions(count: number) {
+  database
+    .insert(project)
+    .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
+    .run()
+  const ids = orderedSessionIds(count)
+  for (const [index, id] of ids.entries())
+    database
+      .insert(sessionTable)
+      .values({
+        argoId: id,
+        harness: 'claude',
+        nativeId: `native-${index}`,
+        projectId: 'project-1',
+        listOrderAt: 1_000 - index,
+      })
+      .run()
+  return ids
+}
+
+test('reads history only for the retained window and keeps a selected Feed past eviction', async () => {
+  const ids = insertOrderedSessions(12)
+  const reads = new Map<string, number>()
+  const caller = createAppRouter(
+    routerDependencies({
+      readHistory: async (_harness, target) => {
+        reads.set(target.nativeId, (reads.get(target.nativeId) ?? 0) + 1)
+        return []
+      },
+    }),
+  ).createCaller({})
+  const changes = await caller.sessionListChanges({ view: VIEW })
+  const changeSubscription = changes.subscribe({ next: () => {} })
+  const selected: unknown[] = []
+  const settle = () => new Promise((resolve) => setImmediate(resolve))
+  const window = (anchor: { kind: 'start' } | { kind: 'end' }) =>
+    caller.sessionListWindow({ projectId: 'project-1', view: VIEW, anchor, before: 3, after: 3 })
+  try {
+    await window({ kind: 'start' })
+    await settle()
+    const top = [...reads.keys()]
+    const selectedId = ids[0] ?? ''
+    const feed = await caller.sessionFeed({ sessionId: selectedId })
+    const feedSubscription = feed.subscribe({ next: (reading) => selected.push(reading) })
+    await settle()
+    const selectedReadings = selected.length
+    await window({ kind: 'end' })
+    await settle()
+    const refreshed = await caller.sessionFeedRefresh({ sessionId: selectedId, subagentId: null })
+    await settle()
+
+    expect(top).toEqual(['native-0', 'native-1', 'native-2'])
+    expect([...reads.keys()]).toEqual([
+      'native-0',
+      'native-1',
+      'native-2',
+      'native-8',
+      'native-9',
+      'native-10',
+      'native-11',
+    ])
+    expect(refreshed).toEqual({ accepted: true })
+    expect(selected.length).toBe(selectedReadings)
+    feedSubscription.unsubscribe()
+  } finally {
+    changeSubscription.unsubscribe()
   }
 })
 
@@ -196,9 +260,7 @@ test('lists the Subagents the sync read from each Session history', async () => 
     stopped: () => false,
   })
 
-  const updates = await firstRosterUpdates()
-
-  expect(updates[0]?.type === 'list' && updates[0].rows[0]?.subagents).toEqual([
+  expect((await firstWindow()).rows[0]?.subagents).toEqual([
     { id: 'agent-1', label: 'Survey', state: 'running', startedAt: null, endedAt: null },
   ])
 })
@@ -329,7 +391,7 @@ test('reads a Session beyond the loaded roster window by ID without reading its 
   insertActivitySessions(ids)
   database
     .update(sessionTable)
-    .set({ activityAt: 1 })
+    .set({ activityAt: 1, listOrderAt: -1 })
     .where(eq(sessionTable.argoId, ids[0] ?? ''))
     .run()
   const historyReads: string[] = []
@@ -339,11 +401,11 @@ test('reads a Session beyond the loaded roster window by ID without reading its 
       return []
     },
   })
-  const listed = await firstRosterUpdates()
+  const listed = await firstWindow()
 
   const updates = await firstDetails(dependencies, ids[0] ?? '')
 
-  expect(listed[0]?.type === 'list' && listed[0].rows.map(({ id }) => id)).not.toContain(ids[0])
+  expect(listed.rows.map(({ id }) => id)).not.toContain(ids[0])
   expect(updates).toEqual([
     {
       sessionId: ids[0],

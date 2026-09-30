@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { project } from '@/database/project/schema'
 import { timestampColumns } from '@/database/timestamp-columns'
 import { workspace } from '@/database/workspace/schema'
@@ -16,9 +16,14 @@ export const sessionTable = sqliteTable(
     firstPrompt: text('first_prompt'),
     cwd: text(),
     activityAt: integer('activity_at'),
+    // The Session List order: it advances on discovery and Turn transitions, not on every write.
+    listOrderAt: integer('list_order_at').notNull().default(0),
     // The `activityAt` whose history the stored Subagents were read from.
     subagentsReadAt: integer('subagents_read_at'),
     ...timestampColumns(),
   },
-  (table) => [uniqueIndex('session_harness_native').on(table.harness, table.nativeId)],
+  (table) => [
+    uniqueIndex('session_harness_native').on(table.harness, table.nativeId),
+    index('session_list_order').on(table.projectId, table.listOrderAt, table.argoId),
+  ],
 )

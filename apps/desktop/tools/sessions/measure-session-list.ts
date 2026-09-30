@@ -1,4 +1,4 @@
-// Reproducible pre-change workload for #2934. Run from apps/desktop through run-tool.mts.
+// Reproducible Session List workload for #2934 and its comparisons. Run from apps/desktop through run-tool.mts.
 
 import { execFileSync } from 'node:child_process'
 import {
@@ -93,6 +93,7 @@ async function buildCorpus(fixture: Awaited<ReturnType<typeof prepare>>) {
     firstPrompt: `Saved prompt ${index + 1}`,
     cwd,
     activityAt: now - index * 60_000,
+    listOrderAt: now - index * 60_000,
   }))
   database.insert(sessionTable).values(rows).run()
   database
@@ -258,7 +259,8 @@ async function step(request: {
   const after = await mainSnapshot(application)
   const renderer = await rendererSnapshot(page)
   const sidebar = page.getByRole('complementary', { name: 'Sessions' })
-  const listPages = Number(await sidebar.getAttribute('data-page-count'))
+  const listOffset = Number(await sidebar.getAttribute('data-offset'))
+  const listRetained = Number(await sidebar.getAttribute('data-retained'))
   const listTotal = Number(await sidebar.getAttribute('data-total'))
   const ipc = Object.fromEntries(
     Object.entries(after.ipc).map(([name, current]) => {
@@ -279,9 +281,10 @@ async function step(request: {
     asyncReads: after.asyncReads - before.asyncReads,
     asyncReadBytes: after.asyncReadBytes - before.asyncReadBytes,
     activeWatchers: after.activeWatchers,
-    listPages,
+    listOffset,
+    listRetained,
     listTotal,
-    listOwnedReaderCount: Math.min(listPages * 30, listTotal),
+    listOwnedReaderCount: listRetained,
     eventLoopDelay: after.delay,
     mainRssMb: after.mainRssMb,
     rendererWorkingSetMb: after.rendererWorkingSetMb,
@@ -295,19 +298,24 @@ function sqlMeasurements(userData: string) {
   const database = new DatabaseSync(databaseFile)
   const listColumns = `session.argo_id, session.harness, session.native_id,
     session.custom_title, session.preview, session.first_prompt, session.cwd,
-    session.workspace_id, session.activity_at, session.updated_at,
+    session.workspace_id, session.activity_at, session.list_order_at, session.updated_at,
     session_ticket_link.project_id, session_ticket_link.ticket_key,
     session_ticket_link.title, session_ticket_link.state, session_ticket_link.created_at`
   const listFrom = `FROM session LEFT JOIN session_ticket_link
     ON session_ticket_link.session_id = session.argo_id`
   const browse = `SELECT ${listColumns} ${listFrom} WHERE session.project_id = ? AND NOT EXISTS
     (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)
-    ORDER BY coalesce(session.activity_at, session.updated_at) DESC, session.argo_id ASC LIMIT 30`
+    AND (session.list_order_at, session.argo_id) <= (?, ?)
+    ORDER BY session.list_order_at DESC, session.argo_id DESC LIMIT 60`
+  const earlier = `SELECT ${listColumns} ${listFrom} WHERE session.project_id = ? AND NOT EXISTS
+    (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)
+    AND (session.list_order_at, session.argo_id) > (?, ?)
+    ORDER BY session.list_order_at ASC, session.argo_id ASC LIMIT 30`
   const search = `SELECT ${listColumns} ${listFrom} WHERE session.project_id = ? AND NOT EXISTS
     (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)
     AND (instr(lower(coalesce(session.custom_title, '')), lower(?)) > 0
       OR instr(lower(coalesce(session.preview, '')), lower(?)) > 0)
-    ORDER BY coalesce(session.activity_at, session.updated_at) DESC, session.argo_id ASC LIMIT 30`
+    ORDER BY session.list_order_at DESC, session.argo_id DESC LIMIT 60`
   const count = `SELECT count(*) FROM session WHERE project_id = ? AND NOT EXISTS
     (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)`
   const archive = `SELECT session_id FROM session_archive`
@@ -318,8 +326,16 @@ function sqlMeasurements(userData: string) {
   const archiveRows = `SELECT session.argo_id FROM session LEFT JOIN session_ticket_link
     ON session_ticket_link.session_id = session.argo_id WHERE session.project_id = ?
     AND session.argo_id IN (${archivedIds.map(() => '?').join(',')})`
+  // A key in the middle of the active list, where a scrolled window seeks from.
+  const middle = database
+    .prepare(
+      'SELECT list_order_at, argo_id FROM session WHERE project_id = ? ORDER BY list_order_at DESC, argo_id DESC LIMIT 1 OFFSET 300',
+    )
+    .get(PROJECT_ID) as { list_order_at: number; argo_id: string }
+  const key = [middle.list_order_at, middle.argo_id]
   const queries = [
-    { name: 'browse', sql: browse, arguments: [PROJECT_ID] },
+    { name: 'browse', sql: browse, arguments: [PROJECT_ID, ...key] },
+    { name: 'earlier', sql: earlier, arguments: [PROJECT_ID, ...key] },
     { name: 'search', sql: search, arguments: [PROJECT_ID, 'Needle', 'Needle'] },
     { name: 'count', sql: count, arguments: [PROJECT_ID] },
     { name: 'archive', sql: archive, arguments: [] },

@@ -1,7 +1,18 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { sessionError } from '@/domains/sessions/api/session-error'
-import { useSessionRoster } from './session-roster'
+import type { SessionListRetainedWindow } from '../types'
+import { useSessionListWindow } from './session-list-window'
+import type { SessionListAnchor } from './session-list-window-reader'
 import { useSessionSync } from './use-session-sync'
+
+// A visible row this close to either end of the retained window moves the window.
+const EDGE_ROWS = 10
+
+function anchorAt(page: SessionListRetainedWindow, index: number): SessionListAnchor {
+  const row = page.sessions[index - page.offset]
+  if (row !== undefined) return { kind: 'key', listOrderAt: row.listOrderAt, id: row.id }
+  return index === 0 ? { kind: 'start' } : { kind: 'index', index }
+}
 
 export function useSessionList({
   projectId,
@@ -13,37 +24,40 @@ export function useSessionList({
   search?: string
 }) {
   const sync = useSessionSync()
-  const input = { projectId: projectId ?? 'unselected', search }
-  const inputKey = JSON.stringify(input)
-  // The window this reader asked for, reset when it reads another roster.
-  const [requested, setRequested] = useState({ inputKey, pages: 1 })
-  const pages = requested.inputKey === inputKey ? requested.pages : 1
-  const roster = useSessionRoster(input, pages, enabled && projectId !== null)
-  const list = roster?.list ?? null
-  const error = roster?.failed === true ? sessionError('internal-error', null) : null
-  const hasMoreSessions = list !== null && list.rows.length < list.total
-  const isFetchingMoreSessions = list !== null && list.pages < pages
-  const sessionList = useMemo(() => {
-    if (list === null || error !== null) return null
-    const more = list.rows.length < list.total
-    return {
-      total: list.total,
-      sessions: list.rows,
-      nextPage: more ? list.pages + 1 : null,
-      historyComplete: !more,
-    }
-  }, [error, list])
-  const loadedPages = list?.pages ?? 0
+  const read = useSessionListWindow(
+    { projectId: projectId ?? 'unselected', search },
+    enabled && projectId !== null,
+  )
+  const { window, seek } = read
+  const error = read.failed ? sessionError('internal-error', null) : null
+  const sessionList = useMemo<SessionListRetainedWindow | null>(
+    () =>
+      window === null || error !== null
+        ? null
+        : { total: window.total, offset: window.offset, sessions: window.rows },
+    [error, window],
+  )
+  // The index the last seek asked for, until its window lands, so a scroll asks once per move.
+  const sought = useRef<{ window: SessionListRetainedWindow | null; index: number } | null>(null)
+  // Takes the visible range in list positions; loaded rows outside the window are dropped.
+  const showRange = useCallback(
+    (start: number, end: number) => {
+      if (sessionList === null) return
+      const loadedEnd = sessionList.offset + sessionList.sessions.length
+      const earlier = sessionList.offset > 0 && start < sessionList.offset + EDGE_ROWS
+      const later = loadedEnd < sessionList.total && end >= loadedEnd - EDGE_ROWS
+      if (!earlier && !later) return
+      const pending = sought.current
+      if (pending?.window === sessionList && Math.abs(pending.index - start) < EDGE_ROWS) return
+      sought.current = { window: sessionList, index: start }
+      seek(anchorAt(sessionList, start))
+    },
+    [seek, sessionList],
+  )
   return {
     sessionList,
     sessionListError: error,
-    loadedSessionPages: loadedPages,
-    hasMoreSessions,
-    isFetchingMoreSessions,
-    fetchMoreSessions: useCallback(() => {
-      if (!hasMoreSessions || isFetchingMoreSessions) return
-      setRequested({ inputKey, pages: loadedPages + 1 })
-    }, [hasMoreSessions, inputKey, isFetchingMoreSessions, loadedPages]),
+    showRange,
     refreshSessions: sync.refresh,
     refreshingSessions: sync.refreshing,
     syncStatus: sync.status,

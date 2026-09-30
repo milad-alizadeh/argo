@@ -2,9 +2,8 @@ import type { SessionFeedRow } from '@/domains/sessions/api/feed/feed-rows'
 import type { SessionError } from '@/domains/sessions/api/session-error'
 import type { RouterOutputs } from '@/platform/renderer/trpc-client'
 
-export type SessionListUpdate = RouterOutputs['sessionList']
-export type SessionListResult = Extract<SessionListUpdate, { type: 'list' }>
-export type Session = SessionListResult['rows'][number]
+export type SessionListWindow = RouterOutputs['sessionListWindow']
+export type Session = SessionListWindow['rows'][number]
 export type SessionId = Session['id']
 export type SessionDetailsUpdate = RouterOutputs['sessionDetails']
 
@@ -18,10 +17,9 @@ export type SessionFeed = {
 }
 
 export type { SessionError }
-export type SessionListPage = Pick<SessionListResult, 'total'> & {
+// The retained rows of a list view: `sessions` stand at list positions from `offset` on.
+export type SessionListRetainedWindow = Pick<SessionListWindow, 'total' | 'offset'> & {
   sessions: Session[]
-  nextPage: number | null
-  historyComplete: boolean
 }
 export type { SessionFeedRow }
 

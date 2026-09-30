@@ -24,7 +24,6 @@
   "findSession": "Find a Session",
   "reading": "Reading this Session",
   "noSessionsFound": "No Sessions found",
-  "loadingMoreSessions": "Loading more Sessions",
   "unableToLoadSessions": "Unable to load Sessions",
   "errors": {
     "sessionList": "Argo could not read the Sessions again.",

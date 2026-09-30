@@ -7,14 +7,20 @@ import {
   type FeedRead,
   sessionFeedRefreshTrpc,
   sessionFeedSubscribe,
+  sessionListWindowOf,
 } from '@/mocks/sessions/session-story-host'
-import { queryClient, type RouterOutputs } from '@/platform/renderer/trpc-client'
+import { queryClient, type RouterInputs, type RouterOutputs } from '@/platform/renderer/trpc-client'
 import { replaceComposerCommands } from '../../composer/references/composer-command-registry'
 import { useFeedReading } from '../../feed/use-feed-reading'
 import { sessionArchivePathKey } from '../../session-queries'
-import type { SessionError, SessionId, SessionListPage } from '../../types'
+import type { SessionError, SessionId, SessionListRetainedWindow } from '../../types'
+import { SESSION_LIST_ROW_HEIGHT } from '../rows/session-list-rows'
 import { SessionList, type SessionListActions } from '../session-list'
-import { sessionRosterPathKey } from '../session-roster'
+import {
+  SESSION_LIST_ROWS_AFTER,
+  SESSION_LIST_ROWS_BEFORE,
+  sessionListWindowPathKey,
+} from '../session-list-window'
 
 const session = sessionRow({
   id: 'prose',
@@ -39,9 +45,8 @@ const listed = {
     },
   ],
   total: 2,
-  nextPage: null,
-  historyComplete: true,
-} satisfies SessionListPage
+  offset: 0,
+} satisfies SessionListRetainedWindow
 
 const readFailure = {
   version: 1,
@@ -65,73 +70,47 @@ const initialSyncStatus: SessionSyncStatus = {
 
 let publishSessionSyncEvent = (_event: SessionSyncEvent) => {}
 
-function listedReply(sessionList: SessionListPage): SessionListPage {
+function listedReply(sessionList: SessionListRetainedWindow): SessionListRetainedWindow {
   return sessionList
 }
 
-type SessionListRead = { projectId: string; search: string; pages: number }
-type SessionListHandler = (request: SessionListRead) => Promise<SessionListPage | SessionError>
+type SessionListRead = Pick<RouterInputs['sessionListWindow'], 'anchor' | 'before' | 'after'> & {
+  projectId: string
+  search: string
+}
+// Answers one window read with the whole list; the host cuts the window main would return.
+type SessionListHandler = (
+  request: SessionListRead,
+) => Promise<SessionListRetainedWindow | SessionError>
 
-// Every roster read a story's host answered, in order.
+// Every window read a story's host answered, in order.
 let sessionListReads = fn<SessionListHandler>()
 let resendSessionLists = () => {}
-let sendSessionListRow = (_row: SessionListPage['sessions'][number]) => {}
 
-type Subscribe = typeof window.argo.trpcSubscribe
-
-function sessionListSubscriber(
+function sessionListWindowTrpc(
   reads: SessionListHandler,
-  rosters: Set<() => void>,
-  rowRosters: Set<(row: SessionListPage['sessions'][number]) => void>,
-): Subscribe {
-  return async (request, listener) => {
+  trpc: typeof window.argo.trpc,
+): typeof window.argo.trpc {
+  return (async (request) => {
+    if (request.path !== 'sessionListWindow') return trpc(request)
     const input = request.input as SessionListRead
-    const send = async () => {
-      const sessionList = await reads(input)
-      if (!rosters.has(send)) return
-      if ('type' in sessionList) {
-        listener({ id: request.id, type: 'error', error: { message: sessionList.message } })
-        return
-      }
-      listener({
-        id: request.id,
-        type: 'data',
-        result: {
-          data: {
-            type: 'list',
-            pages: input.pages,
-            pageSize: 30,
-            total: sessionList.total,
-            rows: sessionList.sessions,
-          },
-        },
-      })
-    }
-    const sendRow = (row: SessionListPage['sessions'][number]) =>
-      listener({ id: request.id, type: 'data', result: { data: { type: 'row', row } } })
-    rosters.add(send)
-    rowRosters.add(sendRow)
-    void send()
-    return () => {
-      rosters.delete(send)
-      rowRosters.delete(sendRow)
-    }
-  }
+    const sessionList = await reads(input)
+    if ('type' in sessionList) return { id: request.id, error: { message: sessionList.message } }
+    return { id: request.id, result: { data: sessionListWindowOf(sessionList.sessions, input) } }
+  }) as typeof window.argo.trpc
 }
 
-// The active Session list subscribes to a growing window of rows through the typed tRPC path, and
-// is sent its rows again after each change. Archive stories keep their separate preload seam until
-// that reader moves in its own slice.
+// The active Session list reads bounded windows through the typed tRPC path, and reads again after
+// each change it is told of. Archive stories keep their separate preload seam.
 function withSessionListHost(handler: SessionListHandler) {
-  queryClient.removeQueries({ queryKey: sessionRosterPathKey })
+  queryClient.removeQueries({ queryKey: sessionListWindowPathKey })
   sessionListReads = fn(handler)
   const before = window.argo
   const listeners = new Set<{
     id: number
     listener: Parameters<typeof before.trpcSubscribe>[1]
   }>()
-  const rosters = new Set<() => void>()
-  const rowRosters = new Set<(row: SessionListPage['sessions'][number]) => void>()
+  const views = new Set<() => void>()
   let syncStatus = initialSyncStatus
   const publish = (event: SessionSyncEvent) => {
     for (const { id, listener } of listeners)
@@ -140,20 +119,23 @@ function withSessionListHost(handler: SessionListHandler) {
   publishSessionSyncEvent = (event) => {
     if (event.type === 'status') syncStatus = event.status
     publish(event)
-    // The main process sends the roster again after each committed sync.
+    // The main process invalidates the list after each committed sync.
     if (event.type === 'committed') resendSessionLists()
   }
   resendSessionLists = () => {
-    for (const send of rosters) send()
+    for (const invalidate of views) invalidate()
   }
-  sendSessionListRow = (row) => {
-    for (const send of rowRosters) send(row)
-  }
-  const subscribeSessionList = sessionListSubscriber(sessionListReads, rosters, rowRosters)
   window.argo = {
     ...before,
+    trpc: sessionListWindowTrpc(sessionListReads, before.trpc),
     trpcSubscribe: async (request, listener) => {
-      if (request.path === 'sessionList') return subscribeSessionList(request, listener)
+      if (request.path === 'sessionListChanges') {
+        const invalidate = () =>
+          listener({ id: request.id, type: 'data', result: { data: { type: 'invalidated' } } })
+        views.add(invalidate)
+        queueMicrotask(invalidate)
+        return () => views.delete(invalidate)
+      }
       if (request.path !== 'sessionSyncStatus') return before.trpcSubscribe(request, listener)
       listeners.add({ id: request.id, listener })
       listener({
@@ -171,7 +153,6 @@ function withSessionListHost(handler: SessionListHandler) {
   return () => {
     publishSessionSyncEvent = () => {}
     resendSessionLists = () => {}
-    sendSessionListRow = () => {}
     window.argo = before
   }
 }
@@ -182,20 +163,20 @@ function publishSyncStatus(status: SessionSyncStatus) {
 
 // A Session list refresh rebuilds its array even when nothing changed, so a rename or focused row
 // must survive a same-content rebuild rather than only the array a rename dialog closed against.
-function withSessionsHost(initialSessions: SessionListPage['sessions']) {
+function withSessionsHost(initialSessions: SessionListRetainedWindow['sessions']) {
   let sessions = initialSessions
   const restore = withSessionListHost(async () => listedReply({ ...listed, sessions }))
   return {
-    setSessions(next: SessionListPage['sessions']) {
+    setSessions(next: SessionListRetainedWindow['sessions']) {
       sessions = next
     },
-    repoll(next: SessionListPage['sessions']) {
+    repoll(next: SessionListRetainedWindow['sessions']) {
       sessions = next
       resendSessionLists()
     },
-    updateSession(row: SessionListPage['sessions'][number]) {
+    updateSession(row: SessionListRetainedWindow['sessions'][number]) {
       sessions = sessions.map((session) => (session.id === row.id ? row : session))
-      sendSessionListRow(row)
+      resendSessionLists()
     },
     restore,
   }
@@ -1310,21 +1291,18 @@ export const Failure: Story = {
   },
 }
 
-// The sessionList's window grows when the reader reaches the bottom of what is loaded, and at no other
-// time. The sentinel row is what "reached" means, and it is mounted well before it is visible: the
-// virtualizer keeps 30 rows of overscan, so a sentinel below the fold used to count as reached and
-// the Session list grew a page before the reader had scrolled at all (#2277).
-function manySessionsWindow(pages: number) {
+// A list far longer than one retained window: 300 Sessions, newest first.
+function manySessions(count = 300) {
   return {
     ...listed,
-    sessions: Array.from({ length: pages * 40 }, (_unused, row) => ({
+    sessions: Array.from({ length: count }, (_unused, row) => ({
       ...session,
-      id: `session-${Math.floor(row / 40)}-${row % 40}`,
-      title: { text: `Session number ${row % 40}`, source: 'first-prompt' as const },
+      id: `session-${row}`,
+      listOrderAt: count - row,
+      title: { text: `Session number ${row}`, source: 'first-prompt' as const },
     })),
-    total: 80,
-    nextPage: pages === 1 ? 2 : null,
-  } satisfies SessionListPage
+    total: count,
+  } satisfies SessionListRetainedWindow
 }
 
 // The status filter is one store for the whole window, and ArchiveRestored widens it, so a story
@@ -1339,90 +1317,159 @@ function sessionListScroll(canvasElement: HTMLElement) {
   return scroll
 }
 
-export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
-  beforeEach: () => {
-    showingActiveSessions()
-    return withSessionListHost(async ({ pages }) => listedReply(manySessionsWindow(pages)))
-  },
-  play: async ({ canvasElement }) => {
-    const scroll = await waitFor(() => sessionListScroll(canvasElement))
-    const listSessions = sessionListReads
-    await expect(scroll.scrollTop).toBe(0)
-    await expect(listSessions).toHaveBeenCalledTimes(1)
-    scroll.scrollTop = scroll.scrollHeight
-    scroll.dispatchEvent(new Event('scroll'))
-    // One arrival of the sentinel asks for one page: the callback's identity changes with the
-    // cursor the read returned, which used to ask again for as long as the sentinel stayed in view.
-    await waitFor(() => expect(listSessions).toHaveBeenCalledTimes(2))
-    await expect(listSessions).toHaveBeenLastCalledWith({
-      projectId: 'project-1',
-      search: '',
-      pages: 2,
-    })
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    await expect(listSessions).toHaveBeenCalledTimes(2)
-  },
+function scrollListTo(scroll: HTMLElement, top: number) {
+  scroll.scrollTop = top
+  scroll.dispatchEvent(new Event('scroll'))
 }
 
-// A window shorter than the viewport leaves the sentinel visible with nothing to scroll, so it is
-// reached once and asks once, rather than growing the Session list page after page on its own.
-export const AsksOnceWhenTheWindowDoesNotFillTheViewport: Story = {
-  beforeEach: () => {
-    showingActiveSessions()
-    return withSessionListHost(async ({ pages }) =>
-      listedReply(pages === 1 ? { ...listed, total: 3, nextPage: 2 } : listed),
-    )
-  },
-  play: async () => {
-    const listSessions = sessionListReads
-    await waitFor(() => expect(listSessions).toHaveBeenCalledTimes(2))
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    await expect(listSessions).toHaveBeenCalledTimes(2)
-  },
+function sidebarOf(canvasElement: HTMLElement) {
+  return within(canvasElement).getByRole('complementary', { name: 'Sessions sidebar' })
 }
 
-// The spinner stands where the rows it waits for will be: one Session row tall, at the bottom of the
-// list, with the spinner centered in it and no border of its own.
-export const GrowingTheWindow: Story = {
+// The scroll extent is every Session's, though only a bounded window of rows is kept: scrolling to
+// the end reads the last window and drops the first, and scrolling back reads the first again.
+export const ScrollsDownAndBackThroughBoundedWindows: Story = {
   beforeEach: () => {
     showingActiveSessions()
-    return withSessionListHost(async ({ pages }) =>
-      pages === 1
-        ? listedReply(manySessionsWindow(1))
-        : new Promise(() => {
-            // The second page never lands, so the Session list stays on its loading-more row.
-          }),
-    )
+    return withSessionListHost(async () => manySessions())
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const scroll = await waitFor(() => sessionListScroll(canvasElement))
-    scroll.scrollTop = scroll.scrollHeight
-    scroll.dispatchEvent(new Event('scroll'))
-    const spinner = await canvas.findByRole('status', { name: 'Loading more Sessions' })
-    await expect(spinner).toBeVisible()
-    await expect(spinner.getBoundingClientRect().height).toBe(56)
-    await expect(spinner.querySelector('[data-slot="loader"]')).toBeNull()
-    await expect(spinner.querySelector('svg.animate-spin')).not.toBeNull()
-    const rows = [...canvas.getByRole('navigation', { name: 'Sessions' }).querySelectorAll('li')]
-    await expect(rows.indexOf(spinner.closest('li') as HTMLLIElement)).toBe(rows.length - 1)
+    await canvas.findByRole('button', { name: /Session number 0\b/ })
+    const scroll = sessionListScroll(canvasElement)
+    const sidebar = sidebarOf(canvasElement)
+    await expect(scroll.scrollHeight).toBeGreaterThanOrEqual(300 * 56)
+    await expect(Number(sidebar.dataset.retained)).toBeLessThanOrEqual(
+      SESSION_LIST_ROWS_BEFORE + SESSION_LIST_ROWS_AFTER,
+    )
+
+    scrollListTo(scroll, scroll.scrollHeight)
+    await canvas.findByRole('button', { name: /Session number 299\b/ })
+    await expect(Number(sidebar.dataset.retained)).toBeLessThanOrEqual(
+      SESSION_LIST_ROWS_BEFORE + SESSION_LIST_ROWS_AFTER,
+    )
+    await expect(Number(sidebar.dataset.offset)).toBeGreaterThan(200)
+    await expect(canvas.queryByRole('button', { name: /Session number 0\b/ })).toBeNull()
+
+    scrollListTo(scroll, 0)
+    await canvas.findByRole('button', { name: /Session number 0\b/ })
+    await waitFor(() => expect(sidebar.dataset.offset).toBe('0'))
+    await expect(scroll.scrollHeight).toBeGreaterThanOrEqual(300 * 56)
   },
 }
 
-// A story-level fact declared once, and only tested here, so no other story is left to default it
-// away by omission: with the window already complete, the sentinel never mounts at all (#2284).
-export const NoSentinelWhenTheWindowIsComplete: Story = {
+// A window that already covers the list is read once and never sought again.
+export const ReadsOnceWhenOneWindowHoldsTheList: Story = {
   beforeEach: () => {
     showingActiveSessions()
-    return withSessionListHost(async () => listedReply(listed))
+    return withSessionListHost(async () => listed)
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await canvas.findByRole('button', { name: /Read the Session transcript/ })
-    const scroll = sessionListScroll(canvasElement)
-    await expect(scroll.querySelectorAll('div[aria-hidden="true"]')).toHaveLength(0)
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    await expect(sessionListReads).toHaveBeenCalledTimes(1)
   },
 }
+
+// End reaches the last Session though its window was never read, and focus lands on it by id.
+export const KeyboardReachesAnUnloadedWindow: Story = {
+  beforeEach: () => {
+    showingActiveSessions()
+    return withSessionListHost(async () => manySessions())
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const first = await canvas.findByRole('button', { name: /Session number 0\b/ })
+    first.focus()
+    await userEvent.keyboard('{End}')
+    await waitFor(() =>
+      expect(document.activeElement).toHaveAttribute('data-session-id', 'session-299'),
+    )
+    await userEvent.keyboard('{ArrowUp}')
+    await waitFor(() =>
+      expect(document.activeElement).toHaveAttribute('data-session-id', 'session-298'),
+    )
+    await userEvent.keyboard('{Home}')
+    await waitFor(() =>
+      expect(document.activeElement).toHaveAttribute('data-session-id', 'session-0'),
+    )
+  },
+}
+
+// The first Session row whose bottom is below the scrolled container's top edge.
+function firstVisibleSession(scroll: HTMLElement) {
+  const top = scroll.getBoundingClientRect().top
+  const row = [...scroll.querySelectorAll<HTMLElement>('button[data-session-id]')].find(
+    (button) => button.getBoundingClientRect().bottom > top,
+  )
+  const index = Number(row?.dataset.sessionId?.replace('session-', ''))
+  if (row === undefined || Number.isNaN(index)) throw new Error('No Session row is on screen.')
+  return index
+}
+
+async function scrolledToTwenty(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  await canvas.findByRole('button', { name: /Session number 0\b/ })
+  const scroll = sessionListScroll(canvasElement)
+  const rowHeight = (await canvas.findByRole('button', { name: /Session number 0\b/ }))
+    .closest('li')
+    ?.getBoundingClientRect().height
+  scrollListTo(scroll, 20 * (rowHeight ?? SESSION_LIST_ROW_HEIGHT))
+  await waitFor(() => expect(firstVisibleSession(scroll)).toBeGreaterThanOrEqual(19))
+  return { canvas, scroll, first: firstVisibleSession(scroll) }
+}
+
+function rowTop(canvasElement: HTMLElement, index: number) {
+  const row = canvasElement.querySelector(`button[data-session-id="session-${index}"]`)
+  if (row === null) throw new Error(`Session ${index} is not mounted.`)
+  return row.getBoundingClientRect().top
+}
+
+// A Session that moves to the top while the reader is scrolled down leaves the rows they are
+// looking at where they were.
+export const KeepsTheScrolledRowStillWhenARowMovesAbove: Story = {
+  beforeEach: () => {
+    showingActiveSessions()
+    const list = manySessions(120)
+    const restore = withSessionListHost(async () => list)
+    moveSessionToTop = (index) => {
+      const moved = list.sessions.splice(index, 1)
+      list.sessions.unshift(...moved)
+      resendSessionLists()
+    }
+    return () => {
+      moveSessionToTop = () => {}
+      restore()
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const { scroll, first } = await scrolledToTwenty(canvasElement)
+    const top = rowTop(canvasElement, first)
+    const scrolled = scroll.scrollTop
+    moveSessionToTop(100)
+    await waitFor(() => expect(scroll.scrollTop).toBeGreaterThan(scrolled + 1))
+    await expect(Math.abs(rowTop(canvasElement, first) - top)).toBeLessThan(1)
+  },
+}
+
+// When the scrolled-to row itself moves to the top, the row under it holds the view.
+export const HoldsTheNeighbourWhenTheScrolledRowMovesAway: Story = {
+  beforeEach: KeepsTheScrolledRowStillWhenARowMovesAbove.beforeEach,
+  play: async ({ canvasElement }) => {
+    const { canvas, first } = await scrolledToTwenty(canvasElement)
+    const top = rowTop(canvasElement, first + 1)
+    moveSessionToTop(first)
+    await waitFor(() =>
+      expect(
+        canvas.queryByRole('button', { name: new RegExp(`Session number ${first}\\b`) }),
+      ).toBeNull(),
+    )
+    await expect(Math.abs(rowTop(canvasElement, first + 1) - top)).toBeLessThan(1)
+  },
+}
+
+let moveSessionToTop: (index: number) => void = () => {}
 
 async function typeSearch(canvasElement: HTMLElement, query: string) {
   const canvas = within(canvasElement)
@@ -1451,8 +1498,8 @@ export const SearchNoMatches: Story = {
 
 export const SearchDoesNotShowInitialSkeleton: Story = {
   beforeEach: () => {
-    let resolveSearch: ((result: SessionListPage) => void) | null = null
-    const pendingSearch = new Promise<SessionListPage>((resolve) => {
+    let resolveSearch: ((result: SessionListRetainedWindow) => void) | null = null
+    const pendingSearch = new Promise<SessionListRetainedWindow>((resolve) => {
       resolveSearch = resolve
     })
     const restore = withSessionListHost(({ search }) =>

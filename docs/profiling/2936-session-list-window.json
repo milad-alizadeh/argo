@@ -1,0 +1,1178 @@
+{
+  "sourceRevision": "7402b009052f28e624cc8f288726cfd2276ab556",
+  "machine": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "osRelease": "25.5.0",
+    "cpus": [
+      "Apple M4 Pro"
+    ],
+    "memoryGb": 48,
+    "node": "v24.21.0",
+    "electron": "44.2.0"
+  },
+  "corpus": {
+    "savedSessions": 600,
+    "archivedSessions": 120,
+    "extraClaudeFiles": 120,
+    "extraCodexFiles": 40,
+    "largeTranscriptBytes": 12001817,
+    "largeTranscriptTurns": 2145
+  },
+  "viewport": {
+    "width": 1440,
+    "height": 860
+  },
+  "cache": "fresh temporary userData and Electron process; prebuilt Vite assets and OS file cache not flushed",
+  "startupMs": 946.61,
+  "startup": {
+    "syncReads": 78,
+    "syncReadBytes": 218868,
+    "syncDirectoryReads": 82,
+    "syncStats": 39,
+    "asyncReads": 159,
+    "asyncReadBytes": 882132,
+    "watcherStarts": 215,
+    "activeWatchers": 215,
+    "delay": {
+      "p50Ms": 20.82,
+      "p95Ms": 211.03,
+      "maxMs": 244.84
+    },
+    "mainRssMb": 314,
+    "rendererWorkingSetMb": 308,
+    "ipc": {}
+  },
+  "steps": [
+    {
+      "label": "down scroll",
+      "elapsedMs": 1131.43,
+      "syncReads": 288,
+      "syncReadBytes": 1512260,
+      "syncDirectoryReads": 224,
+      "syncStats": 205,
+      "asyncReads": 81,
+      "asyncReadBytes": 449388,
+      "activeWatchers": 213,
+      "listOffset": 92,
+      "listRetained": 60,
+      "listTotal": 601,
+      "listOwnedReaderCount": 60,
+      "eventLoopDelay": {
+        "p50Ms": 20.15,
+        "p95Ms": 81.07,
+        "maxMs": 101.12
+      },
+      "mainRssMb": 339,
+      "rendererWorkingSetMb": 348,
+      "frameCount": 68,
+      "frameP95Ms": 18.5,
+      "framesOver33Ms": 0,
+      "longestFrameMs": 18.6,
+      "longTasks": 0,
+      "longestTaskMs": 0,
+      "rendererHeapMb": 30,
+      "ipc": {
+        "sessionListWindow:in": {
+          "messages": 9,
+          "bytes": 2396
+        },
+        "sessionListWindow:reply": {
+          "messages": 9,
+          "bytes": 371294
+        }
+      }
+    },
+    {
+      "label": "up scroll",
+      "elapsedMs": 1087.35,
+      "syncReads": 273,
+      "syncReadBytes": 516516,
+      "syncDirectoryReads": 184,
+      "syncStats": 182,
+      "asyncReads": 91,
+      "asyncReadBytes": 504868,
+      "activeWatchers": 243,
+      "listOffset": 0,
+      "listRetained": 54,
+      "listTotal": 601,
+      "listOwnedReaderCount": 54,
+      "eventLoopDelay": {
+        "p50Ms": 20.4,
+        "p95Ms": 40.73,
+        "maxMs": 41.91
+      },
+      "mainRssMb": 345,
+      "rendererWorkingSetMb": 391,
+      "frameCount": 66,
+      "frameP95Ms": 17.9,
+      "framesOver33Ms": 0,
+      "longestFrameMs": 18.6,
+      "longTasks": 0,
+      "longestTaskMs": 0,
+      "rendererHeapMb": 27,
+      "ipc": {
+        "sessionListWindow:in": {
+          "messages": 21,
+          "bytes": 5754
+        },
+        "sessionListWindow:reply": {
+          "messages": 21,
+          "bytes": 881668
+        }
+      }
+    },
+    {
+      "label": "find and open massive transcript",
+      "elapsedMs": 2536.7,
+      "syncReads": 120,
+      "syncReadBytes": 1270068,
+      "syncDirectoryReads": 82,
+      "syncStats": 80,
+      "asyncReads": 39,
+      "asyncReadBytes": 216372,
+      "activeWatchers": 217,
+      "listOffset": 0,
+      "listRetained": 40,
+      "listTotal": 601,
+      "listOwnedReaderCount": 40,
+      "eventLoopDelay": {
+        "p50Ms": 21.92,
+        "p95Ms": 22.2,
+        "maxMs": 107.09
+      },
+      "mainRssMb": 377,
+      "rendererWorkingSetMb": 736,
+      "frameCount": 38,
+      "frameP95Ms": 50.2,
+      "framesOver33Ms": 5,
+      "longestFrameMs": 1831.6,
+      "longTasks": 2,
+      "longestTaskMs": 1803,
+      "rendererHeapMb": 118,
+      "ipc": {
+        "sessionListWindow:in": {
+          "messages": 5,
+          "bytes": 1113
+        },
+        "sessionListWindow:reply": {
+          "messages": 5,
+          "bytes": 57739
+        },
+        "sessionListChanges:in": {
+          "messages": 2,
+          "bytes": 230
+        },
+        "sessionListChanges:out": {
+          "messages": 163,
+          "bytes": 10432
+        },
+        "sessionListChanges:reply": {
+          "messages": 2,
+          "bytes": 64
+        },
+        "sessionComposerCommands:in": {
+          "messages": 2,
+          "bytes": 250
+        },
+        "sessionComposerCommands:reply": {
+          "messages": 2,
+          "bytes": 64
+        },
+        "harnessCatalogRead:in": {
+          "messages": 1,
+          "bytes": 81
+        },
+        "composerDraftRead:in": {
+          "messages": 1,
+          "bytes": 129
+        },
+        "composerDraftRead:reply": {
+          "messages": 1,
+          "bytes": 32
+        },
+        "sessionDetails:in": {
+          "messages": 1,
+          "bytes": 116
+        },
+        "sessionDetails:out": {
+          "messages": 1,
+          "bytes": 917
+        },
+        "sessionDetails:reply": {
+          "messages": 1,
+          "bytes": 32
+        },
+        "sessionFeed:in": {
+          "messages": 1,
+          "bytes": 131
+        },
+        "sessionFeed:out": {
+          "messages": 1,
+          "bytes": 10757282
+        },
+        "sessionFeed:reply": {
+          "messages": 1,
+          "bytes": 32
+        },
+        "sessionPermissionRead:in": {
+          "messages": 1,
+          "bytes": 116
+        },
+        "sessionPermissionRead:reply": {
+          "messages": 1,
+          "bytes": 32
+        },
+        "sessionComposerCommands:out": {
+          "messages": 1,
+          "bytes": 81
+        },
+        "harnessCatalogRead:reply": {
+          "messages": 1,
+          "bytes": 2777
+        },
+        "composerDraftCreate:in": {
+          "messages": 1,
+          "bytes": 276
+        },
+        "composerDraftCreate:reply": {
+          "messages": 1,
+          "bytes": 342
+        },
+        "sessionArchiveList:in": {
+          "messages": 1,
+          "bytes": 163
+        },
+        "sessionArchiveList:reply": {
+          "messages": 1,
+          "bytes": 13009
+        }
+      }
+    },
+    {
+      "label": "search",
+      "elapsedMs": 329.94,
+      "syncReads": 0,
+      "syncReadBytes": 0,
+      "syncDirectoryReads": 2,
+      "syncStats": 0,
+      "asyncReads": 0,
+      "asyncReadBytes": 0,
+      "activeWatchers": 139,
+      "listOffset": 0,
+      "listRetained": 1,
+      "listTotal": 1,
+      "listOwnedReaderCount": 1,
+      "eventLoopDelay": {
+        "p50Ms": 21.91,
+        "p95Ms": 22.09,
+        "maxMs": 22.13
+      },
+      "mainRssMb": 377,
+      "rendererWorkingSetMb": 736,
+      "frameCount": 21,
+      "frameP95Ms": 18.5,
+      "framesOver33Ms": 0,
+      "longestFrameMs": 18.6,
+      "longTasks": 0,
+      "longestTaskMs": 0,
+      "rendererHeapMb": 120,
+      "ipc": {
+        "sessionListWindow:in": {
+          "messages": 1,
+          "bytes": 210
+        },
+        "sessionListWindow:reply": {
+          "messages": 1,
+          "bytes": 736
+        },
+        "sessionListChanges:in": {
+          "messages": 1,
+          "bytes": 115
+        },
+        "sessionListChanges:out": {
+          "messages": 1,
+          "bytes": 64
+        },
+        "sessionListChanges:reply": {
+          "messages": 1,
+          "bytes": 32
+        },
+        "sessionComposerCommands:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "harnessCatalogRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionDetails:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionDetails:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionDetails:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionPermissionRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionPermissionRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "harnessCatalogRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftCreate:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftCreate:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionArchiveList:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionArchiveList:reply": {
+          "messages": 0,
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "label": "Archive",
+      "elapsedMs": 1298.96,
+      "syncReads": 39,
+      "syncReadBytes": 2496,
+      "syncDirectoryReads": 0,
+      "syncStats": 39,
+      "asyncReads": 0,
+      "asyncReadBytes": 0,
+      "activeWatchers": 217,
+      "listOffset": 0,
+      "listRetained": 40,
+      "listTotal": 601,
+      "listOwnedReaderCount": 40,
+      "eventLoopDelay": {
+        "p50Ms": 22.09,
+        "p95Ms": 22.15,
+        "maxMs": 22.17
+      },
+      "mainRssMb": 377,
+      "rendererWorkingSetMb": 751,
+      "frameCount": 78,
+      "frameP95Ms": 18.3,
+      "framesOver33Ms": 0,
+      "longestFrameMs": 32.5,
+      "longTasks": 0,
+      "longestTaskMs": 0,
+      "rendererHeapMb": 124,
+      "ipc": {
+        "sessionListWindow:in": {
+          "messages": 1,
+          "bytes": 204
+        },
+        "sessionListWindow:reply": {
+          "messages": 1,
+          "bytes": 29637
+        },
+        "sessionListChanges:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionListChanges:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionListChanges:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "harnessCatalogRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionDetails:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionDetails:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionDetails:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionPermissionRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionPermissionRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "harnessCatalogRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftCreate:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftCreate:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionArchiveList:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionArchiveList:reply": {
+          "messages": 0,
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "label": "large Claude and Codex append",
+      "elapsedMs": 1057.05,
+      "syncReads": 10,
+      "syncReadBytes": 2642729,
+      "syncDirectoryReads": 0,
+      "syncStats": 4,
+      "asyncReads": 0,
+      "asyncReadBytes": 0,
+      "activeWatchers": 215,
+      "listOffset": 0,
+      "listRetained": 40,
+      "listTotal": 601,
+      "listOwnedReaderCount": 40,
+      "eventLoopDelay": {
+        "p50Ms": 22.07,
+        "p95Ms": 22.17,
+        "maxMs": 161.35
+      },
+      "mainRssMb": 359,
+      "rendererWorkingSetMb": 753,
+      "frameCount": 64,
+      "frameP95Ms": 17.9,
+      "framesOver33Ms": 0,
+      "longestFrameMs": 18.7,
+      "longTasks": 0,
+      "longestTaskMs": 0,
+      "rendererHeapMb": 128,
+      "ipc": {
+        "sessionListWindow:in": {
+          "messages": 2,
+          "bytes": 408
+        },
+        "sessionListWindow:reply": {
+          "messages": 2,
+          "bytes": 59340
+        },
+        "sessionListChanges:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionListChanges:out": {
+          "messages": 2,
+          "bytes": 128
+        },
+        "sessionListChanges:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "harnessCatalogRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionDetails:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionDetails:out": {
+          "messages": 1,
+          "bytes": 914
+        },
+        "sessionDetails:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionPermissionRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionPermissionRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "harnessCatalogRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftCreate:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftCreate:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionArchiveList:in": {
+          "messages": 1,
+          "bytes": 129
+        },
+        "sessionArchiveList:reply": {
+          "messages": 1,
+          "bytes": 13009
+        }
+      }
+    },
+    {
+      "label": "rapid selection",
+      "elapsedMs": 615.4,
+      "syncReads": 0,
+      "syncReadBytes": 0,
+      "syncDirectoryReads": 12,
+      "syncStats": 0,
+      "asyncReads": 0,
+      "asyncReadBytes": 0,
+      "activeWatchers": 215,
+      "listOffset": 0,
+      "listRetained": 40,
+      "listTotal": 601,
+      "listOwnedReaderCount": 40,
+      "eventLoopDelay": {
+        "p50Ms": 21.84,
+        "p95Ms": 22.2,
+        "maxMs": 23.59
+      },
+      "mainRssMb": 359,
+      "rendererWorkingSetMb": 763,
+      "frameCount": 35,
+      "frameP95Ms": 31.9,
+      "framesOver33Ms": 1,
+      "longestFrameMs": 34.1,
+      "longTasks": 0,
+      "longestTaskMs": 0,
+      "rendererHeapMb": 143,
+      "ipc": {
+        "sessionListWindow:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionListWindow:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionListChanges:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionListChanges:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionListChanges:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:in": {
+          "messages": 12,
+          "bytes": 1503
+        },
+        "sessionComposerCommands:reply": {
+          "messages": 12,
+          "bytes": 387
+        },
+        "harnessCatalogRead:in": {
+          "messages": 5,
+          "bytes": 403
+        },
+        "composerDraftRead:in": {
+          "messages": 6,
+          "bytes": 775
+        },
+        "composerDraftRead:reply": {
+          "messages": 6,
+          "bytes": 193
+        },
+        "sessionDetails:in": {
+          "messages": 6,
+          "bytes": 697
+        },
+        "sessionDetails:out": {
+          "messages": 6,
+          "bytes": 4714
+        },
+        "sessionDetails:reply": {
+          "messages": 6,
+          "bytes": 193
+        },
+        "sessionFeed:in": {
+          "messages": 6,
+          "bytes": 787
+        },
+        "sessionFeed:out": {
+          "messages": 12,
+          "bytes": 4835
+        },
+        "sessionFeed:reply": {
+          "messages": 6,
+          "bytes": 193
+        },
+        "sessionPermissionRead:in": {
+          "messages": 6,
+          "bytes": 698
+        },
+        "sessionPermissionRead:reply": {
+          "messages": 6,
+          "bytes": 194
+        },
+        "sessionComposerCommands:out": {
+          "messages": 9,
+          "bytes": 732
+        },
+        "harnessCatalogRead:reply": {
+          "messages": 5,
+          "bytes": 10100
+        },
+        "composerDraftCreate:in": {
+          "messages": 6,
+          "bytes": 1694
+        },
+        "composerDraftCreate:reply": {
+          "messages": 6,
+          "bytes": 2090
+        },
+        "sessionArchiveList:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionArchiveList:reply": {
+          "messages": 0,
+          "bytes": 0
+        }
+      }
+    }
+  ],
+  "final": {
+    "syncReads": 886,
+    "syncReadBytes": 6381805,
+    "syncDirectoryReads": 666,
+    "syncStats": 588,
+    "asyncReads": 409,
+    "asyncReadBytes": 2269132,
+    "watcherStarts": 743,
+    "activeWatchers": 215,
+    "delay": {
+      "p50Ms": 21.79,
+      "p95Ms": 22.2,
+      "maxMs": 23.59
+    },
+    "mainRssMb": 359,
+    "rendererWorkingSetMb": 763,
+    "ipc": {
+      "sessionListWindow:in": {
+        "messages": 40,
+        "bytes": 10289
+      },
+      "sessionListWindow:reply": {
+        "messages": 40,
+        "bytes": 1426112
+      },
+      "sessionListChanges:in": {
+        "messages": 4,
+        "bytes": 460
+      },
+      "sessionListChanges:out": {
+        "messages": 206,
+        "bytes": 13184
+      },
+      "sessionListChanges:reply": {
+        "messages": 4,
+        "bytes": 128
+      },
+      "sessionComposerCommands:in": {
+        "messages": 14,
+        "bytes": 1753
+      },
+      "sessionComposerCommands:reply": {
+        "messages": 14,
+        "bytes": 451
+      },
+      "harnessCatalogRead:in": {
+        "messages": 6,
+        "bytes": 484
+      },
+      "composerDraftRead:in": {
+        "messages": 7,
+        "bytes": 904
+      },
+      "composerDraftRead:reply": {
+        "messages": 7,
+        "bytes": 225
+      },
+      "sessionDetails:in": {
+        "messages": 7,
+        "bytes": 813
+      },
+      "sessionDetails:out": {
+        "messages": 8,
+        "bytes": 6545
+      },
+      "sessionDetails:reply": {
+        "messages": 7,
+        "bytes": 225
+      },
+      "sessionFeed:in": {
+        "messages": 7,
+        "bytes": 918
+      },
+      "sessionFeed:out": {
+        "messages": 13,
+        "bytes": 10762117
+      },
+      "sessionFeed:reply": {
+        "messages": 7,
+        "bytes": 225
+      },
+      "sessionPermissionRead:in": {
+        "messages": 7,
+        "bytes": 814
+      },
+      "sessionPermissionRead:reply": {
+        "messages": 7,
+        "bytes": 226
+      },
+      "sessionComposerCommands:out": {
+        "messages": 10,
+        "bytes": 813
+      },
+      "harnessCatalogRead:reply": {
+        "messages": 6,
+        "bytes": 12877
+      },
+      "composerDraftCreate:in": {
+        "messages": 7,
+        "bytes": 1970
+      },
+      "composerDraftCreate:reply": {
+        "messages": 7,
+        "bytes": 2432
+      },
+      "sessionArchiveList:in": {
+        "messages": 2,
+        "bytes": 292
+      },
+      "sessionArchiveList:reply": {
+        "messages": 2,
+        "bytes": 26018
+      }
+    }
+  },
+  "sql": {
+    "measurements": [
+      {
+        "name": "browse",
+        "sql": "SELECT session.argo_id, session.harness, session.native_id,\n    session.custom_title, session.preview, session.first_prompt, session.cwd,\n    session.workspace_id, session.activity_at, session.list_order_at, session.updated_at,\n    session_ticket_link.project_id, session_ticket_link.ticket_key,\n    session_ticket_link.title, session_ticket_link.state, session_ticket_link.created_at FROM session LEFT JOIN session_ticket_link\n    ON session_ticket_link.session_id = session.argo_id WHERE session.project_id = ? AND NOT EXISTS\n    (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)\n    AND (session.list_order_at, session.argo_id) <= (?, ?)\n    ORDER BY session.list_order_at DESC, session.argo_id DESC LIMIT 60",
+        "runsMs": [
+          0.0878,
+          0.068,
+          0.0647,
+          0.0655,
+          0.0635,
+          0.063,
+          0.0627,
+          0.0621,
+          0.0617,
+          0.0621,
+          0.0651,
+          0.0703,
+          0.067,
+          0.0682,
+          0.0623,
+          0.0619,
+          0.0621,
+          0.0629,
+          0.0624,
+          0.0709
+        ],
+        "plan": [
+          {
+            "id": 7,
+            "parent": 0,
+            "notused": 51,
+            "detail": "SEARCH session USING INDEX session_list_order (project_id=? AND (list_order_at,argo_id)<(?,?))"
+          },
+          {
+            "id": 28,
+            "parent": 0,
+            "notused": 0,
+            "detail": "CORRELATED SCALAR SUBQUERY 1"
+          },
+          {
+            "id": 32,
+            "parent": 28,
+            "notused": 39,
+            "detail": "SEARCH session_archive USING COVERING INDEX sqlite_autoindex_session_archive_1 (session_id=?)"
+          },
+          {
+            "id": 41,
+            "parent": 0,
+            "notused": 46,
+            "detail": "SEARCH session_ticket_link USING INDEX sqlite_autoindex_session_ticket_link_1 (session_id=?) LEFT-JOIN"
+          }
+        ],
+        "scanStats": "00000000-0000-4000-8000-000000000180|codex|list-baseline-179|Saved Session 180|Saved preview 180|Saved prompt 180|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730025138|1790730025138|1790740765149|||||\n00000000-0000-4000-8000-000000000181|claude|list-baseline-180|Saved Session 181|Saved preview 181|Saved prompt 181|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729965138|1790729965138|1790740765149|||||\n00000000-0000-4000-8000-000000000182|codex|list-baseline-181|Saved Session 182|Saved preview 182|Saved prompt 182|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729905138|1790729905138|1790740765149|||||\n00000000-0000-4000-8000-000000000183|claude|list-baseline-182|Saved Session 183|Saved preview 183|Saved prompt 183|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729845138|1790729845138|1790740765149|||||\n00000000-0000-4000-8000-000000000184|codex|list-baseline-183|Saved Session 184|Saved preview 184|Saved prompt 184|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729785138|1790729785138|1790740765149|||||\n00000000-0000-4000-8000-000000000185|claude|list-baseline-184|Saved Session 185|Saved preview 185|Saved prompt 185|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729725138|1790729725138|1790740765149|||||\n00000000-0000-4000-8000-000000000186|codex|list-baseline-185|Saved Session 186|Saved preview 186|Saved prompt 186|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729665138|1790729665138|1790740765149|||||\n00000000-0000-4000-8000-000000000187|claude|list-baseline-186|Saved Session 187|Saved preview 187|Saved prompt 187|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729605138|1790729605138|1790740765149|||||\n00000000-0000-4000-8000-000000000188|codex|list-baseline-187|Saved Session 188|Saved preview 188|Saved prompt 188|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729545138|1790729545138|1790740765149|||||\n00000000-0000-4000-8000-000000000189|claude|list-baseline-188|Saved Session 189|Saved preview 189|Saved prompt 189|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729485138|1790729485138|1790740765149|||||\n00000000-0000-4000-8000-000000000190|codex|list-baseline-189|Saved Session 190|Saved preview 190|Saved prompt 190|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729425138|1790729425138|1790740765149|||||\n00000000-0000-4000-8000-000000000191|claude|list-baseline-190|Saved Session 191|Saved preview 191|Saved prompt 191|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729365138|1790729365138|1790740765149|||||\n00000000-0000-4000-8000-000000000192|codex|list-baseline-191|Saved Session 192|Saved preview 192|Saved prompt 192|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729305138|1790729305138|1790740765149|||||\n00000000-0000-4000-8000-000000000193|claude|list-baseline-192|Saved Session 193|Saved preview 193|Saved prompt 193|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729245138|1790729245138|1790740765149|||||\n00000000-0000-4000-8000-000000000194|codex|list-baseline-193|Saved Session 194|Saved preview 194|Saved prompt 194|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729185138|1790729185138|1790740765149|||||\n00000000-0000-4000-8000-000000000195|claude|list-baseline-194|Saved Session 195|Saved preview 195|Saved prompt 195|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729125138|1790729125138|1790740765149|||||\n00000000-0000-4000-8000-000000000196|codex|list-baseline-195|Saved Session 196|Saved preview 196|Saved prompt 196|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729065138|1790729065138|1790740765149|||||\n00000000-0000-4000-8000-000000000197|claude|list-baseline-196|Saved Session 197|Saved preview 197|Saved prompt 197|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790729005138|1790729005138|1790740765149|||||\n00000000-0000-4000-8000-000000000198|codex|list-baseline-197|Saved Session 198|Saved preview 198|Saved prompt 198|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728945138|1790728945138|1790740765149|||||\n00000000-0000-4000-8000-000000000199|claude|list-baseline-198|Saved Session 199|Saved preview 199|Saved prompt 199|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728885138|1790728885138|1790740765149|||||\n00000000-0000-4000-8000-000000000200|codex|list-baseline-199|Saved Session 200|Saved preview 200|Saved prompt 200|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728825138|1790728825138|1790740765149|||||\n00000000-0000-4000-8000-000000000201|claude|list-baseline-200|Saved Session 201|Saved preview 201|Saved prompt 201|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728765138|1790728765138|1790740765149|||||\n00000000-0000-4000-8000-000000000202|codex|list-baseline-201|Saved Session 202|Saved preview 202|Saved prompt 202|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728705138|1790728705138|1790740765149|||||\n00000000-0000-4000-8000-000000000203|claude|list-baseline-202|Saved Session 203|Saved preview 203|Saved prompt 203|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728645138|1790728645138|1790740765149|||||\n00000000-0000-4000-8000-000000000204|codex|list-baseline-203|Saved Session 204|Saved preview 204|Saved prompt 204|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728585138|1790728585138|1790740765149|||||\n00000000-0000-4000-8000-000000000205|claude|list-baseline-204|Saved Session 205|Saved preview 205|Saved prompt 205|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728525138|1790728525138|1790740765149|||||\n00000000-0000-4000-8000-000000000206|codex|list-baseline-205|Saved Session 206|Saved preview 206|Saved prompt 206|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728465138|1790728465138|1790740765149|||||\n00000000-0000-4000-8000-000000000207|claude|list-baseline-206|Saved Session 207|Saved preview 207|Saved prompt 207|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728405138|1790728405138|1790740765149|||||\n00000000-0000-4000-8000-000000000208|codex|list-baseline-207|Saved Session 208|Saved preview 208|Saved prompt 208|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728345138|1790728345138|1790740765149|||||\n00000000-0000-4000-8000-000000000209|claude|list-baseline-208|Saved Session 209|Saved preview 209|Saved prompt 209|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728285138|1790728285138|1790740765149|||||\n00000000-0000-4000-8000-000000000210|codex|list-baseline-209|Saved Session 210|Saved preview 210|Saved prompt 210|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728225138|1790728225138|1790740765149|||||\n00000000-0000-4000-8000-000000000211|claude|list-baseline-210|Saved Session 211|Saved preview 211|Saved prompt 211|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728165138|1790728165138|1790740765149|||||\n00000000-0000-4000-8000-000000000212|codex|list-baseline-211|Saved Session 212|Saved preview 212|Saved prompt 212|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728105138|1790728105138|1790740765149|||||\n00000000-0000-4000-8000-000000000213|claude|list-baseline-212|Saved Session 213|Saved preview 213|Saved prompt 213|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790728045138|1790728045138|1790740765149|||||\n00000000-0000-4000-8000-000000000214|codex|list-baseline-213|Saved Session 214|Saved preview 214|Saved prompt 214|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727985138|1790727985138|1790740765149|||||\n00000000-0000-4000-8000-000000000215|claude|list-baseline-214|Saved Session 215|Saved preview 215|Saved prompt 215|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727925138|1790727925138|1790740765149|||||\n00000000-0000-4000-8000-000000000216|codex|list-baseline-215|Saved Session 216|Saved preview 216|Saved prompt 216|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727865138|1790727865138|1790740765149|||||\n00000000-0000-4000-8000-000000000217|claude|list-baseline-216|Saved Session 217|Saved preview 217|Saved prompt 217|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727805138|1790727805138|1790740765149|||||\n00000000-0000-4000-8000-000000000218|codex|list-baseline-217|Saved Session 218|Saved preview 218|Saved prompt 218|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727745138|1790727745138|1790740765149|||||\n00000000-0000-4000-8000-000000000219|claude|list-baseline-218|Saved Session 219|Saved preview 219|Saved prompt 219|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727685138|1790727685138|1790740765149|||||\n00000000-0000-4000-8000-000000000220|codex|list-baseline-219|Saved Session 220|Saved preview 220|Saved prompt 220|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727625138|1790727625138|1790740765149|||||\n00000000-0000-4000-8000-000000000221|claude|list-baseline-220|Saved Session 221|Saved preview 221|Saved prompt 221|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727565138|1790727565138|1790740765149|||||\n00000000-0000-4000-8000-000000000222|codex|list-baseline-221|Saved Session 222|Saved preview 222|Saved prompt 222|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727505138|1790727505138|1790740765149|||||\n00000000-0000-4000-8000-000000000223|claude|list-baseline-222|Saved Session 223|Saved preview 223|Saved prompt 223|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727445138|1790727445138|1790740765149|||||\n00000000-0000-4000-8000-000000000224|codex|list-baseline-223|Saved Session 224|Saved preview 224|Saved prompt 224|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727385138|1790727385138|1790740765149|||||\n00000000-0000-4000-8000-000000000225|claude|list-baseline-224|Saved Session 225|Saved preview 225|Saved prompt 225|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727325138|1790727325138|1790740765149|||||\n00000000-0000-4000-8000-000000000226|codex|list-baseline-225|Saved Session 226|Saved preview 226|Saved prompt 226|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727265138|1790727265138|1790740765149|||||\n00000000-0000-4000-8000-000000000227|claude|list-baseline-226|Saved Session 227|Saved preview 227|Saved prompt 227|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727205138|1790727205138|1790740765149|||||\n00000000-0000-4000-8000-000000000228|codex|list-baseline-227|Saved Session 228|Saved preview 228|Saved prompt 228|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727145138|1790727145138|1790740765149|||||\n00000000-0000-4000-8000-000000000229|claude|list-baseline-228|Saved Session 229|Saved preview 229|Saved prompt 229|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727085138|1790727085138|1790740765149|||||\n00000000-0000-4000-8000-000000000230|codex|list-baseline-229|Saved Session 230|Saved preview 230|Saved prompt 230|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790727025138|1790727025138|1790740765149|||||\n00000000-0000-4000-8000-000000000231|claude|list-baseline-230|Saved Session 231|Saved preview 231|Saved prompt 231|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790726965138|1790726965138|1790740765149|||||\n00000000-0000-4000-8000-000000000232|codex|list-baseline-231|Saved Session 232|Saved preview 232|Saved prompt 232|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790726905138|1790726905138|1790740765149|||||\n00000000-0000-4000-8000-000000000233|claude|list-baseline-232|Saved Session 233|Saved preview 233|Saved prompt 233|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790726845138|1790726845138|1790740765149|||||\n00000000-0000-4000-8000-000000000234|codex|list-baseline-233|Saved Session 234|Saved preview 234|Saved prompt 234|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790726785138|1790726785138|1790740765149|||||\n00000000-0000-4000-8000-000000000235|claude|list-baseline-234|Saved Session 235|Saved preview 235|Saved prompt 235|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790726725138|1790726725138|1790740765149|||||\n00000000-0000-4000-8000-000000000236|codex|list-baseline-235|Saved Session 236|Saved preview 236|Saved prompt 236|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790726665138|1790726665138|1790740765149|||||\n00000000-0000-4000-8000-000000000237|claude|list-baseline-236|Saved Session 237|Saved preview 237|Saved prompt 237|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790726605138|1790726605138|1790740765149|||||\n00000000-0000-4000-8000-000000000238|codex|list-baseline-237|Saved Session 238|Saved preview 238|Saved prompt 238|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790726545138|1790726545138|1790740765149|||||\n00000000-0000-4000-8000-000000000239|claude|list-baseline-238|Saved Session 239|Saved preview 239|Saved prompt 239|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790726485138|1790726485138|1790740765149|||||\nQUERY PLAN\n|--CORRELATED SCALAR SUBQUERY 1                                                                               (loops=60)\n|  `--SEARCH session_archive USING COVERING INDEX sqlite_autoindex_session_archive_1 (session_id=?)           (loops=60 rows=0)\n|--SEARCH session USING INDEX session_list_order (project_id=? AND (list_order_at,argo_id)<(?,?))             (loops=1 rows=60)\n`--SEARCH session_ticket_link USING INDEX sqlite_autoindex_session_ticket_link_1 (session_id=?) LEFT-JOIN     (loops=60 rows=60)\n"
+      },
+      {
+        "name": "earlier",
+        "sql": "SELECT session.argo_id, session.harness, session.native_id,\n    session.custom_title, session.preview, session.first_prompt, session.cwd,\n    session.workspace_id, session.activity_at, session.list_order_at, session.updated_at,\n    session_ticket_link.project_id, session_ticket_link.ticket_key,\n    session_ticket_link.title, session_ticket_link.state, session_ticket_link.created_at FROM session LEFT JOIN session_ticket_link\n    ON session_ticket_link.session_id = session.argo_id WHERE session.project_id = ? AND NOT EXISTS\n    (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)\n    AND (session.list_order_at, session.argo_id) > (?, ?)\n    ORDER BY session.list_order_at ASC, session.argo_id ASC LIMIT 30",
+        "runsMs": [
+          0.0463,
+          0.0363,
+          0.0344,
+          0.0351,
+          0.0344,
+          0.0343,
+          0.0346,
+          0.0343,
+          0.0343,
+          0.0363,
+          0.0341,
+          0.0337,
+          0.034,
+          0.0333,
+          0.0336,
+          0.0335,
+          0.0335,
+          0.033,
+          0.0332,
+          0.0338
+        ],
+        "plan": [
+          {
+            "id": 7,
+            "parent": 0,
+            "notused": 51,
+            "detail": "SEARCH session USING INDEX session_list_order (project_id=? AND (list_order_at,argo_id)>(?,?))"
+          },
+          {
+            "id": 28,
+            "parent": 0,
+            "notused": 0,
+            "detail": "CORRELATED SCALAR SUBQUERY 1"
+          },
+          {
+            "id": 32,
+            "parent": 28,
+            "notused": 39,
+            "detail": "SEARCH session_archive USING COVERING INDEX sqlite_autoindex_session_archive_1 (session_id=?)"
+          },
+          {
+            "id": 41,
+            "parent": 0,
+            "notused": 46,
+            "detail": "SEARCH session_ticket_link USING INDEX sqlite_autoindex_session_ticket_link_1 (session_id=?) LEFT-JOIN"
+          }
+        ],
+        "scanStats": "00000000-0000-4000-8000-000000000179|claude|list-baseline-178|Saved Session 179|Saved preview 179|Saved prompt 179|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730085138|1790730085138|1790740765149|||||\n00000000-0000-4000-8000-000000000178|codex|list-baseline-177|Saved Session 178|Saved preview 178|Saved prompt 178|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730145138|1790730145138|1790740765149|||||\n00000000-0000-4000-8000-000000000177|claude|list-baseline-176|Saved Session 177|Saved preview 177|Saved prompt 177|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730205138|1790730205138|1790740765149|||||\n00000000-0000-4000-8000-000000000176|codex|list-baseline-175|Saved Session 176|Saved preview 176|Saved prompt 176|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730265138|1790730265138|1790740765149|||||\n00000000-0000-4000-8000-000000000175|claude|list-baseline-174|Saved Session 175|Saved preview 175|Saved prompt 175|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730325138|1790730325138|1790740765149|||||\n00000000-0000-4000-8000-000000000174|codex|list-baseline-173|Saved Session 174|Saved preview 174|Saved prompt 174|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730385138|1790730385138|1790740765149|||||\n00000000-0000-4000-8000-000000000173|claude|list-baseline-172|Saved Session 173|Saved preview 173|Saved prompt 173|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730445138|1790730445138|1790740765149|||||\n00000000-0000-4000-8000-000000000172|codex|list-baseline-171|Saved Session 172|Saved preview 172|Saved prompt 172|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730505138|1790730505138|1790740765149|||||\n00000000-0000-4000-8000-000000000171|claude|list-baseline-170|Saved Session 171|Saved preview 171|Saved prompt 171|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730565138|1790730565138|1790740765149|||||\n00000000-0000-4000-8000-000000000170|codex|list-baseline-169|Saved Session 170|Saved preview 170|Saved prompt 170|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730625138|1790730625138|1790740765149|||||\n00000000-0000-4000-8000-000000000169|claude|list-baseline-168|Saved Session 169|Saved preview 169|Saved prompt 169|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730685138|1790730685138|1790740765149|||||\n00000000-0000-4000-8000-000000000168|codex|list-baseline-167|Saved Session 168|Saved preview 168|Saved prompt 168|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730745138|1790730745138|1790740765149|||||\n00000000-0000-4000-8000-000000000167|claude|list-baseline-166|Saved Session 167|Saved preview 167|Saved prompt 167|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730805138|1790730805138|1790740765149|||||\n00000000-0000-4000-8000-000000000166|codex|list-baseline-165|Saved Session 166|Saved preview 166|Saved prompt 166|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730865138|1790730865138|1790740765149|||||\n00000000-0000-4000-8000-000000000165|claude|list-baseline-164|Saved Session 165|Saved preview 165|Saved prompt 165|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730925138|1790730925138|1790740765149|||||\n00000000-0000-4000-8000-000000000164|codex|list-baseline-163|Saved Session 164|Saved preview 164|Saved prompt 164|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790730985138|1790730985138|1790740765149|||||\n00000000-0000-4000-8000-000000000163|claude|list-baseline-162|Saved Session 163|Saved preview 163|Saved prompt 163|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790731045138|1790731045138|1790740765149|||||\n00000000-0000-4000-8000-000000000162|codex|list-baseline-161|Saved Session 162|Saved preview 162|Saved prompt 162|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790731105138|1790731105138|1790740765149|||||\n00000000-0000-4000-8000-000000000161|claude|list-baseline-160|Saved Session 161|Saved preview 161|Saved prompt 161|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790731165138|1790731165138|1790740765149|||||\n00000000-0000-4000-8000-000000000160|codex|list-baseline-159|Saved Session 160|Saved preview 160|Saved prompt 160|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790731225138|1790731225138|1790740765149|||||\n00000000-0000-4000-8000-000000000159|claude|list-baseline-158|Saved Session 159|Saved preview 159|Saved prompt 159|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790731285138|1790731285138|1790740765149|||||\n00000000-0000-4000-8000-000000000158|codex|list-baseline-157|Saved Session 158|Saved preview 158|Saved prompt 158|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790731345138|1790731345138|1790740765149|||||\n00000000-0000-4000-8000-000000000157|claude|list-baseline-156|Saved Session 157|Saved preview 157|Saved prompt 157|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790731405138|1790731405138|1790740765149|||||\n00000000-0000-4000-8000-000000000156|codex|list-baseline-155|Saved Session 156|Saved preview 156|Saved prompt 156|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790731465138|1790731465138|1790740765149|||||\n00000000-0000-4000-8000-000000000155|claude|list-baseline-154|Saved Session 155|Saved preview 155|Saved prompt 155|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790731525138|1790731525138|1790740765149|||||\n00000000-0000-4000-8000-000000000154|codex|list-baseline-153|Saved Session 154|Saved preview 154|Saved prompt 154|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790731585138|1790731585138|1790740765149|||||\n00000000-0000-4000-8000-000000000153|claude|list-baseline-152|Saved Session 153|Saved preview 153|Saved prompt 153|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790731645138|1790731645138|1790740765149|||||\n00000000-0000-4000-8000-000000000152|codex|list-baseline-151|Saved Session 152|Saved preview 152|Saved prompt 152|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790731705138|1790731705138|1790740765149|||||\n00000000-0000-4000-8000-000000000151|claude|list-baseline-150|Saved Session 151|Saved preview 151|Saved prompt 151|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790731765138|1790731765138|1790740765149|||||\n00000000-0000-4000-8000-000000000150|codex|list-baseline-149|Saved Session 150|Saved preview 150|Saved prompt 150|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790731825138|1790731825138|1790740765149|||||\nQUERY PLAN\n|--CORRELATED SCALAR SUBQUERY 1                                                                               (loops=30)\n|  `--SEARCH session_archive USING COVERING INDEX sqlite_autoindex_session_archive_1 (session_id=?)           (loops=30 rows=0)\n|--SEARCH session USING INDEX session_list_order (project_id=? AND (list_order_at,argo_id)>(?,?))             (loops=1 rows=31)\n`--SEARCH session_ticket_link USING INDEX sqlite_autoindex_session_ticket_link_1 (session_id=?) LEFT-JOIN     (loops=30 rows=30)\n"
+      },
+      {
+        "name": "search",
+        "sql": "SELECT session.argo_id, session.harness, session.native_id,\n    session.custom_title, session.preview, session.first_prompt, session.cwd,\n    session.workspace_id, session.activity_at, session.list_order_at, session.updated_at,\n    session_ticket_link.project_id, session_ticket_link.ticket_key,\n    session_ticket_link.title, session_ticket_link.state, session_ticket_link.created_at FROM session LEFT JOIN session_ticket_link\n    ON session_ticket_link.session_id = session.argo_id WHERE session.project_id = ? AND NOT EXISTS\n    (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)\n    AND (instr(lower(coalesce(session.custom_title, '')), lower(?)) > 0\n      OR instr(lower(coalesce(session.preview, '')), lower(?)) > 0)\n    ORDER BY session.list_order_at DESC, session.argo_id DESC LIMIT 60",
+        "runsMs": [
+          0.2987,
+          0.1953,
+          0.1771,
+          0.1749,
+          0.1722,
+          0.1717,
+          0.1719,
+          0.1711,
+          0.1696,
+          0.1673,
+          0.1655,
+          0.1771,
+          0.1658,
+          0.165,
+          0.1768,
+          0.1645,
+          0.1654,
+          0.1651,
+          0.1652,
+          0.1661
+        ],
+        "plan": [
+          {
+            "id": 7,
+            "parent": 0,
+            "notused": 62,
+            "detail": "SEARCH session USING INDEX session_list_order (project_id=?)"
+          },
+          {
+            "id": 33,
+            "parent": 0,
+            "notused": 0,
+            "detail": "CORRELATED SCALAR SUBQUERY 1"
+          },
+          {
+            "id": 37,
+            "parent": 33,
+            "notused": 39,
+            "detail": "SEARCH session_archive USING COVERING INDEX sqlite_autoindex_session_archive_1 (session_id=?)"
+          },
+          {
+            "id": 46,
+            "parent": 0,
+            "notused": 46,
+            "detail": "SEARCH session_ticket_link USING INDEX sqlite_autoindex_session_ticket_link_1 (session_id=?) LEFT-JOIN"
+          }
+        ],
+        "scanStats": "00000000-0000-4000-8000-000000000001|claude|list-baseline-0|Needle session list search target|Saved preview 1|Saved prompt 1|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-Q8EGI0/project/list-workload||1790740765138|1790740765138|1790740765149|||||\nQUERY PLAN\n|--CORRELATED SCALAR SUBQUERY 1                                                                               (loops=1)\n|  `--SEARCH session_archive USING COVERING INDEX sqlite_autoindex_session_archive_1 (session_id=?)           (loops=1 rows=0)\n|--SEARCH session USING INDEX session_list_order (project_id=?)                                               (loops=1 rows=721)\n`--SEARCH session_ticket_link USING INDEX sqlite_autoindex_session_ticket_link_1 (session_id=?) LEFT-JOIN     (loops=1 rows=1)\n"
+      },
+      {
+        "name": "count",
+        "sql": "SELECT count(*) FROM session WHERE project_id = ? AND NOT EXISTS\n    (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)",
+        "runsMs": [
+          0.1009,
+          0.0834,
+          0.0855,
+          0.0813,
+          0.084,
+          0.0811,
+          0.0808,
+          0.0812,
+          0.0813,
+          0.0841,
+          0.0812,
+          0.0807,
+          0.0814,
+          0.0818,
+          0.0817,
+          0.0836,
+          0.0804,
+          0.0811,
+          0.0801,
+          0.0852
+        ],
+        "plan": [
+          {
+            "id": 3,
+            "parent": 0,
+            "notused": 54,
+            "detail": "SEARCH session USING COVERING INDEX session_list_order (project_id=?)"
+          },
+          {
+            "id": 10,
+            "parent": 0,
+            "notused": 0,
+            "detail": "CORRELATED SCALAR SUBQUERY 1"
+          },
+          {
+            "id": 14,
+            "parent": 10,
+            "notused": 39,
+            "detail": "SEARCH session_archive USING COVERING INDEX sqlite_autoindex_session_archive_1 (session_id=?)"
+          }
+        ],
+        "scanStats": "601\nQUERY PLAN\n|--CORRELATED SCALAR SUBQUERY 1                                                                         (loops=721)\n|  `--SEARCH session_archive USING COVERING INDEX sqlite_autoindex_session_archive_1 (session_id=?)     (loops=721 rows=120)\n`--SEARCH session USING COVERING INDEX session_list_order (project_id=?)                                (loops=1 rows=721)\n"
+      },
+      {
+        "name": "archive",
+        "sql": "SELECT session_id FROM session_archive",
+        "runsMs": [
+          0.0295,
+          0.0202,
+          0.0202,
+          0.0197,
+          0.0207,
+          0.0193,
+          0.0199,
+          0.0193,
+          0.0189,
+          0.0185,
+          0.0186,
+          0.0188,
+          0.0194,
+          0.0191,
+          0.0186,
+          0.0185,
+          0.0187,
+          0.0197,
+          0.0199,
+          0.0189
+        ],
+        "plan": [
+          {
+            "id": 2,
+            "parent": 0,
+            "notused": 216,
+            "detail": "SCAN session_archive"
+          }
+        ],
+        "scanStats": "00000000-0000-4000-8000-000000000481\n00000000-0000-4000-8000-000000000482\n00000000-0000-4000-8000-000000000483\n00000000-0000-4000-8000-000000000484\n00000000-0000-4000-8000-000000000485\n00000000-0000-4000-8000-000000000486\n00000000-0000-4000-8000-000000000487\n00000000-0000-4000-8000-000000000488\n00000000-0000-4000-8000-000000000489\n00000000-0000-4000-8000-000000000490\n00000000-0000-4000-8000-000000000491\n00000000-0000-4000-8000-000000000492\n00000000-0000-4000-8000-000000000493\n00000000-0000-4000-8000-000000000494\n00000000-0000-4000-8000-000000000495\n00000000-0000-4000-8000-000000000496\n00000000-0000-4000-8000-000000000497\n00000000-0000-4000-8000-000000000498\n00000000-0000-4000-8000-000000000499\n00000000-0000-4000-8000-000000000500\n00000000-0000-4000-8000-000000000501\n00000000-0000-4000-8000-000000000502\n00000000-0000-4000-8000-000000000503\n00000000-0000-4000-8000-000000000504\n00000000-0000-4000-8000-000000000505\n00000000-0000-4000-8000-000000000506\n00000000-0000-4000-8000-000000000507\n00000000-0000-4000-8000-000000000508\n00000000-0000-4000-8000-000000000509\n00000000-0000-4000-8000-000000000510\n00000000-0000-4000-8000-000000000511\n00000000-0000-4000-8000-000000000512\n00000000-0000-4000-8000-000000000513\n00000000-0000-4000-8000-000000000514\n00000000-0000-4000-8000-000000000515\n00000000-0000-4000-8000-000000000516\n00000000-0000-4000-8000-000000000517\n00000000-0000-4000-8000-000000000518\n00000000-0000-4000-8000-000000000519\n00000000-0000-4000-8000-000000000520\n00000000-0000-4000-8000-000000000521\n00000000-0000-4000-8000-000000000522\n00000000-0000-4000-8000-000000000523\n00000000-0000-4000-8000-000000000524\n00000000-0000-4000-8000-000000000525\n00000000-0000-4000-8000-000000000526\n00000000-0000-4000-8000-000000000527\n00000000-0000-4000-8000-000000000528\n00000000-0000-4000-8000-000000000529\n00000000-0000-4000-8000-000000000530\n00000000-0000-4000-8000-000000000531\n00000000-0000-4000-8000-000000000532\n00000000-0000-4000-8000-000000000533\n00000000-0000-4000-8000-000000000534\n00000000-0000-4000-8000-000000000535\n00000000-0000-4000-8000-000000000536\n00000000-0000-4000-8000-000000000537\n00000000-0000-4000-8000-000000000538\n00000000-0000-4000-8000-000000000539\n00000000-0000-4000-8000-000000000540\n00000000-0000-4000-8000-000000000541\n00000000-0000-4000-8000-000000000542\n00000000-0000-4000-8000-000000000543\n00000000-0000-4000-8000-000000000544\n00000000-0000-4000-8000-000000000545\n00000000-0000-4000-8000-000000000546\n00000000-0000-4000-8000-000000000547\n00000000-0000-4000-8000-000000000548\n00000000-0000-4000-8000-000000000549\n00000000-0000-4000-8000-000000000550\n00000000-0000-4000-8000-000000000551\n00000000-0000-4000-8000-000000000552\n00000000-0000-4000-8000-000000000553\n00000000-0000-4000-8000-000000000554\n00000000-0000-4000-8000-000000000555\n00000000-0000-4000-8000-000000000556\n00000000-0000-4000-8000-000000000557\n00000000-0000-4000-8000-000000000558\n00000000-0000-4000-8000-000000000559\n00000000-0000-4000-8000-000000000560\n00000000-0000-4000-8000-000000000561\n00000000-0000-4000-8000-000000000562\n00000000-0000-4000-8000-000000000563\n00000000-0000-4000-8000-000000000564\n00000000-0000-4000-8000-000000000565\n00000000-0000-4000-8000-000000000566\n00000000-0000-4000-8000-000000000567\n00000000-0000-4000-8000-000000000568\n00000000-0000-4000-8000-000000000569\n00000000-0000-4000-8000-000000000570\n00000000-0000-4000-8000-000000000571\n00000000-0000-4000-8000-000000000572\n00000000-0000-4000-8000-000000000573\n00000000-0000-4000-8000-000000000574\n00000000-0000-4000-8000-000000000575\n00000000-0000-4000-8000-000000000576\n00000000-0000-4000-8000-000000000577\n00000000-0000-4000-8000-000000000578\n00000000-0000-4000-8000-000000000579\n00000000-0000-4000-8000-000000000580\n00000000-0000-4000-8000-000000000581\n00000000-0000-4000-8000-000000000582\n00000000-0000-4000-8000-000000000583\n00000000-0000-4000-8000-000000000584\n00000000-0000-4000-8000-000000000585\n00000000-0000-4000-8000-000000000586\n00000000-0000-4000-8000-000000000587\n00000000-0000-4000-8000-000000000588\n00000000-0000-4000-8000-000000000589\n00000000-0000-4000-8000-000000000590\n00000000-0000-4000-8000-000000000591\n00000000-0000-4000-8000-000000000592\n00000000-0000-4000-8000-000000000593\n00000000-0000-4000-8000-000000000594\n00000000-0000-4000-8000-000000000595\n00000000-0000-4000-8000-000000000596\n00000000-0000-4000-8000-000000000597\n00000000-0000-4000-8000-000000000598\n00000000-0000-4000-8000-000000000599\n00000000-0000-4000-8000-000000000600\nQUERY PLAN\n`--SCAN session_archive     (loops=1 rows=120)\n"
+      },
+      {
+        "name": "archive rows",
+        "sql": "SELECT session.argo_id FROM session LEFT JOIN session_ticket_link\n    ON session_ticket_link.session_id = session.argo_id WHERE session.project_id = ?\n    AND session.argo_id IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "runsMs": [
+          0.1158,
+          0.1251,
+          0.1081,
+          0.097,
+          0.0969,
+          0.0961,
+          0.0949,
+          0.0942,
+          0.0936,
+          0.0934,
+          0.0932,
+          0.0996,
+          0.0982,
+          0.1043,
+          0.1004,
+          0.0979,
+          0.093,
+          0.0953,
+          0.0995,
+          0.1078
+        ],
+        "plan": [
+          {
+            "id": 2,
+            "parent": 0,
+            "notused": 54,
+            "detail": "SEARCH session USING COVERING INDEX session_list_order (project_id=?)"
+          }
+        ],
+        "scanStats": "00000000-0000-4000-8000-000000000600\n00000000-0000-4000-8000-000000000599\n00000000-0000-4000-8000-000000000598\n00000000-0000-4000-8000-000000000597\n00000000-0000-4000-8000-000000000596\n00000000-0000-4000-8000-000000000595\n00000000-0000-4000-8000-000000000594\n00000000-0000-4000-8000-000000000593\n00000000-0000-4000-8000-000000000592\n00000000-0000-4000-8000-000000000591\n00000000-0000-4000-8000-000000000590\n00000000-0000-4000-8000-000000000589\n00000000-0000-4000-8000-000000000588\n00000000-0000-4000-8000-000000000587\n00000000-0000-4000-8000-000000000586\n00000000-0000-4000-8000-000000000585\n00000000-0000-4000-8000-000000000584\n00000000-0000-4000-8000-000000000583\n00000000-0000-4000-8000-000000000582\n00000000-0000-4000-8000-000000000581\n00000000-0000-4000-8000-000000000580\n00000000-0000-4000-8000-000000000579\n00000000-0000-4000-8000-000000000578\n00000000-0000-4000-8000-000000000577\n00000000-0000-4000-8000-000000000576\n00000000-0000-4000-8000-000000000575\n00000000-0000-4000-8000-000000000574\n00000000-0000-4000-8000-000000000573\n00000000-0000-4000-8000-000000000572\n00000000-0000-4000-8000-000000000571\n00000000-0000-4000-8000-000000000570\n00000000-0000-4000-8000-000000000569\n00000000-0000-4000-8000-000000000568\n00000000-0000-4000-8000-000000000567\n00000000-0000-4000-8000-000000000566\n00000000-0000-4000-8000-000000000565\n00000000-0000-4000-8000-000000000564\n00000000-0000-4000-8000-000000000563\n00000000-0000-4000-8000-000000000562\n00000000-0000-4000-8000-000000000561\n00000000-0000-4000-8000-000000000560\n00000000-0000-4000-8000-000000000559\n00000000-0000-4000-8000-000000000558\n00000000-0000-4000-8000-000000000557\n00000000-0000-4000-8000-000000000556\n00000000-0000-4000-8000-000000000555\n00000000-0000-4000-8000-000000000554\n00000000-0000-4000-8000-000000000553\n00000000-0000-4000-8000-000000000552\n00000000-0000-4000-8000-000000000551\n00000000-0000-4000-8000-000000000550\n00000000-0000-4000-8000-000000000549\n00000000-0000-4000-8000-000000000548\n00000000-0000-4000-8000-000000000547\n00000000-0000-4000-8000-000000000546\n00000000-0000-4000-8000-000000000545\n00000000-0000-4000-8000-000000000544\n00000000-0000-4000-8000-000000000543\n00000000-0000-4000-8000-000000000542\n00000000-0000-4000-8000-000000000541\n00000000-0000-4000-8000-000000000540\n00000000-0000-4000-8000-000000000539\n00000000-0000-4000-8000-000000000538\n00000000-0000-4000-8000-000000000537\n00000000-0000-4000-8000-000000000536\n00000000-0000-4000-8000-000000000535\n00000000-0000-4000-8000-000000000534\n00000000-0000-4000-8000-000000000533\n00000000-0000-4000-8000-000000000532\n00000000-0000-4000-8000-000000000531\n00000000-0000-4000-8000-000000000530\n00000000-0000-4000-8000-000000000529\n00000000-0000-4000-8000-000000000528\n00000000-0000-4000-8000-000000000527\n00000000-0000-4000-8000-000000000526\n00000000-0000-4000-8000-000000000525\n00000000-0000-4000-8000-000000000524\n00000000-0000-4000-8000-000000000523\n00000000-0000-4000-8000-000000000522\n00000000-0000-4000-8000-000000000521\n00000000-0000-4000-8000-000000000520\n00000000-0000-4000-8000-000000000519\n00000000-0000-4000-8000-000000000518\n00000000-0000-4000-8000-000000000517\n00000000-0000-4000-8000-000000000516\n00000000-0000-4000-8000-000000000515\n00000000-0000-4000-8000-000000000514\n00000000-0000-4000-8000-000000000513\n00000000-0000-4000-8000-000000000512\n00000000-0000-4000-8000-000000000511\n00000000-0000-4000-8000-000000000510\n00000000-0000-4000-8000-000000000509\n00000000-0000-4000-8000-000000000508\n00000000-0000-4000-8000-000000000507\n00000000-0000-4000-8000-000000000506\n00000000-0000-4000-8000-000000000505\n00000000-0000-4000-8000-000000000504\n00000000-0000-4000-8000-000000000503\n00000000-0000-4000-8000-000000000502\n00000000-0000-4000-8000-000000000501\n00000000-0000-4000-8000-000000000500\n00000000-0000-4000-8000-000000000499\n00000000-0000-4000-8000-000000000498\n00000000-0000-4000-8000-000000000497\n00000000-0000-4000-8000-000000000496\n00000000-0000-4000-8000-000000000495\n00000000-0000-4000-8000-000000000494\n00000000-0000-4000-8000-000000000493\n00000000-0000-4000-8000-000000000492\n00000000-0000-4000-8000-000000000491\n00000000-0000-4000-8000-000000000490\n00000000-0000-4000-8000-000000000489\n00000000-0000-4000-8000-000000000488\n00000000-0000-4000-8000-000000000487\n00000000-0000-4000-8000-000000000486\n00000000-0000-4000-8000-000000000485\n00000000-0000-4000-8000-000000000484\n00000000-0000-4000-8000-000000000483\n00000000-0000-4000-8000-000000000482\n00000000-0000-4000-8000-000000000481\nQUERY PLAN\n`--SEARCH session USING COVERING INDEX session_list_order (project_id=?)     (loops=1 rows=721)\n"
+      }
+    ],
+    "commitsMs": [
+      0.1303,
+      0.047,
+      0.0627,
+      0.0611,
+      0.0616,
+      0.0408,
+      0.0381,
+      0.0477,
+      0.0643,
+      0.0418,
+      0.0353,
+      0.05,
+      0.0514,
+      0.0425,
+      0.0371,
+      0.0284,
+      0.0337,
+      0.0272,
+      0.0253,
+      0.0256
+    ]
+  }
+}
