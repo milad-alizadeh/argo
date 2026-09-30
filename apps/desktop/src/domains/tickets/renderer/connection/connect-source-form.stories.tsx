@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import { ticketError } from '@/domains/tickets/api/errors'
 import { ada, octocat } from '@/mocks/tickets/renderer-models'
@@ -100,6 +100,10 @@ export const SwitchAccount: Story = {
     const choices = await within(canvasElement.ownerDocument.body).findByRole('listbox')
     await userEvent.click(within(choices).getByRole('option', { name: 'GitHub · hubot' }))
     await expect(args.onSelectAccount).toHaveBeenCalledWith('github:1')
+    // The accessibility check reads the page after play, so the closing list must be gone first.
+    await waitFor(() =>
+      expect(within(canvasElement.ownerDocument.body).queryByRole('listbox')).toBeNull(),
+    )
     const repository = canvas.getByRole('combobox', { name: 'Repository' })
     await expect(repository).not.toHaveAttribute('aria-invalid')
     await expect(canvas.queryByText('Choose a repository.')).toBeNull()
