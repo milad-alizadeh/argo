@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { engine, linearPriorities, prototype, wayfinder } from '@/mocks/tickets/renderer-models'
 import { ticketStatuses } from '@/mocks/tickets/scenario'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
@@ -122,6 +122,10 @@ export const ChangeState: Story = {
       within(menu).getByRole('menuitemradio', { name: 'Closed as not planned' }),
     )
     await expect(args.onChangeStatus).toHaveBeenCalledWith(ticketStatuses('github')[2])
+    // Choosing closes the menu even while the Ticket still reads its old value.
+    await waitFor(() =>
+      expect(within(canvasElement.ownerDocument.body).queryByRole('menu')).toBeNull(),
+    )
   },
 }
 
@@ -166,6 +170,10 @@ export const ChangePriority: Story = {
     await expect(within(menu).getByRole('menuitemradio', { name: 'High' })).toBeChecked()
     await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Urgent' }))
     await expect(args.onChangePriority).toHaveBeenCalledWith({ level: 1, label: 'Urgent' })
+    // Choosing closes the menu even while the Ticket still reads its old value.
+    await waitFor(() =>
+      expect(within(canvasElement.ownerDocument.body).queryByRole('menu')).toBeNull(),
+    )
   },
 }
 

@@ -58,10 +58,25 @@ export const notification = (page: Page) => page.getByRole('region', { name: 'No
 export const room = (run: Run) => run.page.getByRole('main', { name: 'Tickets' })
 
 export async function openRoom(page: Page, room: 'tickets' | 'atlas', projectId = 'project-1') {
+  // The launch redirects `/` to a Project's Sessions, and a hash set before that lands is replaced.
+  await page.waitForFunction(() => /^#\/projects\/[^/]+\//.test(window.location.hash))
   await page.evaluate((hash) => {
     window.location.hash = hash
   }, `#/projects/${projectId}/${room}`)
-  if (room === 'tickets') await page.getByRole('main', { name: 'Tickets' }).waitFor()
+  if (room !== 'tickets') return
+  await page
+    .getByRole('main', { name: 'Tickets' })
+    .waitFor()
+    .catch(async (error: unknown) => {
+      // Names the screen that drew instead, since a CI failure keeps no picture of it.
+      const drawn = await page.evaluate(() => ({
+        hash: window.location.hash,
+        headings: [...document.querySelectorAll('h1, h2, [role="main"]')].map(
+          (element) => element.getAttribute('aria-label') ?? element.textContent?.slice(0, 80),
+        ),
+      }))
+      throw new Error(`The Tickets room never drew: ${JSON.stringify(drawn)}`, { cause: error })
+    })
 }
 
 // The keys of the backlog's rows in order: `#607` on GitHub, `ENG-1` on Linear.

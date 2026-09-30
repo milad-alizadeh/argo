@@ -61,7 +61,11 @@ export function PriorityMenu({
       <DropdownMenuContent align="start" className="w-auto">
         <DropdownMenuRadioGroup onValueChange={choose} value={priorityValue(priority)}>
           {options.map((option) => (
-            <DropdownMenuRadioItem key={priorityValue(option)} value={priorityValue(option)}>
+            <DropdownMenuRadioItem
+              closeOnClick
+              key={priorityValue(option)}
+              value={priorityValue(option)}
+            >
               <PriorityIcon priority={option} />
               {option?.label ?? NO_PRIORITY_LABEL}
             </DropdownMenuRadioItem>

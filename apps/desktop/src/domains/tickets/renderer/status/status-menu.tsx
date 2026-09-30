@@ -55,7 +55,7 @@ export function StatusMenu({
       <DropdownMenuContent align="start" className="w-auto">
         <DropdownMenuRadioGroup onValueChange={choose} value={status.id}>
           {statuses.map((option) => (
-            <DropdownMenuRadioItem key={option.id} value={option.id}>
+            <DropdownMenuRadioItem closeOnClick key={option.id} value={option.id}>
               <StatusIcon status={option} statuses={statuses} />
               {option.name}
             </DropdownMenuRadioItem>
