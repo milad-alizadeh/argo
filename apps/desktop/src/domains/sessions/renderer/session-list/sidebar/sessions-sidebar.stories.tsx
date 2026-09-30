@@ -65,7 +65,7 @@ const initialSyncStatus: SessionSyncStatus = {
 
 type SessionListRead = Required<RouterInputs['sessionList']>
 type SessionListHandler = (read: SessionListRead) => Promise<SessionListResult | SessionError>
-type SessionUpdateHandler = (update: RouterInputs['sessionUpdate']) => Promise<Session>
+type SessionUpdateHandler = (update: RouterInputs['sessionUpdate']) => Promise<Session[]>
 type Listener = Parameters<typeof window.argo.trpcSubscribe>[1]
 
 // Every Session List read and Session update a story's host answered, in order.
@@ -79,7 +79,7 @@ function listPage(sessions: readonly Session[], read: SessionListRead): SessionL
   return { total: sessions.length, rows: sessions.slice(read.offset, read.offset + read.limit) }
 }
 
-function missingUpdate(): Promise<Session> {
+function missingUpdate(): Promise<Session[]> {
   return Promise.reject(new Error('This story answers no Session update.'))
 }
 
@@ -156,17 +156,17 @@ function withSessionsHost(initialSessions: readonly Session[]) {
   }
   const restore = withSessionListHost(
     async (read) => storySessionPage(sessions, read),
-    async ({ sessionId, title, archived }) => {
-      const current = sessions.find(({ id }) => id === sessionId)
-      if (current === undefined) throw new Error(`No Session ${sessionId}.`)
-      const updated = {
-        ...current,
-        customTitle: title ?? current.customTitle,
-        title: title === undefined ? current.title : { text: title, source: 'custom' as const },
-        archived: archived ?? current.archived,
-      }
-      store([updated])
-      announceSessionListChange([sessionId])
+    async ({ sessionIds, title, archived }) => {
+      const updated = sessions
+        .filter(({ id }) => sessionIds.includes(id))
+        .map((current) => ({
+          ...current,
+          customTitle: title ?? current.customTitle,
+          title: title === undefined ? current.title : { text: title, source: 'custom' as const },
+          archived: archived ?? current.archived,
+        }))
+      store(updated)
+      announceSessionListChange(updated.map(({ id }) => id))
       return updated
     },
   )
@@ -181,7 +181,7 @@ function withSessionsHost(initialSessions: readonly Session[]) {
 
 // The rename the sidebar sends: one Session update, which the host stores and announces.
 async function renameThroughSessionUpdate(renamed: Session, name: string) {
-  await trpcClient.sessionUpdate.mutate({ sessionId: renamed.id, title: name })
+  await trpcClient.sessionUpdate.mutate({ sessionIds: [renamed.id], title: name })
 }
 
 type SessionListHarnessArgs = SessionListActions & { selectedSessionId: SessionId | null }
@@ -1106,17 +1106,15 @@ export const BulkArchiveAndUndoUpdateEachSession: Story = {
     await userEvent.click(await within(document.body).findByRole('menuitem', { name: 'Archive' }))
     await expect(await canvas.findByText('No Sessions found')).toBeInTheDocument()
     await expect(sessionUpdates.mock.calls.map(([update]) => update)).toEqual([
-      { sessionId: 'prose', archived: true },
-      { sessionId: 'second-session', archived: true },
+      { sessionIds: ['prose', 'second-session'], archived: true },
     ])
     await userEvent.click(await within(document.body).findByRole('button', { name: 'Undo' }))
     await expect(
       await canvas.findByRole('button', { name: /Read the Session transcript/ }),
     ).toBeVisible()
     await expect(canvas.getByRole('button', { name: /A second Session/ })).toBeVisible()
-    await expect(sessionUpdates.mock.calls.slice(2).map(([update]) => update)).toEqual([
-      { sessionId: 'prose', archived: false },
-      { sessionId: 'second-session', archived: false },
+    await expect(sessionUpdates.mock.calls.slice(1).map(([update]) => update)).toEqual([
+      { sessionIds: ['prose', 'second-session'], archived: false },
     ])
     await expect(sessionListReads.mock.calls.length).toBeGreaterThan(reads)
   },

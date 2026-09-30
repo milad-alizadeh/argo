@@ -15,8 +15,8 @@ export async function proveClaudeRename(page, { backend, transcripts }) {
   const [beforeRename] = await rosterRow(page, sessionId)
   assert.deepEqual(beforeRename?.title, { text: prompt, source: 'first-prompt' })
 
-  const renamed = await updateSession(page, { sessionId, title: RENAMED })
-  assert.equal(renamed.customTitle, RENAMED)
+  const [renamed] = await updateSession(page, { sessionIds: [sessionId], title: RENAMED })
+  assert.equal(renamed?.customTitle, RENAMED)
 
   const folder = path.join(transcripts, 'mock-claude')
   await waitFor(async () => {

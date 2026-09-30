@@ -31,9 +31,9 @@ test('archiving moves a Session from the active filter to the archived one and r
   try {
     assert.deepEqual(await idsIn(list, 'active'), [IDS[0]])
 
-    const row = await update({ sessionId: IDS[0], archived: true })
+    const [row] = await update({ sessionIds: [IDS[0]], archived: true })
 
-    assert.deepEqual({ id: row.id, archived: row.archived }, { id: IDS[0], archived: true })
+    assert.deepEqual({ id: row?.id, archived: row?.archived }, { id: IDS[0], archived: true })
     assert.deepEqual(await idsIn(list, 'active'), [])
     assert.deepEqual(await idsIn(list, 'archived'), [IDS[0]])
     assert.deepEqual(await idsIn(list, 'all'), [IDS[0]])
@@ -45,10 +45,10 @@ test('archiving moves a Session from the active filter to the archived one and r
 test('unarchiving puts a Session back on the active filter', async () => {
   const { client, list, update } = callerWithOneSession()
   try {
-    await update({ sessionId: IDS[0], archived: true })
-    const row = await update({ sessionId: IDS[0], archived: false })
+    await update({ sessionIds: [IDS[0]], archived: true })
+    const [row] = await update({ sessionIds: [IDS[0]], archived: false })
 
-    assert.equal(row.archived, false)
+    assert.equal(row?.archived, false)
     assert.deepEqual(await idsIn(list, 'active'), [IDS[0]])
     assert.deepEqual(await idsIn(list, 'archived'), [])
   } finally {
@@ -59,19 +59,44 @@ test('unarchiving puts a Session back on the active filter', async () => {
 test('a rename goes to the Harness, then stores the custom title', async () => {
   const { client, update, renames } = callerWithOneSession()
   try {
-    const row = await update({ sessionId: IDS[0], title: 'Renamed' })
+    const [row] = await update({ sessionIds: [IDS[0]], title: 'Renamed' })
 
     assert.deepEqual(renames, [{ harness: 'claude', nativeId: 'native-1', title: 'Renamed' }])
-    assert.deepEqual(row.title, { text: 'Renamed', source: 'custom' })
+    assert.deepEqual(row?.title, { text: 'Renamed', source: 'custom' })
   } finally {
     client.close()
   }
 })
 
-test('an unknown Session is NOT_FOUND', async () => {
+test('archiving several Sessions returns the known ones and skips an unknown ID', async () => {
+  const { client, list, update } = callerWithOneSession()
+  try {
+    const rows = await update({ sessionIds: [IDS[0], IDS[1]], archived: true })
+
+    assert.deepEqual(
+      rows.map(({ id }) => id),
+      [IDS[0]],
+    )
+    assert.deepEqual(await idsIn(list, 'archived'), [IDS[0]])
+  } finally {
+    client.close()
+  }
+})
+
+test('a title for more than one Session is rejected before the Harness sees it', async () => {
   const { client, update, renames } = callerWithOneSession()
   try {
-    await assert.rejects(update({ sessionId: IDS[1], title: 'Renamed' }), (error) => {
+    await assert.rejects(update({ sessionIds: [IDS[0], IDS[1]], title: 'Renamed' }))
+    assert.deepEqual(renames, [])
+  } finally {
+    client.close()
+  }
+})
+
+test('renaming an unknown Session is NOT_FOUND', async () => {
+  const { client, update, renames } = callerWithOneSession()
+  try {
+    await assert.rejects(update({ sessionIds: [IDS[1]], title: 'Renamed' }), (error) => {
       assert.ok(error instanceof TRPCError)
       assert.equal(error.code, 'NOT_FOUND')
       return true

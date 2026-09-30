@@ -1,5 +1,5 @@
 import { initTRPC, TRPCError } from '@trpc/server'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { sessionTable } from '@/database/session/schema'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
@@ -8,11 +8,15 @@ import { readSessionRows, type SessionListContext, sessionListRowSchema } from '
 import { updateSession } from './session-update'
 
 const t = initTRPC.create()
-const sessionUpdateInputSchema = z.strictObject({
-  sessionId: identifierSchema,
-  title: z.string().min(1).optional(),
-  archived: z.boolean().optional(),
-})
+const sessionUpdateInputSchema = z
+  .strictObject({
+    sessionIds: z.array(identifierSchema).min(1),
+    title: z.string().min(1).optional(),
+    archived: z.boolean().optional(),
+  })
+  .refine((input) => input.title === undefined || input.sessionIds.length === 1, {
+    message: 'A title renames exactly one Session.',
+  })
 
 export type SessionUpdateProcedureContext = SessionListContext & {
   rename: (request: { harness: Harness; nativeId: string; title: string }) => Promise<void>
@@ -28,20 +32,19 @@ function readSession(context: SessionUpdateProcedureContext, sessionId: string) 
   return { ...session, harness: harnessSchema.parse(session.harness) }
 }
 
-// Renames or archives one saved Session and returns its row. A title goes to the Harness first.
+// Renames one saved Session or archives several, and returns the updated rows. A title goes to the
+// Harness first; an unknown ID is skipped.
 export function sessionUpdateProcedure(context: SessionUpdateProcedureContext) {
   return t.procedure
     .input(sessionUpdateInputSchema)
-    .output(sessionListRowSchema)
+    .output(z.array(sessionListRowSchema))
     .mutation(async ({ input }) => {
-      const session = readSession(context, input.sessionId)
-      if (input.title !== undefined) await context.rename({ ...session, title: input.title })
-      updateSession(context, input.sessionId, {
-        customTitle: input.title,
-        archived: input.archived,
-      })
-      const [row] = readSessionRows(context, eq(sessionTable.argoId, input.sessionId))
-      if (row === undefined) throw new TRPCError({ code: 'NOT_FOUND', message: 'missing-session' })
-      return row
+      const [renamed] = input.sessionIds
+      if (input.title !== undefined && renamed !== undefined)
+        await context.rename({ ...readSession(context, renamed), title: input.title })
+      const updated = input.sessionIds.filter((sessionId) =>
+        updateSession(context, sessionId, { customTitle: input.title, archived: input.archived }),
+      )
+      return readSessionRows(context, inArray(sessionTable.argoId, updated))
     })
 }

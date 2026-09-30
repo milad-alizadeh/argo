@@ -191,10 +191,10 @@ test('renames a saved Session through sessionUpdate after the Harness accepts it
 
   await expect(
     createAppRouter(dependencies).createCaller({}).sessionUpdate({
-      sessionId: '00000000-0000-4000-8000-000000000002',
+      sessionIds: ['00000000-0000-4000-8000-000000000002'],
       title: 'Confirmed title',
     }),
-  ).resolves.toMatchObject({ customTitle: 'Confirmed title' })
+  ).resolves.toMatchObject([{ customTitle: 'Confirmed title' }])
   expect(renamed).toEqual([
     {
       harness: 'claude',
@@ -229,7 +229,7 @@ test('keeps the existing title when the Harness rejects a rename', async () => {
 
   await expect(
     createAppRouter(dependencies).createCaller({}).sessionUpdate({
-      sessionId: '00000000-0000-4000-8000-000000000003',
+      sessionIds: ['00000000-0000-4000-8000-000000000003'],
       title: 'Rejected title',
     }),
   ).rejects.toThrow('Harness rejected the rename.')
@@ -255,7 +255,7 @@ test('accepts a later Harness sync that changes or clears a confirmed custom tit
   const caller = createAppRouter(dependencies).createCaller({})
 
   await caller.sessionUpdate({
-    sessionId: '00000000-0000-4000-8000-000000000004',
+    sessionIds: ['00000000-0000-4000-8000-000000000004'],
     title: 'Confirmed title',
   })
   saveSessionBatch(database, 'claude', [

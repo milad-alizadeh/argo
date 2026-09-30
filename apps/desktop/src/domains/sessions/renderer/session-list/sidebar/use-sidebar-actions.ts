@@ -26,7 +26,7 @@ export function useSidebarActions() {
     ),
 
     rename: useCallback(async (session: Session, name: string) => {
-      await trpcClient.sessionUpdate.mutate({ sessionId: session.id, title: name })
+      await trpcClient.sessionUpdate.mutate({ sessionIds: [session.id], title: name })
     }, []),
 
     select: useCallback(

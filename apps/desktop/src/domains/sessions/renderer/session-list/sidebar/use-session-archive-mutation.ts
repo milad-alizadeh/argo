@@ -12,17 +12,12 @@ type ArchiveSetOutcome = { applied: SessionId[]; failed: SessionId[] }
 // — a manual dismiss and the timeout both count as "the archive stands."
 const UNDO_TOAST_TIMEOUT_MS = 8000
 
-// One Session update per id, in both directions (#2194): `archived: true` is the bulk action and
-// `archived: false` its Undo. A Session that fails comes back in `failed`, so it never sinks the batch.
+// One Session update for every id, in both directions (#2194): `archived: true` is the bulk action
+// and `archived: false` its Undo. An id main did not update comes back in `failed`.
 function useSessionArchiveMutation() {
   return useMutation<ArchiveSetOutcome, Error, { sessionIds: SessionId[]; archived: boolean }>({
     mutationFn: async ({ sessionIds, archived }) => {
-      const outcomes = await Promise.allSettled(
-        sessionIds.map((sessionId) => trpcClient.sessionUpdate.mutate({ sessionId, archived })),
-      )
-      const rows = outcomes.flatMap((outcome) =>
-        outcome.status === 'fulfilled' ? [outcome.value] : [],
-      )
+      const rows = await trpcClient.sessionUpdate.mutate({ sessionIds, archived }).catch(() => [])
       const applied = new Set(rows.map((row) => row.id))
       return {
         applied: sessionIds.filter((sessionId) => applied.has(sessionId)),

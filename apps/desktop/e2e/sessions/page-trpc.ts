@@ -140,7 +140,7 @@ export function feedRows(reading: SessionFeedReading) {
 
 export async function updateSession(
   page: Page,
-  input: { sessionId: string; title?: string; archived?: boolean },
+  input: { sessionIds: string[]; title?: string; archived?: boolean },
 ) {
-  return trpcCall<SessionRow>(page, { path: 'sessionUpdate', type: 'mutation', input })
+  return trpcCall<SessionRow[]>(page, { path: 'sessionUpdate', type: 'mutation', input })
 }

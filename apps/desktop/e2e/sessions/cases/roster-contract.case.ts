@@ -2,14 +2,14 @@ import assert from 'node:assert/strict'
 import { feedRows, sessionFeed, sessionRows, updateSession } from '../page-trpc'
 
 async function proveArchiveRoundTrip(page, sessionId) {
-  const archived = await updateSession(page, { sessionId, archived: true })
-  assert.equal(archived.archived, true)
+  const [archived] = await updateSession(page, { sessionIds: [sessionId], archived: true })
+  assert.equal(archived?.archived, true)
   const afterArchive = await sessionRows(page)
   assert.ok(!afterArchive.some((session) => session.id === sessionId))
   const archivedPage = await sessionRows(page, 'archived')
   assert.equal(archivedPage.find((session) => session.id === sessionId)?.archived, true)
-  const restored = await updateSession(page, { sessionId, archived: false })
-  assert.equal(restored.archived, false)
+  const [restored] = await updateSession(page, { sessionIds: [sessionId], archived: false })
+  assert.equal(restored?.archived, false)
   const afterRestore = await sessionRows(page)
   assert.ok(afterRestore.some((session) => session.id === sessionId))
 }
@@ -29,7 +29,10 @@ export async function proveContract(page) {
   await page.waitForFunction(() => typeof window.argo?.trpc === 'function')
   await page.locator(`nav[aria-label="Sessions"] button[data-session-id="${first.id}"]`).waitFor()
 
-  await assert.rejects(updateSession(page, { sessionId: 'not-a-session', archived: true }))
+  assert.deepEqual(
+    await updateSession(page, { sessionIds: ['not-a-session'], archived: true }),
+    [],
+  )
 
   const reading = await sessionFeed(page, first.id)
   assert.equal(reading.type, 'session.feed.reading')
