@@ -5,10 +5,7 @@ import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import {
-  ClaudeModelCatalogCache,
-  readClaudeModelCatalog,
-} from '@/harnesses/claude/agent-sdk/model-catalog'
+import { readClaudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
 import { writeMockClaude } from './mock-claude-cli.ts'
 
@@ -21,28 +18,23 @@ test('the Claude mock exposes models and modes through the SDK catalog reader', 
   try {
     const transcripts = path.join(root, 'transcripts')
     const executablePath = await writeMockClaude(root, transcripts)
-    const catalog = await readClaudeModelCatalog({
-      executablePath,
-      cache: new ClaudeModelCatalogCache(),
-    })
+    const info = await readClaudeHarnessInfo(executablePath)
+    assert.equal(info.availability, 'available')
+    if (info.availability !== 'available') return
 
     assert.deepEqual(
-      catalog?.data.map(({ value, supportedEffortLevels }) => ({ value, supportedEffortLevels })),
+      info.models.map(({ value, efforts }) => ({ value, efforts })),
       [
-        { value: 'fable', supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'] },
-        { value: 'opus', supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'] },
-        { value: 'sonnet', supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'] },
-        { value: 'haiku', supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'] },
+        { value: 'fable', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] },
+        { value: 'opus', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] },
+        { value: 'sonnet', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] },
+        { value: 'haiku', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] },
       ],
     )
-    assert.deepEqual(catalog?.supportedPermissionModes, [
-      'acceptEdits',
-      'auto',
-      'bypassPermissions',
-      'manual',
-      'dontAsk',
-      'plan',
-    ])
+    assert.deepEqual(
+      info.modes.map(({ value }) => value),
+      ['acceptEdits', 'auto', 'bypassPermissions', 'manual', 'dontAsk', 'plan'],
+    )
   } finally {
     await rm(root, { recursive: true, force: true })
   }

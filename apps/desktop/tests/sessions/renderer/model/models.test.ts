@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { sessionFeedRowSchema } from '@/domains/sessions/api/feed/feed-rows'
-import { sessionRosterRowSchema } from '@/domains/sessions/renderer/model/models'
-import { sessionRosterRow } from '@/mocks/sessions/session-rows'
+import { sessionListRowSchema } from '@/domains/sessions/main/api/session-list'
+import { sessionRow } from '@/mocks/sessions/session-rows'
 
-const roster = sessionRosterRow({
-  id: 'session-one',
+const roster = sessionRow({
+  id: '0f7c8a3e-5b1d-4c2a-9e64-2d1b7a8c9f10',
   cwd: null,
-  posture: 'managed',
+  posture: 'live',
   status: 'idle',
   title: null,
 })
@@ -19,7 +19,7 @@ test('accepts only complete Roster rows', () => {
     [{ ...roster, archived: 'false' }, false],
     [{ ...roster, extra: true }, false],
   ] as const) {
-    assert.equal(sessionRosterRowSchema.safeParse(value).success, accepted)
+    assert.equal(sessionListRowSchema.safeParse(value).success, accepted)
   }
 })
 
