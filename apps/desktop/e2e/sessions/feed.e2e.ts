@@ -17,7 +17,6 @@ import { proveSessionCreatedByClick } from './cases/create.case'
 import { proveDelegationCards } from './cases/delegation-card.case'
 import { proveSessionDiagram } from './cases/diagram.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
-import { provePackagedIndexRecovery } from './cases/index-recovery.case'
 import { proveLiveFeed } from './cases/live-feed.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
 import { proveSessionPlan } from './cases/plan.case'
@@ -314,14 +313,6 @@ test.describe('session-claude-rename', () => {
 
 test('session-codex-thread-name', async ({ session }) => {
   await proveCodexThreadName(session.page(), session.fixture.codexTranscripts)
-})
-
-// The session index cache this recovers was removed in #2717; Sessions live in argo.sqlite.
-test.fixme('session-index-recovery', async ({ session }) => {
-  await provePackagedIndexRecovery(session.page(), {
-    restart: session.restart,
-    userData: session.fixture.userData,
-  })
 })
 
 test.describe('with a slow Harness', () => {

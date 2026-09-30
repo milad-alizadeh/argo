@@ -106,8 +106,7 @@ async function seedSession(root: string): Promise<string> {
   return userData
 }
 
-// The composer offers Interrupt, not Send, while a Turn runs: the queued-Turn tray went in #2792.
-test.fixme('packaged Feed replays ordered Claude live activity for a stored Session', async ({
+test('packaged Feed replays ordered Claude live activity for a stored Session', async ({
   root,
   applicationUnderTest,
 }) => {
@@ -133,8 +132,6 @@ test.fixme('packaged Feed replays ordered Claude live activity for a stored Sess
     await expect(feed.getByRole('button', { name: /Read/ })).toBeVisible()
     await expect(feed.getByText('Permission needed')).toHaveCount(0)
     await expect(feed.getByText('Unanswered?', { exact: true })).toHaveCount(0)
-    await page.getByRole('combobox', { name: 'Message' }).fill('Continue')
-    await expect(page.getByRole('button', { name: 'Send message' })).toBeEnabled()
     const rows = await feed.locator('[data-feed-row]').allTextContents()
     expect(rows.map((row) => row.trim())).toEqual([
       expect.stringContaining('Inspect this'),
