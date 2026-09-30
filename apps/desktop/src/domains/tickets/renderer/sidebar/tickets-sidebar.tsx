@@ -6,8 +6,8 @@ import {
   useOpenAccountsDialog,
 } from '@/domains/accounts/renderer'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
-import type { ConnectionSummary } from '../hooks/ticket-reply'
-import { useTicketsView } from '../hooks/use-tickets-view'
+import type { ConnectionSummary } from '../hooks'
+import { useTicketsView } from '../hooks'
 import type { TicketWorkPath } from './ticket-work-path'
 import { ticketWorkPath } from './ticket-work-path'
 import { TicketWorkPathSidebar } from './ticket-work-path-sidebar'

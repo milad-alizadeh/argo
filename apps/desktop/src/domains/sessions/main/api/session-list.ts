@@ -8,11 +8,8 @@ import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import { feedActivitySchema } from '@/domains/sessions/api/feed-activity'
 import { sessionShellCommandSchema } from '@/domains/sessions/api/session-shell-command'
 import { sessionTitleSchema } from '@/domains/sessions/api/session-title'
-import { type StoredSubagent, storedSessionSubagents } from '../database/session-subagents'
-import {
-  type LiveSessionSupervisorActor,
-  liveSessionActorFor,
-} from '../live/live-session-supervisor-machine'
+import { type StoredSubagent, storedSessionSubagents } from '../database'
+import { type LiveSessionSupervisorActor, liveSessionActorFor } from '../live'
 import { storedActivity } from './session-activities'
 import type { SessionRosterChanges } from './session-roster-changes'
 import type { WatchedSessionStatus } from './watched-session-status'

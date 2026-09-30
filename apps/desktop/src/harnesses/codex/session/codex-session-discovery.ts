@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { DiscoveredSession, SessionDiscovery } from '@/domains/sessions/api/session-discovery'
-import type { CodexRequest } from '../app-server/codex-app-server-client'
+import type { CodexRequest } from '../app-server'
 
 const threadSchema = z
   .object({

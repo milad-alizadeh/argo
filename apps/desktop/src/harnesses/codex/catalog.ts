@@ -5,8 +5,8 @@ import {
   invalidCatalogResponse,
   unavailable,
 } from '@/harnesses/harness-catalog'
-import type { CodexRequest } from './app-server/codex-app-server-client'
-import copy from './locales/en.json'
+import type { CodexRequest } from './app-server'
+import { en as copy } from './locales'
 
 const codexModelEffortSchema = z.object({
   reasoningEffort: z.string().min(1),

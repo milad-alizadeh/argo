@@ -6,8 +6,8 @@ import {
   InspectorSplit,
 } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import { SessionTitle } from '../prompt/session-title'
-import { sessionName } from '../session-list/rows/session-list-rows'
+import { SessionTitle } from '../prompt'
+import { sessionName } from '../session-list'
 import type { Session } from '../types'
 import { SESSION_SPLIT } from './session-screen-layout'
 import type { SessionWorkspaceIdentity } from './session-screen-workspace'

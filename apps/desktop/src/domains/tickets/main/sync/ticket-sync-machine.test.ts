@@ -3,6 +3,7 @@ import { test } from 'vitest'
 import { createActor, fromPromise, toPromise } from 'xstate'
 import type { Database } from '@/database/database'
 import type { Ticket, TicketStatus } from '@/domains/tickets/api/ticket'
+import type { ScanStart } from '../database/ticket-sync-records'
 import type { TicketPage } from '../sources'
 import {
   type CompleteInput,
@@ -12,7 +13,6 @@ import {
   type SavePageInput,
   ticketSyncMachine,
 } from './ticket-sync-machine'
-import type { ScanStart } from './ticket-sync-records'
 
 const TARGET = { provider: 'github', scope: 'octocat/hello-world', kind: 'active' } as const
 const OPEN: TicketStatus = { id: 'open', name: 'Open', category: 'unstarted' }

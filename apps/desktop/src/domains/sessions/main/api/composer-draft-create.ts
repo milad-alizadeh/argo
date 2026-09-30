@@ -8,7 +8,7 @@ import {
   composerDraftValueSchema,
   insertComposerDraft,
   readComposerDraftForTarget,
-} from '../database/composer-draft'
+} from '../database'
 
 const t = initTRPC.create()
 const inputSchema = z.strictObject({

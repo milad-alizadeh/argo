@@ -4,7 +4,7 @@ import { HarnessLogo } from '@/domains/sessions/renderer'
 import { harnessShortLabel } from '@/harnesses/presentation-registry'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Card, CardContent } from '@/platform/renderer/components/ui/card'
-import { useHarnessSignIn } from '../hooks/use-harness-sign-in'
+import { useHarnessSignIn } from '../hooks'
 import { HarnessStateBody, STATE_BADGE_VARIANT } from './harness-readiness-row'
 
 // One card per Harness, wired to its own sign-in attempt, so the panel below stays presentational:

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { HistoryChange, HistoryTurn, HistoryTurnMarker } from '@/harnesses/registration'
-import type { SubAgentActivityKind } from '../app-server/protocol-generated/v2/sub-agent-activity-kind'
+import type { SubAgentActivityKind } from '../app-server'
 import { codexSubagentContent } from './codex-subagent-content'
 import { codexTaskNotification } from './codex-task-notification'
 

@@ -13,7 +13,7 @@ import { workspace } from '@/database/workspace/schema'
 import {
   type LiveSessionSupervisorActor,
   SessionSubmitRejectedError,
-} from '@/domains/sessions/main/live/live-session-supervisor-machine'
+} from '@/domains/sessions/main/live'
 import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { type AppRouterDependencies, createAppRouter } from './trpc-router'
 

@@ -13,12 +13,12 @@ import type { Database } from '@/database/database'
 import type { SessionDiscovery } from '@/domains/sessions/api/session-discovery'
 import type { SessionHistoryReader } from '@/domains/sessions/api/session-history'
 import type { Harness } from '@/harnesses/harness'
+import { refreshSessionSubagents } from '../database'
 import {
   type SessionSyncStatus,
   type SessionSyncStatusStore,
   sessionSyncStatusSchema,
-} from '../api/session-sync-status'
-import { refreshSessionSubagents } from '../database/session-subagents'
+} from '../session-sync-status'
 import { sessionSyncMachine } from './session-sync-machine'
 import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
 

@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
 import { Button } from '@/platform/renderer/components/ui/button'
-import type { SessionPlan } from '../../model/models'
+import type { SessionPlan } from '../../model'
 import type { ComposerEditing } from '../editing/composer-editing'
 import { ComposerForm, type ComposerFormProps } from '../layout/composer-form'
 import type { TicketChoice } from '../references/context-picker/context-picker-contents'

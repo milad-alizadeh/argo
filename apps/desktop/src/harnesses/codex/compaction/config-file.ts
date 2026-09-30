@@ -2,7 +2,7 @@
 // hand-written comments survive, which a TOML parse and reserialize would lose.
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { autoCompactLimitSchema, DEFAULT_AUTO_COMPACT_LIMIT } from './auto-compact-limit'
+import { autoCompactLimitSchema, DEFAULT_AUTO_COMPACT_LIMIT } from '../auto-compact-limit'
 
 const KEY = 'model_auto_compact_token_limit'
 

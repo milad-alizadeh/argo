@@ -3,12 +3,12 @@
 import { assign, fromPromise, setup } from 'xstate'
 import type { Database } from '@/database/database'
 import type { TicketErrorCode } from '@/domains/tickets/api/errors'
-import { saveSearchedTickets } from '../database/ticket-upsert'
 import {
   beginTicketSearch,
   failTicketSearch,
+  saveSearchedTickets,
   type TicketSearchTarget,
-} from './ticket-search-records'
+} from '../database'
 import { commit, type TicketSyncDependencies, type TicketSyncRequest } from './ticket-sync-machine'
 
 export type TicketSearchRequest = TicketSyncRequest & {

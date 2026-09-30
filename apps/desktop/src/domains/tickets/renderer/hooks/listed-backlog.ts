@@ -2,7 +2,7 @@
 import type { UseInfiniteQueryResult } from '@tanstack/react-query'
 import { contractText } from '@/platform/renderer/i18n/contract-text'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
-import { type Backlog, uniqueTickets } from '../lib/backlog'
+import { type Backlog, uniqueTickets } from '../lib'
 import type { TicketPages } from './use-tickets'
 
 export type TicketListing = UseInfiniteQueryResult<TicketPages, ContractFailure>

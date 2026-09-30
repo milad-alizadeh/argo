@@ -8,11 +8,10 @@ import { type Database, databaseMigrationsFolder, openDatabase } from '@/databas
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { sessionArchive } from '@/database/session-archive/schema'
-import { SessionActivities } from '@/domains/sessions/main/api/session-activities'
-import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster-changes'
-import { refreshSessionSubagents } from '@/domains/sessions/main/database/session-subagents'
-import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
-import { saveSessionBatch } from '@/domains/sessions/main/sync/session-sync-records'
+import { SessionActivities, SessionRosterChanges } from '@/domains/sessions/main/api'
+import { refreshSessionSubagents } from '@/domains/sessions/main/database'
+import { SessionEventJournal } from '@/domains/sessions/main/live'
+import { saveSessionBatch } from '@/domains/sessions/main/sync'
 import { type AppRouter, type AppRouterDependencies, createAppRouter } from './trpc-router'
 
 let userData: string

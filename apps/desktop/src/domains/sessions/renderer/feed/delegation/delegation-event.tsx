@@ -1,8 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import type { SessionFeedRow } from '../../types'
-import { WORK_STATE_MARKS } from '../../work/session-work'
-import { readableWorkTitle } from '../../work/work-presentation'
+import { readableWorkTitle, WORK_STATE_MARKS } from '../../work/presentation'
 import { DELEGATION_PHASE_WORK_STATES, type DelegationPhase } from './delegation-facts'
 
 type SubagentRow = Extract<SessionFeedRow, { shape: 'subagent' }>

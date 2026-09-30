@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { sessionTable } from '@/database/session/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import { identifierSchema } from '@/shared/validation'
-import { storedSessionSubagents } from '../database/session-subagents'
+import { storedSessionSubagents } from '../database'
 import {
   coalescedChanges,
   type SessionListContext,

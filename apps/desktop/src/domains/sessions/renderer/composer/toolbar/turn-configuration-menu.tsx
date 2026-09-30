@@ -5,9 +5,8 @@ import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
-import { HarnessLogo } from '../../harness/harness-logo'
-import { HarnessTabs } from '../../harness/harness-tabs'
-import type { HarnessControl } from '../../harness/harnesses'
+import type { HarnessControl } from '../../harness'
+import { HarnessLogo, HarnessTabs } from '../../harness'
 import {
   choiceLabel,
   effortChoices,

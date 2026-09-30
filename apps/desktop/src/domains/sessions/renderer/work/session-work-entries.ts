@@ -3,10 +3,10 @@
 // one entry here keeps the menu from branching on which kind it is drawing.
 import type { TFunction } from 'i18next'
 import type { SessionShellCommand } from '@/domains/sessions/api/session-shell-command'
-import type { SessionSubagent } from '../model/models'
-import { elapsedDuration, subagentWorkState, WORK_STATE_MARKS } from './session-work'
+import type { SessionSubagent } from '../model'
+import { elapsedDuration, subagentWorkState, WORK_STATE_MARKS } from './presentation/session-work'
+import { workPresentation } from './presentation/work-presentation'
 import type { SubagentUsageFacts } from './types'
-import { workPresentation } from './work-presentation'
 
 export type WorkEntry = {
   id: string

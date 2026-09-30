@@ -29,7 +29,7 @@ import {
 import { contractText } from '@/platform/renderer/i18n/contract-text'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { providerPresentation } from '@/providers/presentation-registry'
-import type { TicketScope } from '../hooks/ticket-reply'
+import type { TicketScope } from '../hooks'
 import { offered, type SourceDiscovery, SourceField } from './source-field'
 
 type ConnectTarget = { accountId: string; scope: string }

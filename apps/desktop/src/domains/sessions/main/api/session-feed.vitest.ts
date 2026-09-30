@@ -1,9 +1,10 @@
 import { expect, test, vi } from 'vitest'
 import { sessionTable } from '@/database/session/schema'
-import type { FeedReading } from '@/domains/sessions/api/feed/feed-reading'
+import type { FeedReading } from '@/domains/sessions/api/feed'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import { FEED_TEXT_COALESCE_MS } from '../feed/feed-reader'
-import { SessionEventJournal } from '../live/session-event-journal'
+import { FEED_TEXT_COALESCE_MS } from '../feed'
+import { SessionEventJournal } from '../live'
+import { SessionSyncStatusStore } from '../session-sync-status'
 import { SessionActivities } from './session-activities'
 import {
   command,
@@ -20,7 +21,6 @@ import {
   rowIds,
   sessionId,
 } from './session-feed-harness'
-import { SessionSyncStatusStore } from './session-sync-status'
 
 registerFeedDatabase()
 

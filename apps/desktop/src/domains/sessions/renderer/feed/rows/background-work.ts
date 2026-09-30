@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import type { FeedSubagent } from '@/domains/sessions/api/feed/feed-subagents'
+import type { FeedSubagent } from '@/domains/sessions/api/feed'
 
 export type BackgroundWorkLinks = {
   // With what the row says of it, since a nested Subagent's row is all the Session has of it.

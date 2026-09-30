@@ -6,11 +6,11 @@ import { Button } from '@/platform/renderer/components/ui/button'
 import {
   CodeBlock,
   CodeBlockActions,
+  CodeBlockCopyButton,
   CodeBlockFilename,
   CodeBlockHeader,
   CodeBlockTitle,
-} from '../ai-elements/code-block'
-import { CodeBlockCopyButton } from '../ai-elements/code-block-copy-button'
+} from '../ai-elements'
 
 type ViewButtonReference = RefObject<HTMLButtonElement | null>
 type Text = { copy: string; toggle: string }

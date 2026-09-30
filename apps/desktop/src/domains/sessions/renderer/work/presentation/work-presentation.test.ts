@@ -3,8 +3,8 @@ import { i18n } from '@/renderer/i18n'
 import {
   DELEGATION_PHASE_WORK_STATES,
   type DelegationPhase,
-} from '../feed/delegation/delegation-facts'
-import { delegationEntries } from './session-work-entries'
+} from '../../feed/delegation/delegation-facts'
+import { delegationEntries } from '../session-work-entries'
 import { workPresentation } from './work-presentation'
 
 const t = i18n.getFixedT('en', 'sessions')

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { FeedSubagent } from '@/domains/sessions/api/feed/feed-subagents'
+import type { FeedSubagent } from '@/domains/sessions/api/feed'
 
 // What the reader picked out of the header's work buttons, held against the Session it was picked
 // in: a selection made in one Session says nothing about the next, and keying it this way retires

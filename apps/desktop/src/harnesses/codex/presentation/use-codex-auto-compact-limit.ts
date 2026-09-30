@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { trpc } from '@/platform/renderer/trpc-client'
-import { DEFAULT_AUTO_COMPACT_LIMIT } from '../compaction/auto-compact-limit'
+import { DEFAULT_AUTO_COMPACT_LIMIT } from '../auto-compact-limit'
 
 const target = { harness: 'codex' } as const
 

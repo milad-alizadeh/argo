@@ -6,7 +6,7 @@ import { type Database, openDatabase } from '@/database/database'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import { saveSessionBatch } from '../sync/session-sync-records'
+import { saveSessionBatch } from '../sync'
 import {
   recordLiveSubagents,
   refreshSessionSubagents,

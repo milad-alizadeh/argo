@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { type FeedContent, toolPresentationKindSchema } from './feed-content'
-import copy from './locales/en.json'
+import { en as copy } from './locales'
 
 export const feedActivityBaseSchema = z.strictObject({
   label: z.string(),

@@ -7,7 +7,7 @@ import { contractText } from '@/platform/renderer/i18n/contract-text'
 import { i18n } from '@/platform/renderer/i18n/i18n'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { providerPresentation } from '@/providers/presentation-registry'
-import type { ConnectionSummary } from '../hooks/ticket-reply'
+import type { ConnectionSummary } from '../hooks'
 
 type ProblemAction = { label: string; onClick: () => void; primary: boolean }
 

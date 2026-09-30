@@ -1,6 +1,6 @@
 import { ticketError } from '@/domains/tickets/api/errors'
 import { type Call, readAs } from '../read-as'
-import { projectExists, saveConnection } from './ticket-connection'
+import { projectExists, saveConnection } from '../ticket-connection'
 
 export async function connectSource(call: Call, target: { accountId: string; scope: string }) {
   if (!(await projectExists(call))) return ticketError('missing-project', call.requestId)

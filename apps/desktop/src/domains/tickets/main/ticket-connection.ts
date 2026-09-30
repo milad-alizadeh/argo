@@ -1,8 +1,8 @@
 import { projectNames } from '@/domains/accounts/main'
 import type { TicketConnection } from '@/domains/connections/main'
 import { type TicketErrorCode, ticketError } from '@/domains/tickets/api/errors'
-import { connectionSummary } from '../connection-summary'
-import type { Call } from '../read-as'
+import { connectionSummary } from './connection-summary'
+import type { Call } from './read-as'
 
 type ConnectionState = Awaited<ReturnType<typeof connectionSummary>>['state']
 

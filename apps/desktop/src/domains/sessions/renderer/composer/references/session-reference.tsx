@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { ComposerCommand } from '@/domains/sessions/api/composer-commands'
 import { HARNESS_PRESENTATIONS, harnessLabel } from '@/harnesses/presentation-registry'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
-import type { SessionHarness } from '../../harness/harnesses'
+import type { SessionHarness } from '../../harness'
 import { useHarnessCommands } from './composer-command-registry'
 import { InlineContext } from './inline-context'
 

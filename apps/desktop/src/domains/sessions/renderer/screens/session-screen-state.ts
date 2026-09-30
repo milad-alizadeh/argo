@@ -1,4 +1,4 @@
-import { type HarnessControl, type SessionHarness, sessionHarnessOf } from '../harness/harnesses'
+import { type HarnessControl, type SessionHarness, sessionHarnessOf } from '../harness'
 import type { Session } from '../types'
 
 export function sessionHarness({

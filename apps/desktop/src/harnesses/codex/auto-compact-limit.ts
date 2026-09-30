@@ -1,4 +1,4 @@
-// The value lives in the person's own `config.toml` (config-file.ts), never in git; this module
+// The value lives in the person's own `config.toml` (compaction/config-file.ts), never in git; this module
 // stays free of `node:fs` so the renderer control can import the range.
 import { z } from 'zod'
 

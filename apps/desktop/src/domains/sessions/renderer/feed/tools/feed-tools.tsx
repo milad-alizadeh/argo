@@ -1,9 +1,12 @@
 import { useTranslation } from 'react-i18next'
-import { displayedToolLabel } from '@/domains/sessions/api/feed/displayed-tool-label'
-import type { LiveActivity } from '@/domains/sessions/api/feed/feed-rows'
-import { standsAlone, TOOL_KIND_PRESENTATION } from '@/domains/sessions/api/feed/tool-groups'
+import type { LiveActivity } from '@/domains/sessions/api/feed'
+import {
+  displayedToolLabel,
+  standsAlone,
+  TOOL_KIND_PRESENTATION,
+} from '@/domains/sessions/api/feed'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
-import { TaskItem } from '../../ai-elements/task'
+import { TaskItem } from '../../ai-elements'
 import type { SessionFeedRow } from '../../types'
 import { FeedMarkdown } from '../content/feed-markdown'
 import { LiveActivityText } from '../rows/live-activity-text'

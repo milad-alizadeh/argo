@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest'
-import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
-import { TICKET_SYNC_TIMING } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
+import { SessionSyncStatusStore } from '@/domains/sessions/main/session-sync-status'
+import { TICKET_SYNC_TIMING } from '@/domains/tickets/main/sync'
 import type { HarnessRegistry } from '@/harnesses/registry'
 
 const electron = vi.hoisted(() => ({

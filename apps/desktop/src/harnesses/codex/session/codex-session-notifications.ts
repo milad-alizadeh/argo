@@ -1,4 +1,4 @@
-import type { WireMessage } from '../app-server/codex-app-server-client'
+import type { WireMessage } from '../app-server'
 
 type Params = Record<string, unknown>
 

@@ -9,7 +9,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
-import { HarnessSignInCards } from '../components/harness-sign-in-cards'
+import { HarnessSignInCards } from '../components'
 
 // Nothing in the cockpit can run a Session with no Harness signed in, so this replaces the whole
 // window rather than sitting inside the Roster (#2579, gated the way `EmptyProjectScreen` is).

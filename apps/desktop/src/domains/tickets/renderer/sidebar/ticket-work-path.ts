@@ -1,5 +1,5 @@
 import type { Ticket } from '@/domains/tickets/api/ticket'
-import { openBlockers } from '../lib/backlog'
+import { openBlockers } from '../lib'
 
 export type WorkPathTicket = Pick<Ticket, 'key' | 'title'>
 

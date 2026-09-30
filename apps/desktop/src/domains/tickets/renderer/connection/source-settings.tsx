@@ -16,7 +16,7 @@ import { useContractText } from '@/platform/renderer/i18n/contract-text'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { providerPresentation } from '@/providers/presentation-registry'
-import type { ConnectionSummary } from '../hooks/ticket-reply'
+import type { ConnectionSummary } from '../hooks'
 import { ConnectionStatusMark } from './connection-status-mark'
 
 export type SourceSettingsProps = {

@@ -3,8 +3,8 @@
 // clock rather than this module reading one.
 import type { TFunction } from 'i18next'
 import type { SessionShellCommand, ShellState } from '@/domains/sessions/api/session-shell-command'
-import type { SessionSubagent } from '../model/models'
-import type { SubagentUsageFacts } from './types'
+import type { SessionSubagent } from '../../model'
+import type { SubagentUsageFacts } from '../types'
 
 // What a header button or a Feed block opens: a Subagent with what it spent, or a Shell.
 export type SessionWork =

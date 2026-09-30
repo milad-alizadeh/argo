@@ -3,7 +3,7 @@
 // header control at all.
 import { useTranslation } from 'react-i18next'
 import type { SessionShellCommand } from '@/domains/sessions/api/session-shell-command'
-import type { SessionSubagent } from '../model/models'
+import type { SessionSubagent } from '../model'
 import { delegationEntries, shellEntries } from './session-work-entries'
 import { SessionWorkMenu } from './session-work-menu'
 import type { SubagentUsageFacts } from './types'

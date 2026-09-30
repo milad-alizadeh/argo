@@ -9,7 +9,7 @@ import {
 } from 'lexical'
 import { useEffect, useRef, useState } from 'react'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
-import type { SessionHarness } from '../../harness/harnesses'
+import type { SessionHarness } from '../../harness'
 import {
   activeReference,
   ComposerReferenceMenu,

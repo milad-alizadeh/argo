@@ -1,4 +1,4 @@
-import claudeSpark from '@/harnesses/claude/presentation/claude-spark.svg?url'
+import { claudeSparkUrl as claudeSpark } from '@/harnesses/claude/presentation'
 import type { HarnessPresentation } from '@/harnesses/harness-presentation'
 
 // The agent is Claude behind ACP, so it wears Claude's mark; its name tells the two apart.

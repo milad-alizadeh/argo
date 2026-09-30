@@ -6,7 +6,7 @@ import { ticketContent } from '@/database/ticket-content/schema'
 import { ticketWriteIntent } from '@/database/ticket-write-intent/schema'
 import type { TicketConnection } from '@/domains/connections/main'
 import type { Ticket } from '@/domains/tickets/api/ticket'
-import type { TicketRead } from '../sync/ticket-omitted'
+import type { TicketRead } from '../sync'
 import { DONE, SCOPE, seededDatabase, ticket } from './test-support/ticket-operation-test-fixtures'
 import { accountForScopeFrom, reconcileTicketWriteIntents } from './ticket-write-intent-recovery'
 import {

@@ -6,7 +6,7 @@ import {
   unavailable,
 } from '@/harnesses/harness-catalog'
 import { platformText } from '@/platform/main/i18n'
-import copy from './locales/en.json'
+import { en as copy } from './locales'
 
 const effortLabels: Record<string, string> = {
   low: platformText('harnessCatalog.effort.low'),

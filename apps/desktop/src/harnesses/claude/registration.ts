@@ -8,13 +8,13 @@ import { createClaudeSignInDriver, createSystemClaudeReadiness } from './readine
 import {
   claudeHistoryOwner,
   claudeHistoryTurn,
+  claudeSessionChannelOpener,
+  claudeSessionRenamer,
+  discoverClaudeSessions,
   openClaudeHistoryReader,
-} from './session/claude-history-lines'
-import { claudeSessionChannelOpener } from './session/claude-session-channel'
-import { discoverClaudeSessions } from './session/claude-session-discovery'
-import { readClaudeSessionHistory } from './session/claude-session-history'
-import { claudeSessionRenamer } from './session/claude-session-rename'
-import { readClaudeSkillCommands } from './session/claude-skill-commands'
+  readClaudeSessionHistory,
+  readClaudeSkillCommands,
+} from './session'
 
 export function createClaudeRegistration(): HarnessRegistration<'claude'> {
   const executable =

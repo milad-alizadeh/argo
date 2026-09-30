@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query'
-import { type SessionRosterState, sessionRosterPathKey } from './session-list/session-roster'
+import { type SessionRosterState, sessionRosterPathKey } from './session-roster'
 import type { SessionId } from './types'
 
 export const SESSION_REFRESH_MS = 500

@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/platform/renderer/components/ui/dialog'
-import type { ProjectSummary } from '../hooks/use-projects'
+import type { ProjectSummary } from '../hooks'
 
 type ProjectSettingsDialogProps = {
   project: ProjectSummary

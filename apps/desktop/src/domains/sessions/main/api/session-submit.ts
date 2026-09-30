@@ -7,15 +7,8 @@ import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments
 import { resolveWorkspacePath } from '@/domains/workspaces/main'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
-import {
-  deleteComposerDraft,
-  draftTurnConfigurationSchema,
-  readComposerDraft,
-} from '../database/composer-draft'
-import {
-  type LiveSessionSupervisorActor,
-  SessionSubmitRejectedError,
-} from '../live/live-session-supervisor-machine'
+import { deleteComposerDraft, draftTurnConfigurationSchema, readComposerDraft } from '../database'
+import { type LiveSessionSupervisorActor, SessionSubmitRejectedError } from '../live'
 import type { SessionRenameContext } from './session-rename'
 
 const t = initTRPC.create()

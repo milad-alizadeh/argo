@@ -1,7 +1,7 @@
 import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Progress } from '@/platform/renderer/components/ui/progress'
-import { useObservedFeedReading } from '../feed/use-feed-reading'
+import { useObservedFeedReading } from '../feed'
 import type { Session, SessionId } from '../types'
 import { useArchivedSection } from './archived/use-archived-section'
 import { useSessionListStatus } from './hooks/use-session-list-filter-store'

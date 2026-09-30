@@ -6,7 +6,7 @@ import { sessionTable } from '@/database/session/schema'
 import { workspace } from '@/database/workspace/schema'
 import type { DiscoveredSession } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
-import { createSessionUpsert } from '../database/session-upsert'
+import { createSessionUpsert } from '../database'
 
 type SessionRoot = {
   projectId: string

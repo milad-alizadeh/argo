@@ -1,5 +1,6 @@
-import type { SessionFeedReaderContext } from '../feed/feed-reader'
-import { SessionFeedReaders } from '../feed/feed-reader'
+import type { SessionFeedReaderContext } from '../feed'
+import { SessionFeedReaders } from '../feed'
+import { type SessionSyncStatusStore, sessionSyncStatusProcedure } from '../session-sync-status'
 import { composerDraftCreateProcedure } from './composer-draft-create'
 import { composerDraftReadProcedure } from './composer-draft-read'
 import { composerDraftSaveProcedure } from './composer-draft-save'
@@ -21,7 +22,6 @@ import { type SessionListContext, sessionListProcedure } from './session-list'
 import { type SessionRefreshContext, sessionRefreshProcedure } from './session-refresh'
 import { sessionRenameProcedure } from './session-rename'
 import { type SessionProcedureContext, sessionSubmitProcedure } from './session-submit'
-import { type SessionSyncStatusStore, sessionSyncStatusProcedure } from './session-sync-status'
 import { sessionWorkReadProcedures } from './session-work-reads'
 
 export type SessionApiContext = SessionProcedureContext &

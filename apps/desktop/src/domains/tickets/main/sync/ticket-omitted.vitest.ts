@@ -7,14 +7,15 @@ import { type Database, openDatabase } from '@/database/database'
 import type { TicketErrorCode } from '@/domains/tickets/api/errors'
 import type { Ticket, TicketStatus } from '@/domains/tickets/api/ticket'
 import {
+  beginTicketScan,
+  completeTicketScan,
   readActiveTickets,
   readClosedTickets,
   readSavedTicket,
   readSearchedTickets,
-} from '../database/ticket-queries'
-import { saveListedTickets } from '../database/ticket-upsert'
+  saveListedTickets,
+} from '../database'
 import { resolveOmittedTickets, type TicketRead } from './ticket-omitted'
-import { beginTicketScan, completeTicketScan } from './ticket-sync-records'
 
 const OPEN: TicketStatus = { id: 'open', name: 'Open', category: 'unstarted' }
 const DONE: TicketStatus = { id: 'completed', name: 'Closed as completed', category: 'completed' }

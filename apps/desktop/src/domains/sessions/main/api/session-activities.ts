@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
-import { type LiveActivity, liveActivitySchema } from '@/domains/sessions/api/feed/feed-rows'
+import { type LiveActivity, liveActivitySchema } from '@/domains/sessions/api/feed'
 
 // The activity each Feed last published, stored so the roster draws the same line the Feed does
 // after its reader closes.

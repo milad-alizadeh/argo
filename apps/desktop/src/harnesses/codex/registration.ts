@@ -1,19 +1,20 @@
 import os from 'node:os'
 import path from 'node:path'
 import type { HarnessRegistration } from '@/harnesses/registration'
-import type { CodexAppServerClient } from './app-server/codex-app-server-client'
+import type { CodexAppServerClient } from './app-server'
 import { readCodexHarnessInfo } from './catalog'
-import { readAutoCompactLimit, writeAutoCompactLimit } from './compaction/config-file'
+import { readAutoCompactLimit, writeAutoCompactLimit } from './compaction'
 import { createCodexSignInDriver, createSystemCodexReadiness } from './readiness'
 import {
   codexHistoryOwner,
   codexHistoryTurn,
+  createCodexSessionDiscovery,
+  hasCodexSessionTurn,
   openCodexHistoryReader,
-} from './session/codex-history-lines'
-import { openCodexSessionChannel } from './session/codex-session-channel'
-import { createCodexSessionDiscovery } from './session/codex-session-discovery'
-import { hasCodexSessionTurn, readCodexSessionHistory } from './session/codex-session-history'
-import { readCodexSkillCommands } from './session/codex-skill-commands'
+  openCodexSessionChannel,
+  readCodexSessionHistory,
+  readCodexSkillCommands,
+} from './session'
 
 export function createCodexRegistration(
   client: CodexAppServerClient,

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { Question, QuestionAnswer } from '@/domains/sessions/api/questions'
-import type { RequestID, WireMessage } from '../app-server/codex-app-server-client'
+import type { RequestID, WireMessage } from '../app-server'
 
 const requestBase = z.object({
   threadId: z.string().min(1),

@@ -1,7 +1,7 @@
 import { skipToken, useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { queryClient, type RouterInputs, trpcClient } from '@/platform/renderer/trpc-client'
-import type { SessionListResult, SessionListUpdate } from '../types'
+import type { SessionListResult, SessionListUpdate } from './types'
 
 export type SessionRosterState = { list: SessionListResult | null; failed: boolean }
 type RosterInput = Pick<RouterInputs['sessionList'], 'projectId' | 'search'>

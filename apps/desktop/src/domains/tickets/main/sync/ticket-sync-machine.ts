@@ -5,17 +5,19 @@ import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import type { TicketErrorCode } from '@/domains/tickets/api/errors'
 import type { Ticket, TicketStatus } from '@/domains/tickets/api/ticket'
-import { countClosedListed, saveClosedTickets, saveListedTickets } from '../database/ticket-upsert'
-import type { ListingState, TicketPage } from '../sources'
-import { resolveOmittedTickets, type TicketRead } from './ticket-omitted'
 import {
   beginScan,
   completeClosedPage,
   completeTicketScan,
+  countClosedListed,
   failTicketScan,
   type ScanStart,
+  saveClosedTickets,
+  saveListedTickets,
   type TicketSyncTarget,
-} from './ticket-sync-records'
+} from '../database'
+import type { ListingState, TicketPage } from '../sources'
+import { resolveOmittedTickets, type TicketRead } from './ticket-omitted'
 
 export type PageRead =
   | {

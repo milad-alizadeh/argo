@@ -7,8 +7,8 @@ import { feedSubagents, subagentCompletionRows } from '@/domains/sessions/api/fe
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
-import { sessionRosterPathKey } from '@/domains/sessions/renderer/session-list/session-roster'
 import { sessionDetailsPathKey } from '@/domains/sessions/renderer/session-queries'
+import { sessionRosterPathKey } from '@/domains/sessions/renderer/session-roster'
 import type { Session } from '@/domains/sessions/renderer/types'
 import { queryClient } from '@/platform/renderer/trpc-client'
 

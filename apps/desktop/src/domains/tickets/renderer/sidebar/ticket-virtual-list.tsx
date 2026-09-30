@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Loader } from '@/platform/renderer/components/loader/loader'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { providerPresentation } from '@/providers/presentation-registry'
-import { type Backlog, type BacklogRow, treeRails } from '../lib/backlog'
+import { type Backlog, type BacklogRow, treeRails } from '../lib'
 import { TicketRow } from './ticket-row'
 
 const OVERSCAN = 30

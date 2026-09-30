@@ -2,7 +2,7 @@ import { initTRPC } from '@trpc/server'
 import { expect, test, vi } from 'vitest'
 import { waitFor } from 'xstate'
 import { databaseFrom } from '@/database/database'
-import type { CodexRequest } from '@/harnesses/codex/app-server/codex-app-server-client'
+import type { CodexRequest } from '@/harnesses/codex/app-server'
 import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
 import {
   available,
@@ -14,7 +14,7 @@ import {
   start,
   supervisorFor,
 } from '@/mocks/sessions/live-session-supervisor.fixture'
-import { liveSessionActorFor } from '../live/live-session-supervisor-machine'
+import { liveSessionActorFor } from '../live'
 import { sessionDetailsProcedure } from './session-details'
 import { SessionRosterChanges } from './session-roster-changes'
 

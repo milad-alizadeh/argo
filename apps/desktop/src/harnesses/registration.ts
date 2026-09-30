@@ -13,10 +13,7 @@ import {
   type SessionLiveEventBody,
   sessionLiveEventBodySchema,
 } from '@/domains/sessions/api/session-live-event'
-import type {
-  SessionLiveInput,
-  SessionStartInput,
-} from '@/domains/sessions/main/api/session-submit'
+import type { SessionLiveInput, SessionStartInput } from '@/domains/sessions/main/api'
 import type { HarnessInfo } from '@/harnesses/harness-catalog'
 import { identifierSchema } from '@/shared/validation'
 import type { Harness } from './harness'
