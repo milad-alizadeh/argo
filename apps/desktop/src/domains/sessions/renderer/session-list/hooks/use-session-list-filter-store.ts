@@ -23,13 +23,3 @@ export function useSetSessionListStatus(): (status: SessionListStatus) => void {
       return next
     })
 }
-
-// Whether the current filter asks for archived Sessions at all, which is what decides if the
-// Archive is read.
-export function showsArchived(status: SessionListStatus): boolean {
-  return status !== 'active'
-}
-
-export function showsActive(status: SessionListStatus): boolean {
-  return status !== 'archived'
-}

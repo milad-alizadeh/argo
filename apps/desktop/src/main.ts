@@ -19,6 +19,11 @@ import {
   SessionRosterChanges,
 } from '@/domains/sessions/main/api/session-roster-changes'
 import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
+import {
+  clearWorkingStatuses,
+  savedSessionId,
+  updateSession,
+} from '@/domains/sessions/main/api/session-update'
 import { WatchedSessionStatus } from '@/domains/sessions/main/api/watched-session-status'
 import {
   markUnresolvedSessionCommandsUnknown,
@@ -237,11 +242,9 @@ function routerForWindow(options: {
   domains: ReturnType<typeof createDomainContexts>
   registry: HarnessRegistry
   roster: SessionRosterChanges
-  watchedStatus: WatchedSessionStatus
   activities: SessionActivities
 }) {
-  const { window, database, actors, domains, sessionSyncStatus, registry, roster, watchedStatus } =
-    options
+  const { window, database, actors, domains, sessionSyncStatus, registry, roster } = options
   const exclusive = createWriteQueue()
   const hasLiveChannel = (sessionId: string) => {
     const session = liveSessionActorFor(actors.sessions, sessionId)
@@ -282,7 +285,6 @@ function routerForWindow(options: {
       },
       supervisor: actors.sessions,
       roster,
-      watchedStatus,
       activities: options.activities,
       acceptsAttachments: (harness) => registry[harness].acceptsAttachments,
       chooseAttachmentFiles: () => chooseAttachmentFiles(window),
@@ -411,8 +413,11 @@ function attachWindowTrpc({
   registry: HarnessRegistry
 }): () => void {
   const roster = new SessionRosterChanges()
-  const watchedStatus = new WatchedSessionStatus(() => roster.changed('activity'))
-  const activities = new SessionActivities(database, () => roster.changed('activity'))
+  const watchedStatus = new WatchedSessionStatus(({ harness, nativeId }, status) => {
+    const sessionId = savedSessionId(database, harness, nativeId)
+    if (sessionId !== undefined) updateSession({ database, roster }, sessionId, { status })
+  })
+  const activities = new SessionActivities({ database, roster })
   const router = routerForWindow({
     actors,
     domains,
@@ -421,7 +426,6 @@ function attachWindowTrpc({
     database,
     registry,
     roster,
-    watchedStatus,
     activities,
   })
   const stopRosterSources = watchRosterSources({ database, registry, roster, watchedStatus })
@@ -447,7 +451,7 @@ function watchRosterSources({
 }): () => void {
   const stops = currentSessionSyncStatus().map((store) =>
     store.subscribe((event) => {
-      if (event.type === 'committed' || event.type === 'stored') roster.changed('membership')
+      if (event.type === 'committed' || event.type === 'stored') roster.changed(event.sessionIds)
     }),
   )
   for (const harness of harnessSchema.options) {
@@ -456,10 +460,11 @@ function watchRosterSources({
     stops.push(
       watchHistoryActivity(files, (owner, turn, events) => {
         const at = Date.now()
-        const turnChanged = watchedStatus.record({ harness, nativeId: owner, turn, at })
-        recordHistoryActivity(database, { harness, nativeId: owner, at, turnChanged })
+        watchedStatus.record({ harness, nativeId: owner, turn, at })
+        recordHistoryActivity(database, { harness, nativeId: owner, at })
         recordLiveSubagents(database, { harness, nativeId: owner, events })
-        roster.changed('activity')
+        const sessionId = savedSessionId(database, harness, owner)
+        if (sessionId !== undefined) roster.changed([sessionId])
       }),
     )
   }
@@ -545,6 +550,7 @@ async function prepare() {
     instance: DEVELOPMENT_INSTANCE,
   })
   applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
+  clearWorkingStatuses(applicationDatabase)
   markUnresolvedSessionCommandsUnknown(applicationDatabase)
   markInterruptedTicketScans(applicationDatabase)
   failInterruptedTicketSearches(applicationDatabase)

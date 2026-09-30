@@ -133,7 +133,7 @@ const rowTitled = (page: Page, title: string) =>
   page.locator(PERSISTED_ROW).filter({ hasText: title })
 
 for (const writer of [claude, codex])
-  test(`a ${writer.harness} history write moves its roster row and shows its turn`, async ({
+  test(`a ${writer.harness} history write keeps its roster row in place and shows its turn`, async ({
     root,
     applicationUnderTest,
   }) => {
@@ -147,8 +147,8 @@ for (const writer of [claude, codex])
       await expect(dot).toHaveAttribute('data-variant', 'unknown')
 
       await writer.openTurn(root, older)
-      await expect(rows.first()).toContainText(OLDER, { timeout: 10_000 })
-      await expect(dot).toHaveAttribute('data-variant', 'active')
+      await expect(dot).toHaveAttribute('data-variant', 'active', { timeout: 10_000 })
+      await expect(rows.first()).toContainText(NEWER)
 
       await writer.closeTurn(root, older)
       await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/, { timeout: 10_000 })

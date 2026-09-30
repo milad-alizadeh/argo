@@ -1,15 +1,18 @@
 import { expect, test } from 'bun:test'
 import { QueryClient } from '@tanstack/react-query'
 import { sessionRow } from '@/mocks/sessions/session-rows'
-import { type SessionRosterState, sessionRosterQueryKey } from './session-list/session-roster'
+import { sessionListQueryKey } from './session-list/session-list-query'
 import { markSessionRead } from './session-queries'
 import type { Session } from './types'
 
-const key = sessionRosterQueryKey({ projectId: 'project-1', search: '' })
+const key = sessionListQueryKey({ projectId: 'project-1', filter: 'active', search: '' })
 
-function rosterOf(rows: Session[]): SessionRosterState {
-  return { list: { type: 'list', pages: 1, pageSize: 30, total: rows.length, rows }, failed: false }
+function listOf(rows: Session[]) {
+  return { pages: [{ total: rows.length, rows }], pageParams: [0] }
 }
+
+const rowsOf = (client: QueryClient) =>
+  client.getQueryData<ReturnType<typeof listOf>>(key)?.pages[0]?.rows
 
 test('opening a Session clears unread state without dropping a loaded row', () => {
   const queryClient = new QueryClient()
@@ -22,13 +25,12 @@ test('opening a Session clears unread state without dropping a loaded row', () =
     retiredIds: ['retired'],
     unread: true,
   })
-  queryClient.setQueryData(key, rosterOf([session]))
+  queryClient.setQueryData(key, listOf([session]))
 
   markSessionRead(queryClient, 'resumed', ['retired'])
 
-  const roster = queryClient.getQueryData<SessionRosterState>(key)
-  expect(roster?.list?.rows).toHaveLength(1)
-  expect(roster?.list?.rows[0]?.unread).toBe(false)
+  expect(rowsOf(queryClient)).toHaveLength(1)
+  expect(rowsOf(queryClient)?.[0]?.unread).toBe(false)
 })
 
 test('opening a resumed Session clears its retired row in every cached Session list', () => {
@@ -41,9 +43,9 @@ test('opening a resumed Session clears its retired row in every cached Session l
     title: null,
     unread: true,
   })
-  queryClient.setQueryData(key, rosterOf([retired]))
+  queryClient.setQueryData(key, listOf([retired]))
 
   markSessionRead(queryClient, 'resumed', ['retired'])
 
-  expect(queryClient.getQueryData<SessionRosterState>(key)?.list?.rows[0]?.unread).toBe(false)
+  expect(rowsOf(queryClient)?.[0]?.unread).toBe(false)
 })

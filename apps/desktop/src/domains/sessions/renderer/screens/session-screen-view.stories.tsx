@@ -5,7 +5,7 @@ import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { sessionRow, sessionShellCommand, sessionSubagent } from '@/mocks/sessions/session-rows'
 import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fixture'
-import { sessionListSubscribe } from '@/mocks/sessions/session-story-host'
+import { sessionListSubscribe, sessionListTrpc } from '@/mocks/sessions/session-story-host'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import { ComposerForm } from '../composer/layout/composer-form'
@@ -166,6 +166,7 @@ function withListedSessions(sessions: Session[]) {
   const before = window.argo
   window.argo = {
     ...before,
+    trpc: sessionListTrpc(before.trpc, () => sessions),
     trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => sessions),
   }
   return () => {

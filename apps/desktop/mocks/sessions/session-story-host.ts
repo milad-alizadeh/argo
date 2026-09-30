@@ -1,4 +1,4 @@
-// Storybook host for Session roster and Feed subscriptions.
+// Storybook host for the Session List query, its change subscription and Feed subscriptions.
 
 import { feedChainKey } from '@/domains/sessions/api/feed/feed-chain'
 import { type FeedReading, feedReading } from '@/domains/sessions/api/feed/feed-reading'
@@ -7,7 +7,11 @@ import { feedSubagents, subagentCompletionRows } from '@/domains/sessions/api/fe
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
-import { sessionRosterPathKey } from '@/domains/sessions/renderer/session-list/session-roster'
+import {
+  type SessionListInput,
+  sessionListMatches,
+  sessionListPathKey,
+} from '@/domains/sessions/renderer/session-list/session-list-query'
 import { sessionDetailsPathKey } from '@/domains/sessions/renderer/session-queries'
 import type { Session } from '@/domains/sessions/renderer/types'
 import { queryClient } from '@/platform/renderer/trpc-client'
@@ -15,7 +19,7 @@ import { queryClient } from '@/platform/renderer/trpc-client'
 type Subscribe = typeof window.argo.trpcSubscribe
 const openReaders = new Set<() => void>()
 
-// Sends every open story roster and details reader its rows again, as main does after a change.
+// Sends every open change and details reader its rows again, as main does after a change.
 export function announceSessionListChange() {
   for (const send of openReaders) send()
 }
@@ -54,7 +58,7 @@ function sessionDetailsReply(
   // A held reply is already in flight, so it arrives even after the reader closes.
   const reply = () => {
     const session = sessions().find(({ id }) => id === sessionId)
-    const details = session === undefined ? null : { projectId: 'project-1', ...session }
+    const details = session === undefined ? null : structuredClone(session)
     listener({ id: request.id, type: 'data', result: { data: { sessionId, details } } })
   }
   const send = () => {
@@ -70,38 +74,48 @@ function sessionDetailsReply(
   })
 }
 
+// Story rows belong to whichever Project the list last read, copied as IPC would copy them.
+let listedProjectId = 'project-1'
+const listedRows = (sessions: readonly Session[]) =>
+  sessions.map((session) => ({ ...session, projectId: listedProjectId }))
+
+// Answers the Session List's change subscription with every story row whenever a story announces one.
 export function sessionListSubscribe(
   subscribe: Subscribe,
   sessions: () => readonly Session[],
 ): Subscribe {
-  queryClient.removeQueries({ queryKey: sessionRosterPathKey })
+  queryClient.removeQueries({ queryKey: sessionListPathKey })
   queryClient.removeQueries({ queryKey: sessionDetailsPathKey })
   return async (request, listener) => {
     if (request.path === 'sessionDetails') return sessionDetailsReply(request, listener, sessions)
-    if (request.path !== 'sessionList') return subscribe(request, listener)
-    const input = request.input as { pages?: number; pageSize?: number }
-    const pages = input.pages ?? 1
-    const pageSize = input.pageSize ?? 30
-    const send = () => {
-      const rows = sessions()
-      listener({
-        id: request.id,
-        type: 'data',
-        result: {
-          data: {
-            type: 'list',
-            pages,
-            pageSize,
-            total: rows.length,
-            rows: rows.slice(0, pages * pageSize),
-          },
-        },
-      })
-    }
+    if (request.path !== 'sessionListChanged') return subscribe(request, listener)
+    const send = () =>
+      listener({ id: request.id, type: 'data', result: { data: { rows: listedRows(sessions()) } } })
     openReaders.add(send)
-    queueMicrotask(send)
     return () => openReaders.delete(send)
   }
+}
+
+// Answers one page of the Session List query from the story's rows, in the story's order.
+export function sessionListTrpc(
+  trpc: typeof window.argo.trpc,
+  sessions: () => readonly Session[],
+): typeof window.argo.trpc {
+  return (async (request) => {
+    if (request.path !== 'sessionList') return trpc(request)
+    const input = request.input as Partial<SessionListInput> & { offset?: number; limit?: number }
+    listedProjectId = input.projectId ?? 'project-1'
+    const listed = listedRows(sessions()).filter((session) =>
+      sessionListMatches(session, {
+        projectId: listedProjectId,
+        filter: input.filter ?? 'active',
+        search: input.search ?? '',
+      }),
+    )
+    const offset = input.offset ?? 0
+    const rows = listed.slice(offset, offset + (input.limit ?? 30))
+    return { result: { data: { total: listed.length, rows } } }
+  }) as typeof window.argo.trpc
 }
 
 // A story's recorded vendor history for one chain, the same input main's reader takes.

@@ -3,7 +3,6 @@ import { SessionFeedReaders } from '../feed/feed-reader'
 import { composerDraftCreateProcedure } from './composer-draft-create'
 import { composerDraftReadProcedure } from './composer-draft-read'
 import { composerDraftSaveProcedure } from './composer-draft-save'
-import { sessionArchiveProcedures } from './session-archive'
 import { type SessionAttachmentContext, sessionAttachmentProcedures } from './session-attachments'
 import {
   type ComposerCommandContext,
@@ -17,11 +16,15 @@ import {
   type SessionInteractionContext,
   sessionInteractionProcedures,
 } from './session-interactions'
-import { type SessionListContext, sessionListProcedure } from './session-list'
+import {
+  type SessionListContext,
+  sessionListChangedProcedure,
+  sessionListProcedure,
+} from './session-list'
 import { type SessionRefreshContext, sessionRefreshProcedure } from './session-refresh'
-import { sessionRenameProcedure } from './session-rename'
 import { type SessionProcedureContext, sessionSubmitProcedure } from './session-submit'
 import { type SessionSyncStatusStore, sessionSyncStatusProcedure } from './session-sync-status'
+import { type SessionUpdateProcedureContext, sessionUpdateProcedure } from './session-update-procedure'
 import { sessionWorkReadProcedures } from './session-work-reads'
 
 export type SessionApiContext = SessionProcedureContext &
@@ -30,6 +33,7 @@ export type SessionApiContext = SessionProcedureContext &
   SessionInteractionContext &
   SessionListContext &
   SessionRefreshContext &
+  SessionUpdateProcedureContext &
   ComposerCommandContext & { sessionSyncStatus: readonly SessionSyncStatusStore[] }
 
 export function sessionProcedures(context: SessionApiContext) {
@@ -41,18 +45,18 @@ export function sessionProcedures(context: SessionApiContext) {
     composerDraftRead: composerDraftReadProcedure(context.database),
     composerDraftSave: composerDraftSaveProcedure(context.database),
     sessionSubmit: sessionSubmitProcedure(context),
-    sessionList: sessionListProcedure(context, (sessionId) =>
+    sessionList: sessionListProcedure(context),
+    sessionListChanged: sessionListChangedProcedure(context, (sessionId) =>
       readers.observe({ sessionId, subagentId: null }, () => {}),
     ),
     sessionDetails: sessionDetailsProcedure(context),
     ...sessionFeedProcedures(context, readers),
     ...sessionInteractionProcedures(context),
-    sessionRename: sessionRenameProcedure(context),
+    sessionUpdate: sessionUpdateProcedure(context),
     sessionRefresh: sessionRefreshProcedure(context),
     sessionSyncStatus: sessionSyncStatusProcedure(context.sessionSyncStatus),
     ...sessionAttachmentProcedures(context),
     ...sessionFileReadProcedures(context),
-    ...sessionArchiveProcedures(context),
     ...sessionWorkReadProcedures(),
   }
 }

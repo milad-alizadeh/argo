@@ -22,21 +22,10 @@ function firstListedStatus(database: Database, supervisor: LiveSessionSupervisor
         database,
         supervisor,
         roster: new SessionRosterChanges(),
-        watchedStatus: { statusOf: () => null },
       }),
     })
     .createCaller({}).list
-  return async () => {
-    const statuses: string[] = []
-    const stream = await list({ projectId: 'project-1', pageSize: 10 })
-    stream
-      .subscribe({
-        next: (update) =>
-          update.type === 'list' && statuses.push(...update.rows.map(({ status }) => status)),
-      })
-      .unsubscribe()
-    return statuses[0]
-  }
+  return async () => (await list({ projectId: 'project-1' })).rows[0]?.status
 }
 
 test('session.list projects the latest live status event and announces each change', async () => {

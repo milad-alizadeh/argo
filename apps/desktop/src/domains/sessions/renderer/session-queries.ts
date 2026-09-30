@@ -1,6 +1,6 @@
-import type { QueryClient } from '@tanstack/react-query'
-import { type SessionRosterState, sessionRosterPathKey } from './session-list/session-roster'
-import type { SessionId } from './types'
+import type { InfiniteData, QueryClient } from '@tanstack/react-query'
+import { sessionListPathKey } from './session-list/session-list-query'
+import type { SessionId, SessionListResult } from './types'
 
 export const SESSION_REFRESH_MS = 500
 // A chain's latest reading, written by its subscription and read by every observer. A Subagent's
@@ -21,11 +21,6 @@ export const sessionShellOutputQueryKey = (sessionId: SessionId, shellId: string
   ['sessions', 'shell-output', sessionId, shellId, live] as const
 export const sessionPermissionQueryKey = (sessionId: SessionId) =>
   ['sessions', 'permission', sessionId] as const
-// Keyed on the restoreId too: a different restoreId asks the reader to hand back a different row
-// outside the loaded pages, so it is a different query rather than a refetch of the same one.
-export const sessionArchivePathKey = ['sessions', 'archive'] as const
-export const sessionArchiveQueryKey = (projectId: string | null, restoreId: SessionId | null) =>
-  [...sessionArchivePathKey, projectId, restoreId] as const
 
 export function markSessionRead(
   queryClient: QueryClient,
@@ -33,18 +28,19 @@ export function markSessionRead(
   retiredIds: readonly SessionId[],
 ) {
   const identities = new Set([sessionId, ...retiredIds])
-  queryClient.setQueriesData<SessionRosterState>({ queryKey: sessionRosterPathKey }, (roster) => {
-    if (roster?.list == null) return roster
-    return {
-      ...roster,
-      list: {
-        ...roster.list,
-        rows: roster.list.rows.map((session) =>
-          identities.has(session.id) || session.retiredIds.some((id) => identities.has(id))
-            ? { ...session, unread: false }
-            : session,
-        ),
+  queryClient.setQueriesData<InfiniteData<SessionListResult, number>>(
+    { queryKey: sessionListPathKey },
+    (data) =>
+      data && {
+        ...data,
+        pages: data.pages.map((page) => ({
+          ...page,
+          rows: page.rows.map((session) =>
+            identities.has(session.id) || session.retiredIds.some((id) => identities.has(id))
+              ? { ...session, unread: false }
+              : session,
+          ),
+        })),
       },
-    }
-  })
+  )
 }

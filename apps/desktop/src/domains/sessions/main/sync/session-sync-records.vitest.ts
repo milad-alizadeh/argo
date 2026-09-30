@@ -16,7 +16,7 @@ function createDatabase() {
   const client = new DatabaseSync(':memory:')
   client.exec(`CREATE TABLE project (id TEXT PRIMARY KEY, path TEXT NOT NULL, common_directory TEXT NOT NULL, created_at INTEGER, updated_at INTEGER);
     CREATE TABLE workspace (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, kind TEXT NOT NULL, display_name TEXT NOT NULL, path TEXT NOT NULL, created_at INTEGER, updated_at INTEGER);
-    CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, workspace_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, activity_at INTEGER, list_order_at INTEGER NOT NULL DEFAULT 0, activity TEXT, subagents_read_at INTEGER, created_at INTEGER NOT NULL DEFAULT 1, updated_at INTEGER NOT NULL DEFAULT 1);
+    CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, workspace_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, activity_at INTEGER, sort_order INTEGER NOT NULL DEFAULT 0, activity TEXT, status TEXT, subagents_read_at INTEGER, created_at INTEGER NOT NULL DEFAULT 1, updated_at INTEGER NOT NULL DEFAULT 1);
     CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);`)
   client.exec("INSERT INTO project VALUES ('project-1', '/repo', '/repo/.git', 1, 1);")
   client.exec(
@@ -64,6 +64,22 @@ test('saves the supplied batch', () => {
     }))
     saveSessionBatch(database, 'claude', records)
     assert.equal(client.prepare('SELECT count(*) AS count FROM session').get()?.count, 51)
+  } finally {
+    client.close()
+  }
+})
+
+test('returns the Argo ID of each saved record, keeping it on a second save', () => {
+  const { client, database } = createDatabase()
+  try {
+    const first = saveSessionBatch(database, 'claude', [{ nativeId: 'one' }, { nativeId: 'two' }])
+    const again = saveSessionBatch(database, 'claude', [{ nativeId: 'two' }])
+    const stored = client
+      .prepare('SELECT argo_id FROM session ORDER BY native_id')
+      .all()
+      .map((row) => row.argo_id)
+    assert.deepEqual(first, stored)
+    assert.deepEqual(again, [stored[1]])
   } finally {
     client.close()
   }

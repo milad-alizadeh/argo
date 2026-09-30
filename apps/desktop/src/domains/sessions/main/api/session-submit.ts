@@ -16,7 +16,6 @@ import {
   type LiveSessionSupervisorActor,
   SessionSubmitRejectedError,
 } from '../live/live-session-supervisor-machine'
-import type { SessionRenameContext } from './session-rename'
 
 const t = initTRPC.create()
 const commandSchema = z.strictObject({
@@ -53,7 +52,7 @@ export type SessionStartInput = z.infer<typeof sessionStartInputSchema>
 export type SessionSendInput = z.infer<typeof sessionSendInputSchema>
 export type SessionLiveInput = SessionStartInput | SessionSendInput
 type SessionSubmitInput = z.infer<typeof inputSchema>
-export type SessionProcedureContext = SessionRenameContext & {
+export type SessionProcedureContext = {
   database: Database
   supervisor: LiveSessionSupervisorActor
   ensureManagedWorkspace: (

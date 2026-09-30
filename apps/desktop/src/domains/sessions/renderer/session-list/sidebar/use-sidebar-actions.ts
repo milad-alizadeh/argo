@@ -5,6 +5,7 @@ import { trpcClient } from '@/platform/renderer/trpc-client'
 import { COMPOSER_FOCUS_STATE } from '../../composer-focus-state'
 import { markSessionRead } from '../../session-queries'
 import type { Session, SessionId } from '../../types'
+import { applySessionListChange } from '../session-list-query'
 
 // What a row's menu and a row's click do, each with one identity for as long as its inputs hold. The
 // sessionList's rows are memoized, so a handler rebuilt on every render would re-render all of them on
@@ -28,13 +29,14 @@ export function useSidebarActions() {
       [navigate, projectId],
     ),
 
-    rename: useCallback(async (session: Session, name: string) => {
-      const renamed = await trpcClient.sessionRename.mutate({
-        sessionId: session.id,
-        title: name,
-      })
-      return renamed.title
-    }, []),
+    rename: useCallback(
+      async (session: Session, name: string) => {
+        const renamed = await trpcClient.sessionUpdate.mutate({ sessionId: session.id, title: name })
+        applySessionListChange(queryClient, [renamed])
+        return renamed.customTitle ?? name
+      },
+      [queryClient],
+    ),
 
     select: useCallback(
       (selectedSessionId: SessionId, retiredIds: SessionId[] = []) => {

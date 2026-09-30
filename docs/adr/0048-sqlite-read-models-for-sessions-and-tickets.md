@@ -2,27 +2,36 @@
 
 Status: accepted · 2026-09-24 · Session discovery amended 2026-09-27
 
-## Amendment · watched Sessions and the pushed roster · 2026-09-28
+## Amendment · watched Sessions and the Session List · 2026-09-28, 2026-09-30
 
 Each Harness registration names where it writes Session history, how to read the lines it
 appends, and which lines open or close a turn. When an open Feed's history file grows, Argo reads
 only the new lines. It appends their events to the live journal, unless the Session has a live
 channel. A rewritten, truncated or branched file still makes the Feed read the whole history.
 
-The roster is one subscription. It sends the whole list first. After a sync commits, a live
-status changes, a rename, or a write to any history file, it sends each changed row, or the whole
-list again when the order or total changed. The list is flat and sorted by `listOrderAt`, newest
-first. That clock moves only on discovery and when a turn opens or closes, so streaming activity
-never moves a row. A history write sets the row's `activityAt` in SQLite.
-It also records, in memory, whether the file's current turn is open or closed. The newest opened
-turn is the current one. A close counts only when it names that turn or names no turn, so a late
-close for an earlier Codex turn leaves the newer turn open. A Session with no live actor shows
-running for an open turn and idle for a closed one. The roster's activity line is the
-last activity a Feed's main reading published, stored on the Session row. The roster opens a Feed
-reader only for a Session that is starting, running, or waiting on the user, so an idle row keeps
-its stored line with no reader. An open turn
-whose file stays quiet for five minutes shows unknown, because a killed terminal writes nothing
-more.
+The Session List is one `sessionList` query. Its input is a Project, a filter (`active`,
+`archived` or `all`), a search over custom title and preview, and an offset and limit. It returns
+one page and the total. Rows are sorted by `sortOrder`, then newest `createdAt`, then Argo ID.
+Every `sortOrder` is 0 until drag and drop sets it. A Session found by sync takes its last
+activity as `createdAt`, so a streaming turn never moves a row.
+
+Every write to a saved Session goes to SQLite first. Then the writer names the changed Session IDs:
+a sync commit, a stored Subagent read, a history write, a live status change, a rename, an archive,
+and a stored activity line. The `sessionListChanged` subscription reads those rows by ID and
+sends them. The renderer writes each row into its cached pages: it replaces it, adds it in order,
+or drops it when it leaves the Project, filter or search. It does not read the list again.
+Rename and archive go through one `sessionUpdate` mutation that returns the row.
+
+A history write sets the row's `activityAt`. The watcher also tracks, in memory, whether the
+file's current turn is open or closed. The newest opened turn is the current one. A close counts
+only when it names that turn or names no turn, so a late close for an earlier Codex turn leaves
+the newer turn open. The watcher stores `running` for an open turn and `idle` for a closed one on
+the Session row. An open turn whose file stays quiet for five minutes is stored as `unknown`,
+because a killed terminal writes nothing more, and a restart resets every working status to
+`unknown`. A live channel's own status outranks the stored one. The row's activity line is the
+last activity a Feed's main reading published, stored on the Session row. The subscription opens
+a Feed reader only for a Session that is starting, running, or waiting on the user, so an idle row
+keeps its stored line with no reader.
 
 ## Amendment · Harness registrations for sync · 2026-09-28
 
@@ -159,8 +168,8 @@ The existing Session list shows saved rows while sync runs. It shows indetermina
 the fetch knows the total, then processed count over total. Refresh stays disabled through sync
 and retry. After success, the list shows a relative last-synced time. A partial scan shows one
 toast with the skipped count. A terminal fetch or save failure shows one toast. A subscription
-sends current sync status on subscribe, then progress and committed-change signals. The renderer
-refetches the SQL list after a commit.
+sends current sync status on subscribe, then progress and committed-change signals. The committed
+rows reach the Session List as row changes.
 
 Codex metadata sync uses the same supervisor, worker entry, sync machine, batch saver, and Session
 upsert as Claude. The supervisor must confirm that the existing Codex app-server is ready before
@@ -234,8 +243,8 @@ clients, the ProjectSetup actor, and the sign-in actors remain separate owners o
 
 Read operations query SQLite for lists, search, and indexed detail. The backend adds current live
 Session projections to those rows and returns one Argo-shaped response; the renderer does not merge
-sources. List operations expose numbered pages, page size, indexed total, and stable SQL order.
-Pages can shift when sync adds rows, so refresh preserves selection by Argo UUID. Pinned Sessions
+sources. List operations expose an offset, a page size, the indexed total, and a stable SQL order.
+Selection follows the Argo UUID. Pinned Sessions
 come from a separate query and do not appear in the ordinary Session pages. Vendor cursors and
 payload shapes stop at the Harness boundary. A separate Feed operation reads vendor history and
 transforms it into the same validated Feed shape as live events. Selecting a Session without a
@@ -245,8 +254,8 @@ Live status and events are reconciled with vendor history.
 Phase one removes the old operation tables, preload client maps, per-operation channels, and
 pass-through renderer hooks as their request-response operations move to tRPC. Named live-stream
 channels remain an explicit current boundary. Phase two moves those streams and change events to
-tRPC subscriptions. Live status transitions invalidate Session list queries; token and Feed events
-do not refetch the Session list.
+tRPC subscriptions. Live status transitions send the changed Session row; token and Feed events
+do not.
 A committed Session or Ticket index change invalidates affected lists and selected detail after
 the transaction, never before it. Vendor history and live events use stable source event identity
 and order so reconciliation fills gaps without duplicate Feed rows.

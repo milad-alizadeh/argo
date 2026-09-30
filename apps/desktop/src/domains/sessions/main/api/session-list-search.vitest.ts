@@ -1,13 +1,7 @@
 import assert from 'node:assert/strict'
 import type { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
-import {
-  IDS,
-  insertSession,
-  type SessionListUpdate,
-  sessionListCaller,
-  settled,
-} from '@/mocks/sessions/session-list-caller'
+import { IDS, insertSession, sessionListCaller } from '@/mocks/sessions/session-list-caller'
 
 const manyId = (index: number) => `00000000-0000-4000-8000-2${String(index).padStart(11, '0')}`
 
@@ -19,101 +13,72 @@ function insertSearchCorpus(client: DatabaseSync, matching: number) {
       harness: 'claude',
       nativeId: `deploy-${index}`,
       customTitle: `Deploy ${index}`,
-      updatedAt: 1_000 - index,
+      createdAt: 1_000 - index,
     })
   insertSession(client, {
     id: manyId(matching),
     harness: 'claude',
     nativeId: 'unrelated',
     customTitle: 'Unrelated',
-    updatedAt: 2_000,
+    createdAt: 2_000,
   })
 }
-
-const idsOfLists = (received: SessionListUpdate[]) =>
-  received.flatMap((update) => (update.type === 'list' ? [update.rows.map(({ id }) => id)] : []))
 
 test('searches past the first page of results in list order', async () => {
   const { client, list } = sessionListCaller()
   try {
     insertSearchCorpus(client, 25)
-    const first = await list({ projectId: 'project-1', search: 'deploy', pageSize: 10 })
-    const three = await list({ projectId: 'project-1', search: 'deploy', pageSize: 10, pages: 3 })
+    const first = await list({ projectId: 'project-1', search: 'deploy', limit: 10 })
+    const last = await list({ projectId: 'project-1', search: 'deploy', offset: 20, limit: 10 })
 
-    assert.equal(first.total, 25)
+    assert.deepEqual([first.total, last.total], [25, 25])
     assert.deepEqual(
       first.rows.map(({ id }) => id),
       Array.from({ length: 10 }, (_, index) => manyId(index)),
     )
     assert.deepEqual(
-      three.rows.map(({ id }) => id),
-      Array.from({ length: 25 }, (_, index) => manyId(index)),
+      last.rows.map(({ id }) => id),
+      Array.from({ length: 5 }, (_, index) => manyId(20 + index)),
     )
   } finally {
     client.close()
   }
 })
 
-test('an activity change reorders search results without scanning again', async () => {
-  const { client, updates, roster, searchScans } = sessionListCaller()
+test('matches custom title and preview without case, and never the first prompt', async () => {
+  const { client, list } = sessionListCaller()
   try {
-    insertSearchCorpus(client, 12)
-    const { received, stop } = await updates({
-      projectId: 'project-1',
-      search: 'deploy',
-      pageSize: 5,
+    insertSession(client, {
+      id: IDS[0],
+      harness: 'claude',
+      nativeId: 'native-1',
+      customTitle: 'Custom match',
+      preview: 'Older summary',
+      firstPrompt: 'Hidden first prompt',
+      createdAt: 10,
     })
-    assert.equal(searchScans.count, 1)
-
-    // The oldest match is past the loaded page; its Turn opening moves it to the top.
-    client.prepare('UPDATE session SET list_order_at = 5000 WHERE argo_id = ?').run(manyId(11))
-    roster.changed('activity')
-    await settled()
-    assert.equal(searchScans.count, 1)
-
-    client
-      .prepare("UPDATE session SET custom_title = 'Deploy again' WHERE argo_id = ?")
-      .run(manyId(12))
-    roster.changed('membership')
-    await settled()
-    stop()
-
-    assert.equal(searchScans.count, 2)
-    assert.deepEqual(idsOfLists(received), [
-      [0, 1, 2, 3, 4].map(manyId),
-      [11, 0, 1, 2, 3].map(manyId),
-      [11, 12, 0, 1, 2].map(manyId),
-    ])
-    const last = received.at(-1)
-    assert.equal(last?.type === 'list' ? last.total : null, 13)
-  } finally {
-    client.close()
-  }
-})
-
-test('a live status change scans the search again only for a Session that now matches', async () => {
-  const { client, updates, statusChanged, searchScans } = sessionListCaller()
-  try {
-    insertSearchCorpus(client, 3)
-    const { received, stop } = await updates({
-      projectId: 'project-1',
-      search: 'deploy',
-      pageSize: 5,
+    insertSession(client, {
+      id: IDS[1],
+      harness: 'codex',
+      nativeId: 'native-2',
+      preview: 'Preview match',
+      firstPrompt: 'Another hidden prompt',
+      createdAt: 20,
     })
 
-    statusChanged(manyId(3))
-    await settled()
-    assert.equal(searchScans.count, 1)
+    const custom = await list({ projectId: 'project-1', search: 'CUSTOM' })
+    const preview = await list({ projectId: 'project-1', search: 'preview' })
+    const prompt = await list({ projectId: 'project-1', search: 'hidden' })
 
-    client
-      .prepare("UPDATE session SET custom_title = 'Deploy live' WHERE argo_id = ?")
-      .run(manyId(3))
-    statusChanged(manyId(3))
-    await settled()
-    stop()
-
-    assert.equal(searchScans.count, 2)
-    assert.deepEqual(idsOfLists(received).at(-1), [3, 0, 1, 2].map(manyId))
+    assert.deepEqual(
+      custom.rows.map(({ id }) => id),
+      [IDS[0]],
+    )
+    assert.deepEqual(
+      preview.rows.map(({ id }) => id),
+      [IDS[1]],
+    )
+    assert.equal(prompt.total, 0)
   } finally {
     client.close()
   }
@@ -129,10 +94,10 @@ test('a search in another Project reads only that Project’s matches', async ()
       nativeId: 'elsewhere',
       customTitle: 'Deploy elsewhere',
       projectId: 'project-2',
-      updatedAt: 10,
+      createdAt: 10,
     })
-    const first = await list({ projectId: 'project-1', search: 'deploy', pageSize: 10 })
-    const second = await list({ projectId: 'project-2', search: 'deploy', pageSize: 10 })
+    const first = await list({ projectId: 'project-1', search: 'deploy' })
+    const second = await list({ projectId: 'project-2', search: 'deploy' })
 
     assert.equal(first.total, 3)
     assert.deepEqual(

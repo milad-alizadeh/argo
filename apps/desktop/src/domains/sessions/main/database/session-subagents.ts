@@ -131,7 +131,7 @@ export async function refreshSessionSubagents(input: {
   database: Database
   harness: Harness
   readHistory: SessionHistoryReader
-  stored: () => void
+  stored: (sessionId: string) => void
   stopped: () => boolean
 }): Promise<{ read: number; failed: number }> {
   let read = 0
@@ -153,7 +153,7 @@ export async function refreshSessionSubagents(input: {
       stampSubagentsRead(input.database, session)
       failed += 1
     }
-    input.stored()
+    input.stored(session.argoId)
   }
   return { read, failed }
 }

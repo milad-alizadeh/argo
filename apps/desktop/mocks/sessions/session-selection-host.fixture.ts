@@ -1,5 +1,5 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import { sessionRosterPathKey } from '@/domains/sessions/renderer/session-list/session-roster'
+import { sessionListPathKey } from '@/domains/sessions/renderer/session-list/session-list-query'
 import { sessionDetailsPathKey } from '@/domains/sessions/renderer/session-queries'
 import type { Session } from '@/domains/sessions/renderer/types'
 import {
@@ -7,6 +7,7 @@ import {
   holdSessionDetails,
   sessionFeedSubscribe,
   sessionListSubscribe,
+  sessionListTrpc,
 } from '@/mocks/sessions/session-story-host'
 import { queryClient, trpc } from '@/platform/renderer/trpc-client'
 import { claudeHarnessInfoFixture, codexHarnessInfoFixture } from './harness-catalog.fixture'
@@ -163,7 +164,7 @@ function clearSelectionQueries() {
   for (const release of heldDraftReads.values()) release()
   heldDraftReads.clear()
   forgetHeldSessionDetails()
-  queryClient.removeQueries({ queryKey: sessionRosterPathKey })
+  queryClient.removeQueries({ queryKey: sessionListPathKey })
   queryClient.removeQueries({ queryKey: sessionDetailsPathKey })
   queryClient.removeQueries({ queryKey: trpc.projectList.pathKey() })
   queryClient.removeQueries({ queryKey: trpc.projectOpen.pathKey() })
@@ -205,17 +206,20 @@ export function sessionSelectionHost(
   for (const sessionId of options.heldDetails ?? []) holdSessionDetails(sessionId)
   window.argo = {
     ...before,
-    trpc: (async (request) =>
-      projectReply(request) ??
-      composerReply(request) ??
-      // Screen stories open the shell inspector and read this tail. Production stays absent.
-      (request.path === 'sessionShellOutput'
-        ? {
-            id: request.id,
-            result: { data: { state: 'available' as const, tail: 'Checked 187 files.\n' } },
-          }
-        : null) ??
-      before.trpc(request)) satisfies typeof window.argo.trpc,
+    trpc: sessionListTrpc(
+      (async (request) =>
+        projectReply(request) ??
+        composerReply(request) ??
+        // Screen stories open the shell inspector and read this tail. Production stays absent.
+        (request.path === 'sessionShellOutput'
+          ? {
+              id: request.id,
+              result: { data: { state: 'available' as const, tail: 'Checked 187 files.\n' } },
+            }
+          : null) ??
+        before.trpc(request)) satisfies typeof window.argo.trpc,
+      () => roster,
+    ),
     trpcSubscribe: sessionFeedSubscribe(
       sessionListSubscribe(before.trpcSubscribe, () => roster),
       readFeed,

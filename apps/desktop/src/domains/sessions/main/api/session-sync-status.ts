@@ -22,9 +22,10 @@ const sessionSyncEventSchema = z.discriminatedUnion('type', [
 ])
 
 export type SessionSyncEvent = z.infer<typeof sessionSyncEventSchema>
-// A pass stored more rows. The roster reads them; an open Feed has nothing to refetch, so this
-// never crosses to the renderer.
-export type SessionSyncStoreEvent = SessionSyncEvent | { type: 'stored' }
+// The Sessions a pass saved, for the Session List. Only `committed` crosses to the renderer, without IDs.
+export type SessionSyncStoreEvent =
+  | Extract<SessionSyncEvent, { type: 'status' }>
+  | { type: 'committed' | 'stored'; sessionIds: readonly string[] }
 const initialSessionSyncStatus: SessionSyncStatus = {
   phase: 'idle',
   processed: 0,
@@ -119,12 +120,12 @@ export class SessionSyncStatusStore {
     this.emit({ type: 'status', status: this.#status })
   }
 
-  committed(): void {
-    this.emit({ type: 'committed' })
+  committed(sessionIds: readonly string[]): void {
+    this.emit({ type: 'committed', sessionIds })
   }
 
-  stored(): void {
-    this.emit({ type: 'stored' })
+  stored(sessionIds: readonly string[]): void {
+    this.emit({ type: 'stored', sessionIds })
   }
 
   subscribe(listener: (event: SessionSyncStoreEvent) => void): () => void {
@@ -190,7 +191,8 @@ export function sessionSyncStatusProcedure(stores: readonly SessionSyncStatusSto
   return t.procedure.subscription(() =>
     observable<SessionSyncEvent>((emit) =>
       observeSessionSync(stores, (event) => {
-        if (event.type !== 'stored') emit.next(event)
+        if (event.type === 'status') emit.next(event)
+        else if (event.type === 'committed') emit.next({ type: 'committed' })
       }),
     ),
   )

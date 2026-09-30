@@ -1,7 +1,6 @@
 import { memo } from 'react'
 import type { SessionId } from '../../types'
 import type { SelectionModifier } from '../hooks/session-list-selection'
-import { ArchivedSectionRow } from './archived-status-row'
 import { renamedSession, type SessionListRow, sameSessionListRow } from './session-list-rows'
 import { SessionListLoadingMoreRow } from './session-list-status-row'
 import { SessionRow } from './session-row'
@@ -51,11 +50,8 @@ export const SessionRowView = memo(function SessionRowView({
   tabbable,
   unavailable,
 }: SessionRowViewProps) {
-  if (row.kind === 'archivedSentinel' || row.kind === 'sessionListSentinel') {
-    return <div aria-hidden="true" />
-  }
+  if (row.kind === 'sessionListSentinel') return <div aria-hidden="true" />
   if (row.kind === 'sessionListLoadingMore') return <SessionListLoadingMoreRow />
-  if (row.kind !== 'session') return <ArchivedSectionRow row={row} />
   const { session, archived } = row
   const selectable = !archived
   return (

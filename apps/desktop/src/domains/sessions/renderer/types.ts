@@ -2,8 +2,7 @@ import type { SessionFeedRow } from '@/domains/sessions/api/feed/feed-rows'
 import type { SessionError } from '@/domains/sessions/api/session-error'
 import type { RouterOutputs } from '@/platform/renderer/trpc-client'
 
-export type SessionListUpdate = RouterOutputs['sessionList']
-export type SessionListResult = Extract<SessionListUpdate, { type: 'list' }>
+export type SessionListResult = RouterOutputs['sessionList']
 export type Session = SessionListResult['rows'][number]
 export type SessionId = Session['id']
 export type SessionDetailsUpdate = RouterOutputs['sessionDetails']
@@ -20,7 +19,6 @@ export type SessionFeed = {
 export type { SessionError }
 export type SessionListPage = Pick<SessionListResult, 'total'> & {
   sessions: Session[]
-  nextPage: number | null
   historyComplete: boolean
 }
 export type { SessionFeedRow }

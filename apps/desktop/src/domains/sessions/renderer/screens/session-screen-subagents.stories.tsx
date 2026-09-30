@@ -9,6 +9,7 @@ import {
   sessionFeedRefreshTrpc,
   sessionFeedSubscribe,
   sessionListSubscribe,
+  sessionListTrpc,
 } from '@/mocks/sessions/session-story-host'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
@@ -96,7 +97,7 @@ const meta = {
         sessionListSubscribe(previous.trpcSubscribe, () => [session]),
         read,
       ),
-      trpc: sessionFeedRefreshTrpc(previous.trpc),
+      trpc: sessionListTrpc(sessionFeedRefreshTrpc(previous.trpc), () => [session]),
     }
     return () => {
       window.argo = previous

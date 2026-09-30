@@ -52,7 +52,6 @@ async function detailsAroundSecondSend(
         database: databaseFrom(client),
         supervisor,
         roster: new SessionRosterChanges(),
-        watchedStatus: { statusOf: () => null },
       }),
     })
     .createCaller({}).details

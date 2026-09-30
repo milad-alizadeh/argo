@@ -20,6 +20,7 @@ import {
   rowIds,
   sessionId,
 } from './session-feed-harness'
+import { SessionRosterChanges } from './session-roster-changes'
 import { SessionSyncStatusStore } from './session-sync-status'
 
 registerFeedDatabase()
@@ -137,9 +138,11 @@ const activityOf = (reading: FeedReading | undefined) =>
 
 test('a multi-activity Turn publishes its latest activity to the Feed and keeps it for the roster', async () => {
   let rosterChanges = 0
-  const activities = new SessionActivities(database, () => {
+  const roster = new SessionRosterChanges()
+  roster.subscribe(() => {
     rosterChanges += 1
   })
+  const activities = new SessionActivities({ database, roster })
   const history = historyReads()
   const feed = await observe({ readHistory: history.readHistory, activities })
   await history.answer([message('m1', 'user', 'Check it'), command('c1', 'bun test')])
@@ -324,7 +327,7 @@ test('a committed sync reads vendor history again', async () => {
   const history = historyReads()
   const store = new SessionSyncStatusStore(undefined, 'claude')
   const feed = await observe({ readHistory: history.readHistory, sessionSyncStatus: [store] })
-  await expectFreshRead(feed, history, () => store.committed())
+  await expectFreshRead(feed, history, () => store.committed([sessionId]))
 })
 
 test('a read that lands after the last observer left publishes nothing', async () => {

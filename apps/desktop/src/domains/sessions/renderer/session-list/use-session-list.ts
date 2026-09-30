@@ -1,49 +1,48 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { sessionError } from '@/domains/sessions/api/session-error'
-import { useSessionRoster } from './session-roster'
+import type { SessionListStatus } from './hooks/use-session-list-filter-store'
+import { useSessionListQuery } from './session-list-query'
 import { useSessionSync } from './use-session-sync'
 
 export function useSessionList({
   projectId,
   enabled = true,
+  filter = 'active',
   search = '',
 }: {
   projectId: string | null
   enabled?: boolean
+  filter?: SessionListStatus
   search?: string
 }) {
   const sync = useSessionSync()
-  const input = { projectId: projectId ?? 'unselected', search }
-  const inputKey = JSON.stringify(input)
-  // The window this reader asked for, reset when it reads another roster.
-  const [requested, setRequested] = useState({ inputKey, pages: 1 })
-  const pages = requested.inputKey === inputKey ? requested.pages : 1
-  const roster = useSessionRoster(input, pages, enabled && projectId !== null)
-  const list = roster?.list ?? null
-  const error = roster?.failed === true ? sessionError('internal-error', null) : null
-  const hasMoreSessions = list !== null && list.rows.length < list.total
-  const isFetchingMoreSessions = list !== null && list.pages < pages
+  const query = useSessionListQuery(
+    { projectId: projectId ?? '', filter, search },
+    enabled && projectId !== null,
+  )
+  const error = query.isError ? sessionError('internal-error', null) : null
   const sessionList = useMemo(() => {
-    if (list === null || error !== null) return null
-    const more = list.rows.length < list.total
-    return {
-      total: list.total,
-      sessions: list.rows,
-      nextPage: more ? list.pages + 1 : null,
-      historyComplete: !more,
-    }
-  }, [error, list])
-  const loadedPages = list?.pages ?? 0
+    const pages = query.data?.pages
+    if (pages === undefined || error !== null) return null
+    const sessions = pages.flatMap((page) => page.rows)
+    const total = pages[0]?.total ?? 0
+    return { total, sessions, historyComplete: sessions.length >= total }
+  }, [error, query.data])
+  const hasMoreSessions = query.hasNextPage
+  const isFetchingMoreSessions = query.isFetchingNextPage
+  const { fetchNextPage } = query
   return {
     sessionList,
     sessionListError: error,
-    loadedSessionPages: loadedPages,
+    loadedSessionPages: query.data?.pages.length ?? 0,
     hasMoreSessions,
     isFetchingMoreSessions,
-    fetchMoreSessions: useCallback(() => {
-      if (!hasMoreSessions || isFetchingMoreSessions) return
-      setRequested({ inputKey, pages: loadedPages + 1 })
-    }, [hasMoreSessions, inputKey, isFetchingMoreSessions, loadedPages]),
+    fetchMoreSessions: useMemo(
+      () => () => {
+        if (hasMoreSessions && !isFetchingMoreSessions) void fetchNextPage()
+      },
+      [fetchNextPage, hasMoreSessions, isFetchingMoreSessions],
+    ),
     refreshSessions: sync.refresh,
     refreshingSessions: sync.refreshing,
     syncStatus: sync.status,

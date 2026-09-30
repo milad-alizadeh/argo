@@ -81,17 +81,13 @@ export function saveSessionBatch(
   database: Database,
   harness: Harness,
   records: readonly DiscoveredSession[],
-): void {
+): string[] {
   const upsert = createSessionUpsert(database)
   database.$client.exec('BEGIN IMMEDIATE')
   try {
-    for (const record of records) {
-      upsert({
-        ...record,
-        harness,
-      })
-    }
+    const sessionIds = records.map((record) => upsert({ ...record, harness }))
     database.$client.exec('COMMIT')
+    return sessionIds
   } catch (error) {
     database.$client.exec('ROLLBACK')
     throw error

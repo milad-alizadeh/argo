@@ -59,41 +59,17 @@ export async function selectedProjectId(page: Page): Promise<string> {
   return projectId
 }
 
-export async function sessionRows(page: Page): Promise<SessionRow[]> {
+export async function sessionRows(
+  page: Page,
+  filter: 'active' | 'archived' | 'all' = 'active',
+): Promise<SessionRow[]> {
   const projectId = await selectedProjectId(page)
-  return page.evaluate(async (projectId) => {
-    const id = Math.floor(Math.random() * 1_000_000_000)
-    const rows = await new Promise<SessionRow[]>((resolve, reject) => {
-      let unsubscribe = () => {}
-      const done = (error: unknown, value?: SessionRow[]) => {
-        unsubscribe()
-        if (error === undefined) resolve(value ?? [])
-        else reject(error instanceof Error ? error : new Error(String(error)))
-      }
-      void window.argo
-        .trpcSubscribe(
-          {
-            id,
-            path: 'sessionList',
-            type: 'subscription',
-            input: { projectId, search: '', pages: 1, pageSize: 100 },
-          },
-          (message) => {
-            if (message.id !== id || message.type !== 'data') {
-              if (message.id === id && message.type === 'error') done(message.error)
-              return
-            }
-            const data = message.result.data as { type?: string; rows?: SessionRow[] }
-            if (data.type === 'list') done(undefined, data.rows)
-          },
-        )
-        .then((stop) => {
-          unsubscribe = stop
-        })
-        .catch((error: unknown) => done(error))
-    })
-    return rows
-  }, projectId)
+  const list = await trpcCall<{ total: number; rows: SessionRow[] }>(page, {
+    path: 'sessionList',
+    type: 'query',
+    input: { projectId, filter, limit: 100 },
+  })
+  return list.rows
 }
 
 export async function sessionFeed(page: Page, sessionId: string): Promise<SessionFeedReading> {
@@ -162,32 +138,9 @@ export function feedRows(reading: SessionFeedReading) {
   return reading.entries.flatMap((entry) => (entry.row.shape === 'activity' ? [] : [entry.row]))
 }
 
-export async function archiveList(page: Page, cursor: string | null, restoreId: string | null) {
-  const projectId = await selectedProjectId(page)
-  return trpcCall<{
-    sessions: SessionRow[]
-    nextCursor: string | null
-    restored: SessionRow | null
-    historyComplete: boolean
-  }>(page, {
-    path: 'sessionArchiveList',
-    type: 'query',
-    input: { projectId, cursor, restoreId },
-  })
-}
-
-export async function archiveSet(page: Page, sessionIds: string[], archived: boolean) {
-  return trpcCall<{ applied: string[]; failed: string[] }>(page, {
-    path: 'sessionArchiveSet',
-    type: 'mutation',
-    input: { sessionIds, archived },
-  })
-}
-
-export async function renameSession(page: Page, sessionId: string, title: string) {
-  return trpcCall<{ title: string }>(page, {
-    path: 'sessionRename',
-    type: 'mutation',
-    input: { sessionId, title },
-  })
+export async function updateSession(
+  page: Page,
+  input: { sessionId: string; title?: string; archived?: boolean },
+) {
+  return trpcCall<SessionRow>(page, { path: 'sessionUpdate', type: 'mutation', input })
 }

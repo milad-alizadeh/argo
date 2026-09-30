@@ -5,21 +5,24 @@ import type { HistoryTurn } from '@/harnesses/registration'
 export const WATCHED_TURN_QUIET_LIMIT_MS = 5 * 60_000
 
 type WatchedTurn = { turn: HistoryTurn; at: number }
-type WatchedWrite = { harness: Harness; nativeId: string; turn: HistoryTurn | null; at: number }
+type WatchedSession = { harness: Harness; nativeId: string }
+type WatchedWrite = WatchedSession & { turn: HistoryTurn | null; at: number }
+type WatchedStatus = 'running' | 'idle' | 'unknown'
 
-// What a watched Session's history file last said about its turn, kept in memory like live status.
+// Turns a watched Session's history writes into its status: running for an open turn, idle for a
+// closed one, and unknown once an open turn has been quiet too long.
 export class WatchedSessionStatus {
   readonly #turns = new Map<string, WatchedTurn>()
   readonly #quietTimers = new Map<string, ReturnType<typeof setTimeout>>()
-  readonly #changed: () => void
+  readonly #write: (session: WatchedSession, status: WatchedStatus) => void
 
-  constructor(changed: () => void) {
-    this.#changed = changed
+  constructor(write: (session: WatchedSession, status: WatchedStatus) => void) {
+    this.#write = write
   }
 
-  // A write with no turn marker in reach still means a turn is under way. Says whether the Turn
-  // opened or closed with this write, counting a write after a quiet open turn as a new opening.
-  record({ harness, nativeId, turn, at }: WatchedWrite): boolean {
+  // A write with no turn marker in reach still means a turn is under way; a write after a quiet
+  // open turn opens it again.
+  record({ harness, nativeId, turn, at }: WatchedWrite): void {
     const key = `${harness}\u0000${nativeId}`
     const observed = turn ?? 'open'
     const previous = this.#turns.get(key)
@@ -30,23 +33,15 @@ export class WatchedSessionStatus {
     const pending = this.#quietTimers.get(key)
     if (pending !== undefined) clearTimeout(pending)
     this.#quietTimers.delete(key)
-    if (turn === 'closed') return changed
+    if (changed) this.#write({ harness, nativeId }, observed === 'closed' ? 'idle' : 'running')
+    if (turn === 'closed') return
     this.#quietTimers.set(
       key,
       setTimeout(() => {
         this.#quietTimers.delete(key)
-        this.#changed()
+        this.#write({ harness, nativeId }, 'unknown')
       }, WATCHED_TURN_QUIET_LIMIT_MS),
     )
-    return changed
-  }
-
-  // The stored Harness column is plain text, so a read takes any Harness name.
-  statusOf(harness: string, nativeId: string, now: number): 'running' | 'idle' | null {
-    const watched = this.#turns.get(`${harness}\u0000${nativeId}`)
-    if (watched === undefined) return null
-    if (watched.turn === 'closed') return 'idle'
-    return now - watched.at < WATCHED_TURN_QUIET_LIMIT_MS ? 'running' : null
   }
 
   dispose(): void {

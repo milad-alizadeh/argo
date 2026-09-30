@@ -32,7 +32,6 @@ function routerDependencies(
       hasLiveChannel: () => false,
       readHistory: async () => [],
       roster: new SessionRosterChanges(),
-      watchedStatus: { statusOf: () => null },
       supervisor: {
         getSnapshot: () => ({ context: { sessions: {} } }),
         send: () => {},
@@ -45,13 +44,10 @@ function routerDependencies(
   } as unknown as AppRouterDependencies
 }
 
-async function firstRosterUpdates() {
-  const updates: inferRouterOutputs<AppRouter>['sessionList'][] = []
-  const stream = await createAppRouter(routerDependencies())
+function firstPage() {
+  return createAppRouter(routerDependencies())
     .createCaller({})
-    .sessionList({ projectId: 'project-1', pageSize: 30 })
-  stream.subscribe({ next: (update) => updates.push(update) }).unsubscribe()
-  return updates
+    .sessionList({ projectId: 'project-1' })
 }
 
 beforeEach(async () => {
@@ -64,7 +60,7 @@ afterEach(async () => {
   await rm(userData, { recursive: true, force: true })
 })
 
-test('registers the Session roster subscription on the global router', async () => {
+test('registers the Session List query on the global router', async () => {
   database
     .insert(project)
     .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
@@ -79,11 +75,7 @@ test('registers the Session roster subscription on the global router', async () 
       firstPrompt: 'Open the saved Session',
     })
     .run()
-  const updates = await firstRosterUpdates()
-  expect(updates[0]).toMatchObject({
-    type: 'list',
-    pages: 1,
-    pageSize: 30,
+  expect(await firstPage()).toMatchObject({
     total: 1,
     rows: [
       {
@@ -105,7 +97,7 @@ function insertActivitySessions(ids: readonly string[]) {
         nativeId: `native-${index}`,
         projectId: 'project-1',
         firstPrompt: `Session ${index}`,
-        listOrderAt: index + 1,
+        createdAt: index + 1,
       })
       .run()
 }
@@ -121,7 +113,7 @@ test('keeps both roster activities when the selected Feed changes', async () => 
   ] as const
   insertActivitySessions(ids)
   const roster = new SessionRosterChanges()
-  const activities = new SessionActivities(database, () => roster.changed('activity'))
+  const activities = new SessionActivities({ database, roster })
   const caller = createAppRouter(
     routerDependencies({
       roster,
@@ -141,9 +133,9 @@ test('keeps both roster activities when the selected Feed changes', async () => 
       ],
     }),
   ).createCaller({})
-  const updates: inferRouterOutputs<AppRouter>['sessionList'][] = []
-  const rosterStream = await caller.sessionList({ projectId: 'project-1' })
-  const rosterSubscription = rosterStream.subscribe({ next: (update) => updates.push(update) })
+  const changes: inferRouterOutputs<AppRouter>['sessionListChanged'][] = []
+  const changeStream = await caller.sessionListChanged()
+  const changeSubscription = changeStream.subscribe({ next: (change) => changes.push(change) })
   const firstStream = await caller.sessionFeed({ sessionId: ids[0] })
   const firstSubscription = firstStream.subscribe({ next: () => {} })
   const secondStream = await caller.sessionFeed({ sessionId: ids[1] })
@@ -156,16 +148,12 @@ test('keeps both roster activities when the selected Feed changes', async () => 
       'Ran native-0',
       'Ran native-1',
     ])
-    expect(
-      new Set(
-        updates
-          .filter((update) => update.type === 'row')
-          .map((update) => update.row.activity?.label),
-      ),
-    ).toEqual(new Set(['Ran native-0', 'Ran native-1']))
+    expect(new Set(changes.flatMap(({ rows }) => rows.map((row) => row.activity?.label)))).toEqual(
+      new Set(['Ran native-0', 'Ran native-1']),
+    )
   } finally {
     secondSubscription.unsubscribe()
-    rosterSubscription.unsubscribe()
+    changeSubscription.unsubscribe()
   }
 })
 
@@ -197,14 +185,12 @@ test('lists the Subagents the sync read from each Session history', async () => 
     stopped: () => false,
   })
 
-  const updates = await firstRosterUpdates()
-
-  expect(updates[0]?.type === 'list' && updates[0].rows[0]?.subagents).toEqual([
+  expect((await firstPage()).rows[0]?.subagents).toEqual([
     { id: 'agent-1', label: 'Survey', state: 'running', startedAt: null, endedAt: null },
   ])
 })
 
-test('renames a saved Session through sessionRename after the Harness accepts it', async () => {
+test('renames a saved Session through sessionUpdate after the Harness accepts it', async () => {
   database
     .insert(sessionTable)
     .values({
@@ -222,11 +208,11 @@ test('renames a saved Session through sessionRename after the Harness accepts it
   })
 
   await expect(
-    createAppRouter(dependencies).createCaller({}).sessionRename({
+    createAppRouter(dependencies).createCaller({}).sessionUpdate({
       sessionId: '00000000-0000-4000-8000-000000000002',
       title: 'Confirmed title',
     }),
-  ).resolves.toEqual({ title: 'Confirmed title' })
+  ).resolves.toMatchObject({ customTitle: 'Confirmed title' })
   expect(renamed).toEqual([
     {
       harness: 'claude',
@@ -260,7 +246,7 @@ test('keeps the existing title when the Harness rejects a rename', async () => {
   })
 
   await expect(
-    createAppRouter(dependencies).createCaller({}).sessionRename({
+    createAppRouter(dependencies).createCaller({}).sessionUpdate({
       sessionId: '00000000-0000-4000-8000-000000000003',
       title: 'Rejected title',
     }),
@@ -286,7 +272,7 @@ test('accepts a later Harness sync that changes or clears a confirmed custom tit
   const dependencies = routerDependencies({ rename: async () => undefined })
   const caller = createAppRouter(dependencies).createCaller({})
 
-  await caller.sessionRename({
+  await caller.sessionUpdate({
     sessionId: '00000000-0000-4000-8000-000000000004',
     title: 'Confirmed title',
   })
@@ -335,11 +321,11 @@ test('reads a Session beyond the loaded roster window by ID without reading its 
       return []
     },
   })
-  const listed = await firstRosterUpdates()
+  const listed = await firstPage()
 
   const updates = await firstDetails(dependencies, ids[0] ?? '')
 
-  expect(listed[0]?.type === 'list' && listed[0].rows.map(({ id }) => id)).not.toContain(ids[0])
+  expect(listed.rows.map(({ id }) => id)).not.toContain(ids[0])
   expect(updates).toEqual([
     {
       sessionId: ids[0],

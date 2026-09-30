@@ -6,7 +6,8 @@ const serverOwnedSessionFields = {
   createdAt: true,
   updatedAt: true,
   subagentsReadAt: true,
-  listOrderAt: true,
+  sortOrder: true,
+  status: true,
   activity: true,
 } as const
 export const sessionInsertSchema = createInsertSchema(sessionTable).omit(serverOwnedSessionFields)

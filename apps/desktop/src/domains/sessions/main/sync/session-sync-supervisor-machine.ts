@@ -48,10 +48,12 @@ type SessionSyncEvent =
   | {
       type: 'SyncCommitted'
       harness: Harness
+      sessionIds: readonly string[]
     }
   | {
       type: 'SyncStored'
       harness: Harness
+      sessionId: string
     }
   | {
       type: 'SyncCompleted'
@@ -100,10 +102,11 @@ const sessionSyncActor = fromCallback<
         database,
         harness,
         readHistory,
-        stored: () =>
+        stored: (sessionId) =>
           sendBack({
             type: 'SyncStored',
             harness,
+            sessionId,
           }),
         stopped: () => stopped,
       })
@@ -121,10 +124,15 @@ const sessionSyncActor = fromCallback<
     sessionSyncMachine.provide({
       actors: {
         save: fromPromise(async ({ input: saveInput }) => {
-          saveSessionBatch(database, harness, matchSessionsToProjects(database, saveInput.records))
+          const sessionIds = saveSessionBatch(
+            database,
+            harness,
+            matchSessionsToProjects(database, saveInput.records),
+          )
           sendBack({
             type: 'SyncCommitted',
             harness,
+            sessionIds,
           })
         }),
       },
@@ -177,10 +185,12 @@ const sessionSyncStatusActor = fromCallback<
   | {
       type: 'Committed'
       harness: Harness
+      sessionIds: readonly string[]
     }
   | {
       type: 'Stored'
       harness: Harness
+      sessionId: string
     },
   Partial<Record<Harness, SessionSyncStatusStore>>
 >(({ input, receive }) => {
@@ -190,10 +200,10 @@ const sessionSyncStatusActor = fromCallback<
         input[event.harness]?.update(event.status)
         break
       case 'Committed':
-        input[event.harness]?.committed()
+        input[event.harness]?.committed(event.sessionIds)
         break
       case 'Stored':
-        input[event.harness]?.stored()
+        input[event.harness]?.stored([event.sessionId])
         break
     }
   })
@@ -309,6 +319,7 @@ export const sessionSyncSupervisorMachine = setup({
       return {
         type: 'Committed',
         harness: event.harness,
+        sessionIds: event.sessionIds,
       }
     }),
     reportStored: sendTo('status', ({ event }) => {
@@ -316,6 +327,7 @@ export const sessionSyncSupervisorMachine = setup({
       return {
         type: 'Stored',
         harness: event.harness,
+        sessionId: event.sessionId,
       }
     }),
   },

@@ -1,112 +1,37 @@
 import { describe, expect, test } from 'vitest'
-import { SessionContractError } from '../../session-contract-error'
 import type { Session } from '../../types'
-import type { SessionListStatus } from '../hooks/use-session-list-filter-store'
-import { sameSessionListRow, sessionName } from './session-list-rows'
-import {
-  archiveFetchingMore,
-  archiveWithMorePages,
-  failedArchive,
-  kindsOf,
-  loadingArchive,
-  someArchived,
-} from './session-list-rows-test-fixtures'
+import { sameSessionListRow, sessionListRows, sessionName } from './session-list-rows'
 
-function readFailure(requestId: string, message: string) {
-  return new SessionContractError({
-    version: 1,
-    type: 'session.error',
-    requestId,
-    code: 'internal-error',
-    message,
-  })
+function kindsOf(options: { hasMoreSessions?: boolean; isFetchingMoreSessions?: boolean }) {
+  const sessions = [{ id: 'session-0' }, { id: 'session-1', archived: true }] as Session[]
+  return sessionListRows({
+    sessions,
+    hasMoreSessions: false,
+    isFetchingMoreSessions: false,
+    ...options,
+  }).map((row) => (row.kind === 'session' ? `session${row.archived ? ' archived' : ''}` : row.kind))
 }
 
-describe('building the Session list rows for a status filter', () => {
-  test('ends on the paging sentinel while a wider window is available', () => {
+describe('building the Session list rows', () => {
+  test('marks each row archived as its Session is', () => {
+    expect(kindsOf({})).toEqual(['session', 'session archived'])
+  })
+
+  test('ends on the paging sentinel while more Sessions are available', () => {
     expect(kindsOf({ hasMoreSessions: true })).toEqual([
       'session',
-      'session',
+      'session archived',
       'sessionListSentinel',
     ])
   })
 
-  test('carries no paging rows once every Session is inside the window', () => {
-    expect(kindsOf({ hasMoreSessions: false })).toEqual(['session', 'session'])
-  })
-
-  test('ends on the spinner row while a wider window is being read', () => {
+  test('ends on the spinner row while the next page is read', () => {
     expect(kindsOf({ hasMoreSessions: true, isFetchingMoreSessions: true })).toEqual([
       'session',
-      'session',
+      'session archived',
       'sessionListSentinel',
       'sessionListLoadingMore',
     ])
-  })
-
-  test('carries only active Sessions under the active filter', () => {
-    expect(kindsOf({ archived: someArchived, showArchive: true, status: 'active' })).toEqual([
-      'session',
-      'session',
-    ])
-  })
-
-  test('drops the active Sessions under the archived filter', () => {
-    expect(kindsOf({ archived: someArchived, showArchive: true, status: 'archived' })).toEqual([
-      'session',
-    ])
-  })
-
-  test('carries both under the all filter, active first', () => {
-    expect(kindsOf({ archived: someArchived, showArchive: true, status: 'all' })).toEqual([
-      'session',
-      'session',
-      'session',
-    ])
-  })
-
-  // The Archive used to be reached by opening a disclosure row inside the list.
-  test('carries no disclosure row for the Archive under any filter', () => {
-    const everyStatus: SessionListStatus[] = ['active', 'archived', 'all']
-    for (const status of everyStatus) {
-      expect(kindsOf({ archived: someArchived, showArchive: true, status })).not.toContain(
-        'archivedToggle',
-      )
-    }
-  })
-})
-
-describe('building the Session list rows for the Archive', () => {
-  test('says the Archive is empty under the archived filter rather than showing nothing', () => {
-    expect(kindsOf({ showArchive: true, status: 'archived' })).toEqual(['archivedEmpty'])
-  })
-
-  test('shows the Archive spinner while its own read is in flight', () => {
-    expect(kindsOf({ archived: loadingArchive, showArchive: true, status: 'archived' })).toEqual([
-      'archivedLoading',
-    ])
-  })
-
-  test('shows the Archive failure in place of its rows', () => {
-    expect(kindsOf({ archived: failedArchive, showArchive: true, status: 'archived' })).toEqual([
-      'archivedError',
-    ])
-  })
-
-  test('ends the Archive on its own paging sentinel while a further page is available', () => {
-    expect(
-      kindsOf({ archived: archiveWithMorePages, showArchive: true, status: 'archived' }),
-    ).toEqual(['session', 'archivedSentinel'])
-  })
-
-  test('ends the Archive on its own spinner while a further page is being read', () => {
-    expect(
-      kindsOf({ archived: archiveFetchingMore, showArchive: true, status: 'archived' }),
-    ).toEqual(['session', 'archivedLoadingMore'])
-  })
-
-  test('carries no Archive rows at all until the Session list has resolved once', () => {
-    expect(kindsOf({ archived: someArchived, showArchive: false, status: 'archived' })).toEqual([])
   })
 })
 
@@ -138,8 +63,6 @@ describe('naming a Session', () => {
 
 describe('deciding whether a Session list row is the same row across a rebuild', () => {
   const session = { id: 'session-1' } as Session
-  const error = readFailure('test-archive-error', 'read failed')
-  const otherError = readFailure('test-other-error', 'read failed again')
 
   test('reads a rebuilt row object carrying one Session as the same row', () => {
     expect(
@@ -177,15 +100,6 @@ describe('deciding whether a Session list row is the same row across a rebuild',
   test('reads two status rows of different kinds as different rows', () => {
     expect(
       sameSessionListRow({ kind: 'sessionListSentinel' }, { kind: 'sessionListLoadingMore' }),
-    ).toBe(false)
-  })
-
-  test('reads two Archive failures carrying different errors as different rows', () => {
-    expect(
-      sameSessionListRow(
-        { kind: 'archivedError', error },
-        { kind: 'archivedError', error: otherError },
-      ),
     ).toBe(false)
   })
 })

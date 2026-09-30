@@ -28,8 +28,8 @@ type SyncEvent =
       harness: Harness
       status: ReturnType<SessionSyncStatusStore['current']>
     }
-  | { type: 'SyncCommitted'; harness: Harness }
-  | { type: 'SyncStored'; harness: Harness }
+  | { type: 'SyncCommitted'; harness: Harness; sessionIds: readonly string[] }
+  | { type: 'SyncStored'; harness: Harness; sessionId: string }
   | { type: 'SyncCompleted'; harness: Harness }
   | { type: 'SyncFailed'; harness: Harness }
 
@@ -47,7 +47,7 @@ test('dispatches registered Session discovery functions and runs a Refresh that 
           dispatched.push(input.harness)
           finished.push(() => sendBack({ type: 'SyncCompleted', harness: input.harness }))
           sendBack({ type: 'SyncStatus', harness: input.harness, status: fetchingStatus })
-          sendBack({ type: 'SyncCommitted', harness: input.harness })
+          sendBack({ type: 'SyncCommitted', harness: input.harness, sessionIds: [] })
           return () => {
             stopped += 1
           }

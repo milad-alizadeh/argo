@@ -4,13 +4,15 @@ import type { z } from 'zod'
 import { databaseFrom } from '@/database/database'
 import { SessionActivities } from '@/domains/sessions/main/api/session-activities'
 import {
+  sessionListChangedProcedure,
   sessionListProcedure,
-  type sessionListUpdateSchema,
+  type sessionListRowSchema,
 } from '@/domains/sessions/main/api/session-list'
 import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster-changes'
-import { WatchedSessionStatus } from '@/domains/sessions/main/api/watched-session-status'
+import { sessionUpdateProcedure } from '@/domains/sessions/main/api/session-update-procedure'
+import type { Harness } from '@/harnesses/harness'
 
-// The Session List's tables, as the list procedure reads them.
+// The Session List's tables, as the list procedures read them.
 const SESSION_LIST_TABLES = `CREATE TABLE session (
     argo_id TEXT PRIMARY KEY,
     harness TEXT NOT NULL,
@@ -22,8 +24,9 @@ const SESSION_LIST_TABLES = `CREATE TABLE session (
     first_prompt TEXT,
     cwd TEXT,
     activity_at INTEGER,
-    list_order_at INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     activity TEXT,
+    status TEXT,
     subagents_read_at INTEGER,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
@@ -46,32 +49,17 @@ const SESSION_LIST_TABLES = `CREATE TABLE session (
   );
   CREATE TABLE session_archive (session_id TEXT PRIMARY KEY);`
 
-// Counts substring scans, the search's one cost that grows with every saved Session. A match
-// test of one row by its Argo ID is not a scan.
-function countSearchScans(client: DatabaseSync) {
-  const searchScans = { count: 0 }
-  const prepare = client.prepare.bind(client)
-  client.prepare = (source: string) => {
-    if (source.includes('instr(') && !source.includes('"argo_id" = ?')) searchScans.count += 1
-    return prepare(source)
-  }
-  return searchScans
-}
-
 export const IDS = [
   '00000000-0000-4000-8000-000000000001',
   '00000000-0000-4000-8000-000000000002',
   '00000000-0000-4000-8000-000000000003',
 ] as const
 
-export function sessionListCaller(
-  sessions: Record<string, unknown> = {},
-  observeFeed?: (sessionId: string) => () => void,
-) {
-  const client = new DatabaseSync(':memory:')
-  client.exec(SESSION_LIST_TABLES)
-  const searchScans = countSearchScans(client)
-  const database = databaseFrom(client)
+export type SessionListRow = z.infer<typeof sessionListRowSchema>
+export type SessionListChange = { rows: SessionListRow[] }
+type RenameRequest = { harness: Harness; nativeId: string; title: string }
+
+function mockSupervisor(sessions: Record<string, unknown>) {
   const statusListeners = new Set<(event: { sessionId: string }) => void>()
   const supervisor = {
     on: (_type: string, listener: (event: { sessionId: string }) => void) => {
@@ -86,50 +74,57 @@ export function sessionListCaller(
       },
     }),
   }
-  const roster = new SessionRosterChanges()
-  const watchedStatus = new WatchedSessionStatus(() => roster.changed('activity'))
-  const activities = new SessionActivities(database, () => roster.changed('activity'))
-  const router = initTRPC.create().router({
-    list: sessionListProcedure(
-      {
-        database,
-        supervisor: supervisor as never,
-        roster,
-        watchedStatus,
-      },
-      observeFeed,
-    ),
-  })
-  const caller = router.createCaller({})
-  const updates = async (input: Parameters<typeof caller.list>[0]) => {
-    const received: SessionListUpdate[] = []
-    const stream = await caller.list(input)
-    const subscription = stream.subscribe({ next: (update) => received.push(update) })
-    return { received, stop: () => subscription.unsubscribe() }
-  }
-  const list = async (input: Parameters<typeof caller.list>[0]) => {
-    const { received, stop } = await updates(input)
-    stop()
-    const [first] = received
-    if (first?.type !== 'list') throw new Error('The roster did not send its list first.')
-    return first
-  }
   const statusChanged = (sessionId: string) => {
     for (const listener of statusListeners) listener({ sessionId })
   }
+  return { supervisor, statusChanged }
+}
+
+export function sessionListCaller(
+  sessions: Record<string, unknown> = {},
+  observeFeed: (sessionId: string) => () => void = () => () => {},
+) {
+  const client = new DatabaseSync(':memory:')
+  client.exec(SESSION_LIST_TABLES)
+  const database = databaseFrom(client)
+  const { supervisor, statusChanged } = mockSupervisor(sessions)
+  const roster = new SessionRosterChanges()
+  const activities = new SessionActivities({ database, roster })
+  const renames: RenameRequest[] = []
+  const context = {
+    database,
+    supervisor: supervisor as never,
+    roster,
+    rename: async (request: RenameRequest) => {
+      renames.push(request)
+    },
+  }
+  const caller = initTRPC
+    .create()
+    .router({
+      list: sessionListProcedure(context),
+      changed: sessionListChangedProcedure(context, observeFeed),
+      update: sessionUpdateProcedure(context),
+    })
+    .createCaller({})
+  const changes = async () => {
+    const received: SessionListChange[] = []
+    const stream = await caller.changed()
+    const subscription = stream.subscribe({ next: (change) => received.push(change) })
+    return { received, stop: () => subscription.unsubscribe() }
+  }
   return {
     client,
-    list,
-    updates,
+    list: caller.list,
+    update: caller.update,
+    changes,
     roster,
-    searchScans,
     statusChanged,
-    watchedStatus,
     activities,
+    renames,
   }
 }
 
-export type SessionListUpdate = z.infer<typeof sessionListUpdateSchema>
 export const settled = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 export function liveSession(state: string, status: string | null = null) {
@@ -151,6 +146,7 @@ export function insertSession(
     id: string
     harness: string
     nativeId: string
+    createdAt: number
     customTitle?: string | null
     preview?: string | null
     firstPrompt?: string | null
@@ -158,15 +154,17 @@ export function insertSession(
     workspaceId?: string | null
     activityAt?: number | null
     projectId?: string
-    updatedAt: number
+    sortOrder?: number
+    status?: string | null
+    archived?: boolean
   },
 ) {
   client
     .prepare(
       `INSERT INTO session (
         argo_id, harness, native_id, project_id, workspace_id, custom_title, preview,
-        first_prompt, cwd, activity_at, list_order_at, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+        first_prompt, cwd, activity_at, sort_order, status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       values.id,
@@ -179,7 +177,11 @@ export function insertSession(
       values.firstPrompt ?? null,
       values.cwd ?? null,
       values.activityAt ?? null,
-      values.activityAt ?? values.updatedAt,
-      values.updatedAt,
+      values.sortOrder ?? 0,
+      values.status ?? null,
+      values.createdAt,
+      values.createdAt,
     )
+  if (values.archived === true)
+    client.prepare('INSERT INTO session_archive (session_id) VALUES (?)').run(values.id)
 }

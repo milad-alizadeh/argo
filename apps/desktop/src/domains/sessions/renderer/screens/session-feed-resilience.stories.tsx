@@ -8,6 +8,7 @@ import {
   sessionFeedRefreshTrpc,
   sessionFeedSubscribe,
   sessionListSubscribe,
+  sessionListTrpc,
 } from '@/mocks/sessions/session-story-host'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { trpcClient } from '@/platform/renderer/trpc-client'
@@ -40,7 +41,7 @@ function flakyFeedHost() {
       sessionListSubscribe(before.trpcSubscribe, () => [session]),
       read,
     ),
-    trpc: sessionFeedRefreshTrpc(before.trpc),
+    trpc: sessionListTrpc(sessionFeedRefreshTrpc(before.trpc), () => [session]),
   }
   return () => {
     window.argo = before
@@ -62,7 +63,7 @@ function flakyFirstOpenHost() {
       sessionListSubscribe(before.trpcSubscribe, () => [session]),
       read,
     ),
-    trpc: sessionFeedRefreshTrpc(before.trpc),
+    trpc: sessionListTrpc(sessionFeedRefreshTrpc(before.trpc), () => [session]),
   }
   return () => {
     window.argo = before
@@ -85,7 +86,7 @@ function missingHistoryHost(listed = true) {
       sessionListSubscribe(before.trpcSubscribe, () => (listed ? [session] : [])),
       read,
     ),
-    trpc: sessionFeedRefreshTrpc(before.trpc),
+    trpc: sessionListTrpc(sessionFeedRefreshTrpc(before.trpc), () => (listed ? [session] : [])),
   }
   return () => {
     window.argo = before
@@ -121,7 +122,7 @@ function liveFeedHost() {
         },
       ],
     ),
-    trpc: sessionFeedRefreshTrpc(before.trpc),
+    trpc: sessionListTrpc(sessionFeedRefreshTrpc(before.trpc), () => [session]),
   }
   return () => {
     window.argo = before

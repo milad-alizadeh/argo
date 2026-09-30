@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
+import type { Session } from '@/domains/sessions/renderer/types'
 import { sessionRow } from '@/mocks/sessions/session-rows'
 import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fixture'
 import {
@@ -11,6 +12,7 @@ import {
   announceSessionListChange,
   sessionFeedSubscribe,
   sessionListSubscribe,
+  sessionListTrpc,
 } from '@/mocks/sessions/session-story-host'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { queryClient } from '@/platform/renderer/trpc-client'
@@ -34,12 +36,11 @@ function restartedHost(row = resumable) {
   const live: SessionLiveEvent[] = []
   const restoreHost = sessionSelectionHost([row])
   const before = window.argo
+  const rows = (): Session[] => [resumed ? { ...row, posture: 'live', status: 'running' } : row]
   window.argo = {
     ...before,
     trpcSubscribe: sessionFeedSubscribe(
-      sessionListSubscribe(before.trpcSubscribe, () => [
-        resumed ? { ...row, posture: 'live', status: 'running' } : row,
-      ]),
+      sessionListSubscribe(before.trpcSubscribe, rows),
       async () => [
         {
           kind: 'message',
@@ -50,22 +51,25 @@ function restartedHost(row = resumable) {
       ],
       live,
     ),
-    trpc: (async (request) => {
-      if (request.path !== 'sessionSubmit') return before.trpc(request)
-      resumed = true
-      live.push({
-        sessionId: row.id,
-        sequence: 1,
-        type: 'status',
-        commandId: null,
-        turnId: null,
-        vendorEventId: null,
-        status: 'running',
-      })
-      announceSessionListChange()
-      announceSessionFeedChange()
-      return { id: request.id, result: { data: { sessionId: row.id } } }
-    }) as typeof window.argo.trpc,
+    trpc: sessionListTrpc(
+      (async (request) => {
+        if (request.path !== 'sessionSubmit') return before.trpc(request)
+        resumed = true
+        live.push({
+          sessionId: row.id,
+          sequence: 1,
+          type: 'status',
+          commandId: null,
+          turnId: null,
+          vendorEventId: null,
+          status: 'running',
+        })
+        announceSessionListChange()
+        announceSessionFeedChange()
+        return { id: request.id, result: { data: { sessionId: row.id } } }
+      }) as typeof window.argo.trpc,
+      rows,
+    ),
   }
   return restoreHost
 }

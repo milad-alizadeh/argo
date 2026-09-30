@@ -22,7 +22,6 @@ export function SessionListVirtualList({
   label,
   onArchive,
   onFetchMoreSessions,
-  onFetchNextPage,
   onFocus,
   onOpenTicket,
   onRename,
@@ -36,7 +35,6 @@ export function SessionListVirtualList({
   unavailableSessionIds,
 }: SessionListRowHandlers & {
   label: string
-  onFetchNextPage: () => void
   renamedTitles: Record<string, string>
   rows: readonly SessionListRow[]
   selectedIds: ReadonlySet<SessionId>
@@ -59,7 +57,6 @@ export function SessionListVirtualList({
   // Read after the items: computing them is what settles the visible range.
   const range = virtualizer.range
   useSentinelFetch({ rows, kind: 'sessionListSentinel', range, onFetch: onFetchMoreSessions })
-  useSentinelFetch({ rows, kind: 'archivedSentinel', range, onFetch: onFetchNextPage })
 
   return (
     <div

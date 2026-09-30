@@ -2,8 +2,7 @@ import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Progress } from '@/platform/renderer/components/ui/progress'
 import { useObservedFeedReading } from '../feed/use-feed-reading'
-import type { Session, SessionId } from '../types'
-import { useArchivedSection } from './archived/use-archived-section'
+import type { SessionId } from '../types'
 import { useSessionListStatus } from './hooks/use-session-list-filter-store'
 import { useSettledSearch } from './hooks/use-settled-search'
 import { RenameDialog } from './rename/rename-dialog'
@@ -20,58 +19,14 @@ import { useSessionList } from './use-session-list'
 
 export type { SessionListActions } from './rows'
 
-function useSessionListRows(options: {
-  projectId: string | null
-  read: ReturnType<typeof useSessionList>
-  searching: boolean
-  selectedSessionId: SessionId | null
-  visible: readonly Session[]
-}) {
-  const { projectId, read, searching, selectedSessionId, visible } = options
-  const visibleSessionIds = useMemo(() => visible.map((session) => session.id), [visible])
-  const status = useSessionListStatus()
-  const archived = useArchivedSection({
-    projectId,
-    selectedSessionId,
-    visibleSessionIds,
-    sessionListResolved: read.sessionList !== null,
-  })
-  const rows = useMemo(
-    () =>
-      sessionListRows({
-        active: visible,
-        archived,
-        hasMoreSessions: read.hasMoreSessions,
-        isFetchingMoreSessions: read.isFetchingMoreSessions,
-        searching,
-        showArchive: read.sessionList !== null,
-        status,
-      }),
-    [
-      archived,
-      read.hasMoreSessions,
-      read.isFetchingMoreSessions,
-      read.sessionList,
-      searching,
-      visible,
-      status,
-    ],
-  )
-  return {
-    rows,
-    onFetchNextPage: archived.fetchNextPage,
-  }
-}
-
 function useSessionListSessions(options: {
   actions: SessionListActions
-  projectId: string | null
   read: ReturnType<typeof useSessionList>
   search: string
   selectedSessionId: SessionId | null
   sidebar: RefObject<HTMLElement | null>
 }) {
-  const { actions, projectId, read, search, selectedSessionId, sidebar } = options
+  const { actions, read, search, selectedSessionId, sidebar } = options
   const sessions = useSidebarSessionList({
     onArchiveSelected: actions.onArchiveSelected,
     onSelect: actions.onSelect,
@@ -81,14 +36,16 @@ function useSessionListSessions(options: {
     selectedSessionId,
     sidebar,
   })
-  const rows = useSessionListRows({
-    projectId,
-    read,
-    searching: sessions.searching,
-    selectedSessionId,
-    visible: sessions.visible,
-  })
-  return { ...sessions, ...rows }
+  const rows = useMemo(
+    () =>
+      sessionListRows({
+        sessions: sessions.visible,
+        hasMoreSessions: read.hasMoreSessions,
+        isFetchingMoreSessions: read.isFetchingMoreSessions,
+      }),
+    [read.hasMoreSessions, read.isFetchingMoreSessions, sessions.visible],
+  )
+  return { ...sessions, rows }
 }
 
 function useUnavailableSessionIds(selectedSessionId: SessionId | null) {
@@ -189,11 +146,11 @@ export function SessionList({ actions, projectId, selectedSessionId }: SessionLi
   const settledSearch = useSettledSearch(search)
   const read = useSessionList({
     projectId,
+    filter: useSessionListStatus(),
     search: settledSearch,
   })
   const sessions = useSessionListSessions({
     actions,
-    projectId,
     read,
     search: settledSearch,
     selectedSessionId,
@@ -218,14 +175,12 @@ export function SessionList({ actions, projectId, selectedSessionId }: SessionLi
         searching={sessions.searching}
         sessionList={read.sessionList}
         sessionListError={read.sessionListError}
-        status={sessions.status}
       />
       <SessionListVirtualList
         label="Sessions"
         unavailableSessionIds={useUnavailableSessionIds(selectedSessionId)}
         onArchive={sessions.archive}
         onFetchMoreSessions={read.fetchMoreSessions}
-        onFetchNextPage={sessions.onFetchNextPage}
         onFocus={sessions.focus.setFocusedSessionId}
         onOpenTicket={actions.onOpenTicket}
         onRename={setRenameTarget}

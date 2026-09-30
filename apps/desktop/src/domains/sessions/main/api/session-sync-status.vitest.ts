@@ -1,13 +1,19 @@
 import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
+import { initTRPC } from '@trpc/server'
 import { test } from 'vitest'
 import { databaseFrom } from '@/database/database'
 import {
   observeSessionSync,
+  type SessionSyncEvent,
   type SessionSyncStatus,
   SessionSyncStatusStore,
   type SessionSyncStoreEvent,
+  sessionSyncStatusProcedure,
 } from './session-sync-status'
+
+const ID = '00000000-0000-4000-8000-000000000001'
+const OTHER_ID = '00000000-0000-4000-8000-000000000002'
 
 test('persists completed results while live phases remain in memory', () => {
   const client = new DatabaseSync(':memory:')
@@ -70,12 +76,13 @@ test('subscribers receive current status and a separate committed signal', () =>
   const store = new SessionSyncStatusStore(undefined, 'claude')
   const events: SessionSyncStoreEvent[] = []
   const unsubscribe = store.subscribe((event) => events.push(event))
-  store.committed()
+  store.committed([ID])
+  store.stored([OTHER_ID])
   unsubscribe()
-  assert.deepEqual(
-    events.map((event) => event.type),
-    ['status', 'committed'],
-  )
+  assert.deepEqual(events.slice(1), [
+    { type: 'committed', sessionIds: [ID] },
+    { type: 'stored', sessionIds: [OTHER_ID] },
+  ])
 })
 
 const idle: SessionSyncStatus = {
@@ -100,10 +107,10 @@ test('one observer reports every Harness scan as one status and forwards each co
     lastSuccessfulSyncAt: '2026-09-28T10:00:00.000Z',
   })
   second.update({ ...idle, phase: 'fetching', processed: 1, total: 4 })
-  second.committed()
+  second.committed([ID])
   second.update({ ...idle, phase: 'failed', processed: 2, total: 4, failure: 'Codex scan failed.' })
   stop()
-  first.committed()
+  first.committed([OTHER_ID])
 
   assert.deepEqual(events, [
     { type: 'status', status: idle },
@@ -127,7 +134,7 @@ test('one observer reports every Harness scan as one status and forwards each co
         lastSuccessfulSyncAt: '2026-09-28T10:00:00.000Z',
       },
     },
-    { type: 'committed' },
+    { type: 'committed', sessionIds: [ID] },
     {
       type: 'status',
       status: {
@@ -140,4 +147,18 @@ test('one observer reports every Harness scan as one status and forwards each co
       },
     },
   ])
+})
+
+test('the renderer gets a commit without Session IDs, and no stored signal', async () => {
+  const store = new SessionSyncStatusStore(undefined, 'claude')
+  const caller = initTRPC
+    .create()
+    .router({ sync: sessionSyncStatusProcedure([store]) })
+    .createCaller({})
+  const events: SessionSyncEvent[] = []
+  const subscription = (await caller.sync()).subscribe({ next: (event) => events.push(event) })
+  store.stored([ID])
+  store.committed([ID])
+  subscription.unsubscribe()
+  assert.deepEqual(events.slice(1), [{ type: 'committed' }])
 })

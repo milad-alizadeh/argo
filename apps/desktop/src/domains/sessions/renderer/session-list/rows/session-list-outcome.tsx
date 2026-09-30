@@ -3,7 +3,6 @@ import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/platform/renderer/components/ui/empty'
 import type { SessionError, SessionListPage } from '../../types'
-import { type SessionListStatus, showsActive } from '../hooks/use-session-list-filter-store'
 import { SessionListLoading } from './session-list-status-row'
 
 function NoSessionsFound() {
@@ -35,23 +34,20 @@ function SessionListErrorAlert({ error }: { error: SessionError }) {
 }
 
 // What the list says instead of rows: the read failed, the first read has not landed, or there are
-// no Sessions to show. Under a filter that excludes the active Session list its emptiness says nothing, so
-// the Archive's own empty row speaks instead.
+// no Sessions to show.
 export function SessionListOutcome({
   count,
   searching,
   sessionList,
   sessionListError,
-  status,
 }: {
   count: number
   searching: boolean
   sessionList: SessionListPage | null
   sessionListError: SessionError | null
-  status: SessionListStatus
 }) {
   if (sessionListError !== null) return <SessionListErrorAlert error={sessionListError} />
   if (sessionList === null) return searching ? null : <SessionListLoading />
-  if (count === 0 && (searching || showsActive(status))) return <NoSessionsFound />
+  if (count === 0) return <NoSessionsFound />
   return null
 }

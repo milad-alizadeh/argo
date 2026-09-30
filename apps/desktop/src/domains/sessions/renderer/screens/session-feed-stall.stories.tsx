@@ -7,6 +7,7 @@ import {
   sessionFeedRefreshTrpc,
   sessionFeedSubscribe,
   sessionListSubscribe,
+  sessionListTrpc,
 } from '@/mocks/sessions/session-story-host'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
@@ -31,7 +32,7 @@ function stalledFeedHost() {
       sessionListSubscribe(before.trpcSubscribe, () => [stalled]),
       read,
     ),
-    trpc: sessionFeedRefreshTrpc(before.trpc),
+    trpc: sessionListTrpc(sessionFeedRefreshTrpc(before.trpc), () => [stalled]),
   }
   return () => {
     window.argo = before
