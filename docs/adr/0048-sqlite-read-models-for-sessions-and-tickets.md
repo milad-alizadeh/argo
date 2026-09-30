@@ -11,12 +11,16 @@ channel. A rewritten, truncated or branched file still makes the Feed read the w
 
 The roster is one subscription. It sends the whole list first. After a sync commits, a live
 status changes, a rename, or a write to any history file, it sends each changed row, or the whole
-list again when the order or total changed. A history write sets the row's `activityAt` in SQLite.
+list again when the order or total changed. The list is flat and sorted by `listOrderAt`, newest
+first. That clock moves only on discovery and when a turn opens or closes, so streaming activity
+never moves a row. A history write sets the row's `activityAt` in SQLite.
 It also records, in memory, whether the file's current turn is open or closed. The newest opened
 turn is the current one. A close counts only when it names that turn or names no turn, so a late
 close for an earlier Codex turn leaves the newer turn open. A Session with no live actor shows
-running for an open turn and idle for a closed one. The roster's activity line for a Session
-whose Feed is open is the activity that Feed's main reading published. An open turn
+running for an open turn and idle for a closed one. The roster's activity line is the
+last activity a Feed's main reading published, stored on the Session row. The roster opens a Feed
+reader only for a Session that is starting, running, or waiting on the user, so an idle row keeps
+its stored line with no reader. An open turn
 whose file stays quiet for five minutes shows unknown, because a killed terminal writes nothing
 more.
 

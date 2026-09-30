@@ -60,3 +60,20 @@ test('keeps a closed turn idle with no timer', () => {
   expect(changes()).toBe(0)
   expect(status.statusOf('claude', 'native-1', 2 * WATCHED_TURN_QUIET_LIMIT_MS)).toBe('idle')
 })
+
+test('says a write changed the Turn only when it opens, closes, or wakes a quiet one', () => {
+  const status = new WatchedSessionStatus(() => {})
+  const write = (turn: 'open' | 'closed' | null, at: number) =>
+    status.record({ harness: 'claude', nativeId: 'native-1', turn, at })
+
+  const changes = [
+    write('open', 0),
+    write(null, 1_000),
+    write('closed', 2_000),
+    write(null, 3_000),
+    write(null, 3_000 + WATCHED_TURN_QUIET_LIMIT_MS),
+  ]
+
+  expect(changes).toEqual([true, false, true, true, true])
+  status.dispose()
+})

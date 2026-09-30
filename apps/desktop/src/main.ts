@@ -412,7 +412,7 @@ function attachWindowTrpc({
 }): () => void {
   const roster = new SessionRosterChanges()
   const watchedStatus = new WatchedSessionStatus(() => roster.changed())
-  const activities = new SessionActivities(() => roster.changed())
+  const activities = new SessionActivities(database, () => roster.changed())
   const router = routerForWindow({
     actors,
     domains,
@@ -456,8 +456,8 @@ function watchRosterSources({
     stops.push(
       watchHistoryActivity(files, (owner, turn, events) => {
         const at = Date.now()
-        recordHistoryActivity(database, { harness, nativeId: owner, at })
-        watchedStatus.record({ harness, nativeId: owner, turn, at })
+        const turnChanged = watchedStatus.record({ harness, nativeId: owner, turn, at })
+        recordHistoryActivity(database, { harness, nativeId: owner, at, turnChanged })
         recordLiveSubagents(database, { harness, nativeId: owner, events })
         roster.changed()
       }),

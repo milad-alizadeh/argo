@@ -12,7 +12,7 @@ import {
   type LiveSessionSupervisorActor,
   liveSessionActorFor,
 } from '../live/live-session-supervisor-machine'
-import type { SessionActivities } from './session-activities'
+import { storedActivity } from './session-activities'
 import type { SessionRosterChanges } from './session-roster-changes'
 import type { WatchedSessionStatus } from './watched-session-status'
 
@@ -146,16 +146,12 @@ export type SessionListContext = {
   supervisor: LiveSessionSupervisorActor
   roster: SessionRosterChanges
   watchedStatus: Pick<WatchedSessionStatus, 'statusOf'>
-  // The activity an observed Feed published; it outranks the live channel's own.
-  activities?: SessionActivities
 }
 
-// The Feed's activity names no tool or target, so the row keeps its kind as the tool.
-function observedActivity(
-  context: SessionListContext,
-  sessionId: string,
-): z.infer<typeof feedActivitySchema> | null {
-  const activity = context.activities?.activityOf(sessionId) ?? null
+// The Feed's activity names no tool or target, so the row keeps its kind as the tool. It outranks
+// the live channel's own.
+function observedActivity(stored: string | null): z.infer<typeof feedActivitySchema> | null {
+  const activity = storedActivity(stored)
   return activity === null ? null : { ...activity, tool: activity.kind, target: null }
 }
 
@@ -210,6 +206,7 @@ export function sessionListRow(
     cwd: string | null
     workspaceId: string | null
     activityAt: number | null
+    activity: string | null
     updatedAt: number
     ticket: {
       projectId: string
@@ -241,7 +238,7 @@ export function sessionListRow(
     branch: null,
     updatedAt: new Date(row.activityAt ?? row.updatedAt).toISOString(),
     turnStartedAt: null,
-    activity: observedActivity(context, row.id) ?? live?.activity ?? null,
+    activity: observedActivity(row.activity) ?? live?.activity ?? null,
     plan: null,
     subagents: subagents.map((subagent) => ({ ...subagent, startedAt: null, endedAt: null })),
     shell: [],
@@ -263,6 +260,7 @@ export const storedSessionColumns = {
   cwd: sessionTable.cwd,
   workspaceId: sessionTable.workspaceId,
   activityAt: sessionTable.activityAt,
+  activity: sessionTable.activity,
   updatedAt: sessionTable.updatedAt,
   ticket: {
     projectId: sessionTicketLink.projectId,
@@ -318,10 +316,7 @@ function readSessionList(
   )
   const stored = storedSessionRows(context.database)
     .where(filter)
-    .orderBy(
-      desc(sql`coalesce(${sessionTable.activityAt}, ${sessionTable.updatedAt})`),
-      asc(sessionTable.argoId),
-    )
+    .orderBy(desc(sessionTable.listOrderAt), asc(sessionTable.argoId))
     .limit(input.pages * input.pageSize)
     .all()
   const subagents = storedSessionSubagents(
@@ -363,18 +358,23 @@ function sameOrder(
   )
 }
 
-function observeVisibleFeeds(
+const workingStatuses = new Set(['starting', 'running', 'permission', 'asking'])
+
+// Only a working Session has an activity line to read, so idle rows open no Feed reader.
+function observeWorkingFeeds(
   observed: Map<string, () => void>,
   rows: readonly z.infer<typeof sessionListRowSchema>[],
   observeFeed: ((sessionId: string) => () => void) | undefined,
 ): void {
-  const visible = new Set(rows.map((row) => row.id))
+  const working = new Set(
+    rows.filter((row) => workingStatuses.has(row.status)).map((row) => row.id),
+  )
   for (const [sessionId, stop] of observed)
-    if (!visible.has(sessionId)) {
+    if (!working.has(sessionId)) {
       observed.delete(sessionId)
       stop()
     }
-  for (const sessionId of visible)
+  for (const sessionId of working)
     if (!observed.has(sessionId) && observeFeed !== undefined)
       observed.set(sessionId, observeFeed(sessionId))
 }
@@ -397,11 +397,11 @@ export function sessionListProcedure(
               emit.next({ type: 'row', row })
           })
         sent = next
-        observeVisibleFeeds(observed, next.rows, observeFeed)
+        observeWorkingFeeds(observed, next.rows, observeFeed)
       })
       const unsubscribeRoster = context.roster.subscribe(changed)
       const statusChanges = context.supervisor.on('Session status changed', changed)
-      observeVisibleFeeds(observed, sent.rows, observeFeed)
+      observeWorkingFeeds(observed, sent.rows, observeFeed)
       return () => {
         stop()
         unsubscribeRoster()

@@ -105,6 +105,7 @@ function insertActivitySessions(ids: readonly string[]) {
         nativeId: `native-${index}`,
         projectId: 'project-1',
         firstPrompt: `Session ${index}`,
+        listOrderAt: index + 1,
       })
       .run()
 }
@@ -120,7 +121,7 @@ test('keeps both roster activities when the selected Feed changes', async () => 
   ] as const
   insertActivitySessions(ids)
   const roster = new SessionRosterChanges()
-  const activities = new SessionActivities(() => roster.changed())
+  const activities = new SessionActivities(database, () => roster.changed())
   const caller = createAppRouter(
     routerDependencies({
       roster,
@@ -327,11 +328,6 @@ test('reads a Session beyond the loaded roster window by ID without reading its 
     (_, index) => `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
   )
   insertActivitySessions(ids)
-  database
-    .update(sessionTable)
-    .set({ activityAt: 1 })
-    .where(eq(sessionTable.argoId, ids[0] ?? ''))
-    .run()
   const historyReads: string[] = []
   const dependencies = routerDependencies({
     readHistory: async (_harness, target) => {
