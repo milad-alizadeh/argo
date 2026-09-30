@@ -2,7 +2,6 @@ import { execFileSync } from 'node:child_process'
 import { copyFile, mkdir, rm, symlink } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import { codexStatePath } from '../../../mocks/cli/codex/codex-state-store'
 import type {
@@ -23,16 +22,23 @@ const REAL_HARNESS_UNSET_ENV = [
   'ARGO_CLAUDE_ARCHIVE',
 ]
 const REAL_HARNESSES = { claude: realClaudeCli, codex: realCodexCli }
+// The real backend runs no ACP agent yet, so a case on another Harness is refused.
+type RealHarness = keyof typeof REAL_HARNESSES
 
-type ExecutableFinder = (name: SessionHarness) => string | null
+function realHarness(harness: string): RealHarness {
+  if (harness in REAL_HARNESSES) return harness as RealHarness
+  throw new Error(`The real Session backend does not run ${harness}.`)
+}
+
+type ExecutableFinder = (name: RealHarness) => string | null
 
 function credentialPath(home: string, parts: string[]) {
   return path.join(home, ...parts)
 }
 
 export function resolveRealSessionExecutables(findExecutable: ExecutableFinder) {
-  const executables = {} as Record<SessionHarness, string>
-  for (const harness of Object.keys(REAL_HARNESSES) as SessionHarness[]) {
+  const executables = {} as Record<RealHarness, string>
+  for (const harness of Object.keys(REAL_HARNESSES) as RealHarness[]) {
     const executable = findExecutable(harness)
     if (executable === null) throw new Error(`${harness} is not available on PATH.`)
     executables[harness] = executable
@@ -42,7 +48,7 @@ export function resolveRealSessionExecutables(findExecutable: ExecutableFinder) 
 
 export async function prepareRealSessionHome(root: string, sourceHome: string) {
   const home = path.join(root, 'home')
-  for (const harness of Object.keys(REAL_HARNESSES) as SessionHarness[]) {
+  for (const harness of Object.keys(REAL_HARNESSES) as RealHarness[]) {
     const source = credentialPath(sourceHome, REAL_HARNESSES[harness].credential)
     const destination = credentialPath(home, REAL_HARNESSES[harness].credential)
     try {
@@ -64,11 +70,8 @@ export async function prepareRealSessionHome(root: string, sourceHome: string) {
   return home
 }
 
-function verifyRealSessionAuthentication(
-  executables: Record<SessionHarness, string>,
-  home: string,
-) {
-  for (const harness of Object.keys(REAL_HARNESSES) as SessionHarness[]) {
+function verifyRealSessionAuthentication(executables: Record<RealHarness, string>, home: string) {
+  for (const harness of Object.keys(REAL_HARNESSES) as RealHarness[]) {
     try {
       execFileSync(executables[harness], REAL_HARNESSES[harness].authentication, {
         env: Object.fromEntries(
@@ -95,18 +98,19 @@ export function createRealSessionHarnessBackend(
   options: {
     findExecutable?: ExecutableFinder
     home?: string
-    verifyAuthentication?: (executables: Record<SessionHarness, string>, home: string) => void
+    verifyAuthentication?: (executables: Record<RealHarness, string>, home: string) => void
   } = {},
 ): SessionHarnessBackend {
   const findExecutable = options.findExecutable ?? findExecutableOnLoginShellPath
   const sourceHome = options.home ?? process.env.HOME ?? ''
-  const transcriptRoots = {} as Record<SessionHarness, string>
+  const transcriptRoots = {} as Record<RealHarness, string>
   const observedSizes = new Map<string, number>()
   const verifyAuthentication = options.verifyAuthentication ?? verifyRealSessionAuthentication
 
-  const transcriptFor = (harness: SessionHarness) => transcriptRoots[harness]
-  const reply = (entry: SessionReply) =>
-    REAL_HARNESSES[entry.harness].replyAfterPrompt(transcriptFor(entry.harness), entry.prompt)
+  const reply = (entry: SessionReply) => {
+    const harness = realHarness(entry.harness)
+    return REAL_HARNESSES[harness].replyAfterPrompt(transcriptRoots[harness], entry.prompt)
+  }
 
   return {
     name: 'real',
@@ -118,7 +122,7 @@ export function createRealSessionHarnessBackend(
         claude: fixture.claudeTranscripts,
         codex: fixture.codexTranscripts,
       }
-      for (const harness of Object.keys(REAL_HARNESSES) as SessionHarness[]) {
+      for (const harness of Object.keys(REAL_HARNESSES) as RealHarness[]) {
         transcriptRoots[harness] = REAL_HARNESSES[harness].transcripts(home)
         // The real backend points the app at its own transcript roots under `home` rather than at
         // the fixture tree directly (`transcripts: null` below), so the 15 seeded fixtures the

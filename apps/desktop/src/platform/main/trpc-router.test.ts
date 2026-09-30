@@ -10,7 +10,7 @@ import type { TicketProcedureContext } from '@/domains/tickets/main/api/ticket-p
 import type { WorkspaceListContext } from '@/domains/workspaces/main/api/workspace-list'
 import { claudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
-import { harnessCatalogSchema } from '@/harnesses/harness-catalog'
+import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
 import { claudeModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { codexModelCatalogFixture } from '@/mocks/sessions/codex-model-catalog.fixture'
 import { harnessCatalogMachine } from './harness-catalog/harness-catalog-machine'
@@ -68,6 +68,7 @@ test('returns only the selected Harness as serializable composer choices', async
             harnesses: [
               claudeHarnessInfo(claudeModelCatalogFixture()),
               codexHarnessInfo(codexModelCatalogFixture()),
+              unavailable('claude-acp'),
             ],
           }),
         ),
@@ -139,6 +140,7 @@ test('repeated reads reuse the settled catalog until an explicit refresh', async
             harnesses: [
               claudeHarnessInfo(claudeModelCatalogFixture()),
               codexHarnessInfo(codexModelCatalogFixture()),
+              unavailable('claude-acp'),
             ],
           })
         }),
@@ -168,7 +170,11 @@ test('retry reloads a failed catalog once', async () => {
           loads += 1
           if (loads === 1) throw new Error('Catalog unavailable')
           return harnessCatalogSchema.parse({
-            harnesses: [claudeHarnessInfo(claudeModelCatalogFixture()), codexHarnessInfo(null)],
+            harnesses: [
+              claudeHarnessInfo(claudeModelCatalogFixture()),
+              codexHarnessInfo(null),
+              unavailable('claude-acp'),
+            ],
           })
         }),
       },
