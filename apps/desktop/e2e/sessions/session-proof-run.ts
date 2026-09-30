@@ -2,6 +2,7 @@
 import type { TestInfo } from '@playwright/test'
 import type { BrowserContext } from 'playwright-core'
 import { createMockSessionHarnessBackend } from '../../mocks/sessions/mock-session-harness-backend'
+import { packagedRun } from '../application-under-test'
 import { finishRecording, test as packagedTest, startRecording } from '../packaged-proof'
 import { feedStateSnapshot } from './feed-selectors'
 import { prepare } from './fixtures/feed.fixture'
@@ -88,7 +89,8 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
     })
     try {
       await session.launch()
-      if (!(await session.isPackaged())) throw new Error('The case did not drive the packaged app.')
+      if (packagedRun && !(await session.isPackaged()))
+        throw new Error('The case did not drive the packaged app.')
       await use(session)
       await finishRecording(performanceProfile, traced, testInfo)
       if (testInfo.status !== testInfo.expectedStatus) await attachFailure(session, testInfo)

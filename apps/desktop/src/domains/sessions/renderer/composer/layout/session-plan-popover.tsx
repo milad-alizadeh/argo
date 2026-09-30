@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import type { PlanEntryStatus, SessionPlan } from '@/domains/sessions/renderer/model/models'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
@@ -10,6 +9,7 @@ import {
   PopoverTrigger,
 } from '@/platform/renderer/components/ui/popover'
 import { Progress } from '@/platform/renderer/components/ui/progress'
+import type { PlanEntryStatus, SessionPlan } from '../../model/models'
 
 const PLAN_ENTRY_CLASS: Record<PlanEntryStatus, string> = {
   completed: 'bg-foreground text-background',

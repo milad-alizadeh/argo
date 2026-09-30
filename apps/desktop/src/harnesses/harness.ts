@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const HARNESSES = ['claude', 'codex'] as const
+export const HARNESSES = ['claude', 'codex', 'claude-acp'] as const
 export const harnessSchema = z.enum(HARNESSES)
 export type Harness = z.infer<typeof harnessSchema>
 

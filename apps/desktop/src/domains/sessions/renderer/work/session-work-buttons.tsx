@@ -2,10 +2,10 @@
 // (#1582). A Session that ran neither draws neither, so a screen with no background work has no
 // header control at all.
 import { useTranslation } from 'react-i18next'
-import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
-import type { SubagentUsageFacts } from '@/domains/sessions/renderer/work/types'
+import type { SessionShellCommand, SessionSubagent } from '../model/models'
 import { delegationEntries, shellEntries } from './session-work-entries'
 import { SessionWorkMenu } from './session-work-menu'
+import type { SubagentUsageFacts } from './types'
 
 export function SessionWorkButtons({
   subagents,

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import type { SetupPlan } from '@/domains/projects/renderer/onboarding/model/setup-plan'
 import { Icon } from '@/platform/renderer/components/icon/icon'
+import type { SetupPlan } from '../model/setup-plan'
 import { RecommendationGroup } from '../project-setup-recommendation-group'
 import { TargetReview } from '../project-setup-target-review'
 import {

@@ -10,6 +10,7 @@ import {
   composerCommandsProcedure,
   sessionComposerCommandsProcedure,
 } from './session-composer-commands'
+import { sessionDetailsProcedure } from './session-details'
 import { sessionFeedProcedures } from './session-feed'
 import { sessionFileReadProcedures } from './session-file-reads'
 import {
@@ -43,6 +44,7 @@ export function sessionProcedures(context: SessionApiContext) {
     sessionList: sessionListProcedure(context, (sessionId) =>
       readers.observe({ sessionId, subagentId: null }, () => {}),
     ),
+    sessionDetails: sessionDetailsProcedure(context),
     ...sessionFeedProcedures(context, readers),
     ...sessionInteractionProcedures(context),
     sessionRename: sessionRenameProcedure(context),

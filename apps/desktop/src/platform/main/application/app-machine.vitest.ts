@@ -18,6 +18,7 @@ const input = {
   sessionSyncStatus: {
     claude: new SessionSyncStatusStore(undefined, 'claude'),
     codex: new SessionSyncStatusStore(undefined, 'codex'),
+    'claude-acp': new SessionSyncStatusStore(undefined, 'claude-acp'),
   },
   ticketSync: {
     database: {} as Database,

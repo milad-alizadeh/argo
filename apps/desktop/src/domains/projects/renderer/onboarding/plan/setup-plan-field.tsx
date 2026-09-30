@@ -1,9 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import {
-  type SetupDocument,
-  setupChoiceText,
-  setupFieldText,
-} from '@/domains/projects/renderer/onboarding/model/setup-document'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Input } from '@/platform/renderer/components/ui/input'
@@ -14,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/platform/renderer/components/ui/select'
+import { type SetupDocument, setupChoiceText, setupFieldText } from '../model/setup-document'
 import type { SetupAnswer } from '../use-setup-answers'
 
 export function SetupPlanField({

@@ -45,6 +45,7 @@ test('hands the app an executable mock for each Harness', () =>
     expect(run.executables).toEqual({
       claude: path.join(root, 'claude'),
       codex: path.join(root, 'codex'),
+      'claude-acp': path.join(root, 'claude-agent-acp'),
     })
     for (const executable of Object.values(run.executables))
       expect((await stat(executable)).mode & 0o111).toBeGreaterThan(0)

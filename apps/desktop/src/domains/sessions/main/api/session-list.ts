@@ -1,6 +1,6 @@
 import { initTRPC } from '@trpc/server'
 import { observable } from '@trpc/server/observable'
-import { and, asc, count, desc, eq, inArray, or, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, not, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
@@ -182,7 +182,7 @@ function liveProjection(context: SessionListContext, sessionId: string) {
     posture: projection.posture,
     status: snapshot.context.status ?? projection.status,
     activity: snapshot.context.activity?.activity ?? null,
-    turnConfiguration: snapshot.context.first.turnConfiguration,
+    turnConfiguration: snapshot.context.turnConfiguration,
   }
 }
 
@@ -201,7 +201,7 @@ function ticketStateOf(value: string): 'open' | 'closed' {
   return z.enum(['open', 'closed']).parse(value)
 }
 
-function sessionListRow(
+export function sessionListRow(
   context: SessionListContext,
   row: StoredSessionTitle & {
     id: string
@@ -253,27 +253,50 @@ function sessionListRow(
   }
 }
 
+export const storedSessionColumns = {
+  id: sessionTable.argoId,
+  harness: sessionTable.harness,
+  nativeId: sessionTable.nativeId,
+  customTitle: sessionTable.customTitle,
+  preview: sessionTable.preview,
+  firstPrompt: sessionTable.firstPrompt,
+  cwd: sessionTable.cwd,
+  workspaceId: sessionTable.workspaceId,
+  activityAt: sessionTable.activityAt,
+  updatedAt: sessionTable.updatedAt,
+  ticket: {
+    projectId: sessionTicketLink.projectId,
+    key: sessionTicketLink.ticketKey,
+    title: sessionTicketLink.title,
+    state: sessionTicketLink.state,
+    createdAt: sessionTicketLink.createdAt,
+  },
+}
+
+export const sessionIsArchived = sql<boolean>`exists (select 1 from session_archive where session_archive.session_id = ${sessionTable.argoId})`
+
+// Runs `publish` once in the next microtask for any burst of `changed` calls, until stopped.
+export function coalescedChanges(publish: () => void) {
+  let pending = false
+  let stopped = false
+  return {
+    changed() {
+      if (pending || stopped) return
+      pending = true
+      queueMicrotask(() => {
+        pending = false
+        if (!stopped) publish()
+      })
+    },
+    stop() {
+      stopped = true
+    },
+  }
+}
+
 function storedSessionRows(database: Database) {
   return database
-    .select({
-      id: sessionTable.argoId,
-      harness: sessionTable.harness,
-      nativeId: sessionTable.nativeId,
-      customTitle: sessionTable.customTitle,
-      preview: sessionTable.preview,
-      firstPrompt: sessionTable.firstPrompt,
-      cwd: sessionTable.cwd,
-      workspaceId: sessionTable.workspaceId,
-      activityAt: sessionTable.activityAt,
-      updatedAt: sessionTable.updatedAt,
-      ticket: {
-        projectId: sessionTicketLink.projectId,
-        key: sessionTicketLink.ticketKey,
-        title: sessionTicketLink.title,
-        state: sessionTicketLink.state,
-        createdAt: sessionTicketLink.createdAt,
-      },
-    })
+    .select(storedSessionColumns)
     .from(sessionTable)
     .leftJoin(sessionTicketLink, eq(sessionTicketLink.sessionId, sessionTable.argoId))
 }
@@ -283,10 +306,9 @@ function readSessionList(
   input: z.infer<typeof sessionListInputSchema>,
 ): z.infer<typeof sessionListSchema> {
   const projectFilter = eq(sessionTable.projectId, input.projectId)
-  const active = sql`not exists (select 1 from session_archive where session_archive.session_id = ${sessionTable.argoId})`
   const filter = and(
     projectFilter,
-    active,
+    not(sessionIsArchived),
     input.search === ''
       ? undefined
       : or(
@@ -366,11 +388,7 @@ export function sessionListProcedure(
       let sent = readSessionList(context, input)
       emit.next({ type: 'list', ...sent })
       const observed = new Map<string, () => void>()
-      let pending = false
-      let stopped = false
-      const publish = () => {
-        pending = false
-        if (stopped) return
+      const { changed, stop } = coalescedChanges(() => {
         const next = readSessionList(context, input)
         if (!sameOrder(sent, next)) emit.next({ type: 'list', ...next })
         else
@@ -380,17 +398,12 @@ export function sessionListProcedure(
           })
         sent = next
         observeVisibleFeeds(observed, next.rows, observeFeed)
-      }
-      const changed = () => {
-        if (pending) return
-        pending = true
-        queueMicrotask(publish)
-      }
+      })
       const unsubscribeRoster = context.roster.subscribe(changed)
       const statusChanges = context.supervisor.on('Session status changed', changed)
       observeVisibleFeeds(observed, sent.rows, observeFeed)
       return () => {
-        stopped = true
+        stop()
         unsubscribeRoster()
         statusChanges.unsubscribe()
         for (const stop of observed.values()) stop()
