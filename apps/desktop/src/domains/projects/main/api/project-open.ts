@@ -4,14 +4,14 @@ import { initTRPC, TRPCError } from '@trpc/server'
 import { eq } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
-import { projectRegistrationSchema, projectSummarySchema } from '@/database/project/validation'
+import { projectSelectSchema, projectSummarySchema } from '@/database/project/validation'
 import { isRecord } from '@/shared/validation'
 
 const t = initTRPC.create()
 
 export function projectOpenProcedure(database: Database) {
   return t.procedure
-    .input(projectRegistrationSchema.shape.id)
+    .input(projectSelectSchema.shape.id)
     .output(projectSummarySchema)
     .query(async ({ input }) => {
       const stored = database
@@ -21,7 +21,7 @@ export function projectOpenProcedure(database: Database) {
         .get()
       if (stored === undefined)
         throw new TRPCError({ code: 'NOT_FOUND', message: 'missing-project' })
-      const parsed = projectRegistrationSchema.safeParse(stored)
+      const parsed = projectSelectSchema.safeParse(stored)
       if (!parsed.success) {
         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'storage-invalid' })
       }

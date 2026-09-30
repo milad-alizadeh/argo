@@ -3,7 +3,7 @@ import { initTRPC, TRPCError } from '@trpc/server'
 import { and, eq, ne } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
-import { projectRegistrationSchema, projectSummarySchema } from '@/database/project/validation'
+import { projectSelectSchema, projectSummarySchema } from '@/database/project/validation'
 import { repositoryRoot } from '@/platform/main/git-repository-root'
 
 const t = initTRPC.create()
@@ -16,7 +16,7 @@ export type ProjectRelocateContext = {
 
 export function projectRelocateProcedure(context: ProjectRelocateContext) {
   return t.procedure
-    .input(projectRegistrationSchema.shape.id)
+    .input(projectSelectSchema.shape.id)
     .output(projectSummarySchema)
     .mutation(({ input }) => context.exclusive(() => relocateProject(context, input)))
 }

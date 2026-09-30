@@ -2,8 +2,5 @@
 export { SourceSettings } from './connection'
 export {
   useConnection,
-  useConnectSource,
   useDisconnectSource,
-  useSources,
-  useTicketList,
 } from './hooks'

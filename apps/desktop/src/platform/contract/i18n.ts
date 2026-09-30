@@ -1,6 +1,6 @@
 import en from './locales/en.json'
 
-export type PlatformCatalog = typeof en
+type PlatformCatalog = typeof en
 
 type LeafKeys<Catalog> = Catalog extends string
   ? ''

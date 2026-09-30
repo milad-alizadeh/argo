@@ -7,7 +7,7 @@ import { SESSION_CODEX_EXECUTABLE_ENV } from '../proof-protocol'
 
 // The base protocol uses the 0.147.0 schema; the thread/resume sandbox override was verified against 0.157.0.
 export type RequestID = string | number
-export const CODEX_THREAD_SOURCE_KINDS = [
+const CODEX_THREAD_SOURCE_KINDS = [
   'cli',
   'vscode',
   'exec',
@@ -19,9 +19,9 @@ export const CODEX_THREAD_SOURCE_KINDS = [
   'subAgentOther',
   'unknown',
 ] as const
-export type CodexThreadSourceKind = (typeof CODEX_THREAD_SOURCE_KINDS)[number]
+type CodexThreadSourceKind = (typeof CODEX_THREAD_SOURCE_KINDS)[number]
 
-export type RequestParams = {
+type RequestParams = {
   'thread/start': {
     cwd: string
     model: string
@@ -101,17 +101,17 @@ function object(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-export function protocolRecord(value: unknown, label: string): Record<string, unknown> {
+function protocolRecord(value: unknown, label: string): Record<string, unknown> {
   assert(object(value), `${label} must be an object`)
   return value
 }
 
-export function protocolString(value: unknown, label: string): string {
+function protocolString(value: unknown, label: string): string {
   assert(typeof value === 'string', `${label} must be a string`)
   return value
 }
 
-export function readMessage(line: string): WireMessage {
+function readMessage(line: string): WireMessage {
   const parsed: unknown = JSON.parse(line)
   const message = protocolRecord(parsed, 'Protocol envelope')
   let id: RequestID | undefined
@@ -165,13 +165,13 @@ export function readMessage(line: string): WireMessage {
   }
 }
 
-export class CodexChannelClosedError extends Error {
+class CodexChannelClosedError extends Error {
   constructor() {
     super('Codex app-server channel closed before this request settled')
   }
 }
 
-export class CodexProtocolError extends Error {
+class CodexProtocolError extends Error {
   readonly code: number
 
   constructor(code: number, message: string) {
@@ -187,7 +187,7 @@ export class CodexRequestTimeoutError extends Error {
   }
 }
 
-export const REQUEST_TIMEOUT_MS = 8_000
+const REQUEST_TIMEOUT_MS = 8_000
 
 export type CodexProcess = {
   stdout: NodeJS.ReadableStream
@@ -344,7 +344,7 @@ export function openCodexChannel(
   }
 }
 
-export type CodexExecutable = {
+type CodexExecutable = {
   executable: string
   version: string
 }

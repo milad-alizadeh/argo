@@ -4,7 +4,7 @@ import { initTRPC, TRPCError } from '@trpc/server'
 import { eq } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
-import { projectRegistrationSchema, projectSummarySchema } from '@/database/project/validation'
+import { projectSelectSchema, projectSummarySchema } from '@/database/project/validation'
 import { repositoryRoot } from '@/platform/main/git-repository-root'
 
 const t = initTRPC.create()
@@ -49,8 +49,8 @@ export function projectRegisterProcedure(context: ProjectRegisterContext) {
   )
 }
 
-function listProjects(database: Database) {
-  return projectRegistrationSchema
+export function listProjects(database: Database) {
+  return projectSelectSchema
     .array()
     .parse(
       database

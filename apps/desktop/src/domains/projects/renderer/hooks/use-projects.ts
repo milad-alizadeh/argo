@@ -30,7 +30,7 @@ const PROJECT_ERROR_CODES = [
 ] as const
 type ProjectErrorCode = (typeof PROJECT_ERROR_CODES)[number]
 
-export type CockpitStatus = 'loading' | 'empty' | 'selected' | 'refused'
+type CockpitStatus = 'loading' | 'empty' | 'selected' | 'refused'
 
 export type Cockpit = {
   status: CockpitStatus
@@ -45,7 +45,7 @@ export type ProjectActions = {
   open: () => void
 }
 
-export type ProjectCockpit = Cockpit
+type ProjectCockpit = Cockpit
 
 const IDLE = { project: null, projects: [], message: null, code: null, busy: false } as const
 const LOADING: ProjectCockpit = { status: 'loading', ...IDLE }

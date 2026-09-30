@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const projectSetupScreenSchema = z.enum([
+const projectSetupScreenSchema = z.enum([
   'choosing-method',
   'manual',
   'planning',

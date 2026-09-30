@@ -26,7 +26,7 @@ export type WireMessage =
   | { method: string; params: Record<string, unknown>; id?: RequestID }
   | { id: RequestID; result: unknown }
   | { id: RequestID; error: { code: number; message: string } }
-export type TurnStatus = 'completed' | 'interrupted' | 'failed' | 'inProgress'
+type TurnStatus = 'completed' | 'interrupted' | 'failed' | 'inProgress'
 type ObservedInput =
   | { type: 'text'; text: string }
   | { type: 'localImage'; path: string }

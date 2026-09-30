@@ -2,7 +2,6 @@
 export {
   AccountsDialog,
   AccountsPanel,
-  type AccountsPanelProps,
 } from './components/accounts-dialog'
 export {
   SignInNotice,
@@ -11,7 +10,6 @@ export {
 export {
   type AccountListing,
   useAccounts,
-  useDismissNotice,
 } from './hooks/use-accounts'
 export { capitalized } from './lib'
 export {

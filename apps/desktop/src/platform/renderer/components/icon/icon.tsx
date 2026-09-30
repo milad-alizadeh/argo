@@ -5,7 +5,7 @@ import { ICONS, type IconName } from './icon-registry'
 
 export type { IconName } from './icon-registry'
 
-export type IconSize = 'control' | 'meta' | 'inline' | 'text'
+type IconSize = 'control' | 'meta' | 'inline' | 'text'
 
 const SIZE_CLASS: Record<IconSize, string> = {
   control: 'size-(--size-icon-control)',

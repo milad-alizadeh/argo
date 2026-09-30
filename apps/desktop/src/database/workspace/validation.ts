@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
 import { workspace } from './schema'
 
-export const workspaceSelectSchema = createSelectSchema(workspace)
+const workspaceSelectSchema = createSelectSchema(workspace)
   .extend({
     id: identifierSchema,
     projectId: identifierSchema,

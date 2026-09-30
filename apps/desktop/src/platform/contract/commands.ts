@@ -31,7 +31,7 @@ export const SEND_MESSAGE_COMMAND = 'composer.send'
 // The channel a menu item's command travels on, declared here with the table it comes from.
 export const COMMAND_CHANNEL = 'argo:command'
 
-export type ShortcutScope = 'menu' | 'window' | 'element'
+type ShortcutScope = 'menu' | 'window' | 'element'
 // `labelKey` names the word in the `platform` catalog rather than holding it, so the menu the main
 // process builds and the shortcut list the renderer draws say the same thing (#2130).
 export type Shortcut = {

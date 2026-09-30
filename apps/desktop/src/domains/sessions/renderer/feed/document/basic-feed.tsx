@@ -31,7 +31,7 @@ import { awaitingAssistantReply, useSettledFeed } from './use-settled-feed'
 import '../feed.css'
 
 // Shared by the Feed view and its callers, so the two do not drift out of sync.
-export type FeedQuestionHandlers = {
+type FeedQuestionHandlers = {
   onOpenEvidence: (evidence: SessionEvidence) => void
   onAnswerQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => void
   answeringQuestionId: string | null

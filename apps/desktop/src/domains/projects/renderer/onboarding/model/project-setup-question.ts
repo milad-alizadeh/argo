@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
 
-export const projectSetupQuestionSchema = z
+const projectSetupQuestionSchema = z
   .strictObject({
     id: identifierSchema,
     prompt: z.string().min(1),
@@ -14,7 +14,7 @@ export const projectSetupQuestionSchema = z
     path: ['recommended'],
   })
 
-export const projectSetupAnswerSchema = z
+const projectSetupAnswerSchema = z
   .strictObject({
     id: identifierSchema,
     selections: z.array(z.string().min(1)),

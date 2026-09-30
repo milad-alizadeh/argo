@@ -3,7 +3,7 @@ import { identifierSchema } from '@/shared/validation'
 import { SUBAGENT_EVENTS } from './feed/subagent-event'
 
 const base = z.strictObject({ id: identifierSchema })
-export const mediaSourceSchema = z.discriminatedUnion('kind', [
+const mediaSourceSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('url'), url: z.string().min(1) }),
   z.strictObject({ kind: z.literal('path'), path: z.string().min(1) }),
   z.strictObject({
@@ -14,7 +14,7 @@ export const mediaSourceSchema = z.discriminatedUnion('kind', [
 ])
 export type MediaSource = z.infer<typeof mediaSourceSchema>
 
-export const promptFileSchema = z.strictObject({ label: z.string(), target: z.string() })
+const promptFileSchema = z.strictObject({ label: z.string(), target: z.string() })
 export type PromptFile = z.infer<typeof promptFileSchema>
 
 const contentPartSchema = z.discriminatedUnion('kind', [
@@ -45,7 +45,7 @@ export const toolPresentationKindSchema = z.enum([
   'skill',
   'searched',
 ])
-export const toolPresentationSchema = z.strictObject({
+const toolPresentationSchema = z.strictObject({
   kind: toolPresentationKindSchema,
   label: z.string(),
   agentDescription: z.boolean().optional(),

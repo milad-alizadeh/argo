@@ -8,7 +8,7 @@ import type { DevelopmentInstance } from './instance'
 
 type Repository = Pick<ProjectRegistration, 'path' | 'commonDirectory'>
 
-export function selectDevelopmentProject(database: Database, repository: Repository): void {
+function selectDevelopmentProject(database: Database, repository: Repository): void {
   const existing = database
     .select({ id: project.id, path: project.path })
     .from(project)

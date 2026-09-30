@@ -32,7 +32,7 @@ import { providerPresentation } from '@/providers/presentation-registry'
 import type { TicketScope } from '../hooks/ticket-reply'
 import { offered, type SourceDiscovery, SourceField } from './source-field'
 
-export type ConnectTarget = { accountId: string; scope: string }
+type ConnectTarget = { accountId: string; scope: string }
 
 export type ConnectSourceFieldsProps = {
   accounts: readonly AccountSummary[]

@@ -1,4 +1,4 @@
-import { createInsertSchema, createSelectSchema } from 'drizzle-orm/zod'
+import { createInsertSchema } from 'drizzle-orm/zod'
 import { sessionTable } from './schema'
 
 const serverOwnedSessionFields = {
@@ -7,6 +7,4 @@ const serverOwnedSessionFields = {
   updatedAt: true,
   subagentsReadAt: true,
 } as const
-
-export const sessionSelectSchema = createSelectSchema(sessionTable)
 export const sessionInsertSchema = createInsertSchema(sessionTable).omit(serverOwnedSessionFields)

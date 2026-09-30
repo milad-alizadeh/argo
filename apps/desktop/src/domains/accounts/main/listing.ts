@@ -24,7 +24,7 @@ function summary(
   return { id, provider, login, workspace, state, connections }
 }
 
-export async function listing(
+async function listing(
   access: AccountAccess,
   registry: AccountRegistry,
 ): Promise<Pick<AccountListed, 'accounts' | 'notice' | 'providers'>> {

@@ -1,5 +1,5 @@
 // The app's Ticket scans: one per scope at a time, and a request during a scan runs once after it.
-import { type ActorRefFrom, enqueueActions, setup, stopChild } from 'xstate'
+import { enqueueActions, setup, stopChild } from 'xstate'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import type { TicketErrorCode } from '@/domains/tickets/api/errors'
 import { TICKET_POLL_PROOF_ENV } from './proof-protocol'
@@ -421,5 +421,3 @@ export const ticketSyncSupervisorMachine = setup({
     },
   },
 })
-
-export type TicketSyncSupervisorActor = ActorRefFrom<typeof ticketSyncSupervisorMachine>

@@ -10,7 +10,10 @@
         "prototypes/codex-transport/channel.ts",
         "prototypes/codex-transport/prove.ts"
       ],
-      "project": ["scripts/**/*.mts", "prototypes/codex-transport/**/*.ts"]
+      "project": ["scripts/**/*.mts", "prototypes/codex-transport/**/*.ts"],
+      // Run as `bunx depcruise` from a string in scripts/quality/migration-ratchet-commands.mts,
+      // which Knip does not read as a binary call.
+      "ignoreDependencies": ["dependency-cruiser"]
     },
     "packages/argo-skills": {
       "entry": ["bin/*.mts", "skills/**/hooks/*.mts"],
@@ -53,7 +56,15 @@
         "src/platform/renderer/components/ui/**"
       ],
       // A macOS system binary read by signing-readback.mts, not an npm-installed dependency.
-      "ignoreBinaries": ["plutil"],
+      "ignoreBinaries": [
+        "plutil",
+        // The Codex CLI, run by tools/generate-codex-protocol.mts on the developer's PATH.
+        "codex",
+        // A macOS system binary run by tools/sessions/feed-memory-sample.ts to read process memory.
+        "footprint",
+        // The SQLite CLI, run by tools/sessions/measure-session-list.ts to query the Session index.
+        "sqlite3"
+      ],
       "ignoreDependencies": [
         // Native-module build-time header for node-pty; nothing imports it from TypeScript.
         "node-addon-api",

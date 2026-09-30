@@ -3,13 +3,8 @@ export {
   type AccountAccess,
   accountState,
   createAccountAccess,
-  markRevoked,
   projectNames,
 } from './access'
-export {
-  type AccountProcedureContext,
-  accountProcedures,
-  createAccountProcedureContext,
-} from './account-procedures'
+export { createAccountProcedureContext } from './account-procedures'
 export { readAccounts } from './registry'
 export { asAccount, type TokenFailure } from './tokens'

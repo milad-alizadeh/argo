@@ -35,7 +35,7 @@ function escapeSource(source: string) {
   return source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-export function referencePattern(references: readonly SessionReference[]) {
+function referencePattern(references: readonly SessionReference[]) {
   const sources = references.flatMap((reference) => [
     reference.source,
     ...(reference.aliases ?? []).map((alias) => `/${alias}`),
@@ -109,7 +109,7 @@ export function referenceInText(
   }
 }
 
-export function SessionReferenceBadge({
+function SessionReferenceBadge({
   harness = null,
   references,
   source,

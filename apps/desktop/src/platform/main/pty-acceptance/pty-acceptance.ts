@@ -8,8 +8,6 @@ import { RESULT_PREFIX, SKIP_ENDURANCE_ENV } from '../../../../scripts/acceptanc
 import { BEHAVIOUR_CASES } from './pty-cases'
 import { descriptorsStayFlat } from './pty-endurance'
 
-export { RESULT_PREFIX }
-
 // The endurance check is minutes of work on a busy machine and the behaviour cases are seconds,
 // so a person debugging one case can drop it. It is never silently absent: `endurance` says which
 // of the three things happened, and the driver refuses a 'skipped' it did not itself ask for.
