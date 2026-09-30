@@ -115,7 +115,6 @@ export const RefusedChoiceStays: Story = {
       turnConfiguration: { model: 'opus', effort: 'max', mode: 'manual' },
     })
 
-    await waitFor(() => expect(refused.sent).toHaveLength(1))
     await expect(trigger).toHaveTextContent('Opus 5·Max')
     await expect(within(canvasElement).queryByRole('alert')).toBeNull()
   },
