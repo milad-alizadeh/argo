@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { applyFeedReadingChange, type FeedReading } from '@/domains/sessions/api/feed/feed-reading'
 import { feedReadingRows } from '@/domains/sessions/api/feed/feed-reading-rows'
 import { sessionError } from '@/domains/sessions/api/session-error'
+import { reconnectingSubscription } from '@/platform/renderer/reconnecting-subscription'
 import { queryClient, trpcClient } from '@/platform/renderer/trpc-client'
 import { sessionFeedReadingQueryKey, sessionPermissionQueryKey } from '../session-queries'
 import type { SessionFeed, SessionId } from '../types'
@@ -58,14 +59,8 @@ function useFeedSubscription(sessionId: SessionId | null, subagentId: string | n
   const [lostSessionId, setLostSessionId] = useState<SessionId | null>(null)
   useEffect(() => {
     if (sessionId === null) return
-    let stopped = false
-    let timer: ReturnType<typeof setTimeout> | null = null
-    let subscription: { unsubscribe: () => void } | null = null
-    const connect = () => {
-      if (timer !== null) clearTimeout(timer)
-      timer = null
-      subscription?.unsubscribe()
-      subscription = trpcClient.sessionFeed.subscribe(
+    const subscription = reconnectingSubscription((lost) =>
+      trpcClient.sessionFeed.subscribe(
         { sessionId, subagentId },
         {
           onData(message) {
@@ -74,25 +69,20 @@ function useFeedSubscription(sessionId: SessionId | null, subagentId: string | n
             const key = sessionFeedReadingQueryKey(sessionId, subagentId)
             const reading = applyFeedReadingChange(queryClient.getQueryData(key), message)
             // A change against a reading this cache no longer holds needs a whole one again.
-            if (reading === null) return connect()
+            if (reading === null) return subscription.reconnect()
             setLostSessionId(null)
             queryClient.setQueryData(key, reading)
           },
           onError() {
-            if (stopped) return
-            setLostSessionId(sessionId)
-            timer = setTimeout(connect, 1000)
+            if (lost()) setLostSessionId(sessionId)
           },
         },
-      )
-    }
-    reconnect.current = connect
-    connect()
+      ),
+    )
+    reconnect.current = subscription.reconnect
     return () => {
-      stopped = true
       reconnect.current = null
-      subscription?.unsubscribe()
-      if (timer !== null) clearTimeout(timer)
+      subscription.stop()
     }
   }, [sessionId, subagentId])
   return { reconnect, lost: sessionId !== null && lostSessionId === sessionId }

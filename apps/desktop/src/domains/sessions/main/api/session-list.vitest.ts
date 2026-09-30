@@ -112,9 +112,7 @@ function liveSession(state: string, status: string | null = null) {
       matches: (candidate: string) => candidate === state,
       context: {
         status,
-        first: {
-          turnConfiguration: { model: 'claude-sonnet', effort: 'high', mode: 'default' },
-        },
+        turnConfiguration: { model: 'claude-sonnet', effort: 'high', mode: 'default' },
       },
     }),
   }

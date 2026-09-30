@@ -14,13 +14,12 @@ import { useFeedReading } from '../feed/use-feed-reading'
 import type { SessionHarness } from '../harness/harnesses'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
 import type { SessionStatus } from '../model/models'
-import { useSessionList } from '../session-list/use-session-list'
 import type { Session, SessionEvidence } from '../types'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work/use-session-work'
 import { sessionHarness } from './session-screen-state'
 import { pickedSubagent, sessionScreenSubagents } from './session-screen-subagents'
 import { sessionWorkspaceIdentity } from './session-screen-workspace'
-import { useSelectedSession } from './use-selected-session'
+import { useSessionDetails } from './use-session-details'
 import { useWorkPick, type WorkSelection } from './work-selection'
 
 function useWorkArtifacts({
@@ -29,7 +28,7 @@ function useWorkArtifacts({
   work,
   feedSubagents,
 }: {
-  session: ReturnType<typeof useSelectedSession>
+  session: Session | null
   selectedSessionId: string | null
   work: WorkSelection
   feedSubagents: readonly FeedSubagent[]
@@ -69,15 +68,13 @@ function useFeedJumpToLatestAction() {
 }
 
 function useSessionSelectionData(
-  projectId: string | null,
   selectedSessionId: string | null,
   workspaces: ReturnType<typeof useWorkspaces>[0]['workspaces'],
 ) {
-  const { sessionList } = useSessionList({ projectId })
-  const session = useSelectedSession(selectedSessionId, sessionList)
+  const { session, loaded } = useSessionDetails(selectedSessionId)
   return {
-    sessionList,
     session,
+    sessionLoaded: loaded,
     workspaceIdentity: sessionWorkspaceIdentity(session, workspaces),
   }
 }
@@ -97,7 +94,7 @@ function useSessionInspectorData({
   workReveal,
   feedSubagents,
 }: {
-  session: ReturnType<typeof useSelectedSession>
+  session: Session | null
   selectedSessionId: string | null
   work: WorkSelection
   workReveal: ReturnType<typeof useWorkPick>['workReveal']
@@ -132,8 +129,7 @@ export function useSessionScreenModel() {
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const { evidence, setEvidence } = useSessionEvidence(selectedSessionId)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
-  const { sessionList, session, workspaceIdentity } = useSessionSelectionData(
-    selectedProjectId,
+  const { session, sessionLoaded, workspaceIdentity } = useSessionSelectionData(
     selectedSessionId,
     workspaceCockpit.workspaces,
   )
@@ -157,9 +153,9 @@ export function useSessionScreenModel() {
     selectedSessionId,
     ...sessionFeed,
     feedRunning,
-    sessionList,
     navigate,
     session,
+    sessionLoaded,
     workspaceIdentity,
     evidence,
     setEvidence,
