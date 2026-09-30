@@ -8,15 +8,15 @@ import type { ProjectSummary } from '@/domains/projects/renderer'
 import type { TicketPriority, TicketStatus } from '@/domains/tickets/api/ticket'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { providerPresentation } from '@/providers/presentation-registry'
-import type { ConnectSourceFormProps } from '../connection/connect-source-form'
-import type { TicketDeckProps } from '../detail/ticket-deck'
+import type { ConnectSourceFormProps } from '../connection'
+import type { TicketDeckProps } from '../detail'
 import {
   connectionProblem,
   failureProblem,
   isConnectionProblem,
   type Recovery,
   type TicketProblemProps,
-} from '../lib/problems'
+} from '../lib'
 import { listedBacklog, type TicketListing } from './listed-backlog'
 import type { ConnectionSummary, TicketError } from './ticket-reply'
 import { savedRead } from './use-active-tickets'

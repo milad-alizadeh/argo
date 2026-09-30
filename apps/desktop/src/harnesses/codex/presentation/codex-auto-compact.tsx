@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AUTO_COMPACT_LIMIT_MAX, AUTO_COMPACT_LIMIT_MIN } from '../compaction/auto-compact-limit'
+import { AUTO_COMPACT_LIMIT_MAX, AUTO_COMPACT_LIMIT_MIN } from '../auto-compact-limit'
 import { useCodexAutoCompactLimit } from './use-codex-auto-compact-limit'
 
 // The threshold lives in the person's own `config.toml`, custom per machine and never committed (#1904).

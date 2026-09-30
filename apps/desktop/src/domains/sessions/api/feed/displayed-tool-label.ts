@@ -1,4 +1,4 @@
-import copy from '../locales/en.json'
+import { en as copy } from '../locales'
 import type { SessionFeedRow } from './feed-rows'
 
 type LabeledCall = {

@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { feedSubagents } from '@/domains/sessions/api/feed/feed-subagents'
+import { feedSubagents } from '@/domains/sessions/api/feed'
 import type { SessionFeedRow } from '../../types'
 import { DelegationEvent } from '../delegation/delegation-event'
 import { BackgroundWork } from './background-work'

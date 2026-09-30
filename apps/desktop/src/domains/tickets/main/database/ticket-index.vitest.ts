@@ -5,13 +5,13 @@ import path from 'node:path'
 import { afterEach, beforeEach, test } from 'vitest'
 import { type Database, openDatabase } from '@/database/database'
 import type { Ticket, TicketStatus } from '@/domains/tickets/api/ticket'
+import { readActiveTickets, readSavedTicket } from './ticket-queries'
 import {
   beginTicketScan,
   completeTicketScan,
   failTicketScan,
   markInterruptedTicketScans,
-} from '../sync/ticket-sync-records'
-import { readActiveTickets, readSavedTicket } from './ticket-queries'
+} from './ticket-sync-records'
 import { saveConfirmedFields, saveListedTickets, saveReadTicket } from './ticket-upsert'
 
 const OPEN: TicketStatus = { id: 'open', name: 'Open', category: 'unstarted' }

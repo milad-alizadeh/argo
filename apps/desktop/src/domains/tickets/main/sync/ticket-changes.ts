@@ -1,11 +1,7 @@
 // Announces that a provider scope's saved Tickets changed; each reader refetches from SQLite.
 import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
-import type {
-  PriorityRequest,
-  StatusRequest,
-  TicketOperationOutcome,
-} from '../operations/ticket-operation-machine'
+import type { PriorityRequest, StatusRequest, TicketOperationOutcome } from '../operations'
 import type { TicketSyncSupervisorCommand } from './ticket-sync-supervisor-machine'
 
 export class TicketChanges {

@@ -3,7 +3,7 @@ import { useLexicalTextEntity } from '@lexical/react/useLexicalTextEntity'
 import type { EntityMatch } from '@lexical/text'
 import { $getSelection, $isRangeSelection, type LexicalEditor, type TextNode } from 'lexical'
 import { useCallback, useEffect } from 'react'
-import type { SessionHarness } from '../../harness/harnesses'
+import type { SessionHarness } from '../../harness'
 import { $createComposerReferenceNode, ComposerReferenceNode } from './composer-reference-node'
 import {
   referenceInText,

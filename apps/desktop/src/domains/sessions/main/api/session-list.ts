@@ -6,12 +6,10 @@ import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import { feedActivitySchema } from '@/domains/sessions/api/feed-activity'
+import { sessionShellCommandSchema } from '@/domains/sessions/api/session-shell-command'
 import { sessionTitleSchema } from '@/domains/sessions/api/session-title'
-import { type StoredSubagent, storedSessionSubagents } from '../database/session-subagents'
-import {
-  type LiveSessionSupervisorActor,
-  liveSessionActorFor,
-} from '../live/live-session-supervisor-machine'
+import { type StoredSubagent, storedSessionSubagents } from '../database'
+import { type LiveSessionSupervisorActor, liveSessionActorFor } from '../live'
 import { storedActivity } from './session-activities'
 import type { SessionRosterChanges } from './session-roster-changes'
 import type { WatchedSessionStatus } from './watched-session-status'
@@ -47,17 +45,6 @@ const sessionSubagentSchema = z.strictObject({
   state: z.enum(['running', 'completed', 'failed', 'interrupted']),
   startedAt: z.string().nullable(),
   endedAt: z.string().nullable(),
-})
-const sessionShellCommandSchema = z.strictObject({
-  id: identifierSchema,
-  command: z.string().nullable(),
-  label: z.string().nullable(),
-  background: z.boolean(),
-  state: z.enum(['running', 'completed', 'failed', 'interrupted']),
-  startedAt: z.string().nullable(),
-  endedAt: z.string().nullable(),
-  outputPath: z.string().nullable(),
-  result: z.string().nullable(),
 })
 const sessionPullRequestSchema = z.strictObject({
   number: countSchema,

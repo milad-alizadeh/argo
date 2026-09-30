@@ -1,6 +1,9 @@
+import { Database } from 'bun:sqlite'
 import { readFileSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
 import { createInterface } from 'node:readline'
-import { readMockReplyDelayMs } from '@/harnesses/proof-protocol'
+import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
+import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
 import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
 
 type Item = {
@@ -25,6 +28,26 @@ const send = (message: unknown) => process.stdout.write(`${JSON.stringify(messag
 const identifier = (index: number) => `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`
 const pending = new Map<string, ActiveTurn>()
 const REPLY_DELAY_MS = readMockReplyDelayMs()
+const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
+let turnIndex = 0
+
+// Codex Desktop names a thread in the state store beside `sessions/`, which `thread/list` reads.
+function storedNames(): Map<string, string> {
+  const home = process.env.CODEX_HOME
+  if (home === undefined) return new Map()
+  let store: Database | null = null
+  try {
+    store = new Database(path.join(home, 'state_5.sqlite'), { readonly: true })
+    const rows = store
+      .query("SELECT id, name FROM threads WHERE trim(coalesce(name, '')) != ''")
+      .all() as { id: string; name: string }[]
+    return new Map(rows.map((row) => [row.id, row.name.trim()]))
+  } catch {
+    return new Map()
+  } finally {
+    store?.close()
+  }
+}
 
 function finish(active: ActiveTurn, status: 'completed' | 'interrupted' | 'failed') {
   const { thread, turn, prompt } = active
@@ -50,6 +73,45 @@ function finish(active: ActiveTurn, status: 'completed' | 'interrupted' | 'faile
   send({
     method: 'turn/completed',
     params: { threadId: thread.id, turn: { id: turn.id, status, error: null } },
+  })
+}
+
+// A seeded Turn: the reply's four-byte character split across two stdout writes, then its outcome.
+function finishAdversarially(
+  active: ActiveTurn,
+  plan: NonNullable<ReturnType<typeof nextAdversarialTurn>>,
+) {
+  const { thread, turn, prompt } = active
+  const assistant: Item = {
+    id: `${turn.id}-assistant`,
+    type: 'agentMessage',
+    text: `Mock Codex read: ${prompt} 🦜`,
+  }
+  turn.items.push(assistant)
+  writeSplitReply(
+    {
+      method: 'item/agentMessage/delta',
+      params: { threadId: thread.id, turnId: turn.id, itemId: assistant.id, delta: assistant.text },
+    },
+    plan.replySplitByte,
+    (chunk) => process.stdout.write(chunk),
+  )
+  send({
+    method: 'item/completed',
+    params: { threadId: thread.id, turnId: turn.id, item: assistant },
+  })
+  turn.status = plan.outcome === 'failure' ? 'failed' : 'completed'
+  save()
+  send({
+    method: 'turn/completed',
+    params: { threadId: thread.id, turn: { id: turn.id, status: turn.status, error: null } },
+  })
+  send({
+    method: 'thread/status/changed',
+    params: {
+      threadId: thread.id,
+      status: { type: turn.status === 'failed' ? 'systemError' : 'idle' },
+    },
   })
 }
 
@@ -151,6 +213,12 @@ function notifyTurn(active: ActiveTurn) {
     return
   }
   if (prompt === 'Wait to interrupt') return
+  const plan = nextAdversarialTurn(adversarialSeed, turnIndex++)
+  if (plan !== null) {
+    if (plan.outcome !== 'stall')
+      setTimeout(() => finishAdversarially(active, plan), plan.firstReplyDelayMs)
+    return
+  }
   const outcome = prompt === 'Fail this turn' ? 'failed' : 'completed'
   if (REPLY_DELAY_MS === 0) finish(active, outcome)
   else setTimeout(() => finish(active, outcome), REPLY_DELAY_MS)
@@ -182,7 +250,8 @@ function handle(message: Request) {
   if (method === 'initialized') return
   if (method === 'initialize') return send({ id, result: {} })
   if (method === 'model/list') return send({ id, result: MOCK_CODEX_MODEL_CATALOG })
-  if (method === 'thread/list')
+  if (method === 'thread/list') {
+    const names = storedNames()
     return send({
       id,
       result: {
@@ -190,11 +259,12 @@ function handle(message: Request) {
           id: threadId,
           cwd,
           updatedAt,
-          name,
+          name: names.get(threadId) ?? name,
         })),
         nextCursor: null,
       },
     })
+  }
   if (method === 'thread/start') {
     const thread: Thread = {
       id: identifier(threads.length + 1),

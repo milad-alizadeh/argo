@@ -7,11 +7,8 @@ import {
   composerCommandListingSchema,
 } from '@/domains/sessions/api/composer-commands'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
-import {
-  type LiveSessionSupervisorActor,
-  liveSessionActorFor,
-} from '../live/live-session-supervisor-machine'
-import { sessionHistoryIdentity } from './session-history-identity'
+import { type LiveSessionSupervisorActor, liveSessionActorFor } from '../live'
+import { sessionHistoryIdentity } from '../session-history-identity'
 
 const t = initTRPC.create()
 const PENDING: ComposerCommandListing = { availability: 'pending', commands: [] }

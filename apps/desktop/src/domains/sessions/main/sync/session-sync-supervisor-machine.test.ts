@@ -4,7 +4,7 @@ import { createActor, fromCallback } from 'xstate'
 import type { Database } from '@/database/database'
 import type { SessionSummaryList } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
-import { SessionSyncStatusStore } from '../api/session-sync-status'
+import { SessionSyncStatusStore } from '../session-sync-status'
 import {
   type SessionSyncActorInput,
   sessionSyncSupervisorMachine,

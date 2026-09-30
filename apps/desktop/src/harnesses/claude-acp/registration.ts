@@ -4,7 +4,7 @@ import { claudeCliEnvironment } from '@/harnesses/claude/cli-environment'
 import type { AvailableHarness } from '@/harnesses/harness-catalog'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import type { HarnessRegistration } from '@/harnesses/registration'
-import copy from './locales/en.json'
+import { en as copy } from './locales'
 import { SESSION_CLAUDE_ACP_EXECUTABLE_ENV } from './proof-protocol'
 import { createClaudeAcpReadiness, createClaudeAcpSignInDriver } from './readiness'
 

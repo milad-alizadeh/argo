@@ -7,12 +7,8 @@ import { onTestFinished, test } from 'vitest'
 import { createActor, toPromise } from 'xstate'
 import { openDatabase } from '@/database/database'
 import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/api/ticket'
-import { readActiveTickets } from '../database/ticket-queries'
-import { saveConfirmedFields } from '../database/ticket-upsert'
-import {
-  changeTicketStatus,
-  ticketOperationSupervisorMachine,
-} from '../operations/ticket-operation-supervisor-machine'
+import { readActiveTickets, saveConfirmedFields } from '../database'
+import { changeTicketStatus, ticketOperationSupervisorMachine } from '../operations'
 import { type PageRead, ticketSyncMachine } from './ticket-sync-machine'
 
 const OPEN: TicketStatus = { id: 'open', name: 'Open', category: 'unstarted' }

@@ -8,10 +8,9 @@ import { type Database, databaseMigrationsFolder, openDatabase } from '@/databas
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { sessionArchive } from '@/database/session-archive/schema'
-import { SessionActivities } from '@/domains/sessions/main/api/session-activities'
-import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster-changes'
-import { recordLiveSubagents } from '@/domains/sessions/main/database/session-subagents'
-import { saveSessionBatch } from '@/domains/sessions/main/sync/session-sync-records'
+import { SessionActivities, SessionRosterChanges } from '@/domains/sessions/main/api'
+import { recordLiveSubagents } from '@/domains/sessions/main/database'
+import { saveSessionBatch } from '@/domains/sessions/main/sync'
 import { sessionRouterDependencies } from '@/mocks/sessions/session-router-dependencies.fixture'
 import { type AppRouter, type AppRouterDependencies, createAppRouter } from './trpc-router'
 

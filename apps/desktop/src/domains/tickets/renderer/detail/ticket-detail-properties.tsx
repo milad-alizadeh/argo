@@ -5,9 +5,7 @@ import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/api
 import { SectionTitle } from '@/platform/renderer/components/section-title'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { providerPresentation } from '@/providers/presentation-registry'
-import { PriorityMenu } from '../status/priority-menu'
-import { StatusMenu } from '../status/status-menu'
-import { TicketLabel } from '../status/ticket-label'
+import { PriorityMenu, StatusMenu, TicketLabel } from '../status'
 import { type Navigation, TicketRelations } from './ticket-detail-links'
 
 const COMPACT_VALUE =

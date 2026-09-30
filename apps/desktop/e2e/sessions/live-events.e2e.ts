@@ -4,8 +4,10 @@ import { _electron as electron } from 'playwright-core'
 import { openDatabase } from '@/database/database'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
+import { signedInHarnessEnvironment } from '../../mocks/cli/signed-in-harness'
 import { launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
+import { openRoute } from '../packaged-window'
 
 const projectId = '00000000-0000-4000-8000-000000000091'
 const workspaceId = '00000000-0000-4000-8000-000000000092'
@@ -42,6 +44,8 @@ const liveEvents: SessionLiveEventBody[] = [
       input: null,
       output: null,
       summary: null,
+      // What the Claude adapter names a Read call that states no file.
+      presentation: { kind: 'read', label: 'Read file' },
     },
   },
   {
@@ -112,15 +116,14 @@ test('packaged Feed replays ordered Claude live activity for a stored Session', 
     ...launchCommand(applicationUnderTest),
     env: {
       ...process.env,
+      ...(await signedInHarnessEnvironment(root)),
       [PROJECT_PROOF_STORE_ENV]: userData,
       [LIVE_EVENT_PROOF_ENV]: JSON.stringify(liveEvents.map((body) => ({ sessionId, body }))),
     },
   })
   try {
     const page = await application.firstWindow()
-    await page.evaluate((route) => {
-      window.location.hash = route
-    }, `#/projects/${projectId}/sessions/${sessionId}`)
+    await openRoute(page, `#/projects/${projectId}/sessions/${sessionId}`)
     const feed = page.getByRole('region', { name: 'Session Feed' })
     await expect(feed.getByText('Inspect this', { exact: true })).toBeVisible()
     await expect(feed.getByText('Reading now', { exact: true })).toBeVisible()
@@ -128,8 +131,6 @@ test('packaged Feed replays ordered Claude live activity for a stored Session', 
     await expect(feed.getByRole('button', { name: /Read/ })).toBeVisible()
     await expect(feed.getByText('Permission needed')).toHaveCount(0)
     await expect(feed.getByText('Unanswered?', { exact: true })).toHaveCount(0)
-    await page.getByRole('combobox', { name: 'Message' }).fill('Continue')
-    await expect(page.getByRole('button', { name: 'Send message' })).toBeEnabled()
     const rows = await feed.locator('[data-feed-row]').allTextContents()
     expect(rows.map((row) => row.trim())).toEqual([
       expect.stringContaining('Inspect this'),

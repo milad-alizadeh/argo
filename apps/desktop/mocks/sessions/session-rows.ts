@@ -1,6 +1,7 @@
 // Session rows the Sessions stories and unit tests draw.
 
-import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
+import type { SessionShellCommand } from '@/domains/sessions/api/session-shell-command'
+import type { SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import type { Session } from '@/domains/sessions/renderer/types'
 import { DEFAULT_HARNESS } from '@/harnesses/harness'
 

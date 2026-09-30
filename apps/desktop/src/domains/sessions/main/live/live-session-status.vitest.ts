@@ -9,8 +9,7 @@ import {
   start,
   supervisorFor,
 } from '@/mocks/sessions/live-session-supervisor.fixture'
-import { sessionListProcedure } from '../api/session-list'
-import { SessionRosterChanges } from '../api/session-roster-changes'
+import { SessionRosterChanges, sessionListProcedure } from '../api'
 import type { LiveSessionSupervisorActor } from './live-session-supervisor-machine'
 
 // The status of the first row the roster lists first.

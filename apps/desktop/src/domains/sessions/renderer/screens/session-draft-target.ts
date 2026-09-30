@@ -1,7 +1,7 @@
 import type { WorkspaceCockpit } from '@/domains/workspaces/renderer'
 import type { RouterInputs } from '@/platform/renderer/trpc-client'
-import type { ComposerIdentity } from '../composer/identity/composer-identity'
-import type { HarnessControl } from '../harness/harnesses'
+import type { ComposerIdentity } from '../composer'
+import type { HarnessControl } from '../harness'
 
 export function draftTarget({
   identity,

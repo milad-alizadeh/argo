@@ -8,6 +8,7 @@ import { test } from 'node:test'
 import { readClaudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
 import { writeMockClaude } from './mock-claude-cli.ts'
+import { claudeProjectFolder } from './mock-claude-transcripts.ts'
 
 const ESCAPE = String.fromCharCode(27)
 
@@ -61,7 +62,10 @@ async function started(seed: string, prepare?: (root: string) => Promise<Prepare
   return {
     child,
     root,
-    transcript: path.join(transcripts, 'mock-claude', 'adversarial-session.jsonl'),
+    transcript: path.join(
+      claudeProjectFolder(transcripts, process.cwd()),
+      'adversarial-session.jsonl',
+    ),
   }
 }
 

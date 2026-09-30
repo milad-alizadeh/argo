@@ -7,15 +7,8 @@ import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments
 import { resolveWorkspacePath } from '@/domains/workspaces/main'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
-import {
-  deleteComposerDraft,
-  draftTurnConfigurationSchema,
-  readComposerDraft,
-} from '../database/composer-draft'
-import {
-  type LiveSessionSupervisorActor,
-  SessionSubmitRejectedError,
-} from '../live/live-session-supervisor-machine'
+import { deleteComposerDraft, draftTurnConfigurationSchema, readComposerDraft } from '../database'
+import { type LiveSessionSupervisorActor, SessionSubmitRejectedError } from '../live'
 import type { SessionRenameContext } from './session-rename'
 
 const t = initTRPC.create()
@@ -193,10 +186,8 @@ export function sessionSubmitProcedure(context: SessionProcedureContext) {
           throw new TRPCError({ code: 'PRECONDITION_FAILED', message: error.message })
         throw error
       })
-      const deleted = deleteComposerDraft(context.database, input.draftId, input.expectedRevision)
-      if (!deleted && readComposerDraft(context.database, input.draftId) !== null) {
-        throw new TRPCError({ code: 'CONFLICT', message: 'stale-draft' })
-      }
+      // The Turn is already accepted, so a newer revision saved meanwhile stays as the next draft.
+      deleteComposerDraft(context.database, input.draftId, input.expectedRevision)
       return accepted
     })
 }

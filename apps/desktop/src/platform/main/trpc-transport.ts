@@ -2,23 +2,12 @@ import { type AnyRouter, callTRPCProcedure, getTRPCErrorShape, TRPCError } from 
 import { isObservable, type Observable } from '@trpc/server/observable'
 import { app, type BrowserWindow, ipcMain } from 'electron'
 import { z } from 'zod'
+import { TRPC_CHANNEL, type TrpcRequest, trpcRequestSchema } from '@/platform/contract/trpc-wire'
 import { isTrustedRendererFrame } from './security/is-trusted-renderer-frame'
 
-const TRPC_CHANNEL = 'argo:trpc'
 type Context = undefined
 type Subscription = { unsubscribe: () => void }
-type TrpcRequestFields = {
-  id: number
-  path: string
-  input: unknown
-}
-type SubscriptionRequest = {
-  type: 'subscription'
-} & TrpcRequestFields
-type TrpcRequest =
-  | ({ type: 'query' } & TrpcRequestFields)
-  | ({ type: 'mutation' } & TrpcRequestFields)
-  | SubscriptionRequest
+type SubscriptionRequest = TrpcRequest & { type: 'subscription' }
 
 function asTRPCError(cause: unknown): TRPCError {
   return cause instanceof TRPCError
@@ -50,31 +39,6 @@ function parseTrpcSubscriptionStop(rawInput: unknown) {
       type: z.literal('subscriptionStop'),
     })
     .safeParse(rawInput)
-}
-
-function parseTrpcRequest(rawInput: unknown): TrpcRequest {
-  return z
-    .discriminatedUnion('type', [
-      z.strictObject({
-        id: z.number().int().nonnegative(),
-        path: z.string().min(1),
-        input: z.unknown(),
-        type: z.literal('query'),
-      }),
-      z.strictObject({
-        id: z.number().int().nonnegative(),
-        path: z.string().min(1),
-        input: z.unknown(),
-        type: z.literal('mutation'),
-      }),
-      z.strictObject({
-        id: z.number().int().nonnegative(),
-        path: z.string().min(1),
-        input: z.unknown(),
-        type: z.literal('subscription'),
-      }),
-    ])
-    .parse(rawInput)
 }
 
 async function startSubscription<TRouter extends AnyRouter>(request: {
@@ -179,13 +143,13 @@ export function attachTrpcTransport<TRouter extends AnyRouter>(request: {
       stopSubscription(stop.data.id)
       return { id: stop.data.id, result: { data: null } }
     }
-    const input = parseTrpcRequest(rawInput)
+    const input = trpcRequestSchema.parse(rawInput)
     if (input.type === 'subscription') {
       stopSubscription(input.id)
       await startSubscription({
         router: request.router,
         context: request.context,
-        input,
+        input: { ...input, type: input.type },
         subscriptions,
         send: sendSubscriptionMessage,
       })

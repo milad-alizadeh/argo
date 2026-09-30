@@ -9,8 +9,8 @@ import {
   type LiveSessionControls,
   liveSessionChannelEventSchema,
 } from '@/harnesses/registration'
-import type { SessionLiveInput } from '../api/session-submit'
-import type { SessionCommandStore } from '../database/session-command-store'
+import type { SessionLiveInput } from '../api'
+import type { SessionCommandStore } from '../database'
 
 export type LiveChannelActorEvent =
   | { type: 'Harness identified'; nativeId: string }

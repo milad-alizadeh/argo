@@ -1,6 +1,5 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import type { CommandExecutionStatus } from '../app-server/protocol-generated/v2/command-execution-status'
-import type { ThreadItem } from '../app-server/protocol-generated/v2/thread-item'
+import type { CommandExecutionStatus, ThreadItem } from '../app-server'
 
 const commandStatuses = {
   inProgress: 'running',

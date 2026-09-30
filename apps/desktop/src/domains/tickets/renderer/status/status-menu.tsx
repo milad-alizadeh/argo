@@ -1,8 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
 import type { TicketStatus } from '@/domains/tickets/api/ticket'
-import { Badge } from '@/platform/renderer/components/ui/badge'
-import { Button } from '@/platform/renderer/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +8,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
+import { ticketMenuTrigger } from './ticket-menu-trigger'
 import { StatusIcon, StatusMark } from './ticket-status'
 
 export type StatusMenuProps = {
@@ -24,13 +23,6 @@ export type StatusMenuProps = {
   // False draws the status without the choices, for a Ticket whose Account cannot be called.
   writable?: boolean
   onChange: (status: TicketStatus) => void
-}
-
-// Pulls the named trigger's icon onto the value column outside the compact Badge treatment.
-const NAMED_INSET = '-ml-[calc(--spacing(2)+var(--size-border))]'
-const namedInset = (named: boolean, metadata: boolean) => {
-  if (!named) return ''
-  return metadata ? '' : NAMED_INSET
 }
 
 // A Ticket's status as a menu of every status its provider offers.
@@ -55,22 +47,7 @@ export function StatusMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={t('status.trigger', { noun, status: status.name })}
-        render={
-          metadata ? (
-            <Badge
-              className={`relative z-10 @3xl:bg-transparent @3xl:text-muted-foreground ${namedInset(named, metadata)}`}
-              render={<button type="button" />}
-              size="default"
-              variant="secondary"
-            />
-          ) : (
-            <Button
-              className={`relative z-10 shrink-0 type-meta text-muted-foreground ${namedInset(named, metadata)}`}
-              size={named ? 'xs' : 'icon-xs'}
-              variant="ghost"
-            />
-          )
-        }
+        render={ticketMenuTrigger(named, metadata)}
       >
         <StatusIcon current={current} status={status} statuses={statuses} total={total} />
         {named ? status.name : null}
@@ -78,7 +55,7 @@ export function StatusMenu({
       <DropdownMenuContent align="start" className="w-auto">
         <DropdownMenuRadioGroup onValueChange={choose} value={status.id}>
           {statuses.map((option) => (
-            <DropdownMenuRadioItem key={option.id} value={option.id}>
+            <DropdownMenuRadioItem closeOnClick key={option.id} value={option.id}>
               <StatusIcon status={option} statuses={statuses} />
               {option.name}
             </DropdownMenuRadioItem>

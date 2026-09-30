@@ -3,6 +3,7 @@ import { type ReactNode, useCallback, useState } from 'react'
 import { MemoryRouter, Navigate, Route, Routes } from 'react-router'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
+import type { SessionShellCommand } from '@/domains/sessions/api/session-shell-command'
 import { sessionRow, sessionShellCommand, sessionSubagent } from '@/mocks/sessions/session-rows'
 import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fixture'
 import { sessionListSubscribe } from '@/mocks/sessions/session-story-host'
@@ -12,7 +13,7 @@ import { ComposerForm } from '../composer/layout/composer-form'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { SessionInspector } from '../inspector/session-inspector'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
-import type { SessionShellCommand, SessionSubagent } from '../model/models'
+import type { SessionSubagent } from '../model/models'
 import { SessionList, type SessionListActions } from '../session-list/session-list'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import type { Session, SessionFeed } from '../types'
@@ -712,7 +713,8 @@ async function expectShellReopensWithOutput(canvasElement: HTMLElement) {
   await userEvent.click(canvas.getByRole('button', { name: /^Shell/ }))
   await userEvent.click(await screen.findByRole('menuitem', { name: /bun run quality/ }))
   const shellInspector = await canvas.findByRole('region', { name: 'Background Shell' })
-  await expect(shellInspector).toBeVisible()
+  // The inspector stays invisible until its panel is ready, so the region mounts before it shows.
+  await waitFor(() => expect(shellInspector).toBeVisible())
   await waitFor(
     () => expect(within(shellInspector).getByText(/Checked 187 files\./)).toBeVisible(),
     { timeout: 5000 },

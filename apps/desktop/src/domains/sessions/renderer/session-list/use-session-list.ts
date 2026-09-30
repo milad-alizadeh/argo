@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { sessionError } from '@/domains/sessions/api/session-error'
-import { useSessionRoster } from './session-roster'
+import { useSessionRoster } from '../session-roster'
 import { useSessionSync } from './use-session-sync'
 
 export function useSessionList({

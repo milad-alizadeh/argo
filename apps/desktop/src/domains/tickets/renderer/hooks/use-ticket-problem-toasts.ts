@@ -3,7 +3,7 @@
 // than announcing a single failed read.
 import { useEffect, useRef } from 'react'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
-import type { TicketProblemProps } from '../lib/problems'
+import type { TicketProblemProps } from '../lib'
 import type { TicketsView } from './use-tickets-view-derive'
 
 const SLOTS = ['main', 'sync', 'detail'] as const

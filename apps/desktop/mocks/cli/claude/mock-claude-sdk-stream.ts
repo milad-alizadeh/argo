@@ -60,9 +60,17 @@ export function promptText(input: unknown): string | null {
 
 type WaitForPermission = () => Promise<void>
 
+// The real CLI records a Turn under the ids it streams: the prompt's `uuid` the SDK sent, and the
+// reply's message id.
+export type MockTurnIds = { user: string; reply: string }
+
 export function startMockClaudeSdkStream(
   sessionId: string,
-  reply: (prompt: string, waitForPermission: WaitForPermission) => Promise<string>,
+  reply: (
+    prompt: string,
+    waitForPermission: WaitForPermission,
+    ids: MockTurnIds,
+  ) => Promise<string>,
 ) {
   writeInitialization(sessionId)
   let pending = ''
@@ -92,9 +100,13 @@ export function startMockClaudeSdkStream(
     const text = promptText(input)
     if (text === null) return
     if (text.includes('FeedActivityProbe')) writeActivity(sessionId)
-    const streamed = text.includes(STREAM_PROBE) ? writeStream(sessionId) : Promise.resolve(null)
-    void Promise.all([reply(text, waitForPermission), streamed]).then(([response, messageId]) =>
-      setTimeout(() => writeReply(sessionId, response, messageId), INITIALIZATION_DELAY_MS),
+    const ids = {
+      user: typeof input.uuid === 'string' ? input.uuid : randomUUID(),
+      reply: randomUUID(),
+    }
+    const streamed = text.includes(STREAM_PROBE) ? writeStream(sessionId, ids.reply) : null
+    void Promise.all([reply(text, waitForPermission, ids), streamed]).then(([response]) =>
+      setTimeout(() => writeReply(sessionId, response, ids.reply), INITIALIZATION_DELAY_MS),
     )
   }
   process.stdin.on('data', (chunk: string) => {
@@ -127,9 +139,8 @@ function writeActivity(sessionId: string) {
   )
 }
 
-// Resolves with the streamed message's id once its last delta is written, so the reply settles it.
-function writeStream(sessionId: string): Promise<string> {
-  const messageId = randomUUID()
+// Resolves once its last delta is written, so the reply under the same message id settles it.
+function writeStream(sessionId: string, messageId: string): Promise<void> {
   const event = (body: Record<string, unknown>) =>
     process.stdout.write(
       `${JSON.stringify({ type: 'stream_event', uuid: randomUUID(), session_id: sessionId, parent_tool_use_id: null, event: body })}\n`,
@@ -146,7 +157,7 @@ function writeStream(sessionId: string): Promise<string> {
       })
       if (written < STREAM_DELTAS) return
       clearInterval(timer)
-      resolve(messageId)
+      resolve()
     }, STREAM_DELTA_INTERVAL_MS)
   })
 }
@@ -192,9 +203,9 @@ export function permissionResponseId(input: unknown): string | null {
   return typeof response.request_id === 'string' ? response.request_id : null
 }
 
-function writeReply(sessionId: string, response: string, messageId: string | null) {
+function writeReply(sessionId: string, response: string, messageId: string) {
   process.stdout.write(
-    `${JSON.stringify({ type: 'assistant', session_id: sessionId, uuid: randomUUID(), parent_tool_use_id: null, message: { id: messageId ?? randomUUID(), type: 'message', role: 'assistant', model: 'claude-opus-4-6', content: [{ type: 'text', text: response }], stop_reason: 'end_turn', stop_sequence: null, usage: { input_tokens: 0, output_tokens: 0 } } })}\n`,
+    `${JSON.stringify({ type: 'assistant', session_id: sessionId, uuid: randomUUID(), parent_tool_use_id: null, message: { id: messageId, type: 'message', role: 'assistant', model: 'claude-opus-4-6', content: [{ type: 'text', text: response }], stop_reason: 'end_turn', stop_sequence: null, usage: { input_tokens: 0, output_tokens: 0 } } })}\n`,
   )
   process.stdout.write(
     `${JSON.stringify({ type: 'result', subtype: 'success', duration_ms: 0, duration_api_ms: 0, is_error: false, num_turns: 1, result: response, stop_reason: 'end_turn', total_cost_usd: 0, usage: { input_tokens: 0, output_tokens: 0 }, modelUsage: {}, permission_denials: [], session_id: sessionId, uuid: randomUUID() })}\n`,

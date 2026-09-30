@@ -3,13 +3,13 @@ import { identifierSchema } from '@/shared/validation'
 import { feedActivityBaseSchema } from '../feed-activity'
 import {
   feedContentKindSchema,
+  SUBAGENT_EVENTS,
   toolPresentationKindSchema,
   workStatusSchema,
 } from '../feed-content'
 import { questionSchema } from '../questions'
 import { BACKGROUND_STATES } from './background-task-record'
 import { feedImageUrlSchema } from './feed-images'
-import { SUBAGENT_EVENTS } from './subagent-event'
 
 const FEED_MARKERS = ['compacted', 'interrupted'] as const
 const feedMarkerSchema = z.enum(FEED_MARKERS)

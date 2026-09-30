@@ -1,6 +1,6 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import { sessionRosterPathKey } from '@/domains/sessions/renderer/session-list/session-roster'
 import { sessionDetailsPathKey } from '@/domains/sessions/renderer/session-queries'
+import { sessionRosterPathKey } from '@/domains/sessions/renderer/session-roster'
 import type { Session } from '@/domains/sessions/renderer/types'
 import {
   forgetHeldSessionDetails,

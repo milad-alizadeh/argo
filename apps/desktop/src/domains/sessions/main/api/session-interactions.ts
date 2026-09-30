@@ -6,8 +6,7 @@ import { sessionTable } from '@/database/session/schema'
 import { PERMISSION_DECISIONS } from '@/domains/sessions/api/permissions'
 import { questionAnswerSchema } from '@/domains/sessions/api/questions'
 import { identifierSchema } from '@/shared/validation'
-import type { LiveSessionSupervisorActor } from '../live/live-session-supervisor-machine'
-import type { SessionInteractionBroker } from '../live/session-interaction-broker'
+import type { LiveSessionSupervisorActor, SessionInteractionBroker } from '../live'
 
 const t = initTRPC.create()
 const sessionInput = z.strictObject({ sessionId: identifierSchema })

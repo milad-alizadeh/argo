@@ -5,7 +5,9 @@
 import assert from 'node:assert/strict'
 import { expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
-import { FARTHEST_WINDOW_FILLER_ID } from '../fixtures/roster-window.fixture'
+import { fixtureSession } from '../fixture-sessions'
+import { FARTHEST_WINDOW_FILLER } from '../fixtures/roster-window.fixture'
+import { refreshSessions } from '../gestures'
 
 const ROW = 'nav[aria-label="Sessions"] button[data-session-id]'
 const SCROLL_ATTEMPTS = 40
@@ -13,7 +15,7 @@ const SCROLL_TIMEOUT_MS = 20_000
 
 // The scrolled container is named rather than walked up to: the list's context menu wraps the nav
 // inside it, so the nav's parent is that wrapper and setting its scrollTop scrolls nothing.
-const SCROLLER = '[data-slot="roster-scroll"]'
+const SCROLLER = '[data-slot="session-list-scroll"]'
 
 function scrollRosterToEnd(page: Page) {
   return page.evaluate((selector) => {
@@ -37,6 +39,8 @@ async function scrollUntilVisible(page: Page, selector: string) {
 }
 
 export async function proveRosterWindow(page: Page) {
+  await refreshSessions(page)
+  const farthestId = await fixtureSession(FARTHEST_WINDOW_FILLER)
   await page.reload()
   await page.locator(ROW).first().waitFor()
   const firstSessionId = await page.locator(ROW).first().getAttribute('data-session-id')
@@ -44,32 +48,25 @@ export async function proveRosterWindow(page: Page) {
 
   // The farthest filler Session sits well outside the first bounded window (#2239): it is not in
   // the document at all until scrolling grows the window past it.
-  await expect(page.locator(`${ROW}[data-session-id="${FARTHEST_WINDOW_FILLER_ID}"]`)).toHaveCount(
-    0,
-  )
+  await expect(page.locator(`${ROW}[data-session-id="${farthestId}"]`)).toHaveCount(0)
 
-  await scrollUntilVisible(page, `${ROW}[data-session-id="${FARTHEST_WINDOW_FILLER_ID}"]`)
+  await scrollUntilVisible(page, `${ROW}[data-session-id="${farthestId}"]`)
 
-  const farthest = page.locator(`${ROW}[data-session-id="${FARTHEST_WINDOW_FILLER_ID}"]`)
+  const farthest = page.locator(`${ROW}[data-session-id="${farthestId}"]`)
   await farthest.focus()
   await page.keyboard.press('ArrowUp')
   const afterUp = await page.evaluate(
     () => document.activeElement?.getAttribute('data-session-id') ?? null,
   )
-  assert.notEqual(afterUp, FARTHEST_WINDOW_FILLER_ID)
+  assert.notEqual(afterUp, farthestId)
   assert.notEqual(afterUp, null)
 
   // Selecting it the way a person would, past the boundary the scroll just crossed, still lands
   // on a real, readable Feed rather than a row the reader never actually resolved a Session for.
   await farthest.focus()
   await page.keyboard.press('Enter')
-  await page.waitForFunction(
-    (id) => window.location.hash === `#/sessions/${id}`,
-    FARTHEST_WINDOW_FILLER_ID,
-  )
-  await page.waitForSelector(
-    `.feed__viewport[data-session="${FARTHEST_WINDOW_FILLER_ID}"] [data-feed-row]`,
-  )
+  await page.waitForFunction((id) => window.location.hash.endsWith(`/sessions/${id}`), farthestId)
+  await page.waitForSelector(`.feed__viewport[data-session="${farthestId}"] [data-feed-row]`)
 
   // The first page stays selectable after a later page names a different owner window.
   await page.evaluate((selector) => {

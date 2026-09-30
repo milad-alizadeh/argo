@@ -14,19 +14,20 @@ import { type AccountAccess, createAccountAccess } from '@/domains/accounts/main
 import type { Cipher } from '@/domains/accounts/main/grants'
 import { createSignIn } from '@/domains/accounts/main/sign-in'
 import { createConnectionPort } from '@/domains/connections/main'
-import { ticketProcedures } from '@/domains/tickets/main/api/ticket-procedures'
+import { ticketProcedures } from '@/domains/tickets/main/api'
 import {
   changeTicketPriority,
   changeTicketStatus,
   ticketOperationSupervisorMachine,
-} from '@/domains/tickets/main/operations/ticket-operation-supervisor-machine'
-import { ticketWriter } from '@/domains/tickets/main/operations/ticket-writer'
-import { TicketChanges } from '@/domains/tickets/main/sync/ticket-changes'
-import { ticketByIdReader, ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
+  ticketWriter,
+} from '@/domains/tickets/main/operations'
 import {
   TICKET_SYNC_TIMING,
+  TicketChanges,
+  ticketByIdReader,
+  ticketPageReader,
   ticketSyncSupervisorMachine,
-} from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
+} from '@/domains/tickets/main/sync'
 import { proofEndpoints } from '@/providers/github/endpoints'
 import { octocatUser } from '@/providers/github/harness'
 import { linearProofEndpoints } from '@/providers/linear/endpoints'

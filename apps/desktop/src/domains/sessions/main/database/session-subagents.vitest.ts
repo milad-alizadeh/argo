@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, test } from 'vitest'
 import { type Database, openDatabase } from '@/database/database'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import { saveSessionBatch } from '../sync/session-sync-records'
+import { saveSessionBatch } from '../sync'
 import { recordLiveSubagents, storedSessionSubagents } from './session-subagents'
 
 let directory: string

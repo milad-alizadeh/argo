@@ -18,11 +18,10 @@ export async function proveClaudeRename(page, { backend, transcripts }) {
   const renamed = await renameSession(page, sessionId, RENAMED)
   assert.equal(renamed.title, RENAMED)
 
-  const folder = path.join(transcripts, 'mock-claude')
   await waitFor(async () => {
-    const names = await readdir(folder).catch(() => [])
-    for (const name of names) {
-      const body = await readFile(path.join(folder, name), 'utf8')
+    const names = await readdir(transcripts, { recursive: true }).catch(() => [])
+    for (const name of names.filter((entry) => entry.endsWith('.jsonl'))) {
+      const body = await readFile(path.join(transcripts, name), 'utf8')
       if (body.includes(`"customTitle":"${RENAMED}"`)) return true
     }
     return false

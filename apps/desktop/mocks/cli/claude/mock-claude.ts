@@ -5,13 +5,13 @@ import { randomUUID } from 'node:crypto'
 import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { SESSION_CLAUDE_TRANSCRIPTS_ENV } from '@/harnesses/claude/proof-protocol'
 import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
 import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversarial-turns.ts'
 import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { createMockClaudeHooks } from './mock-claude-hooks.ts'
 import { replyToSdkPrompt } from './mock-claude-sdk-reply.ts'
 import { startMockClaudeSdkStream } from './mock-claude-sdk-stream.ts'
+import { claudeProjectFolder, MOCK_CLAUDE_TRANSCRIPTS_ENV } from './mock-claude-transcripts.ts'
 import { settleMockClaudeTurn } from './mock-claude-turn.ts'
 
 process.title = MOCK_CLAUDE_PROCESS_TITLE
@@ -53,7 +53,7 @@ if (arguments_.includes('--help')) {
 }
 const [transcriptRoot] = arguments_
 const agentSdk = arguments_.includes('stream-json')
-const transcripts = agentSdk ? process.env[SESSION_CLAUDE_TRANSCRIPTS_ENV] : transcriptRoot
+const transcripts = agentSdk ? process.env[MOCK_CLAUDE_TRANSCRIPTS_ENV] : transcriptRoot
 
 function flagValue(flag: string): string | null {
   const index = arguments_.indexOf(flag)
@@ -68,12 +68,16 @@ const sessionId =
 const pluginRoot = flagValue('--plugin-dir')
 if (transcripts === undefined || sessionId === null) process.exit(2)
 const { displayReply, waitForPermission } = createMockClaudeHooks(pluginRoot)
-const folder = path.join(transcripts, 'mock-claude')
-mkdirSync(folder, { recursive: true })
+// The real CLI keeps a Session under its working directory's project folder, where the SDK reads it.
+const folder = claudeProjectFolder(transcripts, process.cwd())
 const transcript = path.join(folder, `${sessionId}.jsonl`)
+// Made on the first write, as the real CLI does, so a run that records nothing leaves no folder.
+function appendTranscript(data: string | Uint8Array) {
+  mkdirSync(folder, { recursive: true })
+  appendFileSync(transcript, data)
+}
 let parentUuid: string | null = null
-function record(type: 'user' | 'assistant', message: Record<string, unknown>) {
-  const uuid = randomUUID()
+function record(type: 'user' | 'assistant', message: Record<string, unknown>, uuid = randomUUID()) {
   const record = {
     type,
     sessionId,
@@ -86,31 +90,31 @@ function record(type: 'user' | 'assistant', message: Record<string, unknown>) {
   parentUuid = uuid
   return `${JSON.stringify(record)}\n`
 }
-const write = (type: 'user' | 'assistant', message: Record<string, unknown>) =>
-  appendFileSync(transcript, record(type, message))
+const write = (type: 'user' | 'assistant', message: Record<string, unknown>, uuid?: string) =>
+  appendTranscript(record(type, message, uuid))
 const compact = () => {
   const uuid = randomUUID()
-  appendFileSync(
-    transcript,
+  appendTranscript(
     `${JSON.stringify({ type: 'system', subtype: 'compact_boundary', uuid, timestamp: new Date().toISOString() })}\n`,
   )
 }
-function writeReply(text: string, plan: AdversarialTurn | null) {
+function writeReply(text: string, plan: AdversarialTurn | null, messageId?: string) {
   const response = `Mock Claude read: ${text}${plan ? ' 🦜' : ''}`
   const reply = record('assistant', {
+    ...(messageId === undefined ? {} : { id: messageId }),
     role: 'assistant',
     stop_reason: 'end_turn',
     content: [{ type: 'text', text: response }],
   })
   if (plan === null) {
-    appendFileSync(transcript, reply)
+    appendTranscript(reply)
     return response
   }
   const bytes = Buffer.from(reply)
   const characterAt = bytes.indexOf(Buffer.from('🦜'))
   const splitAt = characterAt + Math.min(plan.replySplitByte, Buffer.from('🦜').length - 1)
-  appendFileSync(transcript, bytes.subarray(0, splitAt))
-  setTimeout(() => appendFileSync(transcript, bytes.subarray(splitAt)), 1)
+  appendTranscript(bytes.subarray(0, splitAt))
+  setTimeout(() => appendTranscript(bytes.subarray(splitAt)), 1)
   return response
 }
 let pending = ''
@@ -121,14 +125,15 @@ if (agentSdk) {
   const sdkReplyDelayMs = isFreshSession
     ? Math.max(REPLY_DELAY_MS, SDK_FRESH_SESSION_REPLY_FLOOR_MS)
     : REPLY_DELAY_MS
-  startMockClaudeSdkStream(sessionId, (prompt, sdkWaitForPermission) =>
+  startMockClaudeSdkStream(sessionId, (prompt, sdkWaitForPermission, ids) =>
     replyToSdkPrompt({
+      ids,
       prompt,
       waitForPermission: sdkWaitForPermission,
       compact,
       rename: RENAME,
       transcript,
-      recordUser: (text) => write('user', { role: 'user', content: text }),
+      recordUser: (text, uuid) => write('user', { role: 'user', content: text }, uuid),
       nextPlan: () =>
         adversarialSeed === undefined ? null : adversarialTurn(adversarialSeed, turnIndex++),
       replyDelayMs: sdkReplyDelayMs,
@@ -150,10 +155,7 @@ process.stdin.on('data', (chunk: string) => {
     const text = turn[1] ?? ''
     const rename = RENAME.exec(text)
     if (rename !== null) {
-      appendFileSync(
-        transcript,
-        `${JSON.stringify({ type: 'custom-title', customTitle: rename[1] })}\n`,
-      )
+      appendTranscript(`${JSON.stringify({ type: 'custom-title', customTitle: rename[1] })}\n`)
       continue
     }
     write('user', { role: 'user', content: text })

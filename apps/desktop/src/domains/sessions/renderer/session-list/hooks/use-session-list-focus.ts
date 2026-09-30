@@ -1,5 +1,5 @@
 import { type RefObject, useLayoutEffect, useState } from 'react'
-import { currentSessionId } from '../../model/models'
+import { currentSessionId } from '../../model'
 import type { Session, SessionId } from '../../types'
 
 export function useSessionListFocus(

@@ -4,7 +4,7 @@ import { Fragment, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
-import { LINK_CLASS } from '../feed/content/link-class'
+import { LINK_CLASS } from '../link-class'
 import { formatSkillLabel, type PromptSegment, parsePromptText } from './prompt-segments'
 
 // Set in its host's type role (the Feed prompt, a Roster title, the composer), so the name

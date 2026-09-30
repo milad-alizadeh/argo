@@ -1,9 +1,6 @@
 import type { FeedContent, MediaSource, PromptFile } from '@/domains/sessions/api/feed-content'
-import type { CodexRequest } from '../app-server/codex-app-server-client'
-import type { ThreadItem } from '../app-server/protocol-generated/v2/thread-item'
-import type { ThreadReadResponse } from '../app-server/protocol-generated/v2/thread-read-response'
-import type { UserInput } from '../app-server/protocol-generated/v2/user-input'
-import copy from '../locales/en.json'
+import type { CodexRequest, ThreadItem, ThreadReadResponse, UserInput } from '../app-server'
+import { en as copy } from '../locales'
 import { codexCommandContent } from './codex-command-content'
 import {
   type CodexCollabFacts,

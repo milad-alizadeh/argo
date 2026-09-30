@@ -19,7 +19,7 @@ import {
   type SessionSyncStatus,
   type SessionSyncStatusStore,
   sessionSyncStatusSchema,
-} from '../api/session-sync-status'
+} from '../session-sync-status'
 import { sessionSyncMachine } from './session-sync-machine'
 import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
 

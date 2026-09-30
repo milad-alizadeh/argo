@@ -4,7 +4,7 @@ import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import type { TicketErrorCode } from '@/domains/tickets/api/errors'
 import type { Ticket } from '@/domains/tickets/api/ticket'
-import { type OmittedOutcome, omittedNativeIds, saveOmittedTicket } from '../database/ticket-upsert'
+import { type OmittedOutcome, omittedNativeIds, saveOmittedTicket } from '../database'
 
 export type TicketRead =
   | {

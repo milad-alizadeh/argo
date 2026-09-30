@@ -5,7 +5,7 @@ import { harnessShortLabel } from '@/harnesses/presentation-registry'
 import { ContractFailureAlert } from '@/platform/renderer/components/contract-failure-alert'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
-import { type HarnessSignIn, useHarnessSignIn } from '../hooks/use-harness-sign-in'
+import { type HarnessSignIn, useHarnessSignIn } from '../hooks'
 
 export const STATE_BADGE_VARIANT = {
   ready: 'secondary',

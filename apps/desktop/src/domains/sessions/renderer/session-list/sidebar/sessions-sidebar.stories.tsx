@@ -12,9 +12,9 @@ import { queryClient, type RouterOutputs } from '@/platform/renderer/trpc-client
 import { replaceComposerCommands } from '../../composer/references/composer-command-registry'
 import { useFeedReading } from '../../feed/use-feed-reading'
 import { sessionArchivePathKey } from '../../session-queries'
+import { sessionRosterPathKey } from '../../session-roster'
 import type { SessionError, SessionId, SessionListPage } from '../../types'
 import { SessionList, type SessionListActions } from '../session-list'
-import { sessionRosterPathKey } from '../session-roster'
 
 const session = sessionRow({
   id: 'prose',

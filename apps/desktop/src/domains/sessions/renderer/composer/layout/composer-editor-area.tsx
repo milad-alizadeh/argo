@@ -1,7 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 import type { RefObject } from 'react'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
-import type { SessionHarness } from '../../harness/harnesses'
+import type { SessionHarness } from '../../harness'
 import { ComposerEditor } from '../editor/session-composer-editor'
 import { ComposerAttachments } from './composer-attachments'
 

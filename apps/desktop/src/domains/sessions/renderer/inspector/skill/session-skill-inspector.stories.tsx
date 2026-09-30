@@ -1,0 +1,76 @@
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { expect, within } from 'storybook/test'
+
+import { SessionEvidenceInspector } from '../session-evidence-inspector'
+
+const SKILL_PATH = '/storybook/.claude/skills/implement/SKILL.md'
+const SKILL_FILE = [
+  '---',
+  'name: implement',
+  'description: Build a ticket end to end.',
+  '---',
+  '',
+  '# Implement',
+  '',
+  'Build the ticket in a **worktree**, then review the diff.',
+].join('\n')
+
+// A story has no preload, so the one read the inspector makes is answered here.
+function answerSkillReads(content: string | null) {
+  const before = window.argo
+  window.argo = {
+    ...before,
+    trpc: (async (request) => {
+      if (request.path !== 'sessionSkillRead') return before.trpc(request)
+      const requested = (request.input as { path: string }).path
+      return {
+        id: request.id,
+        result: { data: { content: requested === SKILL_PATH ? content : null } },
+      }
+    }) as typeof window.argo.trpc,
+  }
+}
+
+const meta = {
+  title: 'Sessions/Screen/Skill Inspector',
+  component: SessionEvidenceInspector,
+  parameters: { layout: 'fullscreen' },
+  decorators: [
+    (Story) => (
+      <div className="flex h-dvh min-h-0 w-full">
+        <Story />
+      </div>
+    ),
+  ],
+} satisfies Meta<typeof SessionEvidenceInspector>
+
+export default meta
+type Story = StoryObj<typeof SessionEvidenceInspector>
+
+const skill = {
+  shape: 'skill' as const,
+  id: `skill:${SKILL_PATH}`,
+  name: 'implement',
+  path: SKILL_PATH,
+}
+
+export const RenderedSkill: Story = {
+  args: { evidence: skill, sessionId: null },
+  beforeEach: () => answerSkillReads(SKILL_FILE),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByRole('heading', { name: 'Implement' })).toBeVisible()
+    await expect(canvas.getAllByText('Implement')).toHaveLength(1)
+    await expect(canvas.getByText('worktree').tagName).toBe('STRONG')
+    await expect(canvasElement).not.toHaveTextContent('description: Build a ticket')
+  },
+}
+
+export const UnreadableSkill: Story = {
+  args: { evidence: skill, sessionId: null },
+  beforeEach: () => answerSkillReads(null),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText("This skill's file could not be read.")).toBeVisible()
+  },
+}

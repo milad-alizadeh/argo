@@ -1,34 +1,35 @@
 import os from 'node:os'
 import path from 'node:path'
 import type { HarnessRegistration } from '@/harnesses/registration'
-import type { CodexAppServerClient } from './app-server/codex-app-server-client'
+import type { CodexAppServerClient } from './app-server'
 import { readCodexHarnessInfo } from './catalog'
-import { readAutoCompactLimit, writeAutoCompactLimit } from './compaction/config-file'
+import { readAutoCompactLimit, writeAutoCompactLimit } from './compaction'
+import { HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV } from './proof-protocol'
 import { createCodexSignInDriver, createSystemCodexReadiness } from './readiness'
 import {
   codexHistoryOwner,
   codexHistoryTurn,
-  openCodexHistoryReader,
-} from './session/codex-history-lines'
-import { openCodexSessionChannel } from './session/codex-session-channel'
-import {
   createCodexSessionSummaryList,
   createCodexSessionSummaryReader,
-} from './session/codex-session-discovery'
-import { hasCodexSessionTurn, readCodexSessionHistory } from './session/codex-session-history'
-import { readCodexSkillCommands } from './session/codex-skill-commands'
+  hasCodexSessionTurn,
+  openCodexHistoryReader,
+  openCodexSessionChannel,
+  readCodexSessionHistory,
+  readCodexSkillCommands,
+} from './session'
 
 export function createCodexRegistration(
   client: CodexAppServerClient,
 ): HarnessRegistration<'codex'> {
   const { request } = client
   const codexHome = process.env.CODEX_HOME ?? path.join(os.homedir(), '.codex')
+  const signInExecutable = process.env[HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV]
   return {
     harness: 'codex',
     listSessionSummaries: createCodexSessionSummaryList(request),
     getSessionSummary: createCodexSessionSummaryReader(request),
-    checkReadiness: createSystemCodexReadiness(),
-    signIn: createCodexSignInDriver(),
+    checkReadiness: createSystemCodexReadiness(signInExecutable),
+    signIn: createCodexSignInDriver(signInExecutable),
     readCatalog: () => readCodexHarnessInfo(request),
     readHistory: ({ nativeId, subagentId }) =>
       readCodexSessionHistory(request, subagentId ?? nativeId),

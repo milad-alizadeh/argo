@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { CodexRequest } from '../app-server/codex-app-server-client'
+import type { CodexRequest } from '../app-server'
 
 // `thread.agentNickname` in protocol-generated/v2/thread.ts: the random name Codex gave a spawned thread.
 const nicknameResponseSchema = z.object({

@@ -30,6 +30,18 @@ function getHandler(): Handler {
 
 const t = initTRPC.create()
 
+function attachToHost(router: Parameters<typeof attachTrpcTransport>[0]['router']) {
+  const hostWindow = host()
+  handler = undefined
+  const detach = attachTrpcTransport({
+    window: hostWindow.window,
+    rendererURL: 'http://localhost/',
+    router,
+    context: undefined,
+  })
+  return { hostWindow, detach }
+}
+
 function host() {
   const sent: unknown[] = []
   const listeners = new Map<string, (details?: unknown) => void>()
@@ -83,14 +95,7 @@ test('trusted tRPC transport delivers the initial value and later events, then s
     ),
     ping: t.procedure.query(() => 'pong'),
   })
-  const hostWindow = host()
-  handler = undefined
-  const detach = attachTrpcTransport({
-    window: hostWindow.window,
-    rendererURL: 'http://localhost/',
-    router,
-    context: undefined,
-  })
+  const { hostWindow, detach } = attachToHost(router)
   try {
     await getHandler()(hostWindow.event, {
       id: 1,
@@ -126,14 +131,7 @@ test('trusted tRPC transport keeps hash routes, stops on document navigation and
       }),
     ),
   })
-  const hostWindow = host()
-  handler = undefined
-  const detach = attachTrpcTransport({
-    window: hostWindow.window,
-    rendererURL: 'http://localhost/',
-    router,
-    context: undefined,
-  })
+  const { hostWindow, detach } = attachToHost(router)
   try {
     await getHandler()(hostWindow.event, {
       id: 3,
@@ -162,14 +160,7 @@ test('trusted tRPC transport keeps hash routes, stops on document navigation and
 
 test('trusted tRPC transport rejects an untrusted frame before it can subscribe', async () => {
   const router = t.router({ updates: t.procedure.subscription(() => observable(() => {})) })
-  const hostWindow = host()
-  handler = undefined
-  const detach = attachTrpcTransport({
-    window: hostWindow.window,
-    rendererURL: 'http://localhost/',
-    router,
-    context: undefined,
-  })
+  const { hostWindow, detach } = attachToHost(router)
   try {
     const untrusted = {
       ...hostWindow.event,

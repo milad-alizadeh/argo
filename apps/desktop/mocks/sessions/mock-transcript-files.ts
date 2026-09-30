@@ -7,36 +7,47 @@
 //
 // Kept apart from `session-story-host` because the packaged proof runs under node, which cannot
 // resolve the extensionless TypeScript imports that file reaches for.
-import { cp, mkdir, readFile, utimes, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { existsSync, readdirSync } from 'node:fs'
+import { mkdir, readdir, readFile, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
+import { claudeProjectFolder } from '../cli/claude/mock-claude-transcripts'
 
 // A run always starts in `apps/desktop`; `import.meta` is unavailable once Playwright loads this as CommonJS.
 const FIXTURES = path.join(process.cwd(), 'mocks', 'cli', 'claude', 'fixtures', 'sessions')
-
-export const CODEX_FIXTURES = path.join(
-  process.cwd(),
-  'mocks',
-  'cli',
-  'codex',
-  'fixtures',
-  'sessions',
-)
+const SUBAGENTS = path.join(FIXTURES, '..', 'subagents')
 
 export async function fixtureLines(name, fixtures = FIXTURES) {
   const text = await readFile(path.join(fixtures, `${name}.jsonl`), 'utf8')
   return text.split('\n').filter((line) => line.length > 0)
 }
 
-// A transcripts root shaped the way the Harness writes one: a directory per project holding one
-// `<sessionId>.jsonl` per Session. Written in the given order, so the mtime ordering the Roster
-// reads is the argument order reversed.
-const PROJECT = 'project-one'
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 
-// Where one Session's transcript lands in a tree this module wrote. Owned here so a caller that
-// grows a file mid-run does not keep its own copy of the layout.
-export function fixturePath(root, name) {
-  return path.join(root, PROJECT, `${name}.jsonl`)
+// A Harness names each Session by a UUID, so a fixture named for its reading gets a stable one.
+export function fixtureSessionId(name: string) {
+  if (UUID.test(name)) return name
+  const hex = createHash('sha256').update(name).digest('hex')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`
+}
+
+// Where one Session's transcript already sits in a tree this module wrote, whichever working
+// directory's folder holds it.
+export function fixturePath(transcripts, name) {
+  const file = `${fixtureSessionId(name)}.jsonl`
+  const folder = readdirSync(transcripts).find((entry) =>
+    existsSync(path.join(transcripts, entry, file)),
+  )
+  if (folder === undefined) throw new Error(`No transcript for ${name} under ${transcripts}.`)
+  return path.join(transcripts, folder, file)
+}
+
+// Where a new Session run in `cwd` lands, with its folder made.
+export async function newFixturePath(transcripts, name, cwd) {
+  const folder = claudeProjectFolder(transcripts, cwd)
+  await mkdir(folder, { recursive: true })
+  return path.join(folder, `${fixtureSessionId(name)}.jsonl`)
 }
 
 export async function replaceInFile(file, search, replacement) {
@@ -50,10 +61,11 @@ export async function replaceInFile(file, search, replacement) {
   await utimes(file, future, future)
 }
 
-// The packaged proof's own Project folder, beside its transcripts. The cockpit shows no Roster
-// without a selected Project (#2307), so a proof selects this one and places every cwd under it.
+// The packaged proof's own Project folder, two levels above either Harness's transcript root
+// (`claude-config/projects`, `codex-home/sessions`). The cockpit shows no Roster without a
+// selected Project (#2307), so a proof selects this one and places every cwd under it.
 export function proofProject(transcripts) {
-  return path.join(path.dirname(transcripts), 'project')
+  return path.join(transcripts, '..', '..', 'project')
 }
 
 export function proofCwd(transcripts, place) {
@@ -65,32 +77,42 @@ function placeInProofProject(text, transcripts) {
   return text.replace(/("cwd":\s*")\/Users\/x(?=[/"])/g, `$1${proofProject(transcripts)}`)
 }
 
-export async function writeFixtureTree(root, names, options = {}) {
-  const { directory = PROJECT, fixtures = FIXTURES, inProofProject = false } = options
-  const inside = path.join(root, directory)
-  await mkdir(inside, { recursive: true })
-  for (const name of names) {
-    const text = `${(await fixtureLines(name, fixtures)).join('\n')}\n`
-    await writeFile(
-      path.join(inside, `${name}.jsonl`),
-      inProofProject ? placeInProofProject(text, root) : text,
-    )
-    // The Subagent transcripts the Harness keeps in a folder beside the Session's own file, for the
-    // fixtures that have them. Copied as-is, so the tree matches the layout the reader walks.
-    await cp(path.join(fixtures, '..', 'subagents', name), path.join(inside, name, 'subagents'), {
-      recursive: true,
-    }).catch(() => {})
-  }
-  return root
+function withSessionId(text, name) {
+  return text.replace(
+    new RegExp(`("sessionId":\\s*")${name}"`, 'g'),
+    `$1${fixtureSessionId(name)}"`,
+  )
 }
 
-// Argo's own archive document (#2315): one portable file under the fixture's `userData`, keyed
-// by the Harness Session id, the same shape `domains/sessions/main/archive/store/archive-store.ts` reads and writes.
-export async function writeArchiveStore(userData, names) {
-  const file = path.join(userData, 'portable-v1', 'session-archive.json')
-  await mkdir(path.dirname(file), { recursive: true })
-  const archivedAt = '2026-09-01T00:00:00.000Z'
-  const document = Object.fromEntries(names.map((name) => [name, { archivedAt }]))
-  await writeFile(file, `${JSON.stringify(document, null, 2)}\n`)
-  return file
+function recordedCwd(text, name) {
+  const cwd = /"cwd":\s*"([^"]+)"/.exec(text)?.[1]
+  if (cwd === undefined) throw new Error(`The ${name} fixture records no cwd.`)
+  return cwd
+}
+
+// The Subagent transcripts the Harness keeps in a folder beside the Session's own file.
+async function writeSubagents(transcripts, name, folder) {
+  const source = path.join(SUBAGENTS, name)
+  const entries = await readdir(source).catch(() => [])
+  if (entries.length === 0) return
+  const destination = path.join(folder, fixtureSessionId(name), 'subagents')
+  await mkdir(destination, { recursive: true })
+  for (const entry of entries) {
+    const text = await readFile(path.join(source, entry), 'utf8')
+    await writeFile(path.join(destination, entry), placeInProofProject(text, transcripts))
+  }
+}
+
+// A Claude transcript root shaped the way the Harness writes one: a folder per working directory
+// holding one `<sessionId>.jsonl` per Session. Written in the given order, so the mtime ordering
+// is the argument order reversed.
+export async function writeFixtureTree(transcripts, names) {
+  for (const name of names) {
+    const lines = await fixtureLines(name)
+    const text = withSessionId(placeInProofProject(`${lines.join('\n')}\n`, transcripts), name)
+    const file = await newFixturePath(transcripts, name, recordedCwd(text, name))
+    await writeFile(file, text)
+    await writeSubagents(transcripts, name, path.dirname(file))
+  }
+  return transcripts
 }

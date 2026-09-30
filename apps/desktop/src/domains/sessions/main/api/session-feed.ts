@@ -5,9 +5,9 @@ import {
   type FeedReading,
   type FeedReadingMessage,
   feedReadingChange,
-} from '@/domains/sessions/api/feed/feed-reading'
+} from '@/domains/sessions/api/feed'
 import { identifierSchema } from '@/shared/validation'
-import { type SessionFeedReaderContext, SessionFeedReaders } from '../feed/feed-reader'
+import { type SessionFeedReaderContext, SessionFeedReaders } from '../feed'
 
 const t = initTRPC.create()
 const inputSchema = z.strictObject({

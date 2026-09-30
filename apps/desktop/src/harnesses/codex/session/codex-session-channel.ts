@@ -2,7 +2,7 @@ import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import { type QuestionAnswer, validQuestionAnswers } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import type { SessionLiveInput } from '@/domains/sessions/main/api/session-submit'
+import type { SessionLiveInput } from '@/domains/sessions/main/api'
 import {
   type LiveSessionChannel,
   type LiveSessionChannelEvent,
@@ -10,11 +10,15 @@ import {
   type LiveSessionControls,
   liveSessionChannelEventSchema,
 } from '@/harnesses/registration'
-import type { CodexRequest, RequestID, WireMessage } from '../app-server/codex-app-server-client'
-import type { AgentMessageDeltaNotification } from '../app-server/protocol-generated/v2/agent-message-delta-notification'
-import type { ReasoningSummaryTextDeltaNotification } from '../app-server/protocol-generated/v2/reasoning-summary-text-delta-notification'
-import type { ThreadItem } from '../app-server/protocol-generated/v2/thread-item'
-import type { ThreadReadResponse } from '../app-server/protocol-generated/v2/thread-read-response'
+import type {
+  AgentMessageDeltaNotification,
+  CodexRequest,
+  ReasoningSummaryTextDeltaNotification,
+  RequestID,
+  ThreadItem,
+  ThreadReadResponse,
+  WireMessage,
+} from '../app-server'
 import { codexCommandContent } from './codex-command-content'
 import { codexContentFromItems, userPromptContents, userPromptParts } from './codex-session-history'
 import {

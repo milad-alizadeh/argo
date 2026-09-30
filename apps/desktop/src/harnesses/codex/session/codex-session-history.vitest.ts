@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { afterEach, expect, test, vi } from 'vitest'
 import { scanRollouts } from '../../../../mocks/cli/codex/mock-codex-rollout-history.ts'
-import type { CodexRequest } from '../app-server/codex-app-server-client'
+import type { CodexRequest } from '../app-server'
 import { hasCodexSessionTurn, readCodexSessionHistory } from './codex-session-history'
 
 afterEach(() => vi.unstubAllEnvs())

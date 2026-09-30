@@ -1,7 +1,10 @@
 import { skipToken, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { applyFeedReadingChange, type FeedReading } from '@/domains/sessions/api/feed/feed-reading'
-import { feedReadingRows } from '@/domains/sessions/api/feed/feed-reading-rows'
+import {
+  applyFeedReadingChange,
+  type FeedReading,
+  feedReadingRows,
+} from '@/domains/sessions/api/feed'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import { reconnectingSubscription } from '@/platform/renderer/reconnecting-subscription'
 import { queryClient, trpcClient } from '@/platform/renderer/trpc-client'

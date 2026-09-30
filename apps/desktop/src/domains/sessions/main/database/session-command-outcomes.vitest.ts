@@ -6,8 +6,8 @@ import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { type Database, openDatabase } from '@/database/database'
 import { sessionCommandTable } from '@/database/session/command-schema'
-import type { CodexRequest } from '@/harnesses/codex/app-server/codex-app-server-client'
-import { hasCodexSessionTurn } from '@/harnesses/codex/session/codex-session-history'
+import type { CodexRequest } from '@/harnesses/codex/app-server'
+import { hasCodexSessionTurn } from '@/harnesses/codex/session'
 import { scanRollouts } from '../../../../../mocks/cli/codex/mock-codex-rollout-history'
 import {
   bindSessionCommand,

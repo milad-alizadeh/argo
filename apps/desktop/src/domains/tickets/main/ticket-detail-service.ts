@@ -3,10 +3,9 @@ import { z } from 'zod'
 import { ticketError, ticketErrorSchema } from '@/domains/tickets/api/errors'
 import { ticket, ticketStatus } from '@/domains/tickets/api/ticket'
 import { identifier, message } from '@/shared/messages'
-import { writableConnection } from './api/ticket-connection'
-import { readSavedTicket } from './database/ticket-queries'
-import { saveReadTicket } from './database/ticket-upsert'
+import { readSavedTicket, saveReadTicket } from './database'
 import { type Call, readAs } from './read-as'
+import { writableConnection } from './ticket-connection'
 
 // An Argo UUID, a provider's native ID, or a key such as `#607` or `ENG-12`.
 export const ticketReference = z.string().min(1).max(128)

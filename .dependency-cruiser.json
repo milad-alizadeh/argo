@@ -71,22 +71,15 @@
     },
     {
       "name": "feature-entry-point-only",
-      "comment": "One folder, one secret (AGENTS.md): a feature folder directly under a domain facet or a harness is reached through its entry point, never past it. The entry point is index.ts, or the file named after the folder, and the four of the latter that exist today are listed below. Parked at info for a follow-up ticket: 754 edges still breach it, so as an error it would gate every PR on finishing the whole restructure. The count is the distance to the target. Shrink it by adding entry points and raise this back to error at zero, never widen the rule to fit.",
-      "severity": "info",
+      "comment": "One folder, one secret (AGENTS.md): a feature folder directly under a domain facet or a harness is reached through its entry point, never past it. The entry point is index.ts. Add a name to the entry point rather than widen the rule to fit.",
+      "severity": "error",
       "from": {
         "path": "^apps/desktop/src/((?:domains/[^/]+/(?:api|contract|main|preload|renderer)|harnesses/[^/]+)/[^/]+|[^/]+)",
         "pathNot": ["\\.(test|stories)\\.(ts|tsx)$"]
       },
       "to": {
         "path": "^apps/desktop/src/(?:domains/[^/]+/(?:api|contract|main|preload|renderer)|harnesses/[^/]+)/[^/]+/",
-        "pathNot": [
-          "^apps/desktop/src/$1/",
-          "/index\\.tsx?$",
-          "^apps/desktop/src/domains/sessions/renderer/composer/composer\\.ts$",
-          "^apps/desktop/src/domains/sessions/renderer/roster/roster\\.ts$",
-          "^apps/desktop/src/domains/sessions/renderer/turn-setup/turn-setup\\.ts$",
-          "^apps/desktop/src/domains/sessions/main/drive/drive\\.ts$"
-        ]
+        "pathNot": ["^apps/desktop/src/$1/", "/index\\.tsx?$"]
       }
     },
     {

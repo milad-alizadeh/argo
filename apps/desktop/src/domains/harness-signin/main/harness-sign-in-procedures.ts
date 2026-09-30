@@ -9,6 +9,7 @@ import {
   harnessSignInResolvedSchema,
   harnessSignInStartedSchema,
 } from '@/domains/harness-signin/contract/contract'
+import { HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV } from '@/domains/harness-signin/contract/proof-protocol'
 import { harnessSchema } from '@/harnesses/harness'
 import { listHarnessReadiness } from './harness-readiness-list'
 import type { HarnessReadinessRegistration } from './harness-readiness-registration'
@@ -26,6 +27,18 @@ const canceledOutputSchema = z.union([harnessSignInCanceledSchema, harnessSignIn
 export type HarnessSignInProcedureContext = {
   registrations: readonly HarnessReadinessRegistration[]
   signIn: ReturnType<typeof createHarnessSignIn>
+}
+
+// A proof run may shorten the sign-in window; any other value is rejected, not guessed at.
+export function harnessSignInExpiresAfterMs(proofEnabled: boolean): number | undefined {
+  const raw = proofEnabled ? process.env[HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV] : undefined
+  if (raw === undefined) return undefined
+  const parsed = z.coerce.number().int().nonnegative().safeParse(raw)
+  if (parsed.success) return parsed.data
+  console.error(
+    `Ignored ${HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV}=${raw}: not a whole number of milliseconds.`,
+  )
+  return undefined
 }
 
 export function createHarnessSignInProcedureContext(

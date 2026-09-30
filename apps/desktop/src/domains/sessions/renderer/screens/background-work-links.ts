@@ -1,4 +1,4 @@
-import type { BackgroundWorkLinks } from '../feed/rows/background-work'
+import type { BackgroundWorkLinks } from '../feed'
 import type { SessionScreenModel } from './use-session-screen-model'
 
 // A row opens the Subagent it names by id; the inspector shows an empty state when that Subagent

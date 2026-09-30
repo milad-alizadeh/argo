@@ -24,9 +24,7 @@ Make every change, including docs and configuration, in a worktree under
 resuming, recovery, and subagents: `docs/agents/worktrees.md`.
 
 CI is the gate; `bun run quality` is the local subset. Run it after review and fixes.
-During the migration, zero means that the branch added no quality failure and left no stale
-baseline entry. If a change fixes recorded debt, remove that entry in the same change. See
-`docs/agents/quality-gates.md` for the ratchet commands and fail-open traps. Never suppress a
+See `docs/agents/quality-gates.md` for exemptions and fail-open traps. Never suppress a
 failure inline or raise a global cap. For a Node major switch, reinstall dependencies because
 `node-pty` is bound to the ABI.
 

@@ -1,5 +1,5 @@
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import type { LinkedSession } from '../hooks/use-linked-sessions'
+import type { LinkedSession } from '../hooks'
 import { linkRow, stateIcon } from './ticket-detail-links'
 import { TicketDetailSection } from './ticket-detail-section'
 

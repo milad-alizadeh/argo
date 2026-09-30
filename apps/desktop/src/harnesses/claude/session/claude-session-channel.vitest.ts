@@ -1,6 +1,6 @@
 import type { CanUseTool } from '@anthropic-ai/claude-agent-sdk'
 import { expect, test, vi } from 'vitest'
-import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
+import type { SessionStartInput } from '@/domains/sessions/main/api'
 import type { LiveSessionControls } from '@/harnesses/registration'
 import { liveSessionChannelEventSchema } from '@/harnesses/registration'
 import { claudeSessionChannelOpener } from './claude-session-channel'

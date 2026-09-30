@@ -1,11 +1,11 @@
 import {
   CodeBlock,
   CodeBlockActions,
+  CodeBlockCopyButton,
   CodeBlockFilename,
   CodeBlockHeader,
   CodeBlockTitle,
-} from '../../ai-elements/code-block'
-import { CodeBlockCopyButton } from '../../ai-elements/code-block-copy-button'
+} from '../../ai-elements'
 import { codeLanguageLabel, detectCodeLanguage } from './code-language'
 import { CodeLanguageIcon } from './code-language-icon'
 import { FEED_CARD_RADIUS_CLASS } from './feed-surface'

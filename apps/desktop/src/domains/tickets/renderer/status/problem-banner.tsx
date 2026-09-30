@@ -1,6 +1,6 @@
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
-import type { TicketProblemProps } from '../lib/problems'
+import type { TicketProblemProps } from '../lib'
 
 // A failed read drawn above rows or a Ticket that are still shown from SQLite.
 export function ProblemBanner({ icon, title, description, alert, actions }: TicketProblemProps) {

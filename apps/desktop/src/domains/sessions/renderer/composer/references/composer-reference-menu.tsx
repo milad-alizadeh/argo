@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import type { SessionHarness } from '../../harness/harnesses'
+import type { SessionHarness } from '../../harness'
 import {
   referenceHarnessLabel,
   referenceSuggestions,
