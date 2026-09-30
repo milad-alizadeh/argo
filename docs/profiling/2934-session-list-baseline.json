@@ -1,0 +1,1034 @@
+{
+  "sourceRevision": "256cda4486342db56cae8c9cbe5ddb97b55d4f2d",
+  "machine": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "osRelease": "25.5.0",
+    "cpus": [
+      "Apple M4 Pro"
+    ],
+    "memoryGb": 48,
+    "node": "v24.21.0",
+    "electron": "44.2.0"
+  },
+  "corpus": {
+    "savedSessions": 600,
+    "archivedSessions": 120,
+    "extraClaudeFiles": 120,
+    "extraCodexFiles": 40,
+    "largeTranscriptBytes": 12001817,
+    "largeTranscriptTurns": 2145
+  },
+  "viewport": {
+    "width": 1440,
+    "height": 860
+  },
+  "cache": "fresh temporary userData and Electron process; prebuilt Vite assets and OS file cache not flushed",
+  "startupMs": 1273.89,
+  "startup": {
+    "syncReads": 58,
+    "syncReadBytes": 162748,
+    "syncDirectoryReads": 62,
+    "syncStats": 29,
+    "asyncReads": 149,
+    "asyncReadBytes": 826652,
+    "watcherStarts": 195,
+    "activeWatchers": 195,
+    "delay": {
+      "p50Ms": 22.4,
+      "p95Ms": 212.34,
+      "maxMs": 246.28
+    },
+    "mainRssMb": 313,
+    "rendererWorkingSetMb": 313,
+    "ipc": {}
+  },
+  "steps": [
+    {
+      "label": "down scroll",
+      "elapsedMs": 1355.42,
+      "syncReads": 704,
+      "syncReadBytes": 1509284,
+      "syncDirectoryReads": 540,
+      "syncStats": 437,
+      "asyncReads": 210,
+      "asyncReadBytes": 1165080,
+      "activeWatchers": 375,
+      "listPages": 4,
+      "listTotal": 601,
+      "listOwnedReaderCount": 120,
+      "eventLoopDelay": {
+        "p50Ms": 20.35,
+        "p95Ms": 198.44,
+        "maxMs": 263.59
+      },
+      "mainRssMb": 336,
+      "rendererWorkingSetMb": 405,
+      "frameCount": 83,
+      "frameP95Ms": 18.5,
+      "framesOver33Ms": 2,
+      "longestFrameMs": 83.5,
+      "longTasks": 0,
+      "longestTaskMs": 0,
+      "rendererHeapMb": 47,
+      "ipc": {
+        "sessionList:in": {
+          "messages": 5,
+          "bytes": 600
+        },
+        "sessionList:out": {
+          "messages": 212,
+          "bytes": 363080
+        },
+        "sessionList:reply": {
+          "messages": 5,
+          "bytes": 160
+        }
+      }
+    },
+    {
+      "label": "up scroll",
+      "elapsedMs": 1027.26,
+      "syncReads": 13,
+      "syncReadBytes": 832,
+      "syncDirectoryReads": 0,
+      "syncStats": 13,
+      "asyncReads": 0,
+      "asyncReadBytes": 0,
+      "activeWatchers": 375,
+      "listPages": 4,
+      "listTotal": 601,
+      "listOwnedReaderCount": 120,
+      "eventLoopDelay": {
+        "p50Ms": 20.3,
+        "p95Ms": 21.64,
+        "maxMs": 22.23
+      },
+      "mainRssMb": 337,
+      "rendererWorkingSetMb": 414,
+      "frameCount": 62,
+      "frameP95Ms": 18.3,
+      "framesOver33Ms": 0,
+      "longestFrameMs": 18.4,
+      "longTasks": 0,
+      "longestTaskMs": 0,
+      "rendererHeapMb": 43,
+      "ipc": {
+        "sessionList:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionList:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionList:reply": {
+          "messages": 0,
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "label": "find and open massive transcript",
+      "elapsedMs": 2784.92,
+      "syncReads": 447,
+      "syncReadBytes": 1888752,
+      "syncDirectoryReads": 302,
+      "syncStats": 298,
+      "asyncReads": 148,
+      "asyncReadBytes": 821104,
+      "activeWatchers": 377,
+      "listPages": 4,
+      "listTotal": 601,
+      "listOwnedReaderCount": 120,
+      "eventLoopDelay": {
+        "p50Ms": 22.07,
+        "p95Ms": 40.67,
+        "maxMs": 250.09
+      },
+      "mainRssMb": 360,
+      "rendererWorkingSetMb": 745,
+      "frameCount": 57,
+      "frameP95Ms": 50,
+      "framesOver33Ms": 4,
+      "longestFrameMs": 1749.9,
+      "longTasks": 2,
+      "longestTaskMs": 1749,
+      "rendererHeapMb": 132,
+      "ipc": {
+        "sessionList:in": {
+          "messages": 3,
+          "bytes": 391
+        },
+        "sessionList:out": {
+          "messages": 152,
+          "bytes": 208334
+        },
+        "sessionList:reply": {
+          "messages": 3,
+          "bytes": 96
+        },
+        "sessionComposerCommands:in": {
+          "messages": 1,
+          "bytes": 125
+        },
+        "sessionComposerCommands:reply": {
+          "messages": 1,
+          "bytes": 32
+        },
+        "harnessCatalogRead:in": {
+          "messages": 1,
+          "bytes": 81
+        },
+        "composerDraftRead:in": {
+          "messages": 1,
+          "bytes": 129
+        },
+        "composerDraftRead:reply": {
+          "messages": 1,
+          "bytes": 32
+        },
+        "sessionArchiveList:in": {
+          "messages": 2,
+          "bytes": 326
+        },
+        "sessionArchiveList:reply": {
+          "messages": 2,
+          "bytes": 24898
+        },
+        "sessionFeed:in": {
+          "messages": 1,
+          "bytes": 131
+        },
+        "sessionFeed:out": {
+          "messages": 1,
+          "bytes": 10757282
+        },
+        "sessionFeed:reply": {
+          "messages": 1,
+          "bytes": 32
+        },
+        "sessionPermissionRead:in": {
+          "messages": 1,
+          "bytes": 116
+        },
+        "sessionPermissionRead:reply": {
+          "messages": 1,
+          "bytes": 32
+        },
+        "sessionComposerCommands:out": {
+          "messages": 1,
+          "bytes": 81
+        },
+        "harnessCatalogRead:reply": {
+          "messages": 1,
+          "bytes": 2777
+        },
+        "composerDraftCreate:in": {
+          "messages": 1,
+          "bytes": 276
+        },
+        "composerDraftCreate:reply": {
+          "messages": 1,
+          "bytes": 342
+        }
+      }
+    },
+    {
+      "label": "search",
+      "elapsedMs": 412.17,
+      "syncReads": 87,
+      "syncReadBytes": 164604,
+      "syncDirectoryReads": 60,
+      "syncStats": 58,
+      "asyncReads": 29,
+      "asyncReadBytes": 160892,
+      "activeWatchers": 197,
+      "listPages": 1,
+      "listTotal": 1,
+      "listOwnedReaderCount": 1,
+      "eventLoopDelay": {
+        "p50Ms": 22.09,
+        "p95Ms": 22.13,
+        "maxMs": 26.2
+      },
+      "mainRssMb": 362,
+      "rendererWorkingSetMb": 747,
+      "frameCount": 25,
+      "frameP95Ms": 16.8,
+      "framesOver33Ms": 0,
+      "longestFrameMs": 18.3,
+      "longTasks": 0,
+      "longestTaskMs": 0,
+      "rendererHeapMb": 142,
+      "ipc": {
+        "sessionList:in": {
+          "messages": 2,
+          "bytes": 246
+        },
+        "sessionList:out": {
+          "messages": 31,
+          "bytes": 41723
+        },
+        "sessionList:reply": {
+          "messages": 2,
+          "bytes": 64
+        },
+        "sessionComposerCommands:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "harnessCatalogRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionArchiveList:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionArchiveList:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionPermissionRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionPermissionRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "harnessCatalogRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftCreate:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftCreate:reply": {
+          "messages": 0,
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "label": "Archive",
+      "elapsedMs": 1439.87,
+      "syncReads": 119,
+      "syncReadBytes": 7616,
+      "syncDirectoryReads": 0,
+      "syncStats": 119,
+      "asyncReads": 119,
+      "asyncReadBytes": 660212,
+      "activeWatchers": 377,
+      "listPages": 4,
+      "listTotal": 601,
+      "listOwnedReaderCount": 120,
+      "eventLoopDelay": {
+        "p50Ms": 22.05,
+        "p95Ms": 22.18,
+        "maxMs": 151.13
+      },
+      "mainRssMb": 367,
+      "rendererWorkingSetMb": 784,
+      "frameCount": 87,
+      "frameP95Ms": 18.3,
+      "framesOver33Ms": 0,
+      "longestFrameMs": 18.6,
+      "longTasks": 0,
+      "longestTaskMs": 0,
+      "rendererHeapMb": 151,
+      "ipc": {
+        "sessionList:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionList:out": {
+          "messages": 119,
+          "bytes": 92225
+        },
+        "sessionList:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "harnessCatalogRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionArchiveList:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionArchiveList:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionPermissionRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionPermissionRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "harnessCatalogRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftCreate:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftCreate:reply": {
+          "messages": 0,
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "label": "large Claude and Codex append",
+      "elapsedMs": 1060.67,
+      "syncReads": 10,
+      "syncReadBytes": 2642729,
+      "syncDirectoryReads": 0,
+      "syncStats": 4,
+      "asyncReads": 0,
+      "asyncReadBytes": 0,
+      "activeWatchers": 375,
+      "listPages": 4,
+      "listTotal": 601,
+      "listOwnedReaderCount": 120,
+      "eventLoopDelay": {
+        "p50Ms": 22.02,
+        "p95Ms": 22.18,
+        "maxMs": 94.57
+      },
+      "mainRssMb": 381,
+      "rendererWorkingSetMb": 786,
+      "frameCount": 64,
+      "frameP95Ms": 18.2,
+      "framesOver33Ms": 0,
+      "longestFrameMs": 18.6,
+      "longTasks": 0,
+      "longestTaskMs": 0,
+      "rendererHeapMb": 157,
+      "ipc": {
+        "sessionList:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionList:out": {
+          "messages": 1,
+          "bytes": 85631
+        },
+        "sessionList:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:in": {
+          "messages": 1,
+          "bytes": 125
+        },
+        "sessionComposerCommands:reply": {
+          "messages": 1,
+          "bytes": 32
+        },
+        "harnessCatalogRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionArchiveList:in": {
+          "messages": 1,
+          "bytes": 129
+        },
+        "sessionArchiveList:reply": {
+          "messages": 1,
+          "bytes": 12449
+        },
+        "sessionFeed:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionFeed:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionPermissionRead:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionPermissionRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:out": {
+          "messages": 1,
+          "bytes": 81
+        },
+        "harnessCatalogRead:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftCreate:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "composerDraftCreate:reply": {
+          "messages": 0,
+          "bytes": 0
+        }
+      }
+    },
+    {
+      "label": "rapid selection",
+      "elapsedMs": 613.36,
+      "syncReads": 0,
+      "syncReadBytes": 0,
+      "syncDirectoryReads": 12,
+      "syncStats": 0,
+      "asyncReads": 0,
+      "asyncReadBytes": 0,
+      "activeWatchers": 375,
+      "listPages": 4,
+      "listTotal": 601,
+      "listOwnedReaderCount": 120,
+      "eventLoopDelay": {
+        "p50Ms": 22.07,
+        "p95Ms": 25.95,
+        "maxMs": 27.98
+      },
+      "mainRssMb": 382,
+      "rendererWorkingSetMb": 832,
+      "frameCount": 32,
+      "frameP95Ms": 50,
+      "framesOver33Ms": 4,
+      "longestFrameMs": 51,
+      "longTasks": 0,
+      "longestTaskMs": 0,
+      "rendererHeapMb": 174,
+      "ipc": {
+        "sessionList:in": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionList:out": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionList:reply": {
+          "messages": 0,
+          "bytes": 0
+        },
+        "sessionComposerCommands:in": {
+          "messages": 12,
+          "bytes": 1500
+        },
+        "sessionComposerCommands:reply": {
+          "messages": 12,
+          "bytes": 384
+        },
+        "harnessCatalogRead:in": {
+          "messages": 5,
+          "bytes": 402
+        },
+        "composerDraftRead:in": {
+          "messages": 6,
+          "bytes": 774
+        },
+        "composerDraftRead:reply": {
+          "messages": 6,
+          "bytes": 192
+        },
+        "sessionArchiveList:in": {
+          "messages": 6,
+          "bytes": 978
+        },
+        "sessionArchiveList:reply": {
+          "messages": 6,
+          "bytes": 78369
+        },
+        "sessionFeed:in": {
+          "messages": 6,
+          "bytes": 786
+        },
+        "sessionFeed:out": {
+          "messages": 12,
+          "bytes": 4833
+        },
+        "sessionFeed:reply": {
+          "messages": 6,
+          "bytes": 192
+        },
+        "sessionPermissionRead:in": {
+          "messages": 6,
+          "bytes": 696
+        },
+        "sessionPermissionRead:reply": {
+          "messages": 6,
+          "bytes": 192
+        },
+        "sessionComposerCommands:out": {
+          "messages": 7,
+          "bytes": 567
+        },
+        "harnessCatalogRead:reply": {
+          "messages": 5,
+          "bytes": 10099
+        },
+        "composerDraftCreate:in": {
+          "messages": 9,
+          "bytes": 2520
+        },
+        "composerDraftCreate:reply": {
+          "messages": 9,
+          "bytes": 3078
+        },
+        "composerDraftSave:in": {
+          "messages": 2,
+          "bytes": 714
+        },
+        "composerDraftSave:reply": {
+          "messages": 2,
+          "bytes": 708
+        }
+      }
+    }
+  ],
+  "final": {
+    "syncReads": 1782,
+    "syncReadBytes": 7051177,
+    "syncDirectoryReads": 1216,
+    "syncStats": 1183,
+    "asyncReads": 712,
+    "asyncReadBytes": 3950176,
+    "watcherStarts": 1333,
+    "activeWatchers": 375,
+    "delay": {
+      "p50Ms": 22.07,
+      "p95Ms": 25.95,
+      "maxMs": 27.98
+    },
+    "mainRssMb": 382,
+    "rendererWorkingSetMb": 832,
+    "ipc": {
+      "sessionList:in": {
+        "messages": 11,
+        "bytes": 1357
+      },
+      "sessionList:out": {
+        "messages": 576,
+        "bytes": 911072
+      },
+      "sessionList:reply": {
+        "messages": 11,
+        "bytes": 352
+      },
+      "sessionComposerCommands:in": {
+        "messages": 14,
+        "bytes": 1750
+      },
+      "sessionComposerCommands:reply": {
+        "messages": 14,
+        "bytes": 448
+      },
+      "harnessCatalogRead:in": {
+        "messages": 6,
+        "bytes": 483
+      },
+      "composerDraftRead:in": {
+        "messages": 7,
+        "bytes": 903
+      },
+      "composerDraftRead:reply": {
+        "messages": 7,
+        "bytes": 224
+      },
+      "sessionArchiveList:in": {
+        "messages": 9,
+        "bytes": 1433
+      },
+      "sessionArchiveList:reply": {
+        "messages": 9,
+        "bytes": 115716
+      },
+      "sessionFeed:in": {
+        "messages": 7,
+        "bytes": 917
+      },
+      "sessionFeed:out": {
+        "messages": 13,
+        "bytes": 10762115
+      },
+      "sessionFeed:reply": {
+        "messages": 7,
+        "bytes": 224
+      },
+      "sessionPermissionRead:in": {
+        "messages": 7,
+        "bytes": 812
+      },
+      "sessionPermissionRead:reply": {
+        "messages": 7,
+        "bytes": 224
+      },
+      "sessionComposerCommands:out": {
+        "messages": 9,
+        "bytes": 729
+      },
+      "harnessCatalogRead:reply": {
+        "messages": 6,
+        "bytes": 12876
+      },
+      "composerDraftCreate:in": {
+        "messages": 10,
+        "bytes": 2796
+      },
+      "composerDraftCreate:reply": {
+        "messages": 10,
+        "bytes": 3420
+      },
+      "composerDraftSave:in": {
+        "messages": 2,
+        "bytes": 714
+      },
+      "composerDraftSave:reply": {
+        "messages": 2,
+        "bytes": 708
+      }
+    }
+  },
+  "sql": {
+    "measurements": [
+      {
+        "name": "browse",
+        "sql": "SELECT session.argo_id, session.harness, session.native_id,\n    session.custom_title, session.preview, session.first_prompt, session.cwd,\n    session.workspace_id, session.activity_at, session.updated_at,\n    session_ticket_link.project_id, session_ticket_link.ticket_key,\n    session_ticket_link.title, session_ticket_link.state, session_ticket_link.created_at FROM session LEFT JOIN session_ticket_link\n    ON session_ticket_link.session_id = session.argo_id WHERE session.project_id = ? AND NOT EXISTS\n    (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)\n    ORDER BY coalesce(session.activity_at, session.updated_at) DESC, session.argo_id ASC LIMIT 30",
+        "runsMs": [
+          2.8834,
+          0.2641,
+          0.2563,
+          0.2413,
+          0.24,
+          0.2308,
+          0.2291,
+          0.2253,
+          0.2248,
+          0.2337,
+          0.2348,
+          0.2269,
+          0.2151,
+          0.2127,
+          0.2159,
+          0.2162,
+          0.2166,
+          0.2143,
+          0.2133,
+          0.2166
+        ],
+        "plan": [
+          {
+            "id": 6,
+            "parent": 0,
+            "notused": 216,
+            "detail": "SCAN session"
+          },
+          {
+            "id": 11,
+            "parent": 0,
+            "notused": 0,
+            "detail": "CORRELATED SCALAR SUBQUERY 1"
+          },
+          {
+            "id": 15,
+            "parent": 11,
+            "notused": 39,
+            "detail": "SEARCH session_archive USING COVERING INDEX sqlite_autoindex_session_archive_1 (session_id=?)"
+          },
+          {
+            "id": 24,
+            "parent": 0,
+            "notused": 46,
+            "detail": "SEARCH session_ticket_link USING INDEX sqlite_autoindex_session_ticket_link_1 (session_id=?) LEFT-JOIN"
+          },
+          {
+            "id": 62,
+            "parent": 0,
+            "notused": 0,
+            "detail": "USE TEMP B-TREE FOR ORDER BY"
+          }
+        ],
+        "scanStats": "00000000-0000-4000-8000-000000000002|claude|11111111-2222-4333-8444-666666666666|Massive Session List transcript|Saved preview 2|Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733726093|1790733717767|||||\n00000000-0000-4000-8000-000000000001|claude|list-baseline-0|Needle session list search target|Saved preview 1|Saved prompt 1|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717045|1790733717055|||||\n02b7e347-b102-4ea1-bfec-6fd7fa8a8f82|claude|20000000-0000-4000-8000-000000000119|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717040|1790733717756|||||\n051ccdda-5bec-4a70-b386-5ba9a02156a7|claude|20000000-0000-4000-8000-000000000120|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717040|1790733717756|||||\nb42a5c57-1607-412e-8e5d-cf9ab10e9bb0|claude|20000000-0000-4000-8000-000000000118|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717040|1790733717756|||||\n07542f56-a060-40e5-a687-c501b0d58c44|claude|20000000-0000-4000-8000-000000000116|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717039|1790733717757|||||\n07de7536-2955-4f43-b6fe-062889c07539|claude|20000000-0000-4000-8000-000000000112|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717039|1790733717757|||||\n4f954cbe-9ba5-4b95-b7b8-a6d3756f741e|claude|20000000-0000-4000-8000-000000000109|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717039|1790733717758|||||\n9a9b2dd2-a75e-4998-bab3-b5ac8d54ab08|claude|20000000-0000-4000-8000-000000000111|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717039|1790733717757|||||\na78030c7-578d-4f0a-9fe1-913bde06cfdd|claude|20000000-0000-4000-8000-000000000115|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717039|1790733717757|||||\na9c38954-59f2-4ca8-8de5-7690180a8ec6|claude|20000000-0000-4000-8000-000000000114|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717039|1790733717757|||||\nb12bb4cb-526c-4b45-b289-c84a0c259292|claude|20000000-0000-4000-8000-000000000113|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717039|1790733717757|||||\nc7db892a-1dc3-4518-924f-39aae8b5044d|claude|20000000-0000-4000-8000-000000000110|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717039|1790733717757|||||\nfad6c682-8668-4e9e-a127-ef75d1198961|claude|20000000-0000-4000-8000-000000000117|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717039|1790733717756|||||\n1c88f631-026a-4e85-bdb0-cf22051231af|claude|20000000-0000-4000-8000-000000000101|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717038|1790733717758|||||\n84073b37-1de2-45ba-907a-0405254963bc|claude|20000000-0000-4000-8000-000000000105|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717038|1790733717758|||||\n85636abe-bb3a-4c63-a3bd-16846ad82555|claude|20000000-0000-4000-8000-000000000102|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717038|1790733717758|||||\n8f78d047-c1f6-49ec-aa2c-2fee5af69b85|claude|20000000-0000-4000-8000-000000000103|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717038|1790733717758|||||\n9992b068-08a3-4a6a-984b-ce9b84bd0aff|claude|20000000-0000-4000-8000-000000000107|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717038|1790733717758|||||\nd6b60f66-159c-40a2-84c8-8f3f77f9bd07|claude|20000000-0000-4000-8000-000000000106|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717038|1790733717758|||||\ndc600c10-c1d3-4909-aba7-a3aa0ad11bb2|claude|20000000-0000-4000-8000-000000000108|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717038|1790733717758|||||\ne21fdaa4-8cc7-4aef-8722-52af0240e9f8|claude|20000000-0000-4000-8000-000000000104|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717038|1790733717758|||||\ne5242ede-c670-43bf-ae5e-da0f514177c1|claude|20000000-0000-4000-8000-000000000100|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717038|1790733717758|||||\n4e57d82a-8cf5-4355-be30-9c1ae00e7815|claude|20000000-0000-4000-8000-000000000098|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717037|1790733717759|||||\n7eaaa08e-0c7e-491b-8686-e3e54521f181|claude|20000000-0000-4000-8000-000000000094|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717037|1790733717759|||||\n8199e4fe-9e79-4edf-a7b8-8bf8bf880689|claude|20000000-0000-4000-8000-000000000099|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717037|1790733717758|||||\nade81a76-c2ca-4f39-b139-b7582d3d6951|claude|20000000-0000-4000-8000-000000000096|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717037|1790733717759|||||\nb0a3edb8-a8f3-4ab8-a923-4a8b17a65efe|claude|20000000-0000-4000-8000-000000000092|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717037|1790733717759|||||\nc9277675-7974-48de-b06a-84d554ab89d4|claude|20000000-0000-4000-8000-000000000093|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717037|1790733717759|||||\nca9eedb5-be8b-4bfe-9b5a-6fa6dba84d08|claude|20000000-0000-4000-8000-000000000095|||Run the composer tests for turn 1.|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717037|1790733717759|||||\nQUERY PLAN\n|--CORRELATED SCALAR SUBQUERY 1                                                                               (loops=721)\n|  `--SEARCH session_archive USING COVERING INDEX sqlite_autoindex_session_archive_1 (session_id=?)           (loops=721 rows=120)\n|--SCAN session                                                                                               (loops=1 rows=721)\n|--SEARCH session_ticket_link USING INDEX sqlite_autoindex_session_ticket_link_1 (session_id=?) LEFT-JOIN     (loops=601 rows=601)\n`--USE TEMP B-TREE FOR ORDER BY                                                                               (loops=1 rows=601)\n"
+      },
+      {
+        "name": "search",
+        "sql": "SELECT session.argo_id, session.harness, session.native_id,\n    session.custom_title, session.preview, session.first_prompt, session.cwd,\n    session.workspace_id, session.activity_at, session.updated_at,\n    session_ticket_link.project_id, session_ticket_link.ticket_key,\n    session_ticket_link.title, session_ticket_link.state, session_ticket_link.created_at FROM session LEFT JOIN session_ticket_link\n    ON session_ticket_link.session_id = session.argo_id WHERE session.project_id = ? AND NOT EXISTS\n    (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)\n    AND (instr(lower(coalesce(session.custom_title, '')), lower(?)) > 0\n      OR instr(lower(coalesce(session.preview, '')), lower(?)) > 0)\n    ORDER BY coalesce(session.activity_at, session.updated_at) DESC, session.argo_id ASC LIMIT 30",
+        "runsMs": [
+          0.2703,
+          0.2191,
+          0.2171,
+          0.2181,
+          0.2143,
+          0.21,
+          0.2098,
+          0.209,
+          0.2148,
+          0.2098,
+          0.2208,
+          0.2217,
+          0.2158,
+          0.2094,
+          0.2132,
+          0.2166,
+          0.2135,
+          0.2181,
+          0.2063,
+          0.2088
+        ],
+        "plan": [
+          {
+            "id": 6,
+            "parent": 0,
+            "notused": 216,
+            "detail": "SCAN session"
+          },
+          {
+            "id": 29,
+            "parent": 0,
+            "notused": 0,
+            "detail": "CORRELATED SCALAR SUBQUERY 1"
+          },
+          {
+            "id": 33,
+            "parent": 29,
+            "notused": 39,
+            "detail": "SEARCH session_archive USING COVERING INDEX sqlite_autoindex_session_archive_1 (session_id=?)"
+          },
+          {
+            "id": 42,
+            "parent": 0,
+            "notused": 46,
+            "detail": "SEARCH session_ticket_link USING INDEX sqlite_autoindex_session_ticket_link_1 (session_id=?) LEFT-JOIN"
+          },
+          {
+            "id": 80,
+            "parent": 0,
+            "notused": 0,
+            "detail": "USE TEMP B-TREE FOR ORDER BY"
+          }
+        ],
+        "scanStats": "00000000-0000-4000-8000-000000000001|claude|list-baseline-0|Needle session list search target|Saved preview 1|Saved prompt 1|/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-uvbuw4/project/list-workload||1790733717045|1790733717055|||||\nQUERY PLAN\n|--CORRELATED SCALAR SUBQUERY 1                                                                               (loops=1)\n|  `--SEARCH session_archive USING COVERING INDEX sqlite_autoindex_session_archive_1 (session_id=?)           (loops=1 rows=0)\n|--SCAN session                                                                                               (loops=1 rows=721)\n|--SEARCH session_ticket_link USING INDEX sqlite_autoindex_session_ticket_link_1 (session_id=?) LEFT-JOIN     (loops=1 rows=1)\n`--USE TEMP B-TREE FOR ORDER BY                                                                               (loops=1 rows=1)\n"
+      },
+      {
+        "name": "count",
+        "sql": "SELECT count(*) FROM session WHERE project_id = ? AND NOT EXISTS\n    (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)",
+        "runsMs": [
+          0.1381,
+          0.1181,
+          0.1075,
+          0.1035,
+          0.1088,
+          0.1046,
+          0.1007,
+          0.1003,
+          0.0998,
+          0.1008,
+          0.1009,
+          0.1001,
+          0.1001,
+          0.099,
+          0.0952,
+          0.0981,
+          0.1,
+          0.0966,
+          0.0961,
+          0.0958
+        ],
+        "plan": [
+          {
+            "id": 3,
+            "parent": 0,
+            "notused": 216,
+            "detail": "SCAN session"
+          },
+          {
+            "id": 8,
+            "parent": 0,
+            "notused": 0,
+            "detail": "CORRELATED SCALAR SUBQUERY 1"
+          },
+          {
+            "id": 12,
+            "parent": 8,
+            "notused": 39,
+            "detail": "SEARCH session_archive USING COVERING INDEX sqlite_autoindex_session_archive_1 (session_id=?)"
+          }
+        ],
+        "scanStats": "601\nQUERY PLAN\n|--CORRELATED SCALAR SUBQUERY 1                                                                         (loops=721)\n|  `--SEARCH session_archive USING COVERING INDEX sqlite_autoindex_session_archive_1 (session_id=?)     (loops=721 rows=120)\n`--SCAN session                                                                                         (loops=1 rows=721)\n"
+      },
+      {
+        "name": "archive",
+        "sql": "SELECT session_id FROM session_archive",
+        "runsMs": [
+          0.0275,
+          0.0243,
+          0.0241,
+          0.0202,
+          0.0198,
+          0.0202,
+          0.0212,
+          0.0203,
+          0.0212,
+          0.0278,
+          0.0216,
+          0.0207,
+          0.022,
+          0.0204,
+          0.0207,
+          0.0219,
+          0.0241,
+          0.0199,
+          0.0196,
+          0.0196
+        ],
+        "plan": [
+          {
+            "id": 2,
+            "parent": 0,
+            "notused": 216,
+            "detail": "SCAN session_archive"
+          }
+        ],
+        "scanStats": "00000000-0000-4000-8000-000000000481\n00000000-0000-4000-8000-000000000482\n00000000-0000-4000-8000-000000000483\n00000000-0000-4000-8000-000000000484\n00000000-0000-4000-8000-000000000485\n00000000-0000-4000-8000-000000000486\n00000000-0000-4000-8000-000000000487\n00000000-0000-4000-8000-000000000488\n00000000-0000-4000-8000-000000000489\n00000000-0000-4000-8000-000000000490\n00000000-0000-4000-8000-000000000491\n00000000-0000-4000-8000-000000000492\n00000000-0000-4000-8000-000000000493\n00000000-0000-4000-8000-000000000494\n00000000-0000-4000-8000-000000000495\n00000000-0000-4000-8000-000000000496\n00000000-0000-4000-8000-000000000497\n00000000-0000-4000-8000-000000000498\n00000000-0000-4000-8000-000000000499\n00000000-0000-4000-8000-000000000500\n00000000-0000-4000-8000-000000000501\n00000000-0000-4000-8000-000000000502\n00000000-0000-4000-8000-000000000503\n00000000-0000-4000-8000-000000000504\n00000000-0000-4000-8000-000000000505\n00000000-0000-4000-8000-000000000506\n00000000-0000-4000-8000-000000000507\n00000000-0000-4000-8000-000000000508\n00000000-0000-4000-8000-000000000509\n00000000-0000-4000-8000-000000000510\n00000000-0000-4000-8000-000000000511\n00000000-0000-4000-8000-000000000512\n00000000-0000-4000-8000-000000000513\n00000000-0000-4000-8000-000000000514\n00000000-0000-4000-8000-000000000515\n00000000-0000-4000-8000-000000000516\n00000000-0000-4000-8000-000000000517\n00000000-0000-4000-8000-000000000518\n00000000-0000-4000-8000-000000000519\n00000000-0000-4000-8000-000000000520\n00000000-0000-4000-8000-000000000521\n00000000-0000-4000-8000-000000000522\n00000000-0000-4000-8000-000000000523\n00000000-0000-4000-8000-000000000524\n00000000-0000-4000-8000-000000000525\n00000000-0000-4000-8000-000000000526\n00000000-0000-4000-8000-000000000527\n00000000-0000-4000-8000-000000000528\n00000000-0000-4000-8000-000000000529\n00000000-0000-4000-8000-000000000530\n00000000-0000-4000-8000-000000000531\n00000000-0000-4000-8000-000000000532\n00000000-0000-4000-8000-000000000533\n00000000-0000-4000-8000-000000000534\n00000000-0000-4000-8000-000000000535\n00000000-0000-4000-8000-000000000536\n00000000-0000-4000-8000-000000000537\n00000000-0000-4000-8000-000000000538\n00000000-0000-4000-8000-000000000539\n00000000-0000-4000-8000-000000000540\n00000000-0000-4000-8000-000000000541\n00000000-0000-4000-8000-000000000542\n00000000-0000-4000-8000-000000000543\n00000000-0000-4000-8000-000000000544\n00000000-0000-4000-8000-000000000545\n00000000-0000-4000-8000-000000000546\n00000000-0000-4000-8000-000000000547\n00000000-0000-4000-8000-000000000548\n00000000-0000-4000-8000-000000000549\n00000000-0000-4000-8000-000000000550\n00000000-0000-4000-8000-000000000551\n00000000-0000-4000-8000-000000000552\n00000000-0000-4000-8000-000000000553\n00000000-0000-4000-8000-000000000554\n00000000-0000-4000-8000-000000000555\n00000000-0000-4000-8000-000000000556\n00000000-0000-4000-8000-000000000557\n00000000-0000-4000-8000-000000000558\n00000000-0000-4000-8000-000000000559\n00000000-0000-4000-8000-000000000560\n00000000-0000-4000-8000-000000000561\n00000000-0000-4000-8000-000000000562\n00000000-0000-4000-8000-000000000563\n00000000-0000-4000-8000-000000000564\n00000000-0000-4000-8000-000000000565\n00000000-0000-4000-8000-000000000566\n00000000-0000-4000-8000-000000000567\n00000000-0000-4000-8000-000000000568\n00000000-0000-4000-8000-000000000569\n00000000-0000-4000-8000-000000000570\n00000000-0000-4000-8000-000000000571\n00000000-0000-4000-8000-000000000572\n00000000-0000-4000-8000-000000000573\n00000000-0000-4000-8000-000000000574\n00000000-0000-4000-8000-000000000575\n00000000-0000-4000-8000-000000000576\n00000000-0000-4000-8000-000000000577\n00000000-0000-4000-8000-000000000578\n00000000-0000-4000-8000-000000000579\n00000000-0000-4000-8000-000000000580\n00000000-0000-4000-8000-000000000581\n00000000-0000-4000-8000-000000000582\n00000000-0000-4000-8000-000000000583\n00000000-0000-4000-8000-000000000584\n00000000-0000-4000-8000-000000000585\n00000000-0000-4000-8000-000000000586\n00000000-0000-4000-8000-000000000587\n00000000-0000-4000-8000-000000000588\n00000000-0000-4000-8000-000000000589\n00000000-0000-4000-8000-000000000590\n00000000-0000-4000-8000-000000000591\n00000000-0000-4000-8000-000000000592\n00000000-0000-4000-8000-000000000593\n00000000-0000-4000-8000-000000000594\n00000000-0000-4000-8000-000000000595\n00000000-0000-4000-8000-000000000596\n00000000-0000-4000-8000-000000000597\n00000000-0000-4000-8000-000000000598\n00000000-0000-4000-8000-000000000599\n00000000-0000-4000-8000-000000000600\nQUERY PLAN\n`--SCAN session_archive     (loops=1 rows=120)\n"
+      },
+      {
+        "name": "archive rows",
+        "sql": "SELECT session.argo_id FROM session LEFT JOIN session_ticket_link\n    ON session_ticket_link.session_id = session.argo_id WHERE session.project_id = ?\n    AND session.argo_id IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "runsMs": [
+          0.5238,
+          0.0643,
+          0.0612,
+          0.0592,
+          0.0588,
+          0.0582,
+          0.0583,
+          0.0608,
+          0.0578,
+          0.0598,
+          0.0585,
+          0.0578,
+          0.0577,
+          0.0576,
+          0.0584,
+          0.0581,
+          0.0584,
+          0.058,
+          0.058,
+          0.058
+        ],
+        "plan": [
+          {
+            "id": 3,
+            "parent": 0,
+            "notused": 115,
+            "detail": "SEARCH session USING INDEX sqlite_autoindex_session_1 (argo_id=?)"
+          }
+        ],
+        "scanStats": "00000000-0000-4000-8000-000000000481\n00000000-0000-4000-8000-000000000482\n00000000-0000-4000-8000-000000000483\n00000000-0000-4000-8000-000000000484\n00000000-0000-4000-8000-000000000485\n00000000-0000-4000-8000-000000000486\n00000000-0000-4000-8000-000000000487\n00000000-0000-4000-8000-000000000488\n00000000-0000-4000-8000-000000000489\n00000000-0000-4000-8000-000000000490\n00000000-0000-4000-8000-000000000491\n00000000-0000-4000-8000-000000000492\n00000000-0000-4000-8000-000000000493\n00000000-0000-4000-8000-000000000494\n00000000-0000-4000-8000-000000000495\n00000000-0000-4000-8000-000000000496\n00000000-0000-4000-8000-000000000497\n00000000-0000-4000-8000-000000000498\n00000000-0000-4000-8000-000000000499\n00000000-0000-4000-8000-000000000500\n00000000-0000-4000-8000-000000000501\n00000000-0000-4000-8000-000000000502\n00000000-0000-4000-8000-000000000503\n00000000-0000-4000-8000-000000000504\n00000000-0000-4000-8000-000000000505\n00000000-0000-4000-8000-000000000506\n00000000-0000-4000-8000-000000000507\n00000000-0000-4000-8000-000000000508\n00000000-0000-4000-8000-000000000509\n00000000-0000-4000-8000-000000000510\n00000000-0000-4000-8000-000000000511\n00000000-0000-4000-8000-000000000512\n00000000-0000-4000-8000-000000000513\n00000000-0000-4000-8000-000000000514\n00000000-0000-4000-8000-000000000515\n00000000-0000-4000-8000-000000000516\n00000000-0000-4000-8000-000000000517\n00000000-0000-4000-8000-000000000518\n00000000-0000-4000-8000-000000000519\n00000000-0000-4000-8000-000000000520\n00000000-0000-4000-8000-000000000521\n00000000-0000-4000-8000-000000000522\n00000000-0000-4000-8000-000000000523\n00000000-0000-4000-8000-000000000524\n00000000-0000-4000-8000-000000000525\n00000000-0000-4000-8000-000000000526\n00000000-0000-4000-8000-000000000527\n00000000-0000-4000-8000-000000000528\n00000000-0000-4000-8000-000000000529\n00000000-0000-4000-8000-000000000530\n00000000-0000-4000-8000-000000000531\n00000000-0000-4000-8000-000000000532\n00000000-0000-4000-8000-000000000533\n00000000-0000-4000-8000-000000000534\n00000000-0000-4000-8000-000000000535\n00000000-0000-4000-8000-000000000536\n00000000-0000-4000-8000-000000000537\n00000000-0000-4000-8000-000000000538\n00000000-0000-4000-8000-000000000539\n00000000-0000-4000-8000-000000000540\n00000000-0000-4000-8000-000000000541\n00000000-0000-4000-8000-000000000542\n00000000-0000-4000-8000-000000000543\n00000000-0000-4000-8000-000000000544\n00000000-0000-4000-8000-000000000545\n00000000-0000-4000-8000-000000000546\n00000000-0000-4000-8000-000000000547\n00000000-0000-4000-8000-000000000548\n00000000-0000-4000-8000-000000000549\n00000000-0000-4000-8000-000000000550\n00000000-0000-4000-8000-000000000551\n00000000-0000-4000-8000-000000000552\n00000000-0000-4000-8000-000000000553\n00000000-0000-4000-8000-000000000554\n00000000-0000-4000-8000-000000000555\n00000000-0000-4000-8000-000000000556\n00000000-0000-4000-8000-000000000557\n00000000-0000-4000-8000-000000000558\n00000000-0000-4000-8000-000000000559\n00000000-0000-4000-8000-000000000560\n00000000-0000-4000-8000-000000000561\n00000000-0000-4000-8000-000000000562\n00000000-0000-4000-8000-000000000563\n00000000-0000-4000-8000-000000000564\n00000000-0000-4000-8000-000000000565\n00000000-0000-4000-8000-000000000566\n00000000-0000-4000-8000-000000000567\n00000000-0000-4000-8000-000000000568\n00000000-0000-4000-8000-000000000569\n00000000-0000-4000-8000-000000000570\n00000000-0000-4000-8000-000000000571\n00000000-0000-4000-8000-000000000572\n00000000-0000-4000-8000-000000000573\n00000000-0000-4000-8000-000000000574\n00000000-0000-4000-8000-000000000575\n00000000-0000-4000-8000-000000000576\n00000000-0000-4000-8000-000000000577\n00000000-0000-4000-8000-000000000578\n00000000-0000-4000-8000-000000000579\n00000000-0000-4000-8000-000000000580\n00000000-0000-4000-8000-000000000581\n00000000-0000-4000-8000-000000000582\n00000000-0000-4000-8000-000000000583\n00000000-0000-4000-8000-000000000584\n00000000-0000-4000-8000-000000000585\n00000000-0000-4000-8000-000000000586\n00000000-0000-4000-8000-000000000587\n00000000-0000-4000-8000-000000000588\n00000000-0000-4000-8000-000000000589\n00000000-0000-4000-8000-000000000590\n00000000-0000-4000-8000-000000000591\n00000000-0000-4000-8000-000000000592\n00000000-0000-4000-8000-000000000593\n00000000-0000-4000-8000-000000000594\n00000000-0000-4000-8000-000000000595\n00000000-0000-4000-8000-000000000596\n00000000-0000-4000-8000-000000000597\n00000000-0000-4000-8000-000000000598\n00000000-0000-4000-8000-000000000599\n00000000-0000-4000-8000-000000000600\nQUERY PLAN\n`--SEARCH session USING INDEX sqlite_autoindex_session_1 (argo_id=?)     (loops=1 rows=120)\n"
+      }
+    ],
+    "commitsMs": [
+      0.0865,
+      0.0307,
+      0.0281,
+      0.0331,
+      0.0269,
+      0.0266,
+      0.028,
+      0.0391,
+      0.029,
+      0.0718,
+      0.0265,
+      0.031,
+      0.0329,
+      0.0362,
+      0.0369,
+      0.0395,
+      0.0334,
+      0.0291,
+      0.0251,
+      0.0287
+    ]
+  }
+}
