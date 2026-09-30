@@ -11,7 +11,7 @@ import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
 import { createConnectionPort } from '@/domains/connections/main'
 import {
   createHarnessSignInProcedureContext,
-  harnessSignInTiming,
+  harnessSignInExpiresAfterMs,
 } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
@@ -211,7 +211,7 @@ function createDomainContexts(services: TicketServices, registry: HarnessRegistr
     accounts: createAccountProcedureContext(access),
     connections,
     harnessSignIn: createHarnessSignInProcedureContext(Object.values(registry), {
-      expiresAfterMs: harnessSignInTiming(PROOF_ENABLED),
+      expiresAfterMs: harnessSignInExpiresAfterMs(PROOF_ENABLED),
     }),
   }
 }

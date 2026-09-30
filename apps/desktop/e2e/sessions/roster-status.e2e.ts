@@ -11,10 +11,10 @@ import {
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { writeMockClaude } from '../../mocks/cli/claude/mock-claude-cli'
 import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
+import { signedInHarnessEnvironment } from '../../mocks/cli/signed-in-harness'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
-import { signedInHarnessEnvironment } from '../signed-in-harness'
 import { prepare } from './fixtures/feed.fixture'
 import { chooseHarness, PERSISTED_ROW, TURN_CONFIGURATION } from './gestures'
 

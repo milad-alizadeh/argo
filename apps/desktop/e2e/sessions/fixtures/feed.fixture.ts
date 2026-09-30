@@ -74,6 +74,7 @@ function codexThread(request: {
 }
 
 export const CODEX_PARENT = 'codexParent'
+export const CODEX_FIXTURES = [CODEX_PARENT, 'codexChild']
 
 // The Codex threads the mock app-server starts with, in the state file its executable reads.
 async function writeCodexThreads(root, codexTranscripts) {
@@ -87,7 +88,7 @@ async function writeCodexThreads(root, codexTranscripts) {
       turns: [{ id: 'turn-1', prompt: 'Run Codex check', reply: 'Checking...' }],
     }),
     codexThread({
-      name: 'codexChild',
+      name: CODEX_FIXTURES[1],
       cwd,
       updatedAt: '2026-01-10T08:30:05.000Z',
       title: 'Continue the check',

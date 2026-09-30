@@ -4,5 +4,5 @@ export type { HarnessReadinessRegistration } from './harness-readiness-registrat
 export type { HarnessSignInDriver } from './harness-sign-in'
 export {
   createHarnessSignInProcedureContext,
-  harnessSignInTiming,
+  harnessSignInExpiresAfterMs,
 } from './harness-sign-in-procedures'

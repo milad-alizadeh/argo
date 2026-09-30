@@ -105,10 +105,10 @@ export async function proveLiveCodexModelChoices(page) {
 
   await models.getByText('Mock Opus', { exact: true }).click()
   await expect(effort).toHaveAttribute('max', '2')
-  await expect(effort).toHaveAttribute('aria-valuetext', /^(medium|high|xhigh)$/)
-  await expect(page.getByText('low', { exact: true })).toHaveCount(0)
+  await expect(effort).toHaveAttribute('aria-valuetext', /^(Medium|High|Extra high)$/)
+  await expect(page.getByText('Low', { exact: true })).toHaveCount(0)
   await effort.press('End')
-  await expect(effort).toHaveAttribute('aria-valuetext', 'xhigh')
+  await expect(effort).toHaveAttribute('aria-valuetext', 'Extra high')
 
   await page.getByRole('tab', { name: 'Claude Code' }).click()
   await expect(
@@ -128,6 +128,6 @@ export async function proveLiveCodexModelChoices(page) {
   ).toBeChecked()
   await expect(page.getByRole('slider', { name: 'Effort' })).toHaveAttribute(
     'aria-valuetext',
-    'xhigh',
+    'Extra high',
   )
 }

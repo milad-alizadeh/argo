@@ -11,9 +11,9 @@ import type {
   SessionHarnessBackend,
   SessionHarnessRun,
 } from '../../e2e/sessions/session-harness-backend'
-import { signedInHarnessEnvironment } from '../../e2e/signed-in-harness'
 import { mockClaudeHarness } from '../cli/claude/mock-claude-cli'
 import { mockCodexHarness } from '../cli/codex/mock-codex-cli'
+import { signedInHarnessEnvironment } from '../cli/signed-in-harness'
 import { createMockSessionHarnessBackend } from './mock-session-harness-backend'
 
 type Started = {

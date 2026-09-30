@@ -22,7 +22,7 @@ async function begin({ page, backend, prompt, sends }: BeginRequest) {
   await openNewSessionByClick(page)
   await chooseHarness(page, 'claude')
   await send(page, prompt, sends)
-  // The Feed's live status event, which stays drawn once the Turn ends.
+  // The live status event stays drawn after the Turn, so the unreplied check below proves the wait.
   const waiting = page
     .getByRole('region', { name: 'Session history' })
     .locator('[data-slot="feed-event"]')

@@ -13,12 +13,12 @@ import type {
   SessionHarnessBackend,
   SessionReply,
 } from '../../e2e/sessions/session-harness-backend'
-import { signedInHarnessEnvironment } from '../../e2e/signed-in-harness'
 import { mockClaudeHarness } from '../cli/claude/mock-claude-cli'
 import { mockClaudeAcpHarness } from '../cli/claude-acp/mock-claude-acp-cli'
 import { mockClaudeAcpRoot } from '../cli/claude-acp/mock-claude-acp-transcripts'
 import { mockCodexHarness } from '../cli/codex/mock-codex-cli'
 import type { MockHarness } from '../cli/mock-cli'
+import { signedInHarnessEnvironment } from '../cli/signed-in-harness'
 
 // Long enough for a case to read the app's wait state before the mock answers (#2119).
 const SLOW_REPLY_MS = 2_000

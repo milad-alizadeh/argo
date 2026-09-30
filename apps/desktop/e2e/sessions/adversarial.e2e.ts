@@ -65,6 +65,8 @@ test.describe('session-adversarial-permission', () => {
     await page.keyboard.type('Queue this after Permission.')
     await page.keyboard.press('Enter')
     const reply = page.getByText('Mock Claude read: Queue this after Permission. 🦜')
+    // Enter took the prompt while the Permission still holds the Turn, so its reply waits for Allow.
+    await expect(composer).toHaveText('')
     await expect(page.getByRole('region', { name: 'Permission needed' })).toBeVisible()
     await expect(reply).toHaveCount(0)
     await page.getByRole('button', { name: 'Allow', exact: true }).click()

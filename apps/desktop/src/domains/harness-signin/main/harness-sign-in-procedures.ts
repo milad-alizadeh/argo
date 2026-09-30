@@ -30,7 +30,7 @@ export type HarnessSignInProcedureContext = {
 }
 
 // A proof run may shorten the sign-in window; any other value is rejected, not guessed at.
-export function harnessSignInTiming(proofEnabled: boolean): number | undefined {
+export function harnessSignInExpiresAfterMs(proofEnabled: boolean): number | undefined {
   const raw = proofEnabled ? process.env[HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV] : undefined
   if (raw === undefined) return undefined
   const parsed = z.coerce.number().int().nonnegative().safeParse(raw)

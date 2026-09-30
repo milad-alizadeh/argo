@@ -29,7 +29,7 @@ test('normalizes Codex defaults and excludes hidden models at the Harness bounda
   assert.equal(info.models[0]?.defaultEffort, 'focused')
 })
 
-test('uses the Codex reasoning effort name as its picker label', () => {
+test('names a Codex reasoning effort in the words every Harness uses', () => {
   const modelCatalog = {
     ...catalog,
     data: catalog.data.map((model) => ({
@@ -43,7 +43,7 @@ test('uses the Codex reasoning effort name as its picker label', () => {
   const info = codexHarnessInfo(modelCatalog)
   assert.equal(info.availability, 'available')
   if (info.availability !== 'available') throw new Error('Codex fixture should be available.')
-  assert.equal(info.efforts[0]?.label, 'medium')
+  assert.equal(info.efforts[0]?.label, 'Medium')
 })
 
 test('rejects an unrecognized model/list response', () => {

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { effortLabel } from '@/harnesses/effort-labels'
 import {
   type HarnessInfo,
   harnessInfoSchema,
@@ -105,7 +106,7 @@ export function codexHarnessInfo(catalog: CodexModelCatalog | null): HarnessInfo
       ).values(),
     ].map((effort) => ({
       value: effort.reasoningEffort,
-      label: effort.reasoningEffort,
+      label: effortLabel(effort.reasoningEffort),
       readings: { exact: [effort.reasoningEffort], prefixes: [] },
     })),
     modes: SANDBOX_MODES.map((mode) => ({

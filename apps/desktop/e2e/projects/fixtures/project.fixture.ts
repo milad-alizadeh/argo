@@ -9,9 +9,9 @@ import { _electron as electron } from 'playwright-core'
 import { databasePath, openDatabase } from '@/database/database'
 import { project as projectTable } from '@/database/project/schema'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
+import { signedInHarnessEnvironment } from '../../../mocks/cli/signed-in-harness'
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mts'
 import { applicationUnderTest, launchCommand } from '../../application-under-test'
-import { signedInHarnessEnvironment } from '../../signed-in-harness'
 import { makeProjectLocallyReady } from './locally-ready-project'
 
 const run = promisify(execFile)

@@ -12,6 +12,7 @@ import {
 } from '@/mocks/tickets/provider-inputs'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { GITHUB_PROOF_ORIGIN_ENV, LINEAR_PROOF_ORIGIN_ENV } from '@/providers/proof-protocol'
+import { signedInHarnessEnvironment } from '../../../mocks/cli/signed-in-harness'
 import { startMockGitHubLoopback } from '../../../mocks/providers/github/mock-github-loopback'
 import type { MockLinear } from '../../../mocks/providers/linear/mock-linear'
 import { HIDDEN, TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
@@ -20,7 +21,6 @@ import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mts'
 import { launchCommand } from '../../application-under-test'
 import { makeProjectLocallyReady } from '../../projects/fixtures/locally-ready-project'
 import { repository, seedSingleProject } from '../../projects/fixtures/project.fixture'
-import { signedInHarnessEnvironment } from '../../signed-in-harness'
 
 // Short enough that every read renews the grant first, so a relaunch proves the refresh.
 export const LINEAR_TOKEN_LIFETIME = 60
