@@ -12,8 +12,8 @@ import { ticketsHost } from './tickets-host'
 export const host = window
 const storybookSession = sessionRow({
   id: 'storybook-session',
-  posture: 'external',
-  title: { text: 'Storybook Session', source: 'first-prompt' },
+  posture: null,
+  name: 'Storybook Session',
   status: 'idle',
   cwd: '/storybook/argo',
 })

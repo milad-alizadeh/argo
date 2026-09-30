@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import { BasicFeed, FeedJumpToLatest } from '../feed'
-import type { SessionPosture } from '../model'
-import type { SessionError, SessionEvidence, SessionFeed } from '../types'
+import type { SessionError, SessionEvidence, SessionFeed, SessionPosture } from '../types'
 
 export type SessionWorkspaceProps = {
   composer: ReactNode | null

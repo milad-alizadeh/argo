@@ -1,6 +1,6 @@
 import type { EditorConfig, NodeKey, SerializedTextNode } from 'lexical'
 import { TextNode } from 'lexical'
-import type { SessionHarness } from '../../harness'
+import type { Harness } from '@/harnesses/harness'
 import { composerReferenceIcon } from './composer-reference-icon'
 import {
   referenceBySource,
@@ -13,9 +13,9 @@ const SUPPORTED_CLASS =
 const UNSUPPORTED_CLASS = 'composer-inline-context cursor-text text-muted-foreground type-body'
 
 export class ComposerReferenceNode extends TextNode {
-  __harness: SessionHarness | null
+  __harness: Harness | null
 
-  constructor(text: string, harness: SessionHarness | null = null, key?: NodeKey) {
+  constructor(text: string, harness: Harness | null = null, key?: NodeKey) {
     super(text, key)
     this.__harness = harness
   }
@@ -61,6 +61,6 @@ export class ComposerReferenceNode extends TextNode {
   }
 }
 
-export function $createComposerReferenceNode(text: string, harness: SessionHarness | null = null) {
+export function $createComposerReferenceNode(text: string, harness: Harness | null = null) {
   return new ComposerReferenceNode(text, harness)
 }

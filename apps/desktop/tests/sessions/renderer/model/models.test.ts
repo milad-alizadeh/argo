@@ -4,20 +4,19 @@ import { sessionFeedRowSchema } from '@/domains/sessions/api/feed/feed-rows'
 import { sessionListRowSchema } from '@/domains/sessions/main/api/session-list'
 import { sessionRow } from '@/mocks/sessions/session-rows'
 
-const roster = sessionRow({
+const row = sessionRow({
   id: '0f7c8a3e-5b1d-4c2a-9e64-2d1b7a8c9f10',
   cwd: null,
   posture: 'live',
   status: 'idle',
-  title: null,
 })
 
-test('accepts only complete Roster rows', () => {
+test('accepts only complete Session List rows', () => {
   for (const [value, accepted] of [
-    [roster, true],
-    [{ ...roster, status: 'waiting' }, false],
-    [{ ...roster, archived: 'false' }, false],
-    [{ ...roster, extra: true }, false],
+    [row, true],
+    [{ ...row, status: 'waiting' }, false],
+    [{ ...row, archived: 'false' }, false],
+    [{ ...row, extra: true }, false],
   ] as const) {
     assert.equal(sessionListRowSchema.safeParse(value).success, accepted)
   }

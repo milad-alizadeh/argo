@@ -1,13 +1,11 @@
-import { mkdtemp, rm } from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import { type Database, openDatabase } from '@/database/database'
+import type { Database } from '@/database/database'
 import { sessionCommandTable } from '@/database/session/command-schema'
 import type { CodexRequest } from '@/harnesses/codex/app-server'
 import { hasCodexSessionTurn } from '@/harnesses/codex/session'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { scanRollouts } from '../../../../../mocks/cli/codex/mock-codex-rollout-history'
 import {
   bindSessionCommand,
@@ -25,18 +23,15 @@ const command = {
   nativeId: null,
   cwd: '/project',
 }
-let directory: string
 let database: Database
 
-beforeEach(async () => {
-  directory = await mkdtemp(path.join(os.tmpdir(), 'argo-command-outcome-'))
-  database = openDatabase(directory)
+beforeEach(() => {
+  database = migratedDatabase()
 })
 
-afterEach(async () => {
+afterEach(() => {
   vi.unstubAllEnvs()
   database.$client.close()
-  await rm(directory, { recursive: true, force: true })
 })
 
 function storedOutcome() {

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { DevelopmentIdentity } from '@/platform/contract/development-identity'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import type { SessionTicket } from '../../model'
+import type { SessionTicket } from '../../types'
 
 type DevelopmentIdentityBarProps = {
   identity: DevelopmentIdentity | null

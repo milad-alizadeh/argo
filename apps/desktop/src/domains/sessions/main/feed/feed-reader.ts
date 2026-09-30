@@ -23,10 +23,10 @@ import {
   type SessionLiveEvent,
 } from '@/domains/sessions/api/session-live-event'
 import type { Harness } from '@/harnesses/harness'
-import type { SessionActivities } from '../api'
+import type { SessionListChanges } from '../api'
+import { updateSession } from '../api'
 import type { SessionEventJournal, SessionHistoryFollowers } from '../live'
 import { sessionHistoryIdentity } from '../session-history-identity'
-import { observeSessionSync, type SessionSyncStatusStore } from '../session-sync-status'
 
 export type SessionFeedReaderContext = {
   database: Database
@@ -34,10 +34,11 @@ export type SessionFeedReaderContext = {
   hasLiveChannel: (sessionId: string) => boolean
   readHistory: (harness: Harness, target: SessionHistoryTarget) => Promise<FeedContent[]>
   followHistory?: SessionHistoryFollowers['follow']
-  sessionSyncStatus?: readonly SessionSyncStatusStore[]
-  // Where each reading's current activity goes, so the roster draws the same line.
-  activities?: SessionActivities
+  // Carries each reading's activity to the Session List, and any write that moved the history.
+  changes: SessionListChanges
 }
+
+type StoredHistory = ReturnType<typeof sessionHistoryIdentity>
 
 type Observer = (reading: FeedReading) => void
 type ReadState = FeedReading['state']
@@ -69,6 +70,17 @@ function canDeliver(event: SessionLiveEvent, live: boolean): boolean {
   }
 }
 
+function storedHistory(database: Database, sessionId: string): StoredHistory | null {
+  try {
+    return sessionHistoryIdentity(database, sessionId)
+  } catch {
+    return null
+  }
+}
+
+const historyKey = (stored: StoredHistory | null) =>
+  stored === null ? null : JSON.stringify([stored.harness, stored.nativeId, stored.cwd])
+
 function readFailure(error: unknown): SessionError {
   const missing = error instanceof TRPCError && error.code === 'NOT_FOUND'
   return sessionError(missing ? 'missing-session' : 'vendor-history-unavailable', null)
@@ -98,6 +110,8 @@ class FeedReader {
   readonly #observers = new Set<Observer>()
   readonly #stops: (() => void)[] = []
   #follower: { key: string; stop: () => void } | null = null
+  // Where the last read found the history, so a write that moved nothing reads nothing again.
+  #readKey: string | null = null
   #history: FeedContent[] = []
   #events: LiveEventBuffer = emptyLiveEventBuffer()
   #completion: SessionFeedRow[] = []
@@ -118,10 +132,16 @@ class FeedReader {
   start(): void {
     if (this.#parent === null) this.#attachLive()
     else this.#stops.push(this.#parent.observe((reading) => this.#receiveParent(reading)))
-    // A committed sync can move where the Session's history lives.
+    const { database, changes } = this.#context
+    const { sessionId } = this.#chain
+    // A sync can move where the Session's history lives; this reader's own activity write cannot.
     this.#stops.push(
-      observeSessionSync(this.#context.sessionSyncStatus ?? [], (event) => {
-        if (event.type === 'committed') this.refresh()
+      changes.subscribe((sessionIds) => {
+        if (
+          sessionIds.includes(sessionId) &&
+          historyKey(storedHistory(database, sessionId)) !== this.#readKey
+        )
+          this.refresh()
       }),
     )
     this.refresh()
@@ -140,6 +160,7 @@ class FeedReader {
   // Every call starts a real read; a later read's answer replaces an earlier one's.
   refresh(): void {
     const read = ++this.#read
+    this.#readKey = historyKey(storedHistory(this.#context.database, this.#chain.sessionId))
     this.#follow()
     if (this.#state !== 'ready') this.#settle('loading', this.#error)
     void this.#readHistory().then(
@@ -179,7 +200,7 @@ class FeedReader {
     if (replay.type === 'events') for (const event of replay.events) this.#retain(event, live)
   }
 
-  #target(stored: ReturnType<typeof sessionHistoryIdentity>): SessionHistoryTarget {
+  #target(stored: StoredHistory): SessionHistoryTarget {
     return { nativeId: stored.nativeId, subagentId: this.#chain.subagentId, cwd: stored.cwd }
   }
 
@@ -194,15 +215,9 @@ class FeedReader {
     const { database, followHistory, hasLiveChannel } = this.#context
     const { sessionId, subagentId } = this.#chain
     if (followHistory === undefined) return
-    let stored: ReturnType<typeof sessionHistoryIdentity> | null = null
-    try {
-      if (subagentId !== null || !hasLiveChannel(sessionId))
-        stored = sessionHistoryIdentity(database, sessionId)
-    } catch {
-      stored = null
-    }
-    const key =
-      stored === null ? null : JSON.stringify([stored.harness, stored.nativeId, stored.cwd])
+    const stored =
+      subagentId !== null || !hasLiveChannel(sessionId) ? storedHistory(database, sessionId) : null
+    const key = historyKey(stored)
     if (key === (this.#follower?.key ?? null)) return
     this.#follower?.stop()
     this.#follower = null
@@ -279,7 +294,8 @@ class FeedReader {
     })
     if (reading.revision === this.#reading?.revision) return
     this.#reading = reading
-    if (subagentId === null) this.#context.activities?.publish(sessionId, activity)
+    // Keeps the activity for the Session List after this reader closes.
+    if (subagentId === null) updateSession(this.#context, sessionId, { activity })
     for (const observer of this.#observers) observer(reading)
   }
 }

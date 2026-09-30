@@ -10,7 +10,7 @@ import {
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
 import { sessionFailureState } from '../session-failure-state'
-import type { SessionError } from '../types'
+import type { SessionError, SessionPosture } from '../types'
 import { FeedLoading } from './feed-loading'
 import { StalledFeed } from './stalled-feed'
 
@@ -24,7 +24,7 @@ export function Standing({
   failure: SessionError | null
   selected: boolean
   stalled: boolean
-  posture: 'live' | 'external' | null
+  posture: SessionPosture | null
   onRetry: () => void
 }) {
   const { t } = useTranslation('sessions')

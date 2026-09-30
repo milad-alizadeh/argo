@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
-import { initTRPC } from '@trpc/server'
 import { test } from 'vitest'
-import { type Database, databaseFrom } from '@/database/database'
+import { databaseFrom } from '@/database/database'
 import {
   claudeCatalog,
   claudeFirst,
@@ -9,34 +8,7 @@ import {
   start,
   supervisorFor,
 } from '@/mocks/sessions/live-session-supervisor.fixture'
-import { SessionRosterChanges, sessionListProcedure } from '../api'
-import type { LiveSessionSupervisorActor } from './live-session-supervisor-machine'
-
-// The status of the first row the roster lists first.
-function firstListedStatus(database: Database, supervisor: LiveSessionSupervisorActor) {
-  const list = initTRPC
-    .create()
-    .router({
-      list: sessionListProcedure({
-        database,
-        supervisor,
-        roster: new SessionRosterChanges(),
-        watchedStatus: { statusOf: () => null },
-      }),
-    })
-    .createCaller({}).list
-  return async () => {
-    const statuses: string[] = []
-    const stream = await list({ projectId: 'project-1', pageSize: 10 })
-    stream
-      .subscribe({
-        next: (update) =>
-          update.type === 'list' && statuses.push(...update.rows.map(({ status }) => status)),
-      })
-      .unsubscribe()
-    return statuses[0]
-  }
-}
+import { sessionListCaller } from '@/mocks/sessions/session-list-caller'
 
 test('session.list projects the latest live status event and announces each change', async () => {
   let emitStatus!: (status: 'running' | 'idle' | 'permission') => void
@@ -61,10 +33,8 @@ test('session.list projects the latest live status event and announces each chan
       return { submit: async () => {}, ...passiveChannelMethods }
     },
   )
-  client.exec(
-    'CREATE TABLE session_ticket_link (session_id TEXT PRIMARY KEY, project_id TEXT NOT NULL, ticket_key TEXT NOT NULL, title TEXT NOT NULL, state TEXT NOT NULL, created_at TEXT NOT NULL, updated_at INTEGER NOT NULL DEFAULT 1);',
-  )
-  const statusOf = firstListedStatus(databaseFrom(client), supervisor)
+  const { list, stopWatching } = sessionListCaller({ database: databaseFrom(client), supervisor })
+  const statusOf = async () => (await list({ projectId: 'project-1' })).rows[0]?.status
   const announced: string[] = []
   const subscription = supervisor.on('Session status changed', ({ sessionId }) =>
     announced.push(sessionId),
@@ -80,6 +50,7 @@ test('session.list projects the latest live status event and announces each chan
     assert.deepEqual(announced, [sessionId, sessionId, sessionId, sessionId])
   } finally {
     subscription.unsubscribe()
+    stopWatching()
     root.send({ type: 'Shutdown' })
     client.close()
   }

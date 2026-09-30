@@ -46,25 +46,23 @@ function writeStateStore(codexTranscripts: string) {
   store.close()
 }
 
-async function rosterTitle(page: Page) {
+async function sessionListName(page: Page) {
   const rows = await sessionRows(page)
-  const titled = rows.find(
-    (session) => session.title?.text === 'Run Codex check' || session.title?.text === NAME,
-  )
-  return titled?.title ?? null
+  const named = rows.find((session) => session.name === 'Run Codex check' || session.name === NAME)
+  return named?.name ?? null
 }
 
 // ADR-0042: the packaged main process opens the store through Electron's own `node:sqlite`.
 export async function proveCodexThreadName(page: Page, codexTranscripts: string) {
-  assert.deepEqual(await rosterTitle(page), { text: 'Run Codex check', source: 'custom' })
+  assert.equal(await sessionListName(page), 'Run Codex check')
   writeStateStore(codexTranscripts)
   // Argo reads the name from the Harness's thread list, which a sync asks for.
   await refreshSessions(page)
   const deadline = Date.now() + 10_000
-  let title = await rosterTitle(page)
-  while (title?.text !== NAME && Date.now() < deadline) {
+  let name = await sessionListName(page)
+  while (name !== NAME && Date.now() < deadline) {
     await setTimeout(100)
-    title = await rosterTitle(page)
+    name = await sessionListName(page)
   }
-  assert.deepEqual(title, { text: NAME, source: 'custom' })
+  assert.equal(name, NAME)
 }

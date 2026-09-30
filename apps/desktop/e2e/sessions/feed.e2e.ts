@@ -1,4 +1,4 @@
-// Session Feed and Roster contracts over the packaged app's real preload (#1910).
+// Session Feed and Session List contracts over the packaged app's real preload (#1910).
 // One file, one `test`: `sessionBackend` (`session-proof-run.ts`) is the only difference between
 // a mock and a real Claude/Codex CLI, so a case that drives a live Turn just names the backend it
 // needs and lets the project (`sessions` or `real-sessions`, `playwright.config.ts`) decide which
@@ -16,17 +16,17 @@ import { proveSessionDiagram } from './cases/diagram.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
-import { proveContract } from './cases/roster-contract.case'
-import { provePackagedRosterSelection } from './cases/roster-interaction.case'
-import { proveRosterWindow } from './cases/roster-window.case'
+import { proveContract } from './cases/session-list-contract.case'
+import { provePackagedSessionListSelection } from './cases/session-list-interaction.case'
+import { proveSessionListWindow } from './cases/session-list-window.case'
 import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
 import { proveToolCalls } from './cases/tool-calls.case'
 import { proveLiveCodexModelChoices } from './cases/turn-configuration.case'
-import { rosterRow } from './claude-proof-helpers'
 import { appendProse } from './fixtures/feed.fixture'
-import { writeWindowFillerSessions } from './fixtures/roster-window.fixture'
+import { writeWindowFillerSessions } from './fixtures/session-list-window.fixture'
 import { openSessionByClick } from './gestures'
+import { sessionDetails } from './page-trpc'
 import { assertTranscriptFeedCorpus } from './real-harness/transcript-feed-corpus'
 import { expect, test } from './session-proof-run'
 
@@ -38,7 +38,7 @@ test.describe('with no Project selected', () => {
   })
 })
 
-test('session-roster-contract', async ({ session }) => {
+test('session-list-contract', async ({ session }) => {
   await proveContract(session.page())
 })
 
@@ -83,8 +83,8 @@ test.describe('session refresh progress', () => {
   })
 })
 
-test('session-roster-selection', async ({ session }) => {
-  await provePackagedRosterSelection(session.page())
+test('session-list-selection', async ({ session }) => {
+  await provePackagedSessionListSelection(session.page())
 })
 
 test('session-tool-calls', async ({ session }) => {
@@ -119,10 +119,10 @@ test('session-live-codex-model-choices', async ({ session }) => {
 })
 
 // The fillers are written while the app is closed: a write it watches is new activity, not old history.
-test('session-roster-window', async ({ session }) => {
+test('session-list-window', async ({ session }) => {
   const { claudeTranscripts, project } = session.fixture
   await session.restart(() => writeWindowFillerSessions(claudeTranscripts, project))
-  await proveRosterWindow(session.page())
+  await proveSessionListWindow(session.page())
 })
 
 test.describe('with the Claude ACP agent', () => {
@@ -142,7 +142,7 @@ test.describe('with the real Claude SDK history', () => {
   test('session-sdk-history-real', async ({ session, backend }) => {
     const sessionId = await proveSessionCreatedByClick(session.page(), backend)
     const restarted = await session.restart()
-    const [external] = await rosterRow(restarted, sessionId)
+    const external = await sessionDetails(restarted, sessionId)
     expect(external?.posture).toBe(null)
     await openSessionByClick(restarted, sessionId)
     await restarted.waitForSelector(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
@@ -152,7 +152,7 @@ test.describe('with the real Claude SDK history', () => {
     await restarted.keyboard.type(prompt)
     await restarted.getByRole('button', { name: 'Send message' }).click()
     await backend.waitForReply(restarted, { harness: 'claude', prompt })
-    const [live] = await rosterRow(restarted, sessionId)
+    const live = await sessionDetails(restarted, sessionId)
     expect(live?.posture).toBe('live')
   })
 })

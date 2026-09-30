@@ -71,7 +71,7 @@ const toolCallSchema = z.strictObject({
 
 const toolRowSchema = toolCallSchema.extend({ shape: z.literal('tool') })
 
-// What a Session is doing now, the words the roster and the Feed both draw (`SessionActivity`).
+// What a Session is doing now, the words the Session List and the Feed both draw (`SessionActivity`).
 export const liveActivitySchema = feedActivityBaseSchema
 export type LiveActivity = z.infer<typeof liveActivitySchema>
 
@@ -111,7 +111,7 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
         }),
       )
       .optional(),
-    // The Session's activity while the Turn runs (`withHeadline`), the same fact the roster
+    // The Session's activity while the Turn runs (`withHeadline`), the same fact the Session List
     // draws under the title. Absent once the Turn settles.
     headline: liveActivitySchema.optional(),
   }),

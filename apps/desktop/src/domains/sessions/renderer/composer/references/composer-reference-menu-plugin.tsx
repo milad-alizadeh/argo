@@ -9,7 +9,7 @@ import {
 } from 'lexical'
 import { useEffect, useRef, useState } from 'react'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
-import type { SessionHarness } from '../../harness'
+import type { Harness } from '@/harnesses/harness'
 import {
   activeReference,
   ComposerReferenceMenu,
@@ -66,7 +66,7 @@ export function ComposerReferenceMenuPlugin({
   listing,
   onOpenChange,
 }: {
-  harness?: SessionHarness | null
+  harness?: Harness | null
   disabled?: boolean
   draft: string
   listing: ComposerCommandListing

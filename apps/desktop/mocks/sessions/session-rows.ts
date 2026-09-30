@@ -1,33 +1,30 @@
 // Session rows the Sessions stories and unit tests draw.
 
-import type { SessionShellCommand } from '@/domains/sessions/api/session-shell-command'
-import type { SessionSubagent } from '@/domains/sessions/renderer/model/models'
-import type { Session } from '@/domains/sessions/renderer/types'
+import type {
+  Session,
+  SessionExtras,
+  SessionShellCommand,
+  SessionSubagent,
+} from '@/domains/sessions/renderer/types'
 import { DEFAULT_HARNESS } from '@/harnesses/harness'
 
-function listedSession(overrides: Partial<Session> = {}): Session {
+export function sessionRow(
+  overrides: Partial<Session & SessionExtras> = {},
+): Session & SessionExtras {
   return {
     id: 'session-one',
-    retiredIds: [],
     harness: DEFAULT_HARNESS,
+    projectId: 'project-1',
     posture: 'live',
-    customTitle: null,
-    preview: null,
-    title: null,
+    name: 'session-one',
     status: 'idle',
     cwd: null,
     workspaceId: null,
-    branch: null,
-    updatedAt: null,
-    turnStartedAt: null,
+    updatedAt: '2026-09-01T00:00:00.000Z',
     activity: null,
-    plan: null,
     subagents: [],
-    shell: [],
-    pullRequest: null,
     ticket: null,
     archived: false,
-    unread: false,
     turnConfiguration: { model: null, effort: null, mode: null },
     ...overrides,
   }
@@ -52,11 +49,5 @@ export function sessionShellCommand(
 export function sessionSubagent(
   overrides: Partial<SessionSubagent> & Pick<SessionSubagent, 'id'>,
 ): SessionSubagent {
-  return { label: null, state: 'running', startedAt: null, endedAt: null, ...overrides }
-}
-
-export function sessionRow(
-  overrides: Partial<Session> & Pick<Session, 'id' | 'cwd' | 'posture' | 'status' | 'title'>,
-): Session {
-  return listedSession({ branch: 'main', ...overrides })
+  return { label: null, state: 'running', ...overrides }
 }

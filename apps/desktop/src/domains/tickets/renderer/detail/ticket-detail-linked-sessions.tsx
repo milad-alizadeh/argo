@@ -1,5 +1,6 @@
+import { useTranslation } from 'react-i18next'
+import type { Session } from '@/domains/sessions/renderer'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import type { LinkedSession } from '../hooks'
 import { linkRow, stateIcon } from './ticket-detail-links'
 import { TicketDetailSection } from './ticket-detail-section'
 
@@ -7,14 +8,15 @@ export function LinkedSessions({
   sessions,
   onOpenSession,
 }: {
-  sessions: readonly LinkedSession[]
+  sessions: readonly Session[]
   onOpenSession: (id: string) => void
 }) {
+  const { t } = useTranslation('tickets')
   if (sessions.length === 0) return null
   return (
     <TicketDetailSection
       icon={<Icon name="linked-sessions" className={stateIcon} />}
-      title={`Linked Sessions · ${sessions.length}`}
+      title={t('detail.linkedSessionsCount', { count: sessions.length })}
     >
       <ul className="-mx-(--spacing-shell-item) grid grid-cols-[minmax(0,1fr)]">
         {sessions.map((session) => (
@@ -24,7 +26,7 @@ export function LinkedSessions({
               onClick={() => onOpenSession(session.id)}
               type="button"
             >
-              <span className="min-w-0 flex-1 truncate type-body">{session.title}</span>
+              <span className="min-w-0 flex-1 truncate type-body">{session.name}</span>
             </button>
           </li>
         ))}

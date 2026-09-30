@@ -16,12 +16,7 @@ export const sessionSyncStatusSchema = z.strictObject({
 })
 
 export type SessionSyncStatus = z.infer<typeof sessionSyncStatusSchema>
-const sessionSyncEventSchema = z.discriminatedUnion('type', [
-  z.strictObject({ type: z.literal('status'), status: sessionSyncStatusSchema }),
-  z.strictObject({ type: z.literal('committed') }),
-])
-
-export type SessionSyncEvent = z.infer<typeof sessionSyncEventSchema>
+export type SessionSyncEvent = { type: 'status'; status: SessionSyncStatus }
 const initialSessionSyncStatus: SessionSyncStatus = {
   phase: 'idle',
   processed: 0,
@@ -31,7 +26,8 @@ const initialSessionSyncStatus: SessionSyncStatus = {
   failure: null,
 }
 
-function completedStatus(database: Database, harness: string): SessionSyncStatus {
+// The last completed scan survives a restart; a scan cut short by one restarts idle.
+export function savedSyncStatus(database: Database, harness: string): SessionSyncStatus {
   const row = database
     .select()
     .from(sessionSyncStatus)
@@ -63,72 +59,33 @@ function completedStatus(database: Database, harness: string): SessionSyncStatus
   })
 }
 
-export class SessionSyncStatusStore {
-  #status: SessionSyncStatus
-  #listeners = new Set<(event: SessionSyncEvent) => void>()
-  private readonly database: Database | undefined
-  private readonly harness: Harness
-
-  constructor(database: Database | undefined, harness: Harness) {
-    this.database = database
-    this.harness = harness
-    this.#status =
-      database === undefined ? initialSessionSyncStatus : completedStatus(database, harness)
+export function saveCompletedSyncStatus(
+  database: Database,
+  harness: Harness,
+  completed: SessionSyncStatus,
+): void {
+  const values = {
+    phase: completed.phase,
+    processed: completed.processed,
+    total: completed.total,
+    skipped: completed.skipped,
+    lastSuccessfulSyncAt:
+      completed.lastSuccessfulSyncAt === null
+        ? null
+        : new Date(completed.lastSuccessfulSyncAt).getTime(),
+    failure: completed.failure,
   }
-
-  current(): SessionSyncStatus {
-    return this.#status
-  }
-
-  update(status: SessionSyncStatus): void {
-    this.#status = sessionSyncStatusSchema.parse({
-      ...status,
-      lastSuccessfulSyncAt: status.lastSuccessfulSyncAt ?? this.#status.lastSuccessfulSyncAt,
+  database
+    .insert(sessionSyncStatus)
+    .values({ harness, ...values })
+    .onConflictDoUpdate({
+      target: sessionSyncStatus.harness,
+      set: {
+        ...values,
+        updatedAt: sql`MAX(CAST(unixepoch('subsec') * 1000 AS INTEGER), ${sessionSyncStatus.updatedAt} + 1)`,
+      },
     })
-    if (
-      this.database !== undefined &&
-      (this.#status.phase === 'ready' || this.#status.phase === 'failed')
-    ) {
-      const completed = this.#status
-      const values = {
-        phase: completed.phase,
-        processed: completed.processed,
-        total: completed.total,
-        skipped: completed.skipped,
-        lastSuccessfulSyncAt:
-          completed.lastSuccessfulSyncAt === null
-            ? null
-            : new Date(completed.lastSuccessfulSyncAt).getTime(),
-        failure: completed.failure,
-      }
-      this.database
-        .insert(sessionSyncStatus)
-        .values({ harness: this.harness, ...values })
-        .onConflictDoUpdate({
-          target: sessionSyncStatus.harness,
-          set: {
-            ...values,
-            updatedAt: sql`MAX(CAST(unixepoch('subsec') * 1000 AS INTEGER), ${sessionSyncStatus.updatedAt} + 1)`,
-          },
-        })
-        .run()
-    }
-    this.emit({ type: 'status', status: this.#status })
-  }
-
-  committed(): void {
-    this.emit({ type: 'committed' })
-  }
-
-  subscribe(listener: (event: SessionSyncEvent) => void): () => void {
-    this.#listeners.add(listener)
-    listener({ type: 'status', status: this.#status })
-    return () => this.#listeners.delete(listener)
-  }
-
-  private emit(event: SessionSyncEvent): void {
-    for (const listener of this.#listeners) listener(event)
-  }
+    .run()
 }
 
 // Earlier phases win: one active scan keeps the whole sync active.
@@ -159,28 +116,34 @@ function combinedStatus(statuses: readonly SessionSyncStatus[]): SessionSyncStat
   }
 }
 
+// What the status subscription reads: the sync supervisor's per-Harness status.
+export type SessionSyncStatusSource = {
+  getSnapshot: () => { context: { status: Partial<Record<Harness, SessionSyncStatus>> } }
+  subscribe: (listener: () => void) => { unsubscribe: () => void }
+}
+
+// Reports every Harness scan as one status: the current one, then each change to it.
 export function observeSessionSync(
-  stores: readonly SessionSyncStatusStore[],
+  source: SessionSyncStatusSource,
   listener: (event: SessionSyncEvent) => void,
 ): () => void {
-  let subscribed = false
-  const report = (event: SessionSyncEvent) => {
-    if (event.type === 'committed') listener(event)
-    else if (subscribed)
-      listener({ type: 'status', status: combinedStatus(stores.map((store) => store.current())) })
+  let reported = ''
+  const report = () => {
+    const status = combinedStatus(Object.values(source.getSnapshot().context.status))
+    const key = JSON.stringify(status)
+    if (key === reported) return
+    reported = key
+    listener({ type: 'status', status })
   }
-  const stops = stores.map((store) => store.subscribe(report))
-  subscribed = true
-  listener({ type: 'status', status: combinedStatus(stores.map((store) => store.current())) })
-  return () => {
-    for (const stop of stops) stop()
-  }
+  const subscription = source.subscribe(report)
+  report()
+  return () => subscription.unsubscribe()
 }
 
 const t = initTRPC.create()
 
-export function sessionSyncStatusProcedure(stores: readonly SessionSyncStatusStore[]) {
+export function sessionSyncStatusProcedure(source: SessionSyncStatusSource) {
   return t.procedure.subscription(() =>
-    observable<SessionSyncEvent>((emit) => observeSessionSync(stores, (event) => emit.next(event))),
+    observable<SessionSyncEvent>((emit) => observeSessionSync(source, (event) => emit.next(event))),
   )
 }

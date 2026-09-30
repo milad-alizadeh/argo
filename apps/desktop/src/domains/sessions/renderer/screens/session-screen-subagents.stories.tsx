@@ -4,14 +4,9 @@ import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { sessionRow, sessionSubagent } from '@/mocks/sessions/session-rows'
-import {
-  type FeedRead,
-  sessionFeedRefreshTrpc,
-  sessionFeedSubscribe,
-  sessionListSubscribe,
-} from '@/mocks/sessions/session-story-host'
+import { installSessionHost } from '@/mocks/sessions/session-story-host'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
+import { SessionList } from '../session-list/session-list'
 import { SessionScreenView } from './session-screen-view'
 
 const SESSION_ID = 'subagent-session'
@@ -20,8 +15,8 @@ const SUBAGENT_NAME = 'Survey the Harness adapters'
 let readSubagentIds: Array<string | null> = []
 const session = sessionRow({
   id: SESSION_ID,
-  posture: 'external',
-  title: { text: 'Subagent history', source: 'first-prompt' },
+  posture: null,
+  name: 'Subagent history',
   status: 'idle',
   cwd: '/storybook/argo',
   // The roster the sync stored from the same history.
@@ -74,7 +69,7 @@ const meta = {
     (Story) => (
       <div className="h-dvh w-full">
         <MemoryRouter initialEntries={[`/sessions/${SESSION_ID}`]}>
-          <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionsSidebar />}>
+          <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionList />}>
             <Routes>
               <Route path="/sessions/:sessionId" element={<Story />} />
             </Routes>
@@ -85,22 +80,12 @@ const meta = {
   ],
   beforeEach: () => {
     readSubagentIds = []
-    const previous = window.argo
-    const read: FeedRead = async (_sessionId, subagentId) => {
-      readSubagentIds.push(subagentId)
-      return subagentId === null ? parentContent : childContent
-    }
-    window.argo = {
-      ...previous,
-      trpcSubscribe: sessionFeedSubscribe(
-        sessionListSubscribe(previous.trpcSubscribe, () => [session]),
-        read,
-      ),
-      trpc: sessionFeedRefreshTrpc(previous.trpc),
-    }
-    return () => {
-      window.argo = previous
-    }
+    return installSessionHost([session], {
+      feed: async (_sessionId, subagentId) => {
+        readSubagentIds.push(subagentId)
+        return subagentId === null ? parentContent : childContent
+      },
+    })
   },
 } satisfies Meta<typeof SessionScreenView>
 

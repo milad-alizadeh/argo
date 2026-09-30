@@ -31,7 +31,7 @@ const REPLY_DELAY_MS = readMockReplyDelayMs()
 // A fresh SDK session has to push its opening prompt before the SDK will even identify it
 // (mock-claude-sdk-stream.ts's own comment on that constraint), so this process can otherwise
 // record that prompt's reply before the app's own identify → authorize → paint round trip
-// finishes and the Roster shows the row (`session-created-by-click`, #e2e-real-cheap-models). A
+// finishes and the Session List shows the row (`session-created-by-click`, #e2e-real-cheap-models). A
 // resumed session's row already exists, so only a session this process is creating fresh needs
 // the floor. 50ms cleared 0/50 on a local machine but still lost the race twice in one CI run
 // (once on the initial attempt, once on its retry), so a loaded CI runner's own round trip is

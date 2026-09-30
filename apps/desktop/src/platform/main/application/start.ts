@@ -1,11 +1,10 @@
 import { app } from 'electron'
 import { createActor } from 'xstate'
 import type { Database } from '@/database/database'
+import type { SessionListChanges } from '@/domains/sessions/main/api'
 import type { SessionEventJournal, SessionInteractionBroker } from '@/domains/sessions/main/live'
-import type { SessionSyncStatusStore } from '@/domains/sessions/main/session-sync-status'
 import type { TicketOperationSupervisorInput } from '@/domains/tickets/main/operations'
 import type { TicketSyncSupervisorInput } from '@/domains/tickets/main/sync'
-import type { Harness } from '@/harnesses/harness'
 import type { HarnessRegistry } from '@/harnesses/registry'
 import { applyStoredAppearance, readAppearance } from '../appearance'
 import { setPlatformLanguage } from '../i18n'
@@ -14,7 +13,7 @@ import { type AppActor, createAppMachine } from './app-machine'
 export function startDesktopApplication(request: {
   prepare: () => Promise<{
     database: Database
-    sessionSyncStatus: Record<Harness, SessionSyncStatusStore>
+    sessionListChanges: SessionListChanges
     sessionEventJournal?: SessionEventJournal
     sessionInteractionBroker?: SessionInteractionBroker
     ticketSync: TicketSyncSupervisorInput

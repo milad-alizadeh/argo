@@ -9,7 +9,6 @@ import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
 import { deleteComposerDraft, draftTurnConfigurationSchema, readComposerDraft } from '../database'
 import { type LiveSessionSupervisorActor, SessionSubmitRejectedError } from '../live'
-import type { SessionRenameContext } from './session-rename'
 
 const t = initTRPC.create()
 const commandSchema = z.strictObject({
@@ -46,7 +45,7 @@ export type SessionStartInput = z.infer<typeof sessionStartInputSchema>
 export type SessionSendInput = z.infer<typeof sessionSendInputSchema>
 export type SessionLiveInput = SessionStartInput | SessionSendInput
 type SessionSubmitInput = z.infer<typeof inputSchema>
-export type SessionProcedureContext = SessionRenameContext & {
+export type SessionProcedureContext = {
   database: Database
   supervisor: LiveSessionSupervisorActor
   ensureManagedWorkspace: (

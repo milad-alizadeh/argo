@@ -1,4 +1,4 @@
-import type { SessionShellCommand } from '@/domains/sessions/api/session-shell-command'
+import type { SessionShellCommand } from '../types'
 import type { SessionShellOutput } from '../work'
 
 // A Shell selection is meaningful only once its adapter supplied a terminal to reveal (#2530).

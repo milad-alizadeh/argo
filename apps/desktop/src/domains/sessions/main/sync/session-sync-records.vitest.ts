@@ -1,42 +1,39 @@
 import assert from 'node:assert/strict'
-import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
 import { createActor, fromPromise, waitFor } from 'xstate'
-import { databaseFrom } from '@/database/database'
 import type {
   SessionSummaryList,
   SessionSummaryListResult,
 } from '@/domains/sessions/api/session-discovery'
+import {
+  insertProject,
+  insertWorkspace,
+  migratedDatabase,
+} from '@/mocks/database/migrated-database'
 import { sessionSyncMachine } from './session-sync-machine'
 import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
 
 const ID = '00000000-0000-4000-8000-000000000001'
 
 function createDatabase() {
-  const client = new DatabaseSync(':memory:')
-  client.exec(`CREATE TABLE project (id TEXT PRIMARY KEY, path TEXT NOT NULL, common_directory TEXT NOT NULL, created_at INTEGER, updated_at INTEGER);
-    CREATE TABLE workspace (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, kind TEXT NOT NULL, display_name TEXT NOT NULL, path TEXT NOT NULL, created_at INTEGER, updated_at INTEGER);
-    CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, workspace_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, activity_at INTEGER, list_order_at INTEGER NOT NULL DEFAULT 0, activity TEXT, created_at INTEGER NOT NULL DEFAULT 1, updated_at INTEGER NOT NULL DEFAULT 1);
-    CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);`)
-  client.exec("INSERT INTO project VALUES ('project-1', '/repo', '/repo/.git', 1, 1);")
-  client.exec(
-    "INSERT INTO workspace VALUES ('workspace-1', 'project-1', 'imported', 'feature', '/repo/worktree', 1, 1);",
-  )
-  return { client, database: databaseFrom(client) }
+  const database = migratedDatabase()
+  insertProject(database, 'project-1', '/repo')
+  insertWorkspace(database, 'workspace-1', 'project-1')
+  return { client: database.$client, database }
 }
 
 test('matches cwd to the deepest registered Project root and keeps sparse metadata', () => {
   const { client, database } = createDatabase()
   try {
     const records = matchSessionsToProjects(database, [
-      { nativeId: ID, preview: 'Summary', activityAt: 1, cwd: '/repo/worktree/src' },
+      { nativeId: ID, preview: 'Summary', activityAt: 1, cwd: '/repo/project-1/workspace-1/src' },
     ])
     assert.deepEqual(records, [
       {
         nativeId: ID,
         activityAt: 1,
         preview: 'Summary',
-        cwd: '/repo/worktree/src',
+        cwd: '/repo/project-1/workspace-1/src',
         projectId: 'project-1',
         workspaceId: 'workspace-1',
       },
@@ -64,6 +61,22 @@ test('saves the supplied batch', () => {
     }))
     saveSessionBatch(database, 'claude', records)
     assert.equal(client.prepare('SELECT count(*) AS count FROM session').get()?.count, 51)
+  } finally {
+    client.close()
+  }
+})
+
+test('returns the Argo ID of each saved record, keeping it on a second save', () => {
+  const { client, database } = createDatabase()
+  try {
+    const first = saveSessionBatch(database, 'claude', [{ nativeId: 'one' }, { nativeId: 'two' }])
+    const again = saveSessionBatch(database, 'claude', [{ nativeId: 'two' }])
+    const stored = client
+      .prepare('SELECT argo_id FROM session ORDER BY native_id')
+      .all()
+      .map((row) => row.argo_id)
+    assert.deepEqual(first, stored)
+    assert.deepEqual(again, [stored[1]])
   } finally {
     client.close()
   }

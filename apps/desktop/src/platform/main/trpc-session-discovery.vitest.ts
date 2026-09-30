@@ -1,37 +1,32 @@
-import { mkdtemp, rm } from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { createActor } from 'xstate'
-import { type Database, databaseMigrationsFolder, openDatabase } from '@/database/database'
+import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import type {
   SessionSummaryList,
   SessionSummaryReader,
 } from '@/domains/sessions/api/session-discovery'
-import { SessionSyncStatusStore } from '@/domains/sessions/main/session-sync-status'
+import { SessionListChanges } from '@/domains/sessions/main/api'
 import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync'
 import type { Harness } from '@/harnesses/harness'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { sessionRouterDependencies } from '@/mocks/sessions/session-router-dependencies.fixture'
 import { createAppRouter } from './trpc-router'
 
-let userData: string
 let database: Database
 
-beforeEach(async () => {
+beforeEach(() => {
   vi.useFakeTimers()
-  userData = await mkdtemp(path.join(os.tmpdir(), 'argo-session-discovery-'))
-  database = openDatabase(userData, { migrationsFolder: databaseMigrationsFolder() })
+  database = migratedDatabase()
   database
     .insert(project)
     .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
     .run()
 })
 
-afterEach(async () => {
+afterEach(() => {
   vi.useRealTimers()
   database.$client.close()
-  await rm(userData, { recursive: true, force: true })
 })
 
 const record = (nativeId: string) => ({ nativeId, cwd: '/work/one', activityAt: 1 })
@@ -54,25 +49,20 @@ function startSync(registrations: Partial<Record<Harness, Registration>>, readHi
       },
     ]),
   )
+  const changes = new SessionListChanges()
   const actor = createActor(sessionSyncSupervisorMachine, {
     input: {
       database,
+      changes,
       harnesses,
-      status: {
-        claude: new SessionSyncStatusStore(database, 'claude'),
-        codex: new SessionSyncStatusStore(database, 'codex'),
-      },
     },
   }).start()
-  const router = createAppRouter(sessionRouterDependencies(database))
+  const router = createAppRouter(sessionRouterDependencies(database, { changes }))
   return { actor, readHistory, router }
 }
 
-async function listUpdates(router: ReturnType<typeof startSync>['router']) {
-  const updates: Array<{ type: string; rows?: Array<{ subagents?: unknown }> }> = []
-  const stream = await router.createCaller({}).sessionList({ projectId: 'project-1', pageSize: 30 })
-  stream.subscribe({ next: (update) => updates.push(update) }).unsubscribe()
-  return updates
+function readList(router: ReturnType<typeof startSync>['router']) {
+  return router.createCaller({}).sessionList({ projectId: 'project-1' })
 }
 
 test.each(['claude', 'codex'] as const)(
@@ -92,7 +82,7 @@ test.each(['claude', 'codex'] as const)(
     try {
       actor.send({ type: 'Discover', harness, nativeId: 'new-session' })
       await vi.advanceTimersByTimeAsync(0)
-      expect((await listUpdates(router))[0]).toMatchObject({ type: 'list', total: 1 })
+      expect(await readList(router)).toMatchObject({ total: 1 })
       expect(requested).toEqual(['new-session'])
       expect(listSessionSummaries).not.toHaveBeenCalled()
     } finally {
@@ -138,7 +128,7 @@ test('retries with a growing delay until the Harness lists the Session', async (
     const gaps = attemptTimes.slice(1).map((time, index) => time - (attemptTimes[index] ?? 0))
     expect(attemptTimes).toHaveLength(3)
     expect(gaps[1]).toBeGreaterThan(gaps[0] ?? Number.POSITIVE_INFINITY)
-    expect((await listUpdates(router))[0]).toMatchObject({ total: 1 })
+    expect(await readList(router)).toMatchObject({ total: 1 })
   } finally {
     actor.stop()
   }
@@ -176,10 +166,10 @@ test('a full sync reads no history and stores no Subagents', async () => {
   try {
     actor.send({ type: 'Refresh' })
     await vi.advanceTimersByTimeAsync(1_000)
-    const updates = await listUpdates(router)
-    expect(updates[0]).toMatchObject({ type: 'list', total: 1 })
+    const list = await readList(router)
+    expect(list).toMatchObject({ total: 1 })
     expect(readHistory).not.toHaveBeenCalled()
-    expect(updates[0]?.rows?.[0]?.subagents).toEqual([])
+    expect(list.rows[0]?.subagents).toEqual([])
   } finally {
     actor.stop()
   }

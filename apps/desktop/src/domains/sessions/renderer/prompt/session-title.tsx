@@ -1,5 +1,5 @@
+import { harnessOrDefault } from '@/harnesses/harness'
 import { SessionReferenceText } from '../composer/references'
-import { sessionHarnessOf } from '../harness'
 import type { Session } from '../types'
 import { PromptText } from './prompt-text'
 
@@ -14,7 +14,7 @@ export function SessionTitle({
     <PromptText
       interactiveLinks={false}
       renderText={(value) => (
-        <SessionReferenceText harness={sessionHarnessOf(session)} text={value} />
+        <SessionReferenceText harness={harnessOrDefault(session.harness)} text={value} />
       )}
       text={text}
     />

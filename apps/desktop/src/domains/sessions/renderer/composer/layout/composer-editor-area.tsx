@@ -1,7 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 import type { RefObject } from 'react'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
-import type { SessionHarness } from '../../harness'
+import type { Harness } from '@/harnesses/harness'
 import { ComposerEditor } from '../editor/session-composer-editor'
 import { ComposerAttachments } from './composer-attachments'
 
@@ -19,7 +19,7 @@ export function ComposerEditorArea({
   commands: ComposerCommandListing
   contextPickerOpen: boolean
   disabled: boolean
-  harness: SessionHarness | null
+  harness: Harness | null
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
   onFocusAfterMount?: () => void

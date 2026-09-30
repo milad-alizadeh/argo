@@ -68,7 +68,14 @@ export function useProjects(): [Cockpit, ProjectActions] {
     ...trpc.projectOpen.queryOptions(projectId ?? ''),
     enabled: projectId !== undefined,
   })
-  const mutationOptions = { onSuccess: () => queryClient.invalidateQueries(), onError: () => {} }
+  // The reads a Project change moves; Session reads follow main's change signal instead.
+  const onSuccess = () =>
+    Promise.all(
+      [trpc.projectList, trpc.projectOpen, trpc.workspaceList].map((procedure) =>
+        queryClient.invalidateQueries({ queryKey: procedure.pathKey() }),
+      ),
+    )
+  const mutationOptions = { onSuccess, onError: () => {} }
   const register = useMutation({ ...trpc.projectRegister.mutationOptions(), ...mutationOptions })
   const relocate = useMutation({ ...trpc.projectRelocate.mutationOptions(), ...mutationOptions })
 

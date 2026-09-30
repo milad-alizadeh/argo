@@ -22,7 +22,7 @@ import {
 } from '../composer'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import type { HarnessControl } from '../harness'
-import type { Session } from '../types'
+import type { Session, SessionExtras } from '../types'
 import { draftTarget } from './session-draft-target'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
 import { useSessionDetails } from './use-session-details'
@@ -31,7 +31,7 @@ type SessionScreenDetailsProps = {
   permission: ReturnType<typeof import('../composer').useSessionPermission>
   questionPending: boolean
   liveStatus: ReturnType<typeof import('../feed').useFeedReading>['liveStatus']
-  session: Session | null
+  session: (Session & SessionExtras) | null
   harness: HarnessControl
   selectedSessionId: string | null
   // Whether the selected Session's details have been read, so its composer can open on them.
@@ -66,7 +66,7 @@ function catalogFailureOf(
 function sessionComposerConfiguration(input: {
   selectedSessionId: string | null
   projectId: string | null
-  session: Session | null
+  session: (Session & SessionExtras) | null
   sessionLoaded: boolean
   catalogResult: CatalogReadResult | undefined
   catalogFailed: boolean
@@ -230,11 +230,10 @@ export function SessionComposerArea({
 }: SessionScreenDetailsProps) {
   const { catalogQuery, refreshCatalog } = useCatalogRead(harness)
   const location = useLocation()
-  const { projectId: routeProjectId } = useParams()
   const { catalogFailure, choices, initialTurnConfiguration, identity } =
     sessionComposerConfiguration({
       selectedSessionId,
-      projectId: cockpit.project?.id ?? routeProjectId ?? null,
+      projectId: cockpit.project?.id ?? null,
       session,
       sessionLoaded,
       catalogResult: catalogQuery.data,
@@ -411,7 +410,7 @@ function useComposerFailures(input: {
     })
 }
 
-// A handoff names its other Session by ID, which the roster need not have loaded.
+// A handoff names its other Session by ID, which the Session list need not have loaded.
 function HandoffLink({
   label,
   sessionId,
@@ -431,7 +430,7 @@ function HandoffLink({
         onClick={() => onNavigate(`/projects/${projectId}/sessions/${sessionId}`)}
         type="button"
       >
-        {session?.title?.text ?? sessionId}
+        {session === null ? sessionId : session.name}
       </button>
     </p>
   )

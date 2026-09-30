@@ -40,7 +40,7 @@ export type CreateRequest = {
 type CreatedRow = { id: string; label: string; matchingRows: number }
 
 // A Session route sits under its Project: `#/projects/<id>/sessions/<route>`, and keeps the
-// Roster filter's query (`?status=all`) after it.
+// Session List filter's query (`?status=all`) after it.
 async function waitForRoute(page: Page, route: string) {
   await page.waitForFunction((tail) => {
     const routed = window.location.hash.split('?')[0]
@@ -56,7 +56,7 @@ async function waitForNewSessionRoute(page: Page) {
   )
 }
 
-// Opening a Session is a click on its Roster row, the way a person opens one.
+// Opening a Session is a click on its Session List row, the way a person opens one.
 export async function openSessionByClick(page: Page, sessionId: string) {
   await page.locator(`${ROW}[data-session-id="${sessionId}"]`).click()
   await waitForRoute(page, sessionId)
@@ -66,7 +66,7 @@ export function visibleArchiveMenuItem(page: Page) {
   return page.locator('[role="menuitem"]:visible').filter({ hasText: 'Archive' })
 }
 
-// Sessions a Harness wrote after launch reach the Roster when the reader asks for a refresh.
+// Sessions a Harness wrote after launch reach the Session List when the reader asks for a refresh.
 export async function refreshSessions(page: Page) {
   await page.locator(FILTER).click()
   await page.getByRole('menuitem', { name: 'Refresh Sessions' }).click()
@@ -74,7 +74,7 @@ export async function refreshSessions(page: Page) {
   await expect(page.getByRole('progressbar', { name: 'Session refresh progress' })).toHaveCount(0)
 }
 
-// The plus control above the Roster: the only way to the new Session composer.
+// The plus control above the Session List: the only way to the new Session composer.
 export async function openNewSessionByClick(page: Page) {
   await page.getByRole('button', { name: 'New Session', exact: true }).click()
   await waitForNewSessionRoute(page)
@@ -86,7 +86,7 @@ export async function sessionRoute(page: Page, sessionId: string | null) {
   return `#/projects/${projectId}/sessions${sessionId === null ? '' : `/${sessionId}`}`
 }
 
-// No affordance reaches the Roster with nothing selected: a person lands there by launching, and
+// No affordance reaches the Session List with nothing selected: a person lands there by launching, and
 // several cases need that state mid-run.
 export async function deselectSession(page: Page) {
   const route = await sessionRoute(page, null)
@@ -140,9 +140,9 @@ async function chooseAutoPermissionMode(page: Page) {
   await expect(mode).toContainText('Auto')
 }
 
-// The Roster ids the shipped app answers with. Reading is an assertion, not a gesture: nothing a
+// The Session List ids the shipped app answers with. Reading is an assertion, not a gesture: nothing a
 // person does is injected here.
-export async function rosterIds(page: Page): Promise<string[]> {
+export async function sessionListIds(page: Page): Promise<string[]> {
   const rows = await sessionRows(page)
   return rows.map(({ id }) => id)
 }
@@ -201,7 +201,7 @@ export async function sendFromComposer(page: Page, text: string) {
 // Clicks the plus control, picks the harness, types the prompt and sends it, then answers with the
 // id of the Session that gesture made.
 export async function createSessionByClick(page: Page, request: CreateRequest): Promise<string> {
-  const known = await rosterIds(page)
+  const known = await sessionListIds(page)
   await openNewSessionByClick(page)
   await chooseHarness(page, request.harness)
   if (request.budgetTurnConfiguration === true)

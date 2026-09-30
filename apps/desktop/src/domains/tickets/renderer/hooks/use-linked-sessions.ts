@@ -1,17 +1,19 @@
 // Every Session linked to one Ticket (CONTEXT.md L1 · Session → Ticket), most recently linked
-// first, read here from the Session list through its generated tRPC query.
-import { useSessionList } from '@/domains/sessions/renderer'
+// first, as the Session List reads them.
+import { useEffect } from 'react'
+import { type Session, useSessionListQuery } from '@/domains/sessions/renderer'
 
-export type LinkedSession = { id: string; title: string }
-
-export function useLinkedSessions(projectId: string | null, key: string | null): LinkedSession[] {
-  const { sessionList } = useSessionList({
-    enabled: key !== null,
-    projectId,
-  })
-  if (projectId === null || key === null || sessionList === null) return []
-  return sessionList.sessions
-    .filter((session) => session.ticket?.projectId === projectId && session.ticket.key === key)
-    .sort((a, b) => (b.ticket?.createdAt ?? '').localeCompare(a.ticket?.createdAt ?? ''))
-    .map((session) => ({ id: session.id, title: session.title?.text ?? session.id }))
+export function useLinkedSessions(projectId: string | null, key: string | null): Session[] {
+  const { data, isPlaceholderData, hasNextPage, isFetchingNextPage, fetchNextPage } =
+    useSessionListQuery(
+      { projectId: projectId ?? '', filter: 'all', search: '', ticketKey: key ?? undefined },
+      projectId !== null && key !== null,
+    )
+  // The detail lists every linked Session, so it reads page after page to the end.
+  useEffect(() => {
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage()
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage])
+  // The previous Ticket's Sessions are a placeholder, never this Ticket's.
+  if (projectId === null || key === null || data === undefined || isPlaceholderData) return []
+  return data.pages.flatMap((page) => page.rows)
 }

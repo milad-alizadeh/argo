@@ -297,33 +297,30 @@ function sqlMeasurements(userData: string) {
     session.custom_title, session.preview, session.first_prompt, session.cwd,
     session.workspace_id, session.activity_at, session.updated_at,
     session_ticket_link.project_id, session_ticket_link.ticket_key,
-    session_ticket_link.title, session_ticket_link.state, session_ticket_link.created_at`
+    ticket_content.title, ticket_content.state, session_ticket_link.created_at`
+  // The corpus has one Ticket scope, so the key alone finds the linked Ticket.
   const listFrom = `FROM session LEFT JOIN session_ticket_link
-    ON session_ticket_link.session_id = session.argo_id`
-  const browse = `SELECT ${listColumns} ${listFrom} WHERE session.project_id = ? AND NOT EXISTS
-    (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)
-    ORDER BY coalesce(session.activity_at, session.updated_at) DESC, session.argo_id ASC LIMIT 30`
-  const search = `SELECT ${listColumns} ${listFrom} WHERE session.project_id = ? AND NOT EXISTS
-    (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)
-    AND (instr(lower(coalesce(session.custom_title, '')), lower(?)) > 0
-      OR instr(lower(coalesce(session.preview, '')), lower(?)) > 0)
-    ORDER BY coalesce(session.activity_at, session.updated_at) DESC, session.argo_id ASC LIMIT 30`
-  const count = `SELECT count(*) FROM session WHERE project_id = ? AND NOT EXISTS
+    ON session_ticket_link.session_id = session.argo_id
+    LEFT JOIN ticket_content ON ticket_content.ticket_id = (SELECT keyed.ticket_id
+      FROM ticket_content AS keyed WHERE keyed.key = session_ticket_link.ticket_key LIMIT 1)`
+  const inProject = 'session.project_id = ?'
+  const archived = `EXISTS
     (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)`
-  const archive = `SELECT session_id FROM session_archive`
-  const archivedIds = database
-    .prepare(archive)
-    .all()
-    .map((row) => String(row.session_id))
-  const archiveRows = `SELECT session.argo_id FROM session LEFT JOIN session_ticket_link
-    ON session_ticket_link.session_id = session.argo_id WHERE session.project_id = ?
-    AND session.argo_id IN (${archivedIds.map(() => '?').join(',')})`
+  const active = `${inProject} AND NOT ${archived}`
+  const matching = `instr(lower(coalesce(session.custom_title, ticket_content.title,
+      session.preview, session.first_prompt, '')), lower(?)) > 0`
+  const listOrder = `ORDER BY session.sort_order ASC, session.created_at DESC, session.argo_id ASC
+    LIMIT 30 OFFSET 0`
+  const browse = `SELECT ${listColumns} ${listFrom} WHERE ${active} ${listOrder}`
+  const search = `SELECT ${listColumns} ${listFrom} WHERE ${active} AND ${matching} ${listOrder}`
+  const archive = `SELECT ${listColumns} ${listFrom} WHERE ${inProject} AND ${archived} ${listOrder}`
+  const count = `SELECT count(*) FROM session WHERE ${active}`
   const queries = [
     { name: 'browse', sql: browse, arguments: [PROJECT_ID] },
-    { name: 'search', sql: search, arguments: [PROJECT_ID, 'Needle', 'Needle'] },
+    { name: 'search', sql: search, arguments: [PROJECT_ID, 'Needle'] },
+    { name: 'search broad', sql: search, arguments: [PROJECT_ID, 'Session'] },
     { name: 'count', sql: count, arguments: [PROJECT_ID] },
-    { name: 'archive', sql: archive, arguments: [] },
-    { name: 'archive rows', sql: archiveRows, arguments: [PROJECT_ID, ...archivedIds] },
+    { name: 'archive', sql: archive, arguments: [PROJECT_ID] },
   ]
   const measurements = queries.map((query) => {
     const statement = database.prepare(query.sql)

@@ -1,23 +1,26 @@
 import {
+  type ActorRefFrom,
   assertEvent,
   createActor,
   enqueueActions,
   fromCallback,
   fromPromise,
   type SnapshotFrom,
-  sendTo,
   setup,
   stopChild,
 } from 'xstate'
 import type { Database } from '@/database/database'
 import type {
+  SessionSummary,
   SessionSummaryList,
   SessionSummaryReader,
 } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
+import type { SessionListChanges } from '../api'
 import {
   type SessionSyncStatus,
-  type SessionSyncStatusStore,
+  saveCompletedSyncStatus,
+  savedSyncStatus,
   sessionSyncStatusSchema,
 } from '../session-sync-status'
 import { sessionSyncMachine } from './session-sync-machine'
@@ -35,12 +38,14 @@ type RegisteredHarnesses = Partial<
 
 export type SessionSyncActorInput = {
   database: Database
+  changes: SessionListChanges
   harness: Harness
   listSessionSummaries: SessionSummaryList
 }
 
 type SessionDiscoverActorInput = {
   database: Database
+  changes: SessionListChanges
   harness: Harness
   nativeId: string
   getSessionSummary: SessionSummaryReader
@@ -54,15 +59,11 @@ const DISCOVERY_RETRY_DELAYS_MS = [
   13_500,
 ]
 
-type SessionSyncEvent =
+type SyncActorEvent =
   | {
       type: 'SyncStatus'
       harness: Harness
       status: SessionSyncStatus
-    }
-  | {
-      type: 'SyncCommitted'
-      harness: Harness
     }
   | {
       type: 'SyncCompleted'
@@ -72,6 +73,14 @@ type SessionSyncEvent =
       type: 'SyncFailed'
       harness: Harness
     }
+
+// Saves Harness summaries under their matched Projects, and announces the Sessions they touched.
+function saveSummaries(
+  { database, changes, harness }: Pick<SessionSyncActorInput, 'database' | 'changes' | 'harness'>,
+  summaries: readonly SessionSummary[],
+): void {
+  changes.changed(saveSessionBatch(database, harness, matchSessionsToProjects(database, summaries)))
+}
 
 function discoveryKey({ harness, nativeId }: { harness: Harness; nativeId: string }): string {
   return `${harness}:${nativeId}`
@@ -110,18 +119,14 @@ const sessionSyncActor = fromCallback<
     type: 'Stop'
   },
   SessionSyncActorInput,
-  SessionSyncEvent
+  SyncActorEvent
 >(({ input, sendBack }) => {
   const { database, harness, listSessionSummaries } = input
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
         save: fromPromise(async ({ input: saveInput }) => {
-          saveSessionBatch(database, harness, matchSessionsToProjects(database, saveInput.records))
-          sendBack({
-            type: 'SyncCommitted',
-            harness,
-          })
+          saveSummaries(input, saveInput.records)
         }),
       },
     }),
@@ -173,15 +178,9 @@ const sessionDiscoverActor = fromCallback<
     type: 'Stop'
   },
   SessionDiscoverActorInput,
-  | Extract<
-      SessionSyncEvent,
-      {
-        type: 'SyncCommitted'
-      }
-    >
-  | DiscoverFinished
+  DiscoverFinished
 >(({ input, sendBack }) => {
-  const { database, harness, nativeId, getSessionSummary } = input
+  const { harness, nativeId, getSessionSummary } = input
   let stopped = false
   let timer: ReturnType<typeof setTimeout> | undefined
   const attempt = async (retry: number): Promise<void> => {
@@ -190,17 +189,9 @@ const sessionDiscoverActor = fromCallback<
       const summary = await getSessionSummary(nativeId)
       if (stopped) return
       if (summary !== null) {
-        saveSessionBatch(
-          database,
-          harness,
-          matchSessionsToProjects(database, [
-            summary,
-          ]),
-        )
-        sendBack({
-          type: 'SyncCommitted',
-          harness,
-        })
+        saveSummaries(input, [
+          summary,
+        ])
         stored = true
       }
     } catch (error) {
@@ -223,41 +214,13 @@ const sessionDiscoverActor = fromCallback<
   }
 })
 
-const sessionSyncStatusActor = fromCallback<
-  | {
-      type: 'Update'
-      harness: Harness
-      status: SessionSyncStatus
-    }
-  | {
-      type: 'Committed'
-      harness: Harness
-    },
-  Partial<Record<Harness, SessionSyncStatusStore>>
->(({ input, receive }) => {
-  receive((event) => {
-    switch (event.type) {
-      case 'Update':
-        input[event.harness]?.update(event.status)
-        break
-      case 'Committed':
-        input[event.harness]?.committed()
-        break
-    }
-  })
-})
-
 type SupervisorInput = {
   database: Database
+  changes: SessionListChanges
   harnesses: RegisteredHarnesses
-  status: Partial<Record<Harness, SessionSyncStatusStore>>
 }
 
 type SupervisorEvent =
-  | {
-      type: 'xstate.init'
-      input: SupervisorInput
-    }
   | SessionSyncSupervisorCommand
   | DiscoverFinished
   | {
@@ -267,9 +230,9 @@ type SupervisorEvent =
       type: 'ReplayRefresh'
       harness: Harness
     }
-  | SessionSyncEvent
+  | SyncActorEvent
 
-export type SessionSyncSupervisorCommand =
+type SessionSyncSupervisorCommand =
   | {
       type: 'Refresh'
     }
@@ -284,19 +247,21 @@ export const sessionSyncSupervisorMachine = setup({
     input: {} as SupervisorInput,
     context: {} as {
       database: Database
+      changes: SessionListChanges
       active: Partial<Record<Harness, true>>
       // A Refresh that found a Harness still syncing, run again once it finishes.
       pending: Partial<Record<Harness, true>>
       // New-Session lookups in flight, by `<harness>:<nativeId>`.
       discovering: Record<string, true>
       harnesses: RegisteredHarnesses
+      // Each Harness's scan progress; a completed scan is also saved to survive a restart.
+      status: Partial<Record<Harness, SessionSyncStatus>>
     },
     events: {} as SupervisorEvent,
   },
   actors: {
     sync: sessionSyncActor,
     discover: sessionDiscoverActor,
-    status: sessionSyncStatusActor,
   },
   actions: {
     dispatchSyncs: enqueueActions(({ context, event, enqueue }) => {
@@ -322,6 +287,7 @@ export const sessionSyncSupervisorMachine = setup({
           id: `session-sync-${harness}`,
           input: {
             database: context.database,
+            changes: context.changes,
             harness,
             listSessionSummaries: registration.listSessionSummaries,
           },
@@ -343,6 +309,7 @@ export const sessionSyncSupervisorMachine = setup({
         id: `session-discover-${key}`,
         input: {
           database: context.database,
+          changes: context.changes,
           harness: event.harness,
           nativeId: event.nativeId,
           getSessionSummary: registration.getSessionSummary,
@@ -385,20 +352,23 @@ export const sessionSyncSupervisorMachine = setup({
           harness: event.harness,
         })
     }),
-    reportStatus: sendTo('status', ({ event }) => {
+    recordStatus: enqueueActions(({ context, event, enqueue }) => {
       assertEvent(event, 'SyncStatus')
-      return {
-        type: 'Update',
-        harness: event.harness,
-        status: event.status,
-      }
-    }),
-    reportCommit: sendTo('status', ({ event }) => {
-      assertEvent(event, 'SyncCommitted')
-      return {
-        type: 'Committed',
-        harness: event.harness,
-      }
+      const status = sessionSyncStatusSchema.parse({
+        ...event.status,
+        lastSuccessfulSyncAt:
+          event.status.lastSuccessfulSyncAt ??
+          context.status[event.harness]?.lastSuccessfulSyncAt ??
+          null,
+      })
+      if (status.phase === 'ready' || status.phase === 'failed')
+        enqueue(() => saveCompletedSyncStatus(context.database, event.harness, status))
+      enqueue.assign({
+        status: ({ context: current }) => ({
+          ...current.status,
+          [event.harness]: status,
+        }),
+      })
     }),
   },
 }).createMachine({
@@ -406,19 +376,18 @@ export const sessionSyncSupervisorMachine = setup({
   initial: 'Running',
   context: ({ input }) => ({
     database: input.database,
+    changes: input.changes,
     active: {},
     pending: {},
     discovering: {},
     harnesses: input.harnesses,
+    status: Object.fromEntries(
+      Object.keys(input.harnesses).map((harness) => [
+        harness,
+        savedSyncStatus(input.database, harness),
+      ]),
+    ),
   }),
-  invoke: {
-    id: 'status',
-    src: 'status',
-    input: ({ event }) => {
-      assertEvent(event, 'xstate.init')
-      return event.input.status
-    },
-  },
   states: {
     Running: {
       on: {
@@ -435,10 +404,7 @@ export const sessionSyncSupervisorMachine = setup({
           actions: 'dispatchSyncs',
         },
         SyncStatus: {
-          actions: 'reportStatus',
-        },
-        SyncCommitted: {
-          actions: 'reportCommit',
+          actions: 'recordStatus',
         },
         SyncCompleted: {
           actions: 'releaseSync',
@@ -454,3 +420,5 @@ export const sessionSyncSupervisorMachine = setup({
     },
   },
 })
+
+export type SessionSyncSupervisorActor = ActorRefFrom<typeof sessionSyncSupervisorMachine>

@@ -1,109 +1,51 @@
-import { mkdtemp, rm } from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
 import type { inferRouterOutputs } from '@trpc/server'
-import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, expect, test } from 'vitest'
-import { type Database, databaseMigrationsFolder, openDatabase } from '@/database/database'
-import { project } from '@/database/project/schema'
-import { sessionTable } from '@/database/session/schema'
-import { sessionArchive } from '@/database/session-archive/schema'
-import { SessionActivities, SessionRosterChanges } from '@/domains/sessions/main/api'
-import { recordLiveSubagents } from '@/domains/sessions/main/database'
-import { saveSessionBatch } from '@/domains/sessions/main/sync'
+import type { Database } from '@/database/database'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
+import { insertSession } from '@/mocks/sessions/session-list-caller'
 import { sessionRouterDependencies } from '@/mocks/sessions/session-router-dependencies.fixture'
 import { type AppRouter, type AppRouterDependencies, createAppRouter } from './trpc-router'
 
-let userData: string
 let database: Database
 
 function routerDependencies(
-  sessions: Partial<AppRouterDependencies['sessions']> = {},
+  sessions: Parameters<typeof sessionRouterDependencies>[1] = {},
 ): AppRouterDependencies {
   return sessionRouterDependencies(database, sessions)
 }
 
-async function firstRosterUpdates() {
-  const updates: inferRouterOutputs<AppRouter>['sessionList'][] = []
-  const stream = await createAppRouter(routerDependencies())
+function firstPage() {
+  return createAppRouter(routerDependencies())
     .createCaller({})
-    .sessionList({ projectId: 'project-1', pageSize: 30 })
-  stream.subscribe({ next: (update) => updates.push(update) }).unsubscribe()
-  return updates
+    .sessionList({ projectId: 'project-1' })
 }
 
-beforeEach(async () => {
-  userData = await mkdtemp(path.join(os.tmpdir(), 'argo-session-router-'))
-  database = openDatabase(userData, { migrationsFolder: databaseMigrationsFolder() })
+beforeEach(() => {
+  database = migratedDatabase()
 })
 
-afterEach(async () => {
+afterEach(() => {
   database.$client.close()
-  await rm(userData, { recursive: true, force: true })
-})
-
-test('registers the Session roster subscription on the global router', async () => {
-  database
-    .insert(project)
-    .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
-    .run()
-  database
-    .insert(sessionTable)
-    .values({
-      argoId: '00000000-0000-4000-8000-000000000001',
-      harness: 'claude',
-      nativeId: 'native-1',
-      projectId: 'project-1',
-      firstPrompt: 'Open the saved Session',
-    })
-    .run()
-  const updates = await firstRosterUpdates()
-  expect(updates[0]).toMatchObject({
-    type: 'list',
-    pages: 1,
-    pageSize: 30,
-    total: 1,
-    rows: [
-      {
-        id: '00000000-0000-4000-8000-000000000001',
-        harness: 'claude',
-        title: { text: 'Open the saved Session', source: 'first-prompt' },
-      },
-    ],
-  })
 })
 
 function insertActivitySessions(ids: readonly string[]) {
   for (const [index, id] of ids.entries())
-    database
-      .insert(sessionTable)
-      .values({
-        argoId: id,
-        harness: 'claude',
-        nativeId: `native-${index}`,
-        projectId: 'project-1',
-        firstPrompt: `Session ${index}`,
-        listOrderAt: index + 1,
-      })
-      .run()
+    insertSession(database, {
+      id,
+      nativeId: `native-${index}`,
+      firstPrompt: `Session ${index}`,
+      createdAt: index + 1,
+    })
 }
 
-test('keeps both roster activities when the selected Feed changes', async () => {
-  database
-    .insert(project)
-    .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
-    .run()
+test('keeps both Session List activities when the selected Feed changes', async () => {
   const ids = [
     '00000000-0000-4000-8000-000000000001',
     '00000000-0000-4000-8000-000000000002',
   ] as const
   insertActivitySessions(ids)
-  const roster = new SessionRosterChanges()
-  const activities = new SessionActivities(database, () => roster.changed())
   const caller = createAppRouter(
     routerDependencies({
-      roster,
-      activities,
       readHistory: async (_harness, target) => [
         { kind: 'message', id: 'prompt', role: 'user', text: 'Go' },
         {
@@ -119,9 +61,9 @@ test('keeps both roster activities when the selected Feed changes', async () => 
       ],
     }),
   ).createCaller({})
-  const updates: inferRouterOutputs<AppRouter>['sessionList'][] = []
-  const rosterStream = await caller.sessionList({ projectId: 'project-1' })
-  const rosterSubscription = rosterStream.subscribe({ next: (update) => updates.push(update) })
+  const changes: inferRouterOutputs<AppRouter>['sessionListChanged'][] = []
+  const changeStream = await caller.sessionListChanged()
+  const changeSubscription = changeStream.subscribe({ next: (change) => changes.push(change) })
   const firstStream = await caller.sessionFeed({ sessionId: ids[0] })
   const firstSubscription = firstStream.subscribe({ next: () => {} })
   const secondStream = await caller.sessionFeed({ sessionId: ids[1] })
@@ -130,233 +72,11 @@ test('keeps both roster activities when the selected Feed changes', async () => 
     await new Promise((resolve) => setImmediate(resolve))
     firstSubscription.unsubscribe()
     await new Promise((resolve) => setImmediate(resolve))
-    expect(ids.map((id) => activities.activityOf(id)?.label)).toEqual([
-      'Ran native-0',
-      'Ran native-1',
-    ])
-    expect(
-      new Set(
-        updates
-          .filter((update) => update.type === 'row')
-          .map((update) => update.row.activity?.label),
-      ),
-    ).toEqual(new Set(['Ran native-0', 'Ran native-1']))
+    const { rows } = await firstPage()
+    expect(rows.map((row) => row.activity?.label)).toEqual(['Ran native-1', 'Ran native-0'])
+    expect(new Set(changes.flatMap(({ sessionIds }) => sessionIds))).toEqual(new Set(ids))
   } finally {
     secondSubscription.unsubscribe()
-    rosterSubscription.unsubscribe()
+    changeSubscription.unsubscribe()
   }
-})
-
-test('lists the Subagents a watched Session named', async () => {
-  database
-    .insert(project)
-    .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
-    .run()
-  saveSessionBatch(database, 'codex', [
-    { nativeId: 'native-2', projectId: 'project-1', cwd: '/work/one', activityAt: 1 },
-  ])
-  recordLiveSubagents(database, {
-    harness: 'codex',
-    nativeId: 'native-2',
-    events: [
-      {
-        type: 'content',
-        commandId: null,
-        turnId: null,
-        vendorEventId: null,
-        content: {
-          kind: 'delegation',
-          id: 'call-1',
-          event: 'started',
-          agentId: 'agent-1',
-          status: 'running',
-          name: 'Survey',
-          prompt: null,
-          model: null,
-          summary: null,
-        },
-      },
-    ],
-  })
-
-  const updates = await firstRosterUpdates()
-
-  expect(updates[0]?.type === 'list' && updates[0].rows[0]?.subagents).toEqual([
-    { id: 'agent-1', label: 'Survey', state: 'running', startedAt: null, endedAt: null },
-  ])
-})
-
-test('renames a saved Session through sessionRename after the Harness accepts it', async () => {
-  database
-    .insert(sessionTable)
-    .values({
-      argoId: '00000000-0000-4000-8000-000000000002',
-      harness: 'claude',
-      nativeId: 'native-rename',
-      customTitle: 'Before',
-    })
-    .run()
-  const renamed: unknown[] = []
-  const dependencies = routerDependencies({
-    rename: async (request) => {
-      renamed.push(request)
-    },
-  })
-
-  await expect(
-    createAppRouter(dependencies).createCaller({}).sessionRename({
-      sessionId: '00000000-0000-4000-8000-000000000002',
-      title: 'Confirmed title',
-    }),
-  ).resolves.toEqual({ title: 'Confirmed title' })
-  expect(renamed).toEqual([
-    {
-      harness: 'claude',
-      nativeId: 'native-rename',
-      title: 'Confirmed title',
-    },
-  ])
-  expect(
-    database
-      .select({ customTitle: sessionTable.customTitle })
-      .from(sessionTable)
-      .where(eq(sessionTable.argoId, '00000000-0000-4000-8000-000000000002'))
-      .get(),
-  ).toEqual({ customTitle: 'Confirmed title' })
-})
-
-test('keeps the existing title when the Harness rejects a rename', async () => {
-  database
-    .insert(sessionTable)
-    .values({
-      argoId: '00000000-0000-4000-8000-000000000003',
-      harness: 'claude',
-      nativeId: 'native-rejected-rename',
-      customTitle: 'Before',
-    })
-    .run()
-  const dependencies = routerDependencies({
-    rename: async () => {
-      throw new Error('Harness rejected the rename.')
-    },
-  })
-
-  await expect(
-    createAppRouter(dependencies).createCaller({}).sessionRename({
-      sessionId: '00000000-0000-4000-8000-000000000003',
-      title: 'Rejected title',
-    }),
-  ).rejects.toThrow('Harness rejected the rename.')
-  expect(
-    database
-      .select({ customTitle: sessionTable.customTitle })
-      .from(sessionTable)
-      .where(eq(sessionTable.argoId, '00000000-0000-4000-8000-000000000003'))
-      .get(),
-  ).toEqual({ customTitle: 'Before' })
-})
-
-test('accepts a later Harness sync that changes or clears a confirmed custom title', async () => {
-  database
-    .insert(sessionTable)
-    .values({
-      argoId: '00000000-0000-4000-8000-000000000004',
-      harness: 'claude',
-      nativeId: 'native-synced-rename',
-    })
-    .run()
-  const dependencies = routerDependencies({ rename: async () => undefined })
-  const caller = createAppRouter(dependencies).createCaller({})
-
-  await caller.sessionRename({
-    sessionId: '00000000-0000-4000-8000-000000000004',
-    title: 'Confirmed title',
-  })
-  saveSessionBatch(database, 'claude', [
-    { nativeId: 'native-synced-rename', customTitle: 'Changed by the Harness' },
-  ])
-  expect(
-    database
-      .select({ customTitle: sessionTable.customTitle })
-      .from(sessionTable)
-      .where(eq(sessionTable.argoId, '00000000-0000-4000-8000-000000000004'))
-      .get(),
-  ).toEqual({ customTitle: 'Changed by the Harness' })
-
-  saveSessionBatch(database, 'claude', [{ nativeId: 'native-synced-rename', customTitle: null }])
-  expect(
-    database
-      .select({ customTitle: sessionTable.customTitle })
-      .from(sessionTable)
-      .where(eq(sessionTable.argoId, '00000000-0000-4000-8000-000000000004'))
-      .get(),
-  ).toEqual({ customTitle: null })
-})
-
-async function firstDetails(dependencies: AppRouterDependencies, sessionId: string) {
-  const updates: inferRouterOutputs<AppRouter>['sessionDetails'][] = []
-  const stream = await createAppRouter(dependencies).createCaller({}).sessionDetails({ sessionId })
-  stream.subscribe({ next: (update) => updates.push(update) }).unsubscribe()
-  return updates
-}
-
-test('reads a Session beyond the loaded roster window by ID without reading its history', async () => {
-  database
-    .insert(project)
-    .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
-    .run()
-  const ids = Array.from(
-    { length: 40 },
-    (_, index) => `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
-  )
-  insertActivitySessions(ids)
-  const historyReads: string[] = []
-  const dependencies = routerDependencies({
-    readHistory: async (_harness, target) => {
-      historyReads.push(target.nativeId)
-      return []
-    },
-  })
-  const listed = await firstRosterUpdates()
-
-  const updates = await firstDetails(dependencies, ids[0] ?? '')
-
-  expect(listed[0]?.type === 'list' && listed[0].rows.map(({ id }) => id)).not.toContain(ids[0])
-  expect(updates).toEqual([
-    {
-      sessionId: ids[0],
-      details: expect.objectContaining({
-        id: ids[0],
-        harness: 'claude',
-        projectId: 'project-1',
-        archived: false,
-        posture: null,
-        title: { text: 'Session 0', source: 'first-prompt' },
-      }),
-    },
-  ])
-  await new Promise((resolve) => setImmediate(resolve))
-  expect(historyReads).toEqual([])
-})
-
-test('reads an archived Session by ID and says it is archived', async () => {
-  const id = '00000000-0000-4000-8000-000000000009'
-  database
-    .insert(project)
-    .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
-    .run()
-  insertActivitySessions([id])
-  database.insert(sessionArchive).values({ sessionId: id }).run()
-
-  const updates = await firstDetails(routerDependencies(), id)
-
-  expect(updates).toEqual([
-    { sessionId: id, details: expect.objectContaining({ id, archived: true }) },
-  ])
-})
-
-test('reads no details for an unknown Session ID', async () => {
-  const id = '00000000-0000-4000-8000-00000000000f'
-
-  expect(await firstDetails(routerDependencies(), id)).toEqual([{ sessionId: id, details: null }])
 })

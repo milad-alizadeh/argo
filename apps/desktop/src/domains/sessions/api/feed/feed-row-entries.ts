@@ -105,7 +105,7 @@ function rowActivities(row: SessionFeedRow): (LiveActivity | null)[] {
   return []
 }
 
-// The current Turn's latest tool call or readable thought: the one line the Feed and the roster
+// The current Turn's latest tool call or readable thought: the one line the Feed and the Session List
 // both draw. A Turn that has neither says nothing.
 function currentActivity(rows: readonly SessionFeedRow[]): LiveActivity | null {
   const turnStart = rows.findLastIndex((row) => row.shape === 'prose' && row.role === 'user')

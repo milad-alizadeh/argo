@@ -3,7 +3,7 @@ import { type DragEvent, type RefObject, useEffect, useRef, useState } from 'rea
 import { useTranslation } from 'react-i18next'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
 import type { HarnessControl } from '../../harness'
-import type { SessionPlan } from '../../model'
+import type { SessionPlan } from '../../types'
 import { SessionContextBar } from '../context-bar/session-context-bar'
 import { useComposerEditing } from '../editing/composer-editing-context'
 import { useAttachmentTransfer } from '../hooks/use-composer-attachments'

@@ -1,7 +1,7 @@
 import { sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { sessionTable } from '@/database/session/schema'
 
-// Argo's own archive flag. A Session stays in the vendor history and leaves the active roster.
+// Argo's own archive flag. A Session stays in the vendor history and leaves the active Session List.
 export const sessionArchive = sqliteTable('session_archive', {
   sessionId: text('session_id')
     .primaryKey()

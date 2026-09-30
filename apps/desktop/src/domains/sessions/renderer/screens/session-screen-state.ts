@@ -1,4 +1,5 @@
-import { type HarnessControl, type SessionHarness, sessionHarnessOf } from '../harness'
+import { type Harness, harnessOrDefault } from '@/harnesses/harness'
+import type { HarnessControl } from '../harness'
 import type { Session } from '../types'
 
 export function sessionHarness({
@@ -8,8 +9,8 @@ export function sessionHarness({
   session,
 }: {
   selectedSessionId: string | null
-  lastHarness: SessionHarness
-  chooseHarness: (harness: SessionHarness) => void
+  lastHarness: Harness
+  chooseHarness: (harness: Harness) => void
   session: Pick<Session, 'harness'> | null
 }): HarnessControl {
   // An optimistic row has not called `session.start` yet (#2109): the harness it starts under is
@@ -17,5 +18,5 @@ export function sessionHarness({
   const isPicking = selectedSessionId === null
   return isPicking
     ? { harness: lastHarness, onChange: chooseHarness }
-    : { harness: sessionHarnessOf(session) }
+    : { harness: harnessOrDefault(session?.harness) }
 }

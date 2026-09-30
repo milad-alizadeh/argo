@@ -1,3 +1,2 @@
-export { sessionName } from './rows/session-list-rows'
-export { SessionsSidebar } from './sidebar/sessions-sidebar'
-export { useSessionList } from './use-session-list'
+export { SessionList } from './session-list'
+export { useSessionListQuery } from './session-list-query'

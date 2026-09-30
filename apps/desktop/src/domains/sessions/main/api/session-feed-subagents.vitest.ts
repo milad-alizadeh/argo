@@ -12,7 +12,7 @@ import {
   registerFeedDatabase,
   rowIds,
   sessionId,
-} from './session-feed-harness'
+} from '@/mocks/sessions/session-feed-harness'
 
 registerFeedDatabase()
 

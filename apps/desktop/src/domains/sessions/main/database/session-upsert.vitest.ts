@@ -1,28 +1,12 @@
 import assert from 'node:assert/strict'
-import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
-import { databaseFrom } from '@/database/database'
+import { insertWorkspace, migratedDatabase } from '@/mocks/database/migrated-database'
 import { createSessionUpsert } from './session-upsert'
 
 function database() {
-  const client = new DatabaseSync(':memory:')
-  client.exec(`CREATE TABLE session (
-    argo_id TEXT PRIMARY KEY,
-    harness TEXT NOT NULL,
-    native_id TEXT NOT NULL,
-    project_id TEXT,
-    workspace_id TEXT,
-    custom_title TEXT,
-    preview TEXT,
-    first_prompt TEXT,
-    cwd TEXT,
-    activity_at INTEGER,
-    list_order_at INTEGER NOT NULL DEFAULT 0,
-    activity TEXT,
-    created_at INTEGER NOT NULL DEFAULT (CAST(unixepoch('subsec') * 1000 AS INTEGER)),
-    updated_at INTEGER NOT NULL DEFAULT (CAST(unixepoch('subsec') * 1000 AS INTEGER))
-  ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);`)
-  return { client, upsert: createSessionUpsert(databaseFrom(client)) }
+  const migrated = migratedDatabase()
+  insertWorkspace(migrated, 'workspace-1', 'project-1')
+  return { client: migrated.$client, upsert: createSessionUpsert(migrated) }
 }
 
 test('keeps one Argo ID and preserves known metadata on a sparse upsert', () => {

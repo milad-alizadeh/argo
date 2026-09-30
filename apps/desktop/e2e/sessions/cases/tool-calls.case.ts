@@ -4,8 +4,8 @@ import { feedRows, sessionFeed, sessionRows } from '../page-trpc'
 
 export async function proveToolCalls(page) {
   const sessionId = await fixtureSession('toolCalls')
-  const roster = await sessionRows(page)
-  const session = roster.find((row) => row.id === sessionId)
+  const listed = await sessionRows(page)
+  const session = listed.find((row) => row.id === sessionId)
   assert.notEqual(session, undefined)
   const reply = await sessionFeed(page, session.id)
   assert.equal(reply.type, 'session.feed.reading', JSON.stringify(reply))

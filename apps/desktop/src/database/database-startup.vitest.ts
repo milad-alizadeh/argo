@@ -53,6 +53,7 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20260929180801_cloudy_blizzard' },
       { name: '20260930101125_session_list_order' },
       { name: '20260930113033_drop_subagents_read_at' },
+      { name: '20260930123904_session_sort_order' },
     ])
     expect(
       database

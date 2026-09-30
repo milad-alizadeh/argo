@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { expect, userEvent, within } from 'storybook/test'
 import type { HarnessReadinessState } from '@/domains/harness-signin/contract/contract'
-import { SessionsSidebar } from '@/domains/sessions/renderer/session-list/sidebar/sessions-sidebar'
+import { SessionList } from '@/domains/sessions/renderer/session-list/session-list'
 import type { Harness } from '@/harnesses/harness'
 import { CockpitRouteLayout } from './cockpit-router'
 
@@ -32,7 +32,7 @@ function CockpitRouteLayoutStory({
           children: [
             {
               path: projectScoped ? '/projects/:projectId/sessions' : '/sessions',
-              handle: { sidebar: <SessionsSidebar /> },
+              handle: { sidebar: <SessionList /> },
               // The sidebar reopens the last selected Session, so that path must resolve.
               children: [
                 { index: true, element: <SectionScreen section="Sessions screen" /> },

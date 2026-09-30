@@ -2,14 +2,13 @@ import { execFile } from 'node:child_process'
 import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { promisify } from 'node:util'
 import { initTRPC } from '@trpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, expect, test } from 'vitest'
-import { databaseFrom } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { workspace } from '@/database/workspace/schema'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { workspaceChooseProcedure, workspaceListProcedure } from './api'
 import { ensureManagedWorkspace } from './workspace-create-managed'
 
@@ -40,12 +39,8 @@ async function fixture() {
     '-m',
     'Initial commit',
   ])
-  const client = new DatabaseSync(':memory:')
-  client.exec(`
-    CREATE TABLE project (id TEXT PRIMARY KEY, path TEXT NOT NULL, common_directory TEXT NOT NULL UNIQUE, last_workspace_choice TEXT NOT NULL DEFAULT 'new', created_at INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL DEFAULT 0);
-    CREATE TABLE workspace (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('main', 'imported', 'managed')), display_name TEXT NOT NULL, path TEXT NOT NULL, created_at INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL DEFAULT 0);
-  `)
-  const database = databaseFrom(client)
+  const database = migratedDatabase()
+  const client = database.$client
   const projectId = 'project-workspace-test'
   database
     .insert(project)

@@ -71,9 +71,7 @@
   /* The unavailable-composer notice takes the composer's reserved place without offering a
      field that cannot send a Turn. */
   --size-composer-unavailable: 48px;
-  /* The Session page's panes and composer assembly (#1937). The Feed and the composer share one
-     reading column, and the Roster widens no further than its maximum. */
-  --size-session-roster-max: 460px;
+  /* The Session page's panes and composer assembly (#1937); the Feed and composer share a column. */
   --size-session-feed-min: 360px;
   --size-session-column: 48rem;
   /* The least room the Feed and the composer keep from the window's edges. */
@@ -143,7 +141,6 @@
      Argo cannot place is an outline in the disabled ink: both are reached by name so neither
      restates a colour the block above already holds. */
   --shadow-state-glow: 0 0 6px color-mix(in srgb, var(--color-active) 50%, transparent);
-  --shadow-unread-glow: 0 0 5px var(--color-plan);
   --shadow-state-outline: inset 0 0 0 1px var(--color-off);
 }
 

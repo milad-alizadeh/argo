@@ -7,24 +7,20 @@ import {
   savedSelectionDraft,
   sessionSelectionHost,
 } from '@/mocks/sessions/session-selection-host.fixture'
-import { announceSessionListChange } from '@/mocks/sessions/session-story-host'
 import { queryClient } from '@/platform/renderer/trpc-client'
-import type { SessionTurnConfiguration } from '../model/models'
+import type { SessionTurnConfiguration } from '../types'
 import { SessionScreenView } from './session-screen-view'
 
 const SESSION_ID = 'live-turn-configuration'
-const OPENING_TURN = '2026-09-13T10:00:00.000Z'
-const NEXT_TURN = '2026-09-13T10:01:00.000Z'
 
 // A live Claude Session whose next Turn runs on whatever `reply` says the Harness used.
 function liveRow() {
   return sessionRow({
     id: SESSION_ID,
     posture: 'live',
-    title: { text: 'Turn turnConfiguration Session', source: 'first-prompt' },
+    name: 'Turn turnConfiguration Session',
     status: 'idle',
     cwd: '/storybook/argo',
-    turnStartedAt: OPENING_TURN,
     turnConfiguration: { model: 'claude-opus-5', effort: 'medium', mode: 'default' },
   })
 }
@@ -37,19 +33,18 @@ function withBridge(reply: SessionTurnConfiguration) {
     beforeEach: () => {
       sent.length = 0
       const row = liveRow()
-      const restoreHost = sessionSelectionHost([row])
+      const host = sessionSelectionHost([row])
       const hosted = window.argo
       window.argo = {
         ...hosted,
         trpc: (async (request) => {
           if (request.path !== 'sessionSubmit') return hosted.trpc(request)
           sent.push(request.input)
-          Object.assign(row, { turnStartedAt: NEXT_TURN, turnConfiguration: reply })
-          announceSessionListChange()
+          host.change([{ ...row, turnConfiguration: reply }])
           return { id: request.id, result: { data: { sessionId: SESSION_ID } } }
         }) as typeof window.argo.trpc,
       }
-      return restoreHost
+      return host
     },
   }
 }

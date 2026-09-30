@@ -1,29 +1,18 @@
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
-import { DatabaseSync } from 'node:sqlite'
 import { promisify } from 'node:util'
 import { onTestFinished, test } from 'vitest'
-import { databaseFrom } from '@/database/database'
+import { insertProject, migratedDatabase } from '@/mocks/database/migrated-database'
 import { addLinkedWorktree, workspaceRepoFixture } from '@/mocks/projects/workspace-repo.fixture'
 import { reconcileWorkspaces } from './workspace-reconciliation'
 
 const run = promisify(execFile)
 
 function database() {
-  const client = new DatabaseSync(':memory:')
-  client.exec(`
-    CREATE TABLE workspace (
-      id TEXT PRIMARY KEY NOT NULL,
-      project_id TEXT NOT NULL,
-      kind TEXT NOT NULL,
-      display_name TEXT NOT NULL,
-      path TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-  `)
-  onTestFinished(() => client.close())
-  return databaseFrom(client)
+  const migrated = migratedDatabase()
+  insertProject(migrated, 'project-1')
+  onTestFinished(() => migrated.$client.close())
+  return migrated
 }
 
 function repositoryFixture() {

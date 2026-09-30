@@ -6,23 +6,18 @@ import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import { sessionRow } from '@/mocks/sessions/session-rows'
 import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fixture'
-import {
-  announceSessionFeedChange,
-  announceSessionListChange,
-  sessionFeedSubscribe,
-  sessionListSubscribe,
-} from '@/mocks/sessions/session-story-host'
+import { announceSessionFeedChange } from '@/mocks/sessions/session-story-host'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { queryClient } from '@/platform/renderer/trpc-client'
-import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
+import { SessionList } from '../session-list/session-list'
 import { SessionScreenView } from './session-screen-view'
 
 // #2092: a Session Argo held before a restart reads external, keeps its composer, and the next
 // Send is what resumes it, regardless of whether Argo started it originally.
 const resumable = sessionRow({
   id: 'resumable-session',
-  posture: 'external',
-  title: { text: 'Fix the flaky roster test', source: 'first-prompt' },
+  posture: null,
+  name: 'Fix the flaky roster test',
   status: 'idle',
   cwd: '/storybook/argo',
 })
@@ -30,29 +25,18 @@ const resumable = sessionRow({
 // The bridge a restarted Argo answers with: the Roster lists the resumable Session, and a Send
 // resumes it into a live channel.
 function restartedHost(row = resumable) {
-  let resumed = false
   const live: SessionLiveEvent[] = []
-  const restoreHost = sessionSelectionHost([row])
-  const before = window.argo
+  const host = sessionSelectionHost([row], {
+    feed: async () => [
+      { kind: 'message', id: 'storybook-row', role: 'assistant', text: 'Storybook Session Feed.' },
+    ],
+    live,
+  })
+  const hosted = window.argo
   window.argo = {
-    ...before,
-    trpcSubscribe: sessionFeedSubscribe(
-      sessionListSubscribe(before.trpcSubscribe, () => [
-        resumed ? { ...row, posture: 'live', status: 'running' } : row,
-      ]),
-      async () => [
-        {
-          kind: 'message',
-          id: 'storybook-row',
-          role: 'assistant',
-          text: 'Storybook Session Feed.',
-        },
-      ],
-      live,
-    ),
+    ...hosted,
     trpc: (async (request) => {
-      if (request.path !== 'sessionSubmit') return before.trpc(request)
-      resumed = true
+      if (request.path !== 'sessionSubmit') return hosted.trpc(request)
       live.push({
         sessionId: row.id,
         sequence: 1,
@@ -62,12 +46,12 @@ function restartedHost(row = resumable) {
         vendorEventId: null,
         status: 'running',
       })
-      announceSessionListChange()
+      host.change([{ ...row, posture: 'live', status: 'running' }])
       announceSessionFeedChange()
       return { id: request.id, result: { data: { sessionId: row.id } } }
     }) as typeof window.argo.trpc,
   }
-  return restoreHost
+  return host
 }
 
 const meta = {
@@ -79,7 +63,7 @@ const meta = {
       <div className="h-dvh w-full">
         <QueryClientProvider client={queryClient}>
           <MemoryRouter initialEntries={[`/projects/storybook-project/sessions/${resumable.id}`]}>
-            <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionsSidebar />}>
+            <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionList />}>
               <Routes>
                 <Route path="/projects/:projectId/sessions/:sessionId" element={<Story />} />
               </Routes>

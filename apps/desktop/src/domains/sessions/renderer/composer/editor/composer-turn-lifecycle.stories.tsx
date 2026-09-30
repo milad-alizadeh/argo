@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useRef, useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import type { Harness } from '@/harnesses/harness'
 import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '@/mocks/sessions/harness-catalog.fixture'
 import { Button } from '@/platform/renderer/components/ui/button'
-import type { SessionHarness } from '../../harness/harnesses'
 import { ComposerForm, type ComposerFormProps } from '../layout/composer-form'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 import { configurationFromReading } from '../turn-configuration/turn-configuration'
@@ -82,7 +82,7 @@ function PendingSendStory() {
 }
 
 function NewSessionHarnessestory({ onSend }: { onSend: ComposerFormProps['onSend'] }) {
-  const [harness, setHarness] = useState<SessionHarness>('claude')
+  const [harness, setHarness] = useState<Harness>('claude')
 
   return (
     <ComposerForm

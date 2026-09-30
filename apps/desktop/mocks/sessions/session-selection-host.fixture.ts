@@ -1,14 +1,12 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import { sessionDetailsPathKey } from '@/domains/sessions/renderer/session-queries'
-import { sessionRosterPathKey } from '@/domains/sessions/renderer/session-roster'
+import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import type { Session } from '@/domains/sessions/renderer/types'
 import {
-  forgetHeldSessionDetails,
-  holdSessionDetails,
-  sessionFeedSubscribe,
-  sessionListSubscribe,
+  type FeedRead,
+  heldDetails,
+  heldReads,
+  installSessionHost,
 } from '@/mocks/sessions/session-story-host'
-import { queryClient, trpc } from '@/platform/renderer/trpc-client'
 import { claudeHarnessInfoFixture, codexHarnessInfoFixture } from './harness-catalog.fixture'
 
 // A story host that answers the production Session screen's tRPC reads, so a story can select
@@ -47,17 +45,10 @@ export function savedSelectionDraft(target: object) {
 }
 
 // Draft reads the story holds back until it releases them, by Session id.
-const heldDraftReads = new Map<string, () => void>()
-
-export function releaseDraftRead(sessionId: string) {
-  const release = heldDraftReads.get(sessionId)
-  heldDraftReads.delete(sessionId)
-  release?.()
-}
+export const heldDraftReads = heldReads()
 
 async function draftRead(target: { type: 'session'; sessionId: string }) {
-  if (heldDraftReads.has(target.sessionId))
-    await new Promise<void>((resolve) => heldDraftReads.set(target.sessionId, resolve))
+  await heldDraftReads.wait(target.sessionId)
   return success(drafts.get(JSON.stringify(target)) ?? null)
 }
 
@@ -157,38 +148,28 @@ async function readFeed(sessionId: string): Promise<readonly FeedContent[]> {
   ]
 }
 
-function clearSelectionQueries() {
+function clearSelectionReads() {
   drafts.clear()
   failSelectionWrites({ draftSaves: false, sends: false })
-  for (const release of heldDraftReads.values()) release()
-  heldDraftReads.clear()
-  forgetHeldSessionDetails()
-  queryClient.removeQueries({ queryKey: sessionRosterPathKey })
-  queryClient.removeQueries({ queryKey: sessionDetailsPathKey })
-  queryClient.removeQueries({ queryKey: trpc.projectList.pathKey() })
-  queryClient.removeQueries({ queryKey: trpc.projectOpen.pathKey() })
-  queryClient.removeQueries({ queryKey: trpc.workspaceList.pathKey() })
-  queryClient.removeQueries({ queryKey: trpc.harnessCatalogRead.pathKey() })
-  queryClient.removeQueries({ queryKey: trpc.composerDraftRead.pathKey() })
-  queryClient.removeQueries({ queryKey: ['sessions', 'feed'] })
-  queryClient.removeQueries({ queryKey: ['sessions', 'feed-reading'] })
-  queryClient.removeQueries({ queryKey: ['sessions', 'shell-output'] })
-  queryClient.removeQueries({ queryKey: ['sessions', 'delegation-usage'] })
+  heldDraftReads.releaseAll()
+  heldDetails.releaseAll()
 }
 
-// Installs the host for one story and returns the story's cleanup. A saved draft is read back as
+// Installs the Session host with the screen's other reads, and returns it; calling it cleans up. A saved draft is read back as
 // stored; a held Session's draft read waits for `releaseDraftRead`, and its details read for
 // `releaseSessionDetails`.
 export function sessionSelectionHost(
-  roster: readonly Session[],
+  sessions: readonly Session[],
   options: {
     savedDrafts?: Record<string, string>
     heldDraftReads?: string[]
     heldDetails?: string[]
+    feed?: FeedRead
+    live?: readonly SessionLiveEvent[]
   } = {},
 ) {
   const before = window.argo
-  clearSelectionQueries()
+  clearSelectionReads()
   for (const [sessionId, prompt] of Object.entries(options.savedDrafts ?? {}))
     draftReply({
       id: `selection-draft-${sessionId}`,
@@ -201,8 +182,8 @@ export function sessionSelectionHost(
       createdAt: 0,
       updatedAt: 0,
     })
-  for (const sessionId of options.heldDraftReads ?? []) heldDraftReads.set(sessionId, () => {})
-  for (const sessionId of options.heldDetails ?? []) holdSessionDetails(sessionId)
+  for (const sessionId of options.heldDraftReads ?? []) heldDraftReads.hold(sessionId)
+  for (const sessionId of options.heldDetails ?? []) heldDetails.hold(sessionId)
   window.argo = {
     ...before,
     trpc: (async (request) =>
@@ -216,13 +197,17 @@ export function sessionSelectionHost(
           }
         : null) ??
       before.trpc(request)) satisfies typeof window.argo.trpc,
-    trpcSubscribe: sessionFeedSubscribe(
-      sessionListSubscribe(before.trpcSubscribe, () => roster),
-      readFeed,
-    ),
   }
-  return () => {
-    window.argo = before
-    clearSelectionQueries()
-  }
+  const host = installSessionHost(sessions, {
+    feed: options.feed ?? readFeed,
+    live: options.live,
+  })
+  return Object.assign(
+    () => {
+      host()
+      window.argo = before
+      clearSelectionReads()
+    },
+    { reads: host.reads, updates: host.updates, rows: host.rows, change: host.change },
+  )
 }

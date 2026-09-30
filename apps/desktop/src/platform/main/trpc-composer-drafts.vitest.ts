@@ -6,7 +6,7 @@ import { promisify } from 'node:util'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, expect, test } from 'vitest'
 import { composerDraft } from '@/database/composer-draft/schema'
-import { type Database, databaseMigrationsFolder, openDatabase } from '@/database/database'
+import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { workspace } from '@/database/workspace/schema'
@@ -15,6 +15,7 @@ import {
   SessionSubmitRejectedError,
 } from '@/domains/sessions/main/live'
 import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { type AppRouterDependencies, createAppRouter } from './trpc-router'
 
 const projectId = 'project-1'
@@ -32,7 +33,7 @@ let database: Database
 
 beforeEach(async () => {
   userData = await mkdtemp(path.join(os.tmpdir(), 'argo-composer-draft-'))
-  database = openDatabase(userData, { migrationsFolder: databaseMigrationsFolder() })
+  database = migratedDatabase()
   database
     .insert(project)
     .values({ id: projectId, path: '/repo', commonDirectory: '/repo/.git' })

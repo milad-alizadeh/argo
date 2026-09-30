@@ -1,5 +1,3 @@
-import type { QueryClient } from '@tanstack/react-query'
-import { type SessionRosterState, sessionRosterPathKey } from './session-roster'
 import type { SessionId } from './types'
 
 export const SESSION_REFRESH_MS = 500
@@ -9,10 +7,6 @@ export const sessionFeedReadingQueryKey = (
   sessionId: SessionId | null,
   subagentId: string | null = null,
 ) => ['sessions', 'feed-reading', sessionId, subagentId] as const
-// A Session's details by ID, written by its details subscription.
-export const sessionDetailsPathKey = ['sessions', 'details'] as const
-export const sessionDetailsQueryKey = (sessionId: SessionId | null) =>
-  [...sessionDetailsPathKey, sessionId] as const
 export const sessionSubagentUsageQueryKey = (sessionId: SessionId) =>
   ['sessions', 'delegation-usage', sessionId] as const
 // Keyed on whether the command is still running too: the last poll of a running command can land
@@ -21,30 +15,3 @@ export const sessionShellOutputQueryKey = (sessionId: SessionId, shellId: string
   ['sessions', 'shell-output', sessionId, shellId, live] as const
 export const sessionPermissionQueryKey = (sessionId: SessionId) =>
   ['sessions', 'permission', sessionId] as const
-// Keyed on the restoreId too: a different restoreId asks the reader to hand back a different row
-// outside the loaded pages, so it is a different query rather than a refetch of the same one.
-export const sessionArchivePathKey = ['sessions', 'archive'] as const
-export const sessionArchiveQueryKey = (restoreId: SessionId | null) =>
-  [...sessionArchivePathKey, restoreId] as const
-
-export function markSessionRead(
-  queryClient: QueryClient,
-  sessionId: SessionId,
-  retiredIds: readonly SessionId[],
-) {
-  const identities = new Set([sessionId, ...retiredIds])
-  queryClient.setQueriesData<SessionRosterState>({ queryKey: sessionRosterPathKey }, (roster) => {
-    if (roster?.list == null) return roster
-    return {
-      ...roster,
-      list: {
-        ...roster.list,
-        rows: roster.list.rows.map((session) =>
-          identities.has(session.id) || session.retiredIds.some((id) => identities.has(id))
-            ? { ...session, unread: false }
-            : session,
-        ),
-      },
-    }
-  })
-}

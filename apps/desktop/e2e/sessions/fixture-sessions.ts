@@ -27,7 +27,7 @@ function argoIdOf(nativeId: string): string | undefined {
   }
 }
 
-// Waits for the app to list the fixture, then answers with the id its Roster row carries.
+// Waits for the app to list the fixture, then answers with the id its Session List row carries.
 export async function fixtureSession(name: string): Promise<string> {
   const nativeId = fixtureSessionId(name)
   const deadline = Date.now() + LISTED_TIMEOUT_MS

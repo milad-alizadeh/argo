@@ -1,18 +1,12 @@
 import { expect, test } from 'bun:test'
 import { createActor, fromPromise } from 'xstate'
-import type { AccountProcedureContext } from '@/domains/accounts/main/account-procedures'
-import type { HarnessSignInProcedureContext } from '@/domains/harness-signin/main/harness-sign-in-procedures'
-import type { ProjectRegisterContext } from '@/domains/projects/main/api/project-register'
-import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster-changes'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
-import { SessionSyncStatusStore } from '@/domains/sessions/main/session-sync-status'
-import type { TicketProcedureContext } from '@/domains/tickets/main/api/ticket-procedures'
-import type { WorkspaceListContext } from '@/domains/workspaces/main/api/workspace-list'
 import { claudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
 import { claudeModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { codexModelCatalogFixture } from '@/mocks/sessions/codex-model-catalog.fixture'
+import { sessionRouterDependencies } from '@/mocks/sessions/session-router-dependencies.fixture'
 import { harnessCatalogMachine } from './harness-catalog/harness-catalog-machine'
 import { createAppRouter } from './trpc-router'
 
@@ -30,32 +24,18 @@ function testRouter(
   refreshSessionSync = () => {},
 ) {
   return createAppRouter({
-    accounts: {} as AccountProcedureContext,
-    autoCompactLimit: () => undefined,
-    catalog,
-    harnessSignIn: {} as HarnessSignInProcedureContext,
-    projects: {} as ProjectRegisterContext,
-    sessions: {
-      database: {} as never,
+    ...sessionRouterDependencies({} as never, {
+      supervisor: sessionActor,
+      refreshSessionSync,
       ensureManagedWorkspace: async () => ({
         id: 'test-workspace',
         path: '/tmp/argo-test-worktrees',
       }),
-      readHistory: async () => [],
-      rename: async () => {},
-      roster: new SessionRosterChanges(),
-      watchedStatus: { statusOf: () => null },
-      supervisor: sessionActor,
       acceptsAttachments: () => true,
       chooseAttachmentFiles: async () => [],
-      refreshSessionSync,
-      sessionSyncStatus: [new SessionSyncStatusStore(undefined, 'claude')],
-      journal: {} as never,
-      interactions: {} as never,
-      hasLiveChannel: () => false,
-    },
-    tickets: {} as TicketProcedureContext,
-    workspaces: {} as WorkspaceListContext,
+    }),
+    autoCompactLimit: () => undefined,
+    catalog,
   })
 }
 
@@ -103,9 +83,10 @@ test('registers Session procedures directly on the global router', () => {
   const paths = Object.keys(testRouter({} as never)._def.procedures)
   for (const path of [
     'sessionList',
+    'sessionListChanged',
     'sessionFeed',
     'sessionFeedRefresh',
-    'sessionRename',
+    'sessionUpdate',
     'sessionRefresh',
     'sessionSyncStatus',
   ])

@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
@@ -34,16 +34,6 @@ export function knownSessionIds(database: Database, harness: Harness): string[] 
     .where(eq(sessionTable.harness, harness))
     .all()
     .map((row) => row.nativeId)
-}
-
-export function isKnownSession(database: Database, harness: Harness, nativeId: string): boolean {
-  return (
-    database
-      .select({ argoId: sessionTable.argoId })
-      .from(sessionTable)
-      .where(and(eq(sessionTable.harness, harness), eq(sessionTable.nativeId, nativeId)))
-      .get() !== undefined
-  )
 }
 
 function sessionRoots(database: Database): SessionRoot[] {
@@ -88,17 +78,13 @@ export function saveSessionBatch(
   database: Database,
   harness: Harness,
   records: readonly SessionSummary[],
-): void {
+): string[] {
   const upsert = createSessionUpsert(database)
   database.$client.exec('BEGIN IMMEDIATE')
   try {
-    for (const record of records) {
-      upsert({
-        ...record,
-        harness,
-      })
-    }
+    const sessionIds = records.map((record) => upsert({ ...record, harness }))
     database.$client.exec('COMMIT')
+    return sessionIds
   } catch (error) {
     database.$client.exec('ROLLBACK')
     throw error

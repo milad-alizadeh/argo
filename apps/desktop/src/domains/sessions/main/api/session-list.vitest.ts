@@ -1,303 +1,156 @@
 import assert from 'node:assert/strict'
-import { DatabaseSync } from 'node:sqlite'
-import { initTRPC } from '@trpc/server'
 import { test } from 'vitest'
-import type { z } from 'zod'
-import { databaseFrom } from '@/database/database'
-import { SessionActivities } from './session-activities'
-import { sessionListProcedure, type sessionListUpdateSchema } from './session-list'
-import { SessionRosterChanges } from './session-roster-changes'
-import { WatchedSessionStatus } from './watched-session-status'
+import type { Database } from '@/database/database'
+import {
+  IDS,
+  insertSession,
+  linkTicket,
+  liveSession,
+  saveTicket,
+  sessionListCaller,
+} from '@/mocks/sessions/session-list-caller'
+import { recordLiveSubagents } from '../database'
+import { updateSession } from './session-update'
 
-const IDS = [
-  '00000000-0000-4000-8000-000000000001',
-  '00000000-0000-4000-8000-000000000002',
-  '00000000-0000-4000-8000-000000000003',
-] as const
-
-function sessionListCaller(
-  sessions: Record<string, unknown> = {},
-  observeFeed?: (sessionId: string) => () => void,
-) {
-  const client = new DatabaseSync(':memory:')
-  client.exec(`CREATE TABLE session (
-    argo_id TEXT PRIMARY KEY,
-    harness TEXT NOT NULL,
-    native_id TEXT NOT NULL,
-    project_id TEXT,
-    workspace_id TEXT,
-    custom_title TEXT,
-    preview TEXT,
-    first_prompt TEXT,
-    cwd TEXT,
-    activity_at INTEGER,
-    list_order_at INTEGER NOT NULL DEFAULT 0,
-    activity TEXT,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
-  ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);
-  CREATE TABLE session_ticket_link (
-    session_id TEXT PRIMARY KEY,
-    project_id TEXT NOT NULL,
-    ticket_key TEXT NOT NULL,
-    title TEXT NOT NULL,
-    state TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at INTEGER NOT NULL DEFAULT 1
-  );
-  CREATE TABLE session_subagent (
-    session_id TEXT NOT NULL,
-    subagent_id TEXT NOT NULL,
-    label TEXT,
-    state TEXT NOT NULL,
-    PRIMARY KEY (session_id, subagent_id)
-  );
-  CREATE TABLE session_archive (session_id TEXT PRIMARY KEY);`)
-  const database = databaseFrom(client)
-  const statusListeners = new Set<(event: { sessionId: string }) => void>()
-  const supervisor = {
-    on: (_type: string, listener: (event: { sessionId: string }) => void) => {
-      statusListeners.add(listener)
-      return { unsubscribe: () => statusListeners.delete(listener) }
-    },
-    system: { get: (id: string) => sessions[id] },
-    getSnapshot: () => ({
-      context: {
-        sessions: Object.fromEntries(Object.keys(sessions).map((id) => [id, id])),
-        starts: {},
-      },
-    }),
-  }
-  const roster = new SessionRosterChanges()
-  const watchedStatus = new WatchedSessionStatus(() => roster.changed())
-  const activities = new SessionActivities(database, () => roster.changed())
-  const router = initTRPC.create().router({
-    list: sessionListProcedure(
-      {
-        database,
-        supervisor: supervisor as never,
-        roster,
-        watchedStatus,
-      },
-      observeFeed,
-    ),
-  })
-  const caller = router.createCaller({})
-  const updates = async (input: Parameters<typeof caller.list>[0]) => {
-    const received: SessionListUpdate[] = []
-    const stream = await caller.list(input)
-    const subscription = stream.subscribe({ next: (update) => received.push(update) })
-    return { received, stop: () => subscription.unsubscribe() }
-  }
-  const list = async (input: Parameters<typeof caller.list>[0]) => {
-    const { received, stop } = await updates(input)
-    stop()
-    const [first] = received
-    if (first?.type !== 'list') throw new Error('The roster did not send its list first.')
-    return first
-  }
-  const statusChanged = (sessionId: string) => {
-    for (const listener of statusListeners) listener({ sessionId })
-  }
-  return { client, list, updates, roster, statusChanged, watchedStatus, activities }
-}
-
-type SessionListUpdate = z.infer<typeof sessionListUpdateSchema>
-const settled = () => new Promise((resolve) => setTimeout(resolve, 0))
-
-function liveSession(state: string, status: string | null = null) {
-  return {
-    getSnapshot: () => ({
-      value: state,
-      matches: (candidate: string) => candidate === state,
-      context: {
-        status,
-        turnConfiguration: { model: 'claude-sonnet', effort: 'high', mode: 'default' },
-      },
-    }),
-  }
-}
-
-function insertSession(
-  client: DatabaseSync,
-  values: {
-    id: string
-    harness: string
-    nativeId: string
-    customTitle?: string | null
-    preview?: string | null
-    firstPrompt?: string | null
-    cwd?: string | null
-    workspaceId?: string | null
-    activityAt?: number | null
-    projectId?: string
-    updatedAt: number
-  },
-) {
-  client
-    .prepare(
-      `INSERT INTO session (
-        argo_id, harness, native_id, project_id, workspace_id, custom_title, preview,
-        first_prompt, cwd, activity_at, list_order_at, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
-    )
-    .run(
-      values.id,
-      values.harness,
-      values.nativeId,
-      values.projectId ?? 'project-1',
-      values.workspaceId ?? null,
-      values.customTitle ?? null,
-      values.preview ?? null,
-      values.firstPrompt ?? null,
-      values.cwd ?? null,
-      values.activityAt ?? null,
-      values.activityAt ?? values.updatedAt,
-      values.updatedAt,
-    )
-}
-
-type Caller = ReturnType<typeof sessionListCaller>
-
-function updatesOfTwoSessions(client: DatabaseSync, updates: Caller['updates']) {
-  insertSession(client, { id: IDS[0], harness: 'claude', nativeId: 'native-1', updatedAt: 20 })
-  insertSession(client, { id: IDS[1], harness: 'claude', nativeId: 'native-2', updatedAt: 10 })
-  return updates({ projectId: 'project-1', pageSize: 10 })
-}
-
-function listOneSession(client: DatabaseSync, list: Caller['list']) {
-  insertSession(client, {
-    id: IDS[0],
-    harness: 'claude',
-    nativeId: 'native-1',
-    firstPrompt: 'First prompt',
-    updatedAt: 10,
-  })
-  return list({ projectId: 'project-1', pageSize: 10 })
-}
-
-const statusesOf = (received: SessionListUpdate[]) =>
-  received.map((update) =>
-    update.type === 'row' ? update.row.status : update.rows.map((row) => row.status),
-  )
-
+// Links a Session to a Ticket whose content the provider has saved.
 function insertTicketLink(
-  client: DatabaseSync,
-  values: {
-    sessionId: string
-    projectId: string
-    key: string
-    title: string
-    state: 'open' | 'closed'
-  },
+  database: Database,
+  {
+    key,
+    title,
+    sessionId,
+    createdAt,
+  }: { sessionId: string; key: string; title: string; createdAt?: string },
 ) {
-  client
-    .prepare(
-      `INSERT INTO session_ticket_link (
-        session_id, project_id, ticket_key, title, state, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
-      values.sessionId,
-      values.projectId,
-      values.key,
-      values.title,
-      values.state,
-      '2026-09-26T10:00:00.000Z',
-    )
+  saveTicket(database, { key, title })
+  linkTicket(database, { sessionId, key, createdAt })
 }
 
-test('returns the newest pages in list order with an Argo ID tie-breaker', async () => {
-  const { client, list } = sessionListCaller()
+test('pages by sort order, then newest created, then Argo ID', async () => {
+  const { database, list } = sessionListCaller()
   try {
-    insertSession(client, {
-      id: IDS[2],
+    insertSession(database, {
+      id: '00000000-0000-4000-8000-000000000005',
       harness: 'claude',
-      nativeId: 'shared-native-id',
-      firstPrompt: 'third',
-      activityAt: 10,
-      updatedAt: 30,
+      nativeId: 'moved-down',
+      sortOrder: 1,
+      createdAt: 50,
     })
-    insertSession(client, {
-      id: IDS[0],
-      harness: 'claude',
-      nativeId: 'claude-native-id',
-      firstPrompt: 'first',
-      updatedAt: 20,
-    })
-    insertSession(client, {
-      id: IDS[1],
-      harness: 'codex',
-      nativeId: 'shared-native-id',
-      firstPrompt: 'second',
-      updatedAt: 20,
-    })
-
-    insertSession(client, {
+    insertSession(database, { id: IDS[2], harness: 'claude', nativeId: 'older', createdAt: 10 })
+    insertSession(database, { id: IDS[1], harness: 'codex', nativeId: 'tied-2', createdAt: 20 })
+    insertSession(database, { id: IDS[0], harness: 'claude', nativeId: 'tied-1', createdAt: 20 })
+    insertSession(database, {
       id: '00000000-0000-4000-8000-000000000004',
       harness: 'claude',
       nativeId: 'other-project',
       projectId: 'project-2',
-      firstPrompt: 'other project',
-      updatedAt: 40,
+      createdAt: 40,
     })
 
-    const first = await list({ projectId: 'project-1', pages: 1, pageSize: 2 })
-    const second = await list({ projectId: 'project-1', pages: 2, pageSize: 2 })
+    const first = await list({ projectId: 'project-1', limit: 2 })
+    const second = await list({ projectId: 'project-1', offset: 2, limit: 2 })
 
     assert.deepEqual(
-      first.rows.map(({ id }) => id),
-      [IDS[0], IDS[1]],
+      [...first.rows, ...second.rows].map(({ id }) => id),
+      [IDS[0], IDS[1], IDS[2], '00000000-0000-4000-8000-000000000005'],
     )
-    assert.deepEqual(
-      second.rows.map(({ id }) => id),
-      [IDS[0], IDS[1], IDS[2]],
-    )
-    assert.deepEqual(
-      { pages: first.pages, pageSize: first.pageSize, total: first.total },
-      { pages: 1, pageSize: 2, total: 3 },
-    )
+    assert.deepEqual([first.total, second.total], [4, 4])
+    assert.deepEqual(first.rows.map(({ projectId, archived }) => ({ projectId, archived }))[0], {
+      projectId: 'project-1',
+      archived: false,
+    })
     assert.equal(JSON.stringify(first).includes('native'), false)
-    assert.equal(JSON.stringify(first).includes('cursor'), false)
-    assert.equal(JSON.stringify(first).includes('managed'), false)
-    assert.equal(JSON.stringify(first).includes('watched'), false)
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
-test('projects the stored Workspace identity, including null for legacy Sessions', async () => {
-  const { client, list } = sessionListCaller()
+test('counts every match on a page past the end', async () => {
+  const { database, list } = sessionListCaller()
   try {
-    insertSession(client, {
+    insertSession(database, { id: IDS[0], nativeId: 'native-1', createdAt: 20 })
+    insertSession(database, { id: IDS[1], nativeId: 'native-2', createdAt: 10 })
+
+    const pastEnd = await list({ projectId: 'project-1', offset: 5, limit: 2 })
+    const empty = await list({ projectId: 'project-2' })
+
+    assert.deepEqual([pastEnd.total, pastEnd.rows], [2, []])
+    assert.equal(empty.total, 0)
+  } finally {
+    database.$client.close()
+  }
+})
+
+test('pages many archived Sessions apart from the active ones', async () => {
+  const { database, list } = sessionListCaller()
+  try {
+    const archivedIds = Array.from(
+      { length: 5 },
+      (_, index) => `00000000-0000-4000-8000-00000000010${index}`,
+    )
+    for (const [index, id] of archivedIds.entries())
+      insertSession(database, {
+        id,
+        harness: 'claude',
+        nativeId: `archived-${index}`,
+        createdAt: 100 - index,
+        archived: true,
+      })
+    insertSession(database, { id: IDS[0], harness: 'claude', nativeId: 'active', createdAt: 200 })
+
+    const pages = await Promise.all(
+      [0, 2, 4].map((offset) =>
+        list({ projectId: 'project-1', filter: 'archived', offset, limit: 2 }),
+      ),
+    )
+    const all = await list({ projectId: 'project-1', filter: 'all' })
+
+    assert.deepEqual(
+      pages.flatMap((page) => page.rows.map(({ id }) => id)),
+      archivedIds,
+    )
+    assert.deepEqual(
+      pages.map((page) => page.total),
+      [5, 5, 5],
+    )
+    assert.equal(all.total, 6)
+  } finally {
+    database.$client.close()
+  }
+})
+
+test('projects each Session’s stored Workspace, and null for one outside any Workspace', async () => {
+  const { database, list } = sessionListCaller()
+  try {
+    insertSession(database, {
       id: IDS[0],
       harness: 'claude',
       nativeId: 'linked-session',
       workspaceId: 'workspace-1',
-      updatedAt: 20,
+      createdAt: 20,
     })
-    insertSession(client, {
+    insertSession(database, {
       id: IDS[1],
       harness: 'codex',
-      nativeId: 'legacy-session',
-      updatedAt: 10,
+      nativeId: 'project-root-session',
+      createdAt: 10,
     })
 
-    const result = await list({ projectId: 'project-1', pageSize: 10 })
+    const result = await list({ projectId: 'project-1' })
 
     assert.deepEqual(
       result.rows.map(({ workspaceId }) => workspaceId),
       ['workspace-1', null],
     )
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
-test('chooses custom title, Ticket title, distinct vendor preview, then first prompt', async () => {
-  const { client, list } = sessionListCaller()
+test('names a Session by its custom title, then Ticket title, vendor preview and first prompt', async () => {
+  const { database, list } = sessionListCaller()
   try {
-    insertSession(client, {
+    insertSession(database, {
       id: IDS[0],
       harness: 'claude',
       nativeId: 'native-1',
@@ -305,115 +158,63 @@ test('chooses custom title, Ticket title, distinct vendor preview, then first pr
       preview: 'Vendor preview',
       firstPrompt: 'First prompt',
       cwd: '/work/one',
-      updatedAt: 40,
+      createdAt: 40,
     })
-    insertSession(client, {
+    insertSession(database, {
       id: IDS[1],
       harness: 'codex',
       nativeId: 'native-2',
       preview: 'Vendor preview',
       firstPrompt: 'First prompt',
-      updatedAt: 30,
+      createdAt: 30,
     })
-    insertSession(client, {
+    insertSession(database, {
       id: IDS[2],
       harness: 'claude',
       nativeId: 'native-3',
       preview: 'Vendor preview',
       firstPrompt: 'First prompt',
-      updatedAt: 20,
+      createdAt: 20,
     })
-    insertSession(client, {
+    insertSession(database, {
       id: '00000000-0000-4000-8000-000000000004',
       harness: 'claude',
       nativeId: 'native-4',
       preview: 'First prompt',
       firstPrompt: 'First prompt',
-      updatedAt: 10,
+      createdAt: 10,
     })
-    insertTicketLink(client, {
-      sessionId: IDS[1],
-      projectId: 'project-1',
-      key: '#2765',
-      title: 'Ticket title',
-      state: 'open',
-    })
+    insertTicketLink(database, { sessionId: IDS[1], key: '#2765', title: 'Ticket title' })
 
-    const result = await list({ projectId: 'project-1', pageSize: 10 })
+    const result = await list({ projectId: 'project-1' })
 
     assert.deepEqual(
-      result.rows.map(({ title }) => title),
-      [
-        { text: 'Custom title', source: 'custom' },
-        { text: 'Ticket title', source: 'ticket' },
-        { text: 'Vendor preview', source: 'summarised' },
-        { text: 'First prompt', source: 'first-prompt' },
-      ],
+      result.rows.map(({ name }) => name),
+      ['Custom title', 'Ticket title', 'Vendor preview', 'First prompt'],
     )
     assert.equal(result.rows[0]?.cwd, '/work/one')
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
-test('filters one Project by custom title and preview only', async () => {
-  const { client, list } = sessionListCaller()
+test('joins a Session to its Ticket, whose state follows the provider with no link write', async () => {
+  const { database, list } = sessionListCaller()
   try {
-    insertSession(client, {
-      id: IDS[0],
-      harness: 'claude',
-      nativeId: 'native-1',
-      customTitle: 'Custom match',
-      preview: 'Older summary',
-      firstPrompt: 'Hidden first prompt',
-      updatedAt: 10,
-    })
-    insertSession(client, {
-      id: IDS[1],
-      harness: 'codex',
-      nativeId: 'native-2',
-      preview: 'Preview match',
-      firstPrompt: 'Another hidden prompt',
-      updatedAt: 20,
-    })
-
-    const custom = await list({ projectId: 'project-1', search: 'CUSTOM', pageSize: 10 })
-    const preview = await list({ projectId: 'project-1', search: 'preview', pageSize: 10 })
-    const prompt = await list({ projectId: 'project-1', search: 'hidden', pageSize: 10 })
-
-    assert.deepEqual(
-      custom.rows.map(({ id }) => id),
-      [IDS[0]],
-    )
-    assert.deepEqual(
-      preview.rows.map(({ id }) => id),
-      [IDS[1]],
-    )
-    assert.equal(prompt.total, 0)
-  } finally {
-    client.close()
-  }
-})
-
-test('joins a Session to its Ticket as one nested ticket object', async () => {
-  const { client, list } = sessionListCaller()
-  try {
-    insertSession(client, {
+    insertSession(database, {
       id: IDS[0],
       harness: 'claude',
       nativeId: 'native-1',
       firstPrompt: 'Linked Session',
-      updatedAt: 10,
+      createdAt: 10,
     })
-    insertTicketLink(client, {
+    insertTicketLink(database, {
       sessionId: IDS[0],
-      projectId: 'project-1',
       key: '#2744',
       title: 'Simplify Session renderer state',
-      state: 'open',
     })
 
-    const result = await list({ projectId: 'project-1', pageSize: 10 })
+    const result = await list({ projectId: 'project-1' })
 
     assert.deepEqual(result.rows[0]?.ticket, {
       projectId: 'project-1',
@@ -422,247 +223,203 @@ test('joins a Session to its Ticket as one nested ticket object', async () => {
       state: 'open',
       createdAt: '2026-09-26T10:00:00.000Z',
     })
-    assert.deepEqual(result.rows[0]?.title, {
-      text: 'Simplify Session renderer state',
-      source: 'ticket',
-    })
-    assert.equal(result.rows[0]?.customTitle, null)
+    assert.equal(result.rows[0]?.name, 'Simplify Session renderer state')
     assert.equal('ticketKey' in (result.rows[0] ?? {}), false)
+
+    saveTicket(database, { key: '#2744', title: 'Closed since', state: 'closed' })
+    const closed = (await list({ projectId: 'project-1' })).rows[0]?.ticket
+    assert.deepEqual([closed?.title, closed?.state], ['Closed since', 'closed'])
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
-async function savedSessionRowWithLiveState(state: string) {
-  const { client, list } = sessionListCaller({ [IDS[0]]: liveSession(state) })
+test('a linked Ticket with no saved content shows its key with no title or state', async () => {
+  const { database, list } = sessionListCaller()
   try {
-    const result = await listOneSession(client, list)
-    return result.rows[0]
+    insertSession(database, {
+      id: IDS[0],
+      nativeId: 'native-1',
+      firstPrompt: 'Prompt',
+      createdAt: 10,
+    })
+    linkTicket(database, { sessionId: IDS[0], key: '#2744' })
+
+    const result = await list({ projectId: 'project-1' })
+
+    assert.deepEqual(result.rows[0]?.ticket, {
+      projectId: 'project-1',
+      key: '#2744',
+      title: null,
+      state: null,
+      createdAt: '2026-09-26T10:00:00.000Z',
+    })
+    assert.equal(result.rows[0]?.name, 'Prompt')
   } finally {
-    client.close()
+    database.$client.close()
   }
-}
-
-test('adds the current live projection to a saved Session', async () => {
-  const row = await savedSessionRowWithLiveState('Ready')
-  assert.deepEqual(
-    {
-      posture: row?.posture,
-      status: row?.status,
-      turnConfiguration: row?.turnConfiguration,
-    },
-    {
-      posture: 'live',
-      status: 'unknown',
-      turnConfiguration: { model: 'claude-sonnet', effort: 'high', mode: 'default' },
-    },
-  )
 })
 
-test('does not project a failed live channel as live', async () => {
-  const row = await savedSessionRowWithLiveState('Failed')
-  assert.deepEqual(
-    { posture: row?.posture, status: row?.status },
-    { posture: null, status: 'unknown' },
-  )
-})
-
-test('projects the latest live status over the machine state, and unknown with no live actor', async () => {
-  const { client, list } = sessionListCaller({ [IDS[0]]: liveSession('Sending', 'running') })
+test('lists only one Ticket’s Sessions, most recently linked first, past the first page', async () => {
+  const { database, list } = sessionListCaller()
   try {
-    insertSession(client, { id: IDS[0], harness: 'codex', nativeId: 'native-1', updatedAt: 20 })
-    insertSession(client, { id: IDS[1], harness: 'claude', nativeId: 'native-2', updatedAt: 10 })
+    for (let index = 0; index < 35; index += 1)
+      insertSession(database, {
+        id: `00000000-0000-4000-8000-3${String(index).padStart(11, '0')}`,
+        nativeId: `unlinked-${index}`,
+        createdAt: 1_000 + index,
+      })
+    insertSession(database, { id: IDS[0], nativeId: 'linked-first', createdAt: 20 })
+    insertSession(database, { id: IDS[1], nativeId: 'linked-later', createdAt: 10 })
+    insertSession(database, { id: IDS[2], nativeId: 'other-ticket', createdAt: 30 })
+    insertTicketLink(database, {
+      sessionId: IDS[0],
+      key: '#2937',
+      title: 'Page the archive',
+      createdAt: '2026-09-26T10:00:00.000Z',
+    })
+    insertTicketLink(database, {
+      sessionId: IDS[1],
+      key: '#2937',
+      title: 'Page the archive',
+      createdAt: '2026-09-27T10:00:00.000Z',
+    })
+    insertTicketLink(database, { sessionId: IDS[2], key: '#2938', title: 'Another Ticket' })
 
-    const result = await list({ projectId: 'project-1', pageSize: 10 })
+    const linked = await list({ projectId: 'project-1', ticketKey: '#2937', limit: 30 })
 
     assert.deepEqual(
-      result.rows.map(({ status }) => status),
-      ['running', 'unknown'],
+      linked.rows.map(({ id }) => id),
+      [IDS[1], IDS[0]],
     )
+    assert.equal(linked.total, 2)
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
-test('sends a changed row on its own when the roster announces a change', async () => {
-  const { client, updates, roster } = sessionListCaller()
+test('names a Session by its title, else its ID', async () => {
+  const { database, list } = sessionListCaller()
   try {
-    const { received, stop } = await updatesOfTwoSessions(client, updates)
+    insertSession(database, {
+      id: IDS[0],
+      nativeId: 'native-1',
+      firstPrompt: 'Prompt',
+      createdAt: 30,
+    })
+    insertSession(database, { id: IDS[1], nativeId: 'native-2', createdAt: 20 })
 
-    client.prepare("UPDATE session SET custom_title = 'Renamed' WHERE argo_id = ?").run(IDS[1])
-    roster.changed()
-    roster.changed()
-    await settled()
-    stop()
+    const result = await list({ projectId: 'project-1' })
 
     assert.deepEqual(
-      received.map((update) => (update.type === 'row' ? update.row.customTitle : update.type)),
-      ['list', 'Renamed'],
+      result.rows.map(({ name }) => name),
+      ['Prompt', IDS[1]],
     )
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
-test('sends the whole list again when a change moves or adds rows', async () => {
-  const { client, updates, roster } = sessionListCaller()
-  try {
-    const { received, stop } = await updatesOfTwoSessions(client, updates)
+test.each([
+  { state: 'Starting', live: null, stored: 'unknown', posture: 'live', status: 'starting' },
+  { state: 'Sending', live: 'running', stored: 'unknown', posture: 'live', status: 'running' },
+  { state: 'Ready', live: null, stored: 'unknown', posture: 'live', status: 'unknown' },
+  { state: 'Ready', live: null, stored: 'running', posture: 'live', status: 'running' },
+  { state: 'Ready', live: 'idle', stored: 'running', posture: 'live', status: 'idle' },
+  { state: 'Failed', live: null, stored: 'unknown', posture: null, status: 'unknown' },
+  { state: null, live: null, stored: 'idle', posture: null, status: 'idle' },
+] as const)(
+  'a $state channel with live status $live over stored $stored shows $status',
+  async ({ state, live, stored, posture, status }) => {
+    const { database, list } = sessionListCaller({
+      sessions: state === null ? {} : { [IDS[0]]: liveSession(state, live) },
+    })
+    try {
+      insertSession(database, { id: IDS[0], nativeId: 'native-1', status: stored, createdAt: 10 })
 
-    client.prepare('UPDATE session SET list_order_at = 30 WHERE argo_id = ?').run(IDS[1])
-    roster.changed()
-    await settled()
-    insertSession(client, { id: IDS[2], harness: 'codex', nativeId: 'native-3', updatedAt: 40 })
-    roster.changed()
-    await settled()
-    stop()
+      const [row] = (await list({ projectId: 'project-1' })).rows
 
-    assert.deepEqual(
-      received.map((update) =>
-        update.type === 'list' ? update.rows.map(({ id }) => id) : update.type,
-      ),
-      [
-        [IDS[0], IDS[1]],
-        [IDS[1], IDS[0]],
-        [IDS[2], IDS[1], IDS[0]],
-      ],
-    )
-  } finally {
-    client.close()
-  }
-})
-
-test('sends a row whose live status changed without a roster announcement', async () => {
-  let status = 'running'
-  const session = {
-    getSnapshot: () => ({
-      value: 'Ready',
-      matches: (candidate: string) => candidate === 'Ready',
-      context: {
-        status,
-        first: { turnConfiguration: { model: null, effort: null, mode: null } },
-      },
-    }),
-  }
-  const { client, updates, statusChanged } = sessionListCaller({ [IDS[0]]: session })
-  try {
-    insertSession(client, { id: IDS[0], harness: 'claude', nativeId: 'native-1', updatedAt: 20 })
-    const { received, stop } = await updates({ projectId: 'project-1', pageSize: 10 })
-
-    status = 'idle'
-    statusChanged(IDS[0])
-    await settled()
-    stop()
-
-    assert.deepEqual(statusesOf(received), [['running'], 'idle'])
-  } finally {
-    client.close()
-  }
-})
-
-test('stays quiet when a change leaves every row as it was', async () => {
-  const { client, updates, roster } = sessionListCaller()
-  try {
-    insertSession(client, { id: IDS[0], harness: 'claude', nativeId: 'native-1', updatedAt: 20 })
-    const { received, stop } = await updates({ projectId: 'project-1', pageSize: 10 })
-
-    roster.changed()
-    await settled()
-    stop()
-
-    assert.deepEqual(
-      received.map(({ type }) => type),
-      ['list'],
-    )
-  } finally {
-    client.close()
-  }
-})
-
-test('shows watched Codex history when an open live channel has no status', async () => {
-  const { client, updates, roster, watchedStatus } = sessionListCaller({
-    [IDS[0]]: liveSession('Ready'),
-  })
-  try {
-    insertSession(client, { id: IDS[0], harness: 'codex', nativeId: 'native-1', updatedAt: 20 })
-    const { received, stop } = await updates({ projectId: 'project-1', pageSize: 10 })
-
-    watchedStatus.record({ harness: 'codex', nativeId: 'native-1', turn: 'open', at: Date.now() })
-    roster.changed()
-    await settled()
-    watchedStatus.record({ harness: 'codex', nativeId: 'native-1', turn: null, at: Date.now() })
-    roster.changed()
-    await settled()
-    watchedStatus.record({ harness: 'codex', nativeId: 'native-1', turn: 'closed', at: Date.now() })
-    roster.changed()
-    await settled()
-    stop()
-
-    assert.deepEqual(statusesOf(received), [['unknown'], 'running', 'idle'])
-  } finally {
-    watchedStatus.dispose()
-    client.close()
-  }
-})
-
-test('keeps a known live status ahead of watched history', async () => {
-  const { client, list, watchedStatus } = sessionListCaller({
-    [IDS[0]]: liveSession('Ready', 'idle'),
-  })
-  try {
-    insertSession(client, { id: IDS[0], harness: 'codex', nativeId: 'native-1', updatedAt: 20 })
-    watchedStatus.record({ harness: 'codex', nativeId: 'native-1', turn: 'open', at: Date.now() })
-
-    assert.equal((await list({ projectId: 'project-1', pageSize: 10 })).rows[0]?.status, 'idle')
-  } finally {
-    watchedStatus.dispose()
-    client.close()
-  }
-})
+      assert.deepEqual(
+        { posture: row?.posture, status: row?.status, effort: row?.turnConfiguration.effort },
+        { posture, status, effort: posture === null ? null : 'high' },
+      )
+    } finally {
+      database.$client.close()
+    }
+  },
+)
 
 test('draws the activity the Session’s Feed published under its title', async () => {
-  const { client, list, activities } = sessionListCaller()
+  const { database, list, sessionListChanges } = sessionListCaller()
+  const context = { database, changes: sessionListChanges }
   const activityOf = async () =>
-    (await list({ projectId: 'project-1', pageSize: 10 })).rows.map((row) => row.activity)
+    (await list({ projectId: 'project-1' })).rows.map((row) => row.activity)
   try {
-    insertSession(client, { id: IDS[1], harness: 'claude', nativeId: 'native-2', updatedAt: 30 })
+    insertSession(database, { id: IDS[1], harness: 'claude', nativeId: 'native-2', createdAt: 30 })
 
-    activities.publish(IDS[1], { label: 'Ran bun test', kind: 'command', open: true })
+    updateSession(context, IDS[1], {
+      activity: {
+        label: 'Ran bun test',
+        kind: 'command',
+        open: true,
+      },
+    })
     assert.deepEqual(await activityOf(), [
       { label: 'Ran bun test', kind: 'command', open: true, tool: 'command', target: null },
     ])
-    activities.publish(IDS[1], null)
+    updateSession(context, IDS[1], { activity: null })
     assert.deepEqual(await activityOf(), [null])
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
-test('reads the Feed of a working Session only, and an idle row keeps its stored activity', async () => {
-  const active = new Map<string, number>()
-  const observeFeed = (sessionId: string) => {
-    active.set(sessionId, (active.get(sessionId) ?? 0) + 1)
-    return () => active.delete(sessionId)
-  }
-  const fixture = sessionListCaller({ [IDS[0]]: liveSession('Ready', 'running') }, observeFeed)
-  const { client, updates, activities } = fixture
+test('lists the Subagents a watched Session named', async () => {
+  const { database, list } = sessionListCaller()
   try {
-    for (const [index, id] of IDS.slice(0, 2).entries())
-      insertSession(client, {
-        id,
-        harness: 'claude',
-        nativeId: `native-${index}`,
-        updatedAt: 20 - index,
-      })
-    activities.publish(IDS[1], { label: 'Ran bun test', kind: 'command', open: false })
-    const { received, stop } = await updates({ projectId: 'project-1', pageSize: 10 })
-    await settled()
-    assert.deepEqual(active, new Map([[IDS[0], 1]]))
-    const [first] = received
-    assert.equal(first?.type === 'list' && first.rows[1]?.activity?.label, 'Ran bun test')
-    stop()
-    assert.equal(active.size, 0)
+    insertSession(database, { id: IDS[0], harness: 'codex', nativeId: 'native-2', createdAt: 10 })
+    recordLiveSubagents(database, {
+      harness: 'codex',
+      nativeId: 'native-2',
+      events: [
+        {
+          type: 'content',
+          commandId: null,
+          turnId: null,
+          vendorEventId: null,
+          content: {
+            kind: 'delegation',
+            id: 'call-1',
+            event: 'started',
+            agentId: 'agent-1',
+            status: 'running',
+            name: 'Survey',
+            prompt: null,
+            model: null,
+            summary: null,
+          },
+        },
+      ],
+    })
+
+    assert.deepEqual((await list({ projectId: 'project-1' })).rows[0]?.subagents, [
+      { id: 'agent-1', label: 'Survey', state: 'running' },
+    ])
   } finally {
-    client.close()
+    database.$client.close()
+  }
+})
+
+test('reads an archived Session by ID and says it is archived, and nothing for an unknown ID', async () => {
+  const { database, details } = sessionListCaller()
+  try {
+    insertSession(database, { id: IDS[0], createdAt: 10, archived: true })
+
+    const row = await details({ sessionId: IDS[0] })
+
+    assert.deepEqual([row?.id, row?.archived], [IDS[0], true])
+    assert.equal(await details({ sessionId: IDS[1] }), null)
+  } finally {
+    database.$client.close()
   }
 })

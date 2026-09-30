@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import type { WorkspaceSummary } from '@/domains/workspaces/renderer'
+import type { Harness } from '@/harnesses/harness'
 import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '@/mocks/sessions/harness-catalog.fixture'
-import type { SessionHarness } from '../../harness/harnesses'
-import type { SessionPlan } from '../../model/models'
+import type { SessionPlan } from '../../types'
 import { ComposerForm } from '../layout/composer-form'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 
@@ -42,7 +42,7 @@ const WORKSPACE_CANDIDATES: [WorkspaceSummary, WorkspaceSummary] = [
 // assertion: plan, harness, turn turnConfiguration and the Workspace picker together.
 function EverythingComposerStory() {
   const [sessionId] = useState('session-one')
-  const [harness, setHarness] = useState<SessionHarness>('claude')
+  const [harness, setHarness] = useState<Harness>('claude')
   const [turnConfiguration, setTurnConfiguration] = useState(CLAUDE_TURN_CONFIGURATION.opening)
   const [selectedId, setSelectedId] = useState('new')
   const selected = WORKSPACE_CANDIDATES.find((candidate) => candidate.id === selectedId) ?? null

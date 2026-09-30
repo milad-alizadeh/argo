@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ComposerCommand } from '@/domains/sessions/api/composer-commands'
+import type { Harness } from '@/harnesses/harness'
 import { HARNESS_PRESENTATIONS, harnessLabel } from '@/harnesses/presentation-registry'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
-import type { SessionHarness } from '../../harness'
 import { useHarnessCommands } from './composer-command-registry'
 import { InlineContext } from './inline-context'
 
@@ -79,10 +79,7 @@ export function referenceBySource(
   )
 }
 
-export function referenceSupportsHarness(
-  reference: SessionReference,
-  harness: SessionHarness | null,
-) {
+export function referenceSupportsHarness(reference: SessionReference, harness: Harness | null) {
   return (
     harness === null ||
     reference.needsPermissionPlugin !== true ||
@@ -90,7 +87,7 @@ export function referenceSupportsHarness(
   )
 }
 
-export function referenceHarnessLabel(harness: SessionHarness | null) {
+export function referenceHarnessLabel(harness: Harness | null) {
   return harness ? harnessLabel(harness) : 'this Harness'
 }
 
@@ -114,7 +111,7 @@ function SessionReferenceBadge({
   references,
   source,
 }: {
-  harness?: SessionHarness | null
+  harness?: Harness | null
   references: readonly SessionReference[]
   source: string
 }) {
@@ -137,7 +134,7 @@ export function SessionReferenceText({
   harness = null,
   text,
 }: {
-  harness?: SessionHarness | null
+  harness?: Harness | null
   text: string
 }) {
   const commands = useHarnessCommands(harness)

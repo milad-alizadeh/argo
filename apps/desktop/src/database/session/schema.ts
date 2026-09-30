@@ -2,6 +2,7 @@ import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqli
 import { project } from '@/database/project/schema'
 import { timestampColumns } from '@/database/timestamp-columns'
 import { workspace } from '@/database/workspace/schema'
+import { SESSION_STATUSES } from '@/domains/sessions/api/session-live-event'
 
 export const sessionTable = sqliteTable(
   'session',
@@ -16,14 +17,16 @@ export const sessionTable = sqliteTable(
     firstPrompt: text('first_prompt'),
     cwd: text(),
     activityAt: integer('activity_at'),
-    // The Session List order: it advances on discovery and Turn transitions, not on every write.
-    listOrderAt: integer('list_order_at').notNull().default(0),
+    // The Session List order: lower first, then newest `createdAt`. Drag and drop will set it.
+    sortOrder: integer('sort_order').notNull().default(0),
     // The last activity line a Feed read, as JSON, so an idle row keeps it with no Feed reader.
     activity: text('activity'),
+    // The last status the history watcher saw; a live channel's own status outranks it.
+    status: text('status', { enum: SESSION_STATUSES }).notNull().default('unknown'),
     ...timestampColumns(),
   },
   (table) => [
     uniqueIndex('session_harness_native').on(table.harness, table.nativeId),
-    index('session_list_order').on(table.projectId, table.listOrderAt, table.argoId),
+    index('session_list_order').on(table.projectId, table.sortOrder, table.createdAt, table.argoId),
   ],
 )
