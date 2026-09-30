@@ -1,9 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type {
-  ProjectSetupCommand,
-  ProjectSetupSnapshot,
-} from '@/domains/projects/renderer/onboarding/onboarding-presentation'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
@@ -23,6 +19,7 @@ import {
   QuestionnaireTitle,
 } from '@/platform/renderer/components/ui/questionnaire'
 import { ProjectSetupEditor } from '../editor/project-setup-editor'
+import type { ProjectSetupCommand, ProjectSetupSnapshot } from '../onboarding-presentation'
 
 type InputScreenProps = {
   command: (command: ProjectSetupCommand) => Promise<void>

@@ -4,7 +4,7 @@ import {
   setupChoiceText,
   setupFieldText,
   setupPlanText,
-} from '@/domains/projects/renderer/onboarding/model/setup-document'
+} from '../model/setup-document'
 import type { SetupAnswer } from '../use-setup-answers'
 import { fieldsForSection, SectionIcon, type SetupSectionModel } from './setup-plan-sections'
 

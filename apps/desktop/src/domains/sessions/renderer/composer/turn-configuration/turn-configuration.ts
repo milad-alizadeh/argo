@@ -1,8 +1,7 @@
 import { z } from 'zod'
-
-import type { SessionTurnConfiguration } from '@/domains/sessions/renderer/model/models'
 import type { AvailableHarness, CatalogReading } from '@/harnesses/harness-catalog'
 import type { IconName } from '@/platform/renderer/components/icon/icon'
+import type { SessionTurnConfiguration } from '../../model/models'
 import type { ComposerIdentity } from '../identity/composer-identity'
 
 // The Model, Effort and Mode a composer sends with its next Turn (CONTEXT.md L2 · Model and Effort).

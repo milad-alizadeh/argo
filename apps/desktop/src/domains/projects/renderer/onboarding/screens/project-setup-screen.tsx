@@ -1,10 +1,7 @@
 import { useTranslation } from 'react-i18next'
-import type {
-  ProjectSetupCommand,
-  ProjectSetupSnapshot,
-} from '@/domains/projects/renderer/onboarding/onboarding-presentation'
 import { RunningText } from '@/platform/renderer/components/running-text'
 import { Button } from '@/platform/renderer/components/ui/button'
+import type { ProjectSetupCommand, ProjectSetupSnapshot } from '../onboarding-presentation'
 import { Progress } from '../project-setup-progress'
 import { Recovery } from '../project-setup-recovery'
 import { projectSetupRecoveryText } from '../project-setup-recovery-text'

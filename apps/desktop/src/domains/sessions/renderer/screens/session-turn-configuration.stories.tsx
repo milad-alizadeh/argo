@@ -2,8 +2,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
-
-import type { SessionTurnConfiguration } from '@/domains/sessions/renderer/model/models'
 import { claudeHarnessInfoFixture } from '@/mocks/sessions/harness-catalog.fixture'
 import { sessionRow } from '@/mocks/sessions/session-rows'
 import {
@@ -11,6 +9,7 @@ import {
   sessionListSubscribe,
 } from '@/mocks/sessions/session-story-host'
 import { queryClient, trpc } from '@/platform/renderer/trpc-client'
+import type { SessionTurnConfiguration } from '../model/models'
 import { sessionRosterQueryKey } from '../session-list/session-roster'
 import { SessionScreenView } from './session-screen-view'
 

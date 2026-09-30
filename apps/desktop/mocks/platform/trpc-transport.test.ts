@@ -21,7 +21,7 @@ const app = {
 }
 mock.module('electron', () => ({ app, ipcMain }))
 
-const { attachTrpcTransport } = await import('../../src/platform/main/trpc-transport')
+const { attachTrpcTransport } = await import('@/platform/main/trpc-transport')
 
 function getHandler(): Handler {
   if (handler === undefined) throw new Error('Transport handler is not attached.')

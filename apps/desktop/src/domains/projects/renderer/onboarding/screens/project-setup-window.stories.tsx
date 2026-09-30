@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import type { ProjectSetupSnapshot } from '@/domains/projects/renderer/onboarding/onboarding-presentation'
 import type { AcceptedSetupPlan, SetupPlan } from '../model/setup-plan'
+import type { ProjectSetupSnapshot } from '../onboarding-presentation'
 import { ProjectSetupView } from './project-setup-window'
 
 const project = { id: 'project-1', name: 'Example', path: '/workspace/example' }
