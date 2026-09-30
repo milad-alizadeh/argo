@@ -14,6 +14,8 @@ import type {
   SessionReply,
 } from '../../e2e/sessions/session-harness-backend'
 import { mockClaudeHarness } from '../cli/claude/mock-claude-cli'
+import { mockClaudeAcpHarness } from '../cli/claude-acp/mock-claude-acp-cli'
+import { mockClaudeAcpRoot } from '../cli/claude-acp/mock-claude-acp-transcripts'
 import { mockCodexHarness } from '../cli/codex/mock-codex-cli'
 import type { MockHarness } from '../cli/mock-cli'
 
@@ -26,10 +28,15 @@ const HISTORY = { name: 'Session history' }
 const MOCKS: Record<SessionHarness, MockHarness> = {
   claude: mockClaudeHarness,
   codex: mockCodexHarness,
+  'claude-acp': mockClaudeAcpHarness,
 }
 
-function transcriptRoots(fixture: SessionFixture): Record<SessionHarness, string> {
-  return { claude: fixture.claudeTranscripts, codex: fixture.codexTranscripts }
+function transcriptRoots(root: string, fixture: SessionFixture): Record<SessionHarness, string> {
+  return {
+    claude: fixture.claudeTranscripts,
+    codex: fixture.codexTranscripts,
+    'claude-acp': mockClaudeAcpRoot(root),
+  }
 }
 
 async function transcriptHolds(folder: string, mark: string) {
@@ -42,7 +49,7 @@ async function transcriptHolds(folder: string, mark: string) {
 
 export function createMockSessionHarnessBackend(): SessionHarnessBackend {
   // Where each mock writes its transcripts, filled in by `start` before any case runs.
-  const folders: Record<SessionHarness, string> = { claude: '', codex: '' }
+  const folders: Record<SessionHarness, string> = { claude: '', codex: '', 'claude-acp': '' }
   const mark = ({ harness, prompt }: SessionReply) => MOCKS[harness].replyMark(prompt)
   const feedMark = (page: Page, reply: SessionReply) =>
     page.getByRole('region', HISTORY).getByText(mark(reply))
@@ -51,15 +58,19 @@ export function createMockSessionHarnessBackend(): SessionHarnessBackend {
     name: 'mock',
     budgetMs: BUDGET_MS,
     start: async ({ root, fixture }) => {
-      const roots = transcriptRoots(fixture)
-      const executables = { claude: '', codex: '' }
+      const roots = transcriptRoots(root, fixture)
+      const executables: Record<SessionHarness, string> = {
+        claude: '',
+        codex: '',
+        'claude-acp': '',
+      }
       for (const harness of Object.keys(MOCKS) as SessionHarness[]) {
         folders[harness] = MOCKS[harness].folder(roots[harness])
         executables[harness] = await MOCKS[harness].write(root, roots[harness])
       }
       return {
         executables,
-        transcripts: roots,
+        transcripts: { claude: roots.claude, codex: roots.codex },
         launchEnv: ({ slowReply, adversarialSeed }) => {
           if (adversarialSeed !== undefined) console.info(`Session mock seed: ${adversarialSeed}`)
           return {

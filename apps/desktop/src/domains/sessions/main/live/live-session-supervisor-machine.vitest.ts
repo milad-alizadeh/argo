@@ -97,6 +97,7 @@ test('rejects a model mode that the catalog does not support before calling Code
         ...available,
         models: [{ ...model, supportedModes: ['workspace-write'] }],
       },
+      unavailable('claude-acp'),
     ],
   })
   const { root, supervisor, client } = await supervisorFor(async () => {

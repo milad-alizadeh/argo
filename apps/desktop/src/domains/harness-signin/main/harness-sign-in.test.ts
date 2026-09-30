@@ -32,7 +32,11 @@ function drivers(claude: HarnessSignInDriver) {
     login: async () => 'failed',
     checkReadiness: async () => ({ harness: 'codex', state: 'signed-out', detail: null }),
   }
-  return { claude, codex }
+  const claudeAcp: HarnessSignInDriver = {
+    login: async () => 'failed',
+    checkReadiness: async () => ({ harness: 'claude-acp', state: 'missing', detail: null }),
+  }
+  return { claude, codex, 'claude-acp': claudeAcp }
 }
 
 test('Harness sign-in: wait before any start reports no attempt', async () => {

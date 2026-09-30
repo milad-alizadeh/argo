@@ -4,10 +4,6 @@ import path from 'node:path'
 import { feedEntryRows, projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
 import { type SessionFeedRow, sessionFeedRowSchema } from '@/domains/sessions/api/feed/feed-rows'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import {
-  SESSION_HARNESSES,
-  type SessionHarness,
-} from '@/domains/sessions/renderer/harness/harnesses'
 import { openClaudeHistoryReader } from '@/harnesses/claude/session/claude-history-lines'
 import { openCodexHistoryReader } from '@/harnesses/codex/session/codex-history-lines'
 
@@ -16,6 +12,9 @@ const READERS = {
   claude: openClaudeHistoryReader,
   codex: openCodexHistoryReader,
 } as const
+// Only the Harnesses whose transcript files the corpus can read.
+type TranscriptHarness = keyof typeof READERS
+const TRANSCRIPT_HARNESSES = Object.keys(READERS) as TranscriptHarness[]
 
 const RAW_TAG = /<\/?[a-z][a-z0-9_-]*(?:\s[^>]*)?>/i
 const PASTED_BLOCK = /<pasted_content id="([^"]+)">([\s\S]*?)<\/pasted_content id="\1">/g
@@ -26,7 +25,7 @@ const REQUIRED_ENVELOPES = {
 const ENVELOPE_WAIT_MS = 120_000
 const ENVELOPE_POLL_MS = 250
 
-type RequiredEnvelope = (typeof REQUIRED_ENVELOPES)[SessionHarness][number]
+type RequiredEnvelope = (typeof REQUIRED_ENVELOPES)[TranscriptHarness][number]
 type ToolCall = Extract<SessionFeedRow, { shape: 'tool' }>
 
 function stringsIn(value: unknown): string[] {
@@ -73,7 +72,10 @@ async function transcriptPaths(root: string): Promise<string[]> {
   return paths
 }
 
-function contentOf(harness: SessionHarness, files: readonly (readonly string[])[]): FeedContent[] {
+function contentOf(
+  harness: TranscriptHarness,
+  files: readonly (readonly string[])[],
+): FeedContent[] {
   const content: FeedContent[] = []
   for (const lines of files) {
     const read = READERS[harness]()
@@ -89,7 +91,7 @@ function contentOf(harness: SessionHarness, files: readonly (readonly string[])[
   return content
 }
 
-function rowsOf(harness: SessionHarness, content: readonly FeedContent[]): SessionFeedRow[] {
+function rowsOf(harness: TranscriptHarness, content: readonly FeedContent[]): SessionFeedRow[] {
   const projected = projectFeedRowEntries({ history: content, live: [] })
   assert.equal(
     projected.rejected.history + projected.rejected.rows,
@@ -119,14 +121,14 @@ function proseTexts(rows: readonly SessionFeedRow[]): string[] {
   return rows.flatMap((row) => (row.shape === 'prose' ? [row.text] : []))
 }
 
-function assertNoProseTag(harness: SessionHarness, rows: readonly SessionFeedRow[]) {
+function assertNoProseTag(harness: TranscriptHarness, rows: readonly SessionFeedRow[]) {
   for (const text of proseTexts(rows)) {
     assert.equal(RAW_TAG.test(text), false, `${harness} prose holds a raw tag: ${text}`)
   }
 }
 
 function assertTaskNotification(
-  harness: SessionHarness,
+  harness: TranscriptHarness,
   lines: readonly string[],
   rows: readonly SessionFeedRow[],
 ) {
@@ -146,7 +148,7 @@ function assertTaskNotification(
 }
 
 function assertPastedContent(
-  harness: SessionHarness,
+  harness: TranscriptHarness,
   lines: readonly string[],
   rows: readonly SessionFeedRow[],
 ) {
@@ -171,7 +173,7 @@ function commandSource(call: ToolCall): string {
 }
 
 function assertBashInput(
-  harness: SessionHarness,
+  harness: TranscriptHarness,
   lines: readonly string[],
   rows: readonly SessionFeedRow[],
 ) {
@@ -195,7 +197,7 @@ function assertBashOutput({
   rows,
   envelope,
 }: {
-  harness: SessionHarness
+  harness: TranscriptHarness
   lines: readonly string[]
   rows: readonly SessionFeedRow[]
   envelope: 'bash-stdout' | 'bash-stderr'
@@ -224,7 +226,7 @@ function assertEnvelope({
   lines,
   rows,
 }: {
-  harness: SessionHarness
+  harness: TranscriptHarness
   envelope: RequiredEnvelope
   lines: readonly string[]
   rows: readonly SessionFeedRow[]
@@ -246,7 +248,7 @@ function assertEnvelope({
   }
 }
 
-function observedEnvelopes(harness: SessionHarness, lines: readonly string[]) {
+function observedEnvelopes(harness: TranscriptHarness, lines: readonly string[]) {
   const observed = new Set<RequiredEnvelope>()
   for (const line of lines) {
     for (const envelope of REQUIRED_ENVELOPES[harness]) {
@@ -270,16 +272,16 @@ async function sessionFiles(root: string, sessionId: string): Promise<string[][]
 }
 
 async function waitForRequiredEnvelopes(options: {
-  roots: Record<SessionHarness, string>
-  sessionIds: Record<SessionHarness, string>
-  expectedEnvelopes: Partial<Record<SessionHarness, readonly RequiredEnvelope[]>>
+  roots: Record<TranscriptHarness, string>
+  sessionIds: Record<TranscriptHarness, string>
+  expectedEnvelopes: Partial<Record<TranscriptHarness, readonly RequiredEnvelope[]>>
   waitMs: number
 }) {
   const { roots, sessionIds, expectedEnvelopes, waitMs } = options
   const deadline = Date.now() + waitMs
   for (;;) {
     const missing: string[] = []
-    for (const harness of SESSION_HARNESSES) {
+    for (const harness of TRANSCRIPT_HARNESSES) {
       const files = (await transcriptPaths(roots[harness])).filter((filePath) =>
         filePath.includes(sessionIds[harness]),
       )
@@ -303,9 +305,9 @@ async function waitForRequiredEnvelopes(options: {
 }
 
 export async function assertTranscriptFeedCorpus(options: {
-  roots: Record<SessionHarness, string>
-  sessionIds: Record<SessionHarness, string>
-  expectedEnvelopes?: Partial<Record<SessionHarness, readonly RequiredEnvelope[]>>
+  roots: Record<TranscriptHarness, string>
+  sessionIds: Record<TranscriptHarness, string>
+  expectedEnvelopes?: Partial<Record<TranscriptHarness, readonly RequiredEnvelope[]>>
   waitMs?: number
 }): Promise<void> {
   const {
@@ -315,7 +317,7 @@ export async function assertTranscriptFeedCorpus(options: {
     waitMs = ENVELOPE_WAIT_MS,
   } = options
   await waitForRequiredEnvelopes({ roots, sessionIds, expectedEnvelopes, waitMs })
-  for (const harness of SESSION_HARNESSES) {
+  for (const harness of TRANSCRIPT_HARNESSES) {
     const files = await sessionFiles(roots[harness], sessionIds[harness])
     const lines = files.flat()
     const rows = rowsOf(harness, contentOf(harness, files))
