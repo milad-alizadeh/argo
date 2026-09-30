@@ -14,7 +14,7 @@ import { HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-pro
 import { writeMockClaudeReadinessCli } from '../../../mocks/cli/claude/mock-claude-readiness-cli'
 import { writeMockCodexReadinessCli } from '../../../mocks/cli/codex/mock-codex-readiness-cli'
 import { test as packagedTest } from '../../packaged-proof'
-import { openHiddenWindow } from '../../packaged-window'
+import { openHiddenWindow, openRoute } from '../../packaged-window'
 import { makeProjectLocallyReady } from '../../projects/fixtures/locally-ready-project'
 import { launch, repository } from '../../projects/fixtures/project.fixture'
 
@@ -127,9 +127,7 @@ export const test = packagedTest.extend<{
     try {
       const page = await openHiddenWindow(application, VIEWPORT)
       // Saved Sessions stay readable without a Harness, so the gate is proven on Tickets.
-      await page.evaluate((hash) => {
-        window.location.hash = hash
-      }, `#/projects/${PROOF_PROJECT_ID}/tickets`)
+      await openRoute(page, `#/projects/${PROOF_PROJECT_ID}/tickets`)
       await use({ application, page })
     } finally {
       await application.close()

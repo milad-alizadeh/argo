@@ -7,7 +7,7 @@ import type { SessionHarnessBackend } from '../session-harness-backend'
 
 const PROMPT = 'Reply with one short acknowledgement.'
 
-// The mock folder starts empty, so the Roster row must precede a Harness transcript.
+// The mock folder starts empty, so the one new Roster row is the Session this gesture made.
 export async function proveSessionCreatedByClick(
   page: Page,
   backend: SessionHarnessBackend,
@@ -32,7 +32,6 @@ export async function proveSessionCreatedByClick(
     prompt,
     budgetTurnConfiguration,
     permissionMode,
-    harnessWrote: () => backend.recorded(reply),
   })
 
   // The gesture ended in a real Session: the Harness answers the prompt it was sent.

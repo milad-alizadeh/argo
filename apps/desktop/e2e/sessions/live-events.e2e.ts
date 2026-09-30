@@ -7,6 +7,7 @@ import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contra
 import { signedInHarnessEnvironment } from '../../mocks/cli/signed-in-harness'
 import { launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
+import { openRoute } from '../packaged-window'
 
 const projectId = '00000000-0000-4000-8000-000000000091'
 const workspaceId = '00000000-0000-4000-8000-000000000092'
@@ -122,9 +123,7 @@ test('packaged Feed replays ordered Claude live activity for a stored Session', 
   })
   try {
     const page = await application.firstWindow()
-    await page.evaluate((route) => {
-      window.location.hash = route
-    }, `#/projects/${projectId}/sessions/${sessionId}`)
+    await openRoute(page, `#/projects/${projectId}/sessions/${sessionId}`)
     const feed = page.getByRole('region', { name: 'Session Feed' })
     await expect(feed.getByText('Inspect this', { exact: true })).toBeVisible()
     await expect(feed.getByText('Reading now', { exact: true })).toBeVisible()

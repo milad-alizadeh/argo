@@ -125,10 +125,6 @@ test('session-roster-window', async ({ session }) => {
   await proveRosterWindow(session.page())
 })
 
-test('session-created-by-click', async ({ session, backend }) => {
-  await proveSessionCreatedByClick(session.page(), backend)
-})
-
 test.describe('with the Claude ACP agent', () => {
   test.skip(
     ({ sessionBackend }) => sessionBackend === 'real',

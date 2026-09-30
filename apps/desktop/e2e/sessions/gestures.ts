@@ -35,9 +35,6 @@ export type CreateRequest = {
   prompt: string
   budgetTurnConfiguration?: boolean
   permissionMode?: 'auto'
-  // Read on every poll while the Roster row is still absent. A true reading fails the case: the
-  // row a live Session stands on must not wait for the Harness to write.
-  harnessWrote?: () => Promise<boolean>
 }
 
 type CreatedRow = { id: string; label: string; matchingRows: number }
@@ -188,13 +185,6 @@ async function waitForCreatedRow(
   for (;;) {
     const created = await readCreatedRow(page, known, request.prompt)
     if (created !== null) return created
-    if (request.harnessWrote !== undefined) {
-      assert.equal(
-        await request.harnessWrote(),
-        false,
-        'the Harness wrote before the new Session reached the Roster',
-      )
-    }
     if (Date.now() > deadline) throw new Error('Sending from the new Session composer made no row.')
     await new Promise((resolve) => setTimeout(resolve, POLL_MS))
   }

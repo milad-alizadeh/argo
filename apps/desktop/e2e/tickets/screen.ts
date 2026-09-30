@@ -6,6 +6,7 @@ import { DatabaseSync } from 'node:sqlite'
 import type { ElectronApplication, Locator, Page } from 'playwright-core'
 import type { MockUser } from '../../mocks/providers/github/mock-github'
 import { ADA } from '../../mocks/providers/linear/mock-linear-cast'
+import { openRoute } from '../packaged-window'
 import { openedURLs, type TicketFixture } from './fixtures/tickets.fixture'
 
 export type Run = { application: ElectronApplication; page: Page; fixture: TicketFixture }
@@ -58,11 +59,7 @@ export const notification = (page: Page) => page.getByRole('region', { name: 'No
 export const room = (run: Run) => run.page.getByRole('main', { name: 'Tickets' })
 
 export async function openRoom(page: Page, room: 'tickets' | 'atlas', projectId = 'project-1') {
-  // The launch redirects `/` to a Project's Sessions, and a hash set before that lands is replaced.
-  await page.waitForFunction(() => /^#\/projects\/[^/]+\//.test(window.location.hash))
-  await page.evaluate((hash) => {
-    window.location.hash = hash
-  }, `#/projects/${projectId}/${room}`)
+  await openRoute(page, `#/projects/${projectId}/${room}`)
   if (room !== 'tickets') return
   await page
     .getByRole('main', { name: 'Tickets' })
