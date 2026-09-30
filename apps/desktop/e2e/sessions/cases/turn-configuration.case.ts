@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test'
+import { fixtureSession } from '../fixture-sessions'
 import {
   chooseHarness,
   openNewSessionByClick,
@@ -26,7 +27,8 @@ async function waitForTurnConfiguration(page, turnConfiguration, mode) {
 // The composer states the Model, Effort and Mode the Session's own records name, read through the
 // shipped main process and preload, and a choice made by keyboard outlives a Session switch.
 export async function proveTurnConfiguration(page) {
-  await openSessionByClick(page, 'setupAnswered')
+  const setupAnswered = await fixtureSession('setupAnswered')
+  await openSessionByClick(page, setupAnswered)
   await waitForTurnConfiguration(page, 'Sonnet 5·High', 'Plan')
 
   await page.locator(TURN_CONFIGURATION).focus()
@@ -56,14 +58,15 @@ export async function proveTurnConfiguration(page) {
   await page.getByRole('menu').waitFor({ state: 'detached' })
   await waitForTurnConfiguration(page, 'Opus 5·Extra high', 'Auto')
 
-  await openSessionByClick(page, 'prose')
-  await openSessionByClick(page, 'setupAnswered')
+  await openSessionByClick(page, await fixtureSession('prose'))
+  await openSessionByClick(page, setupAnswered)
   await waitForTurnConfiguration(page, 'Opus 5·Extra high', 'Auto')
 }
 
 // A draft and the harness a new Session was set to outlive a reload of the window.
 export async function proveComposerMemory(page) {
-  await openSessionByClick(page, 'setupAnswered')
+  const setupAnswered = await fixtureSession('setupAnswered')
+  await openSessionByClick(page, setupAnswered)
   await page.locator(MESSAGE).click()
   await page.keyboard.type('Half a thought.')
   await openNewSessionByClick(page)
@@ -79,7 +82,7 @@ export async function proveComposerMemory(page) {
     TURN_CONFIGURATION,
     { timeout: 10_000 },
   )
-  await openSessionByClick(page, 'setupAnswered')
+  await openSessionByClick(page, setupAnswered)
   await page.waitForFunction(
     (selector) => document.querySelector(selector)?.textContent === 'Half a thought.',
     MESSAGE,
@@ -102,10 +105,10 @@ export async function proveLiveCodexModelChoices(page) {
 
   await models.getByText('Mock Opus', { exact: true }).click()
   await expect(effort).toHaveAttribute('max', '2')
-  await expect(effort).toHaveAttribute('aria-valuetext', /^(Medium|High|Extra high)$/)
-  await expect(page.getByText('Low', { exact: true })).toHaveCount(0)
+  await expect(effort).toHaveAttribute('aria-valuetext', /^(medium|high|xhigh)$/)
+  await expect(page.getByText('low', { exact: true })).toHaveCount(0)
   await effort.press('End')
-  await expect(effort).toHaveAttribute('aria-valuetext', 'Extra high')
+  await expect(effort).toHaveAttribute('aria-valuetext', 'xhigh')
 
   await page.getByRole('tab', { name: 'Claude Code' }).click()
   await expect(
@@ -125,6 +128,6 @@ export async function proveLiveCodexModelChoices(page) {
   ).toBeChecked()
   await expect(page.getByRole('slider', { name: 'Effort' })).toHaveAttribute(
     'aria-valuetext',
-    'Extra high',
+    'xhigh',
   )
 }

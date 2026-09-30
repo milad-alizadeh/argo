@@ -3,7 +3,10 @@ import path from 'node:path'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { readClaudeHarnessInfo } from './catalog'
-import { SESSION_CLAUDE_EXECUTABLE_ENV } from './proof-protocol'
+import {
+  HARNESS_SIGNIN_CLAUDE_EXECUTABLE_ENV,
+  SESSION_CLAUDE_EXECUTABLE_ENV,
+} from './proof-protocol'
 import { createClaudeSignInDriver, createSystemClaudeReadiness } from './readiness'
 import {
   claudeHistoryOwner,
@@ -19,11 +22,12 @@ import {
 export function createClaudeRegistration(): HarnessRegistration<'claude'> {
   const executable =
     process.env[SESSION_CLAUDE_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('claude')
+  const signInExecutable = process.env[HARNESS_SIGNIN_CLAUDE_EXECUTABLE_ENV]
   return {
     harness: 'claude',
     sessionDiscovery: discoverClaudeSessions,
-    checkReadiness: createSystemClaudeReadiness(),
-    signIn: createClaudeSignInDriver(),
+    checkReadiness: createSystemClaudeReadiness(signInExecutable),
+    signIn: createClaudeSignInDriver(signInExecutable),
     readCatalog: () => readClaudeHarnessInfo(executable),
     readHistory: ({ nativeId, subagentId, cwd }) =>
       readClaudeSessionHistory(nativeId, cwd, subagentId),

@@ -1,10 +1,13 @@
 import { expect } from '@playwright/test'
 import { mountFeedRow } from '../feed-virtualization'
+import { fixtureSession } from '../fixture-sessions'
+import { openSessionByRoute } from '../gestures'
 import { feedRows, sessionFeed, sessionRows } from '../page-trpc'
 
 async function openPackageReadEvidence(page) {
+  const sessionId = await fixtureSession('shellRunning')
   const rows = await sessionRows(page)
-  const session = rows.find((row) => row.id === 'shellRunning')
+  const session = rows.find((row) => row.id === sessionId)
   if (session === undefined) throw new Error('shellRunning Session was not listed')
   const history = page.locator(
     `section[aria-label="Session history"][data-session="${session.id}"]`,
@@ -38,9 +41,7 @@ async function openPackageReadEvidence(page) {
 // the running state.
 export async function proveBackgroundShell(page, { writeOutput, complete }) {
   await writeOutput('watching for changes\nrebuilt in 240ms\n')
-  await page.evaluate(() => {
-    window.location.hash = '#/sessions/shellRunning'
-  })
+  await openSessionByRoute(page, await fixtureSession('shellRunning'))
   const shellButton = page.getByRole('button', { name: 'Shell · 3' })
   await shellButton.waitFor()
   // No Subagent here, so the header carries the Shell button alone.

@@ -11,6 +11,7 @@ import type {
   SessionHarnessBackend,
   SessionHarnessRun,
 } from '../../e2e/sessions/session-harness-backend'
+import { signedInHarnessEnvironment } from '../../e2e/signed-in-harness'
 import { mockClaudeHarness } from '../cli/claude/mock-claude-cli'
 import { mockCodexHarness } from '../cli/codex/mock-codex-cli'
 import { createMockSessionHarnessBackend } from './mock-session-harness-backend'
@@ -60,8 +61,11 @@ test('points every transcript root at the fixture tree', () =>
   }))
 
 test('holds the reply back only when a case asks for a slow Harness', () =>
-  started(async ({ run }) => {
-    expect(run.launchEnv({ slowReply: false })).toEqual({ [SESSION_MOCK_REPLY_DELAY_MS_ENV]: '0' })
+  started(async ({ root, run }) => {
+    expect(run.launchEnv({ slowReply: false })).toEqual({
+      ...(await signedInHarnessEnvironment(root)),
+      [SESSION_MOCK_REPLY_DELAY_MS_ENV]: '0',
+    })
     const slow = run.launchEnv({ slowReply: true })[SESSION_MOCK_REPLY_DELAY_MS_ENV]
     expect(Number(slow)).toBeGreaterThan(0)
   }))

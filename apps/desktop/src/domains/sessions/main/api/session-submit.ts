@@ -186,10 +186,8 @@ export function sessionSubmitProcedure(context: SessionProcedureContext) {
           throw new TRPCError({ code: 'PRECONDITION_FAILED', message: error.message })
         throw error
       })
-      const deleted = deleteComposerDraft(context.database, input.draftId, input.expectedRevision)
-      if (!deleted && readComposerDraft(context.database, input.draftId) !== null) {
-        throw new TRPCError({ code: 'CONFLICT', message: 'stale-draft' })
-      }
+      // The Turn is already accepted, so a newer revision saved meanwhile stays as the next draft.
+      deleteComposerDraft(context.database, input.draftId, input.expectedRevision)
       return accepted
     })
 }

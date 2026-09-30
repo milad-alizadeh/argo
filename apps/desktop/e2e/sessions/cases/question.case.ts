@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test'
+import { fixtureSession } from '../fixture-sessions'
 import { openSessionByClick } from '../gestures'
 
 // A pending `AskUserQuestion` draws as a Feed row (#1840), and the composer stays a plain text
@@ -10,7 +11,7 @@ import { openSessionByClick } from '../gestures'
 // The answerable path is proved live, PTY keys included, at the driver level
 // (`claude-question-driver.test.ts`, `question-answer.test.ts`).
 export async function proveSessionQuestion(page) {
-  await openSessionByClick(page, 'askPending')
+  await openSessionByClick(page, await fixtureSession('askPending'))
   const history = page.getByRole('region', { name: 'Session history' })
   await history.getByText('Which ink?').waitFor()
   await history.getByText('This session is open in another app').waitFor()

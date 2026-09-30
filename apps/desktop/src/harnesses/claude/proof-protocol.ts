@@ -1,7 +1,3 @@
-// Set by the packaged acceptance driver so a proof reads an isolated fixture tree instead of the
-// machine's own Sessions.
-export const SESSION_CLAUDE_TRANSCRIPTS_ENV = 'ARGO_CLAUDE_TRANSCRIPTS'
-
 // The `claude` a Session proof drives: a fake that writes transcripts, honoured only on a proof run.
 export const SESSION_CLAUDE_EXECUTABLE_ENV = 'ARGO_CLAUDE_EXECUTABLE'
 

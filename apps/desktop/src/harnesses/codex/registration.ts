@@ -4,6 +4,7 @@ import type { HarnessRegistration } from '@/harnesses/registration'
 import type { CodexAppServerClient } from './app-server'
 import { readCodexHarnessInfo } from './catalog'
 import { readAutoCompactLimit, writeAutoCompactLimit } from './compaction'
+import { HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV } from './proof-protocol'
 import { createCodexSignInDriver, createSystemCodexReadiness } from './readiness'
 import {
   codexHistoryOwner,
@@ -21,11 +22,12 @@ export function createCodexRegistration(
 ): HarnessRegistration<'codex'> {
   const { request } = client
   const codexHome = process.env.CODEX_HOME ?? path.join(os.homedir(), '.codex')
+  const signInExecutable = process.env[HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV]
   return {
     harness: 'codex',
     sessionDiscovery: createCodexSessionDiscovery(request),
-    checkReadiness: createSystemCodexReadiness(),
-    signIn: createCodexSignInDriver(),
+    checkReadiness: createSystemCodexReadiness(signInExecutable),
+    signIn: createCodexSignInDriver(signInExecutable),
     readCatalog: () => readCodexHarnessInfo(request),
     readHistory: ({ nativeId, subagentId }) =>
       readCodexSessionHistory(request, subagentId ?? nativeId),

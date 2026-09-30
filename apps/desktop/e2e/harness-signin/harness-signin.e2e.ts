@@ -12,7 +12,7 @@ test.describe('missing', () => {
     const { page } = harnessSignIn
     await expect(page.getByText('Sign in to a Harness')).toBeVisible()
     await expect(page.getByText('Install the Claude CLI, then sign in.')).toBeVisible()
-    await expect(page.getByText('Not installed')).toHaveCount(2)
+    await expect(page.getByText('Not installed')).toHaveCount(3)
   })
 })
 

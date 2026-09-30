@@ -4,8 +4,6 @@ import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
 import { TICKET_POLL_PROOF_ENV } from '@/domains/tickets/main/sync/proof-protocol'
-import { SESSION_CLAUDE_TRANSCRIPTS_ENV } from '@/harnesses/claude/proof-protocol'
-import { SESSION_CODEX_TRANSCRIPTS_ENV } from '@/harnesses/codex/proof-protocol'
 import type { MockGitHub } from '@/mocks/providers/github/mock-github'
 import {
   engineRepository,
@@ -22,6 +20,7 @@ import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mts'
 import { launchCommand } from '../../application-under-test'
 import { makeProjectLocallyReady } from '../../projects/fixtures/locally-ready-project'
 import { repository, seedSingleProject } from '../../projects/fixtures/project.fixture'
+import { signedInHarnessEnvironment } from '../../signed-in-harness'
 
 // Short enough that every read renews the grant first, so a relaunch proves the refresh.
 export const LINEAR_TOKEN_LIFETIME = 60
@@ -81,11 +80,12 @@ export async function launch(fixture: TicketFixture): Promise<ElectronApplicatio
     ...launchCommand(fixture.application, ['--use-mock-keychain']),
     env: {
       ...process.env,
+      ...(await signedInHarnessEnvironment(path.dirname(fixture.userData))),
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
       [GITHUB_PROOF_ORIGIN_ENV]: fixture.github.origin,
       [LINEAR_PROOF_ORIGIN_ENV]: fixture.linear.origin,
-      [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.noSessions,
-      [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.noSessions,
+      // Claude lists its Sessions from an empty home, never the machine's own.
+      CLAUDE_CONFIG_DIR: fixture.noSessions,
       [ACCEPTANCE_ENV]: '0',
       ...(fixture.pollMs === null ? {} : { [TICKET_POLL_PROOF_ENV]: String(fixture.pollMs) }),
     },

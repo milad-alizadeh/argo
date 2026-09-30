@@ -9,6 +9,7 @@ import {
   viewportAnchor,
   waitForRevision,
 } from '../feed-selectors'
+import { fixtureSession } from '../fixture-sessions'
 import { openSession } from './roster.case'
 
 type LiveFixture = {
@@ -42,7 +43,7 @@ async function tailReading(page) {
 
 // The feed is virtualized, so only a row near the viewport is in the DOM; wait for that one.
 async function waitForRow(page, uuid) {
-  await page.waitForSelector(`${ACTIVE_VIEWPORT} [data-feed-row^="${uuid}:"]`, {
+  await page.waitForSelector(`${ACTIVE_VIEWPORT} [data-feed-row="${uuid}"]`, {
     timeout: LIVE_TIMEOUT_MS,
   })
 }
@@ -96,7 +97,8 @@ export async function proveLiveFeed(page, fixture: LiveFixture) {
     fixture.transcripts,
     'A streamed result made enough history for the reader to choose a row. '.repeat(48),
   )
-  await openSession(page, 'read this file', 'prose')
+  const prose = await fixtureSession('prose')
+  await openSession(page, 'read this file', prose)
   await waitForTailSettled(page)
   const before = await fixedRow(page)
 
@@ -115,8 +117,12 @@ export async function proveLiveFeed(page, fixture: LiveFixture) {
   assert.equal(Math.abs(held - before.offset) <= 1, true)
 
   // An inactive feed is disposed on a switch (#2177), so a Session opened again starts at its tail.
-  await openSession(page, 'Refactor the auth module', '11111111-2222-4333-8444-555555555555')
-  await openSession(page, 'read this file', 'prose')
+  await openSession(
+    page,
+    'Refactor the auth module',
+    await fixtureSession('11111111-2222-4333-8444-555555555555'),
+  )
+  await openSession(page, 'read this file', prose)
   await waitForTailSettled(page)
 
   const { tail, streamed: streamedTail } = await proveTail(page, fixture)

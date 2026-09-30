@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { ACTIVE_FEED } from '../feed-selectors'
+import { fixtureSession } from '../fixture-sessions'
 import { openSessionByClick } from '../gestures'
 
 type FormattedFixture = {
@@ -41,7 +42,7 @@ async function firstDrawn(page) {
     (feed) => {
       const viewport = document.querySelector(`${feed} .feed__viewport`)
       const rows = [...(viewport?.querySelectorAll('[data-feed-row]') ?? [])]
-      const formatted = rows.find((row) => row.dataset.feedRow === 'p-formatted:0')
+      const formatted = rows.find((row) => row.dataset.feedRow === 'p-formatted')
       if (
         formatted === undefined ||
         formatted.getBoundingClientRect().bottom > viewport.getBoundingClientRect().top
@@ -101,7 +102,7 @@ async function settledReading(page, drawn) {
 }
 
 export async function proveFormattedFeed(page, fixture: FormattedFixture) {
-  await openSessionByClick(page, 'prose')
+  await openSessionByClick(page, await fixtureSession('prose'))
   await page.waitForSelector(`${ACTIVE_FEED} .feed__viewport [data-feed-row]`)
   const localPicture = path.join(fixture.root, 'formatted-picture.svg')
   await writeFile(localPicture, PICTURE)

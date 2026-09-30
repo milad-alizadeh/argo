@@ -3,10 +3,10 @@
 // same resume-chain. A Session Argo never started resumes the same way: origin does not decide
 // whether Argo can open a channel to a transcript it can read.
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
-import path from 'node:path'
-import { fixturePath, proofCwd, replaceInFile } from '../../../mocks/sessions/mock-transcript-files'
+import { mkdir, readdir } from 'node:fs/promises'
+import { proofCwd } from '../../../mocks/sessions/mock-transcript-files'
 import { rosterRow, waitFor } from '../claude-proof-helpers'
+import { fixtureSession } from '../fixture-sessions'
 import { createSessionByClick, openSessionByClick } from '../gestures'
 import { waitForRosterSettled } from '../roster-facts'
 
@@ -18,14 +18,14 @@ async function sendFromComposer(page, text) {
   return composer
 }
 
-export async function provePackagedResume(page, { backend, project, restart, transcripts }) {
+export async function provePackagedResume(page, { backend, restart, transcripts }) {
   const opened = { harness: 'claude', prompt: 'Open the resume proof.' }
   const sessionId = await createSessionByClick(page, { harness: 'claude', prompt: opened.prompt })
   await waitFor(() => backend.recorded(opened))
 
   const relaunched = await restart()
   const [reread] = await rosterRow(relaunched, sessionId)
-  assert.equal(reread?.posture, 'external')
+  assert.equal(reread?.posture, null)
   // A fresh launch is still discovering the fixture pool off disk; a row that click resolves
   // before that settles can have another row's translateY shift onto it before the dispatched
   // click lands (#2650).
@@ -38,7 +38,8 @@ export async function provePackagedResume(page, { backend, project, restart, tra
   await backend
     .waitForReply(relaunched, { harness: 'claude', prompt: 'Carry on after the restart.' })
     .catch((error) => reportStalledResume({ error, page: relaunched, sessionId, transcripts }))
-  await relaunched.getByRole('button', { name: 'Compact context' }).click()
+  await relaunched.getByRole('button', { name: 'Context actions' }).click()
+  await relaunched.getByRole('menuitem', { name: 'Compact context' }).click()
   await waitForCompactionFeed(relaunched, sessionId)
   const resumed = await rosterRow(relaunched, sessionId)
   assert.deepEqual(
@@ -46,21 +47,16 @@ export async function provePackagedResume(page, { backend, project, restart, tra
     ['live'],
   )
 
-  // 11111111-2222-4333-8444-555555555555's fixture cwd is a folder under the Project that no one created; a real send
-  // resumes a real process, so it needs a directory that exists on this machine.
-  await replaceInFile(
-    fixturePath(transcripts, '11111111-2222-4333-8444-555555555555'),
-    proofCwd(transcripts, 'proj'),
-    project,
-  )
+  // The fixture's recorded cwd is a folder under the Project that no one created; a real send
+  // resumes a real process there, so it needs a directory that exists on this machine.
+  await mkdir(proofCwd(transcripts, 'proj'), { recursive: true })
+  const external = await fixtureSession('11111111-2222-4333-8444-555555555555')
 
   // The rewrite above touches disk under the same transcript tree; the resulting rescan can still
   // be shifting rows when the click below would otherwise fire (#2650).
   await waitForRosterSettled(relaunched)
-  await openSessionByClick(relaunched, '11111111-2222-4333-8444-555555555555')
-  await relaunched.waitForSelector(
-    '.feed__viewport[data-session="11111111-2222-4333-8444-555555555555"] [data-feed-row]',
-  )
+  await openSessionByClick(relaunched, external)
+  await relaunched.waitForSelector(`.feed__viewport[data-session="${external}"] [data-feed-row]`)
   await sendFromComposer(relaunched, 'Take this one over.')
   await backend
     .waitForReply(relaunched, { harness: 'claude', prompt: 'Take this one over.' })
@@ -68,7 +64,7 @@ export async function provePackagedResume(page, { backend, project, restart, tra
       reportStalledResume({
         error,
         page: relaunched,
-        sessionId: '11111111-2222-4333-8444-555555555555',
+        sessionId: external,
         transcripts,
       }),
     )
@@ -85,12 +81,11 @@ async function reportStalledResume({ error, page, sessionId, transcripts }) {
     .locator(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
     .allTextContents()
   const [row] = await rosterRow(page, sessionId)
-  const written = await readFile(
-    path.join(transcripts, 'mock-claude', `${sessionId}.jsonl`),
-    'utf8',
-  ).catch((readError) => `<unreadable: ${readError.message}>`)
+  const written = await readdir(transcripts, { recursive: true }).catch(
+    (readError) => `<unreadable: ${readError.message}>`,
+  )
   throw new Error(
-    `${error.message}\nRendered alert(s): ${JSON.stringify(alerted)}\nFeed rows: ${JSON.stringify(feedRows)}\nRoster row: ${JSON.stringify(row)}\nmock-claude/${sessionId}.jsonl: ${written}`,
+    `${error.message}\nRendered alert(s): ${JSON.stringify(alerted)}\nFeed rows: ${JSON.stringify(feedRows)}\nRoster row: ${JSON.stringify(row)}\nTranscripts: ${JSON.stringify(written)}`,
   )
 }
 

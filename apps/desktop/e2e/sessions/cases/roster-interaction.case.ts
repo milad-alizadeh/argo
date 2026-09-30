@@ -26,7 +26,7 @@ export async function provePackagedRosterSelection(page) {
   assert.notEqual(sessionId, null)
   await first.focus()
   await page.keyboard.press('Enter')
-  await page.waitForFunction((id) => window.location.hash === `#/sessions/${id}`, sessionId)
+  await page.waitForFunction((id) => window.location.hash.endsWith(`/sessions/${id}`), sessionId)
   await page.waitForSelector(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
   await expect(page.getByLabel('Session composer')).toBeVisible()
   const selected = page.locator(`nav[aria-label="Sessions"] button[data-session-id="${sessionId}"]`)

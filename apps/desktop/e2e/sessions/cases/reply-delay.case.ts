@@ -22,8 +22,12 @@ async function begin({ page, backend, prompt, sends }: BeginRequest) {
   await openNewSessionByClick(page)
   await chooseHarness(page, 'claude')
   await send(page, prompt, sends)
-  const waiting = page.getByRole('status', { name: /Starting Session|Working/ })
-  await waiting.waitFor()
+  // The Feed's live status event, which stays drawn once the Turn ends.
+  const waiting = page
+    .getByRole('region', { name: 'Session history' })
+    .locator('[data-slot="feed-event"]')
+    .filter({ hasText: /^Session status\s*(Starting|Running)$/ })
+  await waiting.first().waitFor()
   const reply = { harness: 'claude' as const, prompt }
   assert.equal(await backend.replied(page, reply), false)
   assert.equal(await backend.recorded(reply), false)

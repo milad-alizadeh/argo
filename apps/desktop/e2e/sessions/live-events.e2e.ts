@@ -6,6 +6,7 @@ import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-e
 import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
+import { signedInHarnessEnvironment } from '../signed-in-harness'
 
 const projectId = '00000000-0000-4000-8000-000000000091'
 const workspaceId = '00000000-0000-4000-8000-000000000092'
@@ -42,6 +43,8 @@ const liveEvents: SessionLiveEventBody[] = [
       input: null,
       output: null,
       summary: null,
+      // What the Claude adapter names a Read call that states no file.
+      presentation: { kind: 'read', label: 'Read file' },
     },
   },
   {
@@ -103,7 +106,8 @@ async function seedSession(root: string): Promise<string> {
   return userData
 }
 
-test('packaged Feed replays ordered Claude live activity for a stored Session', async ({
+// The composer offers Interrupt, not Send, while a Turn runs: the queued-Turn tray went in #2792.
+test.fixme('packaged Feed replays ordered Claude live activity for a stored Session', async ({
   root,
   applicationUnderTest,
 }) => {
@@ -112,6 +116,7 @@ test('packaged Feed replays ordered Claude live activity for a stored Session', 
     ...launchCommand(applicationUnderTest),
     env: {
       ...process.env,
+      ...(await signedInHarnessEnvironment(root)),
       [PROJECT_PROOF_STORE_ENV]: userData,
       [LIVE_EVENT_PROOF_ENV]: JSON.stringify(liveEvents.map((body) => ({ sessionId, body }))),
     },

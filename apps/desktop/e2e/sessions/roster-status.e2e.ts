@@ -2,10 +2,7 @@
 import path from 'node:path'
 import { _electron as electron, type Page } from 'playwright-core'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
-import {
-  SESSION_CLAUDE_EXECUTABLE_ENV,
-  SESSION_CLAUDE_TRANSCRIPTS_ENV,
-} from '@/harnesses/claude/proof-protocol'
+import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/harnesses/claude/proof-protocol'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
@@ -17,6 +14,7 @@ import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
+import { signedInHarnessEnvironment } from '../signed-in-harness'
 import { prepare } from './fixtures/feed.fixture'
 import { chooseHarness, PERSISTED_ROW, TURN_CONFIGURATION } from './gestures'
 
@@ -33,8 +31,10 @@ async function launch(
     ...launchCommand(applicationUnderTest),
     env: {
       ...process.env,
+      ...(await signedInHarnessEnvironment(root)),
       [SESSION_CLAUDE_EXECUTABLE_ENV]: await writeMockClaude(root, fixture.claudeTranscripts),
-      [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.claudeTranscripts,
+      CLAUDE_CONFIG_DIR: path.dirname(fixture.claudeTranscripts),
+      CODEX_HOME: path.dirname(fixture.codexTranscripts),
       [SESSION_CODEX_EXECUTABLE_ENV]: await writeMockCodexLive(root),
       [SESSION_MOCK_REPLY_DELAY_MS_ENV]: String(REPLY_DELAY_MS),
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,

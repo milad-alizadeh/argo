@@ -149,23 +149,27 @@ jobs:
         run: bun run test:storybook
 
   # This job's `name:` is `main`'s required status check, matched literally, and renaming it
-  # strands every open pull request on a check that never reports (#1733). So it keeps the name
-  # the single Linux job had, and passes only when every Linux job passed.
+  # strands every open pull request on a check that never reports (#1733). It passes only when
+  # every job passed; the e2e shards may skip only when the desktop filter found no desktop change.
   check:
     name: lint · types · duplication · hook tests
-    needs: [gates, storybook]
+    needs: [gates, storybook, desktop-artifact, desktop-e2e]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Require every Linux job to pass
+      - name: Require every job to pass
         env:
-          RESULTS: ${{ join(needs.*.result, ' ') }}
+          RESULTS: ${{ needs.gates.result }} ${{ needs.storybook.result }} ${{ needs.desktop-artifact.result }}
+          E2E: ${{ needs.desktop-e2e.result }}
+          DESKTOP: ${{ needs.desktop-artifact.outputs.desktop }}
         run: |
-          echo "gates, storybook: $RESULTS"
+          echo "gates, storybook, desktop-artifact: $RESULTS; desktop-e2e: $E2E; desktop changed: $DESKTOP"
           for result in $RESULTS; do
             if [ "$result" != "success" ]; then exit 1; fi
           done
+          if [ "$DESKTOP" = "true" ]; then expected=success; else expected=skipped; fi
+          if [ "$E2E" != "$expected" ]; then exit 1; fi
 
   # The artifact tier (#1758). It exists for what Linux genuinely cannot do: package a macOS app,
   # read the fuse wire back out of the shipped binary, and test it. Everything #1769 tests about
@@ -322,9 +326,7 @@ jobs:
   desktop-e2e:
     name: e2e shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
     needs: desktop-artifact
-    # The shell and renderer transport refactor changes the UI contract that these packaged flows
-    # drive. Keep the job visible but skipped until those flows are updated for the new contract.
-    if: ${{ false }}
+    if: needs.desktop-artifact.outputs.desktop == 'true'
     runs-on: macos-26
     timeout-minutes: 20
     strategy:

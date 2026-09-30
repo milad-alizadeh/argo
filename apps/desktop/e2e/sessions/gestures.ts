@@ -6,7 +6,7 @@ import assert from 'node:assert/strict'
 import { expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
-import { sessionRows } from './page-trpc'
+import { selectedProjectId, sessionRows } from './page-trpc'
 
 // The harness tab labels, typed against SessionHarness so a new Harness cannot be left out. The strings
 // themselves live in the renderer's turn turnConfiguration (claude-turn-configuration.ts, codex-turn-configuration.ts), which
@@ -42,14 +42,13 @@ export type CreateRequest = {
 
 type CreatedRow = { id: string; label: string; matchingRows: number }
 
-// A Session route sits under its Project: `#/projects/<id>/sessions/<route>`.
+// A Session route sits under its Project: `#/projects/<id>/sessions/<route>`, and keeps the
+// Roster filter's query (`?status=all`) after it.
 async function waitForRoute(page: Page, route: string) {
-  await page.waitForFunction(
-    (tail) =>
-      /^#\/projects\/[^/]+\/sessions\//.test(window.location.hash) &&
-      window.location.hash.endsWith(tail),
-    `/sessions/${route}`,
-  )
+  await page.waitForFunction((tail) => {
+    const routed = window.location.hash.split('?')[0]
+    return /^#\/projects\/[^/]+\/sessions\//.test(routed) && routed.endsWith(tail)
+  }, `/sessions/${route}`)
 }
 
 // A "+" click opens a fresh composer (#2109): with a Project open, that composer already carries
@@ -84,6 +83,14 @@ export async function chooseRosterStatus(page: Page, status: 'Active' | 'Archive
   await choice.waitFor({ state: 'detached' })
 }
 
+// Sessions a Harness wrote after launch reach the Roster when the reader asks for a refresh.
+export async function refreshSessions(page: Page) {
+  await page.locator(FILTER).click()
+  await page.getByRole('menuitem', { name: 'Refresh Sessions' }).click()
+  await page.getByRole('menu').waitFor({ state: 'detached' })
+  await expect(page.getByRole('progressbar', { name: 'Session refresh progress' })).toHaveCount(0)
+}
+
 export async function openArchivedSessionByClick(page: Page, sessionId: string) {
   await chooseRosterStatus(page, 'All')
   await page.locator(`${ROW}[data-session-id="${sessionId}"]`).click()
@@ -96,12 +103,28 @@ export async function openNewSessionByClick(page: Page) {
   await waitForNewSessionRoute(page)
 }
 
+// The route a Session opens under, inside the open Project.
+export async function sessionRoute(page: Page, sessionId: string | null) {
+  const projectId = await selectedProjectId(page)
+  return `#/projects/${projectId}/sessions${sessionId === null ? '' : `/${sessionId}`}`
+}
+
 // No affordance reaches the Roster with nothing selected: a person lands there by launching, and
 // several cases need that state mid-run.
 export async function deselectSession(page: Page) {
-  await page.evaluate(() => {
-    window.location.hash = '#/sessions'
-  })
+  const route = await sessionRoute(page, null)
+  await page.evaluate((hash) => {
+    window.location.hash = hash
+  }, route)
+}
+
+// A Session's own route, the way a link to it opens it.
+export async function openSessionByRoute(page: Page, sessionId: string) {
+  const route = await sessionRoute(page, sessionId)
+  await page.evaluate((hash) => {
+    window.location.hash = hash
+  }, route)
+  await waitForRoute(page, sessionId)
 }
 
 // The harness tabs inside the Turn configuration popover, dismissed the way a person dismisses it.

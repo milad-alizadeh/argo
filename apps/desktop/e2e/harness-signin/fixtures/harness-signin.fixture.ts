@@ -1,6 +1,6 @@
 // One packaged launch per Harness readiness/sign-in scenario (#2579): Claude plays the state under
-// test, Codex is pinned to `MISSING` so it never reads ready and the gate screen stays up
-// regardless of which Claude state the case is proving.
+// test, Codex and Claude ACP are pinned to `MISSING` so neither reads ready and the gate screen
+// stays up regardless of which Claude state the case is proving.
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { expect as baseExpect } from '@playwright/test'
@@ -9,6 +9,7 @@ import { openDatabase } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV } from '@/domains/harness-signin/contract/proof-protocol'
 import { HARNESS_SIGNIN_CLAUDE_EXECUTABLE_ENV } from '@/harnesses/claude/proof-protocol'
+import { SESSION_CLAUDE_ACP_EXECUTABLE_ENV } from '@/harnesses/claude-acp/proof-protocol'
 import { HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { writeMockClaudeReadinessCli } from '../../../mocks/cli/claude/mock-claude-readiness-cli'
 import { writeMockCodexReadinessCli } from '../../../mocks/cli/codex/mock-codex-readiness-cli'
@@ -118,10 +119,17 @@ export const test = packagedTest.extend<{
   harnessSignInScenario: ['signed-out', { option: true }],
   harnessSignIn: async ({ applicationUnderTest, harnessSignInScenario, root }, use) => {
     const fixture = await prepareReadyProject(root, applicationUnderTest)
-    const environment = await environmentFor(root, harnessSignInScenario)
+    const environment = {
+      [SESSION_CLAUDE_ACP_EXECUTABLE_ENV]: MISSING,
+      ...(await environmentFor(root, harnessSignInScenario)),
+    }
     const application = await launch(fixture, environment)
     try {
       const page = await openHiddenWindow(application, VIEWPORT)
+      // Saved Sessions stay readable without a Harness, so the gate is proven on Tickets.
+      await page.evaluate((hash) => {
+        window.location.hash = hash
+      }, `#/projects/${PROOF_PROJECT_ID}/tickets`)
       await use({ application, page })
     } finally {
       await application.close()

@@ -278,7 +278,7 @@ test('retains a newer draft revision when the accepted Session loses the delete 
       expectedRevision: created.revision,
       commandId: 'command-1',
     }),
-  ).rejects.toThrow('stale-draft')
+  ).resolves.toEqual({ sessionId: 'session-1' })
   await expect(api.composerDraftRead(created.target)).resolves.toMatchObject({
     prompt: 'A newer thought.',
     revision: created.revision + 1,
@@ -619,7 +619,7 @@ test('retains a newer Session revision when an accepted Turn loses the delete ra
       expectedRevision: created.revision,
       commandId: 'delete-race-command',
     }),
-  ).rejects.toThrow('stale-draft')
+  ).resolves.toEqual({ sessionId: 'session-1' })
   await expect(api.composerDraftRead(created.target)).resolves.toMatchObject({
     prompt: 'Written while submit was pending.',
     revision: created.revision + 1,

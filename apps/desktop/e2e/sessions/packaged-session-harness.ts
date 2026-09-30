@@ -1,14 +1,11 @@
+import path from 'node:path'
 import { type ElectronApplication, _electron as electron, type Page } from 'playwright-core'
 import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CLAUDE_SYNC_FIXTURE_ENV,
-  SESSION_CLAUDE_TRANSCRIPTS_ENV,
 } from '@/harnesses/claude/proof-protocol'
 import { SESSION_CLAUDE_ACP_EXECUTABLE_ENV } from '@/harnesses/claude-acp/proof-protocol'
-import {
-  SESSION_CODEX_EXECUTABLE_ENV,
-  SESSION_CODEX_TRANSCRIPTS_ENV,
-} from '@/harnesses/codex/proof-protocol'
+import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { launchCommand } from '../application-under-test'
@@ -35,12 +32,13 @@ function keepRecentConsole(page: Page, lines: string[]) {
 }
 
 // Unset leaves the shipped app reading the machine's own transcript roots under HOME, which is
-// what a backend running the real CLIs asks for.
+// what a backend running the real CLIs asks for. Each root sits one folder below the home its
+// Harness names by environment: `<CLAUDE_CONFIG_DIR>/projects` and `<CODEX_HOME>/sessions`.
 function transcriptEnv(transcripts: SessionHarnessRun['transcripts']): Record<string, string> {
   if (transcripts === null) return {}
   return {
-    [SESSION_CLAUDE_TRANSCRIPTS_ENV]: transcripts.claude,
-    [SESSION_CODEX_TRANSCRIPTS_ENV]: transcripts.codex,
+    CLAUDE_CONFIG_DIR: path.dirname(transcripts.claude),
+    CODEX_HOME: path.dirname(transcripts.codex),
   }
 }
 

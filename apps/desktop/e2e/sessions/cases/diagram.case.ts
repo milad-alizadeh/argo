@@ -6,6 +6,8 @@
 import assert from 'node:assert/strict'
 import { expect } from '@playwright/test'
 import { ACTIVE_VIEWPORT } from '../feed-selectors'
+import { fixtureSession } from '../fixture-sessions'
+import { openSessionByRoute } from '../gestures'
 
 type DiagramFixture = {
   transcripts: string
@@ -48,7 +50,7 @@ function rowOffset(page, id) {
       if (!container || !row) return null
       return row.getBoundingClientRect().top - container.getBoundingClientRect().top
     },
-    { viewport: ACTIVE_VIEWPORT, rowId: `${id}:0` },
+    { viewport: ACTIVE_VIEWPORT, rowId: id },
   )
 }
 
@@ -63,9 +65,7 @@ async function waitForDrawnDiagrams(page) {
 }
 
 export async function proveSessionDiagram(page, fixture: DiagramFixture) {
-  await page.evaluate(() => {
-    window.location.hash = '#/sessions/prose'
-  })
+  await openSessionByRoute(page, await fixtureSession('prose'))
   await page.waitForSelector(`${ACTIVE_VIEWPORT} [data-feed-row]`)
   await fixture.append(fixture.transcripts, DIAGRAM_ROW, DIAGRAM_TEXT)
   await fixture.append(fixture.transcripts, 'p-diagram-after', FOLLOWING_TEXT)
