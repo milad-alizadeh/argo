@@ -100,7 +100,6 @@ export function useSessionScreenModel() {
   const sessionFeed = useFeedReading(selectedSessionId, null, feedRunning)
   const [lastHarness, chooseHarness] = useState<Harness>(DEFAULT_HARNESS)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
-  // Ask only real Session ids; an optimistic Session row has no backend record yet (#2109).
   const permission = useSessionPermission(selectedSessionId)
   const question = useSessionQuestion(selectedSessionId)
   const inspector = useWorkInspector({

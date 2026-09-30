@@ -2,18 +2,18 @@ import type { FeedSubagent } from '@/domains/sessions/api/feed'
 import type { SessionSubagent } from '../types'
 import type { WorkSelection } from './work-selection'
 
-// Main's Feed lists every Subagent its rows name; the roster adds when each ran. Both key by id.
+// Main's Feed lists every Subagent its rows name; the Session index adds when each ran. Both key by id.
 export function sessionScreenSubagents(
   feedSubagents: readonly FeedSubagent[],
-  roster: readonly SessionSubagent[],
+  indexed: readonly SessionSubagent[],
 ): SessionSubagent[] {
   const subagents = new Map<string, SessionSubagent>(
     feedSubagents.map((subagent) => [subagent.id, { ...subagent, startedAt: null, endedAt: null }]),
   )
-  // The roster was read at the last sync; the Feed's state is at least as new.
-  for (const subagent of roster) {
+  // The index was read at the last sync; the Feed's state is at least as new.
+  for (const subagent of indexed) {
     const current = subagents.get(subagent.id)
-    // Only the Feed knows a nickname; the roster never records one.
+    // Only the Feed knows a nickname; the index never records one.
     const nickname = current?.nickname
     subagents.set(subagent.id, {
       ...subagent,

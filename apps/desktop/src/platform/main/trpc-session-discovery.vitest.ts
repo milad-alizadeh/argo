@@ -1,9 +1,6 @@
-import { mkdtemp, rm } from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { createActor } from 'xstate'
-import { type Database, databaseMigrationsFolder, openDatabase } from '@/database/database'
+import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import type {
   SessionSummaryList,
@@ -12,26 +9,24 @@ import type {
 import { SessionListChanges } from '@/domains/sessions/main/api'
 import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync'
 import type { Harness } from '@/harnesses/harness'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { sessionRouterDependencies } from '@/mocks/sessions/session-router-dependencies.fixture'
 import { createAppRouter } from './trpc-router'
 
-let userData: string
 let database: Database
 
-beforeEach(async () => {
+beforeEach(() => {
   vi.useFakeTimers()
-  userData = await mkdtemp(path.join(os.tmpdir(), 'argo-session-discovery-'))
-  database = openDatabase(userData, { migrationsFolder: databaseMigrationsFolder() })
+  database = migratedDatabase()
   database
     .insert(project)
     .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
     .run()
 })
 
-afterEach(async () => {
+afterEach(() => {
   vi.useRealTimers()
   database.$client.close()
-  await rm(userData, { recursive: true, force: true })
 })
 
 const record = (nativeId: string) => ({ nativeId, cwd: '/work/one', activityAt: 1 })

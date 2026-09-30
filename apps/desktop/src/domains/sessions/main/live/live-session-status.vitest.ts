@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
-import { initTRPC } from '@trpc/server'
 import { test } from 'vitest'
-import { type Database, databaseFrom } from '@/database/database'
+import { databaseFrom } from '@/database/database'
 import {
   claudeCatalog,
   claudeFirst,
@@ -9,24 +8,7 @@ import {
   start,
   supervisorFor,
 } from '@/mocks/sessions/live-session-supervisor.fixture'
-import { SessionListChanges, sessionListProcedure } from '../api'
-import type { LiveSessionSupervisorActor } from './live-session-supervisor-machine'
-
-// The status of the first row the Session List lists first.
-function firstListedStatus(database: Database, supervisor: LiveSessionSupervisorActor) {
-  const list = initTRPC
-    .create()
-    .router({
-      list: sessionListProcedure({
-        database,
-        supervisor,
-        changes: new SessionListChanges(),
-        ticketSource: async () => null,
-      }),
-    })
-    .createCaller({}).list
-  return async () => (await list({ projectId: 'project-1' })).rows[0]?.status
-}
+import { sessionListCaller } from '@/mocks/sessions/session-list-caller'
 
 test('session.list projects the latest live status event and announces each change', async () => {
   let emitStatus!: (status: 'running' | 'idle' | 'permission') => void
@@ -51,7 +33,8 @@ test('session.list projects the latest live status event and announces each chan
       return { submit: async () => {}, ...passiveChannelMethods }
     },
   )
-  const statusOf = firstListedStatus(databaseFrom(client), supervisor)
+  const { list, stopWatching } = sessionListCaller({ database: databaseFrom(client), supervisor })
+  const statusOf = async () => (await list({ projectId: 'project-1' })).rows[0]?.status
   const announced: string[] = []
   const subscription = supervisor.on('Session status changed', ({ sessionId }) =>
     announced.push(sessionId),
@@ -67,6 +50,7 @@ test('session.list projects the latest live status event and announces each chan
     assert.deepEqual(announced, [sessionId, sessionId, sessionId, sessionId])
   } finally {
     subscription.unsubscribe()
+    stopWatching()
     root.send({ type: 'Shutdown' })
     client.close()
   }

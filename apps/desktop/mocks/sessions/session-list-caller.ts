@@ -1,5 +1,4 @@
 import { type inferRouterOutputs, initTRPC } from '@trpc/server'
-import type { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionArchive } from '@/database/session-archive/schema'
@@ -8,7 +7,6 @@ import {
   sessionDetailsProcedure,
   sessionListChangedProcedure,
   sessionListProcedure,
-  type sessionListRowSchema,
   watchSessionList,
 } from '@/domains/sessions/main/api/session-list'
 import { SessionListChanges } from '@/domains/sessions/main/api/session-list-changes'
@@ -16,6 +14,7 @@ import {
   type SessionUpdateProcedureContext,
   sessionUpdateProcedure,
 } from '@/domains/sessions/main/api/session-update'
+import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live'
 import { saveReadTicket } from '@/domains/tickets/main/database/ticket-upsert'
 import {
   insertProject,
@@ -30,12 +29,11 @@ export const IDS = [
   '00000000-0000-4000-8000-000000000003',
 ] as const
 
-export type SessionListRow = z.infer<typeof sessionListRowSchema>
 type SessionListChange = inferRouterOutputs<AppRouter>['sessionListChanged']
 type RenameRequest = Parameters<SessionUpdateProcedureContext['rename']>[0]
 
 // The provider scope every test Project's Tickets are saved under.
-export const TICKET_SCOPE = { provider: 'github', scope: 'octocat/hello-world' } as const
+const TICKET_SCOPE = { provider: 'github', scope: 'octocat/hello-world' } as const
 
 function mockSupervisor(sessions: Record<string, unknown>) {
   const statusListeners = new Set<(event: { sessionId: string }) => void>()
@@ -58,20 +56,29 @@ function mockSupervisor(sessions: Record<string, unknown>) {
   return { supervisor, statusChanged }
 }
 
+type SessionListCallerOptions = {
+  // Mock live actors by Session ID, unless a test passes a real `supervisor`.
+  sessions?: Record<string, unknown>
+  supervisor?: LiveSessionSupervisorActor
+  database?: Database
+  observeFeed?: (sessionId: string) => () => void
+  rename?: (request: RenameRequest) => Promise<void>
+}
+
 // The Session List procedures over an in-memory database, with the app-level watcher main starts.
-export function sessionListCaller(
-  sessions: Record<string, unknown> = {},
-  observeFeed: (sessionId: string) => () => void = () => () => {},
-  rename: (request: RenameRequest) => Promise<void> = async () => {},
-) {
-  const database = migratedDatabase()
-  const client = database.$client
-  const { supervisor, statusChanged } = mockSupervisor(sessions)
+export function sessionListCaller({
+  sessions = {},
+  supervisor,
+  database = migratedDatabase(),
+  observeFeed = () => () => {},
+  rename = async () => {},
+}: SessionListCallerOptions = {}) {
+  const mock = mockSupervisor(sessions)
   const changes = new SessionListChanges()
   const renames: RenameRequest[] = []
   const context = {
     database,
-    supervisor: supervisor as never,
+    supervisor: supervisor ?? (mock.supervisor as never),
     changes,
     ticketSource: async () => TICKET_SCOPE,
     rename: async (request: RenameRequest) => {
@@ -96,7 +103,6 @@ export function sessionListCaller(
     return { received, stop: () => subscription.unsubscribe() }
   }
   return {
-    client,
     database,
     list: caller.list,
     update: caller.update,
@@ -104,7 +110,7 @@ export function sessionListCaller(
     changes: subscribeChanges,
     sessionListChanges: changes,
     stopWatching,
-    statusChanged,
+    statusChanged: mock.statusChanged,
     renames,
   }
 }

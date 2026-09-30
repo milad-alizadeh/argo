@@ -13,6 +13,7 @@ const session = sessionRow({
   id: 'flaky-feed-session',
   posture: null,
   title: { text: 'Read the transcript through a flaky source', source: 'first-prompt' },
+  name: 'Read the transcript through a flaky source',
   status: 'idle',
   cwd: '/storybook/argo',
 })

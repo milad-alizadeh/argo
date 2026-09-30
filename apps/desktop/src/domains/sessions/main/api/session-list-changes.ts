@@ -1,7 +1,7 @@
-// Announces the saved Sessions a write or a live status changed, once a tick for any burst, so each
-// Session List reads just those rows.
-export class SessionListChanges {
-  readonly #listeners = new Set<(sessionIds: readonly string[]) => void>()
+import { ChangeListeners } from '@/platform/main/change-listeners'
+
+// Announces the saved Sessions a write or a live status changed, once a tick for any burst.
+export class SessionListChanges extends ChangeListeners<readonly string[]> {
   readonly #pending = new Set<string>()
 
   changed(sessionIds: readonly string[]): void {
@@ -11,12 +11,7 @@ export class SessionListChanges {
     queueMicrotask(() => {
       const changed = [...this.#pending]
       this.#pending.clear()
-      for (const listener of this.#listeners) listener(changed)
+      this.announce(changed)
     })
-  }
-
-  subscribe(listener: (sessionIds: readonly string[]) => void): () => void {
-    this.#listeners.add(listener)
-    return () => this.#listeners.delete(listener)
   }
 }

@@ -45,22 +45,3 @@ test('disconnecting drops the link and leaves other Sessions alone', async (cont
   assert.equal(await links.linkFor('session-1'), null)
   assert.notEqual(await links.linkFor('session-2'), null)
 })
-
-test('linkedSessions lists every Session on one Ticket, most recently linked first', async (context) => {
-  const links = await store(context)
-  await links.connect('session-1', ticket('#607'), '2026-09-14T00:00:00.000Z')
-  await links.connect('session-2', ticket('#607'), '2026-09-14T00:02:00.000Z')
-  await links.connect('session-3', ticket('#608'), '2026-09-14T00:01:00.000Z')
-  assert.deepEqual(await links.linkedSessions('project-1', '#607'), ['session-2', 'session-1'])
-})
-
-test('a link is scoped to its Project: the same key in another Project is a different Ticket', async (context) => {
-  const links = await store(context)
-  await links.connect('session-1', ticket('#607'), '2026-09-14T00:00:00.000Z')
-  await links.connect(
-    'session-2',
-    { ...ticket('#607'), projectId: 'project-2' },
-    '2026-09-14T00:01:00.000Z',
-  )
-  assert.deepEqual(await links.linkedSessions('project-1', '#607'), ['session-1'])
-})

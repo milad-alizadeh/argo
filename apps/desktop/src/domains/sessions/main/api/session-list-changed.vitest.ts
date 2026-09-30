@@ -14,22 +14,6 @@ function insertTwoSessions(database: Database) {
   insertSession(database, { id: IDS[1], harness: 'claude', nativeId: 'native-2', createdAt: 10 })
 }
 
-test('an announcement names the Sessions it changed', async () => {
-  const { client, database, changes, sessionListChanges } = sessionListCaller()
-  try {
-    insertTwoSessions(database)
-    const { received, stop } = await changes()
-
-    sessionListChanges.changed([IDS[1]])
-    await settled()
-    stop()
-
-    assert.deepEqual(received, [{ sessionIds: [IDS[1]] }])
-  } finally {
-    client.close()
-  }
-})
-
 test('a live status change names that Session', async () => {
   let status = 'running'
   const session = {
@@ -39,7 +23,9 @@ test('a live status change names that Session', async () => {
       context: { status, turnConfiguration: { model: null, effort: null, mode: null } },
     }),
   }
-  const { client, database, changes, statusChanged } = sessionListCaller({ [IDS[0]]: session })
+  const { database, changes, statusChanged } = sessionListCaller({
+    sessions: { [IDS[0]]: session },
+  })
   try {
     insertTwoSessions(database)
     const { received, stop } = await changes()
@@ -51,12 +37,12 @@ test('a live status change names that Session', async () => {
 
     assert.deepEqual(received, [{ sessionIds: [IDS[0]] }])
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
 test('a burst of announcements in one tick sends one change', async () => {
-  const { client, database, changes, sessionListChanges, statusChanged } = sessionListCaller()
+  const { database, changes, sessionListChanges, statusChanged } = sessionListCaller()
   try {
     insertTwoSessions(database)
     const { received, stop } = await changes()
@@ -69,7 +55,7 @@ test('a burst of announcements in one tick sends one change', async () => {
 
     assert.deepEqual(received, [{ sessionIds: [IDS[0], IDS[1], IDS[2]] }])
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
@@ -79,10 +65,10 @@ test('opens a Feed reader only for working Sessions, and closes them when the wa
     observed.set(sessionId, (observed.get(sessionId) ?? 0) + 1)
     return () => observed.delete(sessionId)
   }
-  const { client, database, sessionListChanges, stopWatching } = sessionListCaller(
-    { [IDS[0]]: liveSession('Ready', 'running') },
+  const { database, sessionListChanges, stopWatching } = sessionListCaller({
+    sessions: { [IDS[0]]: liveSession('Ready', 'running') },
     observeFeed,
-  )
+  })
   try {
     insertTwoSessions(database)
     insertSession(database, {
@@ -94,7 +80,9 @@ test('opens a Feed reader only for working Sessions, and closes them when the wa
     })
     assert.deepEqual(observed, new Map([[IDS[0], 1]]))
 
-    client.prepare("UPDATE session SET status = 'permission' WHERE argo_id = ?").run(IDS[1])
+    database.$client
+      .prepare("UPDATE session SET status = 'permission' WHERE argo_id = ?")
+      .run(IDS[1])
     sessionListChanges.changed([IDS[1]])
     await settled()
     assert.deepEqual(
@@ -105,7 +93,7 @@ test('opens a Feed reader only for working Sessions, and closes them when the wa
       ]),
     )
 
-    client.prepare("UPDATE session SET status = 'idle' WHERE argo_id = ?").run(IDS[1])
+    database.$client.prepare("UPDATE session SET status = 'idle' WHERE argo_id = ?").run(IDS[1])
     sessionListChanges.changed([IDS[1]])
     await settled()
     assert.deepEqual(observed, new Map([[IDS[0], 1]]))
@@ -113,6 +101,6 @@ test('opens a Feed reader only for working Sessions, and closes them when the wa
     stopWatching()
     assert.equal(observed.size, 0)
   } finally {
-    client.close()
+    database.$client.close()
   }
 })

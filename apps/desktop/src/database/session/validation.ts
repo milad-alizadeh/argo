@@ -1,5 +1,4 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-orm/zod'
-import type { z } from 'zod'
 import { sessionTable } from './schema'
 
 const serverOwnedSessionFields = {
@@ -13,5 +12,3 @@ const serverOwnedSessionFields = {
 export const sessionInsertSchema = createInsertSchema(sessionTable).omit(serverOwnedSessionFields)
 
 export const sessionSelectSchema = createSelectSchema(sessionTable)
-export const sessionStatusSchema = sessionSelectSchema.shape.status
-export type SessionStatus = z.infer<typeof sessionStatusSchema>

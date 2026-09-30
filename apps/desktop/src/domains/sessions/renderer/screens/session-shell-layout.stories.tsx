@@ -12,6 +12,7 @@ const session = sessionRow({
     text: 'Keep the sidebar control clear of every Session title at every workspace width',
     source: 'custom',
   },
+  name: 'Keep the sidebar control clear of every Session title at every workspace width',
   cwd: '/workspace/argo/.claude/worktrees/ticket-page-layout',
 })
 

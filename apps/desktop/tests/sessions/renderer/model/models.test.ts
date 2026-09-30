@@ -12,7 +12,7 @@ const roster = sessionRow({
   title: null,
 })
 
-test('accepts only complete Roster rows', () => {
+test('accepts only complete Session List rows', () => {
   for (const [value, accepted] of [
     [roster, true],
     [{ ...roster, status: 'waiting' }, false],

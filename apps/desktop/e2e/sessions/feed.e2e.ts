@@ -83,7 +83,7 @@ test.describe('session refresh progress', () => {
   })
 })
 
-test('session-roster-selection', async ({ session }) => {
+test('session-list-selection', async ({ session }) => {
   await provePackagedSessionListSelection(session.page())
 })
 
@@ -119,7 +119,7 @@ test('session-live-codex-model-choices', async ({ session }) => {
 })
 
 // The fillers are written while the app is closed: a write it watches is new activity, not old history.
-test('session-roster-window', async ({ session }) => {
+test('session-list-window', async ({ session }) => {
   const { claudeTranscripts, project } = session.fixture
   await session.restart(() => writeWindowFillerSessions(claudeTranscripts, project))
   await proveSessionListWindow(session.page())

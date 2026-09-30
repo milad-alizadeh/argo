@@ -11,6 +11,7 @@ import {
 } from 'xstate'
 import type { Database } from '@/database/database'
 import type {
+  SessionSummary,
   SessionSummaryList,
   SessionSummaryReader,
 } from '@/domains/sessions/api/session-discovery'
@@ -58,7 +59,7 @@ const DISCOVERY_RETRY_DELAYS_MS = [
   13_500,
 ]
 
-type SessionSyncEvent =
+type SyncActorEvent =
   | {
       type: 'SyncStatus'
       harness: Harness
@@ -72,6 +73,14 @@ type SessionSyncEvent =
       type: 'SyncFailed'
       harness: Harness
     }
+
+// Saves Harness summaries under their matched Projects, and announces the Sessions they touched.
+function saveSummaries(
+  { database, changes, harness }: Pick<SessionSyncActorInput, 'database' | 'changes' | 'harness'>,
+  summaries: readonly SessionSummary[],
+): void {
+  changes.changed(saveSessionBatch(database, harness, matchSessionsToProjects(database, summaries)))
+}
 
 function discoveryKey({ harness, nativeId }: { harness: Harness; nativeId: string }): string {
   return `${harness}:${nativeId}`
@@ -110,20 +119,14 @@ const sessionSyncActor = fromCallback<
     type: 'Stop'
   },
   SessionSyncActorInput,
-  SessionSyncEvent
+  SyncActorEvent
 >(({ input, sendBack }) => {
-  const { database, changes, harness, listSessionSummaries } = input
+  const { database, harness, listSessionSummaries } = input
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
         save: fromPromise(async ({ input: saveInput }) => {
-          changes.changed(
-            saveSessionBatch(
-              database,
-              harness,
-              matchSessionsToProjects(database, saveInput.records),
-            ),
-          )
+          saveSummaries(input, saveInput.records)
         }),
       },
     }),
@@ -177,7 +180,7 @@ const sessionDiscoverActor = fromCallback<
   SessionDiscoverActorInput,
   DiscoverFinished
 >(({ input, sendBack }) => {
-  const { database, changes, harness, nativeId, getSessionSummary } = input
+  const { harness, nativeId, getSessionSummary } = input
   let stopped = false
   let timer: ReturnType<typeof setTimeout> | undefined
   const attempt = async (retry: number): Promise<void> => {
@@ -186,15 +189,9 @@ const sessionDiscoverActor = fromCallback<
       const summary = await getSessionSummary(nativeId)
       if (stopped) return
       if (summary !== null) {
-        changes.changed(
-          saveSessionBatch(
-            database,
-            harness,
-            matchSessionsToProjects(database, [
-              summary,
-            ]),
-          ),
-        )
+        saveSummaries(input, [
+          summary,
+        ])
         stored = true
       }
     } catch (error) {
@@ -233,7 +230,7 @@ type SupervisorEvent =
       type: 'ReplayRefresh'
       harness: Harness
     }
-  | SessionSyncEvent
+  | SyncActorEvent
 
 type SessionSyncSupervisorCommand =
   | {

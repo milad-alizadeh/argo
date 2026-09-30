@@ -10,17 +10,15 @@ import {
 } from '@/platform/renderer/components/ui/dialog'
 import { Input } from '@/platform/renderer/components/ui/input'
 import { Label } from '@/platform/renderer/components/ui/label'
-import { sessionName } from '../session-name'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import type { Session } from '../types'
 
 // A failed rename keeps the dialog open with the reason inline.
 export function SessionRenameDialog({
   onClose,
-  onRename,
   session,
 }: {
   onClose: () => void
-  onRename: (session: Session, name: string) => Promise<void>
   session: Session | null
 }) {
   const { t } = useTranslation('sessions')
@@ -31,7 +29,7 @@ export function SessionRenameDialog({
 
   useEffect(() => {
     if (session === null) return
-    setName(sessionName(session, t('newSession')))
+    setName(session.name ?? t('newSession'))
     setError(null)
   }, [session, t])
 
@@ -48,7 +46,7 @@ export function SessionRenameDialog({
     setSaving(true)
     setError(null)
     try {
-      await onRename(session, name)
+      await trpcClient.sessionUpdate.mutate({ sessionIds: [session.id], title: name })
       onClose()
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : t('rename.failure'))

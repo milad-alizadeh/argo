@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { type Session, sessionName } from '@/domains/sessions/renderer'
+import type { Session } from '@/domains/sessions/renderer'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { linkRow, stateIcon } from './ticket-detail-links'
 import { TicketDetailSection } from './ticket-detail-section'
@@ -28,7 +28,7 @@ export function LinkedSessions({
               type="button"
             >
               <span className="min-w-0 flex-1 truncate type-body">
-                {sessionName(session, sessionsT('newSession'))}
+                {session.name ?? sessionsT('newSession')}
               </span>
             </button>
           </li>

@@ -1,4 +1,3 @@
-import { initTRPC } from '@trpc/server'
 import { expect, test, vi } from 'vitest'
 import { waitFor } from 'xstate'
 import { databaseFrom } from '@/database/database'
@@ -14,13 +13,8 @@ import {
   start,
   supervisorFor,
 } from '@/mocks/sessions/live-session-supervisor.fixture'
+import { sessionListCaller } from '@/mocks/sessions/session-list-caller'
 import { liveSessionActorFor } from '../live'
-import {
-  sessionDetailsProcedure,
-  sessionListChangedProcedure,
-  watchSessionList,
-} from './session-list'
-import { SessionListChanges } from './session-list-changes'
 
 if (model === undefined) throw new Error('The Codex fixture needs a model.')
 const openingEffort = model.defaultEffort
@@ -46,20 +40,10 @@ async function detailsAroundSecondSend(
       ? secondTurn()
       : recording.request(method, params, parse)
   const { root, supervisor, client, notify } = await supervisorFor(request, twoEffortCatalog)
-  const context = {
+  const { details, sessionListChanges, stopWatching } = sessionListCaller({
     database: databaseFrom(client),
     supervisor,
-    changes: new SessionListChanges(),
-    ticketSource: async () => null,
-  }
-  const stopWatching = watchSessionList(context, () => () => {})
-  const caller = initTRPC
-    .create()
-    .router({
-      details: sessionDetailsProcedure(context),
-      changes: sessionListChangedProcedure(context),
-    })
-    .createCaller({})
+  })
   const seen: Details[] = []
   try {
     const { sessionId } = await start(supervisor, first)
@@ -69,18 +53,15 @@ async function detailsAroundSecondSend(
     completeCodexTurn(notify, 'turn-2')
     await waitFor(child, (snapshot) => snapshot.matches('Ready'))
     const read = async () => {
-      const details = await caller.details({ sessionId })
+      const row = await details({ sessionId })
       seen.push({
-        posture: details?.posture ?? null,
-        effort: details?.turnConfiguration.effort ?? null,
+        posture: row?.posture ?? null,
+        effort: row?.turnConfiguration.effort ?? null,
       })
     }
     await read()
-    const stream = await caller.changes()
-    const subscription = stream.subscribe({
-      next: ({ sessionIds }) => {
-        if (sessionIds.includes(sessionId)) void read()
-      },
+    const unsubscribe = sessionListChanges.subscribe((sessionIds) => {
+      if (sessionIds.includes(sessionId)) void read()
     })
     send(supervisor, {
       ...first,
@@ -89,7 +70,7 @@ async function detailsAroundSecondSend(
       turnConfiguration: { ...first.turnConfiguration, effort: 'deep' },
     }).catch(() => {})
     await vi.waitFor(() => expect(settled(seen)).toBe(true))
-    subscription.unsubscribe()
+    unsubscribe()
     return seen
   } finally {
     stopWatching()

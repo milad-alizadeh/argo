@@ -13,13 +13,14 @@ import { heldDetails } from '@/mocks/sessions/session-story-host'
 import { cockpitRoutes } from '@/renderer/cockpit-router'
 import type { Session } from '../types'
 
-const ROSTER = [
+const SESSION_ROWS = [
   sessionRow({
     id: 'claude-first',
     posture: 'live',
     status: 'idle',
     cwd: '/workspace/argo',
     title: { text: 'First Claude Session', source: 'custom' },
+    name: 'First Claude Session',
     updatedAt: '2026-09-13T15:50:00Z',
   }),
   sessionRow({
@@ -29,6 +30,7 @@ const ROSTER = [
     status: 'idle',
     cwd: '/workspace/argo',
     title: { text: 'Second Codex Session', source: 'custom' },
+    name: 'Second Codex Session',
     updatedAt: '2026-09-13T15:40:00Z',
   }),
   sessionRow({
@@ -37,6 +39,7 @@ const ROSTER = [
     status: 'idle',
     cwd: '/workspace/argo',
     title: { text: 'Third Claude Session', source: 'custom' },
+    name: 'Third Claude Session',
     updatedAt: '2026-09-13T15:30:00Z',
   }),
 ] satisfies Session[]
@@ -144,7 +147,7 @@ type Story = StoryObj<typeof meta>
 // A Session switch keeps the one composer card on screen, enabled, and swaps only its content,
 // for Claude and Codex Sessions alike (#2836).
 export const SwitchingKeepsTheComposerCardMounted: Story = {
-  beforeEach: () => sessionSelectionHost(ROSTER),
+  beforeEach: () => sessionSelectionHost(SESSION_ROWS),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = await canvas.findByRole('combobox', { name: MESSAGE_LABEL })
@@ -215,7 +218,7 @@ function watchForeignText(canvasElement: HTMLElement, sessionId: string, text: s
 // never the last Session's draft (#2836).
 export const FirstVisitNeverShowsTheLastSessionsDraft: Story = {
   beforeEach: () =>
-    sessionSelectionHost(ROSTER, {
+    sessionSelectionHost(SESSION_ROWS, {
       savedDrafts: { 'claude-third': 'Draft kept for the third Session' },
       heldDraftReads: ['claude-third'],
     }),
@@ -340,7 +343,7 @@ async function selectSession(canvasElement: HTMLElement, title: string, sessionI
 // Composer failures toast instead of drawing above the card, for Claude and Codex alike, and a
 // Session switch neither carries a toast to the next Session nor raises it again (#2836).
 export const FailuresToastWithoutMovingTheComposer: Story = {
-  beforeEach: () => sessionSelectionHost(ROSTER),
+  beforeEach: () => sessionSelectionHost(SESSION_ROWS),
   play: async ({ canvasElement }) => {
     await within(canvasElement).findByRole('combobox', { name: MESSAGE_LABEL })
     await failSaveThenSend(canvasElement, 'Words for Claude')
@@ -360,8 +363,8 @@ export const FailuresToastWithoutMovingTheComposer: Story = {
   },
 }
 
-// The roster loads one page of 30, and the 31st Session opens by ID all the same: its title heads
-// the screen and its composer opens on its own Harness (#2935).
+// The Session list loads one page of 30, and the 31st Session opens by ID all the same: its title
+// heads the screen and its composer opens on its own Harness (#2935).
 const BEYOND_THE_WINDOW = sessionRow({
   id: 'codex-beyond-the-window',
   harness: 'codex',
@@ -369,9 +372,10 @@ const BEYOND_THE_WINDOW = sessionRow({
   status: 'idle',
   cwd: '/workspace/argo',
   title: { text: 'Codex Session beyond the window', source: 'custom' },
+  name: 'Codex Session beyond the window',
   updatedAt: '2026-09-01T09:00:00Z',
 })
-const LONG_ROSTER = [
+const LONG_SESSION_ROWS = [
   ...Array.from({ length: 30 }, (_, index) =>
     sessionRow({
       id: `claude-${index}`,
@@ -379,15 +383,16 @@ const LONG_ROSTER = [
       status: 'idle',
       cwd: '/workspace/argo',
       title: { text: `Claude Session ${index}`, source: 'custom' },
+      name: `Claude Session ${index}`,
       updatedAt: `2026-09-13T${String(10 + (index % 10)).padStart(2, '0')}:00:00Z`,
     }),
   ),
   BEYOND_THE_WINDOW,
 ] satisfies Session[]
 
-export const OpensASessionBeyondTheLoadedRoster: Story = {
+export const OpensASessionBeyondTheLoadedPage: Story = {
   args: { sessionId: BEYOND_THE_WINDOW.id },
-  beforeEach: () => sessionSelectionHost(LONG_ROSTER),
+  beforeEach: () => sessionSelectionHost(LONG_SESSION_ROWS),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(
@@ -408,13 +413,16 @@ export const OpensASessionBeyondTheLoadedRoster: Story = {
 
 // A reopened Session's pending details reply replaces the details it was left with (#2935).
 export const AReopenedSessionTakesItsCurrentDetails: Story = {
-  beforeEach: () => sessionSelectionHost(RENAMED_ROSTER),
+  beforeEach: () => sessionSelectionHost(RENAMED_SESSION_ROWS),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await canvas.findByRole('heading', { level: 1, name: 'First Claude Session' })
     await userEvent.click(canvas.getByRole('button', { name: /Second Codex Session/ }))
     await canvas.findByRole('heading', { level: 1, name: 'Second Codex Session' })
-    Object.assign(RENAMED_ROSTER[0] ?? {}, { title: { text: 'Renamed first', source: 'custom' } })
+    Object.assign(RENAMED_SESSION_ROWS[0] ?? {}, {
+      title: { text: 'Renamed first', source: 'custom' },
+      name: 'Renamed first',
+    })
     heldDetails.hold('claude-first')
     await userEvent.click(canvas.getByRole('button', { name: /First Claude Session/ }))
     await canvas.findByRole('heading', { level: 1, name: 'First Claude Session' })
@@ -423,4 +431,4 @@ export const AReopenedSessionTakesItsCurrentDetails: Story = {
   },
 }
 
-const RENAMED_ROSTER = ROSTER.map((row) => ({ ...row }))
+const RENAMED_SESSION_ROWS = SESSION_ROWS.map((row) => ({ ...row }))

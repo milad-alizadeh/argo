@@ -193,7 +193,7 @@ async function launchSession(root: string, fixture: Fixture) {
     (viewport) => window.innerWidth === viewport.width && window.innerHeight === viewport.height,
     VIEWPORT,
   )
-  // The Roster is read over tRPC, so its readiness is the bridge's readiness.
+  // The Session List is read over tRPC, so its readiness is the bridge's readiness.
   await page.waitForFunction(() => typeof window.argo?.trpc === 'function')
   return { application, page }
 }
@@ -269,7 +269,7 @@ type RunStepsRequest = {
   application: ElectronApplication
   fixture: Fixture
   historyId: string
-  // The Roster and Feed key Sessions by Argo id, not by the transcript's vendor id.
+  // The Session List and Feed key Sessions by Argo id, not by the transcript's vendor id.
   sessionIds: SessionIds
   history: FeedHistory
   cwd: string
@@ -305,7 +305,7 @@ const HISTORY_TITLE = 'Run the composer tests for turn 1.'
 const OTHER_FIRST_INDEX = 1000
 const OTHER_TITLE = `Run the composer tests for turn ${OTHER_FIRST_INDEX + 1}.`
 
-async function rosterSessionIds(page: Page): Promise<SessionIds> {
+async function sessionListIds(page: Page): Promise<SessionIds> {
   const rows = 'nav[aria-label="Sessions"] button[data-session-id]'
   const history = page.locator(rows, { hasText: HISTORY_TITLE }).first()
   await history.waitFor({ timeout: STEP_TIMEOUT_MS })
@@ -314,7 +314,8 @@ async function rosterSessionIds(page: Page): Promise<SessionIds> {
     history.getAttribute('data-session-id'),
     other.getAttribute('data-session-id'),
   ])
-  if (historyId === null || otherId === null) throw new Error('Roster rows carry no Session id.')
+  if (historyId === null || otherId === null)
+    throw new Error('Session List rows carry no Session id.')
   return { history: historyId, other: otherId }
 }
 
@@ -372,7 +373,7 @@ async function runSize(size: (typeof SIZES)[number]): Promise<SizeResult> {
       await instrumentPage(page)
       await armDriftProbe(application)
       await armFeedIpcProbe(application)
-      const sessionIds = await rosterSessionIds(page)
+      const sessionIds = await sessionListIds(page)
       const steps = await runSteps({
         page,
         application,

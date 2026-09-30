@@ -1,13 +1,26 @@
 import { initTRPC } from '@trpc/server'
 import { observable } from '@trpc/server/observable'
-import { and, asc, count, desc, eq, inArray, isNotNull, isNull, type SQL, sql } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  inArray,
+  isNotNull,
+  isNull,
+  type SQL,
+  sql,
+} from 'drizzle-orm'
 import { alias } from 'drizzle-orm/sqlite-core'
 import { createSelectSchema } from 'drizzle-orm/zod'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
-import { sessionSelectSchema, sessionStatusSchema } from '@/database/session/validation'
+import { sessionSelectSchema } from '@/database/session/validation'
 import { sessionArchive } from '@/database/session-archive/schema'
+import { sessionSubagent } from '@/database/session-subagent/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import { ticketTable } from '@/database/ticket/schema'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
@@ -15,6 +28,7 @@ import { ticketContent } from '@/database/ticket-content/schema'
 import { ticketContentSelectSchema } from '@/database/ticket-content/validation'
 import { type LiveActivity, liveActivitySchema } from '@/domains/sessions/api/feed'
 import { feedActivitySchema } from '@/domains/sessions/api/feed-activity'
+import { sessionListInputSchema } from '@/domains/sessions/api/session-list-input'
 import {
   isWorkingStatus,
   WORKING_SESSION_STATUSES,
@@ -27,20 +41,11 @@ import type { SessionListChanges } from './session-list-changes'
 
 const t = initTRPC.create()
 
-// One page of one Project's Sessions, newest first. Each filter narrows the same list.
-const sessionListInputSchema = z.strictObject({
-  projectId: z.string().min(1),
-  filter: z.enum(['active', 'archived', 'all']).default('active'),
-  search: z.string().trim().max(500).default(''),
-  ticketKey: identifierSchema.optional(),
-  offset: z.number().int().min(0).default(0),
-  limit: z.number().int().min(1).max(100).default(30),
-})
-
+const storedSubagent = createSelectSchema(sessionSubagent).shape
 const sessionSubagentSchema = z.strictObject({
   id: identifierSchema,
-  label: z.string().nullable(),
-  state: z.enum(['running', 'completed', 'failed', 'interrupted']),
+  label: storedSubagent.label,
+  state: storedSubagent.state,
 })
 const storedTicketLink = createSelectSchema(sessionTicketLink).shape
 const savedTicket = ticketContentSelectSchema.shape
@@ -54,26 +59,22 @@ const sessionTicketSchema = z.strictObject({
 })
 
 // The stored columns a row carries unchanged.
-const passedSessionColumns = {
-  harness: sessionTable.harness,
-  projectId: sessionTable.projectId,
-  cwd: sessionTable.cwd,
-  workspaceId: sessionTable.workspaceId,
-}
-const storedSessionSchema = sessionSelectSchema.pick({
-  harness: true,
-  projectId: true,
-  cwd: true,
-  workspaceId: true,
-})
+const passed = { harness: true, projectId: true, cwd: true, workspaceId: true } as const
+const storedSessionSchema = sessionSelectSchema.pick(passed)
+const sessionColumns = getTableColumns(sessionTable)
+const passedSessionColumns = Object.fromEntries(
+  Object.keys(passed).map((column) => [column, sessionColumns[column as keyof typeof passed]]),
+) as Pick<typeof sessionColumns, keyof typeof passed>
 
 export const sessionListRowSchema = z.strictObject({
   ...storedSessionSchema.shape,
   id: z.string().uuid(),
   posture: z.literal('live').nullable(),
   title: sessionTitleSchema.nullable(),
-  status: sessionStatusSchema,
-  updatedAt: z.string().nullable(),
+  // The title, else the ID; null only while an untitled Session starts, which the UI labels.
+  name: z.string().nullable(),
+  status: sessionSelectSchema.shape.status,
+  updatedAt: z.iso.datetime(),
   activity: feedActivitySchema.nullable(),
   subagents: z.array(sessionSubagentSchema),
   ticket: sessionTicketSchema.nullable(),
@@ -108,7 +109,7 @@ async function linkedTicketSource(
   return source === null ? null : { ...source, projectId }
 }
 
-export function storedActivity(stored: string | null): LiveActivity | null {
+function storedActivity(stored: string | null): LiveActivity | null {
   if (stored === null) return null
   const parsed = liveActivitySchema.safeParse(JSON.parse(stored))
   if (parsed.success) return parsed.data
@@ -153,15 +154,18 @@ function sessionListRow(
 ) {
   const live = liveProjection(context, row.id)
   const liveStatus = live?.status === 'unknown' ? null : live?.status
+  const status = liveStatus ?? row.status
+  const title =
+    row.title === null || row.titleSource === null
+      ? null
+      : { text: row.title, source: row.titleSource }
   return {
     ...row.passed,
     id: row.id,
     posture: live === null ? null : ('live' as const),
-    title:
-      row.title === null || row.titleSource === null
-        ? null
-        : { text: row.title, source: row.titleSource },
-    status: liveStatus ?? row.status,
+    title,
+    name: title?.text ?? (status === 'starting' ? null : row.id),
+    status,
     updatedAt: new Date(row.activityAt ?? row.updatedAt).toISOString(),
     activity: observedActivity(row.activity) ?? live?.activity ?? null,
     subagents,

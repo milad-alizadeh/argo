@@ -22,7 +22,6 @@ import {
 } from '../composer'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import type { HarnessControl } from '../harness'
-import { sessionName } from '../session-name'
 import type { Session, SessionExtras } from '../types'
 import { draftTarget } from './session-draft-target'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
@@ -411,7 +410,7 @@ function useComposerFailures(input: {
     })
 }
 
-// A handoff names its other Session by ID, which the roster need not have loaded.
+// A handoff names its other Session by ID, which the Session list need not have loaded.
 function HandoffLink({
   label,
   sessionId,
@@ -432,7 +431,7 @@ function HandoffLink({
         onClick={() => onNavigate(`/projects/${projectId}/sessions/${sessionId}`)}
         type="button"
       >
-        {session === null ? sessionId : sessionName(session, t('newSession'))}
+        {session === null ? sessionId : (session.name ?? t('newSession'))}
       </button>
     </p>
   )

@@ -49,7 +49,7 @@ export default defineConfig<object, SessionBackendOptions>({
             name: 'real-sessions',
             testDir: 'e2e/sessions',
             testMatch: 'feed.e2e.ts',
-            grep: /session-sdk-history-real|session-feed-transcript-corpus|session-roster-selection|session-roster-window/,
+            grep: /session-sdk-history-real|session-feed-transcript-corpus|session-list-selection|session-list-window/,
             // One real Turn at a time, so the subscriptions see one person's pace.
             fullyParallel: false,
             timeout: 240_000,

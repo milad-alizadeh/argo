@@ -17,6 +17,7 @@ const session = sessionRow({
   id: SESSION_ID,
   posture: null,
   title: { text: 'Subagent history', source: 'first-prompt' },
+  name: 'Subagent history',
   status: 'idle',
   cwd: '/storybook/argo',
   // The roster the sync stored from the same history.

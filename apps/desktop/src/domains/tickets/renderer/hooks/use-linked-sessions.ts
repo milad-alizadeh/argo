@@ -6,7 +6,7 @@ import { type Session, useSessionListQuery } from '@/domains/sessions/renderer'
 export function useLinkedSessions(projectId: string | null, key: string | null): Session[] {
   const { data, isPlaceholderData, hasNextPage, isFetchingNextPage, fetchNextPage } =
     useSessionListQuery(
-      { projectId: projectId ?? '', filter: 'active', search: '', ticketKey: key ?? undefined },
+      { projectId: projectId ?? '', filter: 'all', search: '', ticketKey: key ?? undefined },
       projectId !== null && key !== null,
     )
   // The detail lists every linked Session, so it reads page after page to the end.

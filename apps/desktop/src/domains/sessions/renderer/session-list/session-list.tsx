@@ -13,6 +13,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import { useProjects } from '@/domains/projects/renderer'
+import { matchesShortcut, pressedKeys, SESSION_LIST_MOVES } from '@/platform/contract/commands'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { SidebarSearch } from '@/platform/renderer/components/sidebar-search'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
@@ -41,13 +42,15 @@ import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { useObservedFeedReading } from '../feed'
-import { sessionName } from '../session-name'
 import type { Session, SessionId } from '../types'
-import { type SessionListFilter, useSessionListFilter } from './hooks/use-session-list-filter'
-import { useSessionListFocus } from './hooks/use-session-list-focus'
-import { useSessionListSelection } from './hooks/use-session-list-selection'
-import { useSettledSearch } from './hooks/use-settled-search'
-import { useSessionListQuery } from './session-list-query'
+import { useSessionListFocus, useSessionListSelection } from './hooks/use-session-list-selection'
+import {
+  FILTER_LABELS,
+  type SessionListFilter,
+  useSessionListFilter,
+  useSessionListQuery,
+  useSettledSearch,
+} from './session-list-query'
 import { SessionRenameDialog } from './session-rename-dialog'
 import { SESSION_LIST_ROW_HEIGHT, SessionRow } from './session-row'
 import { type SessionSyncStatus, useSessionSync } from './use-session-sync'
@@ -60,13 +63,6 @@ const UNDO_TOAST_TIMEOUT_MS = 8000
 // Overscan generous enough to keep a realistic Project's rows mounted, so the arrow keys, which walk
 // the mounted buttons, reach every row; windowing still applies to a longer list.
 const OVERSCAN = 30
-
-// The closed set of filters, each with the catalog key that names it to the reader.
-const FILTER_LABELS = {
-  active: 'sessionListStatusActive',
-  archived: 'sessionListStatusArchived',
-  all: 'sessionListStatusAll',
-} as const satisfies Record<SessionListFilter, string>
 
 const FILTERS = Object.keys(FILTER_LABELS) as SessionListFilter[]
 
@@ -120,10 +116,6 @@ function sessionListState(
   if (query.isError) return 'error'
   if (query.data === undefined) return 'loading'
   return count === 0 ? 'empty' : 'ready'
-}
-
-async function renameSession(session: Session, title: string) {
-  await trpcClient.sessionUpdate.mutate({ sessionIds: [session.id], title })
 }
 
 // The ids main updated (#2194), or null when the update failed and its reason was shown.
@@ -222,21 +214,26 @@ function useNextPageAtTheEnd(lastVisibleIndex: number, count: number, pages: Ses
   }, [count, fetchNextPage, hasNextPage, isFetchingNextPage, lastVisibleIndex])
 }
 
+type SessionListMove = keyof typeof SESSION_LIST_MOVES
+const MOVES = Object.entries(SESSION_LIST_MOVES) as [SessionListMove, string][]
+
 function moveFocus(event: KeyboardEvent<HTMLUListElement>) {
-  if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
+  const pressed = pressedKeys(event)
+  const move = MOVES.find(([, command]) => matchesShortcut(command, pressed))?.[0]
+  if (move === undefined) return
   const buttons = [
     ...event.currentTarget.querySelectorAll<HTMLButtonElement>('button[data-session-id]'),
   ]
   const current = buttons.indexOf(document.activeElement as HTMLButtonElement)
   if (current === -1) return
   event.preventDefault()
-  const nextByKey = {
-    ArrowDown: Math.min(current + 1, buttons.length - 1),
-    ArrowUp: Math.max(current - 1, 0),
-    End: buttons.length - 1,
-    Home: 0,
-  }
-  buttons[nextByKey[event.key as keyof typeof nextByKey]]?.focus()
+  const nextByMove = {
+    next: Math.min(current + 1, buttons.length - 1),
+    previous: Math.max(current - 1, 0),
+    first: 0,
+    last: buttons.length - 1,
+  } satisfies Record<SessionListMove, number>
+  buttons[nextByMove[move]]?.focus()
 }
 
 function menuTargetOf(element: EventTarget | null, sessions: readonly Session[]) {
@@ -421,7 +418,7 @@ function SessionMenuItems({
   const { t } = useTranslation('sessions')
   return (
     <ContextMenuContent
-      aria-label={t('contextMenu.actions', { title: sessionName(target, t('newSession')) })}
+      aria-label={t('contextMenu.actions', { title: target.name ?? t('newSession') })}
     >
       <ContextMenuGroup>
         <ContextMenuItem onClick={() => onRename(target)}>
@@ -450,9 +447,13 @@ function SessionMenuItems({
 // ContextMenuTriggers in a 4.25s fling, 17.1s of render time, for menus nobody opened.
 function SessionContextMenu({
   children,
+  handlers,
   sessions,
-  ...handlers
-}: SessionMenuHandlers & { children: ReactNode; sessions: readonly Session[] }) {
+}: {
+  children: ReactNode
+  handlers: SessionMenuHandlers
+  sessions: readonly Session[]
+}) {
   const [target, setTarget] = useState<Session | null>(null)
   const [open, setOpen] = useState(false)
   // The trigger opens in the event that names the row, before the state lands, so it reads a ref.
@@ -486,7 +487,8 @@ function LoadingMoreRow() {
   )
 }
 
-type SessionRowsProps = SessionMenuHandlers & {
+type SessionRowsProps = {
+  menu: SessionMenuHandlers
   onFocus: (sessionId: SessionId) => void
   onSelect: (sessionId: SessionId) => void
   onToggleSelect: Parameters<typeof SessionRow>[0]['onToggleSelect']
@@ -531,7 +533,7 @@ function SessionRows(props: SessionRowsProps) {
       data-slot="session-list-scroll"
       ref={scrollRef}
     >
-      <SessionContextMenu {...props}>
+      <SessionContextMenu handlers={props.menu} sessions={sessions}>
         <nav aria-label={t('navigationLabel')} className="min-w-0">
           <ul
             className="relative flex min-w-0 flex-col px-3"
@@ -576,6 +578,7 @@ export function SessionList() {
   })
   const focus = useSessionListFocus(sidebar, sessions, selectedSessionId)
   const [renameTarget, setRenameTarget] = useState<Session | null>(null)
+  const menu = { onArchive: selection.archive, onOpenTicket, onRename: setRenameTarget }
   const state = sessionListState(query, sessions.length)
   return (
     <aside
@@ -595,10 +598,8 @@ export function SessionList() {
       />
       <SessionListOutcome state={state} />
       <SessionRows
-        onArchive={selection.archive}
+        menu={menu}
         onFocus={focus.setFocusedSessionId}
-        onOpenTicket={onOpenTicket}
-        onRename={setRenameTarget}
         onSelect={selection.select}
         onToggleSelect={selection.toggle}
         pages={query}
@@ -608,11 +609,7 @@ export function SessionList() {
         tabStop={focus.tabStop}
         unavailableSessionIds={useUnavailableSessionIds(selectedSessionId)}
       />
-      <SessionRenameDialog
-        onClose={() => setRenameTarget(null)}
-        onRename={renameSession}
-        session={renameTarget}
-      />
+      <SessionRenameDialog onClose={() => setRenameTarget(null)} session={renameTarget} />
     </aside>
   )
 }

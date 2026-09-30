@@ -2,14 +2,13 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { expect, test } from 'vitest'
-import { databaseMigrationsFolder, openDatabase } from '@/database/database'
 import { project } from '@/database/project/schema'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { type AppRouterDependencies, createAppRouter } from './trpc-router'
 
 test('opens a registered Project without ProjectSetup state', async () => {
-  const userData = await mkdtemp(path.join(os.tmpdir(), 'argo-project-router-'))
   const projectPath = await mkdtemp(path.join(os.tmpdir(), 'argo-project-'))
-  const database = openDatabase(userData, { migrationsFolder: databaseMigrationsFolder() })
+  const database = migratedDatabase()
   try {
     database
       .insert(project)
@@ -37,9 +36,6 @@ test('opens a registered Project without ProjectSetup state', async () => {
     })
   } finally {
     database.$client.close()
-    await Promise.all([
-      rm(userData, { recursive: true, force: true }),
-      rm(projectPath, { recursive: true, force: true }),
-    ])
+    await rm(projectPath, { recursive: true, force: true })
   }
 })

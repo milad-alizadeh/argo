@@ -6,6 +6,7 @@ import { feedEntryRows, projectFeedRowEntries } from '@/domains/sessions/api/fee
 import { feedSubagents, subagentCompletionRows } from '@/domains/sessions/api/feed/feed-subagents'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { sessionError } from '@/domains/sessions/api/session-error'
+import { sessionListInputSchema } from '@/domains/sessions/api/session-list-input'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import type { SessionListInput } from '@/domains/sessions/renderer/session-list/session-list-query'
 import type { SessionSyncStatus } from '@/domains/sessions/renderer/session-list/use-session-sync'
@@ -72,7 +73,7 @@ export function publishSessionSyncStatus(status: Partial<SessionSyncStatus>) {
 type SessionListRead = SessionListInput & { offset: number; limit: number }
 type SessionUpdate = RouterInputs['sessionUpdate']
 
-// One page of the rows in the order given; main alone sorts and searches.
+// One page of the rows in the order given, by archive filter only: no sort, search or Ticket.
 export function storySessionPage(sessions: readonly Session[], read: SessionListRead) {
   const listed = sessions.filter(
     (session) => read.filter === 'all' || session.archived === (read.filter === 'archived'),
@@ -98,18 +99,13 @@ export type SessionHost = (() => void) & {
   rows: () => readonly Session[]
   // Main stores each changed row, adding any new one, then announces the change.
   change: (changed: readonly Session[]) => void
+  // Main stores the rows without announcing them and ends every open change signal with an error.
+  dropChangeSignal: (changed: readonly Session[]) => void
 }
 
-// A read with main's defaults filled in, and no `ticketKey` unless the list sent one.
+// A read parsed as main parses it, in the story Project unless the list names one.
 function listRead(input: Partial<SessionListRead>): SessionListRead {
-  return {
-    projectId: input.projectId ?? 'project-1',
-    filter: input.filter ?? 'active',
-    search: input.search ?? '',
-    ...(input.ticketKey === undefined ? {} : { ticketKey: input.ticketKey }),
-    offset: input.offset ?? 0,
-    limit: input.limit ?? 30,
-  }
+  return sessionListInputSchema.parse({ projectId: 'project-1', ...input })
 }
 
 // The rows an update changed, with its title and archive applied.
@@ -120,16 +116,17 @@ function updatedRows(rows: readonly Session[], input: SessionUpdate, sessionIds:
       ...row,
       title:
         input.title === undefined ? row.title : { text: input.title, source: 'custom' as const },
+      name: input.title ?? row.name,
       archived: input.archived ?? row.archived,
     }))
 }
 
 // Answers the sync subscription with the status a story last published, and the change
 // subscription with each change the host announces.
-function sessionSignals(
-  next: Subscribe,
-  changeReaders: Set<(sessionIds: string[]) => void>,
-): Subscribe {
+// Each open change signal's sender and the error that ends it.
+type ChangeReader = { send: (sessionIds: string[]) => void; drop: () => void }
+
+function sessionSignals(next: Subscribe, changeReaders: Set<ChangeReader>): Subscribe {
   return async (request, listener) => {
     if (request.path === 'sessionSyncStatus') {
       const send = () =>
@@ -143,10 +140,35 @@ function sessionSignals(
       return () => syncReaders.delete(send)
     }
     if (request.path !== 'sessionListChanged') return next(request, listener)
-    const send = (sessionIds: string[]) =>
-      listener({ id: request.id, type: 'data', result: { data: { sessionIds } } })
-    changeReaders.add(send)
-    return () => changeReaders.delete(send)
+    const reader: ChangeReader = {
+      send: (sessionIds) =>
+        listener({ id: request.id, type: 'data', result: { data: { sessionIds } } }),
+      drop: () => listener({ id: request.id, type: 'error', error: { message: 'Signal lost' } }),
+    }
+    changeReaders.add(reader)
+    return () => changeReaders.delete(reader)
+  }
+}
+
+// Main's stored rows: `change` stores and announces them, `dropChangeSignal` stores them silently.
+function storedRows(initial: readonly Session[], changeReaders: Set<ChangeReader>) {
+  let rows = [...initial]
+  const store = (changed: readonly Session[]) => {
+    const fresh = changed.filter((row) => !rows.some(({ id }) => id === row.id))
+    rows = [...rows.map((row) => changed.find(({ id }) => id === row.id) ?? row), ...fresh]
+  }
+  return {
+    rows: () => rows,
+    change: (changed: readonly Session[]) => {
+      store(changed)
+      const sessionIds = changed.map(({ id }) => id)
+      for (const reader of changeReaders) reader.send(sessionIds)
+    },
+    dropChangeSignal: (changed: readonly Session[]) => {
+      store(changed)
+      for (const reader of [...changeReaders]) reader.drop()
+      changeReaders.clear()
+    },
   }
 }
 
@@ -159,27 +181,23 @@ export function installSessionHost(
   const before = window.argo
   queryClient.clear()
   syncStatus = IDLE_SYNC_STATUS
-  let rows = [...initial]
   const reads: SessionListRead[] = []
   const updates: SessionUpdate[] = []
-  const changeReaders = new Set<(sessionIds: string[]) => void>()
-  const change = (changed: readonly Session[]) => {
-    const fresh = changed.filter((row) => !rows.some(({ id }) => id === row.id))
-    rows = [...rows.map((row) => changed.find(({ id }) => id === row.id) ?? row), ...fresh]
-    const sessionIds = changed.map(({ id }) => id)
-    for (const send of changeReaders) send(sessionIds)
-  }
+  const changeReaders = new Set<ChangeReader>()
+  const { rows, change, dropChangeSignal } = storedRows(initial, changeReaders)
   const applyUpdate = async (input: SessionUpdate) => {
     updates.push(input)
-    const known = rows.filter(({ id }) => input.sessionIds.includes(id)).map(({ id }) => id)
+    const known = rows()
+      .filter(({ id }) => input.sessionIds.includes(id))
+      .map(({ id }) => id)
     const { sessionIds } = (await update?.(input)) ?? { sessionIds: known }
-    change(updatedRows(rows, input, sessionIds))
+    change(updatedRows(rows(), input, sessionIds))
     return { sessionIds }
   }
   const readList = async (input: Partial<SessionListRead>) => {
     const read = listRead(input)
     reads.push(read)
-    const listed = rows.map((session) => ({ ...session, projectId: read.projectId }))
+    const listed = rows().map((session) => ({ ...session, projectId: read.projectId }))
     return structuredClone(await (list?.(read) ?? storySessionPage(listed, read)))
   }
   const trpc = (async (request) => {
@@ -191,7 +209,7 @@ export function installSessionHost(
       case 'sessionDetails': {
         const { sessionId } = request.input as { sessionId: string }
         await heldDetails.wait(sessionId)
-        const session = rows.find(({ id }) => id === sessionId)
+        const session = rows().find(({ id }) => id === sessionId)
         return { result: { data: session === undefined ? null : structuredClone(session) } }
       }
       case 'sessionUpdate':
@@ -210,7 +228,7 @@ export function installSessionHost(
     window.argo = before
     queryClient.clear()
   }
-  return Object.assign(restore, { reads, updates, rows: () => rows, change })
+  return Object.assign(restore, { reads, updates, rows, change, dropChangeSignal })
 }
 
 // A story's recorded vendor history for one chain, the same input main's reader takes.

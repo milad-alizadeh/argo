@@ -80,21 +80,3 @@ test('keeps both Session List activities when the selected Feed changes', async 
     changeSubscription.unsubscribe()
   }
 })
-
-test('reads a Session by ID without reading its history', async () => {
-  const sessionId = '00000000-0000-4000-8000-000000000001'
-  insertActivitySessions([sessionId])
-  const historyReads: string[] = []
-  const dependencies = routerDependencies({
-    readHistory: async (_harness, target) => {
-      historyReads.push(target.nativeId)
-      return []
-    },
-  })
-
-  const details = await createAppRouter(dependencies).createCaller({}).sessionDetails({ sessionId })
-
-  expect(details?.id).toBe(sessionId)
-  await new Promise((resolve) => setImmediate(resolve))
-  expect(historyReads).toEqual([])
-})

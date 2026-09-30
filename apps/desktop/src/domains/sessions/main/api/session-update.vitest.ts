@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 import { TRPCError } from '@trpc/server'
 import { test } from 'vitest'
-import type { SessionStatus } from '@/database/session/validation'
 import { migratedDatabase } from '@/mocks/database/migrated-database'
 import {
   IDS,
@@ -10,9 +9,14 @@ import {
   settled,
 } from '@/mocks/sessions/session-list-caller'
 import { SessionListChanges } from './session-list-changes'
-import { clearWorkingStatuses, updateHarnessSession, updateSession } from './session-update'
+import {
+  clearWorkingStatuses,
+  type SessionUpdate,
+  updateHarnessSession,
+  updateSession,
+} from './session-update'
 
-function sessionsWithStatuses(statuses: readonly SessionStatus[]) {
+function sessionsWithStatuses(statuses: readonly NonNullable<SessionUpdate['status']>[]) {
   const database = migratedDatabase()
   const client = database.$client
   for (const [index, status] of statuses.entries())
@@ -110,8 +114,10 @@ test('history activity moves a saved Session forward only, and reports one never
 
 const PROJECT = 'project-1'
 
-function callerWithOneSession(rename?: Parameters<typeof sessionListCaller>[2]) {
-  const fixture = sessionListCaller({}, undefined, rename)
+function callerWithOneSession(
+  rename?: NonNullable<Parameters<typeof sessionListCaller>[0]>['rename'],
+) {
+  const fixture = sessionListCaller({ rename })
   insertSession(fixture.database, {
     id: IDS[0],
     harness: 'claude',
@@ -129,40 +135,30 @@ async function idsIn(
   return (await list({ projectId: PROJECT, filter })).rows.map(({ id }) => id)
 }
 
-test('archiving moves a Session from the active filter to the archived one and returns its ID', async () => {
-  const { client, list, update, details } = callerWithOneSession()
+test('archiving moves known Sessions to the archived filter and back, skipping an unknown ID', async () => {
+  const { database, list, update, details } = callerWithOneSession()
   try {
     assert.deepEqual(await idsIn(list, 'active'), [IDS[0]])
 
-    assert.deepEqual(await update({ sessionIds: [IDS[0]], archived: true }), {
+    assert.deepEqual(await update({ sessionIds: [IDS[0], IDS[1]], archived: true }), {
       sessionIds: [IDS[0]],
     })
-
     assert.equal((await details({ sessionId: IDS[0] }))?.archived, true)
     assert.deepEqual(await idsIn(list, 'active'), [])
     assert.deepEqual(await idsIn(list, 'archived'), [IDS[0]])
     assert.deepEqual(await idsIn(list, 'all'), [IDS[0]])
-  } finally {
-    client.close()
-  }
-})
 
-test('unarchiving puts a Session back on the active filter', async () => {
-  const { client, list, update, details } = callerWithOneSession()
-  try {
-    await update({ sessionIds: [IDS[0]], archived: true })
     await update({ sessionIds: [IDS[0]], archived: false })
-
     assert.equal((await details({ sessionId: IDS[0] }))?.archived, false)
     assert.deepEqual(await idsIn(list, 'active'), [IDS[0]])
     assert.deepEqual(await idsIn(list, 'archived'), [])
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
 test('a rename goes to the Harness, then stores the custom title', async () => {
-  const { client, update, details, renames } = callerWithOneSession()
+  const { database, update, details, renames } = callerWithOneSession()
   try {
     await update({ sessionIds: [IDS[0]], title: 'Renamed' })
 
@@ -172,12 +168,12 @@ test('a rename goes to the Harness, then stores the custom title', async () => {
       source: 'custom',
     })
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
 test('a title is stored with control characters and repeated spaces collapsed', async () => {
-  const { client, update, details, renames } = callerWithOneSession()
+  const { database, update, details, renames } = callerWithOneSession()
   try {
     await update({ sessionIds: [IDS[0]], title: '  Fix\tthe\n\nSession List  ' })
 
@@ -185,12 +181,12 @@ test('a title is stored with control characters and repeated spaces collapsed', 
     assert.equal((await details({ sessionId: IDS[0] }))?.title?.text, 'Fix the Session List')
     await assert.rejects(update({ sessionIds: [IDS[0]], title: ' \u0007 ' }))
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
 test('keeps the existing title when the Harness rejects a rename', async () => {
-  const { client, update, details } = callerWithOneSession(async () => {
+  const { database, update, details } = callerWithOneSession(async () => {
     throw new Error('Harness rejected the rename.')
   })
   try {
@@ -202,34 +198,22 @@ test('keeps the existing title when the Harness rejects a rename', async () => {
       source: 'first-prompt',
     })
   } finally {
-    client.close()
-  }
-})
-
-test('archiving several Sessions returns the known ones and skips an unknown ID', async () => {
-  const { client, list, update } = callerWithOneSession()
-  try {
-    assert.deepEqual(await update({ sessionIds: [IDS[0], IDS[1]], archived: true }), {
-      sessionIds: [IDS[0]],
-    })
-    assert.deepEqual(await idsIn(list, 'archived'), [IDS[0]])
-  } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
 test('a title for more than one Session is rejected before the Harness sees it', async () => {
-  const { client, update, renames } = callerWithOneSession()
+  const { database, update, renames } = callerWithOneSession()
   try {
     await assert.rejects(update({ sessionIds: [IDS[0], IDS[1]], title: 'Renamed' }))
     assert.deepEqual(renames, [])
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
 test('renaming an unknown Session is NOT_FOUND', async () => {
-  const { client, update, renames } = callerWithOneSession()
+  const { database, update, renames } = callerWithOneSession()
   try {
     await assert.rejects(update({ sessionIds: [IDS[1]], title: 'Renamed' }), (error) => {
       assert.ok(error instanceof TRPCError)
@@ -238,6 +222,6 @@ test('renaming an unknown Session is NOT_FOUND', async () => {
     })
     assert.deepEqual(renames, [])
   } finally {
-    client.close()
+    database.$client.close()
   }
 })

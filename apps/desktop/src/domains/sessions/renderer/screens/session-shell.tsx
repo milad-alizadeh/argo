@@ -7,7 +7,6 @@ import {
 } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { SessionTitle } from '../prompt'
-import { sessionName } from '../session-name'
 import type { Session } from '../types'
 import { SESSION_SPLIT } from './session-screen-layout'
 import type { SessionWorkspaceIdentity } from './session-screen-workspace'
@@ -19,7 +18,7 @@ type SessionShellProps = Omit<SessionWorkspaceProps, 'header'> & {
   // The workspace header's own controls, drawn leading. A Session with no background work hands
   // nothing here and the bar stays empty (#1582).
   headerControls?: ReactNode
-  session?: Pick<Session, 'harness' | 'id' | 'status' | 'title'> | null
+  session?: Pick<Session, 'harness' | 'name'> | null
   workspaceIdentity?: SessionWorkspaceIdentity | null
   inspector: ReactNode
   inspectorBar?: ReactNode
@@ -42,7 +41,7 @@ function SessionIdentity({
       className="flex min-w-0 flex-1 flex-col items-start justify-center gap-(--spacing-shell-tight)"
     >
       <h1 className="w-full truncate type-heading">
-        <SessionTitle session={session} text={sessionName(session, t('newSession'))} />
+        <SessionTitle session={session} text={session.name ?? t('newSession')} />
       </h1>
       {workspaceIdentity !== null && workspaceIdentity.branch !== null ? (
         <div

@@ -7,8 +7,8 @@ import {
   menuAccelerators,
   navigateCommand,
   REGISTER_PROJECT_COMMAND,
-  ROSTER_MOVES,
   SEND_MESSAGE_COMMAND,
+  SESSION_LIST_MOVES,
   SHORTCUTS,
 } from '@/platform/contract/commands'
 import { menuTemplate } from '@/platform/main/menu-template'
@@ -57,8 +57,8 @@ test('registration is reachable from the menu', () => {
   )
 })
 
-test('the Roster movement chords fire on one element', () => {
-  for (const command of Object.values(ROSTER_MOVES)) {
+test('the Session list movement chords fire on one element', () => {
+  for (const command of Object.values(SESSION_LIST_MOVES)) {
     const found = SHORTCUTS.find((entry) => entry.command === command)
     assert.equal(found?.scope, 'element')
   }

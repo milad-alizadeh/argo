@@ -1,27 +1,20 @@
-import { mkdtemp, rm } from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
 import { afterEach, beforeEach, expect, test } from 'vitest'
-import { type Database, openDatabase } from '@/database/database'
+import type { Database } from '@/database/database'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
+import { insertProject, migratedDatabase } from '@/mocks/database/migrated-database'
 import { saveSessionBatch } from '../sync'
 import { recordLiveSubagents, storedSessionSubagents } from './session-subagents'
 
-let directory: string
 let database: Database
 
-beforeEach(async () => {
-  directory = await mkdtemp(path.join(os.tmpdir(), 'argo-session-subagents-'))
-  database = openDatabase(directory)
-  database.$client.exec(
-    "INSERT INTO project (id, path, common_directory) VALUES ('project-1', '/repo', '/repo/.git')",
-  )
+beforeEach(() => {
+  database = migratedDatabase()
+  insertProject(database, 'project-1', '/repo')
 })
 
-afterEach(async () => {
+afterEach(() => {
   database.$client.close()
-  await rm(directory, { recursive: true, force: true })
 })
 
 function delegation(

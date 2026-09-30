@@ -1,12 +1,9 @@
-// The shared harness for the Feed reader's tRPC tests: one temporary database and journal per
-// test, history reads a test answers by hand, and an observer that collects published readings.
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+// The shared harness for the Feed reader's tRPC tests: one migrated database and journal per test,
+// history reads a test answers by hand, and an observer that collects published readings.
 import { initTRPC } from '@trpc/server'
 import type { Observable } from '@trpc/server/observable'
 import { afterEach, beforeEach, expect, vi } from 'vitest'
-import { type Database, openDatabase } from '@/database/database'
+import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import {
   applyFeedReadingChange,
@@ -15,10 +12,11 @@ import {
 } from '@/domains/sessions/api/feed'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import { type SessionFeedReaderContext, SessionFeedReaders } from '../feed'
-import { SessionEventJournal } from '../live'
-import { sessionFeedProcedures } from './session-feed'
-import { SessionListChanges } from './session-list-changes'
+import { SessionListChanges } from '@/domains/sessions/main/api'
+import { sessionFeedProcedures } from '@/domains/sessions/main/api/session-feed'
+import { type SessionFeedReaderContext, SessionFeedReaders } from '@/domains/sessions/main/feed'
+import { SessionEventJournal } from '@/domains/sessions/main/live'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
 
 export const sessionId = '00000000-0000-4000-8000-000000000001'
 
@@ -28,20 +26,17 @@ export let journal: SessionEventJournal
 
 // Registers the per-test database and journal. Each test file calls it once, at its top.
 export function registerFeedDatabase() {
-  let directory: string
-  beforeEach(async () => {
-    directory = await mkdtemp(join(tmpdir(), 'argo-session-feed-'))
-    database = openDatabase(directory)
+  beforeEach(() => {
+    database = migratedDatabase()
     database
       .insert(sessionTable)
       .values({ argoId: sessionId, harness: 'claude', nativeId: 'native-1' })
       .run()
     journal = new SessionEventJournal()
   })
-  afterEach(async () => {
+  afterEach(() => {
     vi.useRealTimers()
     database.$client.close()
-    await rm(directory, { recursive: true, force: true })
   })
 }
 

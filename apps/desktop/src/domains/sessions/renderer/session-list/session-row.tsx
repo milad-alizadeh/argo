@@ -1,14 +1,12 @@
 import { type MouseEvent, memo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isWorkingStatus } from '@/domains/sessions/api/session-live-event'
-import { ticketKeyInPlace } from '@/domains/tickets/api/branch-ticket'
 import { harnessSchema } from '@/harnesses/harness'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { LiveActivityWords, useLiveActivityText } from '../feed'
 import { HarnessLogo } from '../harness'
 import { SessionTitle } from '../prompt'
-import { sessionName } from '../session-name'
 import type { Session, SessionExtras, SessionId, SessionPlan } from '../types'
 import type { SelectionModifier } from './hooks/session-list-selection'
 import './session-row.css'
@@ -120,8 +118,8 @@ function SessionPlanBar({ plan, running }: { plan: SessionPlan; running: boolean
 type RowSession = Session & Pick<SessionExtras, 'plan'>
 
 function SessionMetadata({ now, session }: { now: number; session: RowSession }) {
-  // An asserted link outranks the key the worktree carries (CONTEXT.md L1 · Session → Ticket).
-  const ticketKey = session.ticket?.key ?? ticketKeyInPlace(null, session.cwd)
+  // Main's link alone, so the row names the Ticket the list files it under.
+  const ticketKey = session.ticket?.key ?? null
   const minutes = sessionAge(session, now)
   const plan = session.plan ?? null
   if (session.subagents.length === 0 && ticketKey === null && minutes === null && plan === null)
@@ -179,7 +177,7 @@ export const SessionRow = memo(function SessionRow({
     ? 'focus-visible:outline-2 focus-visible:outline-transparent focus-visible:ring-0'
     : 'focus-visible:ring-2 focus-visible:ring-ring'
   const running = session.status === 'running'
-  // The Roster stores an open Harness string (ADR-0021); an unknown one draws no logo.
+  // The Session index stores an open Harness string (ADR-0021); an unknown one draws no logo.
   const harness = harnessSchema.safeParse(session.harness)
   const statusVariant = unavailable ? 'failed' : STATUS_VARIANTS[session.status]
   // A modifier click selects instead of opening; an archived row takes no part in a bulk selection.
@@ -229,7 +227,7 @@ export const SessionRow = memo(function SessionRow({
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
           <span className="block min-w-0 truncate type-body font-medium text-foreground">
-            <SessionTitle session={session} text={sessionName(session, t('newSession'))} />
+            <SessionTitle session={session} text={session.name ?? t('newSession')} />
           </span>
           {archived ? (
             <span

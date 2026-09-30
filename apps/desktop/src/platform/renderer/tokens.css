@@ -71,9 +71,7 @@
   /* The unavailable-composer notice takes the composer's reserved place without offering a
      field that cannot send a Turn. */
   --size-composer-unavailable: 48px;
-  /* The Session page's panes and composer assembly (#1937). The Feed and the composer share one
-     reading column, and the Roster widens no further than its maximum. */
-  --size-session-roster-max: 460px;
+  /* The Session page's panes and composer assembly (#1937); the Feed and composer share a column. */
   --size-session-feed-min: 360px;
   --size-session-column: 48rem;
   /* The least room the Feed and the composer keep from the window's edges. */

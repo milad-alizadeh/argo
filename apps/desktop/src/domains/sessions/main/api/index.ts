@@ -1,5 +1,5 @@
 export { listComposerCommandsFor } from './session-composer-commands'
-export { sessionListProcedure, watchSessionList } from './session-list'
+export { watchSessionList } from './session-list'
 export { SessionListChanges } from './session-list-changes'
 export { type SessionApiContext, sessionProcedures } from './session-procedures'
 export type { SessionLiveInput, SessionSendInput, SessionStartInput } from './session-submit'

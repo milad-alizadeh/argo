@@ -37,7 +37,7 @@ export type SessionExtras = {
   handoffTo?: string | null
   handoffFrom?: string | null
 }
-// Only the Feed knows a Subagent's nickname; the roster never records one, nor yet its times.
+// Only the Feed knows a Subagent's nickname; the Session index never records one, nor yet its times.
 export type SessionSubagent = Session['subagents'][number] &
   Pick<FeedSubagent, 'nickname'> & { startedAt?: string | null; endedAt?: string | null }
 

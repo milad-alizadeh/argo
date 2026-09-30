@@ -1,27 +1,13 @@
 // Announces that a provider scope's saved Tickets changed; each reader refetches from SQLite.
 import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
+import { ChangeListeners } from '@/platform/main/change-listeners'
 import type { PriorityRequest, StatusRequest, TicketOperationOutcome } from '../operations'
 import type { TicketSyncSupervisorCommand } from './ticket-sync-supervisor-machine'
 
-export class TicketChanges {
-  readonly #listeners = new Set<(target: TicketScopeTarget) => void>()
-
-  // A listener that throws cannot fail the write that already committed, nor starve the others.
-  readonly changed = (target: TicketScopeTarget): void => {
-    for (const listener of this.#listeners) {
-      try {
-        listener(target)
-      } catch (error) {
-        console.warn('A Ticket change listener failed.', error)
-      }
-    }
-  }
-
-  subscribe(listener: (target: TicketScopeTarget) => void): () => void {
-    this.#listeners.add(listener)
-    return () => this.#listeners.delete(listener)
-  }
+// A listener that throws cannot fail the write that already committed.
+export class TicketChanges extends ChangeListeners<TicketScopeTarget> {
+  readonly changed = (target: TicketScopeTarget): void => this.announce(target)
 }
 
 // The SQLite read model behind the Ticket procedures, and the scan that fills it.

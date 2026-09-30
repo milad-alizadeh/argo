@@ -3,7 +3,7 @@
 // owned state, never committed. A Session links to at most one Ticket, so the document is keyed
 // by sessionId. The link holds only the Ticket's key; its content comes from the saved Ticket.
 
-import { and, desc, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
@@ -27,9 +27,6 @@ const linksDocumentSchema = z.record(z.string(), linkedTicketSchema)
 
 export type SessionTicketLinkStore = {
   linkFor: (sessionId: string) => Promise<LinkedTicket | null>
-  // Every sessionId linked to one Ticket, most recently linked first (CONTEXT.md L1 · claim lease
-  // reads this same ordering; this ticket does not build the lease itself).
-  linkedSessions: (projectId: string, key: string) => Promise<string[]>
   connect: (
     sessionId: string,
     ticket: Omit<LinkedTicket, 'createdAt'>,
@@ -64,11 +61,6 @@ export function createSessionTicketLinkStore(path: string): SessionTicketLinkSto
   const enqueue = createWriteQueue()
   return {
     linkFor: async (sessionId) => (await readLinks(path))[sessionId] ?? null,
-    linkedSessions: async (projectId, key) =>
-      Object.entries(await readLinks(path))
-        .filter(([, link]) => link.projectId === projectId && link.key === key)
-        .sort(([, a], [, b]) => b.createdAt.localeCompare(a.createdAt))
-        .map(([sessionId]) => sessionId),
     connect: (sessionId, ticket, createdAt) =>
       enqueue(async () => {
         const links = await readLinks(path)
@@ -100,16 +92,6 @@ export function createSessionTicketLinkStoreFromDatabase(
           .where(eq(sessionTicketLink.sessionId, sessionId))
           .get(),
       ),
-    linkedSessions: async (projectId, key) =>
-      database
-        .select({ sessionId: sessionTicketLink.sessionId })
-        .from(sessionTicketLink)
-        .where(
-          and(eq(sessionTicketLink.projectId, projectId), eq(sessionTicketLink.ticketKey, key)),
-        )
-        .orderBy(desc(sessionTicketLink.createdAt))
-        .all()
-        .map((row) => row.sessionId),
     connect: async (sessionId, ticket, createdAt) => {
       const link = {
         sessionId,

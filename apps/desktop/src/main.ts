@@ -255,7 +255,7 @@ function routerForWindow(options: {
         return rename(nativeId, title)
       },
       supervisor: actors.sessions,
-      changes: currentSessionListChanges(),
+      changes: sessionListChanges,
       ticketSource: (projectId) => projectTicketScope(domains.connections, projectId),
       readers: sessionServices.readers,
       acceptsAttachments: (harness) => registry[harness].acceptsAttachments,
@@ -310,11 +310,6 @@ async function reconcileTicketWriteIntentsAtStartup(database: Database): Promise
     accountForScope: accountForScopeFrom(read.ok ? read.document.connections : []),
     changed: changes.changed,
   })
-}
-
-function currentSessionListChanges(): SessionListChanges {
-  if (sessionListChanges === undefined) throw new Error('Session List changes are unavailable.')
-  return sessionListChanges
 }
 
 function currentSessionEventJournal(): SessionEventJournal {
@@ -416,7 +411,7 @@ function sessionFeedReaders(actors: WindowActors, database: Database, registry: 
     hasLiveChannel,
     readHistory: (harness, target) => registry[harness].readHistory(target),
     followHistory: (followed, invalidate) => historyFollowers.follow(followed, invalidate),
-    changes: currentSessionListChanges(),
+    changes: sessionListChanges,
   })
 }
 
@@ -424,7 +419,7 @@ function sessionFeedReaders(actors: WindowActors, database: Database, registry: 
 // working Session keeps a Feed reader open for its activity line.
 function startSessionServices(actors: WindowActors, database: Database, registry: HarnessRegistry) {
   const readers = sessionFeedReaders(actors, database, registry)
-  const context = { database, changes: currentSessionListChanges() }
+  const context = { database, changes: sessionListChanges }
   const watchedStatus = new WatchedSessionStatus((session) =>
     updateHarnessSession(context, session, { status: 'unknown' }),
   )
@@ -449,11 +444,9 @@ function startSessionServices(actors: WindowActors, database: Database, registry
   }
   return {
     readers,
-    // Nothing watches once the database closes, so no stored working status can stay true.
     stop: () => {
       for (const stop of stops) stop()
       watchedStatus.dispose()
-      clearWorkingStatuses(database)
     },
   }
 }
@@ -537,7 +530,7 @@ function createWindow({
 }
 
 let applicationDatabase: Database | undefined
-let sessionListChanges: SessionListChanges | undefined
+const sessionListChanges = new SessionListChanges()
 let sessionServices: SessionServices | undefined
 let sessionEventJournal: SessionEventJournal | undefined
 let sessionInteractionBroker: SessionInteractionBroker | undefined
@@ -558,7 +551,6 @@ async function prepare() {
   const database = applicationDatabase
   const tickets = createTicketServices(database)
   ticketServices = tickets
-  sessionListChanges = new SessionListChanges()
   sessionEventJournal = new SessionEventJournal()
   const liveEventProof = process.env[LIVE_EVENT_PROOF_ENV]
   if (PROOF_ENABLED && liveEventProof !== undefined) {

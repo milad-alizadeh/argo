@@ -31,7 +31,7 @@ function insertSearchCorpus(database: Database, matching: number) {
 }
 
 test('searches past the first page of results in list order', async () => {
-  const { client, database, list } = sessionListCaller()
+  const { database, list } = sessionListCaller()
   try {
     insertSearchCorpus(database, 25)
     const first = await list({ projectId: 'project-1', search: 'deploy', limit: 10 })
@@ -47,12 +47,12 @@ test('searches past the first page of results in list order', async () => {
       Array.from({ length: 5 }, (_, index) => manyId(20 + index)),
     )
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
 test('matches the shown title without case, and never a first prompt another title hides', async () => {
-  const { client, database, list } = sessionListCaller()
+  const { database, list } = sessionListCaller()
   try {
     insertSession(database, {
       id: IDS[0],
@@ -86,12 +86,12 @@ test('matches the shown title without case, and never a first prompt another tit
     )
     assert.equal(prompt.total, 0)
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
 test('finds a Session by the Ticket title or first prompt it shows', async () => {
-  const { client, database, list } = sessionListCaller()
+  const { database, list } = sessionListCaller()
   try {
     insertSession(database, {
       id: IDS[0],
@@ -117,12 +117,12 @@ test('finds a Session by the Ticket title or first prompt it shows', async () =>
     )
     assert.equal(hidden.total, 0)
   } finally {
-    client.close()
+    database.$client.close()
   }
 })
 
 test('a search in another Project reads only that Project’s matches', async () => {
-  const { client, database, list } = sessionListCaller()
+  const { database, list } = sessionListCaller()
   try {
     insertSearchCorpus(database, 3)
     insertSession(database, {
@@ -143,6 +143,6 @@ test('a search in another Project reads only that Project’s matches', async ()
     )
     assert.equal(second.total, 1)
   } finally {
-    client.close()
+    database.$client.close()
   }
 })

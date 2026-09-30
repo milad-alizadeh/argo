@@ -3,7 +3,6 @@ import { and, eq, inArray, or, type SQL, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
-import type { SessionStatus } from '@/database/session/validation'
 import { sessionArchive } from '@/database/session-archive/schema'
 import { nextUpdatedAt } from '@/database/timestamp-columns'
 import type { LiveActivity } from '@/domains/sessions/api/feed'
@@ -13,12 +12,12 @@ import { identifierSchema } from '@/shared/validation'
 import { sessionHistoryIdentity } from '../session-history-identity'
 import type { SessionListChanges } from './session-list-changes'
 
+type StoredUpdate = Pick<typeof sessionTable.$inferInsert, 'customTitle' | 'status' | 'activityAt'>
 export type SessionUpdate = {
-  customTitle?: string
+  [Column in keyof StoredUpdate]?: NonNullable<StoredUpdate[Column]>
+} & {
   archived?: boolean
   activity?: LiveActivity | null
-  status?: SessionStatus
-  activityAt?: number
 }
 
 export type SessionUpdateContext = { database: Database; changes: SessionListChanges }

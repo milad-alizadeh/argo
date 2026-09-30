@@ -159,7 +159,7 @@ function clearSelectionReads() {
 // stored; a held Session's draft read waits for `releaseDraftRead`, and its details read for
 // `releaseSessionDetails`.
 export function sessionSelectionHost(
-  roster: readonly Session[],
+  sessions: readonly Session[],
   options: {
     savedDrafts?: Record<string, string>
     heldDraftReads?: string[]
@@ -198,7 +198,7 @@ export function sessionSelectionHost(
         : null) ??
       before.trpc(request)) satisfies typeof window.argo.trpc,
   }
-  const host = installSessionHost(roster, {
+  const host = installSessionHost(sessions, {
     feed: options.feed ?? readFeed,
     live: options.live,
   })

@@ -3,8 +3,6 @@ import { expect, test, vi } from 'vitest'
 import { sessionTable } from '@/database/session/schema'
 import type { FeedReading } from '@/domains/sessions/api/feed'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import { FEED_TEXT_COALESCE_MS } from '../feed'
-import { SessionEventJournal } from '../live'
 import {
   command,
   content,
@@ -19,8 +17,10 @@ import {
   replaceJournal,
   rowIds,
   sessionId,
-} from './session-feed-harness'
-import { storedActivity } from './session-list'
+} from '@/mocks/sessions/session-feed-harness'
+import { sessionListCaller } from '@/mocks/sessions/session-list-caller'
+import { FEED_TEXT_COALESCE_MS } from '../feed'
+import { SessionEventJournal } from '../live'
 import { SessionListChanges } from './session-list-changes'
 
 registerFeedDatabase()
@@ -138,14 +138,13 @@ const activityOf = (reading: FeedReading | undefined) =>
 
 const settled = () => new Promise((resolve) => setImmediate(resolve))
 
-const sessionListActivity = () =>
-  storedActivity(
-    database
-      .select({ activity: sessionTable.activity })
-      .from(sessionTable)
-      .where(eq(sessionTable.argoId, sessionId))
-      .get()?.activity ?? null,
-  )
+// The activity the Session List row reads back from what the Feed stored.
+async function sessionListActivity() {
+  const { details, stopWatching } = sessionListCaller({ database })
+  const row = await details({ sessionId })
+  stopWatching()
+  return row?.activity
+}
 
 test('a multi-activity Turn publishes its latest activity to the Feed and keeps it for the Session List', async () => {
   let sessionListChanges = 0
@@ -158,7 +157,7 @@ test('a multi-activity Turn publishes its latest activity to the Feed and keeps 
   await history.answer([message('m1', 'user', 'Check it'), command('c1', 'bun test')])
   const first = { kind: 'command', label: 'Ran bun test', open: false }
   expect(activityOf(feed.latest())).toMatchObject({ activity: first })
-  expect(sessionListActivity()).toMatchObject(first)
+  expect(await sessionListActivity()).toMatchObject(first)
 
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   journal.append(sessionId, content(reasoning('r1', null)))
@@ -172,7 +171,7 @@ test('a multi-activity Turn publishes its latest activity to the Feed and keeps 
   journal.append(sessionId, content(running('c2', 'bun run typecheck')))
   const latest = { kind: 'command', label: 'Ran bun run typecheck', open: true }
   expect(activityOf(feed.latest())).toMatchObject({ activity: latest })
-  expect(sessionListActivity()).toMatchObject(latest)
+  expect(await sessionListActivity()).toMatchObject(latest)
   expect(feed.latest()?.entries.filter(({ row }) => row.shape === 'activity')).toHaveLength(1)
 
   journal.append(sessionId, content(command('c2', 'bun run typecheck')))
@@ -189,7 +188,7 @@ test('a multi-activity Turn publishes its latest activity to the Feed and keeps 
   const changesBeforeClose = sessionListChanges
   feed.subscription.unsubscribe()
   await settled()
-  expect(sessionListActivity()).toMatchObject({ ...latest, open: false })
+  expect(await sessionListActivity()).toMatchObject({ ...latest, open: false })
   expect(sessionListChanges).toBe(changesBeforeClose)
 })
 

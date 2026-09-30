@@ -19,6 +19,7 @@ function liveRow() {
     id: SESSION_ID,
     posture: 'live',
     title: { text: 'Turn turnConfiguration Session', source: 'first-prompt' },
+    name: 'Turn turnConfiguration Session',
     status: 'idle',
     cwd: '/storybook/argo',
     turnConfiguration: { model: 'claude-opus-5', effort: 'medium', mode: 'default' },

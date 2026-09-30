@@ -27,11 +27,12 @@ import { SessionScreenView } from './session-screen-view'
 import { type ListedWorkspace, sessionWorkspaceIdentity } from './session-screen-workspace'
 import { SessionShell } from './session-shell'
 
-const SESSION_ROSTER = [
+const SESSION_ROWS = [
   sessionRow({
     id: 'composer-review',
     posture: null,
     title: { text: 'Finish Session composer review', source: 'first-prompt' },
+    name: 'Finish Session composer review',
     status: 'running',
     cwd: '/workspace/argo/.claude/worktrees/ticket-1846-composer',
     updatedAt: '2026-09-13T15:50:00Z',
@@ -65,6 +66,7 @@ const SESSION_ROSTER = [
     harness: 'codex',
     posture: 'live',
     title: { text: 'Add Markdown typing shortcuts', source: 'summarised' },
+    name: 'Add Markdown typing shortcuts',
     status: 'idle',
     cwd: '/workspace/argo',
     updatedAt: '2026-09-13T15:28:00Z',
@@ -75,6 +77,7 @@ const SESSION_ROSTER = [
     id: 'feed-review',
     posture: null,
     title: { text: 'Review transcript rendering', source: 'custom' },
+    name: 'Review transcript rendering',
     status: 'permission',
     cwd: '/workspace/argo',
     updatedAt: '2026-09-13T15:18:00Z',
@@ -255,7 +258,7 @@ function ReviewScreen({
   // The header's picks drive a real inspector, so the story shows what picking a row opens.
   const [picked, setPicked] = useState<{ id: string; count: number } | null>(null)
   const pick = (id: string) => setPicked((last) => ({ id, count: (last?.count ?? 0) + 1 }))
-  const session = SESSION_ROSTER.find(({ id }) => id === selectedSessionId)
+  const session = SESSION_ROWS.find(({ id }) => id === selectedSessionId)
   const feed = rows === null ? feedFor(selectedSessionId) : { ...feedFor(selectedSessionId), rows }
   if (session === undefined) return null
   const headerSession = sessionWithTitle({ ...session, workspaceId }, titleText)
@@ -364,7 +367,7 @@ function ReviewContent({
 function sessionWithTitle(session: Session, titleText: string | undefined): Session {
   return titleText === undefined
     ? session
-    : { ...session, title: { text: titleText, source: 'first-prompt' } }
+    : { ...session, title: { text: titleText, source: 'first-prompt' }, name: titleText }
 }
 
 function NewSessionScreen() {
@@ -650,7 +653,7 @@ const meta = {
       </MemoryRouter>
     ),
   ],
-  beforeEach: () => installSessionHost(SESSION_ROSTER),
+  beforeEach: () => installSessionHost(SESSION_ROWS),
 } satisfies Meta<typeof SessionScreenView>
 
 export default meta
@@ -763,7 +766,7 @@ export const Open: Story = {
 
 export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
   parameters: { route: PRODUCTION_ROUTE },
-  beforeEach: () => sessionSelectionHost(SESSION_ROSTER),
+  beforeEach: () => sessionSelectionHost(SESSION_ROWS),
   render: () => <ProductionSessionSelectionScreen />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -808,7 +811,7 @@ export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
 // new one (#2852).
 export const SwitchingBackDoesNotReopenADismissedInspector: Story = {
   parameters: { route: PRODUCTION_ROUTE },
-  beforeEach: () => sessionSelectionHost(SESSION_ROSTER),
+  beforeEach: () => sessionSelectionHost(SESSION_ROWS),
   render: () => <ProductionSessionSelectionScreen />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -855,7 +858,7 @@ const FORMATTED_TITLE =
 export const FormattedHeaderTitle: Story = {
   beforeEach: () =>
     installSessionHost(
-      SESSION_ROSTER.map((session) =>
+      SESSION_ROWS.map((session) =>
         session.id === 'composer-review' ? sessionWithTitle(session, FORMATTED_TITLE) : session,
       ),
     ),

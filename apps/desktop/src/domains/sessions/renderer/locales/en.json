@@ -334,13 +334,6 @@
     "protocolDetails": "Protocol text"
   },
   "delegation": {
-    "agent": {
-      "label": "Background Agent"
-    },
-    "shell": {
-      "label": "Background Task",
-      "running": "Running Background Task"
-    },
     "event": {
       "messaged": "{{name}} received a message",
       "responded": "{{name}} sent a reply to the main Session",
@@ -353,7 +346,6 @@
       "started": "{{nickname}} started {{name}}",
       "stopped": "{{nickname}} stopped {{name}}"
     },
-    "open": "Open the {{name}} Session",
     "tokens": "{{amount}} tokens"
   },
   "workState": {
@@ -363,8 +355,7 @@
     "done": "Done",
     "completed": "Completed",
     "failed": "Failed",
-    "interrupted": "Interrupted",
-    "finished": "Finished"
+    "interrupted": "Interrupted"
   },
   "skill": {
     "open": "Open the {{name}} skill",

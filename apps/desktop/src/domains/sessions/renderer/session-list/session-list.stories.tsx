@@ -17,6 +17,7 @@ const session = sessionRow({
   id: 'prose',
   posture: null,
   title: { text: 'Read the Session transcript', source: 'first-prompt' },
+  name: 'Read the Session transcript',
   status: 'idle',
   cwd: '/workspace/argo',
   subagents: [sessionSubagent({ id: 'interface-review', label: 'Interface review' })],
@@ -26,6 +27,7 @@ const secondSession: Session = {
   ...session,
   id: 'second-session',
   title: { text: 'A second Session', source: 'summarised' },
+  name: 'A second Session',
 }
 
 const listed: Session[] = [session, secondSession]
@@ -195,7 +197,11 @@ export const CommandTitledSession: Story = {
       },
     ])
     const restore = showing([
-      { ...session, title: { text: '/implement 1847', source: 'first-prompt' } },
+      {
+        ...session,
+        title: { text: '/implement 1847', source: 'first-prompt' },
+        name: '/implement 1847',
+      },
     ])
     return () => {
       replaceComposerCommands('claude', [])
@@ -210,31 +216,6 @@ export const CommandTitledSession: Story = {
   },
 }
 
-export const ActiveSessionSpinsItsHarnessLogo: Story = {
-  beforeEach: () =>
-    showing([
-      {
-        ...session,
-        status: 'running',
-        title: { text: 'Build the approved sessionList layout', source: 'first-prompt' },
-      },
-    ]),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const row = await canvas.findByRole('button', { name: /Build the approved sessionList layout/ })
-    await expect(row).toHaveAccessibleName(/Running/)
-    await expect(row.querySelector('[data-slot="loader"]')).toBeNull()
-    await expect(row.querySelector('[data-slot="harness-logo"]')).toHaveAttribute(
-      'data-active',
-      'true',
-    )
-    await expect(row.querySelector('[data-slot="session-status"]')).toHaveAttribute(
-      'data-variant',
-      'active',
-    )
-  },
-}
-
 // Optional activity metadata must not present `unknown` status as an activity summary.
 export const MissingActivityKeepsStatusOutOfTheSubtitle: Story = {
   beforeEach: () =>
@@ -244,6 +225,7 @@ export const MissingActivityKeepsStatusOutOfTheSubtitle: Story = {
         activity: null,
         status: 'unknown',
         title: { text: 'A Session with no observed activity', source: 'first-prompt' },
+        name: 'A Session with no observed activity',
       },
     ]),
   play: async ({ canvasElement }) => {
@@ -272,6 +254,7 @@ export const OpenCommandReadsRunning: Story = {
         },
         status: 'running',
         title: { text: 'Gate the branch', source: 'first-prompt' },
+        name: 'Gate the branch',
       },
       {
         ...session,
@@ -285,6 +268,7 @@ export const OpenCommandReadsRunning: Story = {
         },
         status: 'idle',
         title: { text: 'Gated the branch', source: 'first-prompt' },
+        name: 'Gated the branch',
       },
     ]),
   play: async ({ canvasElement }) => {
@@ -299,6 +283,7 @@ function concurrentActivityRows(activityBySession: Record<string, string>) {
     ...session,
     id: name.toLowerCase(),
     title: { text: `${name} session`, source: 'first-prompt' as const },
+    name: `${name} session`,
     status: activityBySession[name] === undefined ? ('idle' as const) : ('running' as const),
     cwd: null,
     subagents: [],
@@ -385,6 +370,7 @@ export const CommentaryActivityDrawsMarkdown: Story = {
         },
         status: 'running',
         title: { text: 'Order the group phrases', source: 'first-prompt' },
+        name: 'Order the group phrases',
       },
       {
         ...session,
@@ -398,6 +384,7 @@ export const CommentaryActivityDrawsMarkdown: Story = {
         },
         status: 'idle',
         title: { text: 'List the sources', source: 'first-prompt' },
+        name: 'List the sources',
       },
     ]),
   play: async ({ canvasElement }) => {
@@ -430,6 +417,7 @@ export const SessionListStructure: Story = {
           ],
         },
         title: { text: 'Codex session names displaying as ID', source: 'first-prompt' },
+        name: 'Codex session names displaying as ID',
       },
     ]),
   play: async ({ canvasElement }) => {
@@ -458,9 +446,17 @@ export const SettledRowShowsItsAge: Story = {
   },
 }
 
-// The dot beside a blocked Session is already `bg-warn` for both statuses; the badge names the
-// shared action the reader must take (#2509).
-export const PendingBadges: Story = {
+function statusOf(row: HTMLElement) {
+  return row.querySelector('[data-slot="session-status"]')?.getAttribute('data-variant')
+}
+
+function harnessActive(row: HTMLElement) {
+  return row.querySelector('[data-slot="harness-logo"]')?.getAttribute('data-active')
+}
+
+// Each status draws its dot; both blocked statuses share one "Needs input" badge (#2509), a
+// starting Session keeps the idle mark, and a running one spins its Harness logo.
+export const StatusMarks: Story = {
   beforeEach: () =>
     showing([
       session,
@@ -470,30 +466,57 @@ export const PendingBadges: Story = {
         posture: 'live',
         status: 'asking',
         title: { text: 'A question is waiting', source: 'first-prompt' },
+        name: 'A question is waiting',
       },
       {
         ...session,
         id: 'wants-permission',
         status: 'permission',
         title: { text: 'A tool call is waiting', source: 'first-prompt' },
+        name: 'A tool call is waiting',
+      },
+      {
+        ...session,
+        id: 'starting-session',
+        status: 'starting',
+        title: { text: 'New Session', source: 'first-prompt' },
+        name: 'New Session',
+      },
+      {
+        ...session,
+        id: 'running-session',
+        status: 'running',
+        title: { text: 'Build the approved layout', source: 'first-prompt' },
+        name: 'Build the approved layout',
       },
     ]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const wantsAnswer = await canvas.findByRole('button', { name: /A question is waiting/ })
     await expect(within(wantsAnswer).getByText('Needs input')).toBeVisible()
-    await expect(wantsAnswer.querySelector('[data-slot="session-status"]')).toHaveAttribute(
-      'data-variant',
-      'attention',
-    )
+    await expect(statusOf(wantsAnswer)).toBe('attention')
     const wantsPermission = canvas.getByRole('button', { name: /A tool call is waiting/ })
     await expect(within(wantsPermission).getByText('Needs input')).toBeVisible()
+    await expect(statusOf(wantsPermission)).toBe('attention')
     const idle = canvas.getByRole('button', { name: /Read the Session transcript/ })
     await expect(within(idle).queryByText('Needs input')).toBeNull()
+    await expect(statusOf(idle)).toBe('idle')
+    const starting = canvas
+      .getAllByRole('button')
+      .find((button) => button.dataset.sessionId === 'starting-session')
+    if (starting === undefined) throw new Error('The starting Session row is absent.')
+    await expect(statusOf(starting)).toBe('idle')
+    await expect(harnessActive(starting)).toBe('false')
+    const running = canvas.getByRole('button', { name: /Build the approved layout/ })
+    await expect(running).toHaveAccessibleName(/Running/)
+    await expect(running.querySelector('[data-slot="loader"]')).toBeNull()
+    await expect(statusOf(running)).toBe('active')
+    await expect(harnessActive(running)).toBe('true')
   },
 }
 
-export const StatusTransitions: Story = {
+// A changed status redraws the dot, and a resolved permission drops its badge.
+export const StatusFollowsChanges: Story = {
   beforeEach: () =>
     showing([
       {
@@ -501,43 +524,22 @@ export const StatusTransitions: Story = {
         id: 'waiting-for-permission',
         status: 'permission',
         title: { text: 'Approve the command', source: 'first-prompt' },
+        name: 'Approve the command',
       },
       {
         ...session,
         id: 'idle-session',
         title: { text: 'Read the idle Session', source: 'first-prompt' },
-      },
-      {
-        ...session,
-        id: 'starting-session',
-        status: 'starting',
-        title: { text: 'New Session', source: 'first-prompt' },
+        name: 'Read the idle Session',
       },
     ]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const waiting = await canvas.findByRole('button', { name: /Approve the command/ })
     const idle = canvas.getByRole('button', { name: /Read the idle Session/ })
-    const starting = canvas
-      .getAllByRole('button')
-      .find((button) => button.dataset.sessionId === 'starting-session')
-    if (starting === undefined) throw new Error('The starting Session row is absent.')
-    await expect(waiting.querySelector('[data-slot="session-status"]')).toHaveAttribute(
-      'data-variant',
-      'attention',
-    )
-    await expect(idle.querySelector('[data-slot="session-status"]')).toHaveAttribute(
-      'data-variant',
-      'idle',
-    )
-    await expect(starting.querySelector('[data-slot="session-status"]')).toHaveAttribute(
-      'data-variant',
-      'idle',
-    )
-    await expect(starting.querySelector('[data-slot="harness-logo"]')).toHaveAttribute(
-      'data-active',
-      'false',
-    )
+    await expect(within(waiting).getByText('Needs input')).toBeVisible()
+    await expect(statusOf(waiting)).toBe('attention')
+    await expect(statusOf(idle)).toBe('idle')
     host.change([
       { ...session, id: 'waiting-for-permission', status: 'idle' },
       {
@@ -545,37 +547,34 @@ export const StatusTransitions: Story = {
         id: 'idle-session',
         status: 'running',
         title: { text: 'Read the idle Session', source: 'first-prompt' },
+        name: 'Read the idle Session',
       },
     ])
     await waitFor(async () => {
-      await expect(waiting.querySelector('[data-slot="session-status"]')).toHaveAttribute(
-        'data-variant',
-        'idle',
-      )
-      await expect(idle.querySelector('[data-slot="session-status"]')).toHaveAttribute(
-        'data-variant',
-        'active',
-      )
+      await expect(statusOf(waiting)).toBe('idle')
+      await expect(within(waiting).queryByText('Needs input')).toBeNull()
+      await expect(statusOf(idle)).toBe('active')
     })
   },
 }
 
-export const NeedsInputClearsAfterResolution: Story = {
-  beforeEach: () =>
-    showing([
-      {
-        ...session,
-        id: 'waiting-for-permission',
-        status: 'permission',
-        title: { text: 'Approve the command', source: 'first-prompt' },
-      },
-    ]),
+// A lost change signal opens again and reads the list afresh, so a change made meanwhile lands.
+export const LostChangeSignalReconnects: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const waiting = await canvas.findByRole('button', { name: /Approve the command/ })
-    await expect(within(waiting).getByText('Needs input')).toBeVisible()
-    host.change([{ ...session, id: 'waiting-for-permission', status: 'idle' }])
-    await waitFor(() => expect(within(waiting).queryByText('Needs input')).toBeNull())
+    await canvas.findByRole('button', { name: /Read the Session transcript/ })
+    host.dropChangeSignal([
+      {
+        ...session,
+        title: { text: 'Renamed while the signal was lost', source: 'custom' },
+        name: 'Renamed while the signal was lost',
+      },
+    ])
+    await canvas.findByRole(
+      'button',
+      { name: /Renamed while the signal was lost/ },
+      { timeout: 3000 },
+    )
   },
 }
 
@@ -588,6 +587,7 @@ export const NarrowSidebarWithLongSessionName: Story = {
           text: 'Keep the Sessions sidebar readable when a Session name is substantially longer than its pane',
           source: 'first-prompt',
         },
+        name: 'Keep the Sessions sidebar readable when a Session name is substantially longer than its pane',
       },
     ]),
   decorators: [
@@ -687,11 +687,13 @@ const alpha: Session = {
   ...session,
   id: 'alpha',
   title: { text: 'Alpha session', source: 'first-prompt' },
+  name: 'Alpha session',
 }
 const beta: Session = {
   ...session,
   id: 'beta',
   title: { text: 'Beta session', source: 'first-prompt' },
+  name: 'Beta session',
 }
 let reordered = false
 
@@ -731,6 +733,7 @@ export const SkillMentionTitle: Story = {
           text: '[$implement](/Users/milad/Developer/argo/.agents/skills/implement/SKILL.md) [https://github.com/milad-alizadeh/argo/issues/1944](https://github.com/milad-alizadeh/argo/issues/1944)',
           source: 'first-prompt',
         },
+        name: '[$implement](/Users/milad/Developer/argo/.agents/skills/implement/SKILL.md) [https://github.com/milad-alizadeh/argo/issues/1944](https://github.com/milad-alizadeh/argo/issues/1944)',
       },
     ]),
   play: async ({ canvasElement }) => {
@@ -791,6 +794,7 @@ const archivedSession: Session = {
   id: 'archived-session',
   archived: true,
   title: { text: 'Read the archived transcript', source: 'first-prompt' },
+  name: 'Read the archived transcript',
 }
 
 // The archived filter is a filter on the one list query, so choosing it reads `filter: 'archived'`.
@@ -819,6 +823,7 @@ export const ArchivedRowsCanBeOpened: Story = {
       {
         ...archivedSession,
         title: { text: 'Open the archived transcript', source: 'first-prompt' },
+        name: 'Open the archived transcript',
       },
     ]),
   play: async ({ canvasElement }) => {
@@ -893,6 +898,7 @@ const manySessions: Session[] = Array.from({ length: 80 }, (_unused, row) => ({
   ...session,
   id: `session-${String(row).padStart(2, '0')}`,
   title: { text: `Session number ${row}`, source: 'first-prompt' as const },
+  name: `Session number ${row}`,
 }))
 
 function sessionListScroll(canvasElement: HTMLElement) {
@@ -1007,18 +1013,6 @@ export const SearchDoesNotShowInitialSkeleton: Story = {
   },
 }
 
-// Typing reads the list once, for the settled text, rather than once per keystroke.
-export const SearchWaitsForTypingToSettle: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await canvas.findByRole('button', { name: /Read the Session transcript/ })
-    await typeSearch(canvasElement, 'second')
-    await waitFor(() => expect(host.reads.at(-1)).toMatchObject({ search: 'second' }))
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    await expect(host.reads.map((read) => read.search)).toEqual(['', 'second'])
-  },
-}
-
 function OpenSecondProject() {
   const navigate = useNavigate()
   const { search } = useLocation()
@@ -1041,6 +1035,7 @@ function projectSessions(projectId: string): Session[] {
       projectId,
       archived,
       title: { text: name, source: 'first-prompt' },
+      name: name,
     }
   })
 }
@@ -1080,8 +1075,9 @@ export const ProjectSwitchReadsThatProject: Story = {
   },
 }
 
-// Until the typed text settles, the list is still the unsearched one, archived rows included.
-export const UnsettledSearchKeepsTheArchive: Story = {
+// Until the typed text settles, the list is still the unsearched one, archived rows included, and
+// the settled text is read once.
+export const SearchWaitsForTypingToSettle: Story = {
   beforeEach: () =>
     showing([...listed, archivedSession], {
       list: async (read) =>
@@ -1091,10 +1087,12 @@ export const UnsettledSearchKeepsTheArchive: Story = {
     const canvas = within(canvasElement)
     await chooseStatus(canvasElement, 'All')
     await canvas.findByRole('button', { name: /Read the archived transcript/ })
-    await typeSearch(canvasElement, 's')
+    await typeSearch(canvasElement, 'second')
     await expect(canvas.getByRole('button', { name: /Read the archived transcript/ })).toBeVisible()
     await waitFor(() =>
       expect(canvas.queryByRole('button', { name: /Read the archived transcript/ })).toBeNull(),
     )
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    await expect(host.reads.map((read) => read.search)).toEqual(['', '', 'second'])
   },
 }

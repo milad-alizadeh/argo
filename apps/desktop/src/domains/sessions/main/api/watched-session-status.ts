@@ -1,5 +1,6 @@
 import type { Harness } from '@/harnesses/harness'
 import type { HistoryTurn } from '@/harnesses/registration'
+import type { SessionUpdate } from './session-update'
 
 // A terminal killed partway through a turn writes nothing more, so an open turn this quiet is unknown.
 export const WATCHED_TURN_QUIET_LIMIT_MS = 5 * 60_000
@@ -7,7 +8,7 @@ export const WATCHED_TURN_QUIET_LIMIT_MS = 5 * 60_000
 type WatchedTurn = { turn: HistoryTurn; at: number }
 type WatchedSession = { harness: Harness; nativeId: string }
 type WatchedWrite = WatchedSession & { turn: HistoryTurn | null; at: number }
-type WatchedStatus = 'running' | 'idle' | 'unknown'
+type WatchedStatus = Extract<SessionUpdate['status'], 'running' | 'idle'>
 
 // Turns a watched Session's history writes into its status: running for an open turn, idle for a
 // closed one, and unknown once an open turn has been quiet too long, which `quiet` writes.
