@@ -25,9 +25,10 @@ import {
 } from '../composer/turn-configuration/turn-configuration'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import type { HarnessControl } from '../harness/harnesses'
-import type { Session, SessionListPage } from '../types'
+import type { Session } from '../types'
 import { draftTarget } from './session-draft-target'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
+import { useSessionDetails } from './use-session-details'
 
 type SessionScreenDetailsProps = {
   permission: ReturnType<
@@ -38,7 +39,8 @@ type SessionScreenDetailsProps = {
   session: Session | null
   harness: HarnessControl
   selectedSessionId: string | null
-  sessionList: SessionListPage | null
+  // Whether the selected Session's details have been read, so its composer can open on them.
+  sessionLoaded: boolean
   cockpit: Cockpit
   workspaceCockpit: WorkspaceCockpit
   workspaceActions: WorkspaceActions
@@ -69,7 +71,8 @@ function catalogFailureOf(
 function sessionComposerConfiguration(input: {
   selectedSessionId: string | null
   projectId: string | null
-  sessionList: SessionListPage | null
+  session: Session | null
+  sessionLoaded: boolean
   catalogResult: CatalogReadResult | undefined
   catalogFailed: boolean
 }) {
@@ -78,12 +81,9 @@ function sessionComposerConfiguration(input: {
   const identity = composerIdentityOf(input.selectedSessionId, input.projectId)
   const choices = catalog?.availability === 'available' ? catalog : null
   const initialTurnConfiguration =
-    choices === null || (identity.kind === 'session' && input.sessionList === null)
+    choices === null || (identity.kind === 'session' && !input.sessionLoaded)
       ? null
-      : turnConfigurationFor(choices, {
-          identity,
-          rows: input.sessionList?.sessions ?? [],
-        })
+      : turnConfigurationFor(choices, { identity, session: input.session })
   return { catalogFailure, choices, initialTurnConfiguration, identity }
 }
 
@@ -228,7 +228,7 @@ export function SessionComposerArea({
   session,
   harness,
   selectedSessionId,
-  sessionList,
+  sessionLoaded,
   cockpit,
   workspaceCockpit,
   workspaceActions,
@@ -240,7 +240,8 @@ export function SessionComposerArea({
     sessionComposerConfiguration({
       selectedSessionId,
       projectId: cockpit.project?.id ?? routeProjectId ?? null,
-      sessionList,
+      session,
+      sessionLoaded,
       catalogResult: catalogQuery.data,
       catalogFailed: catalogQuery.isError,
     })
@@ -415,23 +416,18 @@ function useComposerFailures(input: {
     })
 }
 
-function handoffTitle(sessionList: SessionListPage | null, sessionId: string) {
-  const row = sessionList?.sessions.find(({ id }) => id === sessionId)
-  return row?.title?.text ?? sessionId
-}
-
+// A handoff names its other Session by ID, which the roster need not have loaded.
 function HandoffLink({
   label,
   sessionId,
-  sessionList,
   onNavigate,
 }: {
   label: string
   sessionId: string
-  sessionList: SessionListPage | null
   onNavigate: (path: string) => void
 }) {
   const { projectId } = useParams()
+  const { session } = useSessionDetails(sessionId)
   return (
     <p className="mt-2">
       {label}{' '}
@@ -440,7 +436,7 @@ function HandoffLink({
         onClick={() => onNavigate(`/projects/${projectId}/sessions/${sessionId}`)}
         type="button"
       >
-        {handoffTitle(sessionList, sessionId)}
+        {session?.title?.text ?? sessionId}
       </button>
     </p>
   )
@@ -448,10 +444,8 @@ function HandoffLink({
 
 export function SessionHandoffFacts({
   session,
-  sessionList = null,
   onNavigate,
 }: Pick<SessionScreenDetailsProps, 'session'> & {
-  sessionList?: SessionListPage | null
   onNavigate?: (path: string) => void
 }) {
   const { t } = useTranslation('sessions')
@@ -463,7 +457,6 @@ export function SessionHandoffFacts({
         <HandoffLink
           label={t('handoff.to')}
           onNavigate={onNavigate}
-          sessionList={sessionList}
           sessionId={session.handoffTo}
         />
       ) : null}
@@ -471,7 +464,6 @@ export function SessionHandoffFacts({
         <HandoffLink
           label={t('handoff.from')}
           onNavigate={onNavigate}
-          sessionList={sessionList}
           sessionId={session.handoffFrom}
         />
       ) : null}

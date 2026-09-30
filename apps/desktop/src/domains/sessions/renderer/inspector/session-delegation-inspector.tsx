@@ -5,7 +5,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { hasSubagentTranscript } from '@/domains/sessions/api/feed/feed-subagents'
-import type { SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Empty,
@@ -15,6 +14,7 @@ import {
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
 import { BasicFeed } from '../feed/document/basic-feed'
+import type { SessionSubagent } from '../model/models'
 import type { SessionError, SessionEvidence, SessionFeed } from '../types'
 
 import '../feed/feed.css'

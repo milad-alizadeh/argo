@@ -27,7 +27,8 @@ export function HarnessTabs({
       <div className="border-b p-2">
         <TabsList
           aria-label={t('harness.label')}
-          className="grid w-full grid-cols-2 gap-1 p-1 group-data-horizontal/tabs:h-auto"
+          className="grid w-full gap-1 p-1 group-data-horizontal/tabs:h-auto"
+          style={{ gridTemplateColumns: `repeat(${SESSION_HARNESSES.length}, minmax(0, 1fr))` }}
         >
           {SESSION_HARNESSES.map((option) => (
             <TabsTrigger

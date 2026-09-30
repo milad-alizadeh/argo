@@ -2,16 +2,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
-
-import type { SessionTurnConfiguration } from '@/domains/sessions/renderer/model/models'
-import { claudeHarnessInfoFixture } from '@/mocks/sessions/harness-catalog.fixture'
 import { sessionRow } from '@/mocks/sessions/session-rows'
 import {
-  announceSessionListChange,
-  sessionListSubscribe,
-} from '@/mocks/sessions/session-story-host'
-import { queryClient, trpc } from '@/platform/renderer/trpc-client'
-import { sessionRosterQueryKey } from '../session-list/session-roster'
+  savedSelectionDraft,
+  sessionSelectionHost,
+} from '@/mocks/sessions/session-selection-host.fixture'
+import { announceSessionListChange } from '@/mocks/sessions/session-story-host'
+import { queryClient } from '@/platform/renderer/trpc-client'
+import type { SessionTurnConfiguration } from '../model/models'
 import { SessionScreenView } from './session-screen-view'
 
 const SESSION_ID = 'live-turn-configuration'
@@ -19,12 +17,8 @@ const OPENING_TURN = '2026-09-13T10:00:00.000Z'
 const NEXT_TURN = '2026-09-13T10:01:00.000Z'
 
 // A live Claude Session whose next Turn runs on whatever `reply` says the Harness used.
-function liveSession(
-  reply: SessionTurnConfiguration,
-  sent: unknown[],
-  trpc: typeof window.argo.trpc,
-) {
-  const row = sessionRow({
+function liveRow() {
+  return sessionRow({
     id: SESSION_ID,
     posture: 'live',
     title: { text: 'Turn turnConfiguration Session', source: 'first-prompt' },
@@ -33,22 +27,6 @@ function liveSession(
     turnStartedAt: OPENING_TURN,
     turnConfiguration: { model: 'claude-opus-5', effort: 'medium', mode: 'default' },
   })
-  return {
-    trpcSubscribe: sessionListSubscribe(window.argo.trpcSubscribe, () => [row]),
-    trpc: (async (request) => {
-      if (request.path === 'harnessCatalogRead') {
-        return {
-          id: request.id,
-          result: { data: { info: claudeHarnessInfoFixture(), failure: null } },
-        }
-      }
-      if (request.path !== 'sessionSubmit') return trpc(request)
-      sent.push(request.input)
-      Object.assign(row, { turnStartedAt: NEXT_TURN, turnConfiguration: reply })
-      announceSessionListChange()
-      return { id: request.id, result: { data: { sessionId: SESSION_ID } } }
-    }) as typeof window.argo.trpc,
-  }
 }
 
 // Each run starts from the opening Turn, so a replay in the Storybook UI proves the same thing.
@@ -58,37 +36,20 @@ function withBridge(reply: SessionTurnConfiguration) {
     sent,
     beforeEach: () => {
       sent.length = 0
-      queryClient.removeQueries({
-        queryKey: trpc.harnessCatalogRead.queryKey({ harness: 'claude' }),
-      })
-      queryClient.setQueryData(
-        sessionRosterQueryKey({ projectId: 'storybook-project', search: '' }),
-        {
-          list: {
-            type: 'list',
-            pages: 1,
-            pageSize: 30,
-            total: 1,
-            rows: [
-              sessionRow({
-                id: SESSION_ID,
-                posture: 'live',
-                title: { text: 'Turn turnConfiguration Session', source: 'first-prompt' },
-                status: 'idle',
-                cwd: '/storybook/argo',
-                turnStartedAt: OPENING_TURN,
-                turnConfiguration: { model: 'claude-opus-5', effort: 'medium', mode: 'default' },
-              }),
-            ],
-          },
-          failed: false,
-        },
-      )
-      const previous = window.argo
-      window.argo = { ...previous, ...liveSession(reply, sent, previous.trpc) }
-      return () => {
-        window.argo = previous
+      const row = liveRow()
+      const restoreHost = sessionSelectionHost([row])
+      const hosted = window.argo
+      window.argo = {
+        ...hosted,
+        trpc: (async (request) => {
+          if (request.path !== 'sessionSubmit') return hosted.trpc(request)
+          sent.push(request.input)
+          Object.assign(row, { turnStartedAt: NEXT_TURN, turnConfiguration: reply })
+          announceSessionListChange()
+          return { id: request.id, result: { data: { sessionId: SESSION_ID } } }
+        }) as typeof window.argo.trpc,
       }
+      return restoreHost
     },
   }
 }
@@ -138,38 +99,24 @@ async function sendWithMaxEffort(canvasElement: HTMLElement) {
 
 const refused = withBridge({ model: 'claude-opus-5', effort: 'high', mode: 'default' })
 
-export const RefusedChoiceReverts: Story = {
+// The Send names a saved draft, and the composer keeps the draft's choice: nothing reads the
+// Harness's report back into it, so a refused Effort stays chosen and no message appears.
+export const RefusedChoiceStays: Story = {
   beforeEach: refused.beforeEach,
   play: async ({ canvasElement }) => {
     const trigger = await sendWithMaxEffort(canvasElement)
+    // A Send names its draft, and the draft carries the prompt and the chosen configuration.
     await expect(refused.sent.at(-1)).toMatchObject({
-      sessionId: SESSION_ID,
+      draftId: `selection-draft-${SESSION_ID}`,
+    })
+    await expect(savedSelectionDraft({ type: 'session', sessionId: SESSION_ID })).toMatchObject({
       prompt: 'Think hard about the driver.',
       turnConfiguration: { model: 'opus', effort: 'max', mode: 'manual' },
     })
 
-    await waitFor(
-      () =>
-        expect(within(canvasElement).getByRole('alert')).toHaveTextContent(
-          'Claude used High, not Max.',
-        ),
-      { timeout: 3000 },
-    )
-    await expect(trigger).toHaveTextContent('Opus 5·High')
-    await expectSameWidthAsComposer(canvasElement)
+    await expect(trigger).toHaveTextContent('Opus 5·Max')
+    await expect(within(canvasElement).queryByRole('alert')).toBeNull()
   },
-}
-
-// The message spans exactly the composer card's content column, never wider.
-async function expectSameWidthAsComposer(canvasElement: HTMLElement) {
-  const canvas = within(canvasElement)
-  const alert = canvas.getByRole('alert').getBoundingClientRect()
-  const form = canvas.getByLabelText('Message').closest('form')
-  if (form === null) throw new Error('The composer has no form.')
-  const style = getComputedStyle(form)
-  const box = form.getBoundingClientRect()
-  await expect(alert.left).toBeCloseTo(box.left + Number.parseFloat(style.paddingLeft))
-  await expect(alert.right).toBeCloseTo(box.right - Number.parseFloat(style.paddingRight))
 }
 
 const accepted = withBridge({ model: 'claude-opus-5', effort: 'max', mode: 'default' })

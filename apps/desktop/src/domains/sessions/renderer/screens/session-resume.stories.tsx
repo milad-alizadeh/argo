@@ -5,6 +5,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import { sessionRow } from '@/mocks/sessions/session-rows'
+import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fixture'
 import {
   announceSessionFeedChange,
   announceSessionListChange,
@@ -31,6 +32,7 @@ const resumable = sessionRow({
 function restartedHost(row = resumable) {
   let resumed = false
   const live: SessionLiveEvent[] = []
+  const restoreHost = sessionSelectionHost([row])
   const before = window.argo
   window.argo = {
     ...before,
@@ -65,9 +67,7 @@ function restartedHost(row = resumable) {
       return { id: request.id, result: { data: { sessionId: row.id } } }
     }) as typeof window.argo.trpc,
   }
-  return () => {
-    window.argo = before
-  }
+  return restoreHost
 }
 
 const meta = {

@@ -23,9 +23,11 @@ export const available = codexHarnessInfo(codexModelCatalogFixture())
 if (available.availability !== 'available') throw new Error('Codex fixture must be available.')
 export const model = available.models[0]
 if (model === undefined) throw new Error('Codex fixture needs a model.')
-export const catalog = harnessCatalogSchema.parse({ harnesses: [unavailable('claude'), available] })
+export const catalog = harnessCatalogSchema.parse({
+  harnesses: [unavailable('claude'), available, unavailable('claude-acp')],
+})
 export const claudeCatalog = harnessCatalogSchema.parse({
-  harnesses: [{ ...available, harness: 'claude' }, available],
+  harnesses: [{ ...available, harness: 'claude' }, available, unavailable('claude-acp')],
 })
 export const first: SessionStartInput = {
   commandId: 'first-command',

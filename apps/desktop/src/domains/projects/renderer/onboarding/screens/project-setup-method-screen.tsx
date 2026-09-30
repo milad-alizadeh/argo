@@ -1,13 +1,5 @@
 import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  defaultProjectSetupHarnesses,
-  type ProjectSetupHarness,
-} from '@/domains/projects/renderer/onboarding/model/project-setup-harness'
-import type {
-  ProjectSetupCommand,
-  ProjectSetupSnapshot,
-} from '@/domains/projects/renderer/onboarding/onboarding-presentation'
 import { DEFAULT_HARNESS, harnessSchema } from '@/harnesses/harness'
 import { harnessLabel } from '@/harnesses/presentation-registry'
 import { Icon } from '@/platform/renderer/components/icon/icon'
@@ -20,6 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/platform/renderer/components/ui/select'
+import {
+  defaultProjectSetupHarnesses,
+  type ProjectSetupHarness,
+} from '../model/project-setup-harness'
+import type { ProjectSetupCommand, ProjectSetupSnapshot } from '../onboarding-presentation'
 
 type SetupMethod = 'agent' | 'manual'
 

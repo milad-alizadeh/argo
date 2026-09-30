@@ -1,11 +1,11 @@
 import { type ReactNode, useState } from 'react'
-import type { SetupPlan } from '@/domains/projects/renderer/onboarding/model/setup-plan'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/platform/renderer/components/ui/collapsible'
+import type { SetupPlan } from '../model/setup-plan'
 
 export function PackageNames({ names }: { names: string[] }) {
   return names.length ? (

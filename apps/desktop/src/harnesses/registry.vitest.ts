@@ -3,9 +3,11 @@ import { claudeModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog
 import { codexModelCatalogFixture } from '@/mocks/sessions/codex-model-catalog.fixture'
 import { claudeHarnessInfo } from './claude/catalog'
 import { createClaudeRegistration } from './claude/registration'
+import { createClaudeAcpRegistration } from './claude-acp/registration'
 import type { CodexAppServerClient, CodexRequest } from './codex/app-server/codex-app-server-client'
 import { codexHarnessInfo } from './codex/catalog'
 import { createCodexRegistration } from './codex/registration'
+import { unavailable } from './harness-catalog'
 import { type HarnessRegistry, readHarnessCatalog } from './registry'
 
 const vendor = vi.hoisted(() => ({
@@ -42,6 +44,7 @@ test('registered Claude reads root and subagent history and renames through the 
         throw new Error('Codex was not selected.')
       }),
     ),
+    'claude-acp': createClaudeAcpRegistration(),
   } satisfies HarnessRegistry
   const claude = registrations.claude
 
@@ -78,6 +81,7 @@ test('registered Codex reads the selected thread through its shared request and 
   const registrations = {
     claude: createClaudeRegistration(),
     codex: createCodexRegistration(clientFor(request)),
+    'claude-acp': createClaudeAcpRegistration(),
   } satisfies HarnessRegistry
   const codex = registrations.codex
 
@@ -97,7 +101,7 @@ test('registered Codex reads the selected thread through its shared request and 
 })
 
 test('the registry reads every Harness catalog', async () => {
-  const reads = { claude: 0, codex: 0 }
+  const reads = { claude: 0, codex: 0, 'claude-acp': 0 }
   const registry = {
     claude: {
       harness: 'claude',
@@ -113,14 +117,22 @@ test('the registry reads every Harness catalog', async () => {
         return codexHarnessInfo(codexModelCatalogFixture())
       },
     },
+    'claude-acp': {
+      harness: 'claude-acp',
+      readCatalog: async () => {
+        reads['claude-acp'] += 1
+        return unavailable('claude-acp')
+      },
+    },
   } as unknown as HarnessRegistry
 
   const catalog = await readHarnessCatalog(registry)
 
-  expect(reads).toEqual({ claude: 1, codex: 1 })
+  expect(reads).toEqual({ claude: 1, codex: 1, 'claude-acp': 1 })
   expect(catalog.harnesses.map(({ availability }) => availability)).toEqual([
     'available',
     'available',
+    'unavailable',
   ])
 })
 
@@ -135,6 +147,10 @@ test('one failed catalog read leaves the other Harness available', async () => {
       readCatalog: async () => {
         throw new Error('Codex catalog is unavailable')
       },
+    },
+    'claude-acp': {
+      harness: 'claude-acp',
+      readCatalog: async () => unavailable('claude-acp'),
     },
   } as unknown as HarnessRegistry
 

@@ -1,8 +1,5 @@
 import { useRef } from 'react'
-import {
-  type SetupDocument,
-  setupAnswers,
-} from '@/domains/projects/renderer/onboarding/model/setup-document'
+import { type SetupDocument, setupAnswers } from './model/setup-document'
 
 export type SetupAnswer = string | boolean
 

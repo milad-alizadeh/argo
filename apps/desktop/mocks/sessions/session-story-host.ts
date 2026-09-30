@@ -8,15 +8,16 @@ import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import { sessionRosterPathKey } from '@/domains/sessions/renderer/session-list/session-roster'
+import { sessionDetailsPathKey } from '@/domains/sessions/renderer/session-queries'
 import type { Session } from '@/domains/sessions/renderer/types'
 import { queryClient } from '@/platform/renderer/trpc-client'
 
 type Subscribe = typeof window.argo.trpcSubscribe
-const openRosters = new Set<() => void>()
+const openReaders = new Set<() => void>()
 
-// Sends every open story roster its rows again, as the main process does after a change.
+// Sends every open story roster and details reader its rows again, as main does after a change.
 export function announceSessionListChange() {
-  for (const send of openRosters) send()
+  for (const send of openReaders) send()
 }
 
 export function announceSessionFeedChange() {
@@ -25,12 +26,58 @@ export function announceSessionFeedChange() {
   }
 }
 
+// Details reads the story holds back until it releases them, by Session id.
+const heldDetails = new Map<string, () => void>()
+
+export function holdSessionDetails(sessionId: string) {
+  heldDetails.set(sessionId, () => {})
+}
+
+export function forgetHeldSessionDetails() {
+  heldDetails.clear()
+}
+
+export function releaseSessionDetails(sessionId: string) {
+  const release = heldDetails.get(sessionId)
+  heldDetails.delete(sessionId)
+  release?.()
+}
+
+// Answers a Session's details from the story's rows, found by ID as main reads them.
+function sessionDetailsReply(
+  request: Parameters<Subscribe>[0],
+  listener: Parameters<Subscribe>[1],
+  sessions: () => readonly Session[],
+) {
+  const { sessionId } = request.input as { sessionId: string }
+  let open = true
+  // A held reply is already in flight, so it arrives even after the reader closes.
+  const reply = () => {
+    const session = sessions().find(({ id }) => id === sessionId)
+    const details = session === undefined ? null : { projectId: 'project-1', ...session }
+    listener({ id: request.id, type: 'data', result: { data: { sessionId, details } } })
+  }
+  const send = () => {
+    if (!open) return
+    if (heldDetails.has(sessionId)) heldDetails.set(sessionId, reply)
+    else reply()
+  }
+  openReaders.add(send)
+  queueMicrotask(send)
+  return Promise.resolve(() => {
+    open = false
+    openReaders.delete(send)
+  })
+}
+
 export function sessionListSubscribe(
   subscribe: Subscribe,
   sessions: () => readonly Session[],
 ): Subscribe {
   queryClient.removeQueries({ queryKey: sessionRosterPathKey })
+  queryClient.removeQueries({ queryKey: sessionDetailsPathKey })
   return async (request, listener) => {
+    if (request.path === 'sessionDetails') return sessionDetailsReply(request, listener, sessions)
     if (request.path !== 'sessionList') return subscribe(request, listener)
     const input = request.input as { pages?: number; pageSize?: number }
     const pages = input.pages ?? 1
@@ -51,9 +98,9 @@ export function sessionListSubscribe(
         },
       })
     }
-    openRosters.add(send)
+    openReaders.add(send)
     queueMicrotask(send)
-    return () => openRosters.delete(send)
+    return () => openReaders.delete(send)
   }
 }
 

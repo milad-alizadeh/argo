@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
+import type { SessionPlan } from '../../model/models'
 import { ComposerStory } from './composer-story-samples'
 
 const FRAME = 'mx-auto max-w-4xl p-8'
