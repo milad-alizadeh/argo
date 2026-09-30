@@ -1,6 +1,6 @@
 import { initTRPC } from '@trpc/server'
 import { observable } from '@trpc/server/observable'
-import { and, asc, count, desc, eq, not, or, type SQL, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, not, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
@@ -294,12 +294,9 @@ export function coalescedChanges(publish: () => void) {
   }
 }
 
-export function storedSessionRows<Extra extends Record<string, SQL>>(
-  database: Database,
-  extra: Extra = {} as Extra,
-) {
+export function storedSessionRows(database: Database) {
   return database
-    .select({ ...storedSessionColumns, ...extra })
+    .select(storedSessionColumns)
     .from(sessionTable)
     .leftJoin(sessionTicketLink, eq(sessionTicketLink.sessionId, sessionTable.argoId))
 }
