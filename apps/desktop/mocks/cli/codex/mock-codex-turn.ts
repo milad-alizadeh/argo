@@ -134,6 +134,11 @@ export function createMockTurnStartHandler(options: {
       method: 'thread/status/changed',
       params: { threadId, status: { type: 'active', activeFlags: [] } },
     })
+    // Codex announces the Turn before its items, so an item never waits on the response.
+    options.send({
+      method: 'turn/started',
+      params: { threadId, turn: { id: turnId, status: 'inProgress' } },
+    })
     sendPlanUpdate({ text, turnId, send: options.send, beforeTurnStart: false })
     if (text.includes('PROJECT_TOOL_USAGE'))
       setTimeout(() => sendToolUsage(options.send, threadId, turnId), 1)
