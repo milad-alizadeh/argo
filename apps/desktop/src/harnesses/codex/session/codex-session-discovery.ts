@@ -110,12 +110,12 @@ export async function readCodexSessions(input: {
 }
 
 export function createCodexSessionDiscovery(request: CodexRequest): SessionDiscovery {
-  return async ({ knownNativeIds, nativeId }) => {
+  return async (input) => {
     let skipped = 0
     const records = await readCodexSessions({
       request,
-      knownNativeIds: nativeId === undefined ? knownNativeIds : [nativeId],
-      listed: nativeId === undefined,
+      knownNativeIds: input.nativeId === undefined ? input.knownNativeIds : [input.nativeId],
+      listed: input.nativeId === undefined,
       reportMalformed: () => {
         skipped += 1
       },

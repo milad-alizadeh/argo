@@ -8,10 +8,10 @@ export type SessionDiscoveryResult = {
   skipped: number
 }
 
-export type SessionDiscoveryInput = {
-  knownNativeIds: readonly string[]
-  // Read this one Session and skip the listing.
-  nativeId?: string
-}
+export type SessionDiscoveryInput =
+  // A sync: list every Session, and also read these stored ones the listing may omit.
+  | { knownNativeIds: readonly string[]; nativeId?: never }
+  // A Session the history watcher saw first: read only it, with no listing.
+  | { nativeId: string; knownNativeIds?: never }
 
 export type SessionDiscovery = (input: SessionDiscoveryInput) => Promise<SessionDiscoveryResult>

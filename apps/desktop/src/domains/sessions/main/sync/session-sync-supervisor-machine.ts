@@ -194,7 +194,6 @@ const sessionDiscoverActor = fromCallback<
     let found = false
     try {
       const { records } = await sessionDiscovery({
-        knownNativeIds: [],
         nativeId,
       })
       if (stopped) return
