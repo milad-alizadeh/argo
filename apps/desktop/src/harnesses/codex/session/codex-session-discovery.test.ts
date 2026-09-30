@@ -4,7 +4,11 @@ import recordedResponses from '../../../../mocks/cli/codex/fixtures/session-sync
   type: 'json',
 }
 import type { CodexRequest } from '../app-server/codex-app-server-client'
-import { createCodexSessionDiscovery, readCodexSessions } from './codex-session-discovery'
+import {
+  createCodexSessionSummaryList,
+  createCodexSessionSummaryReader,
+  readCodexSessions,
+} from './codex-session-discovery'
 
 const FIRST_ID = 'thread-first'
 const KNOWN_ID = 'thread-known'
@@ -94,7 +98,7 @@ function recordedRequest(calls: unknown[]) {
 test('pages interactive Codex threads, deduplicates IDs, and reads known missing IDs', async () => {
   const calls: unknown[] = []
   const fixture = recordedRequest(calls)
-  const result = await createCodexSessionDiscovery(fixture.request)({
+  const result = await createCodexSessionSummaryList(fixture.request)({
     knownNativeIds: [KNOWN_ID, SAVED_ID],
   })
   expect(result).toEqual({
@@ -164,4 +168,21 @@ test('skips a previously saved thread that Codex has removed', async () => {
 
   expect(result).toEqual([])
   expect(calls).toEqual(['thread/list', 'thread/read'])
+})
+
+test('gets one thread summary without listing, and null for a thread Codex does not know', async () => {
+  const calls: unknown[] = []
+  const getSummary = createCodexSessionSummaryReader((async (method: string, params, parse) => {
+    calls.push(method)
+    if ((params as { threadId: string }).threadId === 'missing') throw new Error('Thread not found')
+    return parse({ thread: { id: 'new-thread', updatedAt: 4, cwd: '/repo' } })
+  }) as CodexRequest)
+
+  expect(await getSummary('new-thread')).toEqual({
+    nativeId: 'new-thread',
+    activityAt: 4000,
+    cwd: '/repo',
+  })
+  expect(await getSummary('missing')).toBeNull()
+  expect(calls).toEqual(['thread/read', 'thread/read'])
 })

@@ -10,15 +10,16 @@ import {
   stopChild,
 } from 'xstate'
 import type { Database } from '@/database/database'
-import type { SessionDiscovery } from '@/domains/sessions/api/session-discovery'
-import type { SessionHistoryReader } from '@/domains/sessions/api/session-history'
+import type {
+  SessionSummaryList,
+  SessionSummaryReader,
+} from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
 import {
   type SessionSyncStatus,
   type SessionSyncStatusStore,
   sessionSyncStatusSchema,
 } from '../api/session-sync-status'
-import { refreshSessionSubagents } from '../database/session-subagents'
 import { sessionSyncMachine } from './session-sync-machine'
 import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
 
@@ -26,8 +27,8 @@ type RegisteredHarnesses = Partial<
   Record<
     Harness,
     {
-      sessionDiscovery: SessionDiscovery
-      readHistory: SessionHistoryReader
+      listSessionSummaries: SessionSummaryList
+      getSessionSummary: SessionSummaryReader
     }
   >
 >
@@ -35,9 +36,23 @@ type RegisteredHarnesses = Partial<
 export type SessionSyncActorInput = {
   database: Database
   harness: Harness
-  sessionDiscovery: SessionDiscovery
-  readHistory: SessionHistoryReader
+  listSessionSummaries: SessionSummaryList
 }
+
+type SessionDiscoverActorInput = {
+  database: Database
+  harness: Harness
+  nativeId: string
+  getSessionSummary: SessionSummaryReader
+}
+
+// Waits between a new Session's lookups, for a Harness that lists a Session late.
+const DISCOVERY_RETRY_DELAYS_MS = [
+  500,
+  1_500,
+  4_500,
+  13_500,
+]
 
 type SessionSyncEvent =
   | {
@@ -50,10 +65,6 @@ type SessionSyncEvent =
       harness: Harness
     }
   | {
-      type: 'SyncStored'
-      harness: Harness
-    }
-  | {
       type: 'SyncCompleted'
       harness: Harness
     }
@@ -61,6 +72,16 @@ type SessionSyncEvent =
       type: 'SyncFailed'
       harness: Harness
     }
+
+function discoveryKey({ harness, nativeId }: { harness: Harness; nativeId: string }): string {
+  return `${harness}:${nativeId}`
+}
+
+type DiscoverFinished = {
+  type: 'DiscoverFinished'
+  harness: Harness
+  nativeId: string
+}
 
 function statusFor(snapshot: SnapshotFrom<typeof sessionSyncMachine>): SessionSyncStatus {
   const phaseByState = {
@@ -91,32 +112,7 @@ const sessionSyncActor = fromCallback<
   SessionSyncActorInput,
   SessionSyncEvent
 >(({ input, sendBack }) => {
-  const { database, harness, sessionDiscovery, readHistory } = input
-  let stopped = false
-  // Subagents come from full history reads, so they run after the listing has committed.
-  const completeWithSubagents = async () => {
-    try {
-      const { failed } = await refreshSessionSubagents({
-        database,
-        harness,
-        readHistory,
-        stored: () =>
-          sendBack({
-            type: 'SyncStored',
-            harness,
-          }),
-        stopped: () => stopped,
-      })
-      if (failed > 0) console.warn(`${harness} Session sync could not read ${failed} histories.`)
-    } catch (error) {
-      console.warn(`${harness} Session sync could not store Subagents.`, error)
-    }
-    if (!stopped)
-      sendBack({
-        type: 'SyncCompleted',
-        harness,
-      })
-  }
+  const { database, harness, listSessionSummaries } = input
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
@@ -133,7 +129,7 @@ const sessionSyncActor = fromCallback<
       input: {
         harness,
         knownNativeIds: knownSessionIds(database, harness),
-        sessionDiscovery,
+        listSessionSummaries,
       },
     },
   )
@@ -149,7 +145,10 @@ const sessionSyncActor = fromCallback<
         console.warn(
           `${harness} Session sync skipped ${snapshot.context.skipped} malformed records.`,
         )
-      void completeWithSubagents()
+      sendBack({
+        type: 'SyncCompleted',
+        harness,
+      })
     }
     if (snapshot.matches('Failed'))
       sendBack({
@@ -162,9 +161,65 @@ const sessionSyncActor = fromCallback<
     type: 'Start',
   })
   return () => {
-    stopped = true
     subscription.unsubscribe()
     actor.stop()
+  }
+})
+
+// One Session the history watcher saw before any sync stored it. It gets that Session's summary,
+// and asks again with a growing wait while the Harness does not know it yet.
+const sessionDiscoverActor = fromCallback<
+  {
+    type: 'Stop'
+  },
+  SessionDiscoverActorInput,
+  | Extract<
+      SessionSyncEvent,
+      {
+        type: 'SyncCommitted'
+      }
+    >
+  | DiscoverFinished
+>(({ input, sendBack }) => {
+  const { database, harness, nativeId, getSessionSummary } = input
+  let stopped = false
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const attempt = async (retry: number): Promise<void> => {
+    let stored = false
+    try {
+      const summary = await getSessionSummary(nativeId)
+      if (stopped) return
+      if (summary !== null) {
+        saveSessionBatch(
+          database,
+          harness,
+          matchSessionsToProjects(database, [
+            summary,
+          ]),
+        )
+        sendBack({
+          type: 'SyncCommitted',
+          harness,
+        })
+        stored = true
+      }
+    } catch (error) {
+      if (stopped) return
+      console.warn(`${harness} could not store the Session summary for ${nativeId}.`, error)
+    }
+    const delay = DISCOVERY_RETRY_DELAYS_MS[retry]
+    if (stored || delay === undefined)
+      return sendBack({
+        type: 'DiscoverFinished',
+        harness,
+        nativeId,
+      })
+    timer = setTimeout(() => void attempt(retry + 1), delay)
+  }
+  void attempt(0)
+  return () => {
+    stopped = true
+    clearTimeout(timer)
   }
 })
 
@@ -177,10 +232,6 @@ const sessionSyncStatusActor = fromCallback<
   | {
       type: 'Committed'
       harness: Harness
-    }
-  | {
-      type: 'Stored'
-      harness: Harness
     },
   Partial<Record<Harness, SessionSyncStatusStore>>
 >(({ input, receive }) => {
@@ -191,9 +242,6 @@ const sessionSyncStatusActor = fromCallback<
         break
       case 'Committed':
         input[event.harness]?.committed()
-        break
-      case 'Stored':
-        input[event.harness]?.stored()
         break
     }
   })
@@ -211,6 +259,7 @@ type SupervisorEvent =
       input: SupervisorInput
     }
   | SessionSyncSupervisorCommand
+  | DiscoverFinished
   | {
       type: 'Shutdown'
     }
@@ -220,9 +269,15 @@ type SupervisorEvent =
     }
   | SessionSyncEvent
 
-export type SessionSyncSupervisorCommand = {
-  type: 'Refresh'
-}
+export type SessionSyncSupervisorCommand =
+  | {
+      type: 'Refresh'
+    }
+  | {
+      type: 'Discover'
+      harness: Harness
+      nativeId: string
+    }
 
 export const sessionSyncSupervisorMachine = setup({
   types: {
@@ -232,16 +287,19 @@ export const sessionSyncSupervisorMachine = setup({
       active: Partial<Record<Harness, true>>
       // A Refresh that found a Harness still syncing, run again once it finishes.
       pending: Partial<Record<Harness, true>>
+      // New-Session lookups in flight, by `<harness>:<nativeId>`.
+      discovering: Record<string, true>
       harnesses: RegisteredHarnesses
     },
     events: {} as SupervisorEvent,
   },
   actors: {
     sync: sessionSyncActor,
+    discover: sessionDiscoverActor,
     status: sessionSyncStatusActor,
   },
   actions: {
-    dispatchSessionDiscoveries: enqueueActions(({ context, event, enqueue }) => {
+    dispatchSyncs: enqueueActions(({ context, event, enqueue }) => {
       const harnesses =
         event.type === 'ReplayRefresh'
           ? [
@@ -265,8 +323,7 @@ export const sessionSyncSupervisorMachine = setup({
           input: {
             database: context.database,
             harness,
-            sessionDiscovery: registration.sessionDiscovery,
-            readHistory: registration.readHistory,
+            listSessionSummaries: registration.listSessionSummaries,
           },
         })
         enqueue.assign({
@@ -276,6 +333,38 @@ export const sessionSyncSupervisorMachine = setup({
           }),
         })
       }
+    }),
+    discoverSession: enqueueActions(({ context, event, enqueue }) => {
+      assertEvent(event, 'Discover')
+      const registration = context.harnesses[event.harness]
+      const key = discoveryKey(event)
+      if (registration === undefined || context.discovering[key] === true) return
+      enqueue.spawnChild('discover', {
+        id: `session-discover-${key}`,
+        input: {
+          database: context.database,
+          harness: event.harness,
+          nativeId: event.nativeId,
+          getSessionSummary: registration.getSessionSummary,
+        },
+      })
+      enqueue.assign({
+        discovering: ({ context: current }) => ({
+          ...current.discovering,
+          [key]: true,
+        }),
+      })
+    }),
+    releaseDiscovery: enqueueActions(({ event, enqueue }) => {
+      assertEvent(event, 'DiscoverFinished')
+      const key = discoveryKey(event)
+      enqueue(stopChild(`session-discover-${key}`))
+      enqueue.assign({
+        discovering: ({ context: current }) => {
+          const { [key]: _finished, ...remaining } = current.discovering
+          return remaining
+        },
+      })
     }),
     releaseSync: enqueueActions(({ context, event, enqueue }) => {
       if (event.type !== 'SyncCompleted' && event.type !== 'SyncFailed') return
@@ -311,13 +400,6 @@ export const sessionSyncSupervisorMachine = setup({
         harness: event.harness,
       }
     }),
-    reportStored: sendTo('status', ({ event }) => {
-      assertEvent(event, 'SyncStored')
-      return {
-        type: 'Stored',
-        harness: event.harness,
-      }
-    }),
   },
 }).createMachine({
   id: 'sessionSyncSupervisor',
@@ -326,6 +408,7 @@ export const sessionSyncSupervisorMachine = setup({
     database: input.database,
     active: {},
     pending: {},
+    discovering: {},
     harnesses: input.harnesses,
   }),
   invoke: {
@@ -340,19 +423,22 @@ export const sessionSyncSupervisorMachine = setup({
     Running: {
       on: {
         Refresh: {
-          actions: 'dispatchSessionDiscoveries',
+          actions: 'dispatchSyncs',
+        },
+        Discover: {
+          actions: 'discoverSession',
+        },
+        DiscoverFinished: {
+          actions: 'releaseDiscovery',
         },
         ReplayRefresh: {
-          actions: 'dispatchSessionDiscoveries',
+          actions: 'dispatchSyncs',
         },
         SyncStatus: {
           actions: 'reportStatus',
         },
         SyncCommitted: {
           actions: 'reportCommit',
-        },
-        SyncStored: {
-          actions: 'reportStored',
         },
         SyncCompleted: {
           actions: 'releaseSync',
