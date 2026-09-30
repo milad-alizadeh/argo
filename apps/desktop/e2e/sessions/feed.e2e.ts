@@ -3,6 +3,7 @@
 // a mock and a real Claude/Codex CLI, so a case that drives a live Turn just names the backend it
 // needs and lets the project (`sessions` or `real-sessions`, `playwright.config.ts`) decide which
 // one it gets, rather than living in a second curated file (#e2e-real-cheap-models).
+import path from 'node:path'
 import { completeWatch, writeWatchOutput } from '../../mocks/sessions/mock-shell-output'
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
@@ -45,6 +46,7 @@ import { rosterOrderMutations } from './fixtures/roster-order.fixture'
 import { writeWindowFillerSessions } from './fixtures/roster-window.fixture'
 import { writeBuriedSearchTarget } from './fixtures/search-window.fixture'
 import { openSessionByClick } from './gestures'
+import { assertTranscriptFeedCorpus } from './real-harness/transcript-feed-corpus'
 import { expect, test } from './session-proof-run'
 
 test.describe('with no Project selected', () => {
@@ -214,6 +216,38 @@ test.describe('with a real Codex', () => {
 
   test('session-codex-created-by-click', async ({ session, backend }) => {
     await proveSessionCreatedByClick(session.page(), backend, { harness: 'codex' })
+  })
+})
+
+test.describe('with real Session transcript corpora', () => {
+  test.skip(({ sessionBackend }) => sessionBackend !== 'real', 'Requires both signed-in CLIs.')
+
+  test('session-feed-transcript-corpus', async ({ session, backend }) => {
+    const claudeSessionId = await proveSessionCreatedByClick(session.page(), backend, {
+      harness: 'claude',
+      prompt:
+        'Review this pasted snippet: <pasted_content id="corpus-paste">const answer = 42</pasted_content id="corpus-paste">. Start one short Task agent in the background that returns READY. Wait for its completion notification, then acknowledge the result in one sentence.',
+      budgetTurnConfiguration: true,
+      permissionMode: 'auto',
+    })
+    const composer = session.page().getByRole('combobox', { name: 'Message' })
+    await composer.click()
+    await session.page().keyboard.type('!printf hello; printf warning >&2')
+    await session.page().getByRole('button', { name: 'Send message' }).click()
+    const codexSessionId = await proveSessionCreatedByClick(session.page(), backend, {
+      harness: 'codex',
+      prompt:
+        '<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>',
+      budgetTurnConfiguration: true,
+    })
+    const home = path.join(session.root, 'home')
+    await assertTranscriptFeedCorpus({
+      roots: {
+        claude: path.join(home, '.claude', 'projects'),
+        codex: path.join(home, '.codex', 'sessions'),
+      },
+      sessionIds: { claude: claudeSessionId, codex: codexSessionId },
+    })
   })
 })
 

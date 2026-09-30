@@ -154,6 +154,30 @@ function shellOutput(id: string, value: string): FeedContent | null {
   }
 }
 
+// Claude wraps a paste as `<pasted_content id="c485">…</pasted_content id="c485">`, often between prose.
+function pastedPrompt(id: string, text: string): FeedContent | null {
+  const matches = [
+    ...text.matchAll(/<pasted_content id="([^"]+)">([\s\S]*?)<\/pasted_content id="\1">/g),
+  ]
+  if (matches.length === 0) return null
+  const pastedContent = matches.flatMap((match) => {
+    const pasteId = match[1]
+    return pasteId === undefined ? [] : [{ id: pasteId, text: (match[2] ?? '').trim() }]
+  })
+  if (pastedContent.length === 0) return null
+  let cursor = 0
+  const prose: string[] = []
+  for (const match of matches) {
+    const start = match.index ?? 0
+    const piece = text.slice(cursor, start).trim()
+    if (piece !== '') prose.push(piece)
+    cursor = start + match[0].length
+  }
+  const tail = text.slice(cursor).trim()
+  if (tail !== '') prose.push(tail)
+  return { id, kind: 'message', role: 'user', text: prose.join('\n'), pastedContent }
+}
+
 function singleEnvelope(id: string, value: string): FeedContent | null {
   const command = wrapped(value, 'bash-input')
   if (command !== null)
@@ -191,16 +215,6 @@ function singleEnvelope(id: string, value: string): FeedContent | null {
     const body = wrapped(value, tag)
     if (body !== null) return { id, kind: 'context', source: 'system', text: body }
   }
-  const pasted = wrapped(value, 'pasted_content')
-  if (pasted !== null)
-    return {
-      id,
-      kind: 'reference',
-      referenceType: 'pasted',
-      label: 'Pasted content',
-      target: null,
-      text: pasted,
-    }
   return null
 }
 
@@ -218,6 +232,8 @@ export function decodeClaudeText(
   if (role === 'assistant') return { id, kind: 'message', role, text }
   const value = text.trim()
   if (commandEnvelope(value)) return commandInvocation(id, value, reject)
+  const pasted = pastedPrompt(id, text)
+  if (pasted !== null) return pasted
   if (input.humanInput) return { id, kind: 'message', role, text }
   if (wrapped(value, 'task-notification') !== null) return taskNotification(id, value, reject)
   if (wrapped(value, 'realtime_delegation') !== null) return delegation(id, value, reject)
