@@ -69,32 +69,12 @@ export function visibleArchiveMenuItem(page: Page) {
   return page.locator('[role="menuitem"]:visible').filter({ hasText: 'Archive' })
 }
 
-// Which Sessions the list holds is a status the reader picks in the header's filter (#2239). "All"
-// is the reading that keeps the active rows beside the archived ones, which is what the disclosure
-// the filter replaced did.
-export async function chooseRosterStatus(page: Page, status: 'Active' | 'Archived' | 'All') {
-  await page.locator(FILTER).click()
-  const choice = page.getByRole('menuitemradio', { name: status })
-  await choice.click()
-  // A Base UI radio item takes `closeOnClick = false` (MenuRadioItem.mjs), so the picked status is
-  // read off the item and the menu is dismissed by hand rather than waited out.
-  await page.getByRole('menuitemradio', { checked: true, name: status }).waitFor()
-  await page.keyboard.press('Escape')
-  await choice.waitFor({ state: 'detached' })
-}
-
 // Sessions a Harness wrote after launch reach the Roster when the reader asks for a refresh.
 export async function refreshSessions(page: Page) {
   await page.locator(FILTER).click()
   await page.getByRole('menuitem', { name: 'Refresh Sessions' }).click()
   await page.getByRole('menu').waitFor({ state: 'detached' })
   await expect(page.getByRole('progressbar', { name: 'Session refresh progress' })).toHaveCount(0)
-}
-
-export async function openArchivedSessionByClick(page: Page, sessionId: string) {
-  await chooseRosterStatus(page, 'All')
-  await page.locator(`${ROW}[data-session-id="${sessionId}"]`).click()
-  await waitForRoute(page, sessionId)
 }
 
 // The plus control above the Roster: the only way to the new Session composer.

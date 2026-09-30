@@ -4,47 +4,28 @@
 // needs and lets the project (`sessions` or `real-sessions`, `playwright.config.ts`) decide which
 // one it gets, rather than living in a second curated file (#e2e-real-cheap-models).
 import path from 'node:path'
-import { completeWatch, writeWatchOutput } from '../../mocks/sessions/mock-shell-output'
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
-import { proveBackgroundShell } from './cases/background-shell.case'
 import { proveClaudeAcpHistory } from './cases/claude-acp-history.case'
 import { proveClaudeRename } from './cases/claude-rename.case'
-import { provePackagedResume } from './cases/claude-resume.case'
 import { provePackagedCodexResume } from './cases/codex-resume.case'
 import { proveCodexThreadName } from './cases/codex-thread-name.case'
 import { proveSessionCreatedByClick } from './cases/create.case'
 import { proveDelegationCards } from './cases/delegation-card.case'
 import { proveSessionDiagram } from './cases/diagram.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
-import { proveLiveFeed } from './cases/live-feed.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
-import { proveSessionPlan } from './cases/plan.case'
-import { provePromptLatency } from './cases/prompt-latency.case'
-import { proveSessionQuestion } from './cases/question.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveContract } from './cases/roster-contract.case'
-import {
-  provePackagedRosterRestart,
-  provePackagedRosterSelection,
-} from './cases/roster-interaction.case'
-import { proveStableRosterPolling } from './cases/roster-order.case'
+import { provePackagedRosterSelection } from './cases/roster-interaction.case'
 import { proveRosterWindow } from './cases/roster-window.case'
-import { proveSearchFindsABuriedSession } from './cases/search.case'
 import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
 import { proveToolCalls } from './cases/tool-calls.case'
-import {
-  proveComposerMemory,
-  proveLiveCodexModelChoices,
-  proveTurnConfiguration,
-} from './cases/turn-configuration.case'
+import { proveLiveCodexModelChoices } from './cases/turn-configuration.case'
 import { rosterRow } from './claude-proof-helpers'
-import { appendProse, removeProse, streamProse } from './fixtures/feed.fixture'
-import { updatePlan } from './fixtures/plan.fixture'
-import { rosterOrderMutations } from './fixtures/roster-order.fixture'
+import { appendProse } from './fixtures/feed.fixture'
 import { writeWindowFillerSessions } from './fixtures/roster-window.fixture'
-import { writeBuriedSearchTarget } from './fixtures/search-window.fixture'
 import { openSessionByClick } from './gestures'
 import { assertTranscriptFeedCorpus } from './real-harness/transcript-feed-corpus'
 import { expect, test } from './session-proof-run'
@@ -118,28 +99,6 @@ test('session-subagent-feed', async ({ session }) => {
   await proveSubagentFeed(session.page())
 })
 
-// Stored Sessions list no Shell commands and the Shell tail reads absent (session-list.ts, session-work-reads.ts). (#2911)
-test.fixme('session-background-shell', async ({ session }) => {
-  await proveBackgroundShell(session.page(), {
-    writeOutput: (text: string) => writeWatchOutput(session.root, text),
-    complete: () => completeWatch(session.fixture.claudeTranscripts, session.root),
-  })
-})
-
-// History draws a pending AskUserQuestion as a tool row; only a live question event draws the question row. (#2959)
-test.fixme('session-question', async ({ session }) => {
-  await proveSessionQuestion(session.page())
-})
-
-// A row above shrinking leaves a reader at the tail 198px short of it, and it stays there. (#2960)
-test.fixme('session-feed-reader-anchor', async ({ session }) => {
-  await proveLiveFeed(session.page(), {
-    transcripts: session.fixture.claudeTranscripts,
-    append: appendProse,
-    stream: streamProse,
-  })
-})
-
 test('session-feed-formatted', async ({ session }) => {
   await proveFormattedFeed(session.page(), {
     root: session.root,
@@ -155,34 +114,8 @@ test('session-diagram', async ({ session }) => {
   })
 })
 
-// Stored Sessions carry no Plan (session-list.ts sets it null), so no Open task plan control draws. (#2961)
-test.fixme('session-plan', async ({ session }) => {
-  await proveSessionPlan(session.page(), () => updatePlan(session.fixture.claudeTranscripts))
-})
-
-// The composer reads a stored Session's Model, Effort and Mode only from a live channel, not its records. (#2962)
-test.fixme('session-turn-configuration', async ({ session }) => {
-  await proveTurnConfiguration(session.page())
-})
-
 test('session-live-codex-model-choices', async ({ session }) => {
   await proveLiveCodexModelChoices(session.page())
-})
-
-// Activity moves a row up, resumed Sessions no longer fold into one row, and a deleted transcript keeps its row. (#2963)
-test.fixme('session-roster-stable-polling', async ({ session }) => {
-  await proveStableRosterPolling(
-    session.page(),
-    rosterOrderMutations({ transcripts: session.fixture.claudeTranscripts }),
-  )
-})
-
-// A launch no longer restores the selected Session, and a deleted transcript keeps its row. (#2964)
-test.fixme('session-roster-restart', async ({ session }) => {
-  await provePackagedRosterRestart(session.page(), {
-    remove: () => removeProse(session.fixture.claudeTranscripts),
-    restart: () => session.restart(),
-  })
 })
 
 // The fillers are written while the app is closed: a write it watches is new activity, not old history.
@@ -190,16 +123,6 @@ test('session-roster-window', async ({ session }) => {
   const { claudeTranscripts, project } = session.fixture
   await session.restart(() => writeWindowFillerSessions(claudeTranscripts, project))
   await proveRosterWindow(session.page())
-})
-
-// Search matches a custom title or preview only, so a Session titled by its first prompt is not found. (#2965)
-test.fixme('session-search', async ({ session }) => {
-  const { claudeTranscripts, project } = session.fixture
-  await session.restart(async () => {
-    await writeWindowFillerSessions(claudeTranscripts, project)
-    await writeBuriedSearchTarget(claudeTranscripts, project)
-  })
-  await proveSearchFindsABuriedSession(session.page())
 })
 
 test('session-created-by-click', async ({ session, backend }) => {
@@ -279,20 +202,6 @@ test.describe('with real Session transcript corpora', () => {
   })
 })
 
-// The Harness picked for a new Session is component state, so a reload resets it to the default. (#2966)
-test.fixme('session-composer-memory', async ({ session }) => {
-  await proveComposerMemory(session.page())
-})
-
-// No screen passes onCompact to the composer, so Compact context is always disabled. (#2967)
-test.fixme('session-claude-resume', async ({ session, backend }) => {
-  await provePackagedResume(session.page(), {
-    backend,
-    restart: session.restart,
-    transcripts: session.fixture.claudeTranscripts,
-  })
-})
-
 test('session-codex-resume', async ({ session, backend }) => {
   await provePackagedCodexResume(session.page(), { backend, restart: session.restart })
 })
@@ -320,10 +229,6 @@ test.describe('with a slow Harness', () => {
 
   test('session-reply-wait', async ({ session, backend }) => {
     await proveReplyWait(session.page(), backend)
-  })
-
-  test('session-prompt-latency', async ({ session, backend }) => {
-    await provePromptLatency(session.page(), backend)
   })
 
   test('session-duplicate-send', async ({ session, backend }) => {

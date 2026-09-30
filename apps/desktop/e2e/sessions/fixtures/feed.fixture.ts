@@ -1,6 +1,6 @@
 // The disk state every packaged Session case launches the app against, and the mutations that
 // prove a re-read reaches the file system rather than a cache.
-import { appendFile, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { pointShellOutputAtRoot } from '../../../mocks/sessions/mock-shell-output'
 import {
@@ -119,10 +119,6 @@ export async function growStranded(transcripts) {
   await appendFile(fixturePath(transcripts, 'strandedResume'), grownTurn(transcripts))
 }
 
-export async function removeProse(transcripts) {
-  await rm(fixturePath(transcripts, 'prose'))
-}
-
 // The Harness reads a transcript as the parent chain from its newest record, so each append extends it.
 async function newestRecord(transcript) {
   const lines = (await readFile(transcript, 'utf8')).split('\n').filter((line) => line !== '')
@@ -146,17 +142,6 @@ export async function appendProse(transcripts, uuid, text) {
         content: [{ type: 'text', text }],
       },
     })}\n`,
-  )
-}
-
-// Claude can add to a message while its Turn is still running. The projected row keeps its id,
-// but its prose and height change, which is the live Result case ADR-0033 rule 5 calls out.
-export async function streamProse(transcripts, text) {
-  const transcript = fixturePath(transcripts, 'prose')
-  const before = await readFile(transcript, 'utf8')
-  await writeFile(
-    transcript,
-    before.replace(/"text":\s*"(?:[^"\\]|\\.)*"/, `"text": ${JSON.stringify(text)}`),
   )
 }
 
