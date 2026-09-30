@@ -3,7 +3,7 @@ import { observable } from '@trpc/server/observable'
 import { and, asc, count, desc, eq, inArray, not, or, type SQL, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
-import { sessionTable, WORKING_SESSION_STATUSES } from '@/database/session/schema'
+import { sessionTable } from '@/database/session/schema'
 import {
   type SessionStatus,
   sessionSelectSchema,
@@ -11,6 +11,10 @@ import {
 } from '@/database/session/validation'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import { feedActivitySchema } from '@/domains/sessions/api/feed-activity'
+import {
+  isWorkingStatus,
+  WORKING_SESSION_STATUSES,
+} from '@/domains/sessions/api/session-live-event'
 import { sessionTitleSchema } from '@/domains/sessions/api/session-title'
 import { type StoredSubagent, storedSessionSubagents } from '../database/session-subagents'
 import {
@@ -335,8 +339,6 @@ export function sessionListProcedure(context: SessionListContext) {
     .query(({ input }) => readSessionList(context, input))
 }
 
-const workingStatuses = new Set<SessionStatus>(WORKING_SESSION_STATUSES)
-
 // The Sessions working now: a live channel's status, or else the one the history watcher stored.
 function workingSessionIds(context: SessionListContext): Set<string> {
   const stored = context.database
@@ -347,7 +349,7 @@ function workingSessionIds(context: SessionListContext): Set<string> {
   const working = new Set(stored.map((row) => row.id))
   for (const sessionId of Object.keys(context.supervisor.getSnapshot().context.sessions)) {
     const status = liveProjection(context, sessionId)?.status
-    if (status !== undefined && workingStatuses.has(status)) working.add(sessionId)
+    if (status !== undefined && isWorkingStatus(status)) working.add(sessionId)
   }
   return working
 }

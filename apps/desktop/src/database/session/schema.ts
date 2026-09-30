@@ -2,24 +2,7 @@ import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqli
 import { project } from '@/database/project/schema'
 import { timestampColumns } from '@/database/timestamp-columns'
 import { workspace } from '@/database/workspace/schema'
-
-export const SESSION_STATUSES = [
-  'starting',
-  'running',
-  'permission',
-  'asking',
-  'idle',
-  'stopped',
-  'ended',
-  'unknown',
-] as const
-// The statuses of a Session with a Turn under way.
-export const WORKING_SESSION_STATUSES = [
-  'starting',
-  'running',
-  'permission',
-  'asking',
-] as const satisfies readonly (typeof SESSION_STATUSES)[number][]
+import { SESSION_STATUSES } from '@/domains/sessions/api/session-live-event'
 
 export const sessionTable = sqliteTable(
   'session',

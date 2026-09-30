@@ -1,16 +1,5 @@
+import { isWorkingStatus } from '@/domains/sessions/api/session-live-event'
 import type { Session } from '../../types'
-
-// A settled Session shows how long ago it last changed; a working one shows no time.
-const SHOWS_RECENCY: Record<Session['status'], boolean> = {
-  asking: false,
-  ended: true,
-  idle: true,
-  permission: false,
-  running: false,
-  starting: false,
-  stopped: true,
-  unknown: true,
-}
 
 function elapsedMinutes(timestamp: string, now: number) {
   const startedAt = Date.parse(timestamp)
@@ -27,8 +16,9 @@ function compactDuration(minutes: number) {
 }
 
 export function sessionTiming(session: Session, now: number) {
+  // A working Session shows no time; a settled one shows how long ago it last changed.
   const timestamp = session.updatedAt
-  if (!SHOWS_RECENCY[session.status] || timestamp === null) return null
+  if (isWorkingStatus(session.status) || timestamp === null) return null
   const minutes = elapsedMinutes(timestamp, now)
   if (minutes === null) return null
   const duration = compactDuration(minutes)

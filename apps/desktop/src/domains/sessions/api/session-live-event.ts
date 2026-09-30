@@ -12,7 +12,7 @@ const identity = {
   vendorEventId: identifierSchema.nullable(),
 }
 
-export const sessionLiveStatusSchema = z.enum([
+export const SESSION_STATUSES = [
   'starting',
   'running',
   'permission',
@@ -21,7 +21,19 @@ export const sessionLiveStatusSchema = z.enum([
   'stopped',
   'ended',
   'unknown',
-])
+] as const
+export const sessionLiveStatusSchema = z.enum(SESSION_STATUSES)
+type SessionStatus = z.infer<typeof sessionLiveStatusSchema>
+
+// The statuses of a Session with a Turn under way.
+export const WORKING_SESSION_STATUSES = [
+  'starting',
+  'running',
+  'permission',
+  'asking',
+] as const satisfies readonly SessionStatus[]
+const workingStatuses = new Set<SessionStatus>(WORKING_SESSION_STATUSES)
+export const isWorkingStatus = (status: SessionStatus) => workingStatuses.has(status)
 
 export const sessionLiveEventBodySchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('content'), ...identity, content: feedContentSchema }),

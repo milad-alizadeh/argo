@@ -37,20 +37,9 @@ export const STATUS_LABELS: Record<Session['status'], string> = {
   unknown: 'Unknown',
 }
 
-const NEEDS_INPUT: Record<Session['status'], boolean> = {
-  asking: true,
-  ended: false,
-  idle: false,
-  permission: true,
-  running: false,
-  starting: false,
-  stopped: false,
-  unknown: false,
-}
-
 export function SessionBlockedBadge({ session }: { session: Session }) {
   const { t } = useTranslation('sessions')
-  if (!NEEDS_INPUT[session.status]) return null
+  if (statusVariantOf(session) !== 'attention') return null
   return (
     <Badge size="compact" variant="warning">
       {t('needsInput')}

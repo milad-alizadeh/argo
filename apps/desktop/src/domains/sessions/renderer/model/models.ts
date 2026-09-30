@@ -1,21 +1,12 @@
 import { z } from 'zod'
 import { feedActivitySchema } from '@/domains/sessions/api/feed-activity'
+import { sessionLiveStatusSchema } from '@/domains/sessions/api/session-live-event'
 import { ticketKey } from '@/domains/tickets/api/ticket'
 import { identifierSchema } from '@/shared/validation'
 
 const SESSION_POSTURES = ['live', 'external'] as const
 const sessionPostureSchema = z.enum(SESSION_POSTURES)
-const SESSION_STATUSES = [
-  'starting',
-  'running',
-  'permission',
-  'asking',
-  'idle',
-  'stopped',
-  'ended',
-  'unknown',
-] as const
-const sessionStatusSchema = z.enum(SESSION_STATUSES)
+const sessionStatusSchema = sessionLiveStatusSchema
 
 export type SessionPosture = z.infer<typeof sessionPostureSchema>
 export type SessionStatus = z.infer<typeof sessionStatusSchema>

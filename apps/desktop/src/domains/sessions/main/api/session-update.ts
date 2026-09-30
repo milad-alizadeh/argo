@@ -1,10 +1,11 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import type { Database } from '@/database/database'
-import { sessionTable, WORKING_SESSION_STATUSES } from '@/database/session/schema'
+import { sessionTable } from '@/database/session/schema'
 import type { SessionStatus } from '@/database/session/validation'
 import { sessionArchive } from '@/database/session-archive/schema'
 import { nextUpdatedAt } from '@/database/timestamp-columns'
 import type { LiveActivity } from '@/domains/sessions/api/feed/feed-rows'
+import { WORKING_SESSION_STATUSES } from '@/domains/sessions/api/session-live-event'
 import type { Harness } from '@/harnesses/harness'
 import type { SessionRosterChanges } from './session-roster-changes'
 
