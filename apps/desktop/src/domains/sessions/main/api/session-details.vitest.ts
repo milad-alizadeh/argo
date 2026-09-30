@@ -16,6 +16,7 @@ import {
 } from '@/mocks/sessions/live-session-supervisor.fixture'
 import { liveSessionActorFor } from '../live/live-session-supervisor-machine'
 import { sessionDetailsProcedure } from './session-details'
+import { sessionListChangedProcedure } from './session-list'
 import { SessionRosterChanges } from './session-roster-changes'
 
 if (model === undefined) throw new Error('The Codex fixture needs a model.')
@@ -30,8 +31,8 @@ const twoEffortCatalog = harnessCatalogSchema.parse({
 
 type Details = { posture: string | null; effort: string | null }
 
-// Starts a Codex Session whose first Turn completes, then follows its selected details while the
-// test sends a second command until `settled`; `secondTurn` answers that command's `turn/start`.
+// Starts a Codex Session whose first Turn completes, then reads its details on each announced change
+// while the test sends a second command until `settled`; `secondTurn` answers that `turn/start`.
 async function detailsAroundSecondSend(
   secondTurn: () => Promise<never>,
   settled: (seen: readonly Details[]) => boolean,
@@ -42,16 +43,14 @@ async function detailsAroundSecondSend(
       ? secondTurn()
       : recording.request(method, params, parse)
   const { root, supervisor, client, notify } = await supervisorFor(request, twoEffortCatalog)
-  const details = initTRPC
+  const context = { database: databaseFrom(client), supervisor, roster: new SessionRosterChanges() }
+  const caller = initTRPC
     .create()
     .router({
-      details: sessionDetailsProcedure({
-        database: databaseFrom(client),
-        supervisor,
-        roster: new SessionRosterChanges(),
-      }),
+      details: sessionDetailsProcedure(context),
+      changes: sessionListChangedProcedure(context, () => () => {}),
     })
-    .createCaller({}).details
+    .createCaller({})
   const seen: Details[] = []
   try {
     const { sessionId } = await start(supervisor, first)
@@ -60,13 +59,19 @@ async function detailsAroundSecondSend(
     await waitFor(child, (snapshot) => snapshot.context.feedSerial >= 1)
     completeCodexTurn(notify, 'turn-2')
     await waitFor(child, (snapshot) => snapshot.matches('Ready'))
-    const stream = await details({ sessionId })
+    const read = async () => {
+      const details = await caller.details({ sessionId })
+      seen.push({
+        posture: details?.posture ?? null,
+        effort: details?.turnConfiguration.effort ?? null,
+      })
+    }
+    await read()
+    const stream = await caller.changes()
     const subscription = stream.subscribe({
-      next: ({ details }) =>
-        seen.push({
-          posture: details?.posture ?? null,
-          effort: details?.turnConfiguration.effort ?? null,
-        }),
+      next: ({ sessionIds }) => {
+        if (sessionIds.includes(sessionId)) void read()
+      },
     })
     send(supervisor, {
       ...first,

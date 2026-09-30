@@ -18,7 +18,7 @@ import { queryClient } from '@/platform/renderer/trpc-client'
 type Subscribe = typeof window.argo.trpcSubscribe
 const openReaders = new Set<() => void>()
 
-// Sends every open change and details reader its rows again, as main does after a change.
+// Announces every story row to each open change reader, as main does after a change.
 export function announceSessionListChange() {
   for (const send of openReaders) send()
 }
@@ -47,30 +47,15 @@ export function releaseSessionDetails(sessionId: string) {
 }
 
 // Answers a Session's details from the story's rows, found by ID as main reads them.
-function sessionDetailsReply(
-  request: Parameters<Subscribe>[0],
-  listener: Parameters<Subscribe>[1],
-  sessions: () => readonly Session[],
-) {
-  const { sessionId } = request.input as { sessionId: string }
-  let open = true
-  // A held reply is already in flight, so it arrives even after the reader closes.
+function sessionDetailsReply(sessionId: string, sessions: () => readonly Session[]) {
   const reply = () => {
     const session = sessions().find(({ id }) => id === sessionId)
-    const details = session === undefined ? null : structuredClone(session)
-    listener({ id: request.id, type: 'data', result: { data: { sessionId, details } } })
+    return { result: { data: session === undefined ? null : structuredClone(session) } }
   }
-  const send = () => {
-    if (!open) return
-    if (heldDetails.has(sessionId)) heldDetails.set(sessionId, reply)
-    else reply()
-  }
-  openReaders.add(send)
-  queueMicrotask(send)
-  return Promise.resolve(() => {
-    open = false
-    openReaders.delete(send)
-  })
+  if (!heldDetails.has(sessionId)) return Promise.resolve(reply())
+  return new Promise<ReturnType<typeof reply>>((resolve) =>
+    heldDetails.set(sessionId, () => resolve(reply())),
+  )
 }
 
 // Story rows belong to whichever Project the list last read, copied as IPC would copy them.
@@ -86,7 +71,6 @@ export function sessionListSubscribe(
   queryClient.removeQueries({ queryKey: sessionListPathKey })
   queryClient.removeQueries({ queryKey: sessionDetailsPathKey })
   return async (request, listener) => {
-    if (request.path === 'sessionDetails') return sessionDetailsReply(request, listener, sessions)
     if (request.path !== 'sessionListChanged') return subscribe(request, listener)
     const send = () =>
       listener({
@@ -124,6 +108,8 @@ export function sessionListTrpc(
   sessions: () => readonly Session[],
 ): typeof window.argo.trpc {
   return (async (request) => {
+    if (request.path === 'sessionDetails')
+      return sessionDetailsReply((request.input as { sessionId: string }).sessionId, sessions)
     if (request.path !== 'sessionList') return trpc(request)
     const input = request.input as Partial<SessionListInput> & { offset?: number; limit?: number }
     listedProjectId = input.projectId ?? 'project-1'

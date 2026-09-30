@@ -258,7 +258,7 @@ const storedSessionColumns = {
 const sessionIsArchived = sql<boolean>`exists (select 1 from session_archive where session_archive.session_id = ${sessionTable.argoId})`
 
 // Runs `publish` once in the next microtask for any burst of `changed` calls, until stopped.
-export function coalescedChanges(publish: () => void) {
+function coalescedChanges(publish: () => void) {
   let pending = false
   let stopped = false
   return {

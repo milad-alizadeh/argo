@@ -29,10 +29,7 @@ export async function proveContract(page) {
   await page.waitForFunction(() => typeof window.argo?.trpc === 'function')
   await page.locator(`nav[aria-label="Sessions"] button[data-session-id="${first.id}"]`).waitFor()
 
-  assert.deepEqual(
-    await updateSession(page, { sessionIds: ['not-a-session'], archived: true }),
-    [],
-  )
+  assert.deepEqual(await updateSession(page, { sessionIds: ['not-a-session'], archived: true }), [])
 
   const reading = await sessionFeed(page, first.id)
   assert.equal(reading.type, 'session.feed.reading')

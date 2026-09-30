@@ -190,10 +190,12 @@ test('renames a saved Session through sessionUpdate after the Harness accepts it
   })
 
   await expect(
-    createAppRouter(dependencies).createCaller({}).sessionUpdate({
-      sessionIds: ['00000000-0000-4000-8000-000000000002'],
-      title: 'Confirmed title',
-    }),
+    createAppRouter(dependencies)
+      .createCaller({})
+      .sessionUpdate({
+        sessionIds: ['00000000-0000-4000-8000-000000000002'],
+        title: 'Confirmed title',
+      }),
   ).resolves.toMatchObject([{ customTitle: 'Confirmed title' }])
   expect(renamed).toEqual([
     {
@@ -228,10 +230,12 @@ test('keeps the existing title when the Harness rejects a rename', async () => {
   })
 
   await expect(
-    createAppRouter(dependencies).createCaller({}).sessionUpdate({
-      sessionIds: ['00000000-0000-4000-8000-000000000003'],
-      title: 'Rejected title',
-    }),
+    createAppRouter(dependencies)
+      .createCaller({})
+      .sessionUpdate({
+        sessionIds: ['00000000-0000-4000-8000-000000000003'],
+        title: 'Rejected title',
+      }),
   ).rejects.toThrow('Harness rejected the rename.')
   expect(
     database
@@ -279,11 +283,8 @@ test('accepts a later Harness sync that changes or clears a confirmed custom tit
   ).toEqual({ customTitle: null })
 })
 
-async function firstDetails(dependencies: AppRouterDependencies, sessionId: string) {
-  const updates: inferRouterOutputs<AppRouter>['sessionDetails'][] = []
-  const stream = await createAppRouter(dependencies).createCaller({}).sessionDetails({ sessionId })
-  stream.subscribe({ next: (update) => updates.push(update) }).unsubscribe()
-  return updates
+function readDetails(dependencies: AppRouterDependencies, sessionId: string) {
+  return createAppRouter(dependencies).createCaller({}).sessionDetails({ sessionId })
 }
 
 test('reads a Session beyond the loaded roster window by ID without reading its history', async () => {
@@ -305,22 +306,19 @@ test('reads a Session beyond the loaded roster window by ID without reading its 
   })
   const listed = await firstPage()
 
-  const updates = await firstDetails(dependencies, ids[0] ?? '')
+  const details = await readDetails(dependencies, ids[0] ?? '')
 
   expect(listed.rows.map(({ id }) => id)).not.toContain(ids[0])
-  expect(updates).toEqual([
-    {
-      sessionId: ids[0],
-      details: expect.objectContaining({
-        id: ids[0],
-        harness: 'claude',
-        projectId: 'project-1',
-        archived: false,
-        posture: null,
-        title: { text: 'Session 0', source: 'first-prompt' },
-      }),
-    },
-  ])
+  expect(details).toEqual(
+    expect.objectContaining({
+      id: ids[0],
+      harness: 'claude',
+      projectId: 'project-1',
+      archived: false,
+      posture: null,
+      title: { text: 'Session 0', source: 'first-prompt' },
+    }),
+  )
   await new Promise((resolve) => setImmediate(resolve))
   expect(historyReads).toEqual([])
 })
@@ -334,15 +332,13 @@ test('reads an archived Session by ID and says it is archived', async () => {
   insertActivitySessions([id])
   database.insert(sessionArchive).values({ sessionId: id }).run()
 
-  const updates = await firstDetails(routerDependencies(), id)
-
-  expect(updates).toEqual([
-    { sessionId: id, details: expect.objectContaining({ id, archived: true }) },
-  ])
+  expect(await readDetails(routerDependencies(), id)).toEqual(
+    expect.objectContaining({ id, archived: true }),
+  )
 })
 
 test('reads no details for an unknown Session ID', async () => {
   const id = '00000000-0000-4000-8000-00000000000f'
 
-  expect(await firstDetails(routerDependencies(), id)).toEqual([{ sessionId: id, details: null }])
+  expect(await readDetails(routerDependencies(), id)).toBeNull()
 })
