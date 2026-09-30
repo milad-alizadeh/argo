@@ -1,72 +1,71 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import {
-  createAdapter,
-  createMockAdapter,
-  mockCodexExecutable,
-  waitFor,
-} from './mock-codex-session-adapter-support.ts'
+import { mockStartInput } from './mock-codex-channel.ts'
+import { clientBackedByMock, mockCodexExecutable, waitFor } from './mock-codex-driver.ts'
+import { openLiveSession } from './mock-codex-live-session.ts'
 
-async function start(adapter: Awaited<ReturnType<typeof createMockAdapter>>, prompt: string) {
-  const outcome = await adapter.execute({
-    type: 'session.start',
-    harness: 'codex',
-    prompt,
-    workspace: { kind: 'main' },
+const SETTLE_MS = 150
+
+const pause = () => new Promise((resolve) => setTimeout(resolve, SETTLE_MS))
+
+// A live channel holds no lease to release, so these cover what it does when app-server unloads or
+// closes its thread.
+for (const [verb, prompt] of [
+  ['unloaded', 'NOT_LOADED'],
+  ['closed', 'CLOSED'],
+] as const) {
+  test(`an ${verb} managed thread claims no status and leaves the channel open`, async () => {
+    const client = clientBackedByMock(await mockCodexExecutable())
+    const session = openLiveSession(client, { ...mockStartInput, prompt })
+    try {
+      await waitFor(() => session.statuses().length > 0, 'the Turn to start')
+      await pause()
+      assert.equal(session.statuses().at(-1), 'running')
+      assert.equal(session.has('closed'), false)
+      assert.equal(session.has('failure'), false)
+    } finally {
+      session.channel.close()
+      client.shutdown()
+    }
   })
-  assert.equal(outcome.kind, 'accepted', JSON.stringify(outcome))
-  if (outcome.kind !== 'accepted') throw new Error('Codex did not start the managed Session')
-  return outcome.projection.session
 }
 
-test('releases the lease when app-server unloads a managed thread', async () => {
-  const released: string[] = []
-  const adapter = await createMockAdapter(released)
+test('unsubscribes when it closes a managed Session', async () => {
+  const client = clientBackedByMock(await mockCodexExecutable())
+  const session = openLiveSession(client, {
+    ...mockStartInput,
+    prompt: 'Close this managed Session.',
+  })
   try {
-    const session = await start(adapter, 'Start before app-server unloads the managed thread.')
-    await adapter.execute({ type: 'session.send', session, prompt: 'NOT_LOADED' })
-    await waitFor(() => released.includes(session.nativeId))
+    await waitFor(() => session.has('turn.started'), 'the Turn to start')
+    session.channel.close()
+    const emitted = session.events.length
+    assert.equal(session.events.at(-1)?.type, 'closed')
+    await pause()
+    assert.equal(session.events.length, emitted)
   } finally {
-    await adapter.close()
-  }
-})
-
-test('releases the lease when app-server closes a managed thread', async () => {
-  const released: string[] = []
-  const adapter = await createMockAdapter(released)
-  try {
-    const session = await start(adapter, 'Start before app-server closes the managed thread.')
-    await adapter.execute({ type: 'session.send', session, prompt: 'CLOSED' })
-    await waitFor(() => released.includes(session.nativeId))
-  } finally {
-    await adapter.close()
-  }
-})
-
-test('unsubscribes before it releases a closed managed Session lease', async () => {
-  const released: string[] = []
-  const adapter = await createMockAdapter(released)
-  try {
-    const session = await start(adapter, 'Close this managed Session.')
-    const closed = await adapter.execute({ type: 'session.close', session })
-    assert.equal(closed.kind, 'accepted')
-    await waitFor(() => released.includes(session.nativeId))
-  } finally {
-    await adapter.close()
+    client.shutdown()
   }
 })
 
 test('does not share an app-server process between different executables', async () => {
-  const first = createAdapter(await mockCodexExecutable())
-  const second = createAdapter(await mockCodexExecutable())
+  const firstClient = clientBackedByMock(await mockCodexExecutable())
+  const secondClient = clientBackedByMock(await mockCodexExecutable())
+  const first = openLiveSession(firstClient, {
+    ...mockStartInput,
+    prompt: 'First isolated Session.',
+  })
+  const second = openLiveSession(secondClient, {
+    ...mockStartInput,
+    prompt: 'Second isolated Session.',
+  })
   try {
-    const [one, two] = await Promise.all([
-      start(first, 'First isolated Session.'),
-      start(second, 'Second isolated Session.'),
-    ])
-    assert.equal(one.nativeId, two.nativeId)
+    await waitFor(() => first.nativeId() !== undefined && second.nativeId() !== undefined)
+    assert.equal(first.nativeId(), second.nativeId())
   } finally {
-    await first.close()
-    await second.close()
+    first.channel.close()
+    second.channel.close()
+    firstClient.shutdown()
+    secondClient.shutdown()
   }
 })
