@@ -35,7 +35,7 @@ export type SessionSyncActorInput = {
   sessionDiscovery: SessionDiscovery
 }
 
-export type SessionDiscoverActorInput = SessionSyncActorInput & {
+type SessionDiscoverActorInput = SessionSyncActorInput & {
   nativeId: string
 }
 
