@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer'
+import { pendingSessionId } from '@/domains/sessions/api/pending-session'
 import type { WorkspaceActions, WorkspaceCockpit } from '@/domains/workspaces/renderer'
 import type { Harness } from '@/harnesses/harness'
 import type { CatalogReadResult } from '@/harnesses/harness-catalog'
@@ -42,6 +43,8 @@ type SessionScreenDetailsProps = {
   cockpit: Cockpit
   workspaceCockpit: WorkspaceCockpit
   workspaceActions: WorkspaceActions
+  // A new Session's pending id from its saved prompt, and the Session route that draws it.
+  onStartingSession: (pendingId: string | null, sessionId?: string) => void
 }
 
 type SessionsTranslator = ReturnType<typeof useTranslation<'sessions'>>['t']
@@ -195,6 +198,7 @@ function useSessionComposerSend(input: {
   identity: ComposerIdentity
   projectId: string | null
   onFailure: (failure: DraftSubmitFailure) => void
+  onStartingSession: SessionScreenDetailsProps['onStartingSession']
 }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -203,8 +207,19 @@ function useSessionComposerSend(input: {
     turnConfiguration: TurnConfiguration | null,
     attachments: DraftContent['attachments'],
   ) => {
-    const result = await input.draft?.submit(prompt, turnConfiguration, attachments)
+    let pendingId = null as string | null
+    const onSaved = (saved: { id: string; revision: number }) => {
+      pendingId = pendingSessionId(saved)
+      input.onStartingSession(pendingId)
+    }
+    const result = await input.draft?.submit({
+      prompt,
+      turnConfiguration,
+      attachments,
+      ...(input.identity.kind === 'draft' ? { onSaved } : {}),
+    })
     if (result?.outcome !== 'accepted') {
+      input.onStartingSession(null)
       const failure = result ?? PLAIN_REJECTION
       input.onFailure(failure)
       return failure.outcome
@@ -213,6 +228,8 @@ function useSessionComposerSend(input: {
       void queryClient.invalidateQueries({
         queryKey: trpc.workspaceList.queryKey({ projectId: input.projectId }),
       })
+      // The named Session draws the prompt until its own Feed shows it, whatever the Harness.
+      input.onStartingSession(pendingId, result.sessionId)
       navigate(`/projects/${input.projectId}/sessions/${result.sessionId}`, { replace: true })
     }
     return 'accepted'
@@ -271,6 +288,7 @@ export function SessionComposerArea({
   cockpit,
   workspaceCockpit,
   workspaceActions,
+  onStartingSession,
 }: SessionScreenDetailsProps) {
   const { catalogQuery, refreshCatalog } = useCatalogRead(harness)
   const location = useLocation()
@@ -313,6 +331,7 @@ export function SessionComposerArea({
       onRefreshCatalog={refreshCatalog}
       onRetryCatalog={retryCatalog}
       onRetryDraft={retryDraft}
+      onStartingSession={onStartingSession}
     />
   )
 }
@@ -348,9 +367,16 @@ function SessionComposer({
   onRetryDraft,
   isRunning,
   onInterrupt,
+  onStartingSession,
 }: Pick<
   SessionScreenDetailsProps,
-  'permission' | 'questionPending' | 'session' | 'harness' | 'workspaceCockpit' | 'workspaceActions'
+  | 'permission'
+  | 'questionPending'
+  | 'session'
+  | 'harness'
+  | 'workspaceCockpit'
+  | 'workspaceActions'
+  | 'onStartingSession'
 > & {
   catalogFailure: CatalogFailure | null
   choices: Parameters<typeof useDurableComposerDraft>[0]['choices']
@@ -381,6 +407,7 @@ function SessionComposer({
     identity,
     projectId: identity.kind === 'draft' ? identity.projectId : null,
     onFailure: reportSendFailure,
+    onStartingSession,
   })
   const waiting = draft?.hasDraft !== true
   // A failed catalog leaves no draft to wait for: the card disables, and its catalog menu can retry.

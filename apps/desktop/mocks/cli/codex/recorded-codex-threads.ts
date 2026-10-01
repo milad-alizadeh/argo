@@ -2,6 +2,8 @@
 // app-server's own generated protocol, so a recording that no longer fits fails the typecheck.
 import type {
   CodexRequest,
+  ConfigLayer,
+  ConfigReadParams,
   ThreadListParams,
   ThreadListResponse,
   ThreadReadParams,
@@ -15,6 +17,12 @@ export type RecordedCodexCall =
   | { method: 'thread/list'; params: ThreadListParams; result: ThreadListResponse }
   | { method: 'thread/read'; params: ThreadReadParams; result: ThreadReadResponse }
   | { method: 'thread/turns/list'; params: ThreadTurnsListParams; result: ThreadTurnsListResponse }
+  // Only the layers, read under a user config that holds hooks of its own.
+  | { method: 'config/read'; params: ConfigReadParams; result: { layers: RecordedConfigLayer[] } }
+
+// codex 0.157 leaves out a null `disabledReason`.
+type RecordedConfigLayer = Omit<ConfigLayer, 'disabledReason'> &
+  Partial<Pick<ConfigLayer, 'disabledReason'>>
 
 export type CodexRecording = { version: string; calls: RecordedCodexCall[] }
 

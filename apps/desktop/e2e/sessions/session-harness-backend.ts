@@ -18,6 +18,8 @@ export type SessionFixture = {
 // that answers instantly never shows the app waiting.
 export type SessionHarnessLaunch = {
   slowReply: boolean
+  // A Harness that holds its start, so a case reads the app before the Session is named (#3052).
+  heldStart?: boolean
   adversarialSeed?: string
   // Recorded Claude SDK rows for the packaged Session-sync proof.
   sessionSyncFixture?: { records: unknown[] }

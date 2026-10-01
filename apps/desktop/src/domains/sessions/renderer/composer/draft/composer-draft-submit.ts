@@ -22,6 +22,13 @@ export type DraftSubmitFailure =
   | { outcome: 'rejected'; reason: SessionSubmitRejection | null }
   | { outcome: 'uncertain' }
 export const PLAIN_REJECTION = { outcome: 'rejected', reason: null } satisfies DraftSubmitFailure
+type DraftSubmission = {
+  prompt: string
+  turnConfiguration: TurnConfiguration | null
+  attachments: DraftContent['attachments']
+  // Told the saved revision before main is asked to send it.
+  onSaved?: (saved: PersistedDraft) => void
+}
 type DraftSubmitResult = { outcome: 'accepted'; sessionId: string } | DraftSubmitFailure
 export type ComposerDraftActionInput = {
   persist: (content: DraftContent) => Promise<PersistedDraft>
@@ -63,11 +70,7 @@ export function useComposerDraftSubmit(input: ComposerDraftSubmitInput) {
     clearAcceptedDraft,
   } = input
   return useCallback(
-    (
-      prompt: string,
-      turnConfiguration: TurnConfiguration | null,
-      attachments: DraftContent['attachments'],
-    ) =>
+    (submission: DraftSubmission) =>
       submitDraft({
         input: {
           persist,
@@ -81,9 +84,7 @@ export function useComposerDraftSubmit(input: ComposerDraftSubmitInput) {
           submit,
           clearAcceptedDraft,
         },
-        prompt,
-        turnConfiguration,
-        attachments,
+        ...submission,
       }),
     [
       clearAcceptedDraft,
@@ -105,12 +106,8 @@ async function submitDraft({
   prompt,
   turnConfiguration,
   attachments,
-}: {
-  input: ComposerDraftSubmitInput
-  prompt: string
-  turnConfiguration: TurnConfiguration | null
-  attachments: DraftContent['attachments']
-}) {
+  onSaved,
+}: DraftSubmission & { input: ComposerDraftSubmitInput }) {
   const editing = input.latestEditing.current
   if (editing === null || turnConfiguration === null || input.owner === null) return PLAIN_REJECTION
   cancelSaveTimer(input.saveTimer, input.owner)
@@ -124,19 +121,19 @@ async function submitDraft({
     owner: input.owner,
     setSaveFailureOwner: input.setSaveFailureOwner,
   })
-  return saved === null
-    ? PLAIN_REJECTION
-    : sendPersistedDraft({
-        saved,
-        editing,
-        latestEditing: input.latestEditing,
-        submit: input.submit,
-        owner: input.owner,
-        setSendFailure: input.setSendFailure,
-        suppressNextEmptyAutosave: input.suppressNextEmptyAutosave,
-        persisted: input.persisted,
-        clearAcceptedDraft: input.clearAcceptedDraft,
-      })
+  if (saved === null) return PLAIN_REJECTION
+  onSaved?.(saved)
+  return sendPersistedDraft({
+    saved,
+    editing,
+    latestEditing: input.latestEditing,
+    submit: input.submit,
+    owner: input.owner,
+    setSendFailure: input.setSendFailure,
+    suppressNextEmptyAutosave: input.suppressNextEmptyAutosave,
+    persisted: input.persisted,
+    clearAcceptedDraft: input.clearAcceptedDraft,
+  })
 }
 
 function cancelSaveTimer(saveTimer: React.RefObject<Map<string, number>>, owner: string) {

@@ -11,8 +11,9 @@ export async function proveRefusedStart(page: Page, project: string) {
   await git(project, ['commit', '--allow-empty', '--quiet', '-m', 'base'])
   const worktree = path.join(path.dirname(project), MOCK_START_REFUSED_FOLDER)
   await git(project, ['worktree', 'add', '--quiet', '-b', 'refused', worktree])
-  await reload(page)
   for (const harness of ['claude', 'codex'] as const) {
+    // A reload clears the other Harness's toast, so the reason below names this one.
+    await reload(page)
     await openNewSessionByClick(page)
     await chooseHarness(page, harness)
     await chooseWorkLocation(page, MOCK_START_REFUSED_FOLDER)
