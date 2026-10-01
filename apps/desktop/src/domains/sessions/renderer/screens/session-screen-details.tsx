@@ -354,6 +354,7 @@ function SessionComposer({
     catalogFailure,
     refreshCatalog: draft === null ? onRetryCatalog : onRefreshCatalog,
     workspace: workspaceControl(identity, workspaceCockpit, workspaceActions),
+    // #2968 fills context usage.
     contextTokens: session?.contextTokens,
     contextWindowTokens: session?.contextWindowTokens,
     disabled: questionPending || catalogBlocked || (draft?.loadFailed === true && !draft.hasDraft),
@@ -366,6 +367,7 @@ function SessionComposer({
         onDecide={permission.decide}
       />
     ),
+    // #2962 fills Plan progress.
     plan: session?.plan ?? null,
     projectId,
     commandCwd:
@@ -445,6 +447,7 @@ export function SessionHandoffFacts({
   onNavigate?: (path: string) => void
 }) {
   const { t } = useTranslation('sessions')
+  // #2969 fills the handoff links.
   if (session === null || (!session.handoffTo && !session.handoffFrom) || !onNavigate) return null
   return (
     <section aria-label={t('handoff.label')} className="p-4 type-meta text-muted-foreground">

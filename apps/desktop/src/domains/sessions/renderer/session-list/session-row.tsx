@@ -157,6 +157,7 @@ function SessionMetadata({ now, session }: { now: number; session: RowSession })
   // Main's link alone, so the row names the Ticket the list files it under.
   const ticketKey = session.ticket?.key ?? null
   const minutes = sessionAge(session, now)
+  // #2962 fills Plan progress.
   const plan = session.plan ?? null
   // The line keeps its height when empty, so a row does not shrink as its age hides.
   return (
