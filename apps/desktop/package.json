@@ -18,7 +18,7 @@
     "test:storybook": "vitest run --project=storybook",
     "build": "electron-forge package --arch arm64",
     "build:vite": "node scripts/build-vite.mts",
-    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.e2e.json",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.e2e.json && tsc --noEmit -p tsconfig.tools.json",
     "test:packaged-contents": "node scripts/assert-packaged-pty.mts",
     "test:packaged-manifest": "bun run desktop:manifest",
     "test:packaged-pty": "node scripts/prove-packaged-pty.mts",

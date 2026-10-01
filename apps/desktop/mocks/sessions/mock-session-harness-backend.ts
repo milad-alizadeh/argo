@@ -4,7 +4,7 @@ import { writeFileSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import type { Page } from 'playwright-core'
-import type { Harness } from '@/domains/sessions/renderer/harness/harnesses'
+import type { Harness } from '@/harnesses/harness'
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
