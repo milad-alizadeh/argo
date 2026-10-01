@@ -1,5 +1,9 @@
 // The install and the removal every Harness's hooks share, run over its storage.
 import assert from 'node:assert/strict'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { createServer } from 'node:net'
+import os from 'node:os'
+import path from 'node:path'
 import { type TestContext, test } from 'node:test'
 import { installStatusHooks, removeStatusHooks } from '@/harnesses/host/status-hooks'
 import type { ExternalSessionHooks } from '@/harnesses/registration'
@@ -64,5 +68,30 @@ export function testStatusHookInstall(harness: HookHarness, storage: HookStorage
     await installStatusHooks(harness, hooks, SOCKET)
     await removeStatusHooks(harness, hooks, SOCKET)
     assert.deepEqual(await read(), user)
+  })
+
+  test(`a ${harness} install drops the groups of an Argo launch whose socket no longer answers, and keeps a live one`, async (context) => {
+    const folder = await mkdtemp(path.join(os.tmpdir(), 'argo-sockets-'))
+    context.after(() => rm(folder, { recursive: true, force: true }))
+    const live = path.join(folder, 'live.sock')
+    const crashed = path.join(folder, 'crashed.sock')
+    const server = createServer().listen(live)
+    context.after(() => server.close())
+    await new Promise((resolve) => server.once('listening', resolve))
+    await writeFile(crashed, '')
+    const { hooks, read } = await storage(context, true)
+    const user = await read()
+    for (const socket of [path.join(folder, 'gone', 'hooks.sock'), crashed, live])
+      await installStatusHooks(harness, hooks, socket)
+    await installStatusHooks(harness, hooks, SOCKET)
+    const table = await read()
+    for (const event of events)
+      assert.deepEqual(table[event], [
+        ...(user[event] ?? []),
+        hooks.group(
+          `curl -s -m 1 --unix-socket '${live}' --data-binary @- http://localhost/h/${harness} || true`,
+        ),
+        argoGroup(hooks),
+      ])
   })
 }

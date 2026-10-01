@@ -10,20 +10,32 @@ const REAL_CONFIG_FILES = [
   claudeSettingsFile({}, REAL_HOME),
   path.join(REAL_HOME, '.codex', 'config.toml'),
 ]
-// An Argo status hook URL, in the socket form or the earlier port form.
-const ARGO_HOOK = /(?:127\.0\.0\.1:\d+|localhost)\/h\/(?:claude|codex)\b/
+// An Argo status hook command, in the socket form or the earlier port form.
+const ARGO_HOOK = /curl [^"\n]*(?:127\.0\.0\.1:\d+|localhost)\/h\/(?:claude|codex)\b[^"\n]*/g
 
-// Playwright's global teardown: the run fails while a real config holds any Argo status hook, so a
-// leak stays red until it is removed by hand.
-export default function noArgoHooksInRealConfig(): void {
-  const leaked = REAL_CONFIG_FILES.filter((file) => {
-    try {
-      return ARGO_HOOK.test(readFileSync(file, 'utf8'))
-    } catch {
-      return false
-    }
-  })
-  if (leaked.length > 0) throw new Error(`Argo status hooks leaked into ${leaked.join(' and ')}.`)
+function argoHooks(): Set<string> {
+  return new Set(
+    REAL_CONFIG_FILES.flatMap((file) => {
+      try {
+        return [...readFileSync(file, 'utf8').matchAll(ARGO_HOOK)].map(
+          ([hook]) => `${file}: ${hook}`,
+        )
+      } catch {
+        return []
+      }
+    }),
+  )
+}
+
+// Playwright's global setup, whose returned step is its teardown: the run fails when a real config
+// holds an Argo status hook it did not hold before, so a leak from a case stays red. A hook the
+// installed app or a dev run wrote is the person's own.
+export default function noArgoHooksAddedToRealConfig(): () => void {
+  const before = argoHooks()
+  return () => {
+    const added = [...argoHooks()].filter((hook) => !before.has(hook))
+    if (added.length > 0) throw new Error(`Argo status hooks leaked into ${added.join(' and ')}.`)
+  }
 }
 
 const HARNESS_FOLDERS = ['CLAUDE_CONFIG_DIR', 'CODEX_HOME'] as const
