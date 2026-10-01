@@ -3,11 +3,11 @@
 import { execFileSync } from 'node:child_process'
 import { chmod, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { CODEX_RECORDING_VERSION } from '../../recordings/codex-app-server'
 import type { MockHarness } from '../mock-cli'
-import { codexRecording } from './recorded-codex-threads.ts'
 
-// The CLI version the Codex recordings under fixtures/ came from.
-export const MOCK_CODEX_VERSION = codexRecording.version
+// The version comes from the directory that owns every Codex recording.
+export const MOCK_CODEX_VERSION = CODEX_RECORDING_VERSION
 
 // A `codex` that answers the version and login probes, then serves the mock app-server. Its thread
 // state lives beside it unless the launch names another file.

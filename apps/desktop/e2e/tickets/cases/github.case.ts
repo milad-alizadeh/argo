@@ -1,4 +1,4 @@
-// The Ticket proof's connection and backlog cases, read off the screen of the packaged cockpit and
+// The Ticket proof's connection and backlog cases, read off the screen of the packaged app and
 // then off the files its main process wrote. GitHub is the mock; everything else is the shipped
 // app. Its account lifecycle cases are `lifecycle.case.ts`, and Linear's are
 // `linear.case.ts`.

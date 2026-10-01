@@ -21,8 +21,8 @@ archive.
   driver's `SCREENS`.
 - **Browse the components** — `cd apps/desktop && bun run storybook` serves the stories from the
   working tree. Vercel owns pull request preview deployments outside this repository.
-- **Render a state** — the shipped screen: `bun run capture:cockpit`, output
-  `apps/desktop/out/cockpit-captures`, one PNG per screen, in the appearance the app draws
+- **Render a state** — the shipped screen: `bun run capture:desktop`, output
+  `apps/desktop/out/desktop-captures`, one PNG per screen, in the appearance the app draws
   (#3069). It launches the Vite build, or the packaged copy under `ARGO_E2E_PACKAGED=1`.
 
 **Every PNG the command writes is disposable.** Look at it and delete it. No gate reads one and

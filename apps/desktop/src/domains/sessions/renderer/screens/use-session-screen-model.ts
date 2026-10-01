@@ -90,7 +90,7 @@ function useSessionEvidence(sessionId: string | null) {
 
 // The Session's Feed. A new Session's pending id draws on New Session from Enter, then on the
 // Session it was named until that Session's own Feed shows a prompt, whatever the Harness. New
-// Session keeps it across the naming render.
+// Session keeps it across the naming render only.
 function useSessionFeed(selectedSessionId: string | null, running: boolean) {
   const { projectId, sessionId } = useParams()
   const [starting, setStarting] = useState<{
@@ -103,6 +103,13 @@ function useSessionFeed(selectedSessionId: string | null, running: boolean) {
       setStarting(pendingId === null ? null : { projectId, pendingId, sessionId: named }),
     [projectId],
   )
+  // A move to any route but the named Session drops the start, so New Session draws no old prompt.
+  const route = `${projectId}/${sessionId}`
+  const [seenRoute, setSeenRoute] = useState(route)
+  if (seenRoute !== route) {
+    setSeenRoute(route)
+    if (starting !== null && sessionId !== starting.sessionId) setStarting(null)
+  }
   const shown =
     starting !== null &&
     starting.projectId === projectId &&
@@ -122,8 +129,8 @@ export function useSessionScreenModel() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const { jumpToLatest, onJumpToLatestChange } = useFeedJumpToLatestAction()
-  const [cockpit, projectActions] = useProjects()
-  const [workspaceCockpit, workspaceActions] = useWorkspaces(cockpit.project?.id ?? null)
+  const [projectState, projectActions] = useProjects()
+  const [workspaceState, workspaceActions] = useWorkspaces(projectState.project?.id ?? null)
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const { evidence, setEvidence } = useSessionEvidence(selectedSessionId)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
@@ -153,13 +160,13 @@ export function useSessionScreenModel() {
     navigate,
     session,
     sessionLoaded,
-    workspaceIdentity: sessionWorkspaceIdentity(session, workspaceCockpit.workspaces),
+    workspaceIdentity: sessionWorkspaceIdentity(session, workspaceState.workspaces),
     evidence,
     setEvidence,
     harness,
-    cockpit,
+    projectState,
     projectActions,
-    workspaceCockpit,
+    workspaceState,
     workspaceActions,
     permission,
     question,
@@ -169,7 +176,7 @@ export function useSessionScreenModel() {
   }
 }
 
-// A Turn the cockpit knows is in flight draws its current activity; every other Session, including
+// A Turn the app recognizes as in flight draws its current activity; every other Session, including
 // one whose liveness is unknown, draws only what vendor history recorded.
 function sessionTurnRunning(session: Session | null | undefined) {
   return session?.status === 'running' || session?.status === 'permission'

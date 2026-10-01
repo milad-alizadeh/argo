@@ -7,8 +7,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { createInterface } from 'node:readline'
 import type { CodexRequest } from '@/harnesses/codex/app-server'
-import recorded from './fixtures/external-threads-codex-0.157.0.json' with { type: 'json' }
-
+import { recordedCodexExternalThreads as recorded } from '@/mocks/recordings/codex-app-server'
 // A recorded newest Turn: finished, interrupted by the user, or left unfinished by a crash.
 export type RecordedTurn = 'completed' | 'interrupted' | 'crashed'
 type TurnsAnswer = { page: unknown } | { error: Error }

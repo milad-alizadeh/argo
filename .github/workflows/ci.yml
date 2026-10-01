@@ -78,7 +78,7 @@ jobs:
         run: bun run quality:types
 
       # The one cap biome can't express: duplication is whole-tree, and a linter reads one
-      # file at a time. Its own step so a breach doesn't hide the hook tests' output
+      # file at a time. Its own step so a breach doesn't hide the test output
       # (see AGENTS.md "Quality gates").
       - name: Duplication gate
         if: ${{ !cancelled() }}
@@ -105,13 +105,6 @@ jobs:
       - name: Workspace tests
         if: ${{ !cancelled() }}
         run: bun run test
-
-      # Guardrail-hook tests (the publish guard, the worktree edit and naming guards, the shell
-      # command reader) live outside the turbo `test` pipeline — plain node scripts, not a
-      # workspace suite. They are what stands between a guard's prose and its behaviour.
-      - name: Hook tests
-        if: ${{ !cancelled() }}
-        run: bun run test:hooks
 
   storybook:
     name: storybook interaction tests

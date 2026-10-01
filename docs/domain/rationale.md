@@ -51,7 +51,7 @@ only point where the two can still be told apart.
 
 **Ticket, and not Work Item or Issue (#881).** The term was `Work Item` until 2026-08-28, defined
 in this very model as "a ticket owned by a provider" — the word it should have been called. Every
-surface downstream then said *ticket* anyway: `AGENTS.md`, `docs/agents/worktrees.md`'s
+surface downstream then said *ticket* anyway: `AGENTS.md`, the
 `argo/#<N>-<slug>` branch, `/implement <N>` spoken aloud, and Argo's own UI layer, which drew a
 `WorkItem` as `TicketHead` and `TicketBody`. One noun with two names either side of the port
 boundary is the thing this model exists to forbid, and `Work Item` was the half nobody spoke.
@@ -140,11 +140,11 @@ started, so it sits beside `harness` and `cwd` rather than beside live-channel s
   changes what the Session list draws without changing what a Session is.
 
 **And the folded row is not one either.** A row standing for 180 Sessions is not a Session, so
-#1073 named it in "Not domain entities" beside Cockpit and the Session list rather than in L2. It belongs to
+#1073 named it in "Not domain entities" beside the app shell and the Session list rather than in L2. It belongs to
 the projection, and nothing about it reaches `HubSession`. Two alternatives were on the table and
 were declined. **Hiding headless runs** (dropping them at `isPublished`) is cheaper and needs no
 name at all, but a headless run that FAILED would become invisible and its history unreachable
-from the cockpit. The list would omit work that ran in this Project. **Admitting
+from Argo Desktop. The list would omit work that ran in this Project. **Admitting
 them and fixing only the naming** (#1072) is honest to L2 as written and needs no new concept, but
 leaves the Session list permanently dominated by headless SDK output. The earlier measured set contained
 328 Sessions in the Argo Project's seven-day working set, at least 136 of them headless, and one

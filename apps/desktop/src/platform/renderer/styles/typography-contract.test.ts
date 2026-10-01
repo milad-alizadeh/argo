@@ -49,7 +49,7 @@ test('keeps feed prose and tool summaries on the dominant rung', () => {
 test('keeps direct size rungs out of app-owned product components', async () => {
   const sourceGlobs = [
     new Bun.Glob('../../../domains/{accounts,projects,sessions,tickets}/renderer/**/*.tsx'),
-    new Bun.Glob('../cockpit/**/*.tsx'),
+    new Bun.Glob('../app/**/*.tsx'),
   ]
   const violations = []
   for (const sourceGlob of sourceGlobs) {

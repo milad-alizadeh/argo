@@ -1,9 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { LiveSessionChannelEvent } from '@/harnesses/registration'
-import recorded from '../../../../mocks/cli/codex/fixtures/live-notifications-codex-0.157.0.json' with {
-  type: 'json',
-}
+import { recordedCodexNotifications as recorded } from '@/mocks/recordings/codex-app-server'
 import { mockCodexChannel, mockStartInput } from '../../../../mocks/cli/codex/mock-codex-channel'
 import type { CodexRequest, WireMessage } from '../app-server/codex-app-server-client'
 import type { openCodexSessionChannel } from './codex-session-channel'

@@ -4,7 +4,7 @@
 // accelerator from it.
 import type { ShortcutLabelKey } from '@/platform/contract/i18n'
 
-// The working surfaces of the cockpit, in sidebar order. The Project is not one of them: it is the
+// The working surfaces of the app, in sidebar order. The Project is not one of them: it is the
 // window's subject, and the surfaces are what a reader does inside it.
 export const DESTINATIONS = ['Sessions', 'Tickets', 'Atlas'] as const
 export type Destination = (typeof DESTINATIONS)[number]

@@ -15,7 +15,7 @@
 - **Agent tree**: **Session** *is* the root **Agent** (`parentId: null`); an **Agent** `0..N`
   child **Subagent** (recursive via `parentId`). Each **Agent** owns **`0..1` Workspace** (else
   inherits its parent's) and attaches **`0..1` Preview** — both node-scoped (ADR-0010); Preview
-  is additionally a **cockpit-level singleton**. A **Workspace** holds `0—N` **File**.
+  is additionally an **app-wide singleton**. A **Workspace** holds `0—N` **File**.
 - **Inside an Agent**: `1—N` **Turn**; each **Turn** `0—N` **Tool Call**, `0—N` **Message** and
   `0—N` **Thought** (one ordered prose sequence, the two kinds distinct within it), `0..1` its
   opening **prompt**, and `0..1` **Usage**, rolled up to a **Session**-level Usage; `0—N`

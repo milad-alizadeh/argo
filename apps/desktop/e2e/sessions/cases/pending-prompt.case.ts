@@ -37,4 +37,7 @@ export async function provePromptBeforeNaming(
   await expect(page).not.toHaveURL(/\/sessions\/new$/)
   await expect(prompts).toHaveCount(1)
   expect(await page.evaluate(() => (window as { promptGaps?: number }).promptGaps)).toBe(0)
+  // The prompt belongs to the named Session: a later New Session opens without it (#3086).
+  await openNewSessionByClick(page)
+  await expect(prompts).toHaveCount(0)
 }

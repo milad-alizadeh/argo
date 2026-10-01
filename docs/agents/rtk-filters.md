@@ -20,9 +20,8 @@ inherits the root file's trust while a copy would need its own.
 
 The filters are inert until trusted: **run `rtk trust --yes` at the repo root once per checkout,
 and again after any edit** — trust keys on the file's hash. An untrusted directory prints no
-warning of any kind, so a stale trust looks exactly like a working one. This repo creates a
-worktree per ticket and each is a distinct path, so `docs/agents/worktrees.md` makes the trust
-step part of entering one.
+warning of any kind, so a stale trust looks exactly like a working one. Each worktree is a
+distinct path, so trust again in every new worktree.
 
 `~/.config/rtk/filters.toml` is a *user-global* file that applies in every directory, and on at
 least one machine it holds an older divergent copy of these same filters. A run from an

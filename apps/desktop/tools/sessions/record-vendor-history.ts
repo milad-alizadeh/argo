@@ -12,6 +12,7 @@ import type {
   ThreadTurnsListResponse,
   WireMessage,
 } from '@/harnesses/codex/app-server'
+import { readModelCatalog } from '@/harnesses/codex/catalog'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import {
   claudeSessionMessages,
@@ -30,6 +31,7 @@ import type {
   RecordedCodexCall,
 } from '../../mocks/cli/codex/recorded-codex-threads'
 import { RECORDED_PROMPTS } from '../../mocks/cli/recorded-prompts'
+import { loadRecording, type RecordingMetadata } from '../../mocks/recordings/recording'
 
 // Recorded paths read as this mock home, which a selected Project scopes out.
 const MOCK_HOME = '/Users/x'
@@ -53,18 +55,22 @@ command = "./check.sh"
 `
 const RECORDINGS = {
   claude: {
-    file: 'mocks/cli/claude/recordings/session-history-claude.ts',
+    producer: 'claude-cli',
+    file: 'session-history-claude.ts',
+    harness: 'claude',
     loader: 'recorded-claude-sessions',
     type: 'ClaudeRecording',
     name: 'claudeRecording',
   },
   codex: {
-    file: 'mocks/cli/codex/recordings/thread-history-codex.ts',
+    producer: 'codex-app-server',
+    file: 'thread-history-codex.ts',
+    harness: 'codex',
     loader: 'recorded-codex-threads',
     type: 'CodexRecording',
     name: 'codexRecording',
   },
-}
+} as const
 
 type Executables = Record<'claude' | 'codex', string>
 type Recorder = { root: string; home: string; executables: Executables }
@@ -142,7 +148,13 @@ async function recordClaude(recorder: Recorder): Promise<ClaudeRecording> {
     const result = await claudeSessionMessages(configDirectory, sessionId)
     calls.push({ method: 'getSessionMessages', params: { sessionId }, result })
   }
-  return { version: cliVersion(recorder.executables.claude), agentSdk: await sdkVersion(), calls }
+  return {
+    producer: 'claude-cli',
+    version: cliVersion(recorder.executables.claude),
+    recordedAt: new Date().toISOString(),
+    agentSdk: await sdkVersion(),
+    calls,
+  }
 }
 
 async function sdkVersion(): Promise<string> {
@@ -188,7 +200,9 @@ async function codexThread(client: CodexAppServerClient, cwd: string, prompt: st
   await completed
 }
 
-async function recordCodex(recorder: Recorder): Promise<CodexRecording> {
+async function recordCodex(
+  recorder: Recorder,
+): Promise<{ history: CodexRecording; models: unknown }> {
   const client = await codexClientUnderHome(recorder.home, recorder.executables.codex)
   try {
     const cwd = await project(recorder, 'project-codex')
@@ -221,7 +235,15 @@ async function recordCodex(recorder: Recorder): Promise<CodexRecording> {
       calls.push({ method: 'thread/turns/list', params: turnsParams, result: turns })
     }
     calls.push(await recordCodexConfig(recorder))
-    return { version: cliVersion(recorder.executables.codex), calls }
+    return {
+      history: {
+        producer: 'codex-app-server',
+        version: cliVersion(recorder.executables.codex),
+        recordedAt: new Date().toISOString(),
+        calls,
+      },
+      models: await recordCodexModels(client),
+    }
   } finally {
     client.shutdown()
   }
@@ -263,19 +285,53 @@ function sanitized(recorder: Recorder, recording: unknown, resolvedRoot: string)
   return text
 }
 
-async function writeRecording(
-  recording: (typeof RECORDINGS)[keyof typeof RECORDINGS],
-  body: string,
-) {
-  await writeFile(
-    recording.file,
-    `// Written by \`bun run record:vendor-history\`; do not edit by hand.
-import type { Recorded } from '../../recorded.ts'
-import type { ${recording.type} } from '../${recording.loader}.ts'
+async function recordCodexModels(client: CodexAppServerClient): Promise<unknown> {
+  return client.request('model/list', { includeHidden: true, limit: 100 }, (value) => {
+    const catalog = readModelCatalog(value)
+    if (catalog.nextCursor)
+      throw new Error('Model catalog exceeds one page; recording was not saved.')
+    return value
+  })
+}
 
-export const ${recording.name}: Recorded<${recording.type}> = ${body}
+type RecordingWriter = { recorder: Recorder; resolvedRoot: string }
+
+async function recordingFile(metadata: RecordingMetadata, name: string, value: unknown) {
+  const relative = `${metadata.producer}/${metadata.version}/${name}`
+  loadRecording(relative, value)
+  const file = path.join('mocks/recordings', relative)
+  await mkdir(path.dirname(file), { recursive: true })
+  return file
+}
+
+async function writeRecording(
+  specification: (typeof RECORDINGS)[keyof typeof RECORDINGS],
+  recording: ClaudeRecording | CodexRecording,
+  writer: RecordingWriter,
+) {
+  const file = await recordingFile(recording, specification.file, recording)
+  await writeFile(
+    file,
+    `// Written by \`bun run record:vendor-history\`; do not edit by hand.
+import type { Recorded } from '../../recorded'
+import type { ${specification.type} } from '../../../cli/${specification.harness}/${specification.loader}'
+
+export const ${specification.name}: Recorded<${specification.type}> = ${sanitized(writer.recorder, recording, writer.resolvedRoot)}
 `,
   )
+  return file
+}
+
+async function writeModels(writer: RecordingWriter, history: CodexRecording, models: unknown) {
+  const recording = {
+    producer: history.producer,
+    version: history.version,
+    recordedAt: history.recordedAt,
+    payload: models,
+  }
+  const file = await recordingFile(recording, 'model-list.json', recording)
+  await writeFile(file, sanitized(writer.recorder, recording, writer.resolvedRoot))
+  return file
 }
 
 async function main() {
@@ -286,12 +342,18 @@ async function main() {
     verifyRealSessionAuthentication(executables, home)
     const recorder = { root, home, executables }
     const resolvedRoot = await realpath(root)
-    const claude = sanitized(recorder, await recordClaude(recorder), resolvedRoot)
-    const codex = sanitized(recorder, await recordCodex(recorder), resolvedRoot)
-    await writeRecording(RECORDINGS.claude, claude)
-    await writeRecording(RECORDINGS.codex, codex)
-    const files = Object.values(RECORDINGS).map((recording) => recording.file)
+    const writer = { recorder, resolvedRoot }
+    const claude = await recordClaude(recorder)
+    const codex = await recordCodex(recorder)
+    const files = [
+      await writeRecording(RECORDINGS.claude, claude, writer),
+      await writeRecording(RECORDINGS.codex, codex.history, writer),
+      await writeModels(writer, codex.history, codex.models),
+    ]
     execFileSync('bunx', ['biome', 'format', '--write', ...files], {
+      stdio: 'inherit',
+    })
+    execFileSync(process.execPath, ['tools/recordings/generate-recording-imports.mts'], {
       stdio: 'inherit',
     })
     process.stdout.write('Recorded. Read the diff, then run `bun run typecheck` and the tests.\n')

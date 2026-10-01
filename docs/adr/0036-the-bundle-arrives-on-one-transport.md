@@ -15,7 +15,7 @@ is versioned:
 |---|---|---|
 | skills | `npx skills add milad-alizadeh/argo` | `skills-lock.json` |
 | rtk filters | `curl` from `raw.githubusercontent.com/.../main` | nothing |
-| hooks | copy `hooks.json`, the installed hook directory and `docs/agents/worktrees.md` by hand | nothing |
+| hooks | copy `hooks.json` and the installed hook directory by hand | nothing |
 
 The hooks are the sharpest case. A project can be a version behind on its guardrails with nothing
 on disk that says so.
@@ -59,11 +59,11 @@ behaves worse than it does in this repository, for reasons the user cannot see.
 - **Asking is not the same as installing.** Writing into someone's repository unasked is not the
   app's call, and a setup nobody remembers to run is not a setup. An offer on open is both.
 - **Skills are additive; hooks are coercive.** An uninvoked skill costs its frontmatter. A hook
-  changes how every session in that project behaves, and the worktree guard refuses any branch
-  outside the project's configured convention. That asymmetry is why the hook opt-in survives.
+  changes how every session in that project behaves, and the PR ownership guard refuses any push
+  or pull request that does not come from `/ship`. That asymmetry is why the hook opt-in survives.
 - **User-level install is the tempting shortcut and it is wrong for hooks.** One install covering
-  every project is defensible for skills. For hooks it means the worktree guard polices every
-  repository the user opens, including ones with no worktree convention at all.
+  every project is defensible for skills. For hooks it means the PR ownership guard polices every
+  repository the user opens, including ones that never use `/ship`.
 
 ## Consequences
 

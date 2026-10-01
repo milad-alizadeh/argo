@@ -4,7 +4,7 @@ import { expect, waitFor, within } from 'storybook/test'
 import { App } from './app'
 
 const meta = {
-  title: 'Cockpit/Application',
+  title: 'App/Application',
   component: App,
   parameters: { layout: 'fullscreen' },
   decorators: [

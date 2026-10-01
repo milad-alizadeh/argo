@@ -1,7 +1,7 @@
 {
   "name": "@argo/desktop",
   "version": "0.1.0",
-  "description": "Argo cockpit on Electron. Scaffold under migration; packaged tests are its gate.",
+  "description": "Argo Desktop on Electron. Scaffold under migration; packaged tests are its gate.",
   "private": true,
   "main": ".vite/build/main.js",
   "scripts": {
@@ -26,11 +26,12 @@
     "test:e2e:profile": "bun run build:vite && ARGO_E2E_PROFILE=1 playwright test",
     "e2e:real": "bun run build:vite && ARGO_E2E_REAL=1 playwright test --project=real-sessions",
     "test:live-claude-display": "node tools/run-tool.mts tools/claude/message-display.ts",
-    "capture:cockpit": "node tools/run-tool.mts tools/cockpit/capture.ts",
-    "measure:cockpit": "node tools/run-tool.mts tools/cockpit/measure.ts",
+    "capture:desktop": "node tools/run-tool.mts tools/desktop/capture.mts",
+    "measure:desktop": "node tools/run-tool.mts tools/desktop/measure.mts",
     "measure:feed-history": "node tools/run-tool.mts tools/sessions/measure-feed-history.ts",
     "measure:session-list": "node tools/run-tool.mts tools/sessions/measure-session-list.ts",
     "measure:session-open": "node tools/run-tool.mts tools/sessions/open-session-cost.ts",
+    "recordings:sync": "node tools/recordings/generate-recording-imports.mts",
     "record:vendor-history": "node tools/run-tool.mts tools/sessions/record-vendor-history.ts",
     "desktop:manifest": "node scripts/desktop-manifest.mts",
     "desktop:verdict": "node scripts/write-release-verdict.mts",

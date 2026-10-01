@@ -1,6 +1,6 @@
 export {
   useWorkspaces,
   type WorkspaceActions,
-  type WorkspaceCockpit,
+  type WorkspaceState,
   type WorkspaceSummary,
 } from './use-workspaces'
