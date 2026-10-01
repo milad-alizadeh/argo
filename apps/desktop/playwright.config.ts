@@ -3,7 +3,8 @@ import type { SessionBackendOptions } from './e2e/sessions/session-backend-optio
 import { isolateHarnessFolders } from './mocks/cli/real-user-config'
 
 // The app installs its status hooks in the Harness config folders at launch, so a case that names
-// none gets throwaway folders, never the person's own. The runner deletes them on exit.
+// none gets throwaway folders, never the person's own. The runner deletes them on exit, and its
+// teardown fails while the person's own config holds an Argo hook.
 process.once('exit', isolateHarnessFolders())
 
 // One project per flow under `e2e/` (#2325). Every case launches the app against its own root
@@ -12,6 +13,7 @@ process.once('exit', isolateHarnessFolders())
 export default defineConfig<object, SessionBackendOptions>({
   testDir: 'e2e',
   testMatch: '**/*.e2e.ts',
+  globalTeardown: './mocks/cli/real-user-config.ts',
   fullyParallel: true,
   // A recorded video (electron.launch's recordVideo, wired per case) lives only in a passing
   // test's own outputDir, which Playwright otherwise deletes on success.

@@ -62,7 +62,7 @@ export type ExternalActivityReading = {
 export type HookTableChanges = ReadonlyMap<string, unknown[] | null>
 
 // Hooks Argo installs once in the Harness's user-level config, so they fire for every Session, and
-// posts to its receiver on 127.0.0.1. The host owns the install and the reading (#2976).
+// posts to Argo's Unix socket. The host owns the install and the reading (#2976).
 export type ExternalSessionHooks = {
   // The config's `hooks` table, and the write of the event lists a change sets. Throws, writing
   // nothing, when it cannot read the config.

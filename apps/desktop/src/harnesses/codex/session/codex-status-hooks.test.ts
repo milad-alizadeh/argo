@@ -40,7 +40,7 @@ testStatusHookInstall('codex', async (context, userHooks) => codex(context, user
 
 test('a Codex install writes each event it changes through config/value/write, chaining versions', async (context) => {
   const { hooks, writes } = codex(context, true)
-  await installStatusHooks('codex', hooks, 4321)
+  await installStatusHooks('codex', hooks, '/tmp/argo/hooks.sock')
   assert.equal(writes.length, 7)
   writes.forEach(({ params }, index) => {
     const { keyPath, mergeStrategy, expectedVersion, filePath } = params as Record<string, unknown>

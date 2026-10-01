@@ -28,6 +28,7 @@ export const isStatusHookEvent = (name: string): name is StatusHookEvent =>
 
 // What one hook event says about a Session; a null activity keeps the stored line.
 export type ExternalHookReading = {
+  event: StatusHookEvent
   nativeId: string
   status: ExternalSessionStatus | null
   activity: LiveActivity | null
@@ -46,20 +47,9 @@ async function openTable(hooks: ExternalSessionHooks) {
 }
 
 // An async command hook: the CLI does not wait for it, and curl fails quietly when Argo is closed.
-const hookCommand = (harness: Harness, port: number, event: StatusHookEvent) =>
-  `curl -s -m 1 --data-binary @- http://127.0.0.1:${port}/h/${harness}/${event} || true`
-
-// Reads the port an Argo group of `event` names, or null for a group Argo did not write.
-const argoPortOf =
-  (hooks: ExternalSessionHooks, harness: Harness, event: StatusHookEvent) =>
-  (group: unknown): number | null => {
-    const named = new RegExp(`127\\.0\\.0\\.1:(\\d+)/h/${harness}/${event} `).exec(
-      JSON.stringify(group),
-    )?.[1]
-    if (named === undefined) return null
-    const port = Number(named)
-    return isDeepStrictEqual(group, hooks.group(hookCommand(harness, port, event))) ? port : null
-  }
+// The socket path is quoted for the shell, since macOS's app data folder has a space in it.
+const hookCommand = (harness: Harness, socketPath: string) =>
+  `curl -s -m 1 --unix-socket '${socketPath.replaceAll("'", `'\\''`)}' --data-binary @- http://localhost/h/${harness} || true`
 
 // Writes the event lists `next` returns; undefined leaves an event as it is.
 async function change(
@@ -75,48 +65,38 @@ async function change(
   if (changes.size > 0) await write(changes)
 }
 
-// Appends Argo's group to each event the adapter names, or rewrites it where it stands when it
-// names another port.
+// Appends Argo's group to each event the adapter names that lacks it.
 export function installStatusHooks(
   harness: Harness,
   hooks: ExternalSessionHooks,
-  port: number,
+  socketPath: string,
 ): Promise<void> {
+  const group = hooks.group(hookCommand(harness, socketPath))
   return change(hooks, (event, groups) => {
     if (!hooks.events.includes(event)) return undefined
-    const argoPort = argoPortOf(hooks, harness, event)
-    const group = hooks.group(hookCommand(harness, port, event))
-    const index = groups.findIndex((each) => argoPort(each) !== null)
-    if (index === -1) return [...groups, group]
-    return argoPort(groups[index]) === port ? undefined : groups.with(index, group)
+    return groups.some((each) => isDeepStrictEqual(each, group)) ? undefined : [...groups, group]
   })
 }
 
 // Drops exactly Argo's groups; an event left with no group is deleted.
-export function removeStatusHooks(harness: Harness, hooks: ExternalSessionHooks): Promise<void> {
-  return change(hooks, (event, groups) => {
-    const kept = groups.filter((each) => argoPortOf(hooks, harness, event)(each) === null)
+export function removeStatusHooks(
+  harness: Harness,
+  hooks: ExternalSessionHooks,
+  socketPath: string,
+): Promise<void> {
+  const group = hooks.group(hookCommand(harness, socketPath))
+  return change(hooks, (_event, groups) => {
+    const kept = groups.filter((each) => !isDeepStrictEqual(each, group))
     if (kept.length === groups.length) return undefined
     return kept.length === 0 ? null : kept
   })
 }
 
-// The port the installed hooks name, or null when none are installed.
-export async function installedStatusHookPort(
-  harness: Harness,
-  hooks: ExternalSessionHooks,
-): Promise<number | null> {
-  const { parsed } = await openTable(hooks)
-  for (const event of STATUS_HOOK_EVENTS)
-    for (const group of parsed[event] ?? []) {
-      const port = argoPortOf(hooks, harness, event)(group)
-      if (port !== null) return port
-    }
-  return null
-}
-
 const payloadSchema = z.looseObject({
   session_id: z.string().min(1),
+  hook_event_name: z.custom<StatusHookEvent>(
+    (name) => typeof name === 'string' && isStatusHookEvent(name),
+  ),
   tool_name: z.string().min(1).optional(),
   tool_input: z.unknown().optional(),
 })
@@ -140,16 +120,17 @@ function toolActivity(
 // the question tool shows asking; only PreToolUse of another tool sets the activity line.
 export function readStatusHook(
   hooks: ExternalSessionHooks,
-  event: StatusHookEvent,
   payload: unknown,
 ): ExternalHookReading | null {
   const parsed = payloadSchema.safeParse(payload)
   if (!parsed.success) return null
-  const { session_id: nativeId, tool_name: toolName, tool_input: toolInput } = parsed.data
-  if (!TOOL_EVENTS.has(event)) return { nativeId, status: EVENT_STATUS[event], activity: null }
+  const { hook_event_name: event, session_id: nativeId } = parsed.data
+  const { tool_name: toolName, tool_input: toolInput } = parsed.data
+  if (!TOOL_EVENTS.has(event))
+    return { event, nativeId, status: EVENT_STATUS[event], activity: null }
   if (toolName === undefined) return null
-  if (toolName === hooks.questionTool) return { nativeId, status: 'asking', activity: null }
+  if (toolName === hooks.questionTool) return { event, nativeId, status: 'asking', activity: null }
   const activity =
     event === 'PreToolUse' ? toolActivity(hooks.activityTool, toolName, toolInput) : null
-  return { nativeId, status: EVENT_STATUS[event], activity }
+  return { event, nativeId, status: EVENT_STATUS[event], activity }
 }

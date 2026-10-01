@@ -1,22 +1,19 @@
+import { rm } from 'node:fs/promises'
 import { createServer, type IncomingMessage, type Server } from 'node:http'
-import type { AddressInfo } from 'node:net'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
-import {
-  installedStatusHookPort,
-  installStatusHooks,
-  isStatusHookEvent,
-  readStatusHook,
-} from '@/harnesses/host/status-hooks'
+import { installStatusHooks, readStatusHook } from '@/harnesses/host/status-hooks'
 import type { ExternalSessions } from '@/harnesses/registration'
 import type { ExternalSessionPoll } from './external-session-poll'
 
 // A hook payload is one JSON object; anything larger is not one Argo installed.
 const BODY_LIMIT_BYTES = 1024 * 1024
-const HOOK_PATH = /^\/h\/([^/]+)\/([^/]+)$/
+const HOOK_PATH = /^\/h\/([^/]+)$/
 
 type StatusHookReceiverContext = {
   poll: ExternalSessionPoll
   harnesses: readonly { harness: Harness; external: ExternalSessions }[]
+  // In Argo's app data folder, so the hook command stays the same across launches.
+  socketPath: string
 }
 
 async function readBody(request: IncomingMessage): Promise<string | null> {
@@ -30,8 +27,8 @@ async function readBody(request: IncomingMessage): Promise<string | null> {
   return Buffer.concat(chunks).toString('utf8')
 }
 
-// Installs every Harness's status hooks once, globally, naming one loopback port, and passes
-// what they post to the poll. A failed install leaves that Harness on the poll.
+// Installs every Harness's status hooks once, globally, naming one Unix socket, and passes what
+// they post to the poll. A failed install leaves that Harness on the poll alone.
 export class StatusHookReceiver {
   readonly #context: StatusHookReceiverContext
   readonly #server: Server
@@ -52,32 +49,26 @@ export class StatusHookReceiver {
     })
   }
 
-  // The port the hooks name; 0 before start.
-  get port(): number {
-    return (this.#server.address() as AddressInfo | null)?.port ?? 0
-  }
-
-  // Listens on the port the hooks already name, so an unchanged install writes nothing. That port
-  // busy means another Argo owns the hooks, so this one rewrites nothing and stays on the poll.
+  // The single-instance lock keeps one Argo per app data folder, so a socket already there was
+  // left by one that did not close.
   async start(): Promise<void> {
-    const named = await this.#installedPort()
-    try {
-      await this.#listen(named ?? 0)
-    } catch (error) {
-      console.warn(
-        `Could not listen on status hook port ${named ?? 0}; staying on the poll:`,
-        error,
-      )
-      return
-    }
+    const { socketPath, harnesses } = this.#context
+    await rm(socketPath, { force: true })
+    await new Promise<void>((resolve, reject) => {
+      this.#server.once('error', reject)
+      this.#server.listen(socketPath, () => {
+        this.#server.off('error', reject)
+        resolve()
+      })
+    })
     if (this.#stopped) {
       this.#server.close()
       return
     }
-    for (const { harness, external } of this.#context.harnesses)
+    for (const { harness, external } of harnesses)
       try {
         if (external.hooks !== undefined)
-          await installStatusHooks(harness, external.hooks, this.port)
+          await installStatusHooks(harness, external.hooks, socketPath)
       } catch (error) {
         this.#installFailures += 1
         console.warn(
@@ -93,47 +84,17 @@ export class StatusHookReceiver {
     if (this.#server.listening) this.#server.close()
   }
 
-  async #installedPort(): Promise<number | null> {
-    for (const { harness, external } of this.#context.harnesses) {
-      if (external.hooks === undefined) continue
-      const port = await installedStatusHookPort(harness, external.hooks).catch(() => null)
-      if (port !== null) return port
-    }
-    return null
-  }
-
-  #listen(port: number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.#server.once('error', reject)
-      this.#server.listen(port, '127.0.0.1', () => {
-        this.#server.off('error', reject)
-        resolve()
-      })
-    })
-  }
-
-  // A browser page names an Origin, or a Host other than the loopback port when it rebinds DNS.
-  #fromHook(request: IncomingMessage): boolean {
-    return request.headers.origin === undefined && request.headers.host === `127.0.0.1:${this.port}`
-  }
-
   async #receive(request: IncomingMessage): Promise<boolean> {
-    const [, harnessName, event = ''] = HOOK_PATH.exec(request.url ?? '') ?? []
-    const harness = harnessSchema.safeParse(harnessName).data
+    const harness = harnessSchema.safeParse(HOOK_PATH.exec(request.url ?? '')?.[1]).data
     const hooks = this.#context.harnesses.find((each) => each.harness === harness)?.external.hooks
-    const known =
-      request.method === 'POST' &&
-      this.#fromHook(request) &&
-      harness !== undefined &&
-      hooks !== undefined &&
-      isStatusHookEvent(event)
-    if (!known) return this.#reject()
+    if (request.method !== 'POST' || harness === undefined || hooks === undefined)
+      return this.#reject()
     const payload: unknown = await readBody(request)
       .then((text) => JSON.parse(text ?? ''))
       .catch(() => undefined)
-    const reading = readStatusHook(hooks, event, payload)
+    const reading = readStatusHook(hooks, payload)
     if (reading === null) return this.#reject()
-    this.#context.poll.hookEvent(harness, event, reading)
+    this.#context.poll.hookEvent(harness, reading)
     return true
   }
 

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
 import { lstat, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { test } from 'node:test'
+import { after, test } from 'node:test'
 import type {
   PermissionDeniedHookInput,
   PostToolUseFailureHookInput,
@@ -13,7 +12,7 @@ import type {
 import { installStatusHooks, removeStatusHooks } from '@/harnesses/host/status-hooks'
 import { testStatusHookInstall } from '@/mocks/cli/status-hook-install-suite'
 import { type HOOK_FIXTURES, hookReadings } from '@/mocks/cli/status-hooks'
-import { createClaudeStatusHooks } from './claude-status-hooks'
+import { claudeSettingsFile, createClaudeStatusHooks } from './claude-status-hooks'
 
 // Each docs fixture payload of `Shape` carries what the Agent SDK says Claude sends with `Input`.
 type Payload = (typeof HOOK_FIXTURES.claude)['bashTurn' | 'failureTurn'][number]['payload']
@@ -31,7 +30,11 @@ true satisfies Carries<
   Omit<StopFailureHookInput, 'error'> & { error: string }
 >
 
-const settings = path.join(process.env.CLAUDE_CONFIG_DIR as string, 'settings.json')
+const folder = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-settings-'))
+after(() => rm(folder, { recursive: true, force: true }))
+const settings = path.join(folder, 'settings.json')
+const SOCKET = '/tmp/argo/hooks.sock'
+const claudeHooks = () => createClaudeStatusHooks(settings)
 const USER_SETTINGS = {
   model: 'opus',
   hooks: {
@@ -54,25 +57,25 @@ testStatusHookInstall('claude', async (_context, userHooks) => {
   const { Notification: _other, ...hooks } = USER_SETTINGS.hooks
   await seed(userHooks ? JSON.stringify({ hooks }) : null)
   return {
-    hooks: createClaudeStatusHooks(),
+    hooks: claudeHooks(),
     read: async () => (await readJson(settings)).hooks ?? {},
   }
 })
 
 test('a Claude install keeps every other setting and hook, and its removal leaves them as they were', async () => {
   await seed(JSON.stringify(USER_SETTINGS))
-  await installStatusHooks('claude', createClaudeStatusHooks(), 4321)
+  await installStatusHooks('claude', claudeHooks(), SOCKET)
   const written = await readJson(settings)
   assert.deepEqual(Object.keys(written), ['model', 'hooks', 'permissions'])
   assert.deepEqual(written.hooks.Notification, USER_SETTINGS.hooks.Notification)
-  await removeStatusHooks('claude', createClaudeStatusHooks())
+  await removeStatusHooks('claude', claudeHooks(), SOCKET)
   assert.deepEqual(await readJson(settings), USER_SETTINGS)
 })
 
 test('a Claude removal after an install into settings with no hooks leaves no hooks table', async () => {
   await seed(JSON.stringify({ model: 'opus' }))
-  await installStatusHooks('claude', createClaudeStatusHooks(), 4321)
-  await removeStatusHooks('claude', createClaudeStatusHooks())
+  await installStatusHooks('claude', claudeHooks(), SOCKET)
+  await removeStatusHooks('claude', claudeHooks(), SOCKET)
   assert.deepEqual(await readJson(settings), { model: 'opus' })
 })
 
@@ -84,8 +87,8 @@ for (const [label, text] of [
 ] as const)
   test(`Claude settings that ${label} are not written`, async () => {
     await seed(text)
-    await assert.rejects(installStatusHooks('claude', createClaudeStatusHooks(), 4321))
-    await assert.rejects(removeStatusHooks('claude', createClaudeStatusHooks()))
+    await assert.rejects(installStatusHooks('claude', claudeHooks(), SOCKET))
+    await assert.rejects(removeStatusHooks('claude', claudeHooks(), SOCKET))
     assert.equal(await readFile(settings, 'utf8'), text)
   })
 
@@ -94,32 +97,22 @@ test('a Claude settings link to a file is written through, keeping the link', as
   await seed(null)
   await writeFile(target, JSON.stringify({ model: 'opus' }))
   await symlink(target, settings)
-  await installStatusHooks('claude', createClaudeStatusHooks(), 4321)
+  await installStatusHooks('claude', claudeHooks(), SOCKET)
   assert.ok((await lstat(settings)).isSymbolicLink())
   assert.equal((await readJson(target)).model, 'opus')
   assert.ok((await readJson(target)).hooks.Stop)
 })
 
-// A child process, because Bun reads HOME once at start and a change to it here moves nothing.
-test('without CLAUDE_CONFIG_DIR the install writes the settings in the home Claude folder', async (context) => {
-  const home = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-home-'))
-  context.after(() => rm(home, { recursive: true, force: true }))
-  const { CLAUDE_CONFIG_DIR: _unset, ...environment } = process.env
-  const install = `
-    const { createClaudeStatusHooks } = await import(${JSON.stringify(import.meta.resolve('./claude-status-hooks'))})
-    const { installStatusHooks } = await import(${JSON.stringify(import.meta.resolve('@/harnesses/host/status-hooks'))})
-    if ((await import('node:os')).homedir() !== ${JSON.stringify(home)}) process.exit(3)
-    await installStatusHooks('claude', createClaudeStatusHooks(), 4321)`
-  const result = spawnSync(process.execPath, ['-e', install], {
-    env: { ...environment, HOME: home },
-    encoding: 'utf8',
-  })
-  assert.equal(result.status, 0, result.stderr)
-  assert.ok((await readJson(path.join(home, '.claude', 'settings.json'))).hooks.Stop)
+test('the Claude settings file is in CLAUDE_CONFIG_DIR, else in the home Claude folder', () => {
+  assert.equal(claudeSettingsFile({}, '/home/me'), '/home/me/.claude/settings.json')
+  assert.equal(
+    claudeSettingsFile({ CLAUDE_CONFIG_DIR: '/config' }, '/home/me'),
+    '/config/settings.json',
+  )
 })
 
 test('each Claude event of a Bash Turn sets its status, and PreToolUse its activity line', () => {
-  assert.deepEqual(hookReadings('claude', createClaudeStatusHooks(), 'bashTurn'), [
+  assert.deepEqual(hookReadings('claude', claudeHooks(), 'bashTurn'), [
     ['SessionStart', null, null],
     ['UserPromptSubmit', 'running', null],
     ['PreToolUse', 'running', 'Run test suite'],
@@ -131,7 +124,7 @@ test('each Claude event of a Bash Turn sets its status, and PreToolUse its activ
 })
 
 test('a failed or denied Claude tool ends its permission prompt, and a failed Turn shows idle', () => {
-  assert.deepEqual(hookReadings('claude', createClaudeStatusHooks(), 'failureTurn'), [
+  assert.deepEqual(hookReadings('claude', claudeHooks(), 'failureTurn'), [
     ['UserPromptSubmit', 'running', null],
     ['PreToolUse', 'running', 'Run test suite'],
     ['PermissionRequest', 'permission', null],
@@ -143,7 +136,7 @@ test('a failed or denied Claude tool ends its permission prompt, and a failed Tu
 })
 
 test('a Claude AskUserQuestion shows asking until it is answered', () => {
-  assert.deepEqual(hookReadings('claude', createClaudeStatusHooks(), 'questionTurn'), [
+  assert.deepEqual(hookReadings('claude', claudeHooks(), 'questionTurn'), [
     ['SessionStart', null, null],
     ['UserPromptSubmit', 'running', null],
     ['PreToolUse', 'asking', null],

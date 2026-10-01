@@ -17,8 +17,7 @@ import { writeMockClaude } from '../../mocks/cli/claude/mock-claude-cli'
 import { MOCK_CODEX_USER_HOOKS_FILE } from '../../mocks/cli/codex/fixtures/mock-codex-skills-config'
 import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { holdCodexWriterLock } from '../../mocks/cli/codex/mock-codex-external-threads'
-import { guardRealUserConfig } from '../../mocks/cli/real-user-config'
-import { argoHookUrls, hookEvent, postHook } from '../../mocks/cli/status-hooks'
+import { hookEvent, postHook } from '../../mocks/cli/status-hooks'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
@@ -149,8 +148,7 @@ async function launch(root: string, applicationUnderTest: string, source: Status
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
       [ACCEPTANCE_ENV]: '0',
       ARGO_CODEX_E2E_STATE: codexState(root),
-      // Empty folders for the Harness the case does not seed. The run-wide ones name another app's
-      // hook port, and a busy port stops every install.
+      // Empty folders for the Harness the case does not seed, so parallel apps share no config.
       CLAUDE_CONFIG_DIR: path.join(root, 'unseeded-claude-config'),
       CODEX_HOME: path.join(root, 'unseeded-codex-home'),
       ...(await source.seed(root, fixture.project, sessions)),
@@ -158,7 +156,8 @@ async function launch(root: string, applicationUnderTest: string, source: Status
   })
   const page = await application.firstWindow()
   await page.waitForFunction(() => typeof window.argo?.trpc === 'function')
-  return { application, page, older: sessions[0] as ExternalSession }
+  const socketPath = path.join(fixture.userData, 'hooks.sock')
+  return { application, page, older: sessions[0] as ExternalSession, socketPath }
 }
 
 const rowTitled = (page: Page, title: string) =>
@@ -194,15 +193,11 @@ for (const createSource of [claudeSource, codexSource]) {
   })
 }
 
-// The port the app's installed hooks name, once the install has written them.
-async function installedPort(root: string, source: StatusSource): Promise<number> {
-  let port = 0
+// Waits until the app's install has written its hooks, naming its socket.
+async function hooksInstalled(root: string, source: StatusSource, socketPath: string) {
   await expect(async () => {
-    const config = await readFile(source.hooksFile(root), 'utf8')
-    port = Number(argoHookUrls(config)[0]?.[1])
-    expect(port).toBeGreaterThan(0)
+    expect(await readFile(source.hooksFile(root), 'utf8')).toContain(socketPath)
   }).toPass({ timeout: 15_000 })
-  return port
 }
 
 for (const createSource of [claudeSource, codexSource]) {
@@ -210,15 +205,22 @@ for (const createSource of [claudeSource, codexSource]) {
     root,
     applicationUnderTest,
   }) => {
-    const realConfigUnchanged = guardRealUserConfig()
     const source = createSource()
-    const { application, page, older } = await launch(root, applicationUnderTest, source)
+    const { application, page, older, socketPath } = await launch(
+      root,
+      applicationUnderTest,
+      source,
+    )
     try {
       const dot = rowTitled(page, OLDER).locator('[data-slot="session-status"]')
       await expect(rowTitled(page, NEWER)).toHaveCount(1, { timeout: 30_000 })
-      const port = await installedPort(root, source)
+      await hooksInstalled(root, source, socketPath)
       const post = (event: string) =>
-        postHook(port, source.harness, hookEvent(source.harness, event, older.nativeId))
+        postHook(
+          socketPath,
+          source.harness,
+          hookEvent(source.harness, event, older.nativeId).payload,
+        )
       expect(await post('PermissionRequest')).toBe(204)
       await expect(dot).toHaveAttribute('data-variant', 'attention')
       expect(await post('Stop')).toBe(204)
@@ -226,7 +228,6 @@ for (const createSource of [claudeSource, codexSource]) {
     } finally {
       await application.close()
       await source.stop()
-      realConfigUnchanged()
     }
   })
 }

@@ -1,5 +1,4 @@
 import { readFile, realpath, stat } from 'node:fs/promises'
-import os from 'node:os'
 import path from 'node:path'
 import type { HookEvent, Settings } from '@anthropic-ai/claude-agent-sdk'
 import type { BashInput } from '@anthropic-ai/claude-agent-sdk/sdk-tools'
@@ -28,8 +27,7 @@ async function readSettings(file: string): Promise<Record<string, unknown>> {
 type HookGroup = NonNullable<Settings['hooks']>[string][number]
 
 // Argo's status hooks in the user settings; the whole file is replaced once per change.
-export function createClaudeStatusHooks(): ExternalSessionHooks {
-  const file = claudeSettingsFile(process.env, os.homedir())
+export function createClaudeStatusHooks(file: string): ExternalSessionHooks {
   return {
     async open() {
       const settings = await readSettings(file)

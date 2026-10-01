@@ -3,7 +3,7 @@ import { and, eq, lte, ne, notInArray, type SQL, sql } from 'drizzle-orm'
 import { sessionTable } from '@/database/session/schema'
 import { projectFeedRowEntries } from '@/domains/sessions/api/feed'
 import { type Harness, type HarnessSession, harnessSessionKey } from '@/harnesses/harness'
-import type { ExternalHookReading, StatusHookEvent } from '@/harnesses/host/status-hooks'
+import type { ExternalHookReading } from '@/harnesses/host/status-hooks'
 import type {
   ExternalActivityReading,
   ExternalSessionStatus,
@@ -101,7 +101,7 @@ const newTracked = (
 // that changed or left, and diffs the list against the last tick's. The first sight of a transcript
 // only records its stamp, so startup reads nothing. Updates merge into one write per Session a
 // window, and activity reads run one at a time, since one vendor read can take a large file whole.
-// Once a Harness's status hooks fire, their events set its statuses and its listing stops.
+// A status hook event settles a status, which outranks the listed one.
 export class ExternalSessionPoll {
   readonly #context: ExternalSessionPollContext
   readonly #external: ReadonlyMap<Harness, ExternalSessions>
@@ -113,9 +113,6 @@ export class ExternalSessionPoll {
   readonly #leaving = new Map<string, TrackedSession>()
   // Harnesses whose last listing failed, so a failure is reported once until one succeeds.
   readonly #failing = new Set<Harness>()
-  // Harnesses whose status hooks have fired, and those whose saved rows the first listing closed.
-  readonly #firing = new Set<Harness>()
-  readonly #closed = new Set<Harness>()
   // Each Harness's last reported count of unrecognised live records, so a count is reported once.
   readonly #rejected = new Map<Harness, number>()
   readonly #pending = new Map<string, { session: HarnessSession; update: SessionUpdate }>()
@@ -177,10 +174,10 @@ export class ExternalSessionPoll {
     this.#reads.clear()
   }
 
-  // One status hook event. One from a saved external Session turns the poll off for its Harness;
-  // Argo's own CLI probes and Sessions fire the hooks too, and prove nothing about them.
-  hookEvent(harness: Harness, event: StatusHookEvent, reading: ExternalHookReading): void {
+  // One status hook event; Argo's own Sessions are left to their live channel.
+  hookEvent(harness: Harness, reading: ExternalHookReading): void {
     if (this.#stopped) return
+    const { event } = reading
     const session = { harness, nativeId: reading.nativeId }
     const sessionId = harnessSessionId(this.#context.database, session)
     if (sessionId === undefined) {
@@ -188,11 +185,10 @@ export class ExternalSessionPoll {
       return
     }
     if (this.#context.hasLiveChannel(sessionId)) return
-    this.#firing.add(harness)
-    const live = this.#live.get(harness) ?? new Map<string, TrackedSession>()
-    this.#live.set(harness, live)
-    const tracked = live.get(session.nativeId) ?? newTracked(null, null)
-    live.set(session.nativeId, tracked)
+    // Before the first listing there is no live map, so that listing still closes stale rows.
+    const live = this.#live.get(harness)
+    const tracked = live?.get(session.nativeId) ?? newTracked(null, null)
+    live?.set(session.nativeId, tracked)
     tracked.changedAt = Date.now()
     // PreToolUse is async, so it can land after the PermissionRequest it precedes.
     const held =
@@ -205,15 +201,11 @@ export class ExternalSessionPoll {
       ...(reading.activity === null ? {} : { activity: reading.activity }),
     })
     this.#show(session, tracked, tracked.changedAt)
-    if (event === 'SessionEnd') live.delete(session.nativeId)
+    if (event === 'SessionEnd') live?.delete(session.nativeId)
   }
 
   async #tickAll(): Promise<void> {
     for (const { harness, external } of this.#context.harnesses) {
-      if (this.#firing.has(harness) && this.#closed.has(harness)) {
-        this.#showQuiet(harness)
-        continue
-      }
       try {
         await this.#tickHarness(harness, external)
         this.#failing.delete(harness)
@@ -238,43 +230,16 @@ export class ExternalSessionPoll {
       const sessionId = harnessSessionId(this.#context.database, session)
       if (sessionId !== undefined && this.#context.hasLiveChannel(sessionId)) continue
       this.#leaving.delete(harnessSessionKey(session))
-      // A hook event that landed during this listing is already in `current`.
-      const before = current.get(listed.nativeId) ?? previous?.get(listed.nativeId)
-      const tracked = this.#track(harness, listed, before)
+      const tracked = this.#track(listed, previous?.get(listed.nativeId))
       current.set(listed.nativeId, tracked)
       if (sessionId === undefined) this.#discover(session, tracked)
       if (external.readActivity !== undefined) await this.#readChange(session, tracked)
       this.#show(session, tracked, Date.now())
     }
-    this.#unlisted(harness, previous, current)
-    if (!this.#closed.has(harness)) this.#closeAll(harness, current)
-  }
-
-  // A Session the listing missed leaves, unless the Harness's hooks fire, which outrank it.
-  #unlisted(
-    harness: Harness,
-    previous: ReadonlyMap<string, TrackedSession> | undefined,
-    current: Map<string, TrackedSession>,
-  ): void {
-    const readsActivity = this.#external.get(harness)?.readActivity !== undefined
-    for (const [nativeId, tracked] of previous ?? []) {
-      if (current.has(nativeId)) continue
-      if (this.#firing.has(harness)) current.set(nativeId, tracked)
-      else this.#leave({ harness, nativeId }, tracked, readsActivity)
-    }
-  }
-
-  // A hook-fed Harness's Sessions are not listed, so only the quiet limit changes them. A listed
-  // status becomes a settled one, since a Session started before the install fires no hook.
-  #showQuiet(harness: Harness): void {
-    for (const [nativeId, tracked] of this.#live.get(harness) ?? []) {
-      if (tracked.status === null && tracked.listed !== null) {
-        tracked.status = tracked.listed
-        tracked.changedAt = Date.now()
-      }
-      tracked.listed = null
-      this.#show({ harness, nativeId }, tracked, Date.now())
-    }
+    for (const [nativeId, tracked] of previous ?? [])
+      if (!current.has(nativeId))
+        this.#leave({ harness, nativeId }, tracked, external.readActivity !== undefined)
+    if (previous === undefined) this.#closeAll(harness, current)
   }
 
   #reportRejected(harness: Harness, rejected: number): void {
@@ -285,7 +250,6 @@ export class ExternalSessionPoll {
 
   // The same object across ticks, so a read that lands mid-tick is kept.
   #track(
-    harness: Harness,
     { transcript, status: listed }: LiveExternalSession,
     before: TrackedSession | undefined,
   ): TrackedSession {
@@ -294,7 +258,7 @@ export class ExternalSessionPoll {
     if (before.transcript !== transcript) {
       before.transcript = transcript
       before.stamp = null
-      if (!this.#firing.has(harness)) before.status = null
+      before.status = null
     }
     return before
   }
@@ -432,7 +396,6 @@ export class ExternalSessionPoll {
   // The first tick closes every Session an earlier run saved and it does not find live, in one
   // write. A live channel's own status outranks the stored one, so a Session Argo runs needs none.
   #closeAll(harness: Harness, live: ReadonlyMap<string, TrackedSession>): void {
-    this.#closed.add(harness)
     const conditions: SQL[] = [eq(sessionTable.harness, harness), ne(sessionTable.status, 'idle')]
     if (live.size > 0) conditions.push(notInArray(sessionTable.nativeId, [...live.keys()]))
     conditions.push(lte(sql`rowid`, this.#lastEarlierRow))

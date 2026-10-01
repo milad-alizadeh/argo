@@ -1,8 +1,9 @@
-import { createServer, request } from 'node:http'
-import type { AddressInfo } from 'node:net'
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { z } from 'zod'
-import { installStatusHooks, STATUS_HOOK_EVENTS } from '@/harnesses/host/status-hooks'
+import { STATUS_HOOK_EVENTS } from '@/harnesses/host/status-hooks'
 import type { ExternalSessionHooks, LiveExternalSession } from '@/harnesses/registration'
 import { postHook } from '@/mocks/cli/status-hooks'
 import { insertSession, liveSession, sessionListCaller } from '@/mocks/sessions/session-list-caller'
@@ -52,8 +53,12 @@ let liveActors: Record<string, unknown>
 let discovered: string[]
 let poll: ExternalSessionPoll
 let receiver: StatusHookReceiver
+let folder: string
+let socketPath: string
 
 beforeEach(() => {
+  folder = mkdtempSync(path.join(os.tmpdir(), 'argo-hooks-'))
+  socketPath = path.join(folder, 'hooks.sock')
   harness = stubHarness()
   liveActors = {}
   caller = sessionListCaller({ sessions: liveActors })
@@ -68,6 +73,7 @@ beforeEach(() => {
   receiver = new StatusHookReceiver({
     poll,
     harnesses: [{ harness: 'claude', external: harness.external }],
+    socketPath,
   })
 })
 
@@ -78,6 +84,7 @@ afterEach(() => {
   vi.restoreAllMocks()
   caller.stopWatching()
   caller.database.$client.close()
+  rmSync(folder, { recursive: true, force: true })
 })
 
 const saved = (id = SESSION) =>
@@ -90,8 +97,8 @@ async function row(id = SESSION) {
 
 // Posts one event as the installed hook does and writes what it queued.
 async function post(event: string, id = SESSION, tool?: string) {
-  const payload = tool === undefined ? { session_id: id } : { session_id: id, tool_name: tool }
-  const status = await postHook(receiver.port, 'claude', { event, payload })
+  const payload = { hook_event_name: event, session_id: id, tool_name: tool }
+  const status = await postHook(socketPath, 'claude', payload)
   poll.flush()
   return status
 }
@@ -136,46 +143,23 @@ test('a payload of an unknown shape or event is rejected, reported and counted',
   await receiver.start()
   saved()
   const warn = quietWarnings()
-  const sent = (event: string, payload: unknown) =>
-    postHook(receiver.port, 'claude', { event, payload })
-  expect(await sent('Stop', { turn_id: 'no session' })).toBe(400)
-  expect(await sent('Stop', 'not json')).toBe(400)
-  expect(await sent('Notification', { session_id: SESSION })).toBe(400)
-  expect(await sent('PreToolUse', { session_id: SESSION })).toBe(400)
+  const sent = (payload: unknown, harnessName = 'claude') =>
+    postHook(socketPath, harnessName, payload)
+  expect(await sent({ hook_event_name: 'Stop', turn_id: 'no session' })).toBe(400)
+  expect(await sent('not json')).toBe(400)
+  expect(await sent({ hook_event_name: 'Notification', session_id: SESSION })).toBe(400)
+  expect(await sent({ session_id: SESSION })).toBe(400)
+  expect(await sent({ hook_event_name: 'PreToolUse', session_id: SESSION })).toBe(400)
+  expect(await sent({ hook_event_name: 'Stop', session_id: SESSION }, 'codex')).toBe(400)
   expect(await post('UserPromptSubmit')).toBe(204)
-  expect(warn).toHaveBeenLastCalledWith('Rejected 4 unrecognised status hook event(s).')
+  expect(warn).toHaveBeenLastCalledWith('Rejected 6 unrecognised status hook event(s).')
   expect((await row()).status).toBe('running')
-})
-
-test('the poll gives the status until the hooks fire, and is off once they do', async () => {
-  await receiver.start()
-  saved()
-  await listedRunning(SESSION)
-  expect((await row()).status).toBe('running')
-
-  await post('Stop')
-  expect((await row()).status).toBe('idle')
-  saved(OTHER)
-  await listedRunning(SESSION, OTHER)
-  expect([(await row()).status, (await row(OTHER)).status]).toEqual(['idle', 'idle'])
-})
-
-test('hooks from Argo’s own probes and Sessions leave the poll on', async () => {
-  await receiver.start()
-  saved()
-  await listedRunning(SESSION)
-  await post('SessionStart', OTHER)
-  saved(OTHER)
-  liveActors[OTHER] = liveSession('Sending', 'running')
-  await post('Stop', OTHER)
-  await listedRunning()
-  expect((await row()).status).toBe('idle')
 })
 
 test('a permission row with no event for the quiet limit shows unknown, since Esc sends none', async () => {
   await receiver.start()
   saved()
-  await poll.tick()
+  await listedRunning(SESSION)
   const now = Date.now()
   vi.spyOn(Date, 'now').mockReturnValue(now)
   await post('PermissionRequest', SESSION, 'shell')
@@ -187,7 +171,7 @@ test('a permission row with no event for the quiet limit shows unknown, since Es
 test('an asking row is not timed out by the quiet limit', async () => {
   await receiver.start()
   saved()
-  await poll.tick()
+  await listedRunning(SESSION)
   const now = Date.now()
   vi.spyOn(Date, 'now').mockReturnValue(now)
   await post('PreToolUse', SESSION, 'ask')
@@ -210,64 +194,18 @@ test('a config Argo cannot read is not written, the failure is counted, and the 
   expect((await row()).status).toBe('running')
 })
 
-test('a port the hooks name that another Argo holds is left to it, and this one stays on the poll', async () => {
-  const other = createServer()
-  await new Promise<void>((resolve) => other.listen(0, '127.0.0.1', resolve))
-  try {
-    await installStatusHooks('claude', harness.hooks, (other.address() as AddressInfo).port)
-    const before = structuredClone(harness.state.table)
-    quietWarnings()
-    await receiver.start()
-    expect(receiver.port).toBe(0)
-    expect(harness.state.table).toEqual(before)
-    saved()
-    await listedRunning(SESSION)
-    expect((await row()).status).toBe('running')
-  } finally {
-    other.close()
-  }
-})
-
 test('a stop before the start finishes leaves nothing listening and installs nothing', async () => {
   const starting = receiver.start()
   receiver.stop()
   await starting
-  expect(receiver.port).toBe(0)
+  expect(existsSync(socketPath)).toBe(false)
   expect(harness.state.table).toBeUndefined()
-})
-
-// Posts as a browser page or a rebound DNS name would, with its own headers.
-function postWithHeaders(headers: Record<string, string>): Promise<number | undefined> {
-  return new Promise((resolve, reject) => {
-    const sent = request(
-      {
-        host: '127.0.0.1',
-        port: receiver.port,
-        method: 'POST',
-        path: '/h/claude/UserPromptSubmit',
-        headers,
-      },
-      (response) => resolve(response.statusCode),
-    )
-    sent.on('error', reject)
-    sent.end(JSON.stringify({ session_id: SESSION }))
-  })
-}
-
-test('a post with an Origin or a Host other than the loopback port is rejected', async () => {
-  await receiver.start()
-  saved()
-  quietWarnings()
-  expect(await postWithHeaders({ Origin: 'https://example.com' })).toBe(400)
-  expect(await postWithHeaders({ Host: `attacker.example:${receiver.port}` })).toBe(400)
-  poll.flush()
-  expect((await row()).status).toBe('idle')
-  expect(await postWithHeaders({})).toBe(204)
 })
 
 test('a PreToolUse that lands after its PermissionRequest keeps permission', async () => {
   await receiver.start()
   saved()
+  await listedRunning(SESSION)
   await post('UserPromptSubmit')
   await post('PermissionRequest', SESSION, 'shell')
   await post('PreToolUse', SESSION, 'shell')
@@ -276,31 +214,18 @@ test('a PreToolUse that lands after its PermissionRequest keeps permission', asy
   expect((await row()).status).toBe('running')
 })
 
-test('a Session listed before the hooks fire keeps its status once they do, until the quiet limit', async () => {
+test('a hook status outranks the listed one on later ticks', async () => {
   await receiver.start()
   saved()
-  saved(OTHER)
   await listedRunning(SESSION)
-  const now = Date.now()
-  vi.spyOn(Date, 'now').mockReturnValue(now)
-  await post('Stop', OTHER)
-  await poll.tick()
-  poll.flush()
-  expect((await row()).status).toBe('running')
-  await atQuietLimit(now)
-  expect((await row()).status).toBe('unknown')
+  await post('Stop')
+  await listedRunning(SESSION)
+  expect((await row()).status).toBe('idle')
 })
 
-test('a hook event during the first listing is not reset by that listing', async () => {
-  let finishListing = () => {}
-  harness.state.listing = new Promise<void>((resolve) => (finishListing = resolve))
+test('a socket left by an Argo that did not close is replaced', async () => {
+  writeFileSync(socketPath, '')
   await receiver.start()
   saved()
-  const listing = poll.tick()
-  await post('UserPromptSubmit')
-  expect((await row()).status).toBe('running')
-  finishListing()
-  await listing
-  poll.flush()
-  expect((await row()).status).toBe('running')
+  expect(await post('UserPromptSubmit')).toBe(204)
 })

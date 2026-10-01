@@ -97,8 +97,7 @@ function lockedThreadIds(names: readonly string[]) {
 }
 
 // Sessions Codex runs outside Argo: each open thread's writer lock names it, and app-server
-// `thread/turns/list` says what its newest Turn is doing (ADR-0047). The status hooks replace it
-// once they fire.
+// `thread/turns/list` says what its newest Turn is doing (ADR-0047). A status hook outranks it.
 export function createCodexExternalSessions(
   request: CodexRequest,
   codexHome: string,

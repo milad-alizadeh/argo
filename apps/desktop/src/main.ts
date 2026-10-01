@@ -418,7 +418,11 @@ function startSessionServices(actors: WindowActors, database: Database, registry
   // An acceptance run installs nothing, so it cannot write the person's own config (ADR-0041).
   const statusHooks = ACCEPTANCE_ENABLED
     ? null
-    : new StatusHookReceiver({ poll: externalSessions, harnesses })
+    : new StatusHookReceiver({
+        poll: externalSessions,
+        harnesses,
+        socketPath: path.join(app.getPath('userData'), 'hooks.sock'),
+      })
   statusHooks?.start().catch((error) => console.warn('Could not start the status hooks:', error))
   return {
     readers,

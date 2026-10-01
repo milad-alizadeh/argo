@@ -1,6 +1,7 @@
 // What a Harness's installed status hooks post to Argo: the payloads in each Harness's fixture,
 // renamed to one Session, sent the way the hook's curl sends them.
-import { readStatusHook, type StatusHookEvent } from '@/harnesses/host/status-hooks'
+import { request } from 'node:http'
+import { readStatusHook } from '@/harnesses/host/status-hooks'
 import type { ExternalSessionHooks } from '@/harnesses/registration'
 import claude from './claude/fixtures/hooks-claude-docs.json' with { type: 'json' }
 import codex from './codex/fixtures/hooks-codex-0.157.0.json' with { type: 'json' }
@@ -40,26 +41,23 @@ export function hookEvent(harness: HookHarness, event: string, nativeId: string)
   return found
 }
 
-// The Argo hook URLs a config's text names, each with its port.
-export const argoHookUrls = (text: string) => [...text.matchAll(/127\.0\.0\.1:(\d+)\/h\/\w+\/\w+/g)]
-
-// Posts one payload to the receiver as the installed hook command does; returns the HTTP status.
-export async function postHook(
-  port: number,
-  harness: string,
-  { event, payload }: { event: string; payload: unknown },
-): Promise<number> {
-  const response = await fetch(`http://127.0.0.1:${port}/h/${harness}/${event}`, {
-    method: 'POST',
-    body: typeof payload === 'string' ? payload : JSON.stringify(payload),
+// Posts one payload to the receiver's socket as the installed hook command does; returns the
+// HTTP status.
+export function postHook(socketPath: string, harness: string, payload: unknown): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const sent = request({ socketPath, method: 'POST', path: `/h/${harness}` }, (response) => {
+      response.resume()
+      resolve(response.statusCode ?? 0)
+    })
+    sent.on('error', reject)
+    sent.end(typeof payload === 'string' ? payload : JSON.stringify(payload))
   })
-  return response.status
 }
 
 // What each event of a fixture Turn reads as: the event, its status and its activity line.
 export function hookReadings(harness: HookHarness, hooks: ExternalSessionHooks, turn: HookTurn) {
   return hookTurn(harness, turn, 'session-1').map(({ event, payload }) => {
-    const reading = readStatusHook(hooks, event as StatusHookEvent, payload)
+    const reading = readStatusHook(hooks, payload)
     return [event, reading?.status, reading?.activity?.label ?? null]
   })
 }
