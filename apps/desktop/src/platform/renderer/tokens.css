@@ -46,11 +46,6 @@
   --color-ticket-done: #5e6ad2;
   --font-sans: "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "Geist Mono Variable", "SF Mono", "Cascadia Mono", Menlo, monospace;
-  --text-code: 13px;
-  /* Supporting facts and compact counts share the one smaller sans rung. */
-  --text-meta: 12px;
-  /* Labels in the fixed navigation rail stay subordinate to a screen's content. */
-  --text-navigation: 11px;
   /* Named on Tailwind's own spacing namespace, so one declaration serves both readers: the Feed
      reaches these through var() for properties no utility expresses, and the Roster reaches the
      same numbers as `gap-tight` and the rest. Named `--space-*` they would still be valid CSS
@@ -135,7 +130,7 @@
      over once the dot is in it. Derived, never nudged, so it follows the type scale. */
   --size-state-dot: 6px;
   --size-session-list-status-cutout: 2px;
-  --spacing-dot-inset: calc((var(--text-body) * 1.45 - var(--size-state-dot)) / 2);
+  --spacing-dot-inset: calc((var(--typography-body-size) * 1.45 - var(--size-state-dot)) / 2);
   /* Half the state dot: what runs under a Session is drawn smaller than the Session's own state,
      in the Session's own column. */
   --size-subagent-dot: 4px;
@@ -153,45 +148,6 @@
    appearances; only the Plan track, a white wash that vanishes on white, is restated. */
 @theme inline {
   --font-heading: var(--font-sans);
-  /* Most product text shares one reading rung. Role and weight create hierarchy. The title is the
-     rare larger step and code uses a 13px technical rung. */
-  --text-title: 18px;
-  --text-title--line-height: 24px;
-  --text-heading: 14px;
-  --text-heading--line-height: 20px;
-  --text-body: 14px;
-  --text-body--line-height: 20px;
-  --text-prose: 14px;
-  --text-prose--line-height: 20px;
-  --text-meta--line-height: 16px;
-  --text-navigation--line-height: 14px;
-  --text-code--line-height: 19px;
-  --text-control: var(--text-body);
-  --text-control--line-height: var(--text-body--line-height);
-  --text-badge: var(--text-meta);
-  /* Generated shadcn primitives keep their rung names but resolve through the app scale. */
-  --text-xs: var(--text-control);
-  --text-xs--line-height: var(--text-control--line-height);
-  --text-sm: var(--text-body);
-  --text-sm--line-height: var(--text-body--line-height);
-  --text-base: var(--text-body);
-  --text-base--line-height: var(--text-body--line-height);
-  --text-title-weight: 500;
-  --text-heading-weight: 500;
-  --text-body-weight: 400;
-  --text-prose-weight: 400;
-  --text-meta-weight: 400;
-  --text-navigation-weight: 400;
-  --text-code-weight: 400;
-  --text-control-weight: 400;
-  --text-title-tracking: normal;
-  --text-heading-tracking: normal;
-  --text-body-tracking: normal;
-  --text-prose-tracking: normal;
-  --text-meta-tracking: normal;
-  --text-navigation-tracking: normal;
-  --text-code-tracking: normal;
-  --text-control-tracking: normal;
   --size-chrome-bar: 52px;
   --size-navigation-rail: 64px;
   --inset-navigation-rail-item-top: calc(
@@ -205,6 +161,9 @@
   --size-navigation-item: 36px;
   --size-navigation-control: 28px;
   --size-icon-control: 16px;
+  --size-icon-meta: var(--size-icon-control);
+  --size-icon-inline: var(--size-icon-control);
+  --size-icon-text: var(--size-icon-control);
   --size-navigation-icon: calc(var(--size-icon-control) * 1.25);
   --color-icon: var(--muted-foreground);
   --size-navigation-control: 40px;
@@ -380,7 +339,7 @@
      Fixed in both appearances, unlike --ticket-label-lean below, which leans the text. */
   --ticket-label-border-mix: 45%;
   --ticket-label-fill-mix: 18%;
-  /* A key column: GitHub's `#607`, and Linear's longer `ENG-1234`, set in --text-body. */
+  /* A key column: GitHub's `#607`, and Linear's longer `ENG-1234`, set in --typography-body-size. */
   --size-ticket-key: 52px;
   --size-ticket-key-long: 80px;
   --size-ticket-age: 32px;
@@ -489,4 +448,40 @@
   --color-plan-track: rgb(0 0 0 / 0.1);
   /* How far label text leans to its colour: GitHub's pale a2eeef measured 6.8:1 on its tint here. */
   --ticket-label-lean: 40%;
+}
+
+:root {
+  /* App reading, control, metadata, and code recipes keep their own complete metrics. */
+  --typography-title-size: 18px;
+  --typography-title-line-height: 24px;
+  --typography-heading-size: 14px;
+  --typography-heading-line-height: 20px;
+  --typography-body-size: 14px;
+  --typography-body-line-height: 20px;
+  --typography-prose-size: 14px;
+  --typography-prose-line-height: 20px;
+  --typography-meta-size: 12px;
+  --typography-meta-line-height: 16px;
+  --typography-navigation-size: 11px;
+  --typography-navigation-line-height: 14px;
+  --typography-code-size: 13px;
+  --typography-code-line-height: 19px;
+  --typography-control-size: var(--typography-body-size);
+  --typography-control-line-height: var(--typography-body-line-height);
+  --typography-title-weight: 500;
+  --typography-heading-weight: 500;
+  --typography-body-weight: 400;
+  --typography-prose-weight: 400;
+  --typography-meta-weight: 400;
+  --typography-navigation-weight: 400;
+  --typography-code-weight: 400;
+  --typography-control-weight: 400;
+  --typography-title-tracking: normal;
+  --typography-heading-tracking: normal;
+  --typography-body-tracking: normal;
+  --typography-prose-tracking: normal;
+  --typography-meta-tracking: normal;
+  --typography-navigation-tracking: normal;
+  --typography-code-tracking: normal;
+  --typography-control-tracking: normal;
 }

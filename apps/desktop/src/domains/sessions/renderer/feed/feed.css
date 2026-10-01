@@ -88,7 +88,7 @@
 .feed-row {
   padding: var(--spacing-tight) var(--spacing-wide);
   /* The body rung the Roster's titles are set in. */
-  font-size: var(--text-body);
+  font-size: var(--typography-body-size);
   /* Rule 8: selection is a layer, and prose is selectable text. */
   user-select: text;
 }
@@ -103,7 +103,7 @@
 .feed-row__label {
   display: block;
   color: var(--color-quiet);
-  font: var(--text-meta) var(--font-mono);
+  font: var(--typography-meta-size) var(--font-mono);
 }
 
 .feed-row__code {
@@ -112,7 +112,7 @@
   border-radius: var(--radius-sm);
   background: var(--color-muted);
   color: var(--color-ink);
-  font: var(--text-code) / var(--text-code--line-height) var(--font-mono);
+  font: var(--typography-code-size) / var(--typography-code-line-height) var(--font-mono);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }

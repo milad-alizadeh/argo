@@ -14,10 +14,11 @@ const markIcon = 'size-(--size-icon-meta) shrink-0'
 type TreeAnchorStyle = CSSProperties & Record<'--ticket-tree-anchor', string>
 const treeAnchor: TreeAnchorStyle = {
   '--ticket-tree-anchor':
-    'calc(var(--spacing-shell-icon) + var(--text-body--line-height) / 2 + 1px)',
+    'calc(var(--spacing-shell-icon) + var(--typography-body-line-height) / 2 + 1px)',
 }
 const sidebarTreeAnchor: TreeAnchorStyle = {
-  '--ticket-tree-anchor': 'calc(var(--spacing-shell-item) + var(--text-body--line-height) / 2)',
+  '--ticket-tree-anchor':
+    'calc(var(--spacing-shell-item) + var(--typography-body-line-height) / 2)',
 }
 // Past this many, the rest of a row's labels are counted rather than drawn.
 const SHOWN_LABELS = 2
@@ -255,7 +256,7 @@ function SidebarTicketRow(props: TicketRowProps) {
       </span>
       <div className="min-w-0 flex-1 py-(--spacing-shell-item)">
         <div className="grid min-w-0 grid-cols-[var(--size-icon-meta)_minmax(0,1fr)] items-start gap-x-(--spacing-shell-tight)">
-          <span className="relative z-10 flex h-(--text-body--line-height) shrink-0 items-center justify-center">
+          <span className="relative z-10 flex h-(--typography-body-line-height) shrink-0 items-center justify-center">
             <StatusMenu
               current={ticket.children.length > 0 ? closedChildren(ticket) : undefined}
               named={false}
@@ -317,7 +318,7 @@ function WorkspaceTicketRow(props: TicketRowProps) {
       >
         {ticket.key}
       </span>
-      <span className="relative z-10 mt-(--spacing-shell-icon) flex h-(--text-body--line-height) shrink-0 translate-y-px items-center gap-(--spacing-shell-tight) type-meta text-muted-foreground tabular-nums">
+      <span className="relative z-10 mt-(--spacing-shell-icon) flex h-(--typography-body-line-height) shrink-0 translate-y-px items-center gap-(--spacing-shell-tight) type-meta text-muted-foreground tabular-nums">
         <StatusMenu
           current={ticket.children.length > 0 ? closedChildren(ticket) : undefined}
           named={false}

@@ -43,7 +43,7 @@ export const AppNavigationRail = memo(function AppNavigationRail() {
     <TooltipProvider>
       <nav
         aria-label={t('rail.label')}
-        className="no-drag-region flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center [--icon-size:var(--size-navigation-icon)] [&_*]:no-drag-region"
+        className="no-drag-region flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center [&_*]:no-drag-region"
       >
         <div className="flex flex-col items-center gap-2 pt-(--inset-navigation-rail-item-top)">
           {DESTINATIONS.map((itemDestination) => {
@@ -61,7 +61,11 @@ export const AppNavigationRail = memo(function AppNavigationRail() {
                     navigate(`${projectPath}${DESTINATION_PATHS[itemDestination]}`)
                   }}
                 >
-                  <Icon name={iconName} weight={active ? 'fill' : 'regular'} />
+                  <Icon
+                    className="size-(--size-navigation-icon)"
+                    name={iconName}
+                    weight={active ? 'fill' : 'regular'}
+                  />
                 </TooltipTrigger>
                 <TooltipContent side="right" className="type-meta">
                   {label}
@@ -77,7 +81,7 @@ export const AppNavigationRail = memo(function AppNavigationRail() {
               aria-label={settingsLabel}
               className="no-drag-region grid size-(--size-navigation-control) place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-selected hover:text-foreground"
             >
-              <Icon name="settings" />
+              <Icon className="size-(--size-navigation-icon)" name="settings" />
             </TooltipTrigger>
             <TooltipContent side="right" className="type-meta">
               {settingsLabel}

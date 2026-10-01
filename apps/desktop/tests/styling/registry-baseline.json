@@ -1,0 +1,40 @@
+{
+  "reviewedAt": "2026-10-01",
+  "cliVersion": "4.21.1",
+  "configuration": {
+    "style": "base-nova",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "iconLibrary": "phosphor",
+    "rsc": false,
+    "tsx": true,
+    "rtl": false,
+    "prefix": ""
+  },
+  "generationTransforms": [
+    "Resolve each registry:ui path through the configured ui alias.",
+    "Keep cn imports from the selected CLI; Vite and Storybook resolve cn through the configured application merger.",
+    "Neither item contains icons or style placeholders requiring substitution.",
+    "Apply repository quote, comma, import ordering and type-only import formatting; preserve declarations and class strings."
+  ],
+  "items": [
+    {
+      "name": "button",
+      "url": "https://ui.shadcn.com/r/styles/base-nova/button.json",
+      "registryTarget": "registry/base-nova/ui/button.tsx",
+      "target": "src/platform/renderer/components/ui/button.tsx",
+      "dependencies": ["cn"],
+      "payloadSha256": "9ba7e870178813f0552b818a913a2792fb500c779e36395740b4973e3025d427",
+      "sourceSha256": "16e5618349292dbe09932788a21a04227783cdf5667b6680200f0579a3bb47ed"
+    },
+    {
+      "name": "input",
+      "url": "https://ui.shadcn.com/r/styles/base-nova/input.json",
+      "registryTarget": "registry/base-nova/ui/input.tsx",
+      "target": "src/platform/renderer/components/ui/input.tsx",
+      "dependencies": ["cn"],
+      "payloadSha256": "bbad1bba130ac9750a61844eeb8f043e8a710846e07689fa85398b80a46c2741",
+      "sourceSha256": "10612b2f3e8b9072a8339dacd0ee737bf81fd99c033da04210e103eaec367ca6"
+    }
+  ]
+}

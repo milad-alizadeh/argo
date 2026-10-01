@@ -70,7 +70,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   color: var(--muted-foreground);
-  font-size: var(--text-control);
+  font-size: var(--typography-control-size);
 }
 
 .session-page__attachment b {
@@ -108,6 +108,6 @@
 }
 .composer-inline-context::after {
   content: attr(data-context-label);
-  font-size: var(--text-prose);
-  line-height: var(--text-prose--line-height);
+  font-size: var(--typography-prose-size);
+  line-height: var(--typography-prose-line-height);
 }

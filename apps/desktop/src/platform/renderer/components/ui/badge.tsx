@@ -8,8 +8,8 @@ const badgeVariants = cva(
   {
     variants: {
       size: {
-        compact: 'h-4 px-1.5 py-0 text-badge leading-4 font-normal',
-        default: 'h-5 px-2 py-0.5 text-badge leading-4',
+        compact: 'h-4 px-1.5 py-0 type-meta',
+        default: 'h-5 px-2 py-0.5 type-meta-heading',
       },
       variant: {
         default: 'bg-primary text-primary-foreground [a]:hover:bg-primary/80',

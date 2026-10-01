@@ -1,0 +1,15 @@
+@layer components {
+  .composer-editor-content h1 {
+    font-size: var(--typography-title-size);
+    line-height: var(--typography-title-line-height);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--typography-title-tracking);
+  }
+
+  .composer-editor-content :is(h2, h3) {
+    font-size: var(--typography-heading-size);
+    line-height: var(--typography-heading-line-height);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--typography-heading-tracking);
+  }
+}

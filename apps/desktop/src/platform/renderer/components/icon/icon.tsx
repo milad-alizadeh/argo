@@ -5,13 +5,14 @@ import { ICONS, type IconName } from './icon-registry'
 
 export type { IconName } from './icon-registry'
 
-type IconSize = 'control' | 'meta' | 'inline' | 'text'
+type IconSize = 'control' | 'meta' | 'inline' | 'text' | 'primitive'
 
 const SIZE_CLASS: Record<IconSize, string> = {
   control: 'size-(--size-icon-control)',
   meta: 'size-(--size-icon-meta)',
   inline: 'size-(--size-icon-inline)',
   text: 'size-(--size-icon-text)',
+  primitive: '',
 }
 
 type IconAccessibility =
@@ -28,13 +29,18 @@ export type IconProps = Omit<
     weight?: IconWeight
   }
 
-// Shared icon styles keep every role consistent across buttons, headers, and metadata.
-export function Icon({ className, name, size, weight = 'regular', ...props }: IconProps) {
+export function Icon({
+  className,
+  name,
+  size = 'control',
+  weight = 'regular',
+  ...props
+}: IconProps) {
   const Glyph = ICONS[name]
   return (
     <Glyph
       aria-hidden={props['aria-label'] === undefined ? true : undefined}
-      className={cn(size && SIZE_CLASS[size], className)}
+      className={cn('shrink-0 text-current', SIZE_CLASS[size], className)}
       data-slot="icon"
       data-icon={name}
       {...props}

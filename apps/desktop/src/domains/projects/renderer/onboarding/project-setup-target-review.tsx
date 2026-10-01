@@ -73,7 +73,7 @@ function CommandList({ commands }: { commands: SetupPlan['targets'][number]['com
       <dl className="mt-2 grid grid-cols-3 gap-2">
         {Object.entries(commands).map(([name, value]) => (
           <div className="min-w-0 rounded-lg border bg-card px-2.5 py-2" key={name}>
-            <dt className="type-caption text-muted-foreground">{name}</dt>
+            <dt className="type-meta text-muted-foreground">{name}</dt>
             <dd>
               <code className="mt-1 block truncate type-code">{value}</code>
             </dd>

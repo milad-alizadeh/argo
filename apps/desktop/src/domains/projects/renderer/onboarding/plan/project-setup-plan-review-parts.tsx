@@ -96,7 +96,7 @@ export function SummaryRow({
 export function Fact({ label, value }: { label: string; value: string }) {
   return (
     <span className="min-w-0 rounded-lg border bg-card px-2.5 py-2">
-      <small className="block type-caption text-muted-foreground">{label}</small>
+      <small className="block type-meta text-muted-foreground">{label}</small>
       <strong className="mt-1 block type-label font-medium">{value}</strong>
     </span>
   )

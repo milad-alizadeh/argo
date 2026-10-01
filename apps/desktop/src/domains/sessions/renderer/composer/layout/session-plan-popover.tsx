@@ -91,7 +91,7 @@ function PlanContent({ steps }: { steps: PlanSteps }) {
     return (
       <PopoverHeader>
         <PopoverTitle>{t('composer.taskPlan.emptyTitle')}</PopoverTitle>
-        <p className="text-meta text-muted-foreground">{t('composer.taskPlan.emptyDescription')}</p>
+        <p className="type-meta text-muted-foreground">{t('composer.taskPlan.emptyDescription')}</p>
       </PopoverHeader>
     )
   }
