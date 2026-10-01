@@ -14,7 +14,11 @@ import {
   retainLiveEvent,
   subagentCompletionRows,
 } from '@/domains/sessions/api/feed'
-import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import {
+  type FeedContent,
+  feedContentSchema,
+  type PlanProgress,
+} from '@/domains/sessions/api/feed-content'
 import { pendingSessionDraft } from '@/domains/sessions/api/pending-session'
 import type { SessionError } from '@/domains/sessions/api/session-error'
 import { sessionError } from '@/domains/sessions/api/session-error'
@@ -59,6 +63,24 @@ function isStreamedText(event: SessionLiveEvent): boolean {
   if (event.type !== 'content') return false
   const { content } = event
   return content.kind === 'reasoning' || (content.kind === 'message' && content.role !== 'user')
+}
+
+// A Plan's step count, when the Feed accepts the Plan.
+function acceptedPlanProgress(content: FeedContent): PlanProgress | undefined {
+  if (content.kind !== 'plan') return undefined
+  const parsed = feedContentSchema.safeParse(content)
+  return parsed.success && parsed.data.kind === 'plan' ? parsed.data.progress : undefined
+}
+
+// The newest accepted Plan's step count; a live event is newer than any history.
+function newestPlanProgress(
+  history: readonly FeedContent[],
+  events: readonly SessionLiveEvent[],
+): PlanProgress | null {
+  const counted = (content: FeedContent) => acceptedPlanProgress(content) !== undefined
+  const live = events.findLast((event) => event.type === 'content' && counted(event.content))
+  const newest = live?.type === 'content' ? live.content : history.findLast(counted)
+  return (newest && acceptedPlanProgress(newest)) ?? null
 }
 
 // Without a live channel, only what vendor history can also settle reaches the Feed.
@@ -288,8 +310,14 @@ class FeedReader {
     })
     if (reading.revision === this.#reading?.revision) return
     this.#reading = reading
-    // Keeps the activity for the Session List after this reader closes.
-    if (subagentId === null) updateSession(this.#context, sessionId, { activity })
+    // Keeps the activity and Plan progress for the Session List after this reader closes. A
+    // reading with no Plan keeps the stored count, since a vendor history may hold none.
+    const planProgress = newestPlanProgress(this.#history, events)
+    if (subagentId === null)
+      updateSession(this.#context, sessionId, {
+        activity,
+        ...(planProgress === null ? {} : { planProgress }),
+      })
     for (const observer of this.#observers) observer(reading)
   }
 }

@@ -6,6 +6,7 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import {
   type CodexChannel,
+  CodexUnavailableError,
   createCodexAppServerClient,
   type WireMessage,
 } from './codex-app-server-client'
@@ -91,6 +92,18 @@ test('cancels executable discovery immediately when the client shuts down', {
   const request = client.request('model/list', {}, (value) => value)
   client.shutdown()
   await assert.rejects(request, /Codex app-server is closed/)
+})
+
+test('names a machine without Codex in the request failure', async () => {
+  const client = createCodexAppServerClient({ resolveExecutable: async () => null })
+  try {
+    await assert.rejects(
+      client.request('thread/list', {}, (value) => value),
+      CodexUnavailableError,
+    )
+  } finally {
+    client.shutdown()
+  }
 })
 
 test('forwards server notifications and responses through the client API', async () => {

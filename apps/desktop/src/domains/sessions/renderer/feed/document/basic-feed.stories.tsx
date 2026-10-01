@@ -5,11 +5,15 @@ import { feedReadingRows } from '@/domains/sessions/api/feed/feed-reading-rows'
 import { projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
 import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import { preloadForStories } from '@/mocks/platform/story-preload'
+import { loadCodeLanguage } from '../../ai-elements'
 import type { SessionError, SessionFeed, SessionFeedRow } from '../../types'
 import { BROKEN_PICTURE, RICH_MARKDOWN, SAMPLE_PICTURE } from '../content/feed-samples'
 import { BackgroundWork, type BackgroundWorkLinks } from '../rows/background-work'
 import { FeedJumpToLatest } from '../rows/feed-jump-to-latest'
 import { BasicFeed } from './basic-feed'
+
+const loadTypeScript = preloadForStories(() => loadCodeLanguage('ts'))
 
 const feed = {
   sessionId: 'prose',
@@ -275,6 +279,7 @@ async function waitForScrollToSettle(history: HTMLElement) {
 // Mounted rows retain their natural content height after images and code highlighting finish.
 export const FormattedProse: Story = {
   args: { feed: richFeed, selectedSessionId: 'rich' },
+  loaders: [loadTypeScript],
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(2))
     const [prompt, answer] = drawnRows(canvasElement)
