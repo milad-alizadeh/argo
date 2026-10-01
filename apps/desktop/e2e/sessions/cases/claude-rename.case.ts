@@ -8,9 +8,9 @@ import { claudeSessions } from '../real-harness/claude-vendor-reader'
 const RENAMED = 'Ticket: fix the Session List badge'
 
 export async function proveClaudeRename(page, { backend, transcripts }) {
-  const prompt = 'Open the rename proof.'
+  const prompt = 'Reply with one short sentence: the rename proof is open.'
   const sessionId = await createSessionByClick(page, { harness: 'claude', prompt })
-  await waitFor(() => backend.recorded({ harness: 'claude', prompt }))
+  await waitFor(() => backend.recorded({ harness: 'claude', prompt }), backend.budgetMs)
 
   const beforeRename = await sessionDetails(page, sessionId)
   assert.equal(beforeRename?.name, prompt)

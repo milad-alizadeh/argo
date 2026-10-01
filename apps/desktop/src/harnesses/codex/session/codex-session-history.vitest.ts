@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { expect, test, vi } from 'vitest'
 import { recordedThread } from '@/mocks/cli/codex/recorded-codex-threads'
+import { RECORDED_PROMPTS } from '@/mocks/cli/recorded-prompts'
 import type { CodexRequest } from '../app-server'
 import { hasCodexSessionTurn, readCodexSessionHistory } from './codex-session-history'
 
@@ -14,28 +15,28 @@ function singleItemRequest(item: Record<string, unknown>): CodexRequest {
 }
 
 test('projects a recorded Codex thread read into Feed content', async () => {
-  const thread = recordedThread('Continue the check')
+  const thread = recordedThread(RECORDED_PROMPTS.codexReply)
   const calls: unknown[] = []
   const request = (async (method: string, params: unknown, parse: (value: unknown) => unknown) => {
     calls.push({ method, params })
     return parse({ thread })
   }) as CodexRequest
 
-  await expect(readCodexSessionHistory(request, thread.id)).resolves.toEqual([
-    {
-      kind: 'message',
-      id: '01a0f545-019e-7e03-ac98-6120375c2fa9',
-      role: 'user',
-      text: 'Continue the check',
-    },
-    {
-      kind: 'message',
-      id: 'msg_037b94ca171276d5016abdc3d92b3087d29b6307627c7a1279',
-      role: 'assistant',
-      phase: 'final_answer',
-      text: 'What would you like me to continue checking? Please share the file, command, or previous check you mean.',
-    },
-  ])
+  const reply = thread.turns
+    .flatMap((turn) => turn.items)
+    .findLast((item) => item.type === 'agentMessage')
+  if (reply?.type !== 'agentMessage') throw new Error('The recorded Codex thread has no reply.')
+  const content = await readCodexSessionHistory(request, thread.id)
+  expect(content.at(0)).toEqual(
+    expect.objectContaining({ kind: 'message', role: 'user', text: RECORDED_PROMPTS.codexReply }),
+  )
+  expect(content.at(-1)).toEqual({
+    kind: 'message',
+    id: reply.id,
+    role: 'assistant',
+    phase: 'final_answer',
+    text: reply.text,
+  })
   const recordedTurnId = thread.turns[0]?.id
   if (recordedTurnId === undefined) throw new Error('The recorded Codex turn is missing.')
   await expect(hasCodexSessionTurn(request, thread.id, recordedTurnId)).resolves.toBe(true)

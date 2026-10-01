@@ -64,21 +64,29 @@ export async function prepareRealSessionHome(root: string, sourceHome: string) {
   return home
 }
 
-function verifyRealSessionAuthentication(executables: Record<RealHarness, string>, home: string) {
+// The environment a real CLI runs in: the throwaway HOME, with no API key to bypass its login.
+export function realHarnessEnvironment(home: string): NodeJS.ProcessEnv {
+  return Object.fromEntries(
+    Object.entries({ ...process.env, HOME: home }).filter(
+      ([name]) => !REAL_HARNESS_UNSET_ENV.includes(name),
+    ),
+  )
+}
+
+export function verifyRealSessionAuthentication(
+  executables: Record<RealHarness, string>,
+  home: string,
+) {
   for (const harness of Object.keys(REAL_HARNESSES) as RealHarness[]) {
     try {
       execFileSync(executables[harness], REAL_HARNESSES[harness].authentication, {
-        env: Object.fromEntries(
-          Object.entries({ ...process.env, HOME: home }).filter(
-            ([name]) => !REAL_HARNESS_UNSET_ENV.includes(name),
-          ),
-        ),
+        env: realHarnessEnvironment(home),
         stdio: 'pipe',
       })
     } catch (error) {
       const output = error instanceof Error && 'stderr' in error ? String(error.stderr).trim() : ''
       throw new Error(
-        `${REAL_HARNESSES[harness].label} authentication is unavailable. Sign in and run e2e:real again.${output ? `\n${output}` : ''}`,
+        `${REAL_HARNESSES[harness].label} authentication is unavailable. Sign in and try again.${output ? `\n${output}` : ''}`,
       )
     }
   }

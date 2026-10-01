@@ -4,6 +4,7 @@ import type { Database } from '@/database/database'
 import { sessionCommandTable } from '@/database/session/command-schema'
 import { hasCodexSessionTurn } from '@/harnesses/codex/session'
 import { recordedThread, threadReadRequest } from '@/mocks/cli/codex/recorded-codex-threads'
+import { RECORDED_PROMPTS } from '@/mocks/cli/recorded-prompts'
 import { migratedDatabase } from '@/mocks/database/migrated-database'
 import {
   bindSessionCommand,
@@ -60,7 +61,7 @@ test('records only command control facts and prevents a duplicate vendor call', 
 })
 
 test('restart checks a recorded Codex turn before resolving an uncertain send', async () => {
-  const thread = recordedThread('Continue the check')
+  const thread = recordedThread(RECORDED_PROMPTS.codexReply)
   const turnId = thread.turns[0]?.id
   if (turnId === undefined) throw new Error('Recorded Codex turn missing.')
   const codexCommand = { ...command, harness: 'codex' as const, nativeId: thread.id }

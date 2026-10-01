@@ -3,6 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { setTimeout } from 'node:timers/promises'
 import type { Page } from 'playwright-core'
 import { mockCodexStateFile } from '../../../mocks/cli/codex/mock-codex-cli'
+import { RECORDED_PROMPTS } from '../../../mocks/cli/recorded-prompts'
 import { fixtureSessionId } from '../../../mocks/sessions/mock-transcript-files'
 import { CODEX_PARENT } from '../fixtures/feed.fixture'
 import { refreshSessions } from '../gestures'
@@ -23,12 +24,14 @@ async function renameInCodexDesktop(root: string) {
 
 async function sessionListName(page: Page) {
   const rows = await sessionRows(page)
-  const named = rows.find((session) => session.name === 'Run Codex check' || session.name === NAME)
+  const named = rows.find(
+    (session) => session.name === RECORDED_PROMPTS.codexCommand || session.name === NAME,
+  )
   return named?.name ?? null
 }
 
 export async function proveCodexThreadName(page: Page, root: string) {
-  assert.equal(await sessionListName(page), 'Run Codex check')
+  assert.equal(await sessionListName(page), RECORDED_PROMPTS.codexCommand)
   await renameInCodexDesktop(root)
   // Argo reads the name from the Harness's thread list, which a sync asks for.
   await refreshSessions(page)

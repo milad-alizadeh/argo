@@ -34,7 +34,7 @@ test('lists and reads a thread it started beside the recorded ones', async () =>
     const listed = (await client.request('thread/list', {}, identity)) as {
       data: { id: string }[]
     }
-    const recorded = recordedCall('thread/list').result as { data: { id: string }[] }
+    const recorded = recordedCall('thread/list').result
     assert.deepEqual(
       listed.data.map((thread) => thread.id),
       [threadId, ...recorded.data.map((thread) => thread.id)],

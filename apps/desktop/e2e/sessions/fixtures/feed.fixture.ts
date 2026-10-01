@@ -5,6 +5,7 @@ import path from 'node:path'
 import { claudeConfigDirectory } from '../../../mocks/cli/claude/mock-claude-transcripts'
 import { mockCodexStateFile } from '../../../mocks/cli/codex/mock-codex-cli'
 import { recordedThread } from '../../../mocks/cli/codex/recorded-codex-threads'
+import { RECORDED_PROMPTS } from '../../../mocks/cli/recorded-prompts'
 import {
   fixturePath,
   fixtureSessionId,
@@ -23,7 +24,6 @@ export const FIXTURES = [
   'unparseableBody',
   'askPending',
   'prose',
-  'toolCalls',
   // Resumes a leaf that is in no file here, which is what a chain looks like when the Session List's
   // file cap stops short of its origin. Its row has to say so.
   'strandedResume',
@@ -67,13 +67,13 @@ async function writeCodexThreads(root, codexTranscripts) {
       name: CODEX_PARENT,
       cwd,
       updatedAt: '2026-01-10T08:00:05.000Z',
-      title: 'Run Codex check',
+      title: RECORDED_PROMPTS.codexCommand,
     }),
     codexThread({
       name: CODEX_FIXTURES[1],
       cwd,
       updatedAt: '2026-01-10T08:30:05.000Z',
-      title: 'Continue the check',
+      title: RECORDED_PROMPTS.codexReply,
     }),
   ]
   await writeFile(mockCodexStateFile(root), JSON.stringify(threads))

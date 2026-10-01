@@ -1,7 +1,6 @@
 // The stored history the mock app-server answers with: the real CLI's recorded answers, plus the
 // threads this process started. No rollout file or state store is read.
 import type { ThreadReadResponse } from '@/harnesses/codex/app-server'
-import type { RecordedCall } from '../recorded-calls.ts'
 import { recordedCall, recordedCalls } from './recorded-codex-threads.ts'
 
 type Request = { id?: unknown; method?: string; params?: Record<string, unknown> }
@@ -10,7 +9,7 @@ type StoredThread = ThreadReadResponse['thread']
 
 // A recorded thread, its first Turn and that Turn's prompt: the shapes a started thread copies.
 function recordedTemplates() {
-  const thread = (recordedCall('thread/read').result as ThreadReadResponse).thread
+  const thread = recordedCall('thread/read').result.thread
   const turn = thread.turns[0]
   const prompt = turn?.items.find((item) => item.type === 'userMessage')
   if (turn === undefined || prompt === undefined)
@@ -21,11 +20,8 @@ const templates = recordedTemplates()
 
 const started = new Map<string, StoredThread>()
 
-function recordedAnswer(method: string, threadId: unknown): RecordedCall | undefined {
-  return recordedCalls.find(
-    (call) =>
-      call.method === method && (threadId === undefined || call.params.threadId === threadId),
-  )
+function recordedAnswer(method: 'thread/read' | 'thread/turns/list', threadId: unknown) {
+  return recordedCalls(method).find((call) => call.params.threadId === threadId)?.result
 }
 
 const now = () => Math.floor(Date.now() / 1000)
@@ -81,11 +77,9 @@ function promptText(input: unknown): string {
 }
 
 function listThreads() {
-  const listed = recordedAnswer('thread/list', undefined)?.result as
-    | { data: { updatedAt: number }[] }
-    | undefined
+  const listed = recordedCall('thread/list').result
   const summaries = [...started.values()].map(({ turns: _turns, ...summary }) => summary)
-  const data = [...summaries, ...(listed?.data ?? [])].sort(
+  const data = [...summaries, ...listed.data].sort(
     (left, right) => right.updatedAt - left.updatedAt,
   )
   return { ...listed, data }
@@ -94,7 +88,7 @@ function listThreads() {
 function readThread(threadId: unknown) {
   const thread = typeof threadId === 'string' ? started.get(threadId) : undefined
   if (thread !== undefined) return { thread }
-  return recordedAnswer('thread/read', threadId)?.result
+  return recordedAnswer('thread/read', threadId)
 }
 
 // A poll asks for `limit` newest Turns; a Feed read asks for all of them.
@@ -102,7 +96,7 @@ function listTurns(threadId: unknown, limit: unknown) {
   const thread = typeof threadId === 'string' ? started.get(threadId) : undefined
   const newest = typeof limit === 'number' ? thread?.turns.slice(-limit) : thread?.turns
   if (newest !== undefined) return { data: newest, nextCursor: null }
-  return recordedAnswer('thread/turns/list', threadId)?.result
+  return recordedAnswer('thread/turns/list', threadId)
 }
 
 function answer(message: Request, send: Send, result: unknown) {

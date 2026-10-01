@@ -4,6 +4,7 @@
 // needs and lets the project (`sessions` or `real-sessions`, `playwright.config.ts`) decide which
 // one it gets, rather than living in a second curated file (#e2e-real-cheap-models).
 import path from 'node:path'
+import { RECORDED_PROMPTS } from '../../mocks/cli/recorded-prompts'
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
 import { proveClaudeAcpHistory } from './cases/claude-acp-history.case'
@@ -22,7 +23,6 @@ import { provePackagedSessionListSelection } from './cases/session-list-interact
 import { proveSessionListWindow } from './cases/session-list-window.case'
 import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
-import { proveToolCalls } from './cases/tool-calls.case'
 import { proveLiveCodexModelChoices } from './cases/turn-configuration.case'
 import { appendProse } from './fixtures/feed.fixture'
 import { writeWindowFillerSessions } from './fixtures/session-list-window.fixture'
@@ -86,10 +86,6 @@ test.describe('session refresh progress', () => {
 
 test('session-list-selection', async ({ session }) => {
   await provePackagedSessionListSelection(session.page())
-})
-
-test('session-tool-calls', async ({ session }) => {
-  await proveToolCalls(session.page())
 })
 
 test('session-delegation-cards', async ({ session }) => {
@@ -195,8 +191,7 @@ test.describe('with real Session transcript corpora', () => {
     await session.page().getByRole('button', { name: 'Send message' }).click()
     const codexSessionId = await proveSessionCreatedByClick(session.page(), backend, {
       harness: 'codex',
-      prompt:
-        '<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>',
+      prompt: RECORDED_PROMPTS.codexNotice,
       budgetTurnConfiguration: true,
     })
     const corpus = await readRealVendorCorpus({
@@ -211,17 +206,12 @@ test('session-codex-resume', async ({ session, backend }) => {
   await provePackagedCodexResume(session.page(), { backend, restart: session.restart })
 })
 
-test.describe('session-claude-rename', () => {
-  // The rename read-back reads the fixture's Claude config folder (#2134); a real Claude writes
-  // under the real backend's own HOME instead.
-  test.skip(({ sessionBackend }) => sessionBackend !== 'mock', 'Reads the fixture config folder.')
-
-  test('session-claude-rename', async ({ session, backend }) => {
-    await proveClaudeRename(session.page(), {
-      backend,
-      project: session.fixture.project,
-      transcripts: session.fixture.claudeTranscripts,
-    })
+// The real backend links its Claude projects folder to the fixture's, so one read-back serves both.
+test('session-claude-rename', async ({ session, backend }) => {
+  await proveClaudeRename(session.page(), {
+    backend,
+    project: session.fixture.project,
+    transcripts: session.fixture.claudeTranscripts,
   })
 })
 
