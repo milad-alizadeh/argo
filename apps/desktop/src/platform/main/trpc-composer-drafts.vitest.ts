@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, realpath, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
@@ -9,18 +9,17 @@ import { composerDraft } from '@/database/composer-draft/schema'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
-import { workspace } from '@/database/workspace/schema'
 import {
   type LiveSessionSupervisorActor,
   SessionSubmitRejectedError,
 } from '@/domains/sessions/main/live'
-import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
+import { createOwnedWorktree } from '@/domains/sessions/main/worktree'
 import { migratedDatabase } from '@/mocks/database/migrated-database'
+import { addLinkedWorktree, initFixtureRepo } from '@/mocks/projects/worktree-repo.fixture'
 import { type AppRouterDependencies, createAppRouter } from './trpc-router'
 
 const projectId = 'project-1'
 const run = promisify(execFile)
-const workspaceId = 'workspace-1'
 const content = {
   prompt: 'Keep this thought.',
   attachments: [{ kind: 'file' as const, path: '/repo/notes.md' }],
@@ -29,24 +28,18 @@ const content = {
 }
 
 let userData: string
+// The Project's main checkout, a real git repository.
+let repository: string
 let database: Database
+const mainTarget = { type: 'project' as const, projectId, worktree: 'main', harness: 'codex' as const }
 
 beforeEach(async () => {
-  userData = await mkdtemp(path.join(os.tmpdir(), 'argo-composer-draft-'))
+  userData = await realpath(await mkdtemp(path.join(os.tmpdir(), 'argo-composer-draft-')))
+  repository = (await initFixtureRepo(userData)).project
   database = migratedDatabase()
   database
     .insert(project)
-    .values({ id: projectId, path: '/repo', commonDirectory: '/repo/.git' })
-    .run()
-  database
-    .insert(workspace)
-    .values({
-      id: workspaceId,
-      projectId,
-      kind: 'main',
-      displayName: 'Main checkout',
-      path: userData,
-    })
+    .values({ id: projectId, path: repository, commonDirectory: path.join(repository, '.git') })
     .run()
 })
 
@@ -62,9 +55,9 @@ function caller(send: LiveSessionSupervisorActor['send'] = () => {}) {
     sessions: {
       database,
       supervisor: { send } as LiveSessionSupervisorActor,
-      ensureManagedWorkspace: (projectId: string, draftId: string) =>
+      createOwnedWorktree: (projectId: string, draftId: string) =>
         exclusive(() =>
-          ensureManagedWorkspace({
+          createOwnedWorktree({
             database,
             projectId,
             draftId,
@@ -73,14 +66,13 @@ function caller(send: LiveSessionSupervisorActor['send'] = () => {}) {
         ),
       acceptsAttachments: (harness: string) => harness !== 'claude',
     },
-    workspaces: { database, exclusive },
   } as unknown as AppRouterDependencies
   return createAppRouter(dependencies).createCaller({})
 }
 
 async function createProjectDraft() {
   return caller().composerDraftCreate({
-    target: { type: 'project', projectId, workspaceId, harness: 'codex' },
+    target: mainTarget,
     content,
   })
 }
@@ -104,8 +96,7 @@ function addSession(sessionId: string, overrides: Partial<typeof sessionTable.$i
       harness: 'codex',
       nativeId: `native-${sessionId}`,
       projectId,
-      workspaceId,
-      cwd: userData,
+      cwd: repository,
       ...overrides,
     })
     .run()
@@ -142,27 +133,10 @@ test('creates, reads, saves, and rejects a stale draft revision', async () => {
 })
 
 test('saves a Project draft target without changing its content and sends from that target', async () => {
-  database
-    .insert(workspace)
-    .values({
-      id: 'workspace-2',
-      projectId,
-      kind: 'imported',
-      displayName: 'Selected worktree',
-      path: os.tmpdir(),
-    })
-    .run()
+  const linked = await addLinkedWorktree(repository)
   const draftContent = { ...content, attachments: [] }
-  const created = await caller().composerDraftCreate({
-    target: { type: 'project', projectId, workspaceId, harness: 'codex' },
-    content: draftContent,
-  })
-  const target = {
-    type: 'project' as const,
-    projectId,
-    workspaceId: 'workspace-2',
-    harness: 'claude' as const,
-  }
+  const created = await caller().composerDraftCreate({ target: mainTarget, content: draftContent })
+  const target = { type: 'project' as const, projectId, worktree: linked, harness: 'claude' as const }
   const saved = await caller().composerDraftSave({
     id: created.id,
     expectedRevision: created.revision,
@@ -192,7 +166,11 @@ test('saves a Project draft target without changing its content and sends from t
     commandId: 'target-only-command',
   })
   expect(submitted).toMatchObject({
-    input: { harness: 'claude', workspaceId: 'workspace-2', cwd: os.tmpdir() },
+    input: {
+      harness: 'claude',
+      worktree: { path: linked, branch: 'feature', owned: false },
+      cwd: linked,
+    },
   })
 })
 
@@ -207,7 +185,7 @@ test('rejects invalid stored draft JSON at the database interface', async () => 
   await expect(caller().composerDraftRead(created.target)).rejects.toThrow()
 })
 
-test('resolves the Workspace path in main and deletes an accepted new-Session draft', async () => {
+test('resolves the main checkout in main and deletes an accepted new-Session draft', async () => {
   const created = await createProjectDraft()
   let submitted: unknown
   const api = caller((event) => {
@@ -217,32 +195,23 @@ test('resolves the Workspace path in main and deletes an accepted new-Session dr
     event.reply.resolve({ sessionId: 'session-1' })
   })
 
-  await expect(submitCreated(api, created)).resolves.toEqual({ sessionId: 'session-1' })
+  await expect(submitCreated(api, created)).resolves.toEqual({
+    sessionId: 'session-1',
+    worktreeGone: null,
+  })
   expect(submitted).toMatchObject({
     pendingId: `optimistic:${created.id}:${created.revision}`,
-    input: { cwd: userData, projectId, workspaceId, prompt: content.prompt },
+    input: { cwd: repository, projectId, worktree: null, prompt: content.prompt },
   })
   await expect(api.composerDraftRead(created.target)).resolves.toBeNull()
 })
 
-test('creates the selected new worktree before starting a Session', async () => {
-  const repository = path.join(userData, 'repository')
-  await run('git', ['init', '--initial-branch=main', repository])
-  await run('git', ['-C', repository, 'config', 'user.name', 'Argo Test'])
-  await run('git', ['-C', repository, 'config', 'user.email', 'argo-test@example.invalid'])
-  await writeFile(path.join(repository, 'README.md'), 'test repository\n')
-  await run('git', ['-C', repository, 'add', 'README.md'])
-  await run('git', ['-C', repository, 'commit', '-m', 'Initial commit'])
-  database
-    .update(project)
-    .set({ path: repository, commonDirectory: path.join(repository, '.git') })
-    .where(eq(project.id, projectId))
-    .run()
+test('creates the owned worktree a new draft asks for before starting a Session', async () => {
   const created = await caller().composerDraftCreate({
-    target: { type: 'project', projectId, workspaceId: null, harness: 'codex' },
+    target: { ...mainTarget, worktree: 'new' },
     content: { ...content, attachments: [] },
   })
-  let submitted: unknown
+  let submitted: { worktree: unknown; cwd: string } | undefined
   const api = caller((event) => {
     if (event.type !== 'Start') throw new Error(`Unexpected event: ${event.type}`)
     submitted = event.input
@@ -254,14 +223,14 @@ test('creates the selected new worktree before starting a Session', async () => 
       expectedRevision: created.revision,
       commandId: 'new-worktree-command',
     }),
-  ).resolves.toEqual({ sessionId: 'session-new-worktree' })
-  const managed = database.select().from(workspace).where(eq(workspace.kind, 'managed')).get()
-  expect(managed).toBeDefined()
-  expect(submitted).toMatchObject({ workspaceId: managed?.id, cwd: managed?.path })
+  ).resolves.toEqual({ sessionId: 'session-new-worktree', worktreeGone: null })
+  expect(submitted?.worktree).toEqual({
+    path: submitted?.cwd,
+    branch: expect.stringMatching(/^argo\/session-/),
+    owned: true,
+  })
   expect(
-    (
-      await run('git', ['-C', managed?.path ?? '', 'rev-parse', '--abbrev-ref', 'HEAD'])
-    ).stdout.trim(),
+    (await run('git', ['-C', submitted?.cwd ?? '', 'rev-parse', '--abbrev-ref', 'HEAD'])).stdout.trim(),
   ).toMatch(/^argo\/session-/)
   await expect(api.composerDraftRead(created.target)).resolves.toBeNull()
 })
@@ -278,15 +247,22 @@ test('retains a newer draft revision when the accepted Session loses the delete 
     event.reply.resolve({ sessionId: 'session-1' })
   })
 
-  await expect(submitCreated(api, created)).resolves.toEqual({ sessionId: 'session-1' })
+  await expect(submitCreated(api, created)).resolves.toEqual({
+    sessionId: 'session-1',
+    worktreeGone: null,
+  })
   await expect(api.composerDraftRead(created.target)).resolves.toMatchObject({
     prompt: 'A newer thought.',
     revision: created.revision + 1,
   })
 })
 
-test('retains a new-Session draft after submission fails or its Workspace folder is gone', async () => {
-  const created = await createProjectDraft()
+test('retains a new-Session draft after submission fails or its chosen worktree is gone', async () => {
+  const linked = await addLinkedWorktree(repository)
+  const created = await caller().composerDraftCreate({
+    target: { ...mainTarget, worktree: linked },
+    content,
+  })
   let starts = 0
   const api = caller((event) => {
     starts += 1
@@ -295,8 +271,8 @@ test('retains a new-Session draft after submission fails or its Workspace folder
 
   await expect(submitCreated(api, created)).rejects.toThrow('Harness failed.')
   await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
-  await rm(userData, { recursive: true, force: true })
-  await expect(submitCreated(api, created)).rejects.toThrow('workspace-missing')
+  await rm(linked, { recursive: true, force: true })
+  await expect(submitCreated(api, created)).rejects.toThrow('folder-missing')
   expect(starts).toBe(1)
   await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
 })
@@ -318,27 +294,13 @@ test('rejects stale submission before the Session supervisor receives it', async
   expect(submissions).toBe(0)
 })
 
-test('rejects a Workspace that does not belong to the draft Project', async () => {
-  database
-    .insert(project)
-    .values({ id: 'project-2', path: '/other', commonDirectory: '/other/.git' })
-    .run()
-  database
-    .insert(workspace)
-    .values({
-      id: 'workspace-2',
-      projectId: 'project-2',
-      kind: 'main',
-      displayName: 'Other checkout',
-      path: '/other',
-    })
-    .run()
+test('rejects a folder that is not a worktree of the draft Project', async () => {
   let submissions = 0
   const api = caller(() => {
     submissions += 1
   })
   const created = await api.composerDraftCreate({
-    target: { type: 'project', projectId, workspaceId: 'workspace-2', harness: 'codex' },
+    target: { ...mainTarget, worktree: userData },
     content,
   })
 
@@ -348,7 +310,7 @@ test('rejects a Workspace that does not belong to the draft Project', async () =
       expectedRevision: created.revision,
       commandId: 'command-1',
     }),
-  ).rejects.toThrow('workspace-not-in-project')
+  ).rejects.toThrow('folder-missing')
   expect(submissions).toBe(0)
   await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
 })
@@ -383,8 +345,7 @@ test('submits and removes an existing-Session Turn draft', async () => {
         harness: 'codex',
         nativeId: 'native-session-1',
         projectId,
-        workspaceId,
-        cwd: userData,
+        cwd: repository,
       },
     },
   })
@@ -392,7 +353,10 @@ test('submits and removes an existing-Session Turn draft', async () => {
 })
 
 test('retains an existing-Session Turn draft when the supervisor rejects it or its folder is gone', async () => {
-  const created = await createSessionDraft('session-1')
+  const folder = path.join(userData, 'session-folder')
+  await mkdir(folder)
+  addSession('session-1', { cwd: folder })
+  const created = await caller().composerDraftCreate({ target: sessionTarget('session-1'), content })
   const api = caller((event) => {
     if (event.type !== 'Send') throw new Error(`Unexpected event: ${event.type}`)
     event.reply.reject(new Error('Turn failed.'))
@@ -400,9 +364,51 @@ test('retains an existing-Session Turn draft when the supervisor rejects it or i
 
   await expect(submitCreated(api, created)).rejects.toThrow('Turn failed.')
   await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
-  await rm(userData, { recursive: true, force: true })
-  await expect(submitCreated(api, created)).rejects.toThrow('workspace-missing')
+  await rm(folder, { recursive: true, force: true })
+  await expect(submitCreated(api, created)).rejects.toThrow('folder-missing')
   await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
+})
+
+// Claude Code's rule: https://code.claude.com/docs/en/worktrees
+test.each([
+  'claude',
+  'codex',
+] as const)('a %s Session whose worktree is gone continues in the main checkout and drops the worktree', async (harness) => {
+  const gone = path.join(userData, 'removed-worktree')
+  addSession('session-1', {
+    harness,
+    cwd: gone,
+    worktreePath: gone,
+    worktreeBranch: 'argo/session-gone',
+    worktreeOwned: true,
+  })
+  const created = await caller().composerDraftCreate({
+    target: sessionTarget('session-1'),
+    content: { ...content, attachments: [] },
+  })
+  let resumedIn: string | undefined
+  const api = caller((event) => {
+    if (event.type !== 'Send') throw new Error(`Unexpected event: ${event.type}`)
+    resumedIn = event.input.resume.cwd
+    event.reply.resolve({ sessionId: 'session-1' })
+  })
+
+  await expect(submitCreated(api, created)).resolves.toEqual({
+    sessionId: 'session-1',
+    worktreeGone: gone,
+  })
+  expect(resumedIn).toBe(repository)
+  expect(
+    database
+      .select({
+        cwd: sessionTable.cwd,
+        worktreePath: sessionTable.worktreePath,
+        worktreeBranch: sessionTable.worktreeBranch,
+        worktreeOwned: sessionTable.worktreeOwned,
+      })
+      .from(sessionTable)
+      .get(),
+  ).toEqual({ cwd: repository, worktreePath: null, worktreeBranch: null, worktreeOwned: null })
 })
 
 test('reports a definite supervisor rejection and retains the Turn draft', async () => {
@@ -465,7 +471,7 @@ test('keeps Session drafts independent and rejects moving one to another owner',
     api.composerDraftSave({
       id: first.id,
       expectedRevision: saved.revision,
-      target: { type: 'project', projectId, workspaceId, harness: 'codex' },
+      target: mainTarget,
       content,
     }),
   ).rejects.toThrow('draft-target-cannot-change')
@@ -506,7 +512,7 @@ test('round-trips every Session draft content field through SQLite', async () =>
   expect(database.select().from(composerDraft).get()).toMatchObject({
     projectId: null,
     sessionId: 'session-1',
-    workspaceId: null,
+    worktreeChoice: null,
     harness: null,
   })
 })
@@ -592,7 +598,7 @@ test('keeps a Session draft present until main accepts the command', async () =>
   await vi.waitFor(() => expect(accept).toBeDefined())
   await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
   accept?.({ sessionId: 'session-1' })
-  await expect(submission).resolves.toEqual({ sessionId: 'session-1' })
+  await expect(submission).resolves.toEqual({ sessionId: 'session-1', worktreeGone: null })
   await expect(api.composerDraftRead(created.target)).resolves.toBeNull()
 })
 
@@ -616,7 +622,7 @@ test('retains a newer Session revision when an accepted Turn loses the delete ra
       expectedRevision: created.revision,
       commandId: 'delete-race-command',
     }),
-  ).resolves.toEqual({ sessionId: 'session-1' })
+  ).resolves.toEqual({ sessionId: 'session-1', worktreeGone: null })
   await expect(api.composerDraftRead(created.target)).resolves.toMatchObject({
     prompt: 'Written while submit was pending.',
     revision: created.revision + 1,

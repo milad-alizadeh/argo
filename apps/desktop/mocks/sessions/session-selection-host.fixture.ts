@@ -26,11 +26,12 @@ function projectReply(request: StorybookTrpcRequest): StorybookTrpcResponse | nu
       return success([project])
     case 'projectOpen':
       return success(project)
-    case 'workspaceList':
+    case 'worktreeList':
       return success({
-        type: 'workspace.listed',
+        type: 'worktree.listed',
         requestId: '00000000-0000-4000-8000-000000000001',
-        workspaces: [],
+        choice: 'new',
+        worktrees: [],
       })
     default:
       return null

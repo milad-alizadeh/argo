@@ -88,6 +88,8 @@ type SessionHostOptions = {
   // The recorded history every Feed of the story reads.
   feed?: FeedRead
   live?: readonly SessionLiveEvent[]
+  // What each archived Session's owned worktree holds; none by default, so archive asks nothing.
+  worktreeWork?: () => Promise<RouterOutputs['sessionWorktreeWork']>
 }
 
 // Called, it restores the window and clears the query cache, so a story's `beforeEach` returns it.
@@ -173,7 +175,7 @@ function storedRows(initial: readonly Session[], changeReaders: Set<ChangeReader
 // Feeds. Rows belong to whichever Project the list reads, copied as IPC would copy them.
 export function installSessionHost(
   initial: readonly Session[],
-  { list, update, feed, live }: SessionHostOptions = {},
+  { list, update, feed, live, worktreeWork }: SessionHostOptions = {},
 ): SessionHost {
   const before = window.argo
   queryClient.clear()
@@ -211,6 +213,8 @@ export function installSessionHost(
       }
       case 'sessionUpdate':
         return { result: { data: await applyUpdate(request.input as SessionUpdate) } }
+      case 'sessionWorktreeWork':
+        return { result: { data: (await worktreeWork?.()) ?? { worktrees: [] } } }
       default:
         return before.trpc(request)
     }

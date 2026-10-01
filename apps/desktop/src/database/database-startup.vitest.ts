@@ -21,7 +21,6 @@ test('starts a clean database with every ordered migration', async () => {
       expect.arrayContaining([
         { name: '__drizzle_migrations' },
         { name: 'project' },
-        { name: 'workspace' },
         { name: 'composer_draft' },
         { name: 'session_ticket_link' },
         { name: 'session' },
@@ -56,6 +55,7 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20260930123904_session_sort_order' },
       { name: '20261001044322_drop_session_sync_status' },
       { name: '20261001155229_session_turn_configuration' },
+      { name: '20261001215510_session_worktree' },
     ])
     expect(
       database
@@ -108,10 +108,8 @@ test('rebuilds disposable full-text search without deleting durable rows', async
       .prepare('INSERT INTO project (id, path, common_directory) VALUES (?, ?, ?)')
       .run('project-1', '/tmp/project', '/tmp/project/.git')
     database
-      .prepare(
-        'INSERT INTO workspace (id, project_id, kind, display_name, path) VALUES (?, ?, ?, ?, ?)',
-      )
-      .run('workspace-1', 'project-1', 'main', 'Main checkout', '/tmp/project')
+      .prepare('INSERT INTO session (argo_id, harness, native_id, project_id) VALUES (?, ?, ?, ?)')
+      .run('session-1', 'codex', 'native-1', 'project-1')
     database
       .prepare('INSERT INTO session_search (harness, session_id, content) VALUES (?, ?, ?)')
       .run('codex', 'session-1', 'A disposable search record')
@@ -119,7 +117,7 @@ test('rebuilds disposable full-text search without deleting durable rows', async
     rebuildDatabaseIndexes(opened, migrationsFolder)
 
     expect(database.prepare('SELECT id FROM project').all()).toEqual([{ id: 'project-1' }])
-    expect(database.prepare('SELECT id FROM workspace').all()).toEqual([{ id: 'workspace-1' }])
+    expect(database.prepare('SELECT argo_id FROM session').all()).toEqual([{ argo_id: 'session-1' }])
     expect(database.prepare('SELECT content FROM session_search').all()).toEqual([])
     database.close()
   } finally {

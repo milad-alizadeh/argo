@@ -1,4 +1,5 @@
-// A Send that never reaches the Harness shows its reason and keeps the draft, for every Harness.
+// A new Session's chosen folder that is gone refuses the Send and keeps the draft; a saved Session
+// whose worktree is gone continues in the main checkout, as Claude Code does. Both hold for every Harness.
 import { execFile } from 'node:child_process'
 import path from 'node:path'
 import { promisify } from 'node:util'
@@ -9,15 +10,17 @@ import { chooseHarness, openNewSessionByClick, sessionListIds } from '../gesture
 import type { SessionHarnessBackend } from '../session-harness-backend'
 
 const run = promisify(execFile)
-const WORKSPACE_MISSING =
+const FOLDER_MISSING =
   'The work location folder no longer exists, so the Turn was not sent. Choose another work location. Your draft is still saved.'
+
+const WORKTREE_GONE = /The worktree .+ is gone, so this Session now works in the main checkout\./
 
 export function git(folder: string, args: string[]) {
   const identity = ['-c', 'user.name=Argo', '-c', 'user.email=argo@example.invalid']
   return run('git', ['-C', folder, ...identity, ...args])
 }
 
-// A reload is how a person gets the Workspace list read again before its refetch interval.
+// A reload is how a person gets the worktree list read again before its refetch interval.
 export async function reload(page: Page) {
   await page.reload()
   await page.waitForFunction(() => typeof window.argo?.trpc === 'function')
@@ -74,7 +77,7 @@ async function proveOne(page: Page, project: string, harness: Harness) {
   const worktree = await composeInNewWorktree(page, { project, name }, harness)
   await git(project, ['worktree', 'remove', '--force', worktree])
 
-  await sendRefused(page, `Reply from the removed ${harness} worktree.`, WORKSPACE_MISSING)
+  await sendRefused(page, `Reply from the removed ${harness} worktree.`, FOLDER_MISSING)
 
   await reload(page)
   await openNewSessionByClick(page)
@@ -85,7 +88,7 @@ async function proveOne(page: Page, project: string, harness: Harness) {
   await page.keyboard.press('Escape')
 }
 
-// A saved Session whose folder was removed refuses the resume the same way.
+// A saved Session whose worktree was removed resumes in the main checkout and says so.
 async function proveResume(
   page: Page,
   { project, backend }: { project: string; backend: SessionHarnessBackend },
@@ -105,7 +108,10 @@ async function proveResume(
     .toHaveLength(1)
   await git(project, ['worktree', 'remove', '--force', worktree])
 
-  await sendRefused(page, `Reply again from the removed ${harness} worktree.`, WORKSPACE_MISSING)
+  const again = `Reply again from the removed ${harness} worktree.`
+  await sendReplacingDraft(page, again)
+  await expect(page.getByText(WORKTREE_GONE)).toBeVisible()
+  await backend.waitForReply(page, { harness, prompt: again })
 }
 
 export async function proveRemovedWorkLocation(

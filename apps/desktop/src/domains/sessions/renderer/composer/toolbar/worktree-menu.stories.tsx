@@ -1,60 +1,51 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import type { WorkspaceSummary } from '@/domains/workspaces/renderer'
-import { WorkspaceMenu } from './workspace-menu'
+import type { WorktreeSummary } from './use-worktree-choices'
+import { WorktreeMenu } from './worktree-menu'
 
-const WORKSPACE_CANDIDATES: [WorkspaceSummary, WorkspaceSummary] = [
+const WORKTREE_CANDIDATES: [WorktreeSummary, WorktreeSummary] = [
+  { path: '/Users/milad/Developer/argo', main: true, name: 'argo', branch: 'main' },
   {
-    id: 'workspace-main',
-    kind: 'main',
-    displayName: 'argo',
-    path: '/Users/milad/Developer/argo',
-    facts: { branch: 'main', headSha: 'abc1234', dirty: false },
-  },
-  {
-    id: 'workspace-imported',
-    kind: 'imported',
-    displayName: 'linked-feature',
-    path: '/Users/milad/Developer/argo-linked',
-    facts: { branch: 'feature/linked', headSha: 'def5678', dirty: true },
+    path: '/Users/milad/Developer/linked-feature',
+    main: false,
+    name: 'linked-feature',
+    branch: 'feature/linked',
   },
 ]
 
-function WorkspaceStory({
+function WorktreeStory({
   initialChoice = 'new',
   saveFailed = false,
 }: {
   initialChoice?: string
   saveFailed?: boolean
 }) {
-  const [selectedId, setSelectedId] = useState(initialChoice)
-  const selected = WORKSPACE_CANDIDATES.find((candidate) => candidate.id === selectedId) ?? null
+  const [choice, setChoice] = useState(initialChoice)
 
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
-      <WorkspaceMenu
-        choice={selectedId}
-        onSelect={setSelectedId}
+      <WorktreeMenu
+        choice={choice}
+        onSelect={setChoice}
         saveFailed={saveFailed}
-        workspace={selected}
-        workspaces={WORKSPACE_CANDIDATES}
+        worktrees={WORKTREE_CANDIDATES}
       />
     </div>
   )
 }
 
 const meta = {
-  title: 'Sessions/Composer/Workspace Menu',
-  component: WorkspaceStory,
-} satisfies Meta<typeof WorkspaceStory>
+  title: 'Sessions/Composer/Worktree Menu',
+  component: WorktreeStory,
+} satisfies Meta<typeof WorktreeStory>
 
 export default meta
-type Story = StoryObj<typeof WorkspaceStory>
+type Story = StoryObj<typeof WorktreeStory>
 
 const page = () => within(document.body)
 
-export const WorkspacePicker: Story = {
+export const WorktreePicker: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: 'Work location: New worktree' })
@@ -95,7 +86,7 @@ export const WorkspacePicker: Story = {
 }
 
 export const MainCheckout: Story = {
-  args: { initialChoice: 'workspace-main' },
+  args: { initialChoice: 'main' },
   play: async ({ canvasElement }) => {
     const trigger = within(canvasElement).getByRole('button', { name: 'Work location: main' })
     await expect(trigger).toBeVisible()
@@ -113,7 +104,7 @@ export const NoMatches: Story = {
 }
 
 export const UnavailableChoice: Story = {
-  args: { initialChoice: 'missing-workspace', saveFailed: true },
+  args: { initialChoice: '/Users/milad/Developer/removed', saveFailed: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(

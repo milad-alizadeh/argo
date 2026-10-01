@@ -5,6 +5,7 @@ export const project = sqliteTable('project', {
   id: text().primaryKey(),
   path: text().notNull(),
   commonDirectory: text('common_directory').notNull().unique(),
-  lastWorkspaceChoice: text('last_workspace_choice').notNull().default('new'),
+  // The new-Session folder last chosen: 'new', 'main', or an existing worktree's path.
+  lastWorktreeChoice: text('last_worktree_choice').notNull().default('new'),
   ...timestampColumns(),
 })

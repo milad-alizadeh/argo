@@ -190,7 +190,7 @@ async function idsIn(
 }
 
 test('archiving moves known Sessions to the archived filter and back, skipping an unknown ID', async () => {
-  const { database, list, update, details, reapRequests } = callerWithOneSession()
+  const { database, list, update, details, removalRequests } = callerWithOneSession()
   try {
     assert.deepEqual(await idsIn(list, 'active'), [IDS[0]])
 
@@ -201,13 +201,23 @@ test('archiving moves known Sessions to the archived filter and back, skipping a
     assert.deepEqual(await idsIn(list, 'active'), [])
     assert.deepEqual(await idsIn(list, 'archived'), [IDS[0]])
     assert.deepEqual(await idsIn(list, 'all'), [IDS[0]])
-    assert.equal(reapRequests(), 1)
+    assert.deepEqual(removalRequests, [{ sessionIds: [IDS[0]], removal: 'clean' }])
 
     await update({ sessionIds: [IDS[0]], archived: false })
     assert.equal((await details({ sessionId: IDS[0] }))?.archived, false)
-    assert.equal(reapRequests(), 1)
+    assert.equal(removalRequests.length, 1)
     assert.deepEqual(await idsIn(list, 'active'), [IDS[0]])
     assert.deepEqual(await idsIn(list, 'archived'), [])
+  } finally {
+    database.$client.close()
+  }
+})
+
+test('an archive the person confirmed with Remove asks to remove every owned worktree', async () => {
+  const { database, update, removalRequests } = callerWithOneSession()
+  try {
+    await update({ sessionIds: [IDS[0]], archived: true, worktrees: 'all' })
+    assert.deepEqual(removalRequests, [{ sessionIds: [IDS[0]], removal: 'all' }])
   } finally {
     database.$client.close()
   }

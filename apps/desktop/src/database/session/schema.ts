@@ -1,7 +1,7 @@
-import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { sql } from 'drizzle-orm'
+import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { project } from '@/database/project/schema'
 import { timestampColumns } from '@/database/timestamp-columns'
-import { workspace } from '@/database/workspace/schema'
 import type { PlanProgress } from '@/domains/sessions/api/feed-content'
 import type { ReportedTurnConfiguration } from '@/domains/sessions/api/reported-turn-configuration'
 import { SESSION_STATUSES } from '@/domains/sessions/api/session-live-event'
@@ -13,7 +13,11 @@ export const sessionTable = sqliteTable(
     harness: text('harness').notNull(),
     nativeId: text('native_id').notNull(),
     projectId: text('project_id').references(() => project.id, { onDelete: 'set null' }),
-    workspaceId: text('workspace_id').references(() => workspace.id, { onDelete: 'set null' }),
+    // The linked worktree the Session runs in; all null when it runs in the Project's main checkout.
+    worktreePath: text('worktree_path'),
+    worktreeBranch: text('worktree_branch'),
+    // True when Argo made the worktree, so archiving the Session can remove it.
+    worktreeOwned: integer('worktree_owned', { mode: 'boolean' }),
     customTitle: text('custom_title'),
     preview: text('preview'),
     firstPrompt: text('first_prompt'),
@@ -36,5 +40,9 @@ export const sessionTable = sqliteTable(
   (table) => [
     uniqueIndex('session_harness_native').on(table.harness, table.nativeId),
     index('session_list_order').on(table.projectId, table.sortOrder, table.createdAt, table.argoId),
+    check(
+      'session_worktree',
+      sql`(${table.worktreePath} IS NULL) = (${table.worktreeOwned} IS NULL)`,
+    ),
   ],
 )

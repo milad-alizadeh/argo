@@ -6,7 +6,7 @@ What no linter checks about `apps/desktop`. The surfaces are
 ## Naming
 
 Call the Electron application Argo Desktop. Name internal parts for their role, such as `AppShell`,
-`ProjectsState`, and `WorkspaceState`. Use `Cockpit` for historical references to the deprecated
+`ProjectsState`, and `WorktreeChoiceState`. Use `Cockpit` for historical references to the deprecated
 Swift app or earlier decisions.
 
 ## Session adapters

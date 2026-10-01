@@ -49,6 +49,17 @@
   (`claude | codex | …`), native ID, Project, and **`cwd`**. Facts from a live channel are DIRECT.
   Facts read later from vendor history are vendor-sourced.
 
+  A Session has **`0..1` worktree**: a `path`, a `branch`, and whether Argo **owns** it. With no
+  worktree, the Session runs in its Project's main checkout. Argo owns a worktree it created for
+  the Session, and no other draft is offered it. A linked worktree the person made elsewhere is
+  **imported**: two Sessions may share it. Argo never removes an imported worktree or the main
+  checkout. Argo follows [Claude Code's cleanup rule](https://code.claude.com/docs/en/worktrees)
+  for an owned worktree on archive (ADR-0049): a clean worktree goes with its branch; one with
+  changed files or commits on no other branch asks Keep, Remove or Cancel; one Argo cannot read
+  asks the same and says what it could not check; and none is removed while its Session has a
+  Turn in progress. When a Session's worktree folder is gone at open or resume, the Session
+  continues in the main checkout, the person is told, and the worktree is cleared.
+
 - **Custom title** — one reader-chosen name shared by Argo and the vendor. The Harness reads it
   through the vendor interface. An authoritative vendor read can change or clear it. A future
   Argo rename writes through the vendor and stores its confirmed value. The displayed name is the
@@ -111,5 +122,5 @@
   neither draws no control for them at all.
 
 - **`SessionFacts` — dissolved, not an entity.** git facts (`dirty/unpushed/headSha`) →
-  **Workspace**; code-host facts (`pr/ci/review`) → **Delivery**; liveness/mode → **Session
+  **Checkout**; code-host facts (`pr/ci/review`) → **Delivery**; liveness/mode → **Session
   status/Mode**.

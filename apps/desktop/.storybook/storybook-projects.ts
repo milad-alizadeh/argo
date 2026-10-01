@@ -3,16 +3,16 @@ import type { RouterOutputs } from '../src/platform/renderer/trpc-client'
 type ProjectListReply = RouterOutputs['projectList']
 type ProjectOpenReply = RouterOutputs['projectOpen']
 type ProjectRelocateReply = RouterOutputs['projectRelocate']
-type WorkspaceReply = RouterOutputs['workspaceList']
-type WorkspaceChooseReply = RouterOutputs['workspaceChoose']
+type WorktreeReply = RouterOutputs['worktreeList']
+type WorktreeChooseReply = RouterOutputs['worktreeChoose']
 
 type StorybookProjectProcedures = {
   projectOpen: (request: { projectId: string }) => Promise<ProjectOpenReply>
   projectList: () => Promise<ProjectListReply>
   projectRegister: () => Promise<ProjectListReply>
   projectRelocate: (request: { projectId: string }) => Promise<ProjectRelocateReply>
-  workspaceList: (request: { projectId: string }) => Promise<WorkspaceReply>
-  workspaceChoose: (request: { projectId: string; choice: string }) => Promise<WorkspaceChooseReply>
+  worktreeList: (request: { projectId: string }) => Promise<WorktreeReply>
+  worktreeChoose: (request: { projectId: string; choice: string }) => Promise<WorktreeChooseReply>
 }
 
 const primaryProject = { id: 'storybook-project', name: 'argo', path: '/storybook/argo' }
@@ -23,22 +23,14 @@ const secondaryProject = {
 }
 const projects = [primaryProject, secondaryProject]
 
-const workspaces = [
-  {
-    id: 'storybook-workspace-main',
-    kind: 'main' as const,
-    displayName: 'Main checkout',
-    path: '/storybook/argo',
-    facts: { branch: 'main', headSha: 'storybook-sha', dirty: false },
-  },
-]
+const worktrees = [{ path: '/storybook/argo', main: true, name: 'argo', branch: 'main' }]
 
-function workspacesListed() {
+function worktreesListed() {
   return {
-    type: 'workspace.listed' as const,
-    requestId: 'storybook-workspaces',
+    type: 'worktree.listed' as const,
+    requestId: 'storybook-worktrees',
     choice: 'new',
-    workspaces,
+    worktrees,
   }
 }
 
@@ -47,6 +39,6 @@ export const storybookProjectProcedures: StorybookProjectProcedures = {
   projectOpen: () => Promise.resolve(primaryProject),
   projectRegister: () => Promise.resolve(projects),
   projectRelocate: () => Promise.resolve(secondaryProject),
-  workspaceList: () => Promise.resolve(workspacesListed()),
-  workspaceChoose: ({ choice }) => Promise.resolve({ choice }),
+  worktreeList: () => Promise.resolve(worktreesListed()),
+  worktreeChoose: ({ choice }) => Promise.resolve({ choice }),
 }

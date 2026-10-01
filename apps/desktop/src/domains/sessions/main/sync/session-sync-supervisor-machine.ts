@@ -75,11 +75,12 @@ type SyncActorEvent =
     }
 
 // Saves Harness summaries under their matched Projects, and announces the Sessions they touched.
-function saveSummaries(
+async function saveSummaries(
   { database, changes, harness }: Pick<SessionSyncActorInput, 'database' | 'changes' | 'harness'>,
   summaries: readonly SessionSummary[],
-): void {
-  changes.changed(saveSessionBatch(database, harness, matchSessionsToProjects(database, summaries)))
+): Promise<void> {
+  const matched = await matchSessionsToProjects(database, summaries)
+  changes.changed(saveSessionBatch(database, harness, matched))
 }
 
 type DiscoverFinished = {
@@ -121,7 +122,7 @@ const sessionSyncActor = fromCallback<
     sessionSyncMachine.provide({
       actors: {
         save: fromPromise(async ({ input: saveInput }) => {
-          saveSummaries(input, saveInput.records)
+          await saveSummaries(input, saveInput.records)
         }),
       },
     }),
@@ -184,9 +185,7 @@ const sessionDiscoverActor = fromCallback<
       const summary = await getSessionSummary(nativeId)
       if (stopped) return
       if (summary !== null) {
-        saveSummaries(input, [
-          summary,
-        ])
+        await saveSummaries(input, [summary])
         stored = true
       }
     } catch (error) {

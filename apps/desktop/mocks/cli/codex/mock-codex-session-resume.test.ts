@@ -34,7 +34,6 @@ test('sends a follow-up Turn to a Codex Session this window does not hold yet', 
       harness: 'codex',
       nativeId,
       projectId: mockStartInput.projectId,
-      workspaceId: mockStartInput.workspaceId,
       cwd: mockStartInput.cwd,
     },
   }

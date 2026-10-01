@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import path from 'node:path'
 import { test } from 'node:test'
-import { addLinkedWorktree, workspaceRepoFixture } from '@/mocks/projects/workspace-repo.fixture'
+import { addLinkedWorktree, worktreeRepoFixture } from '@/mocks/projects/worktree-repo.fixture'
 import { gitCommonDirectory, linkedWorktreePaths, mainWorktreePath } from './git-worktrees'
 
 test('reads the main worktree back from its own common directory', async (context) => {
-  const { project } = await workspaceRepoFixture(context)
+  const { project } = await worktreeRepoFixture(context)
 
   const common = await gitCommonDirectory(project)
 
@@ -14,7 +14,7 @@ test('reads the main worktree back from its own common directory', async (contex
 })
 
 test('lists a linked worktree by its real path, not by name', async (context) => {
-  const { project } = await workspaceRepoFixture(context)
+  const { project } = await worktreeRepoFixture(context)
   const linked = await addLinkedWorktree(project)
 
   const common = await gitCommonDirectory(project)
@@ -24,7 +24,7 @@ test('lists a linked worktree by its real path, not by name', async (context) =>
 })
 
 test('reports no linked worktrees for a checkout that has none', async (context) => {
-  const { project } = await workspaceRepoFixture(context)
+  const { project } = await worktreeRepoFixture(context)
 
   const common = await gitCommonDirectory(project)
 
@@ -32,7 +32,7 @@ test('reports no linked worktrees for a checkout that has none', async (context)
 })
 
 test('reads a linked worktree own common directory as the main checkout own', async (context) => {
-  const { project } = await workspaceRepoFixture(context)
+  const { project } = await worktreeRepoFixture(context)
   const linked = await addLinkedWorktree(project)
 
   const common = await gitCommonDirectory(linked)

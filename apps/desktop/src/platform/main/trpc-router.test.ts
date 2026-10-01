@@ -28,9 +28,9 @@ function testRouter(
     ...sessionRouterDependencies({} as never, {
       supervisor: sessionActor,
       refreshSessionSync,
-      ensureManagedWorkspace: async () => ({
-        id: 'test-workspace',
+      createOwnedWorktree: async () => ({
         path: '/tmp/argo-test-worktrees',
+        branch: 'argo/session-test',
       }),
       acceptsAttachments: () => true,
       chooseAttachmentFiles: async () => [],

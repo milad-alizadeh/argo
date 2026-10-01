@@ -17,11 +17,7 @@ import {
 } from '@/domains/sessions/main/api/session-update'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live'
 import { saveReadTicket } from '@/domains/tickets/main/database/ticket-upsert'
-import {
-  insertProject,
-  insertWorkspace,
-  migratedDatabase,
-} from '@/mocks/database/migrated-database'
+import { insertProject, migratedDatabase } from '@/mocks/database/migrated-database'
 import type { AppRouter } from '@/platform/main/trpc-router'
 
 export const IDS = [
@@ -75,7 +71,7 @@ export function sessionListCaller({
   const mock = mockSupervisor(sessions)
   const changes = new SessionListChanges()
   const renames: RenameRequest[] = []
-  let reapRequests = 0
+  const removalRequests: Parameters<SessionUpdateProcedureContext['removeOwnedWorktrees']>[0][] = []
   const context = {
     database,
     supervisor: supervisor ?? (mock.supervisor as never),
@@ -85,8 +81,8 @@ export function sessionListCaller({
       renames.push(request)
       await rename(request)
     },
-    reapManagedWorkspaces: () => {
-      reapRequests += 1
+    removeOwnedWorktrees: (input: (typeof removalRequests)[number]) => {
+      removalRequests.push(input)
     },
   }
   const stopWatching = watchSessionList(context)
@@ -115,7 +111,7 @@ export function sessionListCaller({
     stopWatching,
     statusChanged: mock.statusChanged,
     renames,
-    reapRequests: () => reapRequests,
+    removalRequests,
   }
 }
 
@@ -139,7 +135,7 @@ export function liveSession(
   }
 }
 
-// Saves one Session, and its Project and Workspace, with the stored columns a test names.
+// Saves one Session, and its Project, with the stored columns a test names.
 export function insertSession(
   database: Database,
   {
@@ -150,7 +146,6 @@ export function insertSession(
 ) {
   const projectId = values.projectId ?? 'project-1'
   insertProject(database, projectId)
-  if (values.workspaceId != null) insertWorkspace(database, values.workspaceId, projectId)
   database
     .insert(sessionTable)
     .values({

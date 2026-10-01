@@ -13,7 +13,7 @@ async function draftHarness(page: Page) {
   const draft = await trpcCall<{ target: { harness?: string } } | null>(page, {
     path: 'composerDraftRead',
     type: 'query',
-    input: { type: 'project', projectId, workspaceId: null, harness: 'claude' },
+    input: { type: 'project', projectId, worktree: 'new', harness: 'claude' },
   })
   return draft?.target.harness ?? null
 }

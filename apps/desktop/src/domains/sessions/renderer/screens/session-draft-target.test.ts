@@ -1,18 +1,13 @@
 import { expect, test } from 'bun:test'
-import type { WorkspaceState } from '@/domains/workspaces/renderer'
+import type { WorktreeChoiceState } from '../composer/toolbar/use-worktree-choices'
 import { draftTarget } from './session-draft-target'
 
-const main = {
-  id: 'workspace-main',
-  kind: 'main' as const,
-  displayName: 'Main checkout',
-  path: '/project',
-  facts: { branch: 'main', headSha: 'abc123', dirty: false },
-}
-const workspace: WorkspaceState = {
-  workspaces: [main],
-  workspace: main,
-  choice: main.id,
+const worktrees: WorktreeChoiceState = {
+  worktrees: [
+    { path: '/project', main: true, name: 'project', branch: 'main' },
+    { path: '/feature', main: false, name: 'feature', branch: 'feature' },
+  ],
+  choice: 'new',
   saveFailed: false,
 }
 const input = {
@@ -21,12 +16,15 @@ const input = {
   projectId: 'project-one',
 }
 
-test('starts a new worktree only for the explicit New worktree choice', () => {
-  expect(
-    draftTarget({ ...input, workspace: { ...workspace, workspace: null, choice: 'new' } }),
-  ).toMatchObject({ workspaceId: null })
-  expect(draftTarget({ ...input, workspace })).toMatchObject({ workspaceId: main.id })
-  expect(
-    draftTarget({ ...input, workspace: { ...workspace, workspace: null, choice: main.id } }),
-  ).toBeNull()
+test('a new Session draft names a new worktree, the main checkout, or an offered linked worktree', () => {
+  for (const choice of ['new', 'main', '/feature'])
+    expect(draftTarget({ ...input, worktrees: { ...worktrees, choice } })).toMatchObject({
+      worktree: choice,
+    })
+})
+
+test('a new Session draft has no target until its choice is listed', () => {
+  expect(draftTarget({ ...input, worktrees: { ...worktrees, choice: null } })).toBeNull()
+  expect(draftTarget({ ...input, worktrees: { ...worktrees, choice: '/gone' } })).toBeNull()
+  expect(draftTarget({ ...input, worktrees: { ...worktrees, choice: '/project' } })).toBeNull()
 })

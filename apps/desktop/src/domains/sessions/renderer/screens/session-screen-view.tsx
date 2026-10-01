@@ -78,8 +78,8 @@ function composerFor(model: ReturnType<typeof useSessionScreenModel>) {
       selectedSessionId={model.selectedSessionId}
       sessionLoaded={model.sessionLoaded}
       projectState={model.projectState}
-      workspaceActions={model.workspaceActions}
-      workspaceState={model.workspaceState}
+      worktreeActions={model.worktreeActions}
+      worktreeState={model.worktreeState}
       onStartingSession={model.onStartingSession}
     />
   )
@@ -110,7 +110,7 @@ export function SessionScreenView() {
         composer={composerFor(model)}
         headerControls={<WorkButtons model={model} />}
         session={session}
-        workspaceIdentity={model.workspaceIdentity}
+        branch={model.branch}
         inspector={<Inspector model={model} />}
         inspectorBar={<InspectorBar model={model} />}
         defaultInspectorCollapsed={true}

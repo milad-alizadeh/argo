@@ -88,7 +88,7 @@ function savedProjectDraft(harness: Harness): DraftValue {
     target: {
       type: 'project',
       projectId: 'project-1',
-      workspaceId: 'workspace-1',
+      worktree: 'main',
       harness,
     },
   }
@@ -295,14 +295,14 @@ function DraftOwnerControls({
   onSession,
   onReload,
   onScreenReload,
-  onWorkspace,
+  onWorktree,
   onHarness,
 }: {
   project: boolean
   onSession: (sessionId: string) => void
   onReload: () => void
   onScreenReload: () => void
-  onWorkspace: () => void
+  onWorktree: () => void
   onHarness: () => void
 }) {
   return (
@@ -324,8 +324,8 @@ function DraftOwnerControls({
       </button>
       {project ? (
         <>
-          <button onClick={onWorkspace} type="button">
-            Workspace 2
+          <button onClick={onWorktree} type="button">
+            Linked worktree
           </button>
           <button onClick={onHarness} type="button">
             Harness Codex
@@ -478,7 +478,7 @@ function useRestoreProjectDraftStory(input: {
   restoredProjectId: string | null
   loadedTarget: DraftTarget | null | undefined
   harness: Harness
-  setWorkspaceId: (workspaceId: string) => void
+  setWorktree: (worktree: string) => void
   setHarness: (harness: Harness) => void
   setRestoredProjectId: (projectId: string) => void
 }) {
@@ -487,7 +487,7 @@ function useRestoreProjectDraftStory(input: {
     restoredProjectId,
     loadedTarget,
     harness,
-    setWorkspaceId,
+    setWorktree,
     setHarness,
     setRestoredProjectId,
   } = input
@@ -498,7 +498,7 @@ function useRestoreProjectDraftStory(input: {
       return
     }
     if (loadedTarget.type !== 'project') return
-    setWorkspaceId(loadedTarget.workspaceId ?? 'new')
+    setWorktree(loadedTarget.worktree)
     if (harness !== loadedTarget.harness) {
       setHarness(loadedTarget.harness)
       return
@@ -509,7 +509,7 @@ function useRestoreProjectDraftStory(input: {
     restoredProjectId,
     loadedTarget,
     harness,
-    setWorkspaceId,
+    setWorktree,
     setHarness,
     setRestoredProjectId,
   ])
@@ -525,12 +525,12 @@ function DurableDraftScreen({
   onReloadScreen: () => void
 }) {
   const [sessionId, setSessionId] = useState('session-a')
-  const [workspaceId, setWorkspaceId] = useState('workspace-1')
+  const [worktree, setWorktree] = useState('main')
   const [harness, setHarness] = useState<Harness>('claude')
   const [composerVersion, setComposerVersion] = useState(0)
   const [restoredProjectId, setRestoredProjectId] = useState<string | null>(null)
   const target: DraftTarget = project
-    ? { type: 'project', projectId: 'project-1', workspaceId, harness }
+    ? { type: 'project', projectId: 'project-1', worktree, harness }
     : { type: 'session', sessionId }
   const targetRestored = !project || restoredProjectId === 'project-1'
   const currentChoices = harness === 'codex' ? codexChoices : choices
@@ -546,7 +546,7 @@ function DurableDraftScreen({
     restoredProjectId,
     loadedTarget,
     harness,
-    setWorkspaceId,
+    setWorktree,
     setHarness,
     setRestoredProjectId,
   })
@@ -560,7 +560,7 @@ function DurableDraftScreen({
           onSession={setSessionId}
           onReload={() => setComposerVersion((version) => version + 1)}
           onScreenReload={onReloadScreen}
-          onWorkspace={() => setWorkspaceId('workspace-2')}
+          onWorktree={() => setWorktree('/repo-linked')}
           onHarness={() => setHarness('codex')}
         />
         <DraftTimingControls server={server} />
@@ -1045,9 +1045,9 @@ export const ProjectTargetChangesWithoutTextPersistForSend: Story = {
     const canvas = within(canvasElement)
     const editor = await canvas.findByLabelText('Message')
     await expect(editor).toHaveTextContent('Plan this change.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Workspace 2' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Linked worktree' }))
     const store = canvas.getByLabelText('Stored drafts')
-    await waitFor(() => expect(store).toHaveTextContent('"workspaceId":"workspace-2"'))
+    await waitFor(() => expect(store).toHaveTextContent('"worktree":"/repo-linked"'))
     await expect(store).toHaveTextContent('"harness":"claude"')
     await userEvent.click(canvas.getByRole('button', { name: 'Harness Codex' }))
     await waitFor(() => expect(store).toHaveTextContent('"revision":2'))
@@ -1055,7 +1055,7 @@ export const ProjectTargetChangesWithoutTextPersistForSend: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Reload screen' }))
     await waitFor(() =>
       expect(canvas.getByLabelText('Current target')).toHaveTextContent(
-        '"workspaceId":"workspace-2"',
+        '"worktree":"/repo-linked"',
       ),
     )
     await expect(canvas.getByLabelText('Current target')).toHaveTextContent('"harness":"codex"')
@@ -1063,7 +1063,7 @@ export const ProjectTargetChangesWithoutTextPersistForSend: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
     await waitFor(() =>
       expect(canvas.getByLabelText('Submitted target')).toHaveTextContent(
-        '"workspaceId":"workspace-2"',
+        '"worktree":"/repo-linked"',
       ),
     )
     await expect(canvas.getByLabelText('Submitted target')).toHaveTextContent('"harness":"codex"')

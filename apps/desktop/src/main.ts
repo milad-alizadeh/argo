@@ -14,7 +14,7 @@ import {
   harnessSignInExpiresAfterMs,
 } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
-import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
+import { isWorkingStatus, sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import {
   clearWorkingStatuses,
   ExternalSessionPoll,
@@ -35,6 +35,10 @@ import {
   SessionInteractionBroker,
 } from '@/domains/sessions/main/live'
 import type { SessionSyncSupervisorActor } from '@/domains/sessions/main/sync'
+import {
+  createOwnedWorktree,
+  removeOwnedWorktrees,
+} from '@/domains/sessions/main/worktree'
 import {
   failInterruptedTicketSearches,
   markInterruptedTicketScans,
@@ -58,8 +62,6 @@ import {
   ticketSyncTiming,
 } from '@/domains/tickets/main/sync'
 import { projectTicketScope } from '@/domains/tickets/main/ticket-connection'
-import { reapManagedWorkspaces } from '@/domains/workspaces/main'
-import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { harnessSchema } from '@/harnesses/harness'
 import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
 import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
@@ -236,16 +238,17 @@ function routerForWindow(options: {
     },
     sessions: {
       database,
-      ensureManagedWorkspace: (projectId, draftId) =>
+      createOwnedWorktree: (projectId, draftId) =>
         exclusive(() =>
-          ensureManagedWorkspace({
+          createOwnedWorktree({
             database,
             projectId,
             draftId,
             worktreeRoot: path.join(app.getPath('userData'), 'worktrees'),
           }),
         ),
-      reapManagedWorkspaces: () => reapManagedWorktrees(database, actors),
+      removeOwnedWorktrees: (input) => queueWorktreeRemoval(database, actors, input),
+      exclusive,
       rename: ({ harness, nativeId, title }) => {
         const rename = registry[harness].rename
         if (rename === undefined) throw new Error(`${harness} Session renaming is unavailable.`)
@@ -263,7 +266,6 @@ function routerForWindow(options: {
       sessionSync: actors.sessionSync,
     },
     tickets: ticketProcedureContext({ database, actors, domains }),
-    workspaces: { database, exclusive },
   })
 }
 
@@ -392,13 +394,28 @@ function liveChannelCheck(actors: WindowActors) {
   }
 }
 
-const managedWorktreeReaps = createWriteQueue()
+// True while a live channel is mid-Turn, or about to start one, for the Session.
+function turnRunningCheck(actors: WindowActors) {
+  return (sessionId: string) => {
+    const snapshot = liveSessionActorFor(actors.sessions, sessionId)?.getSnapshot()
+    if (snapshot === undefined || snapshot.matches('Failed') || snapshot.matches('Closed'))
+      return false
+    const status = snapshot.context.status
+    return !snapshot.matches('Ready') || (status !== null && isWorkingStatus(status))
+  }
+}
 
-// One sweep at a time, so two never race to remove the same worktree.
-function reapManagedWorktrees(database: Database, actors: WindowActors): void {
-  void managedWorktreeReaps(() =>
-    reapManagedWorkspaces({ database, hasLiveChannel: liveChannelCheck(actors) }),
-  ).catch((error) => console.error('Managed worktree removal failed.', error))
+// One removal at a time, so two archives never race over the same worktree.
+const ownedWorktreeChanges = createWriteQueue()
+
+function queueWorktreeRemoval(
+  database: Database,
+  actors: WindowActors,
+  input: Parameters<typeof removeOwnedWorktrees>[1],
+): void {
+  void ownedWorktreeChanges(() =>
+    removeOwnedWorktrees({ database, isRunning: turnRunningCheck(actors) }, input),
+  ).catch((error) => console.error('Owned worktree removal failed.', error))
 }
 
 // The Session services the app runs once, not per window: one set of Feed readers, the Session
@@ -597,7 +614,6 @@ async function ready(actor: AppActor): Promise<void> {
     console.error('Ticket write intent recovery failed.', error),
   )
   sessionServices = startSessionServices(requireWindowActors(actor), applicationDatabase, registry)
-  reapManagedWorktrees(applicationDatabase, requireWindowActors(actor))
   createWindow({ actor, database: applicationDatabase, registry, sessionServices })
 
   if (ACCEPTANCE_ENABLED) {

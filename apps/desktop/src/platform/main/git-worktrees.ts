@@ -1,5 +1,5 @@
 // The one reader of a Project's `.git` layout: the common git directory, and the raw paths of the
-// main worktree and every linked one. Session scoping (project-scope.ts) and Workspace discovery
+// main worktree and every linked one. Session scoping (project-scope.ts) and worktree discovery
 // both build on this rather than each walking `.git` and `worktrees/*/gitdir` by hand.
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'

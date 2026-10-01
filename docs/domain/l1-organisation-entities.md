@@ -8,17 +8,11 @@
   Project. One active Project per window; the known set lives in the per-machine database. The
   Session list can also show all known Sessions, including those with no Project (ADR-0015
   amendment). The **only entity in the L1 triangle that Argo owns rather than observes**
-  (Account is owned too, but sits outside it). Owns a **Workspace registry**: one durable record
-  for the main checkout and one for each linked worktree, whether externally created
-  (**imported**) or created by Argo (**managed**) —
-  **id is stable, path is a mutable attribute**, the same id-vs-path split as Project's own.
-  Reconciliation against git happens when Workspaces are listed. A new-Session draft names a
-  Workspace or requests a new worktree. The Project remembers the last location choice for a new
-  Session, defaulting to a new worktree. Argo removes only a **managed** worktree and its branch,
-  at launch and after an archive, once it is clean, holds no commit that no other branch or remote
-  holds, has no live channel, and either its Sessions are all archived or its pushed branch is in
-  the remote default branch. The record stays for the Sessions that name it. See L3 · Workspace for the live git facts an Agent reads
-  from the checkout a record points to.
+  (Account is owned too, but sits outside it). Argo keeps no registry of the Project's
+  checkouts; git lists the main checkout and each linked worktree when a draft asks. A new-Session
+  draft names a **new worktree**, the **main checkout**, or an existing linked worktree, and the
+  Project remembers the last choice, defaulting to a new worktree. A worktree another Session
+  owns is not offered. See L2 · Session for the worktree a Session owns and when Argo removes it.
 
 - **Account** — one authenticated identity with a provider: **one OAuth grant, one token in the
   OS keychain**, keyed by the **provider's own stable id** for it (login/workspace name is a

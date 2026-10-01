@@ -9,6 +9,7 @@ import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { useObservedFeedReading } from '../feed'
 import type { Session, SessionId } from '../types'
 import { useSessionListFocus, useSessionListSelection } from './hooks/use-session-list-selection'
+import { type ArchiveQuestion, type HeldWorktree, SessionArchiveDialog } from './session-archive-dialog'
 import { SessionListHeader } from './session-list-header'
 import { SessionListOutcome, type SessionListState } from './session-list-outcome'
 import { useSessionListFilter, useSessionListQuery, useSettledSearch } from './session-list-query'
@@ -53,10 +54,18 @@ function sessionListState(
   return count === 0 ? 'empty' : 'ready'
 }
 
+type WorktreeRemoval = 'clean' | 'all'
+
 // The ids main updated (#2194), or null when the update failed and its reason was shown.
-async function updateArchived(toasts: Toasts, sessionIds: SessionId[], archived: boolean) {
+async function updateArchived(
+  toasts: Toasts,
+  sessionIds: SessionId[],
+  archived: boolean,
+  worktrees?: WorktreeRemoval,
+) {
   try {
-    return (await trpcClient.sessionUpdate.mutate({ sessionIds, archived })).sessionIds
+    const update = worktrees === 'all' ? { sessionIds, archived, worktrees } : { sessionIds, archived }
+    return (await trpcClient.sessionUpdate.mutate(update)).sessionIds
   } catch (error) {
     toasts.add({
       title: toasts.t('bulkSelect.failure'),
@@ -78,8 +87,8 @@ async function restoreSessions(toasts: Toasts, sessionIds: SessionId[]) {
   })
 }
 
-async function archiveSessions(toasts: Toasts, sessionIds: SessionId[]) {
-  const applied = await updateArchived(toasts, sessionIds, true)
+async function archiveSessions(toasts: Toasts, sessionIds: SessionId[], worktrees: WorktreeRemoval) {
+  const applied = await updateArchived(toasts, sessionIds, true, worktrees)
   if (applied === null) return
   const { add, t } = toasts
   if (applied.length > 0)
@@ -98,6 +107,37 @@ async function archiveSessions(toasts: Toasts, sessionIds: SessionId[]) {
       type: 'error',
       timeout: UNDO_TOAST_TIMEOUT_MS,
     })
+}
+
+// The owned worktrees an archive would ask about, or null when main could not say.
+async function heldWorktrees(sessionIds: SessionId[]): Promise<HeldWorktree[] | null> {
+  try {
+    return (await trpcClient.sessionWorktreeWork.query({ sessionIds })).worktrees
+  } catch {
+    return null
+  }
+}
+
+// An archive removes clean owned worktrees at once and asks first about any that hold work, or
+// that Argo could not check, as Claude Code does: https://code.claude.com/docs/en/worktrees
+function useSessionArchive(toasts: Toasts) {
+  const [question, setQuestion] = useState<ArchiveQuestion | null>(null)
+  const archive = useCallback(
+    async (sessionIds: SessionId[]) => {
+      const worktrees = await heldWorktrees(sessionIds)
+      if (worktrees !== null && worktrees.length === 0)
+        return archiveSessions(toasts, sessionIds, 'clean')
+      setQuestion({ sessionIds, worktrees })
+    },
+    [toasts],
+  )
+  const answer = (choice: 'keep' | 'remove' | 'cancel') => {
+    const asked = question
+    setQuestion(null)
+    if (asked === null || choice === 'cancel') return
+    void archiveSessions(toasts, asked.sessionIds, choice === 'remove' ? 'all' : 'clean')
+  }
+  return { question, answer, archive }
 }
 
 // The rows the header's search and filter select for one Project.
@@ -141,8 +181,10 @@ export function SessionList() {
   const sidebar = useRef<HTMLElement>(null)
   const { filter, setFilter, search, setSearch, query, sessions } = useListedSessions(projectId)
   const { onNew, onOpenTicket, onSelect } = useSessionListNavigation(projectId)
+  const toasts = useMemo(() => ({ add, t }), [add, t])
+  const archive = useSessionArchive(toasts)
   const selection = useSessionListSelection(sessions, selectedSessionId, {
-    onArchiveSelected: (sessionIds) => void archiveSessions({ add, t }, sessionIds),
+    onArchiveSelected: (sessionIds) => void archive.archive(sessionIds),
     onSelect,
   })
   const focus = useSessionListFocus(sidebar, sessions, selectedSessionId)
@@ -179,6 +221,7 @@ export function SessionList() {
         unavailableSessionIds={useUnavailableSessionIds(selectedSessionId)}
       />
       <SessionRenameDialog onClose={() => setRenameTarget(null)} session={renameTarget} />
+      <SessionArchiveDialog onAnswer={archive.answer} question={archive.question} />
     </aside>
   )
 }

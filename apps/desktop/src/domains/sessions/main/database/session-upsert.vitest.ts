@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
-import { insertWorkspace, migratedDatabase } from '@/mocks/database/migrated-database'
+import { insertProject, migratedDatabase } from '@/mocks/database/migrated-database'
 import { createSessionUpsert } from './session-upsert'
 
 function database() {
   const migrated = migratedDatabase()
-  insertWorkspace(migrated, 'workspace-1', 'project-1')
+  insertProject(migrated, 'project-1')
   return { client: migrated.$client, upsert: createSessionUpsert(migrated) }
 }
 
@@ -16,7 +16,9 @@ test('keeps one Argo ID and preserves known metadata on a sparse upsert', () => 
       harness: 'claude',
       nativeId: 'native-1',
       projectId: 'project-1',
-      workspaceId: 'workspace-1',
+      worktreePath: '/work/argo',
+      worktreeBranch: 'argo/session-1',
+      worktreeOwned: true,
       customTitle: 'Release notes',
       preview: 'A preview',
       firstPrompt: 'first',
@@ -39,12 +41,14 @@ test('keeps one Argo ID and preserves known metadata on a sparse upsert', () => 
     assert.ok(repeatedTimes.updated_at > originalTimes.updated_at)
     const row = client
       .prepare(
-        'SELECT project_id, workspace_id, custom_title, preview, first_prompt, cwd, activity_at FROM session WHERE argo_id = ?',
+        'SELECT project_id, worktree_path, worktree_branch, worktree_owned, custom_title, preview, first_prompt, cwd, activity_at FROM session WHERE argo_id = ?',
       )
       .get(first)
     assert.deepEqual(Object.assign({}, row), {
       project_id: 'project-1',
-      workspace_id: 'workspace-1',
+      worktree_path: '/work/argo',
+      worktree_branch: 'argo/session-1',
+      worktree_owned: 1,
       custom_title: 'Release notes',
       preview: 'A preview',
       first_prompt: 'first',

@@ -7,6 +7,7 @@ import { provider } from '@/domains/accounts/contract/contract'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
 import { harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
+import { worktreeChoiceSchema } from '../worktree/worktree-choices'
 
 const draftTicketContextSchema = z.strictObject({
   id: z.string().min(1),
@@ -27,7 +28,7 @@ export const draftTurnConfigurationSchema = z.strictObject({
 const projectTargetSchema = z.strictObject({
   type: z.literal('project'),
   projectId: identifierSchema,
-  workspaceId: identifierSchema.nullable(),
+  worktree: worktreeChoiceSchema,
   harness: harnessSchema,
 })
 const sessionTargetSchema = z.strictObject({
@@ -72,7 +73,7 @@ function valueFromRow(stored: unknown): ComposerDraftValue {
       : projectTargetSchema.parse({
           type: 'project',
           projectId: row.projectId,
-          workspaceId: row.workspaceId,
+          worktree: row.worktreeChoice,
           harness: row.harness,
         })
   return composerDraftValueSchema.parse({
@@ -108,13 +109,13 @@ function storedTarget(target: ComposerDraftValue['target']) {
     ? {
         projectId: target.projectId,
         sessionId: null,
-        workspaceId: target.workspaceId,
+        worktreeChoice: target.worktree,
         harness: target.harness,
       }
     : {
         projectId: null,
         sessionId: target.sessionId,
-        workspaceId: null,
+        worktreeChoice: null,
         harness: null,
       }
 }

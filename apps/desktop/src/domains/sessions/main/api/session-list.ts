@@ -55,15 +55,23 @@ const sessionTicketSchema = z.strictObject({
 })
 
 // The stored columns a row carries unchanged.
-const passed = { harness: true, projectId: true, cwd: true, workspaceId: true } as const
+const passed = { harness: true, projectId: true, cwd: true } as const
 const storedSessionSchema = sessionSelectSchema.pick(passed)
 const sessionColumns = getTableColumns(sessionTable)
 const passedSessionColumns = Object.fromEntries(
   Object.keys(passed).map((column) => [column, sessionColumns[column as keyof typeof passed]]),
 ) as Pick<typeof sessionColumns, keyof typeof passed>
 
+// The linked worktree a Session runs in; null runs it in the Project's main checkout.
+const sessionWorktreeSchema = z.strictObject({
+  path: z.string().min(1),
+  branch: z.string().min(1).nullable(),
+  owned: z.boolean(),
+})
+
 export const sessionListRowSchema = z.strictObject({
   ...storedSessionSchema.shape,
+  worktree: sessionWorktreeSchema.nullable(),
   id: z.string().uuid(),
   posture: z.literal('live').nullable(),
   name: z.string(),
@@ -149,6 +157,7 @@ function sessionListRow(
   const liveStatus = live?.status === 'unknown' ? null : live?.status
   return {
     ...row.passed,
+    worktree: sessionWorktree(row),
     id: row.id,
     posture: live === null ? null : ('live' as const),
     name: row.name,
@@ -168,6 +177,12 @@ function sessionListRow(
       },
     planProgress: storedValue(planProgressSchema, row.planProgress, 'Plan progress'),
   }
+}
+
+function sessionWorktree(row: StoredSessionRow) {
+  const { worktreePath: path, worktreeBranch: branch, worktreeOwned: owned } = row
+  if (path === null || owned === null) return null
+  return { path, branch, owned }
 }
 
 // A Session with no link joins no row, so every link column is null.
@@ -190,6 +205,9 @@ const storedSessionColumns = {
   updatedAt: sessionTable.updatedAt,
   turnConfiguration: sessionTable.turnConfiguration,
   planProgress: sessionTable.planProgress,
+  worktreePath: sessionTable.worktreePath,
+  worktreeBranch: sessionTable.worktreeBranch,
+  worktreeOwned: sessionTable.worktreeOwned,
   ticket: {
     projectId: sessionTicketLink.projectId,
     key: sessionTicketLink.ticketKey,

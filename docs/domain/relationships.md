@@ -1,8 +1,8 @@
 ## Relationships (the whole graph)
 
 - **Project** `0—N` **Session**; each **Session** has `0..1` Project. A Session without one remains
-  in the global Session list. **Project** has `1—N` **Delivery**, `1—N` **Workspace** (its registry:
-  main, imported and managed — durable identity); holds **`0..1` Connection per port**
+  in the global Session list. **Project** has `1—N` **Delivery**, and git lists its main
+  checkout and linked worktrees; holds **`0..1` Connection per port**
   (Work Item, Code host), which is what scopes the providers it reads.
 - **Account** `0—N` **Connection**, across any number of Projects; a **Connection** names exactly
   **one Account** and **one port**. A provider has `0—N` **Accounts** on this machine, so
@@ -13,9 +13,10 @@
   **Delivery—Ticket** (join precedence, **user-assertable when unlinked**). Many-to-many
   holds only *across time*; at any instant a Session is on at most one branch → one Delivery.
 - **Agent tree**: **Session** *is* the root **Agent** (`parentId: null`); an **Agent** `0..N`
-  child **Subagent** (recursive via `parentId`). Each **Agent** owns **`0..1` Workspace** (else
-  inherits its parent's) and attaches **`0..1` Preview** — both node-scoped (ADR-0010); Preview
-  is additionally an **app-wide singleton**. A **Workspace** holds `0—N` **File**.
+  child **Subagent** (recursive via `parentId`). Each **Session** owns **`0..1` worktree** and
+  runs in it, else in the main checkout; that folder is its **Checkout**, which a Subagent shares
+  (ADR-0049). Each **Agent** attaches **`0..1` Preview**, node-scoped and an **app-wide
+  singleton**. A **Checkout** holds `0—N` **File**.
 - **Inside an Agent**: `1—N` **Turn**; each **Turn** `0—N` **Tool Call**, `0—N` **Message** and
   `0—N` **Thought** (one ordered prose sequence, the two kinds distinct within it), `0..1` its
   opening **prompt**, and `0..1` **Usage**, rolled up to a **Session**-level Usage; `0—N`
@@ -27,7 +28,7 @@
 - **Session** `0—N` **Outcome** (the `produces` link; each refs a typed target —
   **Diff/Delivery** | **Ticket** | **artifact**). Sessions without a live channel: none in v1.
 - **Session** `0..1` **live channel** (SDK or app-server, owned by its Session actor) and `0—N` **MCP server**
-  (observed attribute, deferred); a **Workspace** additionally has `0—N` agent-less scratch
+  (observed attribute, deferred); a **Checkout** additionally has `0—N` agent-less scratch
   **Terminal**.
 - **Person** (`me | other`) authors a **Review** and owns the teammate-PR distinction on a
   **Delivery**; drives "needs-you" attention.

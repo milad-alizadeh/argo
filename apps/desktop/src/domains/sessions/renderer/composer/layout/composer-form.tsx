@@ -10,7 +10,7 @@ import type {
   CatalogFailure,
   TurnConfigurationControlProps,
 } from '../toolbar/turn-configuration-menu'
-import { WorkspaceMenu, type WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
+import { WorktreeMenu, type WorktreeMenuControlProps } from '../toolbar/worktree-menu'
 import { AttachmentTray } from '../tray/attachment-tray'
 import {
   supportedConfiguration,
@@ -48,7 +48,7 @@ export type ComposerFormProps = {
   turnConfigurationChoices?: TurnConfigurationChoices | null
   catalogFailure?: CatalogFailure | null
   refreshCatalog?: () => void
-  workspace?: WorkspaceMenuControlProps | null
+  worktree?: WorktreeMenuControlProps | null
   initialEditing?: Partial<ComposerEditing>
   onEditingChange?: (editing: ComposerEditing) => void
   commands?: ComposerCommandListing
@@ -130,7 +130,7 @@ function ComposerFormSurface({
   turnConfigurationChoices,
   catalogFailure = null,
   refreshCatalog,
-  workspace = null,
+  worktree = null,
   commands,
   tickets,
   projectId,
@@ -162,9 +162,9 @@ function ComposerFormSurface({
       }}
     >
       <AttachmentTray>{permissionPrompt}</AttachmentTray>
-      {workspace ? (
+      {worktree ? (
         <div className="mb-2 px-1">
-          <WorkspaceMenu {...workspace} />
+          <WorktreeMenu {...worktree} />
         </div>
       ) : null}
       <ComposerCard

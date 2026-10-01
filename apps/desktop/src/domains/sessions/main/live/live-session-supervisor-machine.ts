@@ -721,12 +721,16 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
                   if (record.nativeId === null)
                     throw new Error('Session has no native ID to persist.')
                   if (record.sessionId !== undefined) return Promise.resolve(record.sessionId)
-                  if (record.projectId === null || record.workspaceId === null)
-                    throw new Error('New Session has no Project Workspace to persist.')
+                  if (record.projectId === null)
+                    throw new Error('New Session has no Project to persist.')
+                  const { worktree, ...saved } = record
                   return Promise.resolve(
                     createSessionUpsert(dependencies.database)({
-                      ...record,
+                      ...saved,
                       nativeId: record.nativeId,
+                      worktreePath: worktree?.path ?? null,
+                      worktreeBranch: worktree?.branch ?? null,
+                      worktreeOwned: worktree?.owned ?? null,
                     }),
                   )
                 }),

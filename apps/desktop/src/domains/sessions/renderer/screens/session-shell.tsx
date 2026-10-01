@@ -9,7 +9,6 @@ import {
 import { SessionTitle } from '../prompt'
 import type { Session } from '../types'
 import { SESSION_SPLIT } from './session-screen-layout'
-import type { SessionWorkspaceIdentity } from './session-screen-workspace'
 import { SessionWorkspace, type SessionWorkspaceProps } from './session-workspace'
 
 import './session-screen.css'
@@ -19,7 +18,8 @@ type SessionShellProps = Omit<SessionWorkspaceProps, 'header'> & {
   // nothing here and the bar stays empty (#1582).
   headerControls?: ReactNode
   session?: Pick<Session, 'harness' | 'name'> | null
-  workspaceIdentity?: SessionWorkspaceIdentity | null
+  // The branch the header names under the title, when the Session's folder has one.
+  branch?: string | null
   inspector: ReactNode
   inspectorBar?: ReactNode
   defaultInspectorCollapsed?: boolean
@@ -28,10 +28,10 @@ type SessionShellProps = Omit<SessionWorkspaceProps, 'header'> & {
 
 function SessionIdentity({
   session,
-  workspaceIdentity,
+  branch,
 }: {
   session: SessionShellProps['session']
-  workspaceIdentity: SessionWorkspaceIdentity | null
+  branch: string | null
 }) {
   const { t } = useTranslation('sessions')
   if (session === null || session === undefined) return null
@@ -43,7 +43,7 @@ function SessionIdentity({
       <h1 className="w-full truncate type-heading">
         <SessionTitle session={session} text={session.name} />
       </h1>
-      {workspaceIdentity !== null && workspaceIdentity.branch !== null ? (
+      {branch !== null ? (
         <div
           data-component="SessionMetadata"
           className="w-full min-w-0 type-meta text-muted-foreground"
@@ -54,7 +54,7 @@ function SessionIdentity({
           >
             <Icon name="branch" className="size-(--size-icon-inline) shrink-0" />
             <span className="shrink-0">{t('identity.branch')}</span>
-            <span className="min-w-0 truncate">{workspaceIdentity.branch}</span>
+            <span className="min-w-0 truncate">{branch}</span>
           </p>
         </div>
       ) : null}
@@ -76,7 +76,7 @@ function SessionHeaderControls({ children }: { children: ReactNode }) {
 export function SessionShell({
   headerControls = null,
   session = null,
-  workspaceIdentity = null,
+  branch = null,
   inspector,
   inspectorBar = null,
   defaultInspectorCollapsed = false,
@@ -100,7 +100,7 @@ export function SessionShell({
             {...workspaceProps}
             header={
               <AppPageHeader>
-                <SessionIdentity session={session} workspaceIdentity={workspaceIdentity} />
+                <SessionIdentity branch={branch} session={session} />
                 <SessionHeaderControls>
                   {headerControls}
                   <InspectorHeaderControls />

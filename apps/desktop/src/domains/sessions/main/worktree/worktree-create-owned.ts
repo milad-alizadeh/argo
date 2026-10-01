@@ -3,18 +3,34 @@ import { createHash } from 'node:crypto'
 import { mkdir, realpath, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { projectSelectSchema } from '@/database/project/validation'
-import { workspace } from '@/database/workspace/schema'
 import { gitCommonDirectory } from '@/platform/main/git-worktrees'
-import { readWorkspaceFacts } from './workspace-facts'
+import { readWorktreeBranch } from './worktree-branch'
 
 const run = promisify(execFile)
 
 function hasCode(error: unknown, code: string | number): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === code
+}
+
+function branchExists(projectPath: string, branch: string): Promise<boolean> {
+  return run('git', [
+    '-C',
+    projectPath,
+    'show-ref',
+    '--verify',
+    '--quiet',
+    `refs/heads/${branch}`,
+  ]).then(
+    () => true,
+    (error: unknown) => {
+      if (hasCode(error, 1)) return false
+      throw error
+    },
+  )
 }
 
 async function ensureWorktreeOnDisk(input: {
@@ -32,66 +48,24 @@ async function ensureWorktreeOnDisk(input: {
   )
   if (present) {
     const common = await realpath(await gitCommonDirectory(worktreePath))
-    const facts = await readWorkspaceFacts(worktreePath)
-    if (common !== projectRoot.commonDirectory || facts.branch !== branch)
+    if (common !== projectRoot.commonDirectory || (await readWorktreeBranch(worktreePath)) !== branch)
       throw new Error('worktree-path-conflict')
     return
   }
   await mkdir(path.dirname(worktreePath), { recursive: true })
-  const branchExists = await run('git', [
-    '-C',
-    projectRoot.path,
-    'show-ref',
-    '--verify',
-    '--quiet',
-    `refs/heads/${branch}`,
-  ]).then(
-    () => true,
-    (error: unknown) => {
-      if (hasCode(error, 1)) return false
-      throw error
-    },
-  )
-  const arguments_ = branchExists
+  const arguments_ = (await branchExists(projectRoot.path, branch))
     ? ['-C', projectRoot.path, 'worktree', 'add', worktreePath, branch]
     : ['-C', projectRoot.path, 'worktree', 'add', '-b', branch, worktreePath]
   await run('git', arguments_, { timeout: 120_000 })
 }
 
-function registerWorkspace(input: {
-  database: Database
-  projectId: string
-  key: string
-  name: string
-  worktreePath: string
-}): string {
-  const { database, projectId, key, name, worktreePath } = input
-  const existing = database
-    .select({ id: workspace.id })
-    .from(workspace)
-    .where(and(eq(workspace.projectId, projectId), eq(workspace.path, worktreePath)))
-    .get()
-  const id = existing?.id ?? `workspace-${key.slice(0, 32)}`
-  database
-    .insert(workspace)
-    .values({
-      id,
-      projectId,
-      kind: 'managed',
-      displayName: name,
-      path: worktreePath,
-    })
-    .onConflictDoUpdate({ target: workspace.id, set: { kind: 'managed', path: worktreePath } })
-    .run()
-  return id
-}
-
-export async function ensureManagedWorkspace(input: {
+// The worktree Argo makes for a new Session draft. A second Send of the same draft reuses it.
+export async function createOwnedWorktree(input: {
   database: Database
   projectId: string
   draftId: string
   worktreeRoot: string
-}): Promise<{ id: string; path: string }> {
+}): Promise<{ path: string; branch: string }> {
   const registered = projectSelectSchema.safeParse(
     input.database
       .select({ id: project.id, path: project.path, commonDirectory: project.commonDirectory })
@@ -101,15 +75,8 @@ export async function ensureManagedWorkspace(input: {
   )
   if (!registered.success) throw new Error('missing-project')
   const key = createHash('sha256').update(`${input.projectId}:${input.draftId}`).digest('hex')
-  const name = `session-${key.slice(0, 12)}`
   const worktreePath = path.join(input.worktreeRoot, key)
-  await ensureWorktreeOnDisk({ projectRoot: registered.data, worktreePath, branch: `argo/${name}` })
-  const id = registerWorkspace({
-    database: input.database,
-    projectId: input.projectId,
-    key,
-    name,
-    worktreePath,
-  })
-  return { id, path: worktreePath }
+  const branch = `argo/session-${key.slice(0, 12)}`
+  await ensureWorktreeOnDisk({ projectRoot: registered.data, worktreePath, branch })
+  return { path: worktreePath, branch }
 }

@@ -824,6 +824,67 @@ export const ArchiveFromContextMenu: Story = {
   },
 }
 
+// Argo follows Claude Code's cleanup rule: https://code.claude.com/docs/en/worktrees
+const heldWork = {
+  sessionId: 'prose',
+  path: '/workspace/argo-worktrees/prose',
+  branch: 'argo/prose',
+  changedFiles: 2,
+  ownCommits: 1,
+}
+
+async function archiveFirstRow(canvasElement: HTMLElement) {
+  const row = await within(canvasElement).findByRole('button', {
+    name: /Read the Session transcript/,
+  })
+  await userEvent.pointer({ keys: '[MouseRight]', target: row })
+  await userEvent.click(await within(document.body).findByRole('menuitem', { name: 'Archive' }))
+  return within(document.body).findByRole('alertdialog')
+}
+
+// A worktree that holds work asks first; Keep archives and leaves the worktree.
+export const ArchiveAsksBeforeRemovingWork: Story = {
+  beforeEach: () => showing(listed, { worktreeWork: async () => ({ worktrees: [heldWork] }) }),
+  play: async ({ canvasElement }) => {
+    const dialog = await archiveFirstRow(canvasElement)
+    await waitFor(() => expect(within(dialog).getByText('argo/prose')).toBeVisible())
+    await expect(host.updates).toEqual([])
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Keep' }))
+    await waitFor(() => expect(host.updates).toEqual([{ sessionIds: ['prose'], archived: true }]))
+  },
+}
+
+// Remove archives and asks main to remove the worktree even though it holds work.
+export const ArchiveRemovesWorkWhenAsked: Story = {
+  beforeEach: () => showing(listed, { worktreeWork: async () => ({ worktrees: [heldWork] }) }),
+  play: async ({ canvasElement }) => {
+    const dialog = await archiveFirstRow(canvasElement)
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Remove' }))
+    await waitFor(() =>
+      expect(host.updates).toEqual([{ sessionIds: ['prose'], archived: true, worktrees: 'all' }]),
+    )
+  },
+}
+
+// Cancel archives nothing; a state Argo could not read asks the same question and says so.
+export const ArchiveAsksWhenWorkIsUnchecked: Story = {
+  beforeEach: () =>
+    showing(listed, {
+      worktreeWork: async () => {
+        throw new Error('git could not be read')
+      },
+    }),
+  play: async ({ canvasElement }) => {
+    const dialog = await archiveFirstRow(canvasElement)
+    await waitFor(() =>
+      expect(within(dialog).getByText(/Argo could not check the worktrees/)).toBeVisible(),
+    )
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => expect(within(document.body).queryByRole('alertdialog')).toBeNull())
+    await expect(host.updates).toEqual([])
+  },
+}
+
 // A bulk archive and its Undo are one Session update per row, and the list reads its pages again.
 export const BulkArchiveAndUndoUpdateEachSession: Story = {
   play: async ({ canvasElement }) => {

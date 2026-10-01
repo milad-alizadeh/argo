@@ -25,6 +25,8 @@ import { type SessionRefreshContext, sessionRefreshProcedure } from './session-r
 import { type SessionProcedureContext, sessionSubmitProcedure } from './session-submit'
 import { type SessionUpdateProcedureContext, sessionUpdateProcedure } from './session-update'
 import { sessionWorkReadProcedures } from './session-work-reads'
+import { sessionWorktreeProcedures } from './session-worktree'
+import type { WorktreeChoiceContext } from '../worktree'
 
 export type SessionApiContext = SessionProcedureContext &
   SessionAttachmentContext &
@@ -32,6 +34,7 @@ export type SessionApiContext = SessionProcedureContext &
   SessionListContext &
   SessionRefreshContext &
   SessionUpdateProcedureContext &
+  WorktreeChoiceContext &
   ComposerCommandContext & {
     sessionSync: SessionSyncStatusSource
     // Shared with the app-level watcher that keeps working Sessions' Feeds open.
@@ -57,5 +60,6 @@ export function sessionProcedures(context: SessionApiContext) {
     ...sessionAttachmentProcedures(context),
     ...sessionFileReadProcedures(context),
     ...sessionWorkReadProcedures(),
+    ...sessionWorktreeProcedures(context),
   }
 }
