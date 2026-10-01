@@ -66,7 +66,7 @@ class CodexSessionChannel implements LiveSessionChannel {
   private opening = true
   private closed = false
   private rejected = 0
-  private stopSkills: (() => void) | null = null
+  private skills: ReturnType<typeof followCodexSkillCommands> | null = null
   private lastStatus: string | null = null
 
   constructor(
@@ -102,7 +102,8 @@ class CodexSessionChannel implements LiveSessionChannel {
       if (this.closed) return
       this.nativeId = nativeId
       this.emit({ type: 'identity', nativeId })
-      this.stopSkills = followCodexSkillCommands({
+      this.skills = followCodexSkillCommands({
+        request: this.client.request,
         cwd: 'resume' in input ? input.resume.cwd : input.cwd,
         closed: () => this.closed,
         reject: (shape) => this.reject(shape),
@@ -349,6 +350,7 @@ class CodexSessionChannel implements LiveSessionChannel {
       reasoningSummaryDelta: (params) => this.reasoningSummaryDelta(params),
       commandOutputDelta: (params) => this.commandOutputDelta(params),
       itemNotification: (params, phase) => this.itemNotification(params, phase),
+      skillsChanged: () => this.skills?.changed(),
     })
   }
 
@@ -611,8 +613,8 @@ class CodexSessionChannel implements LiveSessionChannel {
   close(): void {
     if (this.closed) return
     this.closed = true
-    this.stopSkills?.()
-    this.stopSkills = null
+    this.skills?.stop()
+    this.skills = null
     this.pending.clear()
     this.interactionAbort.abort()
     for (const timer of this.approvalTimers.values()) clearTimeout(timer)
