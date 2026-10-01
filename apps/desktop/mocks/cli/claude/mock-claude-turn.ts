@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs'
+import { setTimeout as sleep } from 'node:timers/promises'
+import { SESSION_MOCK_REPLY_HOLD_FILE_ENV } from '@/harnesses/proof-protocol'
 import type { AdversarialTurn } from '../../sessions/adversarial-turns.ts'
 
 type SettleMockClaudeTurnOptions = {
@@ -17,7 +20,9 @@ type ReplyForMockClaudeTurnOptions = Pick<
 export async function replyForMockClaudeTurn(options: ReplyForMockClaudeTurnOptions) {
   const { plan, replyDelayMs, text, writeReply } = options
   const delay = plan?.firstReplyDelayMs ?? replyDelayMs
-  if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay))
+  if (delay > 0) await sleep(delay)
+  const hold = process.env[SESSION_MOCK_REPLY_HOLD_FILE_ENV]
+  while (hold !== undefined && existsSync(hold)) await sleep(20)
   if (plan?.outcome === 'failure') {
     process.stdout.write('Mock Claude failed a Turn.\r\n')
     process.exit(1)

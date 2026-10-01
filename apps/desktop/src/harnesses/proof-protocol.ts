@@ -7,5 +7,9 @@ export function readMockReplyDelayMs(): number {
   return Number.isFinite(delay) && delay > 0 ? delay : 0
 }
 
+// While this file exists, the mock claude holds each reply, so a case reads the wait state with no
+// race against time (#3027).
+export const SESSION_MOCK_REPLY_HOLD_FILE_ENV = 'ARGO_MOCK_REPLY_HOLD_FILE'
+
 // Opts a packaged proof into a replayable adverse transport plan; unset keeps ordinary mock behavior.
 export const SESSION_MOCK_ADVERSARIAL_SEED_ENV = 'ARGO_MOCK_ADVERSARIAL_SEED'
