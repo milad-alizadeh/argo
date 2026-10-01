@@ -23,7 +23,11 @@ import {
 } from './composer-draft-adoption'
 import { forgetComposerDraft, rememberComposerDraft } from './composer-draft-cache'
 import { shouldLoadComposerDraft } from './composer-draft-load'
-import { type ComposerDraftActionInput, useComposerDraftSubmit } from './composer-draft-submit'
+import {
+  type ComposerDraftActionInput,
+  cancelSaveTimer,
+  useComposerDraftSubmit,
+} from './composer-draft-submit'
 
 export type { DraftContent, DraftTarget }
 
@@ -359,8 +363,7 @@ function useComposerDraftAutosave(
         initialFingerprints.current.delete(owner)
         if (baseline === currentFingerprint) return
       }
-      const currentTimer = saveTimer.current.get(owner)
-      if (currentTimer !== undefined) window.clearTimeout(currentTimer)
+      cancelSaveTimer(saveTimer, owner)
       const timer = window.setTimeout(() => {
         if (saveTimer.current.get(owner) === timer) saveTimer.current.delete(owner)
         void persist(content).catch(() => {
@@ -384,8 +387,17 @@ function useComposerDraftAutosave(
   )
 }
 
+// A caller builds its target each render; one kept per identity stops an unchanged edit re-saving.
+function useTargetByIdentity(target: DraftTarget | null) {
+  const identity = target === null ? null : JSON.stringify(target)
+  const kept = useRef({ identity, target })
+  if (kept.current.identity !== identity) kept.current = { identity, target }
+  return kept.current.target
+}
+
 export function useDurableComposerDraft(input: DurableComposerDraftInput) {
-  const { target, choices, opening, targetRestored } = input
+  const { choices, opening, targetRestored } = input
+  const target = useTargetByIdentity(input.target)
   const queryClient = useQueryClient()
   const { create, save, submitMutation } = useComposerDraftMutations()
   const owner = ownerKey(target)
