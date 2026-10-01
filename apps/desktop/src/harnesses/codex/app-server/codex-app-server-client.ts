@@ -198,7 +198,7 @@ export class CodexRequestTimeoutError extends Error {
   }
 }
 
-// No `codex` on this machine, so no Codex Session exists to read.
+// No `codex` on this machine, so Argo cannot read any Codex Session.
 export class CodexUnavailableError extends Error {
   constructor() {
     super('Codex executable is unavailable.')
