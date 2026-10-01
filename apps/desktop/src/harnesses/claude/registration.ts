@@ -16,8 +16,8 @@ import {
   getClaudeSessionSummary,
   listClaudeSessionSummaries,
   openClaudeHistoryReader,
+  readClaudeCommands,
   readClaudeSessionHistory,
-  readClaudeSkillCommands,
 } from './session'
 
 export function createClaudeRegistration(): HarnessRegistration<'claude'> {
@@ -36,13 +36,14 @@ export function createClaudeRegistration(): HarnessRegistration<'claude'> {
     openLiveSession: claudeSessionChannelOpener(executable),
     listCommands: ({ cwd }) => {
       let rejected = 0
-      return readClaudeSkillCommands({
+      return readClaudeCommands({
+        executable,
         cwd,
         reject: () => {
           rejected += 1
         },
       }).then((commands) => {
-        if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Claude skill shape(s).`)
+        if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Claude command shape(s).`)
         return { availability: 'listed' as const, commands }
       })
     },

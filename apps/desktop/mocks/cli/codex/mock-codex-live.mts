@@ -5,6 +5,7 @@ import { createInterface } from 'node:readline'
 import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
 import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
+import { createMockCodexSkillsAndConfig } from './fixtures/mock-codex-skills-config.ts'
 
 type Item = {
   id: string
@@ -244,9 +245,12 @@ function startTurn(id: Request['id'], params: Record<string, unknown>, thread: T
   setTimeout(() => notifyTurn({ thread, turn, prompt }), 50)
 }
 
+const answerSkillsAndConfig = createMockCodexSkillsAndConfig(send)
+
 function handle(message: Request) {
   const { id, method, params = {} } = message
   if (method === undefined && id !== undefined) return handleResponse(id)
+  if (answerSkillsAndConfig(message)) return
   if (method === 'initialized') return
   if (method === 'initialize') return send({ id, result: {} })
   if (method === 'model/list') return send({ id, result: MOCK_CODEX_MODEL_CATALOG })

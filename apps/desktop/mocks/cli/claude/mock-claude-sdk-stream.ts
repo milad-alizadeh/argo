@@ -1,4 +1,9 @@
 import { randomUUID } from 'node:crypto'
+import { readFileSync, watch } from 'node:fs'
+
+// The command list the CLI reports, from the JSON file this names, shaped like
+// fixtures/supported-commands-claude-2.1.286.json. A rewrite of it pushes `commands_changed`.
+export const MOCK_CLAUDE_COMMANDS_FILE_ENV = 'ARGO_CLAUDE_COMMANDS_FILE'
 
 const INITIALIZATION_DELAY_MS = 50
 // A `FeedStreamProbe` prompt streams its reply as text deltas, as the real CLI's partial messages do.
@@ -40,6 +45,21 @@ const MODELS = [
   },
 ]
 
+function mockCommands(): unknown {
+  const file = process.env[MOCK_CLAUDE_COMMANDS_FILE_ENV]
+  return file === undefined ? [] : JSON.parse(readFileSync(file, 'utf8'))
+}
+
+function pushCommandChanges(sessionId: string) {
+  const file = process.env[MOCK_CLAUDE_COMMANDS_FILE_ENV]
+  if (file === undefined) return
+  watch(file, () =>
+    process.stdout.write(
+      `${JSON.stringify({ type: 'system', subtype: 'commands_changed', commands: mockCommands(), uuid: randomUUID(), session_id: sessionId })}\n`,
+    ),
+  ).unref()
+}
+
 export function promptText(input: unknown): string | null {
   if (typeof input !== 'object' || input === null || !('message' in input)) return null
   const message = input.message
@@ -73,6 +93,7 @@ export function startMockClaudeSdkStream(
   ) => Promise<string>,
 ) {
   writeInitialization(sessionId)
+  pushCommandChanges(sessionId)
   let pending = ''
   const pendingPermissions = new Map<string, () => void>()
   const waitForPermission: WaitForPermission = () => {
@@ -87,7 +108,7 @@ export function startMockClaudeSdkStream(
     const initializationId = initializationRequestId(input)
     if (initializationId !== null) {
       process.stdout.write(
-        `${JSON.stringify({ type: 'control_response', response: { subtype: 'success', request_id: initializationId, response: { models: MODELS } } })}\n`,
+        `${JSON.stringify({ type: 'control_response', response: { subtype: 'success', request_id: initializationId, response: { models: MODELS, commands: mockCommands() } } })}\n`,
       )
       return
     }
@@ -190,7 +211,12 @@ export function initializationRequestId(input: unknown): string | null {
   if (input.type !== 'control_request' || !('request_id' in input) || !('request' in input))
     return null
   const { request } = input
-  if (typeof request !== 'object' || request === null || request.subtype !== 'initialize')
+  if (
+    typeof request !== 'object' ||
+    request === null ||
+    !('subtype' in request) ||
+    request.subtype !== 'initialize'
+  )
     return null
   return typeof input.request_id === 'string' ? input.request_id : null
 }

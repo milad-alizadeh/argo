@@ -6,16 +6,10 @@ import {
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { decodeClaudeHistoryContent } from './claude-feed-decoder'
 import { ClaudeFeedProjection } from './claude-feed-projection'
-import { type ClaudeSkillFile, claudeSkillFiles } from './claude-skill-files'
-import { type ClaudeSkillDirectories, readClaudeSkillDirectories } from './claude-skill-records'
 
-export function decodeClaudeSessionMessages(
-  messages: readonly SessionMessage[],
-  skillFile: ClaudeSkillFile = () => null,
-  skillDirectories: () => ClaudeSkillDirectories = () => new Map(),
-): FeedContent[] {
+export function decodeClaudeSessionMessages(messages: readonly SessionMessage[]): FeedContent[] {
   let rejected = 0
-  const projection = new ClaudeFeedProjection(skillFile, skillDirectories)
+  const projection = new ClaudeFeedProjection()
   const content = messages.flatMap((entry) =>
     decodeClaudeHistoryContent(entry, () => {
       rejected += 1
@@ -35,10 +29,5 @@ export async function readClaudeSessionHistory(
     subagentId === null
       ? await getSessionMessages(nativeId, options)
       : await getSubagentMessages(nativeId, subagentId, options)
-  let directories: ClaudeSkillDirectories | null = null
-  // A Subagent's records live in its own file, which holds no recorded folder of the Session's.
-  return decodeClaudeSessionMessages(messages, claudeSkillFiles(cwd), () => {
-    directories ??= subagentId === null ? readClaudeSkillDirectories(nativeId) : new Map()
-    return directories
-  })
+  return decodeClaudeSessionMessages(messages)
 }

@@ -1,1 +1,1 @@
-export { readAutoCompactLimit, writeAutoCompactLimit } from './config-file'
+export { readAutoCompactLimit, writeAutoCompactLimit } from './auto-compact-config'

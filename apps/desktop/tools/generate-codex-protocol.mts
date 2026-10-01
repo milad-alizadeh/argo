@@ -13,6 +13,11 @@ const roots = [
   'v2/ThreadReadResponse.ts',
   'v2/AgentMessageDeltaNotification.ts',
   'v2/ReasoningSummaryTextDeltaNotification.ts',
+  'v2/SkillsListParams.ts',
+  'v2/SkillMetadata.ts',
+  'v2/ConfigReadParams.ts',
+  'v2/ConfigValueWriteParams.ts',
+  'v2/ConfigWriteResponse.ts',
 ]
 const destinationPath = (relativePath: string) =>
   relativePath.replace(/[^/]+\.ts$/, (name) =>
