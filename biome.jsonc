@@ -205,6 +205,12 @@
       }
     },
     {
+      // KIND — `bun run record:vendor-history` writes these vendor recordings; their length is
+      // what the vendor answered, not code anyone holds in their head.
+      "includes": ["apps/desktop/mocks/cli/*/recordings/*.ts"],
+      "linter": { "rules": { "style": { "noExcessiveLinesPerFile": "off" } } }
+    },
+    {
       "includes": ["apps/desktop/components.json", "lint/biome/fixtures/components/**/*.json"],
       "plugins": ["./lint/biome/components-style.grit"]
     },

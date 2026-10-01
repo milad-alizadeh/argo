@@ -1,0 +1,11 @@
+# A vendor bump changes what the Claude adapter reads; docs/agents/testing.md says what to run.
+version: 2
+updates:
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-name: "@anthropic-ai/claude-agent-sdk"
+    commit-message:
+      prefix: "Run e2e:real and record:vendor-history"

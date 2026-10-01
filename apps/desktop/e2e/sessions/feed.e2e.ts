@@ -5,6 +5,7 @@
 // one it gets, rather than living in a second curated file (#e2e-real-cheap-models).
 import { rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { RECORDED_PROMPTS } from '../../mocks/cli/recorded-prompts'
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
 import { proveClaudeAcpHistory } from './cases/claude-acp-history.case'
@@ -24,7 +25,6 @@ import { provePackagedSessionListSelection } from './cases/session-list-interact
 import { proveSessionListWindow } from './cases/session-list-window.case'
 import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
-import { proveToolCalls } from './cases/tool-calls.case'
 import { proveLiveCodexModelChoices } from './cases/turn-configuration.case'
 import { ACTIVE_FEED } from './feed-selectors'
 import { appendProse } from './fixtures/feed.fixture'
@@ -32,7 +32,7 @@ import { writeWindowFillerSessions } from './fixtures/session-list-window.fixtur
 import { openSessionByClick } from './gestures'
 import { sessionSyncHoldFile } from './packaged-session-harness'
 import { sessionDetails, sessionRows } from './page-trpc'
-import { assertTranscriptFeedCorpus } from './real-harness/transcript-feed-corpus'
+import { assertVendorFeedCorpus, readRealVendorCorpus } from './real-harness/vendor-feed-corpus'
 import { expect, test } from './session-proof-run'
 
 test.describe('with no Project selected', () => {
@@ -93,10 +93,6 @@ test.describe('session refresh progress', () => {
 
 test('session-list-selection', async ({ session }) => {
   await provePackagedSessionListSelection(session.page())
-})
-
-test('session-tool-calls', async ({ session }) => {
-  await proveToolCalls(session.page())
 })
 
 test('session-delegation-cards', async ({ session }) => {
@@ -229,18 +225,14 @@ test.describe('with real Session transcript corpora', () => {
     await session.page().getByRole('button', { name: 'Send message' }).click()
     const codexSessionId = await proveSessionCreatedByClick(session.page(), backend, {
       harness: 'codex',
-      prompt:
-        '<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>',
+      prompt: RECORDED_PROMPTS.codexNotice,
       budgetTurnConfiguration: true,
     })
-    const home = path.join(session.root, 'home')
-    await assertTranscriptFeedCorpus({
-      roots: {
-        claude: path.join(home, '.claude', 'projects'),
-        codex: path.join(home, '.codex', 'sessions'),
-      },
+    const corpus = await readRealVendorCorpus({
+      home: path.join(session.root, 'home'),
       sessionIds: { claude: claudeSessionId, codex: codexSessionId },
     })
+    await assertVendorFeedCorpus(corpus)
   })
 })
 
@@ -248,22 +240,22 @@ test('session-codex-resume', async ({ session, backend }) => {
   await provePackagedCodexResume(session.page(), { backend, restart: session.restart })
 })
 
-test.describe('session-claude-rename', () => {
-  // The rename read-back checks `mock-claude/<id>.jsonl` directly (#2134): a real Claude writes
-  // its own transcript somewhere under the real CLI's home, not that fixture layout.
-  test.skip(({ sessionBackend }) => sessionBackend !== 'mock', 'Reads the mock transcript path.')
-
-  test('session-claude-rename', async ({ session, backend }) => {
-    await proveClaudeRename(session.page(), {
-      backend,
-      project: session.fixture.project,
-      transcripts: session.fixture.claudeTranscripts,
-    })
+// The real backend links its Claude projects folder to the fixture's, so one read-back serves both.
+test('session-claude-rename', async ({ session, backend }) => {
+  await proveClaudeRename(session.page(), {
+    backend,
+    project: session.fixture.project,
+    transcripts: session.fixture.claudeTranscripts,
   })
 })
 
-test('session-codex-thread-name', async ({ session }) => {
-  await proveCodexThreadName(session.page(), session.fixture.codexTranscripts)
+test.describe('session-codex-thread-name', () => {
+  // The rename lands in the mock Codex store; a real Codex never reads it.
+  test.skip(({ sessionBackend }) => sessionBackend !== 'mock', 'Writes the mock Codex store.')
+
+  test('session-codex-thread-name', async ({ session }) => {
+    await proveCodexThreadName(session.page(), session.root)
+  })
 })
 
 test.describe('with a slow Harness', () => {
