@@ -78,6 +78,11 @@
     "retry": "Retry",
     "sendFailed": "The Turn could not be sent. Your draft is still saved.",
     "sendUncertain": "Argo could not confirm whether the Turn was sent. Your draft is still saved.",
+    "sendRejected": {
+      "workspace-missing": "The work location folder no longer exists, so the Turn was not sent. Choose another work location. Your draft is still saved.",
+      "worktree-create-failed": "Argo could not create a worktree, so the Turn was not sent. Your draft is still saved.",
+      "harness-start-failed": "{{harness}} could not start, so the Turn was not sent. Check that {{harness}} runs in a terminal. Your draft is still saved."
+    },
     "interrupt": "Interrupt",
     "compactAction": "Compact context",
     "compactShort": "Compact",

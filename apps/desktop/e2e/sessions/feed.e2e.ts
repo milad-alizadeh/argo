@@ -21,6 +21,7 @@ import { proveNewSessionSkipsUninstalledHarness } from './cases/new-session-harn
 import { proveNoProjectWindow } from './cases/no-project.case'
 import { provePromptBeforeNaming } from './cases/pending-prompt.case'
 import { provePromptLatency } from './cases/prompt-latency.case'
+import { proveRefusedStart } from './cases/refused-start.case'
 import { proveRemovedWorkLocation } from './cases/removed-work-location.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveContract } from './cases/session-list-contract.case'
@@ -60,6 +61,10 @@ test('session-shell', async ({ session }) => {
 
 test('session-removed-work-location', async ({ session }) => {
   await proveRemovedWorkLocation(session.page(), session.fixture.project)
+})
+
+test('session-refused-start', async ({ session }) => {
+  await proveRefusedStart(session.page(), session.fixture.project)
 })
 
 test.describe('session refresh progress', () => {

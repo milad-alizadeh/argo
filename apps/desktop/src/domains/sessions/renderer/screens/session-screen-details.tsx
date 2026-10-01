@@ -18,6 +18,8 @@ import {
   composerIdentityKey,
   composerIdentityOf,
   type DraftContent,
+  type DraftSubmitFailure,
+  PLAIN_REJECTION,
   type TurnConfiguration,
   initialTurnConfiguration as turnConfigurationFor,
   useDurableComposerDraft,
@@ -195,7 +197,7 @@ function useSessionComposerSend(input: {
   draft: ReturnType<typeof useDurableComposerDraft>
   identity: ComposerIdentity
   projectId: string | null
-  onFailure: (outcome: 'rejected' | 'uncertain') => void
+  onFailure: (failure: DraftSubmitFailure) => void
   onStartingSession: SessionScreenDetailsProps['onStartingSession']
 }) {
   const navigate = useNavigate()
@@ -218,9 +220,9 @@ function useSessionComposerSend(input: {
     })
     if (result?.outcome !== 'accepted') {
       input.onStartingSession(null)
-      const outcome = result?.outcome ?? 'rejected'
-      input.onFailure(outcome)
-      return outcome
+      const failure = result ?? PLAIN_REJECTION
+      input.onFailure(failure)
+      return failure.outcome
     }
     if (input.identity.kind === 'draft' && input.projectId !== null) {
       void queryClient.invalidateQueries({
@@ -473,11 +475,18 @@ function useComposerFailures(input: {
     failures.push({ scope: owner, title: t('composer.draftLoadFailed'), retry: input.onRetryDraft })
   if (input.draft?.saveFailed) failures.push({ scope: owner, title: t('composer.draftSaveFailed') })
   const report = useComposerFailureToasts(failures, [owner, catalog])
-  return (outcome: 'rejected' | 'uncertain') =>
-    report({
-      scope: owner,
-      title: t(outcome === 'rejected' ? 'composer.sendFailed' : 'composer.sendUncertain'),
-    })
+  return (failure: DraftSubmitFailure) =>
+    report({ scope: owner, title: sendFailureMessage(t, input.harness.harness, failure) })
+}
+
+function sendFailureMessage(
+  t: SessionsTranslator,
+  harness: HarnessControl['harness'],
+  failure: DraftSubmitFailure,
+) {
+  if (failure.outcome === 'uncertain') return t('composer.sendUncertain')
+  if (failure.reason === null) return t('composer.sendFailed')
+  return t(`composer.sendRejected.${failure.reason}`, { harness: harnessLabel(harness) })
 }
 
 // A handoff names its other Session by ID, which the Session list need not have loaded.
