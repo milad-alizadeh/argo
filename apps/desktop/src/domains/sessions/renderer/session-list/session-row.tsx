@@ -29,7 +29,8 @@ const STATUS_VARIANTS = {
 
 const STATUS_MARK = {
   active: 'bg-active shadow-state-glow animate-[status-light-blink_1.6s_ease-in-out_infinite]',
-  attention: 'bg-warn shadow-[0_0_5px_color-mix(in_srgb,var(--color-warn)_35%,transparent)]',
+  attention:
+    'bg-warn shadow-[0_0_5px_color-mix(in_srgb,var(--color-warn)_35%,transparent)] animate-[status-light-blink_1.6s_ease-in-out_infinite]',
   failed: 'bg-danger',
   idle: 'bg-idle',
   unknown: 'bg-transparent shadow-state-outline',
