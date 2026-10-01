@@ -15,15 +15,15 @@ archive.
   fixes the primitive path under `ui/` (#1767).
 - **Isolated-state mechanism** — two of them, and they answer different questions. A **story**
   under a renderer facet in `apps/desktop/src/` holds one component in one state, and is
-  what a reviewer clicks. The **shipped screen** renders its own state name into `data-state` on
-  the deck and the capture drives the app into each one, which is the only way to see
-  the real preload, the real main process and the real window. A new component state costs a
-  story; a new screen state costs a name on that attribute and one step in the capture driver.
+  what a reviewer clicks. The **shipped screen** is launched by the capture into each screen it
+  names, which is the only way to see the real preload, the real main process and the real
+  window. A new component state costs a story; a new screen costs one entry in the capture
+  driver's `SCREENS`.
 - **Browse the components** — `cd apps/desktop && bun run storybook` serves the stories from the
   working tree. Vercel owns pull request preview deployments outside this repository.
 - **Render a state** — the shipped screen: `bun run capture:cockpit`, output
-  `apps/desktop/out/cockpit-captures`, one PNG per state and appearance. It launches the Vite
-  build, or the packaged copy under `ARGO_E2E_PACKAGED=1`.
+  `apps/desktop/out/cockpit-captures`, one PNG per screen, in the appearance the app draws
+  (#3069). It launches the Vite build, or the packaged copy under `ARGO_E2E_PACKAGED=1`.
 
 **Every PNG the command writes is disposable.** Look at it and delete it. No gate reads one and
 no ref holds one (#1910): the reviewable artifact is the story, and the machine-checkable one is

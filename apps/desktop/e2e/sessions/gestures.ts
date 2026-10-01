@@ -5,19 +5,19 @@
 import assert from 'node:assert/strict'
 import { expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+import type { Harness } from '@/harnesses/harness'
 import { selectedProjectId, sessionRows } from './page-trpc'
 
-// The harness tab labels, typed against SessionHarness so a new Harness cannot be left out. The strings
+// The harness tab labels, typed against Harness so a new Harness cannot be left out. The strings
 // themselves live in the renderer's turn turnConfiguration (claude-turn-configuration.ts, codex-turn-configuration.ts), which
 // the driver bundle cannot import: the path there runs through the `@/` alias, and the bundler CI
 // runs leaves that unresolved.
-const HARNESS_TABS: Record<SessionHarness, string> = {
+const HARNESS_TABS: Record<Harness, string> = {
   claude: 'Claude Code',
   codex: 'Codex',
   'claude-acp': 'Claude ACP',
 }
-const BUDGET_MODELS: Record<SessionHarness, RegExp> = {
+const BUDGET_MODELS: Record<Harness, RegExp> = {
   claude: /Haiku 4\.5/,
   codex: /Gpt 5\.6 Luna/,
   'claude-acp': /sonnet/,
@@ -31,7 +31,7 @@ const ROW_TIMEOUT = 30_000
 const POLL_MS = 25
 
 export type CreateRequest = {
-  harness: SessionHarness
+  harness: Harness
   prompt: string
   budgetTurnConfiguration?: boolean
   permissionMode?: 'auto'
@@ -105,7 +105,7 @@ export async function openSessionByRoute(page: Page, sessionId: string) {
 }
 
 // The harness tabs inside the Turn configuration popover, dismissed the way a person dismisses it.
-export async function chooseHarness(page: Page, harness: SessionHarness) {
+export async function chooseHarness(page: Page, harness: Harness) {
   await page.locator(TURN_CONFIGURATION).click()
   // Keyboard tab selection remains valid while the turn-configuration surface re-renders its controls.
   await page.getByRole('tab', { name: HARNESS_TABS[harness] }).press('Enter')
@@ -113,7 +113,7 @@ export async function chooseHarness(page: Page, harness: SessionHarness) {
   await page.getByRole('tablist', { name: 'Harness' }).waitFor({ state: 'detached' })
 }
 
-async function chooseBudgetTurnConfiguration(page: Page, harness: SessionHarness) {
+async function chooseBudgetTurnConfiguration(page: Page, harness: Harness) {
   await page.locator(TURN_CONFIGURATION).click()
   const models = page.getByRole('radiogroup', { name: 'Model' })
   const model = models.getByRole('radio', {
