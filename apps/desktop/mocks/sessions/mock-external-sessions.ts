@@ -1,42 +1,33 @@
 // A Harness's external Session capability with no vendor behind it, for the roster's poll tests:
-// a test opens and closes Sessions and decides what each transcript read says.
+// a test opens and closes Sessions and decides what each activity read answers.
 import type { LiveActivity } from '@/domains/sessions/api/feed'
 import type {
+  ExternalActivityReading,
   ExternalSessionStatus,
   ExternalSessions,
   LiveExternalSession,
-  TranscriptLines,
-  TranscriptReading,
 } from '@/harnesses/registration'
 
-type TranscriptRead = { nativeId: string; lines: TranscriptLines }
-
-// The activity line a mock reading names for the newest line it was given.
 export function mockActivity(label: string): LiveActivity {
   return { label, kind: 'command', open: true }
 }
 
-export function mockExternalSessions() {
+// `readsActivity: false` gives a Harness that lists status only.
+export function mockExternalSessions({ readsActivity = true }: { readsActivity?: boolean } = {}) {
   const live = new Map<string, LiveExternalSession>()
-  const reads: TranscriptRead[] = []
+  const reads: string[] = []
+  const answers = new Map<string, ExternalActivityReading>()
   let rejected = 0
-  // Each line `status:<status>` settles that status; any other line names a command.
-  let answer = async ({ lines }: TranscriptRead): Promise<TranscriptReading> => {
-    const newest = lines.lines.at(-1) ?? null
-    const settled = lines.lines.findLast((line) => line.startsWith('status:'))
-    return {
-      activity: newest === null || newest.startsWith('status:') ? null : mockActivity(newest),
-      status:
-        settled === undefined ? null : (settled.slice('status:'.length) as ExternalSessionStatus),
-    }
+  // By default a read answers what `answer` last set for the Session, or nothing new.
+  let respond = async (nativeId: string): Promise<ExternalActivityReading> =>
+    answers.get(nativeId) ?? { activity: null, status: null }
+  const readActivity = (nativeId: string) => {
+    reads.push(nativeId)
+    return respond(nativeId)
   }
   const external: ExternalSessions = {
     listLive: async () => ({ sessions: [...live.values()], rejected }),
-    readTranscript: (nativeId, lines) => {
-      const read = { nativeId, lines }
-      reads.push(read)
-      return answer(read)
-    },
+    ...(readsActivity ? { readActivity } : {}),
   }
   return {
     external,
@@ -50,9 +41,13 @@ export function mockExternalSessions() {
     reject(count: number) {
       rejected = count
     },
+    // What the next reads for this Session answer.
+    answer(nativeId: string, reading: Partial<ExternalActivityReading>) {
+      answers.set(nativeId, { activity: null, status: null, ...reading })
+    },
     // Replaces how reads answer, such as with one a test settles by hand.
-    answerWith(next: (read: TranscriptRead) => Promise<TranscriptReading>) {
-      answer = next
+    respondWith(next: (nativeId: string) => Promise<ExternalActivityReading>) {
+      respond = next
     },
   }
 }

@@ -1,11 +1,11 @@
-import { appendFileSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { appendFileSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
-import type { TranscriptReading } from '@/harnesses/registration'
+import type { ExternalActivityReading } from '@/harnesses/registration'
 import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { mockActivity, mockExternalSessions } from '@/mocks/sessions/mock-external-sessions'
 import { insertSession } from '@/mocks/sessions/session-list-caller'
@@ -59,14 +59,16 @@ function row(id: string) {
   }
 }
 
+const settleReads = () => new Promise((resolve) => setImmediate(resolve))
+
 // Waits for the reads a tick started, then writes what they queued.
 async function tickAndWrite() {
   await roster.tick()
-  await new Promise((resolve) => setImmediate(resolve))
+  await settleReads()
   roster.flush()
 }
 
-test('the first tick reads no history: it stores the listed status and starts at the end', async () => {
+test('the first tick reads nothing: it stores the listed status and keeps the stored line', async () => {
   insertSession(database, { id: RUNNING, activity: JSON.stringify(mockActivity('Stored line')) })
   mock.open(RUNNING, 'running', transcript('running', 'old history\n'))
   await tickAndWrite()
@@ -78,32 +80,99 @@ test('the first tick reads no history: it stores the listed status and starts at
   })
 })
 
-test('a running Session with no Feed open takes its line from the bytes it appended', async () => {
+test('a transcript that grew asks the Harness for the activity, and the row stores it', async () => {
   insertSession(database, { id: RUNNING })
   const file = transcript('running', 'old history\n')
   mock.open(RUNNING, 'running', file)
   await tickAndWrite()
-  appendFileSync(file, 'bun test\n')
+  mock.answer(RUNNING, { activity: mockActivity('bun test') })
+  appendFileSync(file, 'any bytes\n')
   await tickAndWrite()
-  expect(mock.reads.map(({ lines }) => lines)).toEqual([{ lines: ['bun test'], continued: true }])
+  expect(mock.reads).toEqual([RUNNING])
   expect(row(RUNNING)).toMatchObject({ status: 'running', activity: mockActivity('bun test') })
   expect(row(RUNNING).activityAt).not.toBeNull()
 })
 
-test('an idle row keeps its line when the newest lines name no activity', async () => {
+test('a transcript that did not change asks for nothing', async () => {
+  insertSession(database, { id: RUNNING })
+  mock.open(RUNNING, 'running', transcript('running', 'old history\n'))
+  await tickAndWrite()
+  await tickAndWrite()
+  expect(mock.reads).toEqual([])
+})
+
+test('a rewritten, truncated or touched transcript counts as a change', async () => {
+  insertSession(database, { id: RUNNING })
+  const file = transcript('running', 'one\ntwo\n')
+  mock.open(RUNNING, 'running', file)
+  await tickAndWrite()
+  writeFileSync(file, 'one\n')
+  await tickAndWrite()
+  utimesSync(file, new Date(1_000_000), new Date(1_000_000))
+  await tickAndWrite()
+  expect(mock.reads).toEqual([RUNNING, RUNNING])
+})
+
+test('a Session with no transcript gets its listed status and no read', async () => {
+  insertSession(database, { id: RUNNING })
+  mock.open(RUNNING, 'running', null)
+  await tickAndWrite()
+  mock.open(RUNNING, 'permission', null)
+  await tickAndWrite()
+  expect(mock.reads).toEqual([])
+  expect(row(RUNNING).status).toBe('permission')
+})
+
+test('a Harness with no activity read gets status and change time only', async () => {
+  const statusOnly = mockExternalSessions({ readsActivity: false })
+  roster.stop()
+  roster = new ExternalSessionRoster({
+    database,
+    changes: new SessionListChanges(),
+    harnesses: [{ harness: 'claude', external: statusOnly.external }],
+    hasLiveChannel: () => false,
+    discover: () => {},
+  })
+  insertSession(database, { id: RUNNING, activity: JSON.stringify(mockActivity('Stored line')) })
+  const file = transcript('running', '')
+  statusOnly.open(RUNNING, 'running', file)
+  await tickAndWrite()
+  appendFileSync(file, 'x\n')
+  await tickAndWrite()
+  expect(statusOnly.reads).toEqual([])
+  expect(row(RUNNING)).toMatchObject({ status: 'running', activity: mockActivity('Stored line') })
+  expect(row(RUNNING).activityAt).not.toBeNull()
+})
+
+test('an idle row keeps its line when a read names no activity', async () => {
   insertSession(database, { id: RUNNING })
   const file = transcript('running', '')
   mock.open(RUNNING, 'running', file)
   await tickAndWrite()
-  appendFileSync(file, 'bun run typecheck\n')
+  mock.answer(RUNNING, { activity: mockActivity('bun run typecheck') })
+  appendFileSync(file, 'x\n')
   await tickAndWrite()
-  mock.open(RUNNING, 'idle', file)
-  appendFileSync(file, 'status:idle\n')
+  mock.answer(RUNNING, { status: 'idle' })
+  appendFileSync(file, 'x\n')
   await tickAndWrite()
   expect(row(RUNNING)).toMatchObject({
     status: 'idle',
     activity: mockActivity('bun run typecheck'),
   })
+})
+
+test('a read that fails keeps the stored line', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  insertSession(database, { id: RUNNING, activity: JSON.stringify(mockActivity('Stored line')) })
+  const file = transcript('running', '')
+  mock.open(RUNNING, 'running', file)
+  await tickAndWrite()
+  mock.respondWith(() => Promise.reject(new Error('vendor read failed')))
+  appendFileSync(file, 'x\n')
+  await tickAndWrite()
+  expect(row(RUNNING)).toMatchObject({ status: 'running', activity: mockActivity('Stored line') })
+  expect(warn).toHaveBeenCalled()
+  warn.mockRestore()
 })
 
 test('a Session that leaves the live list, such as for a dead pid, shows idle', async () => {
@@ -124,33 +193,6 @@ test('the first tick closes every saved Session it does not find live', async ()
   expect(row(OTHER).status).toBe('idle')
 })
 
-test('a rewritten transcript hands over its window as lines that do not continue', async () => {
-  insertSession(database, { id: RUNNING })
-  const file = transcript('running', 'one\ntwo\n')
-  mock.open(RUNNING, 'running', file)
-  await tickAndWrite()
-  writeFileSync(file, 'compacted\nnext step\n')
-  await tickAndWrite()
-  expect(mock.reads.map(({ lines }) => lines)).toEqual([
-    { lines: ['compacted', 'next step'], continued: false },
-  ])
-  expect(row(RUNNING).activity).toEqual(mockActivity('next step'))
-})
-
-test('a large append hands over only the newest window of lines', async () => {
-  insertSession(database, { id: RUNNING })
-  const file = transcript('running', '')
-  mock.open(RUNNING, 'running', file)
-  await tickAndWrite()
-  appendFileSync(file, `${'old line\n'.repeat(20_000)}newest\n`)
-  await tickAndWrite()
-  const [read] = mock.reads
-  expect(read?.lines.continued).toBe(false)
-  expect(read?.lines.lines.at(-1)).toBe('newest')
-  expect(read?.lines.lines.length).toBeLessThan(20_000)
-  expect(row(RUNNING).activity).toEqual(mockActivity('newest'))
-})
-
 test('a live Session with no row is discovered once, and its status lands once the row exists', async () => {
   mock.open('native-new', 'running', null)
   await tickAndWrite()
@@ -167,21 +209,23 @@ test('a Session with a live Argo channel is skipped, so the channel owns its sta
   const file = transcript('running', '')
   mock.open(RUNNING, 'running', file)
   await tickAndWrite()
-  appendFileSync(file, 'bun test\n')
+  appendFileSync(file, 'x\n')
   await tickAndWrite()
   expect(mock.reads).toEqual([])
   expect(row(RUNNING)).toMatchObject({ status: 'idle', activity: null })
 })
 
-test('a status the lines settle outranks the listed one', async () => {
+test('a status a read settles outranks the listed one', async () => {
   insertSession(database, { id: RUNNING })
   const file = transcript('running', '')
   mock.open(RUNNING, 'unknown', file)
   await tickAndWrite()
-  appendFileSync(file, 'status:running\n')
+  mock.answer(RUNNING, { status: 'running' })
+  appendFileSync(file, 'x\n')
   await tickAndWrite()
   expect(row(RUNNING).status).toBe('running')
-  appendFileSync(file, 'status:idle\n')
+  mock.answer(RUNNING, { status: 'idle' })
+  appendFileSync(file, 'x\n')
   await tickAndWrite()
   expect(row(RUNNING).status).toBe('idle')
 })
@@ -198,28 +242,39 @@ test('a running Session whose transcript has not grown for five minutes shows un
   vi.setSystemTime(Date.now() + 1_000)
   await tickAndWrite()
   expect(row(RUNNING).status).toBe('unknown')
-  appendFileSync(file, 'bun test\n')
+  appendFileSync(file, 'x\n')
   await tickAndWrite()
   expect(row(RUNNING).status).toBe('running')
 })
 
-test('each Session has one read in flight, and lines that arrive during it are read once after', async () => {
+test('reads run one at a time across Sessions, and a Session that grows mid-read is read once more', async () => {
   insertSession(database, { id: RUNNING })
-  const file = transcript('running', '')
-  mock.open(RUNNING, 'running', file)
+  insertSession(database, { id: OTHER })
+  const running = transcript('running', '')
+  const other = transcript('other', '')
+  mock.open(RUNNING, 'running', running)
+  mock.open(OTHER, 'running', other)
   await tickAndWrite()
-  const settle: ((reading: TranscriptReading) => void)[] = []
-  mock.answerWith(() => new Promise((resolve) => settle.push(resolve)))
-  appendFileSync(file, 'first\n')
+  const settle: ((reading: ExternalActivityReading) => void)[] = []
+  mock.respondWith(() => new Promise((resolve) => settle.push(resolve)))
+  appendFileSync(running, 'x\n')
+  appendFileSync(other, 'x\n')
   await roster.tick()
-  appendFileSync(file, 'second\n')
+  appendFileSync(running, 'x\n')
   await roster.tick()
-  appendFileSync(file, 'third\n')
+  appendFileSync(running, 'x\n')
   await roster.tick()
-  expect(mock.reads.map(({ lines }) => lines.lines)).toEqual([['first']])
-  settle.shift()?.({ activity: mockActivity('first'), status: null })
-  await new Promise((resolve) => setImmediate(resolve))
-  expect(mock.reads.map(({ lines }) => lines.lines)).toEqual([['first'], ['second', 'third']])
+  expect(mock.reads).toEqual([RUNNING])
+  const nothing = { activity: null, status: null }
+  settle.shift()?.(nothing)
+  await settleReads()
+  expect(mock.reads).toEqual([RUNNING, OTHER])
+  settle.shift()?.(nothing)
+  await settleReads()
+  expect(mock.reads).toEqual([RUNNING, OTHER, RUNNING])
+  settle.shift()?.(nothing)
+  await settleReads()
+  expect(mock.reads).toEqual([RUNNING, OTHER, RUNNING])
 })
 
 test('one Session’s updates within the write window reach SQLite as one write', async () => {
@@ -239,7 +294,8 @@ test('one Session’s updates within the write window reach SQLite as one write'
   const file = transcript('running', '')
   mock.open(RUNNING, 'running', file)
   await roster.tick()
-  appendFileSync(file, 'first\n')
+  mock.answer(RUNNING, { activity: mockActivity('first') })
+  appendFileSync(file, 'x\n')
   await roster.tick()
   await vi.advanceTimersByTimeAsync(0)
   expect(row(RUNNING).status).toBe('unknown')

@@ -1,5 +1,5 @@
 import type { Harness } from '@/harnesses/harness'
-import type { TranscriptLines, TranscriptReading } from '@/harnesses/registration'
+import type { ExternalActivityReading } from '@/harnesses/registration'
 import {
   type SessionUpdate,
   type SessionUpdateContext,
@@ -8,31 +8,29 @@ import {
 
 export type HarnessSession = { harness: Harness; nativeId: string }
 type SessionActivitiesOptions = {
-  readTranscript: (session: HarnessSession, lines: TranscriptLines) => Promise<TranscriptReading>
+  readActivity: (session: HarnessSession) => Promise<ExternalActivityReading>
   // Each reading, after its activity line is queued.
-  read: (session: HarnessSession, reading: TranscriptReading) => void
+  read: (session: HarnessSession, reading: ExternalActivityReading) => void
   // A Session with no saved row yet, for discovery to add.
   unknown: (session: HarnessSession) => void
   // Each Session's row reaches SQLite at most once a window, with its newest values.
   writeMs?: number
 }
 
+// A Session waiting its turn, being read, or being read with one more read asked for after it.
+type ReadState = 'queued' | 'reading' | 'again'
+
 const sessionKey = (session: HarnessSession) => `${session.harness}\u0000${session.nativeId}`
 
-// Lines that arrive during a read join the ones already waiting; a reset drops those.
-function joinLines(waiting: TranscriptLines | undefined, next: TranscriptLines): TranscriptLines {
-  if (waiting === undefined || !next.continued) return next
-  return { lines: [...waiting.lines, ...next.lines], continued: waiting.continued }
-}
-
-// External Session rows: every update merges into one write per Session a window, and each
-// Session's new transcript lines are read one batch at a time.
+// External Session rows: every update merges into one write per Session a window. Activity reads
+// run one at a time across every Session, since one vendor read can take a large file whole.
 export class SessionActivities {
   readonly #context: SessionUpdateContext
   readonly #options: SessionActivitiesOptions
   readonly #pending = new Map<string, { session: HarnessSession; update: SessionUpdate }>()
-  // Sessions with a read in flight, and the lines that arrived during it.
-  readonly #reading = new Map<string, TranscriptLines | undefined>()
+  readonly #reads = new Map<string, ReadState>()
+  readonly #queue: HarnessSession[] = []
+  #running = false
   #timer: ReturnType<typeof setTimeout> | null = null
   #stopped = false
 
@@ -49,26 +47,16 @@ export class SessionActivities {
     this.#timer ??= setTimeout(() => this.flush(), this.#options.writeMs ?? 500)
   }
 
-  // Reads the lines now, or after the read in flight for the same Session ends.
-  read(session: HarnessSession, lines: TranscriptLines): void {
+  // Asks for a read. A Session already queued is read once; one being read is read once more after.
+  read(session: HarnessSession): void {
     if (this.#stopped) return
     const key = sessionKey(session)
-    if (this.#reading.has(key)) {
-      this.#reading.set(key, joinLines(this.#reading.get(key), lines))
-      return
-    }
-    this.#reading.set(key, undefined)
-    this.#options
-      .readTranscript(session, lines)
-      .then(
-        (reading) => this.#receive(session, reading),
-        (error: unknown) => console.warn('Could not read an external Session transcript:', error),
-      )
-      .finally(() => {
-        const waiting = this.#reading.get(key)
-        this.#reading.delete(key)
-        if (waiting !== undefined) this.read(session, waiting)
-      })
+    const state = this.#reads.get(key)
+    if (state === 'reading') this.#reads.set(key, 'again')
+    if (state !== undefined) return
+    this.#reads.set(key, 'queued')
+    this.#queue.push(session)
+    void this.#drain()
   }
 
   flush(): void {
@@ -83,12 +71,37 @@ export class SessionActivities {
   stop(): void {
     this.flush()
     this.#stopped = true
-    this.#reading.clear()
+    this.#queue.length = 0
+    this.#reads.clear()
   }
 
-  #receive(session: HarnessSession, reading: TranscriptReading): void {
+  async #drain(): Promise<void> {
+    if (this.#running) return
+    this.#running = true
+    try {
+      for (let session = this.#queue.shift(); session !== undefined; session = this.#queue.shift())
+        await this.#readOne(session)
+    } finally {
+      this.#running = false
+    }
+  }
+
+  async #readOne(session: HarnessSession): Promise<void> {
+    const key = sessionKey(session)
+    this.#reads.set(key, 'reading')
+    try {
+      this.#receive(session, await this.#options.readActivity(session))
+    } catch (error) {
+      // A failed read keeps the stored line.
+      console.warn('Could not read an external Session activity:', error)
+    }
+    const again = this.#reads.get(key) === 'again'
+    this.#reads.delete(key)
+    if (again) this.read(session)
+  }
+
+  #receive(session: HarnessSession, reading: ExternalActivityReading): void {
     if (this.#stopped) return
-    // An idle Session keeps the last line it showed.
     if (reading.activity !== null) this.update(session, { activity: reading.activity })
     this.#options.read(session, reading)
   }

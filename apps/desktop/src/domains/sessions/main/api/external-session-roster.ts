@@ -1,7 +1,7 @@
+import { stat } from 'node:fs/promises'
 import { and, eq, ne, notInArray, type SQL } from 'drizzle-orm'
 import { sessionTable } from '@/database/session/schema'
 import type { Harness } from '@/harnesses/harness'
-import { AppendedTail } from '@/harnesses/host/appended-tail'
 import type {
   ExternalSessionStatus,
   ExternalSessions,
@@ -26,7 +26,7 @@ export type ExternalSessionRosterContext = SessionUpdateContext & {
 type TrackedSession = {
   listed: ExternalSessionStatus
   transcript: string | null
-  // The newest status the transcript's lines settled; it outranks the listed one.
+  // The newest status the Harness's activity read settled; it outranks the listed one.
   settled: ExternalSessionStatus | null
   // When the transcript last grew, or when the Session was first seen live.
   grewAt: number
@@ -35,6 +35,21 @@ type TrackedSession = {
   discovered: boolean
 }
 
+// What a transcript stat compares between ticks; Argo reads none of the file's content.
+type TranscriptStamp = { inode: number; size: number; modifiedMs: number }
+
+async function stampOf(transcript: string): Promise<TranscriptStamp | null> {
+  try {
+    const { ino, size, mtimeMs } = await stat(transcript)
+    return { inode: ino, size, modifiedMs: mtimeMs }
+  } catch {
+    return null
+  }
+}
+
+const sameStamp = (left: TranscriptStamp, right: TranscriptStamp) =>
+  left.inode === right.inode && left.size === right.size && left.modifiedMs === right.modifiedMs
+
 // A running Session whose transcript has not grown for the quiet limit shows unknown.
 function shownStatus(tracked: TrackedSession, at: number): ExternalSessionStatus {
   const status = tracked.settled ?? tracked.listed
@@ -42,12 +57,13 @@ function shownStatus(tracked: TrackedSession, at: number): ExternalSessionStatus
 }
 
 // The stored status and activity of Sessions that run outside Argo, from one poll. Each tick lists
-// every Harness's live external Sessions, tails each transcript that grew, and diffs the list
-// against the last tick's. The first tick reads no history: it starts each transcript at its end.
+// every Harness's live external Sessions, stats each transcript, asks a Harness that reads activity
+// about each one that changed, and diffs the list against the last tick's. The first sight of a
+// transcript only records its stamp, so startup reads nothing.
 export class ExternalSessionRoster {
   readonly #context: ExternalSessionRosterContext
   readonly #activities: SessionActivities
-  readonly #tail = new AppendedTail()
+  readonly #stamps = new Map<string, TranscriptStamp>()
   // Each Harness's live Sessions at its last tick; absent before its first.
   readonly #live = new Map<Harness, Map<string, TrackedSession>>()
   #ticking: Promise<void> | null = null
@@ -58,10 +74,10 @@ export class ExternalSessionRoster {
     this.#context = context
     const external = new Map(context.harnesses.map(({ harness, external }) => [harness, external]))
     this.#activities = new SessionActivities(context, {
-      readTranscript: (session, lines) => {
-        const reader = external.get(session.harness)
-        if (reader === undefined) throw new Error('This Harness has no external Sessions.')
-        return reader.readTranscript(session.nativeId, lines)
+      readActivity: (session) => {
+        const read = external.get(session.harness)?.readActivity
+        if (read === undefined) throw new Error('This Harness reads no external activity.')
+        return read(session.nativeId)
       },
       read: (session, reading) => {
         const tracked = this.#live.get(session.harness)?.get(session.nativeId)
@@ -121,12 +137,12 @@ export class ExternalSessionRoster {
       if (this.#isLive(session)) continue
       const tracked = this.#track(listed, previous?.get(listed.nativeId))
       current.set(listed.nativeId, tracked)
-      await this.#readGrowth(session, tracked)
+      await this.#readGrowth(session, tracked, external.readActivity !== undefined)
       this.#show(session, tracked, Date.now())
     }
     for (const [nativeId, tracked] of previous ?? []) {
       if (current.has(nativeId)) continue
-      if (tracked.transcript !== null) this.#tail.forget(tracked.transcript)
+      if (tracked.transcript !== null) this.#stamps.delete(tracked.transcript)
       const session = { harness, nativeId }
       if (!this.#isLive(session)) this.#activities.update(session, { status: 'idle' })
     }
@@ -146,15 +162,24 @@ export class ExternalSessionRoster {
     }
   }
 
-  // A transcript seen for the first time starts at its end; after that, only growth is read.
-  async #readGrowth(session: HarnessSession, tracked: TrackedSession): Promise<void> {
+  // A transcript seen for the first time only records its stamp; a later change asks for a read.
+  async #readGrowth(
+    session: HarnessSession,
+    tracked: TrackedSession,
+    readsActivity: boolean,
+  ): Promise<void> {
     if (tracked.transcript === null) return
-    if (!this.#tail.has(tracked.transcript)) return this.#tail.mark(tracked.transcript)
-    const lines = await this.#tail.read(tracked.transcript)
-    if (lines === null) return
+    const stamp = await stampOf(tracked.transcript)
+    const before = this.#stamps.get(tracked.transcript)
+    if (stamp === null) {
+      this.#stamps.delete(tracked.transcript)
+      return
+    }
+    this.#stamps.set(tracked.transcript, stamp)
+    if (before === undefined || sameStamp(before, stamp)) return
     tracked.grewAt = Date.now()
     this.#activities.update(session, { activityAt: tracked.grewAt })
-    if (lines.lines.length > 0) this.#activities.read(session, lines)
+    if (readsActivity) this.#activities.read(session)
   }
 
   #show(session: HarnessSession, tracked: TrackedSession, at: number): void {

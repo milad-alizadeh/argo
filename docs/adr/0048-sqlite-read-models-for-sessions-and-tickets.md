@@ -6,28 +6,30 @@ Status: accepted · 2026-09-24 · Session discovery amended 2026-09-27
 
 A Session that runs outside Argo, in a terminal, an IDE or another app, gets its row's status and
 activity line from one poll in main (#2940). A Harness registration that can see such Sessions
-supplies `externalSessions`: a list of the Sessions open elsewhere now, each with a status and its
-transcript path, and a reader that turns a transcript's new lines into an activity line and, where
-the lines settle one, a status. The Harness reads only small records to list them, such as a pid
-file or a lock probe (ADR-0047). The ACP Harness supplies none.
+supplies `externalSessions`: a list of the Sessions open elsewhere now, each with a status and,
+where known, its transcript path, and an activity read that asks the Harness's own interface what a
+Session is doing now and, where it can tell, its status. The Harness reads only small records to
+list them, such as a pid file or a lock probe, and reads no transcript content (ADR-0047). The ACP
+Harness supplies none.
 
 The poll ticks every 2 seconds, one tick at a time. Each tick lists every Harness's open Sessions.
-For each one it stats the transcript, and only if the file grew it reads the new bytes. The tail
-keeps an offset for each file and waits for a partial last line to end. A file that shrinks, is
-rewritten, or grows past a 64 KiB window starts again from the last 64 KiB. Each Session has one
-transcript read in flight; lines that arrive during it are read together after it. The first tick
-reads no history: it starts each transcript at its end, so the stored line stands until the file
-grows. Argo starts no file watcher for Session history.
+For each one it stats the transcript; a change in size, modification time or inode asks for an
+activity read. A Session with no transcript path gets its listed status only. Activity reads run one
+at a time across every Session, because one vendor read can take a large transcript whole. A
+Session has at most one read queued or in flight, and a change during its read asks for one more
+after it. A read that fails keeps the stored line. The first sight of a transcript only records
+its stamp, so startup reads nothing and the stored line stands until the file changes. Argo starts
+no file watcher for Session history.
 
 The tick compares its list with the last one. A Session that is new and has no row sends
 `Discover` once. A Session that left the list shows `idle`, and the first tick stores `idle` for
 every saved Session of that Harness it does not find open. A `running` Session whose transcript has
-not grown for five minutes shows `unknown`, because a killed terminal writes nothing more. A status
-the transcript lines settle outranks the listed one while the Session stays open. A Session with a
-live Argo channel is skipped, so the channel alone owns its status and activity. A reading that
-names no activity keeps the stored line, so an idle row keeps its last line. Each Session's status,
-line and `activityAt` merge into at most one SQLite write every 500 ms. A restart still resets
-every working status to `unknown` until the first tick.
+not changed for five minutes shows `unknown`, because a killed terminal writes nothing more. A
+status an activity read settles outranks the listed one while the Session stays open. A Session
+with a live Argo channel is skipped, so the channel alone owns its status and activity. A reading
+that names no activity keeps the stored line, so an idle row keeps its last line. Each Session's
+status, line and `activityAt` merge into at most one SQLite write every 500 ms. A restart still
+resets every working status to `unknown` until the first tick.
 
 An external Session's Feed reads its whole history when it opens and on Refresh. It has no change
 signal until the external Feed moves to the vendor readers.

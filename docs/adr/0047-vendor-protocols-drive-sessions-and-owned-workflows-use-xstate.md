@@ -2,23 +2,22 @@
 
 Status: accepted · 2026-09-21
 
-## Amendment · external Session presence and tails (#2940) · 2026-10-01
+## Amendment · external Session presence (#2940) · 2026-10-01
 
-No vendor interface reports whether a Session that runs outside Argo is open, or what it is doing.
-To show that on its row, a Harness adapter may read four things, and only these:
+No vendor interface reports whether a Session that runs outside Argo is open. To show that on its
+row, a Harness adapter may read two small records, and only these:
 
 - Claude's `~/.claude/sessions/<pid>.json` pid files, validated when read, with a liveness check
   of the pid.
 - A non-blocking flock probe on Codex's `~/.codex/thread-writer-locks/<id>.lock`. Node has no
   flock, so a host helper runs a `/usr/bin/perl` one-liner that takes `LOCK_EX|LOCK_NB` and lets go.
-- A tail of the bytes a Claude transcript appended, for the activity line.
-- A tail of the bytes a Codex rollout appended, for its turn start and end markers.
 
-Each tail reads only new bytes, from an offset the host keeps, and never at startup. These reads
-change no Session and drive no resume; vendor interfaces still read the Feed and drive every live
-Session. This amends the rule above that Argo does not parse transcript or rollout files, the
-consequence that deletes transcript and rollout parsers, and the decision below that supersedes
-ADR-0040's file and process liveness checks, for these four reads only.
+The host may also `stat` a live Session's transcript or rollout path, as a change signal. Argo
+reads none of that file's content. When the file changed, the adapter asks a vendor interface what
+the Session is doing: the Agent SDK's `getSessionMessages` for Claude, and app-server
+`thread/turns/list` for Codex. These reads change no Session and drive no resume. This amends the
+decision below that supersedes ADR-0040's file and process liveness checks, for the two records
+only. The rule that Argo does not parse transcript or rollout files stands.
 
 ## Amendment · main-owned root Feed reading (#2824) · 2026-09-28
 
