@@ -6,11 +6,9 @@ import { sessionTable } from '@/database/session/schema'
 import { sessionArchive } from '@/database/session-archive/schema'
 import { nextUpdatedAt } from '@/database/timestamp-columns'
 import type { LiveActivity } from '@/domains/sessions/api/feed'
-import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { WORKING_SESSION_STATUSES } from '@/domains/sessions/api/session-live-event'
 import type { Harness, HarnessSession } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
-import { saveSessionSubagents } from '../database'
 import { sessionHistoryIdentity } from '../session-history-identity'
 import type { SessionListChanges } from './session-list-changes'
 
@@ -20,8 +18,6 @@ export type SessionUpdate = {
 } & {
   archived?: boolean
   activity?: LiveActivity | null
-  // Delegation content naming the Session's Subagents.
-  subagents?: readonly FeedContent[]
 }
 
 export type SessionUpdateContext = { database: Database; changes: SessionListChanges }
@@ -75,8 +71,6 @@ export function updateSession(
           .where(and(eq(sessionTable.argoId, sessionId), or(...differs)))
           .run().changes,
       )
-    if (update.subagents !== undefined)
-      changes += saveSessionSubagents(transaction, sessionId, update.subagents)
     if (update.archived === true)
       changes += Number(
         transaction.insert(sessionArchive).values({ sessionId }).onConflictDoNothing().run()

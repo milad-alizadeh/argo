@@ -42,8 +42,9 @@ nothing and stays on the poll. Once a Harness's hooks fire, its listing stops, e
 becomes a settled one under the quiet limit, and hook events set its rows; events for a Session
 with no saved row are ignored, except that a start asks Session sync to discover it (#2976).
 
-An external Session's Feed reads its whole history when it opens and on Refresh. It has no change
-signal until the external Feed moves to the vendor readers.
+An external Session's open Feed reads its whole history through the vendor when it opens, on each
+hook event that adds to it, and on each poll tick until a hook fires for that Session, as ADR-0047
+describes. The poll stores no Subagents for an external Session.
 
 The Session List is one `sessionList` query. Its input is a Project, a filter (`active`,
 `archived` or `all`), a search over the title each row shows, and an offset and limit. That title
@@ -82,7 +83,8 @@ signal itself.
 Live Feed replay is bounded. One memory journal keeps the newest 500 events and 2 MiB across all
 Sessions, and each launch starts a new generation. A cursor older than the journal, or from an
 earlier generation, reads vendor history and merges rows by stable item ID. A Session with no Argo
-live channel is only as fresh as the poll, as the amendment on external Sessions above describes.
+live channel is only as fresh as its hook events or the poll, as the amendment on external Sessions
+above describes.
 
 ## Amendment · Codex live Session ownership · 2026-09-28
 

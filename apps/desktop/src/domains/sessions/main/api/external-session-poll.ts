@@ -31,6 +31,16 @@ const GOES_QUIET: Record<ExternalSessionStatus, boolean> = {
 }
 // Each Session's row reaches SQLite at most once a window, with its newest values.
 const WRITE_WINDOW_MS = 500
+// The hook events after which the Session's history holds something new for its open Feed.
+const READS_FEED: Record<StatusHookEvent, boolean> = {
+  SessionStart: false,
+  UserPromptSubmit: true,
+  PreToolUse: false,
+  PermissionRequest: false,
+  PostToolUse: true,
+  Stop: true,
+  SessionEnd: false,
+}
 
 export type ExternalSessionPollContext = SessionUpdateContext & {
   harnesses: readonly { harness: Harness; external: ExternalSessions }[]
@@ -38,6 +48,8 @@ export type ExternalSessionPollContext = SessionUpdateContext & {
   hasLiveChannel: (sessionId: string) => boolean
   // A live external Session with no saved row.
   discover: (session: HarnessSession) => void
+  // Asks the Session's open Feed to read again; a closed Feed reads nothing.
+  refreshFeed: (sessionId: string) => void
 }
 
 // What a transcript stat compares between ticks; Argo reads none of the file's content.
@@ -105,7 +117,9 @@ const newTracked = (
 // that changed or left, and diffs the list against the last tick's. The first sight of a transcript
 // only records its stamp, so startup reads nothing. Updates merge into one write per Session a
 // window, and activity reads run one at a time, since one vendor read can take a large file whole.
-// Once a Harness's status hooks fire, their events set its statuses and its listing stops.
+// Once a Harness's status hooks fire, their events set its statuses and its listing stops. A
+// Session's open Feed reads again on its hook events, or on each tick until one fires for it and
+// once more when it leaves.
 export class ExternalSessionPoll {
   readonly #context: ExternalSessionPollContext
   readonly #external: ReadonlyMap<Harness, ExternalSessions>
@@ -179,6 +193,7 @@ export class ExternalSessionPoll {
       return
     }
     if (this.#context.hasLiveChannel(sessionId)) return
+    if (READS_FEED[event]) this.#context.refreshFeed(sessionId)
     const live = this.#live.get(harness) ?? new Map<string, TrackedSession>()
     this.#live.set(harness, live)
     const tracked = live.get(session.nativeId) ?? newTracked(null, null)
@@ -235,6 +250,7 @@ export class ExternalSessionPoll {
       if (sessionId === undefined) this.#discover(session, tracked)
       if (external.readActivity !== undefined) await this.#readChange(session, tracked)
       this.#show(session, tracked, Date.now())
+      this.#pollFeed(session, tracked)
     }
     this.#unlisted(harness, previous, current)
     if (!this.#closed.has(harness)) this.#closeAll(harness, current)
@@ -264,7 +280,16 @@ export class ExternalSessionPoll {
       }
       tracked.listed = null
       this.#show({ harness, nativeId }, tracked, Date.now())
+      this.#pollFeed({ harness, nativeId }, tracked)
     }
+  }
+
+  // A Session whose hooks have not fired has its open Feed read again each tick.
+  #pollFeed(session: HarnessSession, tracked: TrackedSession): void {
+    if (tracked.hooked) return
+    const sessionId = harnessSessionId(this.#context.database, session)
+    if (sessionId !== undefined && !this.#context.hasLiveChannel(sessionId))
+      this.#context.refreshFeed(sessionId)
   }
 
   // The same object across ticks, so a read that lands mid-tick is kept.
@@ -304,6 +329,8 @@ export class ExternalSessionPoll {
   #leave(session: HarnessSession, tracked: TrackedSession, readsActivity: boolean): void {
     const sessionId = harnessSessionId(this.#context.database, session)
     if (sessionId !== undefined && this.#context.hasLiveChannel(sessionId)) return
+    // The CLI can write its last Turn after the tick before it left.
+    if (sessionId !== undefined) this.#context.refreshFeed(sessionId)
     this.#update(session, { status: 'idle' })
     if (!readsActivity) return
     this.#leaving.set(harnessSessionKey(session), tracked)
@@ -327,8 +354,7 @@ export class ExternalSessionPoll {
     if (this.#stopped) return
     const key = harnessSessionKey(session)
     const pending = this.#pending.get(key)?.update
-    const subagents = [...(pending?.subagents ?? []), ...(update.subagents ?? [])]
-    this.#pending.set(key, { session, update: { ...pending, ...update, subagents } })
+    this.#pending.set(key, { session, update: { ...pending, ...update } })
     this.#writeTimer ??= setTimeout(() => this.flush(), WRITE_WINDOW_MS)
   }
 
@@ -388,12 +414,11 @@ export class ExternalSessionPoll {
   }
 
   // The line is the newest Turn's activity by the Feed's own rules; none keeps the stored line.
+  // An external Session stores no Subagents.
   #receive(session: HarnessSession, reading: ExternalActivityReading | null): void {
     if (reading !== null) {
       const { activity } = projectFeedRowEntries({ history: reading.turn, live: [] })
-      const subagents = reading.turn.filter((content) => content.kind === 'delegation')
-      if (activity !== null || subagents.length > 0)
-        this.#update(session, { ...(activity === null ? {} : { activity }), subagents })
+      if (activity !== null) this.#update(session, { activity })
     }
     const tracked = this.#tracked(session)
     if (tracked === undefined) {

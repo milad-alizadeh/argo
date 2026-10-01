@@ -1,16 +1,15 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { createServer, request } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import os from 'node:os'
 import path from 'node:path'
 import { afterAll, afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { createClaudeExternalSessions } from '@/harnesses/claude/session'
 import type { CodexAppServerClient } from '@/harnesses/codex/app-server'
 import { createCodexExternalSessions } from '@/harnesses/codex/session'
 import type { ExternalSessions } from '@/harnesses/registration'
-import { mockClaudeAgentsCli } from '@/mocks/cli/claude/mock-claude-agents'
-import { clientBackedByMock, writeMockCodex } from '@/mocks/cli/codex/mock-codex-driver'
-import { guardRealUserConfig, isolateHarnessFolders } from '@/mocks/cli/real-user-config'
+import type { mockClaudeAgentsCli } from '@/mocks/cli/claude/mock-claude-agents'
+import { mockExternalClis } from '@/mocks/cli/mock-external-clis'
+import { guardRealUserConfig } from '@/mocks/cli/real-user-config'
 import { hookEvent, hookTurn, postHook } from '@/mocks/cli/status-hooks'
 import { insertSession, liveSession, sessionListCaller } from '@/mocks/sessions/session-list-caller'
 import { ExternalSessionPoll, RUNNING_QUIET_LIMIT_MS } from './external-session-poll'
@@ -24,8 +23,7 @@ type HookHarness = (typeof HARNESSES)[number]
 const realConfigUnchanged = guardRealUserConfig()
 afterAll(realConfigUnchanged)
 
-let root: string
-let restoreFolders: () => void
+let clis: Awaited<ReturnType<typeof mockExternalClis>>
 let agents: ReturnType<typeof mockClaudeAgentsCli>
 let codex: CodexAppServerClient
 let caller: ReturnType<typeof sessionListCaller>
@@ -35,12 +33,9 @@ let poll: ExternalSessionPoll
 let receiver: StatusHookReceiver
 
 beforeEach(async () => {
-  root = await mkdtemp(path.join(os.tmpdir(), 'argo-status-hooks-'))
-  restoreFolders = isolateHarnessFolders(root)
-  agents = mockClaudeAgentsCli()
-  codex = clientBackedByMock(
-    await writeMockCodex(root, { CODEX_HOME: process.env.CODEX_HOME as string }),
-  )
+  clis = await mockExternalClis('argo-status-hooks-')
+  agents = clis.agents
+  codex = clis.codex
   liveActors = {}
   caller = sessionListCaller({ sessions: liveActors })
   discovered = []
@@ -51,12 +46,9 @@ afterEach(async () => {
   poll?.stop()
   vi.useRealTimers()
   vi.restoreAllMocks()
-  codex.shutdown()
-  agents.dispose()
   caller.stopWatching()
   caller.database.$client.close()
-  restoreFolders()
-  await rm(root, { recursive: true, force: true })
+  await clis.dispose()
 })
 
 // Builds the poll and the receiver; `listen` false leaves the receiver unstarted, and each
@@ -83,6 +75,7 @@ async function start({ listen = true, listed = Promise.resolve() } = {}) {
     harnesses,
     hasLiveChannel: (sessionId) => Object.hasOwn(liveActors, sessionId),
     discover: ({ nativeId }) => discovered.push(nativeId),
+    refreshFeed: () => {},
   })
   receiver = new StatusHookReceiver({ poll, harnesses })
   if (listen) await receiver.start()

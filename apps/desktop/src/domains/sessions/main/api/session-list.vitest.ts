@@ -9,6 +9,7 @@ import {
   saveTicket,
   sessionListCaller,
 } from '@/mocks/sessions/session-list-caller'
+import { saveSessionSubagents } from '../database'
 import { updateSession } from './session-update'
 
 // Links a Session to a Ticket whose content the provider has saved.
@@ -372,24 +373,22 @@ test('draws the activity the Session’s Feed published under its title', async 
 })
 
 test('lists the Subagents a Session named', async () => {
-  const { database, list, sessionListChanges } = sessionListCaller()
+  const { database, list } = sessionListCaller()
   try {
     insertSession(database, { id: IDS[0], harness: 'codex', nativeId: 'native-2', createdAt: 10 })
-    updateSession({ database, changes: sessionListChanges }, IDS[0], {
-      subagents: [
-        {
-          kind: 'delegation',
-          id: 'call-1',
-          event: 'started',
-          agentId: 'agent-1',
-          status: 'running',
-          name: 'Survey',
-          prompt: null,
-          model: null,
-          summary: null,
-        },
-      ],
-    })
+    saveSessionSubagents(database, IDS[0], [
+      {
+        kind: 'delegation',
+        id: 'call-1',
+        event: 'started',
+        agentId: 'agent-1',
+        status: 'running',
+        name: 'Survey',
+        prompt: null,
+        model: null,
+        summary: null,
+      },
+    ])
 
     assert.deepEqual((await list({ projectId: 'project-1' })).rows[0]?.subagents, [
       { id: 'agent-1', label: 'Survey', state: 'running' },

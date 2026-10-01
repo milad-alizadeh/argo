@@ -32,6 +32,7 @@ function startPoll() {
     ],
     hasLiveChannel: (sessionId) => live.has(sessionId),
     discover: ({ nativeId }) => discovered.push(nativeId),
+    refreshFeed: () => {},
   })
 }
 
@@ -112,7 +113,7 @@ test('a running Session with no Feed open stores its status and newest command',
   expect((await row(RUNNING)).updatedAt).not.toBe(before.updatedAt)
 })
 
-test('a Subagent the newest Turn started counts on the row', async () => {
+test('a Subagent the newest Turn started is not stored for the external Session', async () => {
   saved(RUNNING)
   await threads.open(RUNNING)
   await tickAndWrite()
@@ -131,9 +132,8 @@ test('a Subagent the newest Turn started counts on the row', async () => {
   const found = (await caller.list({ projectId: 'project-1' })).rows.find(
     (each) => each.id === RUNNING,
   )
-  expect(found?.subagents).toEqual([
-    { id: 'agent-thread-1', label: expect.anything(), state: 'running' },
-  ])
+  expect(threads.turnsReads).toEqual([RUNNING])
+  expect(found?.subagents).toEqual([])
 })
 
 test('an unchanged rollout asks for nothing', async () => {

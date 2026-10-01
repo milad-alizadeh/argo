@@ -27,6 +27,7 @@ beforeEach(() => {
     harnesses: [{ harness: 'claude', external: createClaudeExternalSessions(agents.executable) }],
     hasLiveChannel: (sessionId) => Object.hasOwn(liveActors, sessionId),
     discover: ({ nativeId }) => discovered.push(nativeId),
+    refreshFeed: () => {},
   })
 })
 
