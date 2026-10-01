@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
 import { createInterface } from 'node:readline'
 import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
 import { MOCK_START_REFUSED_FOLDER } from '../mock-cli.ts'
