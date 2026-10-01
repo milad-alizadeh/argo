@@ -4,6 +4,9 @@ import { createInterface } from 'node:readline'
 import { executableVersion } from '@/harnesses/cli/executable-version'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '../proof-protocol'
+import type { ConfigReadParams } from './protocol-generated/v2/config-read-params'
+import type { ConfigValueWriteParams } from './protocol-generated/v2/config-value-write-params'
+import type { SkillsListParams } from './protocol-generated/v2/skills-list-params'
 
 // The base protocol uses the 0.147.0 schema; the thread/resume sandbox override was verified against 0.157.0.
 export type RequestID = string | number
@@ -60,6 +63,9 @@ type RequestParams = {
     threadId: string
     includeTurns: boolean
   }
+  'skills/list': SkillsListParams
+  'config/read': ConfigReadParams
+  'config/value/write': ConfigValueWriteParams
   initialize: {
     clientInfo: {
       name: string

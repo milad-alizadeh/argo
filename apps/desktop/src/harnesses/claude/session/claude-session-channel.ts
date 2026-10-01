@@ -23,7 +23,6 @@ import { createClaudeToolControl } from './claude-channel-controls'
 import { decodeClaudeLiveContent } from './claude-feed-decoder'
 import { ClaudeFeedProjection } from './claude-feed-projection'
 import { ClaudeLiveText } from './claude-live-text'
-import { claudeSkillFiles } from './claude-skill-files'
 
 type Send = Pick<SessionStartInput, 'prompt' | 'commandId'>
 type ClaudeLiveInput = SessionLiveInput
@@ -95,7 +94,7 @@ class ClaudeSessionChannel implements LiveSessionChannel {
   private seen = new Set<string>()
   private startedCommands = new Set<string>()
   private liveText = new ClaudeLiveText()
-  private projection: ClaudeFeedProjection
+  private projection = new ClaudeFeedProjection()
   private input: ClaudeLiveInput
   private controls: LiveSessionControls | undefined
   private onEvent: (event: LiveSessionChannelEvent) => void
@@ -107,9 +106,6 @@ class ClaudeSessionChannel implements LiveSessionChannel {
     host: { controls: LiveSessionControls | undefined; executable: string | null },
   ) {
     this.input = input
-    this.projection = new ClaudeFeedProjection(
-      claudeSkillFiles('resume' in input ? input.resume.cwd : input.cwd),
-    )
     this.controls = host.controls
     this.onEvent = onEvent
     this.executable = host.executable

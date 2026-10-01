@@ -13,6 +13,7 @@ export function dispatchCodexNotification(
     reasoningSummaryDelta: (params: Params) => void
     commandOutputDelta: (params: Params) => void
     itemNotification: (params: Params, phase: 'started' | 'completed') => void
+    skillsChanged: () => void
   },
 ): undefined {
   const { params } = message
@@ -40,6 +41,9 @@ export function dispatchCodexNotification(
       return undefined
     case 'item/started':
       handlers.itemNotification(params, 'started')
+      return undefined
+    case 'skills/changed':
+      handlers.skillsChanged()
       return undefined
     default:
       return undefined
