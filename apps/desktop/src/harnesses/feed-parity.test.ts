@@ -4,6 +4,7 @@ import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { decodeClaudeSessionMessages } from './claude/session/claude-session-history'
 import type { CodexRequest, ThreadItem } from './codex/app-server'
+import { readCodexPlan } from './codex/session/codex-feed'
 import { readCodexSessionHistory } from './codex/session/codex-session-history'
 
 // What a reader sees: every row with its ids dropped, since each Harness names its own items.
@@ -115,3 +116,60 @@ test('Claude and Codex draw the same rows for a prompt, a thought, commands, and
     expect.objectContaining({ shape: 'tool', label: 'Ran bun test', text: 'bun test' }),
   )
 })
+
+const todoPlan = [
+  assistant([
+    {
+      type: 'tool_use',
+      id: 't1',
+      name: 'TodoWrite',
+      input: {
+        todos: [
+          { content: 'Read the code', status: 'completed', activeForm: 'Reading' },
+          { content: 'Write the test', status: 'in_progress', activeForm: 'Writing' },
+        ],
+      },
+    },
+  ]),
+]
+const taskCreate = (id: string, subject: string) => ({
+  type: 'tool_use',
+  id,
+  name: 'TaskCreate',
+  input: { subject, description: subject },
+})
+const taskPlan = [
+  assistant([taskCreate('c1', 'Read the code')]),
+  result('c1', 'Task #1 created successfully: Read the code'),
+  assistant([taskCreate('c2', 'Write the test')]),
+  result('c2', 'Task #2 created successfully: Write the test'),
+  assistant([
+    { type: 'tool_use', id: 'u1', name: 'TaskUpdate', input: { taskId: '1', status: 'completed' } },
+  ]),
+  result('u1', 'Updated task #1 status'),
+]
+
+test.each([
+  ['TodoWrite', todoPlan],
+  ['TaskCreate and TaskUpdate', taskPlan],
+])(
+  'Claude %s and Codex give the same Plan and step count for the same steps',
+  (_tools, records) => {
+    const claude = decodeClaudeSessionMessages(
+      records.map((record, index) => ({ uuid: `claude-${index}`, ...record }) as SessionMessage),
+    ).findLast((content) => content.kind === 'plan')
+    const codex = readCodexPlan({
+      threadId: 'thread-1',
+      turnId: 'turn-1',
+      explanation: null,
+      plan: [
+        { step: 'Read the code', status: 'completed' },
+        { step: 'Write the test', status: 'inProgress' },
+      ],
+    })?.content
+    const { id: _claudeId, ...claudePlan } = claude ?? { id: '' }
+    const { id: _codexId, ...codexPlan } = codex ?? { id: '' }
+    expect(claudePlan).toEqual(codexPlan)
+    expect(codexPlan).toMatchObject({ kind: 'plan', progress: { completed: 1, total: 2 } })
+  },
+)

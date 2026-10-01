@@ -190,6 +190,34 @@ test('a multi-activity Turn publishes its latest activity to the Feed and keeps 
   expect(sessionListChanges).toBe(changesBeforeClose)
 })
 
+function plan(id: string, completed: number, total: number): FeedContent {
+  return { kind: 'plan', id, text: `Plan ${id}`, progress: { completed, total } }
+}
+
+// The Plan progress the Session List row reads back from what the Feed stored.
+async function sessionListPlan() {
+  const { details, stopWatching } = sessionListCaller({ database })
+  const row = await details({ sessionId })
+  stopWatching()
+  return row?.planProgress
+}
+
+test('a Feed with Plan rows keeps the newest step count for the Session List', async () => {
+  const history = historyReads()
+  const feed = await observe({ readHistory: history.readHistory })
+  await history.answer([message('m1', 'user', 'Plan it'), plan('p1', 0, 3), plan('p2', 1, 3)])
+  expect(await sessionListPlan()).toEqual({ completed: 1, total: 3 })
+
+  journal.append(sessionId, content(plan('p3', 2, 4)))
+  expect(await sessionListPlan()).toEqual({ completed: 2, total: 4 })
+
+  // A history read with no Plan keeps the stored count, since some vendor histories keep none.
+  journal.append(sessionId, { type: 'status', ...identity, status: 'idle' })
+  await history.answer([message('m1', 'user', 'Plan it')])
+  expect(await sessionListPlan()).toEqual({ completed: 2, total: 4 })
+  feed.subscription.unsubscribe()
+})
+
 test('names the waiting Question and Permission', async () => {
   const history = historyReads()
   const feed = await observe({ readHistory: history.readHistory })

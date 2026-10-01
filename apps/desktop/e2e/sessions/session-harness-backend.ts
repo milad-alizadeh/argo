@@ -2,8 +2,8 @@
 // packaged app copy and the launches; the backend answers the four questions that change when the
 // proof swaps a mock `claude` and `codex` for the real ones.
 import type { Page } from 'playwright-core'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import type { AcpHarness } from '@/harnesses/acp/acp-agents'
+import type { Harness } from '@/harnesses/harness'
 
 // The disk state the harness prepares for every backend.
 export type SessionFixture = {
@@ -26,7 +26,7 @@ export type SessionHarnessLaunch = {
 }
 
 // The Turn a case is waiting on, named the way the case sent it.
-export type SessionReply = { harness: SessionHarness; prompt: string }
+export type SessionReply = { harness: Harness; prompt: string }
 
 export type SessionHarnessRun = {
   // 1. Which executables the app must run. The real backend runs no ACP agent yet.

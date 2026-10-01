@@ -47,9 +47,11 @@ export async function sample(
     jsEventListeners: number
   }
   await cdp.detach()
-  const pid = await application.evaluate(({ webContents }) =>
-    webContents.getAllWebContents()[0].getOSProcessId(),
-  )
+  const pid = await application.evaluate(({ webContents }) => {
+    const renderer = webContents.getAllWebContents()[0]
+    if (renderer === undefined) throw new Error('The app has no renderer to sample.')
+    return renderer.getOSProcessId()
+  })
   return {
     label,
     heapUsedMb: Math.round(usage.usedSize / 1048576),
@@ -66,7 +68,7 @@ export async function processWorkingSetMb(application: ElectronApplication) {
   const kilobytes = await application.evaluate(({ app }) =>
     app
       .getAppMetrics()
-      .filter((metric) => metric.type === 'Renderer' || metric.type === 'Tab')
+      .filter((metric) => metric.type === 'Tab')
       .reduce((total, metric) => total + (metric.memory?.workingSetSize ?? 0), 0),
   )
   return Math.round(kilobytes / 1024)

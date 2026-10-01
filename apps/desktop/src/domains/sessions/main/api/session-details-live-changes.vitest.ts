@@ -101,5 +101,6 @@ test('refreshes selected details when the live channel fails', async () => {
     (seen) => seen.at(-1)?.posture === null,
   )
 
-  expect(seen.at(-1)).toEqual({ posture: null, effort: null })
+  // The row keeps the configuration the channel last held.
+  expect(seen.at(-1)).toEqual({ posture: null, effort: 'deep' })
 })

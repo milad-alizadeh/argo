@@ -1,18 +1,18 @@
 // A Session born by clicking, inside the shipped app, drives the plus control, harness tabs, composer and send chord (#2117).
 import assert from 'node:assert/strict'
 import type { Page } from 'playwright-core'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+import type { Harness } from '@/harnesses/harness'
 import { createSessionByClick, sessionListIds } from '../gestures'
 import type { SessionHarnessBackend } from '../session-harness-backend'
 
 const PROMPT = 'Reply with one short acknowledgement.'
 
-// The mock folder starts empty, so the Session List row must precede a Harness transcript.
+// The mock folder starts empty, so the one new Session List row is the Session this gesture made.
 export async function proveSessionCreatedByClick(
   page: Page,
   backend: SessionHarnessBackend,
   options: {
-    harness?: SessionHarness
+    harness?: Harness
     prompt?: string
     budgetTurnConfiguration?: boolean
     permissionMode?: 'auto'
