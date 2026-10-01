@@ -25,7 +25,7 @@ export type SessionOptions = {
   slowReply: boolean
   // Replays the mock Harness's seeded jitter, split bytes and failures.
   adversarialSeed: string | undefined
-  sessionSyncFixture: { records: unknown[]; delayMs: number } | undefined
+  sessionSyncFixture: { records: unknown[] } | undefined
 }
 
 export type SessionFixtures = SessionOptions & {

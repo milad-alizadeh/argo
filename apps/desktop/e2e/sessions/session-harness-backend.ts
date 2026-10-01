@@ -19,7 +19,7 @@ export type SessionHarnessLaunch = {
   slowReply: boolean
   adversarialSeed?: string
   // Recorded Claude SDK rows for the packaged Session-sync proof.
-  sessionSyncFixture?: { records: unknown[]; delayMs: number }
+  sessionSyncFixture?: { records: unknown[] }
 }
 
 // The Turn a case is waiting on, named the way the case sent it.
