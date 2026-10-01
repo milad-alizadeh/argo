@@ -55,7 +55,16 @@ const unavailableHarnessSchema = z.strictObject({
   reason: z.enum(['not-installed', 'not-signed-in', 'invalid-response', 'unavailable']),
   detail: z.string().optional(),
 })
-export const harnessInfoSchema = z.union([availableHarnessSchema, unavailableHarnessSchema])
+// Reader text: the step that installs a missing Harness, carried only by not-installed.
+const notInstalledHarnessSchema = unavailableHarnessSchema.extend({
+  reason: z.literal('not-installed'),
+  installStep: z.string().min(1),
+})
+export const harnessInfoSchema = z.union([
+  availableHarnessSchema,
+  notInstalledHarnessSchema,
+  unavailableHarnessSchema,
+])
 export const harnessCatalogSchema = z
   .strictObject({
     harnesses: z.array(harnessInfoSchema),
@@ -87,6 +96,10 @@ export function unavailable(harness: Harness): HarnessInfo {
     availability: 'unavailable',
     reason: 'unavailable',
   }
+}
+
+export function notInstalled(harness: Harness, installStep: string): HarnessInfo {
+  return { harness, availability: 'unavailable', reason: 'not-installed', installStep }
 }
 
 export function invalidCatalogResponse(harness: Harness, error: z.ZodError): HarnessInfo {
