@@ -114,6 +114,10 @@ function ConfigurationBody({
             harness: harnessLabel(harness.harness),
           })}
         </p>
+        {/* Only a not-installed detail is reader text: the Harness's install step. */}
+        {catalogFailure.reason === 'not-installed' && catalogFailure.detail ? (
+          <p className="type-meta text-muted-foreground">{catalogFailure.detail}</p>
+        ) : null}
         <Button onClick={refreshCatalog} size="sm" type="button" variant="outline">
           {t('composer.turnConfiguration.refreshModels')}
         </Button>

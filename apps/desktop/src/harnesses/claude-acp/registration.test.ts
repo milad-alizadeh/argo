@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
@@ -103,6 +103,41 @@ describe('the Claude ACP registration', () => {
     expect(events.map(({ type }) => type)).toEqual(
       expect.arrayContaining(['command.accepted', 'identity', 'turn.started', 'turn.completed']),
     )
+  })
+})
+
+describe('the Claude ACP catalog without the agent installed', () => {
+  const saved = { SHELL: process.env.SHELL, PATH: process.env.PATH }
+  let bin: string
+
+  beforeEach(async () => {
+    delete process.env[SESSION_CLAUDE_ACP_EXECUTABLE_ENV]
+    bin = path.join(root, 'bin')
+    await mkdir(bin)
+    // With no login shell, the lookup reads PATH, which holds only this empty folder.
+    process.env.SHELL = ''
+    process.env.PATH = bin
+  })
+
+  afterEach(() => {
+    process.env.SHELL = saved.SHELL
+    process.env.PATH = saved.PATH
+  })
+
+  test('names the missing agent and the command that installs it', async () => {
+    expect(await createClaudeAcpRegistration().readCatalog()).toEqual({
+      harness: 'claude-acp',
+      availability: 'unavailable',
+      reason: 'not-installed',
+      detail: expect.stringContaining('npm install -g @agentclientprotocol/claude-agent-acp'),
+    })
+  })
+
+  test('finds the agent on the next read once it is installed', async () => {
+    const registration = createClaudeAcpRegistration()
+    expect(await registration.readCatalog()).toMatchObject({ reason: 'not-installed' })
+    await writeMockClaudeAcp(bin, path.join(root, 'transcripts'))
+    expect(await registration.readCatalog()).toMatchObject({ availability: 'available' })
   })
 })
 

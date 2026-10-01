@@ -6,7 +6,7 @@ import type { HarnessReadinessRegistration } from '@/domains/harness-signin/main
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
 import type { Harness } from '@/harnesses/harness'
-import { type HarnessInfo, unavailable } from '@/harnesses/harness-catalog'
+import type { HarnessInfo } from '@/harnesses/harness-catalog'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { type AcpCatalogPresentation, acpHarnessInfo } from './acp-catalog'
 import { type AcpAgentCommand, AcpCapabilityError, connectAcpAgent } from './acp-client'
@@ -18,6 +18,8 @@ export type AcpHarnessDefinition<Id extends Harness> = HarnessReadinessRegistrat
   harness: Id
   // Where to start the agent, or null when it is not installed.
   command: () => AcpAgentCommand | null
+  // The reader step that installs the agent, shown when `command` finds none.
+  installStep: string
   catalog: AcpCatalogPresentation
 }
 
@@ -61,10 +63,9 @@ async function readAcpHistory(
 // The catalog is what a fresh Session reports; unprompted, it is never stored, and it is closed when advertised.
 async function readAcpCatalog(
   harness: Harness,
-  command: AcpAgentCommand | null,
+  command: AcpAgentCommand,
   presentation: AcpCatalogPresentation,
 ): Promise<HarnessInfo> {
-  if (command === null) return unavailable(harness)
   const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-acp-catalog-'))
   const client = await connectAcpAgent(command, {
     update: noUpdates,
@@ -88,12 +89,22 @@ function required(command: AcpAgentCommand | null, harness: Harness): AcpAgentCo
 export function createAcpRegistration<Id extends Harness>(
   definition: AcpHarnessDefinition<Id>,
 ): HarnessRegistration<Id> {
-  const { harness, command, catalog } = definition
+  const { harness, command, catalog, installStep } = definition
   return {
     harness,
     checkReadiness: definition.checkReadiness,
     signIn: definition.signIn,
-    readCatalog: () => readAcpCatalog(harness, command(), catalog),
+    readCatalog: async () => {
+      const agent = command()
+      if (agent === null)
+        return {
+          harness,
+          availability: 'unavailable',
+          reason: 'not-installed',
+          detail: installStep,
+        }
+      return readAcpCatalog(harness, agent, catalog)
+    },
     readHistory: (target) => readAcpHistory(required(command(), harness), target),
     openLiveSession: (input, controls, emit) =>
       new AcpSessionChannel(input, emit, { command: required(command(), harness), controls }),

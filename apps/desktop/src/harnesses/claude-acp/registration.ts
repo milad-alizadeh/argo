@@ -21,29 +21,33 @@ const modeIcons: Record<string, ModeIcon> = {
 }
 
 export function createClaudeAcpRegistration(): HarnessRegistration<'claude-acp'> {
-  const executable =
-    process.env[SESSION_CLAUDE_ACP_EXECUTABLE_ENV] ??
-    findExecutableOnLoginShellPath('claude-agent-acp')
-  const checkReadiness = createClaudeAcpReadiness(() => executable)
+  let found: string | null = null
+  // Looked up again until found, so an install shows on the next read without a restart.
+  const executable = () =>
+    (found ??=
+      process.env[SESSION_CLAUDE_ACP_EXECUTABLE_ENV] ??
+      findExecutableOnLoginShellPath('claude-agent-acp'))
+  const checkReadiness = createClaudeAcpReadiness(executable)
   const environment = claudeCliEnvironment()
   return createAcpRegistration({
     harness: 'claude-acp',
     checkReadiness,
     signIn: createClaudeAcpSignInDriver(checkReadiness),
     // The agent is a node script; a GUI launch's bare PATH must still find the node beside it.
-    command: () =>
-      executable === null
+    command: () => {
+      const agent = executable()
+      return agent === null
         ? null
         : {
-            executable,
+            executable: agent,
             args: [],
             env: {
               ...environment,
-              PATH: [path.dirname(executable), environment.PATH]
-                .filter(Boolean)
-                .join(path.delimiter),
+              PATH: [path.dirname(agent), environment.PATH].filter(Boolean).join(path.delimiter),
             },
-          },
+          }
+    },
+    installStep: copy.installStep,
     catalog: {
       agent: 'Claude',
       label: copy.presentation.label,
