@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { loadCodeLanguage } from '../../ai-elements'
 import { roleColors } from './appearance-probe'
 import { FeedMarkdown } from './feed-markdown'
+import { drawDiagram } from './feed-mermaid'
 import { RICH_MARKDOWN, SAMPLE_PICTURE, SAMPLE_TYPESCRIPT } from './feed-samples'
 
 const meta = {
@@ -51,6 +53,8 @@ export const Formatted: Story = {
 
 export const UnlabelledFence: Story = {
   args: { text: ['```', SAMPLE_TYPESCRIPT, '```'].join('\n') },
+  // Grammars load on first use, so the play times the highlighting rather than a cold module load.
+  loaders: [() => loadCodeLanguage('ts')],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('img', { name: 'TypeScript file' })).toBeVisible()
@@ -142,21 +146,18 @@ export const LinksFromKeyboard: Story = {
   },
 }
 
-const DIAGRAM_MARKDOWN = [
-  '```mermaid',
-  'flowchart LR',
-  '  Backlog --> Ticket --> Session',
-  '```',
-].join('\n')
+const DIAGRAM_SOURCE = 'flowchart LR\n  Backlog --> Ticket --> Session'
+const DIAGRAM_MARKDOWN = ['```mermaid', DIAGRAM_SOURCE, '```'].join('\n')
+// Mermaid loads on first use, so the play times the drawing rather than a cold module load.
+const loadMermaid = () => drawDiagram('mermaid-preload', DIAGRAM_SOURCE, false)
 
 export const Diagram: Story = {
   args: { text: DIAGRAM_MARKDOWN },
+  loaders: [loadMermaid],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const diagram = canvas.getByRole('figure')
-    // Mermaid loads on first use in the whole file; under a full suite run that import plus its
-    // own parse/render can outrun 5s, same cold-start cost the highlighter pays elsewhere.
-    await waitFor(() => expect(diagram.querySelector('svg')).not.toBeNull(), { timeout: 10000 })
+    await waitFor(() => expect(diagram.querySelector('svg')).not.toBeNull())
     await expect(diagram).toHaveTextContent('Session')
   },
 }
@@ -164,11 +165,10 @@ export const Diagram: Story = {
 // Expanding a fence's diagram hands the caller the same evidence shape a tool call would.
 export const DiagramOpensEvidence: Story = {
   args: { text: DIAGRAM_MARKDOWN, rowId: 'assistant-1', onOpenEvidence: fn() },
+  loaders: [loadMermaid],
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
-    await waitFor(() => expect(canvasElement.querySelector('figure svg')).not.toBeNull(), {
-      timeout: 5000,
-    })
+    await waitFor(() => expect(canvasElement.querySelector('figure svg')).not.toBeNull())
     await userEvent.click(canvas.getByRole('button', { name: 'Expand diagram in inspector' }))
     await expect(args.onOpenEvidence).toHaveBeenCalledTimes(1)
     const evidence = (args.onOpenEvidence as ReturnType<typeof fn>).mock.calls[0]?.[0]
@@ -189,10 +189,9 @@ export const DiagramActive: Story = {
     activeEvidenceId: 'assistant-1:diagram:0',
     onOpenEvidence: fn(),
   },
+  loaders: [loadMermaid],
   play: async ({ canvasElement }) => {
-    await waitFor(() => expect(canvasElement.querySelector('figure svg')).not.toBeNull(), {
-      timeout: 5000,
-    })
+    await waitFor(() => expect(canvasElement.querySelector('figure svg')).not.toBeNull())
     const figure = canvasElement.querySelector('figure')
     await expect(figure).toHaveAttribute('aria-current', 'true')
   },

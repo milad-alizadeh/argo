@@ -5,6 +5,7 @@ import { feedReadingRows } from '@/domains/sessions/api/feed/feed-reading-rows'
 import { projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
 import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import { loadCodeLanguage } from '../../ai-elements'
 import type { SessionError, SessionFeed, SessionFeedRow } from '../../types'
 import { BROKEN_PICTURE, RICH_MARKDOWN, SAMPLE_PICTURE } from '../content/feed-samples'
 import { BackgroundWork, type BackgroundWorkLinks } from '../rows/background-work'
@@ -275,6 +276,8 @@ async function waitForScrollToSettle(history: HTMLElement) {
 // Mounted rows retain their natural content height after images and code highlighting finish.
 export const FormattedProse: Story = {
   args: { feed: richFeed, selectedSessionId: 'rich' },
+  // Grammars load on first use, so the play times the highlighting rather than a cold module load.
+  loaders: [() => loadCodeLanguage('ts')],
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(2))
     const [prompt, answer] = drawnRows(canvasElement)

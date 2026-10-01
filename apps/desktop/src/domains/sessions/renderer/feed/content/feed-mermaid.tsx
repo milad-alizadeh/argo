@@ -10,7 +10,7 @@ type Drawing = 'pending' | 'drawn' | 'failed'
 
 // Mermaid is loaded on the first diagram, so a feed with none never pays for it. `strict` runs every
 // label through DOMPurify and turns off click handlers, so the SVG it returns holds no script.
-async function drawDiagram(id: string, source: string, dark: boolean) {
+export async function drawDiagram(id: string, source: string, dark: boolean) {
   const { default: mermaid } = await import('mermaid')
   mermaid.initialize({
     startOnLoad: false,

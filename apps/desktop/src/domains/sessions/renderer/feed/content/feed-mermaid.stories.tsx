@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { FeedMermaid } from './feed-mermaid'
+import { drawDiagram, FeedMermaid } from './feed-mermaid'
 
 const FLOWCHART = 'flowchart LR\n  Backlog --> Ticket --> Session'
 
@@ -15,6 +15,8 @@ const meta = {
     ),
   ],
   args: { source: FLOWCHART },
+  // Mermaid loads on first use, so the play times the drawing rather than a cold module load.
+  loaders: [() => drawDiagram('mermaid-preload', FLOWCHART, false)],
 } satisfies Meta<typeof FeedMermaid>
 
 export default meta
@@ -25,11 +27,7 @@ export const Drawn: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Diagram')).toBeVisible()
-    // Mermaid loads on first use in the whole file; under a full suite run that import plus its
-    // own parse/render can outrun 5s, same cold-start cost the highlighter pays elsewhere.
-    await waitFor(() => expect(canvasElement.querySelector('svg')).not.toBeNull(), {
-      timeout: 10000,
-    })
+    await waitFor(() => expect(canvasElement.querySelector('svg')).not.toBeNull())
     const expand = canvas.getByRole('button', { name: 'Expand diagram in inspector' })
     await userEvent.click(expand)
     await expect(args.onOpen).toHaveBeenCalledTimes(1)
@@ -45,9 +43,7 @@ export const Drawn: Story = {
 export const NoExpand: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(() => expect(canvasElement.querySelector('svg')).not.toBeNull(), {
-      timeout: 5000,
-    })
+    await waitFor(() => expect(canvasElement.querySelector('svg')).not.toBeNull())
     await expect(
       canvas.queryByRole('button', { name: 'Expand diagram in inspector' }),
     ).not.toBeInTheDocument()
@@ -57,9 +53,7 @@ export const NoExpand: Story = {
 export const Active: Story = {
   args: { active: true },
   play: async ({ canvasElement }) => {
-    await waitFor(() => expect(canvasElement.querySelector('svg')).not.toBeNull(), {
-      timeout: 5000,
-    })
+    await waitFor(() => expect(canvasElement.querySelector('svg')).not.toBeNull())
     const figure = canvasElement.querySelector('figure')
     await expect(figure).toHaveClass('border-primary')
     await expect(figure).toHaveAttribute('aria-current', 'true')
@@ -70,9 +64,7 @@ export const InvalidSource: Story = {
   args: { source: 'flowchart LR\n  Backlog --> ' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(() => expect(canvas.getByText('Diagram · Could not render')).toBeVisible(), {
-      timeout: 5000,
-    })
+    await waitFor(() => expect(canvas.getByText('Diagram · Could not render')).toBeVisible())
     const alert = canvas.getByRole('alert')
     await expect(alert).toHaveTextContent('The diagram source is incomplete')
     await expect(alert).toHaveTextContent('The original source remains available above.')
@@ -97,9 +89,7 @@ export const NarrowWidth: Story = {
       'flowchart LR\n  Backlog --> Refinement --> Ready --> InProgress --> Review --> Done --> Session',
   },
   play: async ({ canvasElement }) => {
-    await waitFor(() => expect(canvasElement.querySelector('svg')).not.toBeNull(), {
-      timeout: 5000,
-    })
+    await waitFor(() => expect(canvasElement.querySelector('svg')).not.toBeNull())
     const frame = canvasElement.querySelector('[aria-busy]')
     await expect(frame).toHaveClass('overflow-x-auto')
   },
