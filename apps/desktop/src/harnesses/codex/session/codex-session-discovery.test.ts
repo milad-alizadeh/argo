@@ -204,6 +204,25 @@ test('counts a thread whose preview or cwd breaks the generated Thread type', as
   expect(result).toEqual({ records: [], skipped: 2 })
 })
 
+test('reads the Model and Effort a thread records, and leaves out what it records as none', async () => {
+  const result = await createCodexSessionSummaryList((async (_method, _params, parse) =>
+    parse({
+      data: [
+        { id: 'configured', updatedAt: 1, model: 'gpt-5.5', reasoningEffort: 'high' },
+        { id: 'unconfigured', updatedAt: 1, model: null, reasoningEffort: null },
+      ],
+      nextCursor: null,
+    })) as CodexRequest)({ knownNativeIds: [] })
+  expect(result.records).toEqual([
+    {
+      nativeId: 'configured',
+      activityAt: 1000,
+      turnConfiguration: { model: 'gpt-5.5', effort: 'high', mode: null },
+    },
+    { nativeId: 'unconfigured', activityAt: 1000 },
+  ])
+})
+
 // The error Codex 0.157.0 answers thread/read with for an id that is not a UUID.
 const INVALID_THREAD_ID_MESSAGE =
   'invalid thread id: invalid character: expected an optional prefix of `urn:uuid:` followed by [0-9a-fA-F-], found `p` at 1'

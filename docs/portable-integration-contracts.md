@@ -193,7 +193,7 @@ It then drives the shipped cockpit through registration, a folder that is not a 
 It also proves accessible names, a focus ring that every control in the first screen's tab ring draws only while focused, and every navigation chord in the table.
 It reads back the original package's production fuses after the run.
 
-`bun run capture:cockpit` writes one PNG per deck state and appearance.
+`bun run capture:cockpit` writes one PNG per screen: no Project, and one Project. It records the appearance the app draws (#3069).
 `bun run measure:cockpit` records startup and idle evidence for #1863 from five launches.
 Both tools launch the Vite build by default, where `app.isPackaged` is false.
 Set `ARGO_E2E_PACKAGED=1` after `bun run build` to collect this evidence from the packaged app.

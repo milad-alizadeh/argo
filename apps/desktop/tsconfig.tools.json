@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    // The tools drive the renderer through Playwright, so their page closures read the DOM.
+    "lib": ["ES2023", "DOM", "DOM.Iterable"]
+  },
+  "include": [
+    "src/renderer/argo.d.ts",
+    "tools/**/*.ts",
+    // The driver reads the global this probe declares in Electron main.
+    "tools/sessions/session-list-startup-probe.mts"
+  ],
+  "exclude": []
+}

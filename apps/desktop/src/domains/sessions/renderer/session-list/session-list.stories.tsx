@@ -406,6 +406,23 @@ export const SessionListStructure: Story = {
   },
 }
 
+// A row whose Feed held a Plan names its step count, with or without a live channel; an empty
+// Plan names none.
+export const RowShowsItsPlanStep: Story = {
+  beforeEach: () =>
+    showing([
+      { ...session, planProgress: { completed: 1, total: 2 } },
+      { ...secondSession, planProgress: { completed: 0, total: 0 } },
+    ]),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const planned = await canvas.findByRole('button', { name: /Read the Session transcript/ })
+    await expect(within(planned).getByText('Step 1/2')).toBeVisible()
+    const unplanned = canvas.getByRole('button', { name: /A second Session/ })
+    await expect(within(unplanned).queryByText(/^Step /)).toBeNull()
+  },
+}
+
 // A settled row says how long ago it last changed; a working one shows no time.
 export const SettledRowShowsItsAge: Story = {
   beforeEach: () => {

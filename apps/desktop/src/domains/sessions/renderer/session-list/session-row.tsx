@@ -154,10 +154,10 @@ function SessionRowMark({ session, unavailable }: { session: RowSession; unavail
 }
 
 function SessionMetadata({ now, session }: { now: number; session: RowSession }) {
+  const { t } = useTranslation('sessions')
   // Main's link alone, so the row names the Ticket the list files it under.
   const ticketKey = session.ticket?.key ?? null
   const minutes = sessionAge(session, now)
-  // #2962 fills Plan progress.
   const plan = session.plan ?? null
   // The line keeps its height when empty, so a row does not shrink as its age hides.
   return (
@@ -166,6 +166,14 @@ function SessionMetadata({ now, session }: { now: number; session: RowSession })
         <SessionAge minutes={minutes} updatedAt={session.updatedAt} />
       )}
       {plan === null ? null : <SessionPlanBar plan={plan} running={session.status === 'running'} />}
+      {session.planProgress === null || session.planProgress.total === 0 ? null : (
+        <span>
+          {t('composer.plan', {
+            current: session.planProgress.completed,
+            total: session.planProgress.total,
+          })}
+        </span>
+      )}
       {ticketKey !== null ? (
         <span className="inline-flex items-center gap-1">
           <Icon name="ticket" />

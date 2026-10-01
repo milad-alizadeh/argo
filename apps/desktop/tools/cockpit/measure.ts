@@ -20,8 +20,9 @@ import { mkdtemp, realpath, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { closeApplication } from '../../e2e/application-under-test'
 import { launch, prepare } from '../../e2e/projects/fixtures/project.fixture'
-import { chooseThen, show, waitForCockpit } from './cockpit-driver'
+import { show, waitForScreen } from './cockpit-driver'
 import { firstPaint, frameDeltas, median, percentile, processLoad } from './cockpit-metrics'
 
 const RUNS = Number(process.argv[2] ?? 5)
@@ -34,28 +35,25 @@ const FRAME_SETTLE_MS = 1000
 const CEILING_RATIO = 1.5
 const REFERENCE_HZ = 120
 
-function verdictName(judged, withinCeiling) {
+function verdictName(judged: boolean, withinCeiling: boolean) {
   if (!judged) return 'unjudged'
   return withinCeiling ? 'pass' : 'fail'
 }
 
-async function measure(fixture) {
+async function measure(fixture: { application: string; userData: string }) {
   const started = Date.now()
   const application = await launch(fixture)
   try {
     const page = await application.firstWindow()
-    await waitForCockpit(page)
-    // The registered Project is opened and drawn: startup is not over until the deck answers.
-    await page.waitForFunction(
-      (selector) => document.querySelector(selector)?.getAttribute('data-state') === 'selected',
-      '[data-component="ProjectDeck"] [data-state]',
-    )
+    // Startup is not over until the seeded Project draws its Session List.
+    await waitForScreen(page, 'project')
     const startupMs = Date.now() - started
     await show(application)
-    const display = await application.evaluate(
-      ({ BrowserWindow, screen }) =>
-        screen.getDisplayMatching(BrowserWindow.getAllWindows()[0].getBounds()).displayFrequency,
-    )
+    const display = await application.evaluate(({ BrowserWindow, screen }) => {
+      const window = BrowserWindow.getAllWindows()[0]
+      if (window === undefined) throw new Error('The app opened no window.')
+      return screen.getDisplayMatching(window.getBounds()).displayFrequency
+    })
     const paintMs = await firstPaint(page)
     await new Promise((resolve) => setTimeout(resolve, FRAME_SETTLE_MS))
     const deltas = await frameDeltas(page)
@@ -73,27 +71,21 @@ async function measure(fixture) {
       ...load,
     }
   } finally {
-    await application.close()
+    await closeApplication(application)
   }
 }
 
+type Run = Awaited<ReturnType<typeof measure>>
+
 const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'argo-cockpit-measure-')))
 try {
-  const fixture = await prepare(root)
-  // The first launch registers the Project; every measured launch then reopens it, which is the
+  // The fixture seeds one registered Project, so every measured launch reopens it, which is the
   // startup this ticket is about.
-  const first = await launch(fixture)
-  const page = await first.firstWindow()
-  await waitForCockpit(page)
-  await chooseThen({ application: first, page, fixture }, fixture.beta, {
-    button: 'Open Project…',
-    state: 'selected',
-  })
-  await first.close()
+  const fixture = await prepare(root)
 
-  const runs = []
+  const runs: Run[] = []
   for (let index = 0; index < RUNS; index += 1) runs.push(await measure(fixture))
-  const summarise = (key) => median(runs.map((run) => run[key]))
+  const summarise = (key: keyof Run) => median(runs.map((run) => run[key]))
   const ceilingMs = Number((summarise('budgetMs') * CEILING_RATIO).toFixed(2))
   const displayHz = summarise('displayHz')
   const judged = displayHz === REFERENCE_HZ
