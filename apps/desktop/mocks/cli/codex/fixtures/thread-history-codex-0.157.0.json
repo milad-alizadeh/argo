@@ -265,7 +265,7 @@
                       "path": "."
                     }
                   ],
-                  "aggregatedOutput": "total 0\ndrwxr-xr-x@ 3 milad  wheel   96 Oct  1 03:21 .\ndrwxr-xr-x@ 6 milad  wheel  192 Oct  1 03:21 ..\ndrwxr-xr-x@ 9 milad  wheel  288 Oct  1 03:21 .git\n./.git/config\n./.git/HEAD\n./.git/description\n",
+                  "aggregatedOutput": "total 0\ndrwxr-xr-x@ 3 x  wheel   96 Oct  1 03:21 .\ndrwxr-xr-x@ 6 x  wheel  192 Oct  1 03:21 ..\ndrwxr-xr-x@ 9 x  wheel  288 Oct  1 03:21 .git\n./.git/config\n./.git/HEAD\n./.git/description\n",
                   "exitCode": 0,
                   "durationMs": 0
                 },
