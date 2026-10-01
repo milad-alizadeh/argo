@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
 import { connectAcpAgent } from '@/harnesses/acp/acp-client'
 import type { LiveSessionChannelEvent, LiveSessionControls } from '@/harnesses/registration'
+import { mockAcpSessionInput, waitForMockAcpEvent } from '@/mocks/cli/claude-acp/mock-acp-session'
 import recorded from '../../../mocks/cli/claude-acp/fixtures/session-discovery-0.84.0.json'
 import { writeMockClaudeAcp } from '../../../mocks/cli/claude-acp/mock-claude-acp-cli'
 import { acpExecutableOverride } from './acp-proof-protocol'
@@ -26,38 +26,6 @@ afterEach(async () => {
   delete process.env[SESSION_CLAUDE_ACP_EXECUTABLE_ENV]
   await rm(root, { recursive: true, force: true })
 })
-
-function start(
-  prompt: string,
-  turnConfiguration: SessionStartInput['turnConfiguration'] = {
-    model: 'sonnet',
-    effort: 'medium',
-    mode: 'default',
-  },
-): SessionStartInput {
-  return {
-    harness: 'claude-acp',
-    projectId: 'project-1',
-    workspaceId: 'workspace-1',
-    cwd: root,
-    commandId: 'command-1',
-    prompt,
-    attachments: [],
-    turnConfiguration,
-  }
-}
-
-function until(events: LiveSessionChannelEvent[], type: LiveSessionChannelEvent['type']) {
-  return new Promise<void>((resolve, reject) => {
-    const deadline = Date.now() + 10_000
-    const check = () => {
-      if (events.some((event) => event.type === type)) resolve()
-      else if (Date.now() > deadline) reject(new Error(`No ${type} event arrived.`))
-      else setTimeout(check, 10)
-    }
-    check()
-  })
-}
 
 describe('the Claude ACP registration', () => {
   test('counts malformed vendor summaries and keeps the valid records', async () => {
@@ -171,18 +139,20 @@ describe('the Claude ACP live channel', () => {
   test('resumes by loading history and keeps prompt identities after a process restart', async () => {
     const registration = createAcpRegistrations()['claude-acp']
     const first: LiveSessionChannelEvent[] = []
-    const initial = registration.openLiveSession?.(start('before restart'), undefined, (event) =>
-      first.push(event),
+    const initial = registration.openLiveSession?.(
+      mockAcpSessionInput(root, 'before restart'),
+      undefined,
+      (event) => first.push(event),
     )
-    await until(first, 'turn.completed')
+    await waitForMockAcpEvent(first, 'turn.completed')
     initial?.close()
-    await until(first, 'closed')
+    await waitForMockAcpEvent(first, 'closed')
     const identity = first.find((event) => event.type === 'identity')
     if (identity?.type !== 'identity') throw new Error('No native identity.')
     const later: LiveSessionChannelEvent[] = []
     const resumed = registration.openLiveSession?.(
       {
-        ...start('after restart'),
+        ...mockAcpSessionInput(root, 'after restart'),
         commandId: 'command-2',
         sessionId: 'argo-saved',
         resume: {
@@ -196,9 +166,9 @@ describe('the Claude ACP live channel', () => {
       undefined,
       (event) => later.push(event),
     )
-    await until(later, 'turn.completed')
+    await waitForMockAcpEvent(later, 'turn.completed')
     resumed?.close()
-    await until(later, 'closed')
+    await waitForMockAcpEvent(later, 'closed')
     const history = await registration.readHistory({
       nativeId: identity.nativeId,
       cwd: root,
@@ -239,17 +209,17 @@ describe('the Claude ACP interruptions', () => {
       decideQuestion: () => false,
     }
     const channel = createAcpRegistrations()['claude-acp'].openLiveSession?.(
-      start('Request ACP permission'),
+      mockAcpSessionInput(root, 'Request ACP permission'),
       controls,
       (event) => events.push(event),
     )
-    await until(events, 'turn.completed')
+    await waitForMockAcpEvent(events, 'turn.completed')
     expect(offered).toBe(false)
     expect(events.some((event) => event.type === 'feed' && event.body.type === 'permission')).toBe(
       false,
     )
     channel?.close()
-    await until(events, 'closed')
+    await waitForMockAcpEvent(events, 'closed')
   })
 })
 
@@ -270,7 +240,7 @@ describe('the Claude ACP interruptions', () => {
       decideQuestion: () => false,
     }
     const channel = createAcpRegistrations()['claude-acp'].openLiveSession?.(
-      start('Request ACP permission'),
+      mockAcpSessionInput(root, 'Request ACP permission'),
       controls,
       (event) => events.push(event),
     )
@@ -285,10 +255,10 @@ describe('the Claude ACP interruptions', () => {
     })
     expect(await channel?.answerQuestion('unsupported', [])).toBe(false)
     await channel?.interrupt()
-    await until(events, 'turn.completed')
+    await waitForMockAcpEvent(events, 'turn.completed')
     expect(pendingSignal?.aborted).toBe(true)
     channel?.close()
-    await until(events, 'closed')
+    await waitForMockAcpEvent(events, 'closed')
   })
 })
 
@@ -296,13 +266,13 @@ describe('the Claude ACP live channel', () => {
   test('closes the advertised vendor Session before ending its channel', async () => {
     const events: LiveSessionChannelEvent[] = []
     const channel = createAcpRegistrations()['claude-acp'].openLiveSession?.(
-      start('close me'),
+      mockAcpSessionInput(root, 'close me'),
       undefined,
       (event) => events.push(event),
     )
-    await until(events, 'turn.completed')
+    await waitForMockAcpEvent(events, 'turn.completed')
     channel?.close()
-    await until(events, 'closed')
+    await waitForMockAcpEvent(events, 'closed')
     const requests = await readFile(path.join(root, 'mock-acp-requests.jsonl'), 'utf8').catch(
       () => '',
     )
