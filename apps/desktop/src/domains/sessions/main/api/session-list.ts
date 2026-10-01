@@ -100,12 +100,21 @@ async function linkedTicketSource(
   return source === null ? null : { ...source, projectId }
 }
 
-function storedActivity(stored: string | null): LiveActivity | null {
+// A stored value of an unknown shape reads as null, so one bad row leaves the list readable.
+function storedValue<Schema extends z.ZodType>(
+  schema: Schema,
+  stored: unknown,
+  name: string,
+): z.infer<Schema> | null {
   if (stored === null) return null
-  const parsed = liveActivitySchema.safeParse(JSON.parse(stored))
+  const parsed = schema.safeParse(stored)
   if (parsed.success) return parsed.data
-  console.warn('Rejected 1 unsupported stored Session activity.')
+  console.warn(`Rejected 1 unsupported stored Session ${name}.`)
   return null
+}
+
+function storedActivity(stored: string | null): LiveActivity | null {
+  return stored === null ? null : storedValue(liveActivitySchema, JSON.parse(stored), 'activity')
 }
 
 function liveProjection(context: Pick<SessionListContext, 'supervisor'>, sessionId: string) {
@@ -152,8 +161,12 @@ function sessionListRow(
     archived: row.archived,
     // A live channel's own configuration outranks the stored one, as its status does.
     turnConfiguration: live?.turnConfiguration ??
-      row.turnConfiguration ?? { model: null, effort: null, mode: null },
-    planProgress: row.planProgress,
+      storedValue(reportedTurnConfigurationSchema, row.turnConfiguration, 'turn configuration') ?? {
+        model: null,
+        effort: null,
+        mode: null,
+      },
+    planProgress: storedValue(planProgressSchema, row.planProgress, 'Plan progress'),
   }
 }
 

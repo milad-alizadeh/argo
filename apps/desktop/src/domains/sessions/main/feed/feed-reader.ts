@@ -14,7 +14,11 @@ import {
   retainLiveEvent,
   subagentCompletionRows,
 } from '@/domains/sessions/api/feed'
-import type { FeedContent, PlanProgress } from '@/domains/sessions/api/feed-content'
+import {
+  type FeedContent,
+  feedContentSchema,
+  type PlanProgress,
+} from '@/domains/sessions/api/feed-content'
 import type { SessionError } from '@/domains/sessions/api/session-error'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
@@ -54,15 +58,22 @@ function isStreamedText(event: SessionLiveEvent): boolean {
   return content.kind === 'reasoning' || (content.kind === 'message' && content.role !== 'user')
 }
 
-// The newest Plan's step count; a live event is newer than any history.
+// A Plan's step count, when the Feed accepts the Plan.
+function acceptedPlanProgress(content: FeedContent): PlanProgress | undefined {
+  if (content.kind !== 'plan') return undefined
+  const parsed = feedContentSchema.safeParse(content)
+  return parsed.success && parsed.data.kind === 'plan' ? parsed.data.progress : undefined
+}
+
+// The newest accepted Plan's step count; a live event is newer than any history.
 function newestPlanProgress(
   history: readonly FeedContent[],
   events: readonly SessionLiveEvent[],
 ): PlanProgress | null {
-  const live = events.flatMap((event) => (event.type === 'content' ? [event.content] : []))
-  for (const content of [...history, ...live].reverse())
-    if (content.kind === 'plan' && content.progress !== undefined) return content.progress
-  return null
+  const counted = (content: FeedContent) => acceptedPlanProgress(content) !== undefined
+  const live = events.findLast((event) => event.type === 'content' && counted(event.content))
+  const newest = live?.type === 'content' ? live.content : history.findLast(counted)
+  return (newest && acceptedPlanProgress(newest)) ?? null
 }
 
 // Without a live channel, only what vendor history can also settle reaches the Feed.
