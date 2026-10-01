@@ -353,8 +353,16 @@ test('a live channel’s Model, Effort and Mode outrank the stored ones, and sta
   const { database, details, statusChanged, stopWatching } = sessionListCaller({ sessions })
   const live = { model: 'claude-sonnet', effort: 'high', mode: 'default' }
   try {
-    insertSession(database, { id: IDS[0], nativeId: 'native-1', effort: 'low' })
-    insertSession(database, { id: IDS[1], nativeId: 'native-2', model: 'opus', effort: 'low' })
+    insertSession(database, {
+      id: IDS[0],
+      nativeId: 'native-1',
+      turnConfiguration: { model: null, effort: 'low', mode: null },
+    })
+    insertSession(database, {
+      id: IDS[1],
+      nativeId: 'native-2',
+      turnConfiguration: { model: 'opus', effort: 'low', mode: null },
+    })
 
     assert.deepEqual((await details({ sessionId: IDS[0] }))?.turnConfiguration, live)
     assert.deepEqual((await details({ sessionId: IDS[1] }))?.turnConfiguration, {

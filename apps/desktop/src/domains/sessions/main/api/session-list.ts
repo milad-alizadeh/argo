@@ -27,6 +27,7 @@ import { ticketContent } from '@/database/ticket-content/schema'
 import { ticketContentSelectSchema } from '@/database/ticket-content/validation'
 import { type LiveActivity, liveActivitySchema } from '@/domains/sessions/api/feed'
 import { planProgressSchema } from '@/domains/sessions/api/feed-content'
+import { reportedTurnConfigurationSchema } from '@/domains/sessions/api/reported-turn-configuration'
 import { sessionListInputSchema } from '@/domains/sessions/api/session-list-input'
 import { identifierSchema } from '@/shared/validation'
 import { type StoredSubagent, storedSessionSubagents } from '../database'
@@ -72,11 +73,7 @@ export const sessionListRowSchema = z.strictObject({
   subagents: z.array(sessionSubagentSchema),
   ticket: sessionTicketSchema.nullable(),
   archived: z.boolean(),
-  turnConfiguration: z.strictObject({
-    model: z.string().nullable(),
-    effort: z.string().nullable(),
-    mode: z.string().nullable(),
-  }),
+  turnConfiguration: reportedTurnConfigurationSchema,
   planProgress: planProgressSchema.nullable(),
 })
 
@@ -154,11 +151,9 @@ function sessionListRow(
     ticket: linkedTicket(row.ticket),
     archived: row.archived,
     // A live channel's own configuration outranks the stored one, as its status does.
-    turnConfiguration: live?.turnConfiguration ?? row.turnConfiguration,
-    planProgress:
-      row.planCompleted === null || row.planTotal === null
-        ? null
-        : { completed: row.planCompleted, total: row.planTotal },
+    turnConfiguration: live?.turnConfiguration ??
+      row.turnConfiguration ?? { model: null, effort: null, mode: null },
+    planProgress: row.planProgress,
   }
 }
 
@@ -180,13 +175,8 @@ const storedSessionColumns = {
   activity: sessionTable.activity,
   status: sessionTable.status,
   updatedAt: sessionTable.updatedAt,
-  turnConfiguration: {
-    model: sessionTable.model,
-    effort: sessionTable.effort,
-    mode: sessionTable.mode,
-  },
-  planCompleted: sessionTable.planCompleted,
-  planTotal: sessionTable.planTotal,
+  turnConfiguration: sessionTable.turnConfiguration,
+  planProgress: sessionTable.planProgress,
   ticket: {
     projectId: sessionTicketLink.projectId,
     key: sessionTicketLink.ticketKey,
@@ -344,7 +334,8 @@ export function watchSessionList(
 ): () => void {
   const statusChanges = context.supervisor.on('Session status changed', ({ sessionId }) => {
     const live = liveProjection(context, sessionId)
-    if (live !== null) updateSession(context, sessionId, live.turnConfiguration)
+    if (live !== null)
+      updateSession(context, sessionId, { turnConfiguration: live.turnConfiguration })
     context.changes.changed([sessionId])
   })
   return () => statusChanges.unsubscribe()

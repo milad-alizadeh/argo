@@ -55,7 +55,7 @@ function isStreamedText(event: SessionLiveEvent): boolean {
 }
 
 // The newest Plan's step count; a live event is newer than any history.
-function planProgress(
+function newestPlanProgress(
   history: readonly FeedContent[],
   events: readonly SessionLiveEvent[],
 ): PlanProgress | null {
@@ -280,9 +280,12 @@ class FeedReader {
     this.#reading = reading
     // Keeps the activity and Plan progress for the Session List after this reader closes. A
     // reading with no Plan keeps the stored count, since a vendor history may hold none.
-    const plan = planProgress(this.#history, events)
+    const planProgress = newestPlanProgress(this.#history, events)
     if (subagentId === null)
-      updateSession(this.#context, sessionId, { activity, ...(plan === null ? {} : { plan }) })
+      updateSession(this.#context, sessionId, {
+        activity,
+        ...(planProgress === null ? {} : { planProgress }),
+      })
     for (const observer of this.#observers) observer(reading)
   }
 }

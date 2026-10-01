@@ -202,7 +202,11 @@ test('reads the Model and Effort a thread records, and leaves out what it record
       nextCursor: null,
     })) as CodexRequest)({ knownNativeIds: [] })
   expect(result.records).toEqual([
-    { nativeId: 'configured', activityAt: 1000, model: 'gpt-5.5', effort: 'high' },
+    {
+      nativeId: 'configured',
+      activityAt: 1000,
+      turnConfiguration: { model: 'gpt-5.5', effort: 'high', mode: null },
+    },
     { nativeId: 'unconfigured', activityAt: 1000 },
   ])
 })

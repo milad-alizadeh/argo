@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "ae9b6a95-1928-409d-8247-7261a032935a",
+  "id": "f5dbdf5c-5d3f-494a-91cd-419b626ceb1e",
   "prevIds": ["9aa93a35-6900-42f6-90af-a5aef253fe85"],
   "ddl": [
     {
@@ -326,7 +326,7 @@
       "autoincrement": false,
       "default": null,
       "generated": null,
-      "name": "model",
+      "name": "turn_configuration",
       "entityType": "columns",
       "table": "session"
     },
@@ -336,37 +336,7 @@
       "autoincrement": false,
       "default": null,
       "generated": null,
-      "name": "effort",
-      "entityType": "columns",
-      "table": "session"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "mode",
-      "entityType": "columns",
-      "table": "session"
-    },
-    {
-      "type": "integer",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "plan_completed",
-      "entityType": "columns",
-      "table": "session"
-    },
-    {
-      "type": "integer",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "plan_total",
+      "name": "plan_progress",
       "entityType": "columns",
       "table": "session"
     },

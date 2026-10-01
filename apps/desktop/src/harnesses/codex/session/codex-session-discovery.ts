@@ -38,8 +38,15 @@ function parseThread(raw: unknown): SessionSummary | null {
     ...(thread.preview === undefined ? {} : { preview: thread.preview }),
     ...(thread.cwd === undefined ? {} : { cwd: thread.cwd }),
     // A thread records no Mode; a live channel saves the one it ran with.
-    ...(thread.model == null ? {} : { model: thread.model }),
-    ...(thread.reasoningEffort == null ? {} : { effort: thread.reasoningEffort }),
+    ...(thread.model == null && thread.reasoningEffort == null
+      ? {}
+      : {
+          turnConfiguration: {
+            model: thread.model ?? null,
+            effort: thread.reasoningEffort ?? null,
+            mode: null,
+          },
+        }),
   }
 }
 
