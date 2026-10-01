@@ -72,9 +72,17 @@ export function proofCwd(transcripts, place) {
   return path.join(proofProject(transcripts), place)
 }
 
+// The receipts in `shellRunning` name an absolute output file, the way the Harness's own do (#1582);
+// each run gets its own folder beside the Project, so two runs never share one file.
+function shellOutputRoot(transcripts) {
+  return path.join(transcripts, '..', '..', 'shell-output')
+}
+
 // The fixtures record their cwd under the mock home `/Users/x`, which a selected Project scopes out.
 function placeInProofProject(text, transcripts) {
-  return text.replace(/("cwd":\s*")\/Users\/x(?=[/"])/g, `$1${proofProject(transcripts)}`)
+  return text
+    .replace(/("cwd":\s*")\/Users\/x(?=[/"])/g, `$1${proofProject(transcripts)}`)
+    .replaceAll('/tmp/argo-shell', shellOutputRoot(transcripts))
 }
 
 function withSessionId(text, name) {
@@ -107,6 +115,7 @@ async function writeSubagents(transcripts, name, folder) {
 // holding one `<sessionId>.jsonl` per Session. Written in the given order, so the mtime ordering
 // is the argument order reversed.
 export async function writeFixtureTree(transcripts, names) {
+  await mkdir(shellOutputRoot(transcripts), { recursive: true })
   for (const name of names) {
     const lines = await fixtureLines(name)
     const text = withSessionId(placeInProofProject(`${lines.join('\n')}\n`, transcripts), name)

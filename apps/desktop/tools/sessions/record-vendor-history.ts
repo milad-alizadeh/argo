@@ -1,0 +1,270 @@
+// Re-records the vendor history recordings from the installed claude and codex CLIs, under a
+// throwaway HOME. Run from apps/desktop: `bun run record:vendor-history`.
+import { execFileSync } from 'node:child_process'
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import process from 'node:process'
+import type {
+  CodexAppServerClient,
+  ThreadListResponse,
+  ThreadReadResponse,
+  ThreadTurnsListResponse,
+  WireMessage,
+} from '@/harnesses/codex/app-server'
+import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
+import {
+  claudeSessionMessages,
+  claudeSessions,
+} from '../../e2e/sessions/real-harness/claude-vendor-reader'
+import { codexClientUnderHome } from '../../e2e/sessions/real-harness/real-codex-harness'
+import {
+  prepareRealSessionHome,
+  realHarnessEnvironment,
+  resolveRealSessionExecutables,
+  verifyRealSessionAuthentication,
+} from '../../e2e/sessions/real-harness/real-session-harness-backend'
+import type { ClaudeRecording } from '../../mocks/cli/claude/recorded-claude-sessions'
+import type {
+  CodexRecording,
+  RecordedCodexCall,
+} from '../../mocks/cli/codex/recorded-codex-threads'
+import { RECORDED_PROMPTS } from '../../mocks/cli/recorded-prompts'
+
+// Recorded paths read as this mock home, which a selected Project scopes out.
+const MOCK_HOME = '/Users/x'
+const CLAUDE_MODEL = 'sonnet'
+const CODEX_MODEL = 'gpt-5.6-luna'
+const CODEX_EFFORT = 'low'
+const TURN_BUDGET_MS = 180_000
+const RECORDINGS = {
+  claude: {
+    file: 'mocks/cli/claude/recordings/session-history-claude.ts',
+    loader: 'recorded-claude-sessions',
+    type: 'ClaudeRecording',
+    name: 'claudeRecording',
+  },
+  codex: {
+    file: 'mocks/cli/codex/recordings/thread-history-codex.ts',
+    loader: 'recorded-codex-threads',
+    type: 'CodexRecording',
+    name: 'codexRecording',
+  },
+}
+
+type Executables = Record<'claude' | 'codex', string>
+type Recorder = { root: string; home: string; executables: Executables }
+
+function cliVersion(executable: string): string {
+  const output = execFileSync(executable, ['--version'], { encoding: 'utf8' })
+  const version = output.match(/\d+\.\d+\.\d+/)?.[0]
+  if (version === undefined) throw new Error(`${executable} --version printed no version.`)
+  return version
+}
+
+async function project(recorder: Recorder, name: string, files: Record<string, string> = {}) {
+  const directory = path.join(recorder.root, name)
+  await mkdir(directory, { recursive: true })
+  execFileSync('git', ['init', '--quiet'], { cwd: directory })
+  for (const [file, text] of Object.entries(files)) {
+    await writeFile(path.join(directory, file), text)
+  }
+  return directory
+}
+
+type ClaudeTurn = { cwd: string; prompt: string; flags?: string[] }
+
+// One headless Claude turn; returns the Session it wrote to.
+function claudeTurn(recorder: Recorder, { cwd, prompt, flags = [] }: ClaudeTurn) {
+  const output = execFileSync(
+    recorder.executables.claude,
+    ['-p', prompt, '--model', CLAUDE_MODEL, '--output-format', 'json', ...flags],
+    { cwd, env: realHarnessEnvironment(recorder.home), encoding: 'utf8', timeout: TURN_BUDGET_MS },
+  )
+  const sessionId = (JSON.parse(output) as { session_id?: unknown }).session_id
+  if (typeof sessionId !== 'string') throw new Error(`Claude printed no session_id: ${output}`)
+  return sessionId
+}
+
+async function recordClaudeSessions(recorder: Recorder) {
+  claudeTurn(recorder, {
+    cwd: await project(recorder, 'prose'),
+    prompt: RECORDED_PROMPTS.claudeProse,
+  })
+  claudeTurn(recorder, {
+    cwd: await project(recorder, 'thought'),
+    prompt: RECORDED_PROMPTS.claudeThought,
+  })
+  claudeTurn(recorder, {
+    cwd: await project(recorder, 'command', { 'notes.txt': 'old\n' }),
+    prompt: RECORDED_PROMPTS.claudeToolCalls,
+    flags: ['--allowedTools', 'Bash(echo argo-recorded)', 'Read', 'Edit'],
+  })
+  const cwd = await project(recorder, 'resume')
+  const parent = claudeTurn(recorder, {
+    cwd,
+    prompt: RECORDED_PROMPTS.claudeParent,
+  })
+  claudeTurn(recorder, {
+    cwd,
+    prompt: RECORDED_PROMPTS.claudeContinue,
+    flags: ['--resume', parent],
+  })
+  claudeTurn(recorder, {
+    cwd,
+    prompt: RECORDED_PROMPTS.claudeBranch,
+    flags: ['--resume', parent, '--fork-session'],
+  })
+}
+
+async function recordClaude(recorder: Recorder): Promise<ClaudeRecording> {
+  await recordClaudeSessions(recorder)
+  const configDirectory = path.join(recorder.home, '.claude')
+  const sessions = await claudeSessions(configDirectory)
+  const calls: ClaudeRecording['calls'] = [
+    { method: 'listSessions', params: { includeProgrammatic: true }, result: sessions },
+  ]
+  for (const { sessionId } of sessions) {
+    const result = await claudeSessionMessages(configDirectory, sessionId)
+    calls.push({ method: 'getSessionMessages', params: { sessionId }, result })
+  }
+  return { version: cliVersion(recorder.executables.claude), agentSdk: await sdkVersion(), calls }
+}
+
+async function sdkVersion(): Promise<string> {
+  const manifest = JSON.parse(await readFile('package.json', 'utf8')) as {
+    dependencies: Record<string, string>
+  }
+  const version = manifest.dependencies['@anthropic-ai/claude-agent-sdk']
+  if (version === undefined) throw new Error('package.json names no Agent SDK version.')
+  return version
+}
+
+function turnCompleted(client: CodexAppServerClient, threadId: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Codex turn timed out.')), TURN_BUDGET_MS)
+    const stop = client.onNotification((message: WireMessage) => {
+      if (!('method' in message) || message.method !== 'turn/completed') return undefined
+      if (message.params.threadId !== threadId) return undefined
+      clearTimeout(timer)
+      stop()
+      resolve()
+      return undefined
+    })
+  })
+}
+
+async function codexThread(client: CodexAppServerClient, cwd: string, prompt: string) {
+  const { thread } = await client.request(
+    'thread/start',
+    { cwd, model: CODEX_MODEL, approvalPolicy: 'never', sandbox: 'read-only' },
+    (value) => value as { thread: { id: string } },
+  )
+  const completed = turnCompleted(client, thread.id)
+  await client.request(
+    'turn/start',
+    {
+      threadId: thread.id,
+      input: [{ type: 'text', text: prompt, text_elements: [] }],
+      model: CODEX_MODEL,
+      effort: CODEX_EFFORT,
+    },
+    (value) => value,
+  )
+  await completed
+}
+
+async function recordCodex(recorder: Recorder): Promise<CodexRecording> {
+  const client = await codexClientUnderHome(recorder.home, recorder.executables.codex)
+  try {
+    const cwd = await project(recorder, 'project-codex')
+    await codexThread(client, cwd, RECORDED_PROMPTS.codexCommand)
+    await codexThread(client, cwd, RECORDED_PROMPTS.codexReply)
+    await codexThread(client, cwd, RECORDED_PROMPTS.codexNotice)
+    const listParams = { limit: 50 }
+    const listed = await client.request(
+      'thread/list',
+      listParams,
+      (value) => value as ThreadListResponse,
+    )
+    const calls: RecordedCodexCall[] = [
+      { method: 'thread/list', params: listParams, result: listed },
+    ]
+    for (const { id: threadId } of listed.data) {
+      const readParams = { threadId, includeTurns: true }
+      const read = await client.request(
+        'thread/read',
+        readParams,
+        (value) => value as ThreadReadResponse,
+      )
+      calls.push({ method: 'thread/read', params: readParams, result: read })
+      const turnsParams = { threadId, limit: 50, itemsView: 'full' as const }
+      const turns = await client.request(
+        'thread/turns/list',
+        turnsParams,
+        (value) => value as ThreadTurnsListResponse,
+      )
+      calls.push({ method: 'thread/turns/list', params: turnsParams, result: turns })
+    }
+    return { version: cliVersion(recorder.executables.codex), calls }
+  } finally {
+    client.shutdown()
+  }
+}
+
+// Every throwaway and personal path becomes the mock home; a user name left over is refused.
+function sanitized(recorder: Recorder, recording: unknown, resolvedRoot: string): string {
+  let text = JSON.stringify(recording, null, 2)
+  for (const local of [resolvedRoot, recorder.root, os.homedir()]) {
+    text = text.split(local).join(MOCK_HOME)
+  }
+  const username = os.userInfo().username
+  // A listing a CLI ran names the file owner.
+  const escaped = username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  text = text.replace(new RegExp(`\\b${escaped}\\b`, 'g'), 'x')
+  const named = text.indexOf(username)
+  if (named !== -1) {
+    const context = text.slice(Math.max(0, named - 80), named + 80)
+    throw new Error(`The recording still names the local user; nothing was written:\n${context}`)
+  }
+  return text
+}
+
+async function writeRecording(
+  recording: (typeof RECORDINGS)[keyof typeof RECORDINGS],
+  body: string,
+) {
+  await writeFile(
+    recording.file,
+    `// Written by \`bun run record:vendor-history\`; do not edit by hand.
+import type { Recorded } from '../../recorded.ts'
+import type { ${recording.type} } from '../${recording.loader}.ts'
+
+export const ${recording.name}: Recorded<${recording.type}> = ${body}
+`,
+  )
+}
+
+async function main() {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-vendor-recording-'))
+  try {
+    const executables = resolveRealSessionExecutables(findExecutableOnLoginShellPath)
+    const home = await prepareRealSessionHome(root, os.homedir())
+    verifyRealSessionAuthentication(executables, home)
+    const recorder = { root, home, executables }
+    const resolvedRoot = await realpath(root)
+    const claude = sanitized(recorder, await recordClaude(recorder), resolvedRoot)
+    const codex = sanitized(recorder, await recordCodex(recorder), resolvedRoot)
+    await writeRecording(RECORDINGS.claude, claude)
+    await writeRecording(RECORDINGS.codex, codex)
+    const files = Object.values(RECORDINGS).map((recording) => recording.file)
+    execFileSync('bunx', ['biome', 'format', '--write', ...files], {
+      stdio: 'inherit',
+    })
+    process.stdout.write('Recorded. Read the diff, then run `bun run typecheck` and the tests.\n')
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+}
+
+await main()
