@@ -26,6 +26,7 @@ import {
 import { AcpFeedProjection } from './acp-feed-projection'
 import { acpExecutableOverride } from './acp-proof-protocol'
 import { AcpSessionChannel, acpPermissionOutcome } from './acp-session-channel'
+import { listAcpSessions } from './acp-session-discovery'
 
 const refusePermission = async (request: Parameters<typeof acpPermissionOutcome>[0]) =>
   acpPermissionOutcome(request, 'cancel')
@@ -229,9 +230,13 @@ export function createAcpRegistration<Id extends Harness>(
     readHistory: (target) => readAcpHistory(required(command(), harness), target),
     openLiveSession: (input, controls, emit) =>
       new AcpSessionChannel(input, emit, { command: required(command(), harness), controls }),
-    // ACP agents get no external Sessions: Argo lists only the Sessions it starts.
-    listSessionSummaries: async () => ({ records: [], skipped: 0 }),
-    getSessionSummary: async () => null,
+    listSessionSummaries: ({ knownNativeIds }) => listAcpSessions(command(), knownNativeIds),
+    getSessionSummary: async (nativeId) => {
+      const listing = await listAcpSessions(command(), [nativeId])
+      if (listing.skipped > 0)
+        console.warn(`Rejected ${listing.skipped} unsupported ACP Session summary(s).`)
+      return listing.records.find((summary) => summary.nativeId === nativeId) ?? null
+    },
     changeableTurnSettings: ['model', 'effort', 'mode'],
     acceptsAttachments: false,
   }

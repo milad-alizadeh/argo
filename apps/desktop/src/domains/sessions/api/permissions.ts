@@ -5,16 +5,17 @@
 import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
 
+// The decisions the reader can make on a Permission. `allowForSession` is a standing allow that
+// Argo holds (ADR-0024, the desktop standing allow); each Harness decides what it covers.
+export const READER_DECISIONS = ['allow', 'deny', 'allowForSession'] as const
+
 const permissionSchema = z.strictObject({
   id: identifierSchema,
   sessionId: identifierSchema,
   description: z.string(),
+  decisions: z.array(z.enum(READER_DECISIONS)).optional(),
 })
 export type Permission = z.infer<typeof permissionSchema>
-
-// The decisions the reader can make on a Permission. `allowForSession` is a standing allow that
-// Argo holds (ADR-0024, the desktop standing allow); each Harness decides what it covers.
-const READER_DECISIONS = ['allow', 'deny', 'allowForSession'] as const
 
 // Every decision word any adapter's Permission can answer with. `cancel` is for a Harness that
 // joins an interrupt to its approvals (#1841).

@@ -34,9 +34,9 @@ const capabilitiesSchema = z.object({
   loadSession: z.boolean().optional(),
   sessionCapabilities: z
     .object({
-      list: z.unknown().optional(),
-      resume: z.unknown().optional(),
-      close: z.unknown().optional(),
+      list: z.object({}).nullish(),
+      resume: z.object({}).nullish(),
+      close: z.object({}).nullish(),
     })
     .nullish(),
 })
@@ -65,6 +65,10 @@ const configResponseSchema = z.object({ configOptions: z.array(z.unknown()) })
 const promptSchema = z.object({
   stopReason: z.enum(['end_turn', 'max_tokens', 'max_turn_requests', 'refusal', 'cancelled']),
 })
+const sessionListSchema = z.object({
+  sessions: z.array(z.unknown()),
+  nextCursor: z.string().min(1).nullish(),
+})
 
 type AcpCapabilities = {
   loadSession: boolean
@@ -90,6 +94,7 @@ export type AcpClient = {
   newSession: (cwd: string) => Promise<AcpSession>
   loadSession: (sessionId: string, cwd: string) => Promise<AcpSession>
   resumeSession: (sessionId: string, cwd: string) => Promise<AcpSession>
+  listSessions: (cursor?: string) => Promise<z.infer<typeof sessionListSchema>>
   prompt: (sessionId: string, text: string) => Promise<StopReason>
   cancel: (sessionId: string) => Promise<void>
   // Answers with every option the Session now reports; one choice can remove or change others.
@@ -195,6 +200,15 @@ function sessionMethods(agent: ClientContext, capabilities: AcpCapabilities) {
   }
 }
 
+function sessionListing(agent: ClientContext, capabilities: AcpCapabilities) {
+  return async (cursor?: string) => {
+    if (!capabilities.listSessions) throw new AcpCapabilityError('session/list')
+    return sessionListSchema.parse(
+      await agent.request(methods.agent.session.list, cursor === undefined ? {} : { cursor }),
+    )
+  }
+}
+
 async function initialize(agent: ClientContext, exited: Promise<void>) {
   return initializeSchema.parse(
     await Promise.race([
@@ -251,6 +265,7 @@ export async function connectAcpAgent(
         await connection.agent.request(methods.agent.authenticate, { methodId })
       },
       ...sessionMethods(connection.agent, capabilities),
+      listSessions: sessionListing(connection.agent, capabilities),
       closed,
       close,
     }

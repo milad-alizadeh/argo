@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import type { Permission } from '@/domains/sessions/api/permissions'
 import type { Harness } from '@/harnesses/harness'
 import type { HarnessPresentation } from '@/harnesses/harness-presentation'
 import { HARNESS_PRESENTATIONS } from '@/harnesses/presentation-registry'
@@ -23,27 +24,33 @@ export function AllowButton({
   allowLabel,
   harness,
   disabled,
+  decisions,
   onDecide,
 }: {
   allowLabel: string
   harness: Harness | undefined
   disabled: boolean
+  decisions?: Permission['decisions']
   onDecide: (decision: PermissionAnswer) => Promise<void>
 }) {
   const { t } = useTranslation('sessions')
-  if (harness === undefined) {
-    return (
+  const canAllow = decisions?.includes('allow') ?? true
+  const canAlwaysAllow = decisions?.includes('allowForSession') ?? true
+  if (harness === undefined || !canAlwaysAllow) {
+    return canAllow ? (
       <Button disabled={disabled} size="sm" onClick={() => void onDecide('allow')}>
         {allowLabel}
       </Button>
-    )
+    ) : null
   }
   return (
     <ButtonGroup>
-      <Button disabled={disabled} size="sm" onClick={() => void onDecide('allow')}>
-        {allowLabel}
-      </Button>
-      <ButtonGroupSeparator className="bg-primary-foreground/25" />
+      {canAllow ? (
+        <Button disabled={disabled} size="sm" onClick={() => void onDecide('allow')}>
+          {allowLabel}
+        </Button>
+      ) : null}
+      {canAllow ? <ButtonGroupSeparator className="bg-primary-foreground/25" /> : null}
       <DropdownMenu>
         <DropdownMenuTrigger
           disabled={disabled}

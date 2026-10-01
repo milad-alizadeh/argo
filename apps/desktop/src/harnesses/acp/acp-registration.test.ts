@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
 import type { LiveSessionChannelEvent } from '@/harnesses/registration'
+import { mockAcpSessionInput, waitForMockAcpEvent } from '@/mocks/cli/claude-acp/mock-acp-session'
 import { writeMockClaudeAcp } from '@/mocks/cli/claude-acp/mock-claude-acp-cli'
 import type { AcpAgentEntry } from './acp-agents'
 import { acpExecutableOverride } from './acp-proof-protocol'
@@ -34,48 +34,17 @@ function mockAgent(env: Record<string, string> = {}): AcpAgentEntry<'claude-acp'
   }
 }
 
-function start(
-  prompt: string,
-  turnConfiguration: SessionStartInput['turnConfiguration'] = {
-    model: 'sonnet',
-    effort: 'medium',
-    mode: 'default',
-  },
-): SessionStartInput {
-  return {
-    harness: 'claude-acp',
-    projectId: 'project-1',
-    workspaceId: 'workspace-1',
-    cwd: root,
-    commandId: 'command-1',
-    prompt,
-    attachments: [],
-    turnConfiguration,
-  }
-}
-
-function until(events: LiveSessionChannelEvent[], type: LiveSessionChannelEvent['type']) {
-  return new Promise<void>((resolve, reject) => {
-    const deadline = Date.now() + 10_000
-    const check = () => {
-      if (events.some((event) => event.type === type)) resolve()
-      else if (Date.now() > deadline) reject(new Error(`No ${type} event arrived.`))
-      else setTimeout(check, 10)
-    }
-    check()
-  })
-}
-
 async function runTurn(
   registration: ReturnType<typeof createAcpRegistration>,
-  input = start('hello'),
+  input = mockAcpSessionInput(root, 'hello'),
 ) {
   const events: LiveSessionChannelEvent[] = []
   const channel = registration.openLiveSession?.(input, undefined, (event) => {
     events.push(event)
   })
-  await until(events, 'turn.completed')
+  await waitForMockAcpEvent(events, 'turn.completed')
   channel?.close()
+  await waitForMockAcpEvent(events, 'closed')
   const identity = events.find((event) => event.type === 'identity')
   if (identity?.type !== 'identity') throw new Error('The channel named no Session.')
   return { events, nativeId: identity.nativeId }
@@ -269,7 +238,7 @@ describe('the ACP live channel', () => {
   test('skips the effort a chosen model stops reporting instead of failing the Turn', async () => {
     const { events } = await runTurn(
       createAcpRegistration(mockAgent()),
-      start('hello', { model: 'haiku', effort: 'low', mode: 'plan' }),
+      mockAcpSessionInput(root, 'hello', { model: 'haiku', effort: 'low', mode: 'plan' }),
     )
     expect(events.filter(({ type }) => type === 'failure')).toEqual([])
   })
