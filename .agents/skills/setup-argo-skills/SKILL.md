@@ -130,7 +130,7 @@ The git root, not the working directory: the projected commands resolve their sc
 | From the Argo clone | Why it is in the set |
 |---|---|
 | `hooks.json` | the neutral descriptor every projection is generated from |
-| the whole `hooks/` directory | every script the projected commands invoke, and nothing else: it holds only these hooks, so it is copied wholesale rather than picked over |
+| `packages/argo-skills/skills/setup-argo-skills/hooks/` | every script the projected commands invoke, and nothing else: it holds only these hooks, so it is copied wholesale rather than picked over |
 | `docs/agents/worktrees.md` | the contract the deny message cites, and only when you set `worktreeGuard.docs` to point at it. A project that keeps its own convention document names that instead, and one that has no convention copies no doc |
 
 The set is lockstep with `hooks.json`: a command added there whose script is missing here
@@ -153,7 +153,7 @@ does not share them is the failure this table exists to prevent.
 Then project the descriptor per agent, from the project root:
 
 ```sh
-node <argo-clone>/packages/argo-skills/bin/hooks-sync.mjs
+node <argo-clone>/packages/argo-skills/bin/hooks-sync.mts
 ```
 
 It regenerates `.claude/settings.json` and `.codex/hooks.json`. Those blocks are generated, so
@@ -184,13 +184,15 @@ frontmatter as one of its five costs, and Phase 2 dispatches it last for exactly
 ## Phase 2: the infra wizard
 
 Detect first (language, UI, monorepo, hooks and CI, linter) so every question ships a
-recommendation, then ask one grouped multi-select question with the recommendation marked:
+recommendation. Include the Codex todo-list choice only when Codex is installed. Then ask one
+grouped multi-select question with the recommendation marked:
 
 | Choice | Delegates to | Recommend when | Order |
 |---|---|---|---|
 | Quality gates as errors, plus the one-page prose residue | `setup-quality-gates` | always | 1 |
-| Always-on task tracking | this skill, below | always | 2 |
-| Guardrail hooks | Phase 1, step 6 | user runs git worktrees | 3 |
+| Enable Codex native todo lists | this skill, below | Codex is installed | 2 |
+| Always-on task tracking | this skill, below | always | 3 |
+| Guardrail hooks | Phase 1, step 6 | user runs git worktrees | 4 |
 | Price and cut the agent docs | `audit-agent-docs` | always | last, since every step above adds to the bill |
 
 Done when the user has answered the one question.
@@ -199,6 +201,25 @@ Done when the user has answered the one question.
 
 Run each chosen skill as a skill; each owns its own detection and wizard. Between steps,
 report one line: what was installed, what was deferred.
+
+### Enable Codex native todo lists
+
+When Codex is installed, the Phase 2 choice asks whether to enable its native todo list. Explain
+that the list adds a small token overhead and only improves progress visibility. It does not
+change the work that Codex does. Recommend enabling it when the user wants visible task progress.
+
+If the user selected the choice, update `~/.codex/config.toml`, preserving unrelated
+configuration. Set `enabled = true` in the existing `[tools.update_plan]` table. Append the table
+only when it is absent.
+
+```toml
+[tools.update_plan]
+enabled = true
+```
+
+Tell the user to restart Codex before they start a new session. If they did not select the choice,
+do not change the Codex configuration. This setting enables `update_plan`; it is separate from
+Plan Mode.
 
 The following sections are templates, appended to the project doc that
 exists (`AGENTS.md`; `CLAUDE.md` too only if it does not merely import `AGENTS.md`), replacing
@@ -225,19 +246,7 @@ than invent one; where no tracker is detected, skip the section.
 
 Done when the installed Labels section has zero hits for `{{`.
 
-### Connect interface review
-
-When the project has UI and `interface-review` is installed, read `templates/ui-workflow.md`.
-Install its `UI work` section in `docs/agents/code-review.md`, replacing that section on repeat runs.
-Preserve the document's other sections. Create the document if it is absent.
-Add a pointer in `AGENTS.md` to read that section for UI work.
-Update `CLAUDE.md` only when it carries independent instructions rather than importing `AGENTS.md`.
-
-Keep the installed review and implementation skills unchanged.
-Done when UI work reaches the third review axis and non-UI work retains the existing route.
-
 ## Phase 4: report
 
 Skills installed or updated (lock delta), infra installed per piece, anything deferred with
 the reason, and how to re-run each selected skill by its actual name.
-For UI work, point to the installed section in `docs/agents/code-review.md`.
