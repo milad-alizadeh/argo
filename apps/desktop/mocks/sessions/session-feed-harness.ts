@@ -55,11 +55,9 @@ export function command(id: string, text: string): FeedContent {
     kind: 'command',
     id,
     command: text,
-    cwd: null,
     status: 'completed',
     output: null,
     stderr: null,
-    exitCode: 0,
   }
 }
 

@@ -464,11 +464,9 @@ const [settledEdits] = groupToolRuns(
         kind: 'command',
         id: 'check',
         command: 'bun test',
-        cwd: '/repo',
         status: 'completed',
         output: '3 pass',
         stderr: null,
-        exitCode: 0,
       },
       {
         kind: 'fileChange',

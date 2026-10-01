@@ -2,7 +2,7 @@ import path from 'node:path'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { HistoryChange, HistoryTurn, HistoryTurnMarker } from '@/harnesses/registration'
 import type { SubAgentActivityKind } from '../app-server'
-import { codexSubagentContent } from './codex-subagent-content'
+import { codexFeedContent } from './codex-feed'
 import { codexTaskNotification } from './codex-task-notification'
 
 const turnOfEvent = new Map<unknown, HistoryTurn>([
@@ -105,33 +105,27 @@ function subagentEvents(payload: unknown, reject: () => void): SessionLiveEventB
   if (
     typeof id !== 'string' ||
     typeof agentThreadId !== 'string' ||
-    typeof agentPath !== 'string'
+    typeof agentPath !== 'string' ||
+    typeof kind !== 'string' ||
+    !Object.hasOwn(SUBAGENT_KINDS, kind)
   ) {
     reject()
     return []
   }
-  if (typeof kind !== 'string' || !Object.hasOwn(SUBAGENT_KINDS, kind)) {
-    reject()
-    return []
-  }
-  return [
-    {
-      type: 'content',
-      commandId: null,
-      turnId: typeof record.turn_id === 'string' ? record.turn_id : null,
-      vendorEventId: id,
-      content: codexSubagentContent(
-        {
-          type: 'subAgentActivity',
-          id,
-          kind: kind as SubAgentActivityKind,
-          agentThreadId,
-          agentPath,
-        },
-        undefined,
-      ),
-    },
-  ]
+  const activity = {
+    type: 'subAgentActivity',
+    id,
+    kind: kind as SubAgentActivityKind,
+    agentThreadId,
+    agentPath,
+  } as const
+  return codexFeedContent(activity, reject).map((content) => ({
+    type: 'content',
+    commandId: null,
+    turnId: typeof record.turn_id === 'string' ? record.turn_id : null,
+    vendorEventId: id,
+    content,
+  }))
 }
 
 // A command or an edit differs between a rollout and `thread/read`, so the Feed reads it whole.

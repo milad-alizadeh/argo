@@ -1,10 +1,10 @@
 import path from 'node:path'
 import { type ElectronApplication, _electron as electron, type Page } from 'playwright-core'
+import { acpExecutableOverride } from '@/harnesses/acp/acp-proof-protocol'
 import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CLAUDE_SYNC_FIXTURE_ENV,
 } from '@/harnesses/claude/proof-protocol'
-import { SESSION_CLAUDE_ACP_EXECUTABLE_ENV } from '@/harnesses/claude-acp/proof-protocol'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
@@ -66,7 +66,7 @@ function launchEnvironment(run: SessionHarnessRun, launch: SessionHarnessLaunch,
     [SESSION_CODEX_EXECUTABLE_ENV]: run.executables.codex,
     ...(run.executables['claude-acp'] === undefined
       ? {}
-      : { [SESSION_CLAUDE_ACP_EXECUTABLE_ENV]: run.executables['claude-acp'] }),
+      : { [acpExecutableOverride('claude-acp')]: run.executables['claude-acp'] }),
     ...(syncFixture === undefined
       ? {}
       : { [SESSION_CLAUDE_SYNC_FIXTURE_ENV]: JSON.stringify(syncFixture) }),

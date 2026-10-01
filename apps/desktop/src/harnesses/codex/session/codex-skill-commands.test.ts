@@ -1,68 +1,116 @@
-import { afterEach, expect, test } from 'bun:test'
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs'
+import assert from 'node:assert/strict'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { skillLabels, writeSkillMarkdown } from '@/harnesses/skill-directory-fixtures'
-import { readCodexSkillCommands } from './codex-skill-commands'
+import { test } from 'node:test'
+import type { LiveSessionChannelEvent } from '@/harnesses/registration'
+import { MOCK_CODEX_SKILLS_FILE_ENV } from '@/mocks/cli/codex/fixtures/mock-codex-skills-config'
+import { clientBackedByMock, waitFor, writeMockCodex } from '@/mocks/cli/codex/mock-codex-driver'
+import { openLiveSession } from '@/mocks/cli/codex/mock-codex-live-session'
+import { createCodexRegistration } from '../registration'
 
-let root: string
+type Listed = Extract<LiveSessionChannelEvent, { type: 'commands' }>
 
-test('lists a user skill ahead of a project skill, and a repo skill ahead of a nested one', async () => {
-  root = mkdtempSync(path.join(os.tmpdir(), 'argo-codex-skills-'))
-  const home = path.join(root, 'codex-home')
-  const repository = path.join(root, 'repo')
-  const nested = path.join(repository, 'apps')
-  mkdirSync(path.join(repository, '.git'), { recursive: true })
-  writeSkillMarkdown(path.join(home, 'skills'), 'implement', 'Build an approved ticket')
-  writeSkillMarkdown(path.join(repository, '.agents', 'skills'), 'implement', 'Project copy')
-  writeSkillMarkdown(path.join(repository, '.agents', 'skills'), 'review', 'Read the diff')
-  writeSkillMarkdown(path.join(nested, '.agents', 'skills'), 'review', 'Nested copy')
-  writeSkillMarkdown(path.join(nested, '.agents', 'skills'), 'tdd', 'Red then green')
-  mkdirSync(path.join(home, 'skills', '.system'))
-  const rejected: string[] = []
+async function recordedSkills(): Promise<Record<string, unknown>[]> {
+  const recorded = JSON.parse(
+    await readFile(
+      new URL(
+        '../../../../mocks/cli/codex/fixtures/skills-list-codex-0.157.0.json',
+        import.meta.url,
+      ),
+      'utf8',
+    ),
+  )
+  return recorded.data[0].skills
+}
 
-  const commands = await readCodexSkillCommands({
-    cwd: nested,
-    codexHome: home,
-    reject: (shape) => rejected.push(shape),
-  })
+async function codexServingSkills(skills: unknown[]) {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-skills-'))
+  const skillsFile = path.join(root, 'skills.json')
+  await writeFile(skillsFile, JSON.stringify(skills))
+  const client = clientBackedByMock(
+    await writeMockCodex(root, { [MOCK_CODEX_SKILLS_FILE_ENV]: skillsFile }),
+  )
+  return {
+    client,
+    skillsFile,
+    async stop() {
+      client.shutdown()
+      await rm(root, { recursive: true, force: true })
+    },
+  }
+}
 
-  expect(skillLabels(commands)).toEqual([
-    ['implement', 'Build an approved ticket'],
-    ['review', 'Read the diff'],
-    ['tdd', 'Red then green'],
+test('lists the skills Codex reports, in the fields every Harness shows', async () => {
+  const codex = await codexServingSkills(await recordedSkills())
+  try {
+    const listing = await createCodexRegistration(codex.client).listCommands?.({ cwd: '/repo' })
+    assert.deepEqual(
+      listing?.commands.map(({ name, argumentHint, aliases }) => ({ name, argumentHint, aliases })),
+      [
+        { name: 'ask-matt', argumentHint: '', aliases: [] },
+        { name: 'brandkit', argumentHint: '', aliases: [] },
+        { name: 'imagegen', argumentHint: '', aliases: [] },
+        { name: 'pdf:pdf', argumentHint: '', aliases: [] },
+      ],
+    )
+    assert.equal(
+      listing?.commands[0]?.description,
+      'Ask which skill or flow fits your situation. A router over the skills in this repo.',
+    )
+  } finally {
+    await codex.stop()
+  }
+})
+
+test('leaves out a disabled skill and counts a skill shape it cannot read', async () => {
+  const [skill] = await recordedSkills()
+  const codex = await codexServingSkills([
+    skill,
+    { ...skill, name: 'switched-off', enabled: false },
+    { ...skill, name: 7 },
   ])
-  expect(commands.every((command) => command.argumentHint === '')).toBe(true)
-  expect(rejected).toEqual([])
-  expect(JSON.stringify(commands)).not.toContain('SKILL.md')
+  const warnings: unknown[][] = []
+  const warn = console.warn
+  console.warn = (...args: unknown[]) => warnings.push(args)
+  try {
+    const listing = await createCodexRegistration(codex.client).listCommands?.({ cwd: '/repo' })
+    assert.deepEqual(
+      listing?.commands.map(({ name }) => name),
+      ['ask-matt'],
+    )
+    assert.deepEqual(warnings, [['Rejected 1 unsupported Codex skill shape(s).']])
+  } finally {
+    console.warn = warn
+    await codex.stop()
+  }
 })
 
-test('counts a skill directory whose name is not a command', async () => {
-  root = mkdtempSync(path.join(os.tmpdir(), 'argo-codex-skills-'))
-  const home = path.join(root, 'codex-home')
-  mkdirSync(path.join(home, 'skills', 'has space'), { recursive: true })
-  const rejected: string[] = []
-  const commands = await readCodexSkillCommands({
-    cwd: null,
-    codexHome: home,
-    reject: (shape) => rejected.push(shape),
-  })
-  expect(commands).toEqual([])
-  expect(rejected).toEqual(['codex-skill'])
-})
-
-test('follows a skill directory that is a symlink', async () => {
-  root = mkdtempSync(path.join(os.tmpdir(), 'argo-codex-skills-'))
-  const home = path.join(root, 'codex-home')
-  const real = path.join(root, 'real-implement')
-  writeSkillMarkdown(root, 'real-implement', 'Build an approved ticket')
-  mkdirSync(path.join(home, 'skills'), { recursive: true })
-  symlinkSync(real, path.join(home, 'skills', 'implement'))
-  const commands = await readCodexSkillCommands({ cwd: null, codexHome: home })
-  expect(commands.map((command) => command.name)).toEqual(['implement'])
-  expect(commands[0]?.description).toBe('Build an approved ticket')
-})
-
-afterEach(() => {
-  if (root) rmSync(root, { recursive: true, force: true })
+test('a live Session lists its skills, then lists them again when Codex says they changed', async () => {
+  const [skill] = await recordedSkills()
+  const codex = await codexServingSkills([skill])
+  const session = openLiveSession(codex.client)
+  const listed = () =>
+    session.events.flatMap((event): Listed[] => (event.type === 'commands' ? [event] : []))
+  try {
+    await waitFor(() => listed().length === 1, 'the first skill list')
+    assert.deepEqual(
+      listed()[0]?.commands.map(({ name }) => name),
+      ['ask-matt'],
+    )
+    await writeFile(codex.skillsFile, JSON.stringify([skill, { ...skill, name: 'review' }]))
+    await waitFor(
+      () => listed().at(-1)?.commands.length === 2,
+      'the skill list after skills/changed',
+    )
+    assert.deepEqual(
+      listed()
+        .at(-1)
+        ?.commands.map(({ name }) => name),
+      ['ask-matt', 'review'],
+    )
+  } finally {
+    session.channel.close()
+    await codex.stop()
+  }
 })

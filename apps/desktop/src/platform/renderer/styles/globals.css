@@ -9,6 +9,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@keyframes status-light-blink {
+  50% {
+    opacity: 0.45;
+  }
+}
+
 /* Shared icons keep the same geometry and ink across their surrounding controls. */
 [data-slot="icon"] {
   width: var(--icon-size, var(--size-icon-control));

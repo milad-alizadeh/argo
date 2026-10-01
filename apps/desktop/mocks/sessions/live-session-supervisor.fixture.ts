@@ -6,6 +6,7 @@ import {
   createLiveSessionSupervisorMachine,
   type LiveSessionSupervisorActor,
 } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import { ACP_HARNESSES } from '@/harnesses/acp/acp-agents'
 import type {
   CodexAppServerClient,
   CodexRequest,
@@ -15,6 +16,7 @@ import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { createHarnessRegistry } from '@/harnesses/registry'
+import { answeringSkillsList } from '@/mocks/cli/codex/mock-codex-channel'
 import { insertWorkspace, migratedDatabase } from '@/mocks/database/migrated-database'
 import { harnessCatalogMachine } from '@/platform/main/harness-catalog/harness-catalog-machine'
 import { codexModelCatalogFixture } from './codex-model-catalog.fixture'
@@ -24,10 +26,18 @@ if (available.availability !== 'available') throw new Error('Codex fixture must 
 export const model = available.models[0]
 if (model === undefined) throw new Error('Codex fixture needs a model.')
 export const catalog = harnessCatalogSchema.parse({
-  harnesses: [unavailable('claude'), available, unavailable('claude-acp')],
+  harnesses: [
+    unavailable('claude'),
+    available,
+    ...ACP_HARNESSES.map((harness) => unavailable(harness)),
+  ],
 })
 export const claudeCatalog = harnessCatalogSchema.parse({
-  harnesses: [{ ...available, harness: 'claude' }, available, unavailable('claude-acp')],
+  harnesses: [
+    { ...available, harness: 'claude' },
+    available,
+    ...ACP_HARNESSES.map((harness) => unavailable(harness)),
+  ],
 })
 export const first: SessionStartInput = {
   commandId: 'first-command',
@@ -84,7 +94,7 @@ export const codexClientFor = (
   request: CodexRequest,
   notifications: Set<(message: WireMessage) => boolean | undefined>,
 ): CodexAppServerClient => ({
-  request: (method, params, parse) => request(method, params, parse),
+  request: answeringSkillsList(request),
   respond: () => {},
   onNotification: (listener) => {
     notifications.add(listener)

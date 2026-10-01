@@ -11,8 +11,14 @@ const temporary = mkdtempSync(path.join(tmpdir(), 'argo-codex-protocol-'))
 const roots = [
   'v2/ThreadItem.ts',
   'v2/ThreadReadResponse.ts',
+  'v2/ThreadListResponse.ts',
   'v2/AgentMessageDeltaNotification.ts',
   'v2/ReasoningSummaryTextDeltaNotification.ts',
+  'v2/SkillsListParams.ts',
+  'v2/SkillMetadata.ts',
+  'v2/ConfigReadParams.ts',
+  'v2/ConfigValueWriteParams.ts',
+  'v2/ConfigWriteResponse.ts',
 ]
 const destinationPath = (relativePath: string) =>
   relativePath.replace(/[^/]+\.ts$/, (name) =>

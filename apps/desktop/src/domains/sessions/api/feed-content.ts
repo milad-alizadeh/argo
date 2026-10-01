@@ -52,13 +52,15 @@ const toolPresentationSchema = z.strictObject({
   kind: toolPresentationKindSchema,
   label: z.string(),
   agentDescription: z.boolean().optional(),
+  // A command's full text, which the Feed shows above its output.
+  text: z.string().optional(),
 })
 export type ToolPresentation = z.infer<typeof toolPresentationSchema>
 
 export const feedContentSchema = z.discriminatedUnion('kind', [
   base.extend({
     kind: z.literal('message'),
-    role: z.enum(['user', 'assistant', 'system']),
+    role: z.enum(['user', 'assistant']),
     text: z.string(),
     phase: z.enum(['commentary', 'final_answer']).nullable().optional(),
     // The images and files an authored prompt carried alongside its text, and any pasted-in
@@ -70,7 +72,7 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
       .min(1)
       .optional(),
   }),
-  base.extend({ kind: z.literal('reasoning'), text: z.string().nullable(), redacted: z.boolean() }),
+  base.extend({ kind: z.literal('reasoning'), text: z.string() }),
   base.extend({
     kind: z.literal('media'),
     mediaType: z.enum(['image', 'audio', 'document']),
@@ -79,7 +81,7 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
   }),
   base.extend({
     kind: z.literal('reference'),
-    referenceType: z.enum(['file', 'skill', 'mention', 'citation', 'memory', 'pasted']),
+    referenceType: z.enum(['file', 'skill', 'memory']),
     label: z.string(),
     target: z.string().nullable(),
     text: z.string().nullable(),
@@ -97,11 +99,9 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
   base.extend({
     kind: z.literal('command'),
     command: z.string().nullable(),
-    cwd: z.string().nullable(),
     status: workStatusSchema,
     output: z.string().nullable(),
     stderr: z.string().nullable(),
-    exitCode: z.number().int().nullable(),
   }),
   base.extend({
     kind: z.literal('fileChange'),
@@ -115,12 +115,6 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
         movedTo: z.string().optional(),
       }),
     ),
-  }),
-  base.extend({
-    kind: z.literal('search'),
-    query: z.string(),
-    action: z.string().nullable(),
-    results: z.array(z.strictObject({ title: z.string(), source: z.string() })),
   }),
   base.extend({ kind: z.literal('plan'), text: z.string() }),
   base.extend({
@@ -144,22 +138,7 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
     description: z.string().nullable(),
     summary: z.string().nullable(),
   }),
-  base.extend({
-    kind: z.literal('notification'),
-    category: z.enum([
-      'status',
-      'info',
-      'warning',
-      'suggestion',
-      'auth',
-      'retry',
-      'hook',
-      'plugin',
-      'system',
-    ]),
-    text: z.string(),
-    priority: z.enum(['low', 'medium', 'high', 'immediate']).nullable(),
-  }),
+  base.extend({ kind: z.literal('notification'), text: z.string() }),
   base.extend({
     kind: z.literal('context'),
     source: z.enum(['system', 'hook', 'memory', 'environment']),
@@ -176,11 +155,7 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
     ]),
     summary: z.string().nullable(),
   }),
-  base.extend({
-    kind: z.literal('refusal'),
-    reason: z.enum(['model', 'permission', 'fallback']),
-    text: z.string().nullable(),
-  }),
+  base.extend({ kind: z.literal('refusal'), text: z.string().nullable() }),
   base.extend({
     kind: z.literal('imageGeneration'),
     status: workStatusSchema,
