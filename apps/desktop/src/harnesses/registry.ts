@@ -1,5 +1,5 @@
+import { createAcpRegistrations } from './acp/acp-registration-factory'
 import { createClaudeRegistration } from './claude/registration'
-import { createClaudeAcpRegistration } from './claude-acp/registration'
 import {
   type CodexAppServerClient,
   createCodexAppServerClient,
@@ -17,7 +17,7 @@ export function createHarnessRegistry(
   return {
     claude: createClaudeRegistration(),
     codex: createCodexRegistration(codexClient),
-    'claude-acp': createClaudeAcpRegistration(),
+    ...createAcpRegistrations(),
   }
 }
 

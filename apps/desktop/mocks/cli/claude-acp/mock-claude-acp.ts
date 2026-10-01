@@ -1,5 +1,5 @@
-// A stand-in `claude-agent-acp` for the packaged proofs, run by node's type stripping. It speaks ACP
-// on stdio and keeps each Session's updates where `session/load` can replay them in a new process.
+// A stand-in ACP agent for the packaged proofs, run by node's type stripping. It speaks ACP on stdio
+// and keeps each Session's updates where `session/load` can replay them in a new process.
 
 import { randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -23,6 +23,27 @@ process.title = MOCK_CLAUDE_ACP_PROCESS_TITLE
 
 const folder = mockClaudeAcpFolder(process.argv[2] ?? process.cwd())
 const REPLY_DELAY_MS = readMockReplyDelayMs()
+// A test's agent entry sets these to play an agent that differs from the default one.
+const behaviour = {
+  // Answers `session/new` with auth_required until a sign-in has run once in this folder.
+  needsLogin: process.env.MOCK_ACP_NEEDS_LOGIN === '1',
+  // `terminal` signs in as claude-agent-acp 0.84.0 does: a relaunch with the method's args.
+  loginMethod: process.env.MOCK_ACP_LOGIN_METHOD === 'terminal' ? 'terminal' : 'agent',
+  loadSession: process.env.MOCK_ACP_NO_LOAD_SESSION !== '1',
+  // Config option categories to report with a value no client can read.
+  unreadable: (process.env.MOCK_ACP_UNREADABLE_OPTIONS ?? '').split(',').filter(Boolean),
+  // Config option categories to leave out.
+  omitted: (process.env.MOCK_ACP_OMITTED_OPTIONS ?? '').split(',').filter(Boolean),
+}
+const LOGIN_METHOD = { id: 'mock-login', name: 'Mock login' }
+const TERMINAL_LOGIN_ARGS = ['--cli', 'auth', 'login', '--claudeai']
+const TERMINAL_LOGIN_METHOD = {
+  id: 'claude-ai-login',
+  name: 'Claude Subscription',
+  type: 'terminal' as const,
+  args: TERMINAL_LOGIN_ARGS,
+}
+const signedInFile = () => path.join(folder, 'signed-in')
 // The mock names each option after its category, as the real agent does for mode and model.
 const select = (
   category: string,
@@ -49,6 +70,12 @@ function configOptions(config: Config): SessionConfigOption[] {
       ? []
       : [select('thought_level', config.thought_level, ['low', 'medium', 'high'])]),
   ]
+    .filter((option) => !behaviour.omitted.includes(option.category ?? ''))
+    .map((option) =>
+      behaviour.unreadable.includes(option.category ?? '')
+        ? ({ ...option, currentValue: 7 } as unknown as SessionConfigOption)
+        : option,
+    )
 }
 
 function reported(config: Config, configId: string): configId is keyof Config {
@@ -92,17 +119,36 @@ function pause(signal: AbortSignal) {
 }
 
 mkdirSync(folder, { recursive: true })
+if (process.argv.slice(3).join(' ') === TERMINAL_LOGIN_ARGS.join(' ')) {
+  // The real login bills an inherited API key, so a relaunch that keeps one fails here.
+  if (process.env.ANTHROPIC_API_KEY !== undefined) process.exit(1)
+  writeFileSync(signedInFile(), '')
+  process.exit(0)
+}
+// The real agent offers a terminal method only to a client that says it can run one.
+function authMethods(terminalAllowed: boolean) {
+  if (!behaviour.needsLogin) return []
+  if (behaviour.loginMethod === 'agent') return [LOGIN_METHOD]
+  return terminalAllowed ? [TERMINAL_LOGIN_METHOD] : []
+}
 const connection = agent({ name: 'mock-claude-agent-acp' })
-  .onRequest(methods.agent.initialize, () => ({
+  .onRequest(methods.agent.initialize, ({ params }) => ({
     protocolVersion: PROTOCOL_VERSION,
     agentCapabilities: {
-      loadSession: true,
+      loadSession: behaviour.loadSession,
       sessionCapabilities: { resume: {}, close: {} },
     },
     agentInfo: { name: 'mock-claude-agent-acp', version: '0.0.0' },
-    authMethods: [],
+    authMethods: authMethods(params.clientCapabilities?.auth?.terminal === true),
   }))
+  .onRequest(methods.agent.authenticate, ({ params }) => {
+    if (behaviour.loginMethod !== 'agent' || params.methodId !== LOGIN_METHOD.id)
+      throw RequestError.invalidParams(params)
+    writeFileSync(signedInFile(), '')
+    return {}
+  })
   .onRequest(methods.agent.session.new, ({ params }) => {
+    if (behaviour.needsLogin && !existsSync(signedInFile())) throw RequestError.authRequired()
     const sessionId = randomUUID()
     writeFileSync(sessionFile(sessionId), JSON.stringify({ cwd: params.cwd, updates: [] }))
     open.set(sessionId, null)
@@ -110,6 +156,7 @@ const connection = agent({ name: 'mock-claude-agent-acp' })
     return { sessionId, configOptions: configOptions(OPENING) }
   })
   .onRequest(methods.agent.session.load, async ({ params, client }) => {
+    if (!behaviour.loadSession) throw RequestError.methodNotFound(methods.agent.session.load)
     const stored = known(params.sessionId)
     for (const update of stored.updates)
       await client.notify(methods.client.session.update, { sessionId: params.sessionId, update })

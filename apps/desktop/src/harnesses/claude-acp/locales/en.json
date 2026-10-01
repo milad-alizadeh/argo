@@ -1,7 +1,0 @@
-{
-  "presentation": {
-    "shortLabel": "Claude ACP",
-    "label": "Claude ACP"
-  },
-  "installStep": "Install it with npm install -g @agentclientprotocol/claude-agent-acp, then refresh models."
-}

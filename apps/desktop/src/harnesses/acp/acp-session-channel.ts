@@ -16,7 +16,7 @@ import {
   liveSessionChannelEventSchema,
 } from '@/harnesses/registration'
 import { ACP_TURN_SETTING_CATEGORIES, acpConfigSelect } from './acp-catalog'
-import { type AcpAgentCommand, type AcpClient, connectAcpAgent } from './acp-client'
+import { type AcpAgentCommand, type AcpClient, connectAcpAgent, errorDetail } from './acp-client'
 import { AcpFeedProjection } from './acp-feed-projection'
 
 type TurnSetting = keyof typeof ACP_TURN_SETTING_CATEGORIES
@@ -233,7 +233,7 @@ export class AcpSessionChannel implements LiveSessionChannel {
 
   private fail(error: unknown) {
     if (!this.open) return
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorDetail(error)
     this.emitFeed({ type: 'failure', ...this.identity(null), detail })
     this.emit({ type: 'failure', detail })
     this.close()
