@@ -1,5 +1,5 @@
 // The packaged app, its own application data, a mock GitHub and a mock Linear, for the Ticket proof.
-// The providers are the one thing mocked; the cockpit, its stores and safeStorage all run for real.
+// The providers are the one thing mocked; the app, its stores and safeStorage all run for real.
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'

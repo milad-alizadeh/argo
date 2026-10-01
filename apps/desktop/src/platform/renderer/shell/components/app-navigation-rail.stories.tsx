@@ -2,11 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter } from 'react-router'
 import { expect, userEvent, within } from 'storybook/test'
 
-import { CockpitNavigationRail } from './cockpit-navigation-rail'
+import { AppNavigationRail } from './app-navigation-rail'
 
 const meta = {
-  title: 'Cockpit/Navigation Rail',
-  component: CockpitNavigationRail,
+  title: 'App/Navigation Rail',
+  component: AppNavigationRail,
   parameters: {
     layout: 'fullscreen',
   },
@@ -19,10 +19,10 @@ const meta = {
       </MemoryRouter>
     ),
   ],
-} satisfies Meta<typeof CockpitNavigationRail>
+} satisfies Meta<typeof AppNavigationRail>
 
 export default meta
-type Story = StoryObj<typeof CockpitNavigationRail>
+type Story = StoryObj<typeof AppNavigationRail>
 
 export const Navigation: Story = {
   play: async ({ canvasElement }) => {

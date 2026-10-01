@@ -90,7 +90,7 @@ Two more deliberate holds, worth recording so a future edit does not undo them b
 **What was deliberately not adopted, and why:**
 
 - **A documentation addon** (MDX docs pages, `autodocs`) — worth it for a published component
-  library whose consumers read a props table; skipped for an internal cockpit nobody browses as
+  library whose consumers read a props table; skipped for an internal app nobody browses as
   documentation.
 - **A design-file addon** (embedding Figma in the addon panel) — there is no Figma file that is
   the source of truth here; the design tokens file already is one.

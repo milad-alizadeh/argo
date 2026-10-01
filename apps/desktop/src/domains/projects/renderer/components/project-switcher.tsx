@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { REGISTER_PROJECT_COMMAND } from '@/platform/contract/commands'
-import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   DropdownMenu,
@@ -13,17 +12,18 @@ import {
   DropdownMenuSeparator,
 } from '@/platform/renderer/components/ui/dropdown-menu'
 import { MenuDropdownTrigger } from '@/platform/renderer/components/ui/dropdown-trigger'
+import { useCommands } from '@/platform/renderer/shell/hooks/use-commands'
 import { useProjects } from '../hooks'
 import { ProjectSettingsDialog } from './project-settings-dialog'
 
 export function ProjectSwitcher() {
   const { t } = useTranslation('projects')
-  const [cockpit, actions] = useProjects()
+  const [projectState, actions] = useProjects()
   const navigate = useNavigate()
   useCommands((command) => {
     if (command === REGISTER_PROJECT_COMMAND) actions.open()
   })
-  const projectName = cockpit.project?.name ?? t('switcher.placeholder')
+  const projectName = projectState.project?.name ?? t('switcher.placeholder')
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   return (
@@ -32,7 +32,7 @@ export function ProjectSwitcher() {
         <MenuDropdownTrigger
           aria-label={t('switcher.current', { name: projectName })}
           className="max-w-48 gap-(--spacing-shell-tight) border-0 pl-2 pr-(--spacing-shell-icon) type-body"
-          disabled={cockpit.busy}
+          disabled={projectState.busy}
           icon="folder"
           label={projectName}
           variant="ghost"
@@ -40,7 +40,7 @@ export function ProjectSwitcher() {
         <DropdownMenuContent align="end" className="w-64">
           <DropdownMenuGroup>
             <DropdownMenuLabel>{t('switcher.switchLabel')}</DropdownMenuLabel>
-            {cockpit.projects.map((project) => (
+            {projectState.projects.map((project) => (
               <DropdownMenuItem
                 key={project.id}
                 aria-label={t('switcher.switchTo', { name: project.name })}
@@ -48,7 +48,7 @@ export function ProjectSwitcher() {
               >
                 <Icon name="folder" />
                 <span className="flex-1 truncate">{project.name}</span>
-                {project.id === cockpit.project?.id ? <Icon name="confirmed" /> : null}
+                {project.id === projectState.project?.id ? <Icon name="confirmed" /> : null}
               </DropdownMenuItem>
             ))}
           </DropdownMenuGroup>
@@ -57,7 +57,7 @@ export function ProjectSwitcher() {
             <Icon name="add" />
             {t('switcher.addEllipsis')}
           </DropdownMenuItem>
-          {cockpit.project ? (
+          {projectState.project ? (
             <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
               <Icon name="settings" />
               {t('switcher.settings')}
@@ -65,11 +65,11 @@ export function ProjectSwitcher() {
           ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
-      {cockpit.project ? (
+      {projectState.project ? (
         <ProjectSettingsDialog
           onOpenChange={setSettingsOpen}
           open={settingsOpen}
-          project={cockpit.project}
+          project={projectState.project}
         />
       ) : null}
     </>

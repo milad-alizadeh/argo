@@ -1,6 +1,6 @@
 # Argo
 
-Argo contains the skills bundle and the Electron cockpit in `apps/desktop`.
+Argo contains the skills bundle and the Argo Desktop app in `apps/desktop`.
 `apps/macOS` is deprecated and kept for reference.
 
 ## Where things are written down

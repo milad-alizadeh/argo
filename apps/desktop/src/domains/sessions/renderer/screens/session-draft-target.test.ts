@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import type { WorkspaceCockpit } from '@/domains/workspaces/renderer'
+import type { WorkspaceState } from '@/domains/workspaces/renderer'
 import { draftTarget } from './session-draft-target'
 
 const main = {
@@ -9,7 +9,7 @@ const main = {
   path: '/project',
   facts: { branch: 'main', headSha: 'abc123', dirty: false },
 }
-const workspace: WorkspaceCockpit = {
+const workspace: WorkspaceState = {
   workspaces: [main],
   workspace: main,
   choice: main.id,

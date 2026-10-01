@@ -1,4 +1,4 @@
-// Every GraphQL request to Linear, and the one place its answer becomes a failure the cockpit can
+// Every GraphQL request to Linear, and the one place its answer becomes a failure the app can
 // name. Linear refuses a token and throttles a caller with a 400 whose error carries a code, so the
 // code is read here, where the body still exists.
 
@@ -11,7 +11,7 @@ export type LinearRead<T> = { ok: true; value: T } | { ok: false; failure: Linea
 
 export const failed = (failure: LinearFailure) => ({ ok: false, failure }) as const
 
-// Linear's `extensions.code` values for the refusals the cockpit tells apart.
+// Linear's `extensions.code` values for the refusals the app tells apart.
 const CODES: Record<string, LinearFailure> = {
   AUTHENTICATION_ERROR: 'unauthorized',
   FORBIDDEN: 'forbidden',

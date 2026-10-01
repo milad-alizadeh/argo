@@ -412,6 +412,7 @@ function startSessionServices(actors: WindowActors, database: Database, registry
     hasLiveChannel,
     discover: ({ harness, nativeId }) =>
       actors.sessionSync.send({ type: 'Discover', harness, nativeId }),
+    refreshFeed: (sessionId) => readers.refresh({ sessionId, subagentId: null }),
   })
   const stopSessionList = watchSessionList({ ...context, supervisor: actors.sessions })
   externalSessions.start()

@@ -41,7 +41,7 @@ function page({ response, url }: Exchange, items: unknown[], wrap: Wrap = bare) 
 
 const isOpen = (issue: MockIssue) => (issue.state ?? 'open') === 'open'
 
-// The qualifiers the cockpit sends, and every other term matched against title and body.
+// The qualifiers the app sends, and every other term matched against title and body.
 function search(exchange: Exchange, user: MockUser) {
   const terms = (exchange.url.searchParams.get('q') ?? '').split(' ')
   const scope = terms.find((term) => term.startsWith('repo:'))?.slice('repo:'.length) ?? ''
@@ -122,7 +122,7 @@ function apiRead(exchange: Exchange) {
 
 const ISSUE_PATH = /^\/repos\/([^/]+\/[^/]+)\/issues\/(\d+)$/
 
-// GitHub's issue update, as far as the cockpit sends it: a state, and a reason for closing.
+// GitHub's issue update, as far as the app sends it: a state, and a reason for closing.
 async function issueWrite(exchange: Exchange) {
   const { state, request, response, url } = exchange
   if (state.outage === 'down') return send(response, 503, { message: 'Unavailable' })
