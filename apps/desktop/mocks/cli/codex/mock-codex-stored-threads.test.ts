@@ -49,6 +49,10 @@ test('lists and reads a thread it started beside the recorded ones', async () =>
       prompts.map((part) => part.text),
       ['Remember this prompt.'],
     )
+    const listedTurns = (await client.request('thread/turns/list', { threadId }, identity)) as {
+      data: unknown[]
+    }
+    assert.deepEqual(listedTurns.data, read.thread.turns)
   } finally {
     session.channel.close()
     client.shutdown()

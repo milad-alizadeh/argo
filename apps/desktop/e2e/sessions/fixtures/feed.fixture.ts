@@ -2,7 +2,9 @@
 // prove a re-read reaches the file system rather than a cache.
 import { appendFile, mkdir, realpath, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { claudeSessionMessages } from '../../../mocks/cli/claude/claude-sdk-history'
+import { claudeSessionMessages } from '../../../mocks/cli/claude/claude-sdk-reader'
+import { mockCodexStateFile } from '../../../mocks/cli/codex/mock-codex-cli'
+import { recordedThread } from '../../../mocks/cli/codex/recorded-codex-threads'
 import {
   fixturePath,
   fixtureSessionId,
@@ -41,45 +43,20 @@ export const FIXTURES = [
 // The Sessions the reader archived before the case begins.
 export const ARCHIVED_FIXTURES = ['plannedWork']
 
-type CodexItem =
-  | { id: string; type: 'userMessage'; content: { type: 'text'; text: string }[] }
-  | { id: string; type: 'agentMessage'; text: string }
-
-// One Codex thread the mock app-server lists and reads, in `thread/read`'s shape.
-function codexThread(request: {
-  name: string
-  cwd: string
-  updatedAt: string
-  title: string
-  turns: { id: string; prompt: string; reply: string }[]
-}) {
+// One recorded Codex thread, renamed and placed for this run, in `thread/read`'s shape. The time
+// keeps it in the same place in the Session List as the Claude fixtures.
+function codexThread(request: { name: string; cwd: string; updatedAt: string; title: string }) {
   return {
+    ...recordedThread(request.title),
     id: fixtureSessionId(request.name),
     cwd: request.cwd,
     updatedAt: Math.floor(Date.parse(request.updatedAt) / 1000),
     name: request.title,
-    turns: request.turns.map((turn) => ({
-      id: turn.id,
-      status: 'completed',
-      items: [
-        {
-          id: `${turn.id}-user`,
-          type: 'userMessage',
-          content: [{ type: 'text', text: turn.prompt }],
-        },
-        { id: `${turn.id}-assistant`, type: 'agentMessage', text: turn.reply },
-      ] satisfies CodexItem[],
-    })),
   }
 }
 
 export const CODEX_PARENT = 'codexParent'
 export const CODEX_FIXTURES = [CODEX_PARENT, 'codexChild']
-
-// The state file the mock Codex app-server answers from, in `thread/read`'s shape.
-export function codexThreadsFile(root: string) {
-  return path.join(root, 'codex-state.json')
-}
 
 // The Codex threads the mock app-server starts with.
 async function writeCodexThreads(root, codexTranscripts) {
@@ -90,17 +67,15 @@ async function writeCodexThreads(root, codexTranscripts) {
       cwd,
       updatedAt: '2026-01-10T08:00:05.000Z',
       title: 'Run Codex check',
-      turns: [{ id: 'turn-1', prompt: 'Run Codex check', reply: 'Checking...' }],
     }),
     codexThread({
       name: CODEX_FIXTURES[1],
       cwd,
       updatedAt: '2026-01-10T08:30:05.000Z',
       title: 'Continue the check',
-      turns: [{ id: 'turn-2', prompt: 'Continue the check', reply: 'Continuing' }],
     }),
   ]
-  await writeFile(codexThreadsFile(root), JSON.stringify(threads))
+  await writeFile(mockCodexStateFile(root), JSON.stringify(threads))
 }
 
 // One more turn on a Session already measured, written the way the Harness writes one: appended to

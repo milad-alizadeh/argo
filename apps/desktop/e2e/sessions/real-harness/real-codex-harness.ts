@@ -7,6 +7,16 @@ import type { VendorHistoryReader } from './real-session-transcript'
 
 type CodexThread = ThreadReadResponse['thread']
 
+function threadIdsOf(value: unknown): string[] {
+  const data = typeof value === 'object' && value !== null && 'data' in value ? value.data : null
+  if (!Array.isArray(data)) throw new Error('codex thread/list answered without a data list.')
+  return data.map((thread: unknown) => {
+    if (typeof thread === 'object' && thread !== null && 'id' in thread)
+      if (typeof thread.id === 'string') return thread.id
+    throw new Error(`codex thread/list answered a thread without an id: ${JSON.stringify(thread)}`)
+  })
+}
+
 // The real `codex app-server`, run under the throwaway HOME through Argo's own client.
 async function openCodexVendorReader(
   home: string,
@@ -19,14 +29,12 @@ async function openCodexVendorReader(
     resolveExecutable: async () => ({ executable: wrapper, version: '' }),
   })
   return {
-    sessionIds: async () => {
-      const listed = await client.request(
+    sessionIds: () =>
+      client.request(
         'thread/list',
         { limit: 100, sourceKinds: ['cli', 'vscode', 'appServer'] },
-        (value) => value as { data: { id: string }[] },
-      )
-      return listed.data.map((thread) => thread.id)
-    },
+        threadIdsOf,
+      ),
     records: async (threadId) =>
       (
         await client.request(

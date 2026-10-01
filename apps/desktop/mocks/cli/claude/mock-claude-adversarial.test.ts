@@ -7,7 +7,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { readClaudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
-import { claudeSessionMessages } from './claude-sdk-history.ts'
+import { claudeSessionMessages } from './claude-sdk-reader.ts'
 import { writeMockClaude } from './mock-claude-cli.ts'
 
 const ESCAPE = String.fromCharCode(27)

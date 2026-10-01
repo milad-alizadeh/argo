@@ -2,9 +2,8 @@ import { expect, test } from 'bun:test'
 import { mkdir, mkdtemp, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import type { CodexRequest } from '@/harnesses/codex/app-server'
 import { readCodexSessionHistory } from '@/harnesses/codex/session/codex-session-history'
-import { recordedThread } from '../../../mocks/cli/codex/recorded-codex-threads'
+import { recordedThread, threadReadRequest } from '../../../mocks/cli/codex/recorded-codex-threads'
 import type { SessionFixture } from '../session-harness-backend'
 import {
   createRealSessionHarnessBackend,
@@ -120,9 +119,7 @@ test('leaves transcript roots unset and launches under its isolated HOME', async
 
 test('recognizes a reply after the prompt in a recorded Codex thread read', async () => {
   const thread = recordedThread('Continue the check')
-  const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
-    parse({ thread })) as CodexRequest
-  const content = await readCodexSessionHistory(request, thread.id)
+  const content = await readCodexSessionHistory(threadReadRequest(thread), thread.id)
 
   expect(replyAfterPrompt(content, 'Continue the check')).toEqual({ size: content.length })
   expect(replyAfterPrompt(content, 'A prompt never sent')).toBeNull()

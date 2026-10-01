@@ -1,6 +1,6 @@
 // The Claude ACP adapter's own answers about its mock: where the executable goes, where its
 // Sessions land, and the words it answers a prompt with.
-import { chmod, writeFile } from 'node:fs/promises'
+import { chmod, readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import type { MockHarness } from '../mock-cli'
@@ -21,8 +21,18 @@ export async function writeMockClaudeAcp(root: string, transcripts: string) {
   return executable
 }
 
+// The mock agent's own Session files; Argo reads ACP history through the agent, not these files.
+async function recordedByClaudeAcp(_root: string, transcripts: string, mark: string) {
+  const folder = mockClaudeAcpFolder(transcripts)
+  const names = await readdir(folder, { recursive: true }).catch(() => [])
+  const records = await Promise.all(
+    names.map((name) => readFile(path.join(folder, name), 'utf8').catch(() => '')),
+  )
+  return records.some((record) => record.includes(mark))
+}
+
 export const mockClaudeAcpHarness: MockHarness = {
   write: writeMockClaudeAcp,
-  folder: mockClaudeAcpFolder,
   replyMark: mockClaudeAcpReply,
+  recorded: recordedByClaudeAcp,
 }

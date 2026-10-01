@@ -2,8 +2,9 @@ import assert from 'node:assert/strict'
 import { readFile, writeFile } from 'node:fs/promises'
 import { setTimeout } from 'node:timers/promises'
 import type { Page } from 'playwright-core'
+import { mockCodexStateFile } from '../../../mocks/cli/codex/mock-codex-cli'
 import { fixtureSessionId } from '../../../mocks/sessions/mock-transcript-files'
-import { CODEX_PARENT, codexThreadsFile } from '../fixtures/feed.fixture'
+import { CODEX_PARENT } from '../fixtures/feed.fixture'
 import { refreshSessions } from '../gestures'
 import { sessionRows } from '../page-trpc'
 
@@ -12,7 +13,7 @@ const NAME = 'Named by Codex Desktop'
 
 // Codex Desktop renames a thread in the store the mock app-server's `thread/list` answers from.
 async function renameInCodexDesktop(root: string) {
-  const file = codexThreadsFile(root)
+  const file = mockCodexStateFile(root)
   const threads = JSON.parse(await readFile(file, 'utf8')) as { id: string; name?: string }[]
   const thread = threads.find((candidate) => candidate.id === THREAD)
   assert.ok(thread !== undefined, `The mock Codex store holds no ${CODEX_PARENT} thread.`)

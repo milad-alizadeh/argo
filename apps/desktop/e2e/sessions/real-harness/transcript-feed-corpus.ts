@@ -4,11 +4,13 @@ import { feedEntryRows, projectFeedRowEntries } from '@/domains/sessions/api/fee
 import { type SessionFeedRow, sessionFeedRowSchema } from '@/domains/sessions/api/feed/feed-rows'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { decodeClaudeSessionMessages } from '@/harnesses/claude/session/claude-session-history'
-import type { CodexRequest, ThreadReadResponse } from '@/harnesses/codex/app-server'
+import type { ThreadReadResponse } from '@/harnesses/codex/app-server'
 import { readCodexSessionHistory } from '@/harnesses/codex/session/codex-session-history'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
+import { threadReadRequest } from '../../../mocks/cli/codex/recorded-codex-threads'
 import { realClaudeCli } from './real-claude-harness'
 import { realCodexCli } from './real-codex-harness'
+import type { VendorHistoryReader } from './real-session-transcript'
 
 type CodexThread = ThreadReadResponse['thread']
 // What each Harness's own history reader returned: the Agent SDK's messages, Codex's thread read.
@@ -68,14 +70,8 @@ async function contentOf(harness: TranscriptHarness, corpus: VendorCorpus): Prom
   switch (harness) {
     case 'claude':
       return decodeClaudeSessionMessages(corpus.claude)
-    case 'codex': {
-      const request = (async (
-        _method: string,
-        _params: unknown,
-        parse: (value: unknown) => unknown,
-      ) => parse({ thread: corpus.codex })) as CodexRequest
-      return readCodexSessionHistory(request, corpus.codex.id)
-    }
+    case 'codex':
+      return readCodexSessionHistory(threadReadRequest(corpus.codex), corpus.codex.id)
   }
 }
 
@@ -259,6 +255,19 @@ function missingEnvelopes(
   })
 }
 
+async function readVendorCorpus(
+  readers: {
+    claude: VendorHistoryReader<SessionMessage[]>
+    codex: VendorHistoryReader<CodexThread>
+  },
+  sessionIds: Record<TranscriptHarness, string>,
+): Promise<VendorCorpus> {
+  return {
+    claude: await readers.claude.records(sessionIds.claude),
+    codex: await readers.codex.records(sessionIds.codex),
+  }
+}
+
 // Polls the real CLIs' own readers under the throwaway HOME until both Sessions hold every envelope.
 export async function readRealVendorCorpus(options: {
   home: string
@@ -274,17 +283,21 @@ export async function readRealVendorCorpus(options: {
   }
   try {
     const deadline = Date.now() + ENVELOPE_WAIT_MS
+    // A thread Codex has not written yet fails its read; the timeout names the last failure.
+    let lastFailure: unknown = null
     for (;;) {
-      const corpus = {
-        claude: await readers.claude.records(sessionIds.claude).catch(() => []),
-        codex: await readers.codex
-          .records(sessionIds.codex)
-          .catch(() => ({ id: sessionIds.codex, turns: [] }) as unknown as CodexThread),
+      const corpus = await readVendorCorpus(readers, sessionIds).catch((error: unknown) => {
+        lastFailure = error
+        return null
+      })
+      const missing =
+        corpus === null ? ['a vendor read'] : missingEnvelopes(corpus, expectedEnvelopes)
+      if (corpus !== null && missing.length === 0) return corpus
+      if (Date.now() >= deadline) {
+        const failure =
+          lastFailure === null ? '' : `\nLast vendor read failure: ${String(lastFailure)}`
+        throw new Error(`Real vendor corpus missed: ${missing.join(', ')}${failure}`)
       }
-      const missing = missingEnvelopes(corpus, expectedEnvelopes)
-      if (missing.length === 0) return corpus
-      if (Date.now() >= deadline)
-        throw new Error(`Real vendor corpus missed required envelopes: ${missing.join(', ')}`)
       await new Promise((resolve) => setTimeout(resolve, ENVELOPE_POLL_MS))
     }
   } finally {

@@ -1,24 +1,11 @@
 // Real `codex app-server` answers, recorded once from codex-cli 0.157.0 in a throwaway CODEX_HOME.
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
-import process from 'node:process'
-import type { ThreadReadResponse } from '@/harnesses/codex/app-server'
+import type { CodexRequest, ThreadReadResponse } from '@/harnesses/codex/app-server'
+import { type RecordedCall, readRecordedCalls } from '../recorded-calls.ts'
 
-export type RecordedCall = { method: string; params: Record<string, unknown>; result: unknown }
 export type RecordedThread = ThreadReadResponse['thread']
 
-// A run always starts in `apps/desktop`; Playwright loads this as CommonJS, without `import.meta`.
-const RECORDING = path.join(
-  process.cwd(),
-  'mocks',
-  'cli',
-  'codex',
-  'fixtures',
-  'thread-history-codex-0.157.0.json',
-)
-
 export function recordedCalls(): RecordedCall[] {
-  return (JSON.parse(readFileSync(RECORDING, 'utf8')) as { calls: RecordedCall[] }).calls
+  return readRecordedCalls('codex', 'fixtures', 'thread-history-codex-0.157.0.json')
 }
 
 // The first recorded answer to `method`.
@@ -37,4 +24,10 @@ export function recordedThread(preview: string): RecordedThread {
     .find((candidate) => candidate.preview === preview)
   if (thread === undefined) throw new Error(`No recorded Codex thread opens with ${preview}.`)
   return thread
+}
+
+// A request that answers every call with this thread's `thread/read`, as the app-server would.
+export function threadReadRequest(thread: RecordedThread): CodexRequest {
+  return (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse({ thread })) as CodexRequest
 }

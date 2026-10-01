@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { expect, test, vi } from 'vitest'
-import { recordedThread } from '../../../../mocks/cli/codex/recorded-codex-threads.ts'
+import { recordedThread } from '@/mocks/cli/codex/recorded-codex-threads'
 import type { CodexRequest } from '../app-server'
 import { hasCodexSessionTurn, readCodexSessionHistory } from './codex-session-history'
 

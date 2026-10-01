@@ -1,5 +1,7 @@
 import { expect, test } from 'bun:test'
-import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
+import { spawn } from 'node:child_process'
+import { once } from 'node:events'
+import { mkdir, mkdtemp, rm, stat } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import {
@@ -11,10 +13,10 @@ import type {
   SessionHarnessBackend,
   SessionHarnessRun,
 } from '../../e2e/sessions/session-harness-backend'
-import { mockClaudeHarness } from '../cli/claude/mock-claude-cli'
-import { mockCodexHarness } from '../cli/codex/mock-codex-cli'
 import { signedInHarnessEnvironment } from '../cli/signed-in-harness'
 import { createMockSessionHarnessBackend } from './mock-session-harness-backend'
+
+const CLAUDE_SESSION_ID = '00000000-0000-4000-8000-00000000b001'
 
 type Started = {
   root: string
@@ -28,7 +30,7 @@ async function started(read: (start: Started) => Promise<void>) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-mock-backend-'))
   const fixture = {
     application: path.join(root, 'application'),
-    claudeTranscripts: path.join(root, 'claude-transcripts'),
+    claudeTranscripts: path.join(root, 'claude-config', 'projects'),
     codexTranscripts: path.join(root, 'codex-transcripts'),
     userData: path.join(root, 'userData'),
     project: path.join(root, 'project'),
@@ -78,34 +80,51 @@ test('passes an adversarial seed to both mock CLIs', () =>
     })
   }))
 
-test('reads a recorded Claude reply out of the transcript the mock wrote', () =>
-  started(async ({ fixture, backend }) => {
+const ESCAPE = String.fromCharCode(27)
+
+async function eventually(check: () => Promise<boolean>) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (await check()) return true
+    await new Promise((resolve) => setTimeout(resolve, 20))
+  }
+  return false
+}
+
+// The mock `claude` writes the Turn; the Agent SDK's reader finds the reply in it.
+test('reads a Claude reply the mock CLI wrote through the Agent SDK reader', () =>
+  started(async ({ root, backend, run }) => {
     const reply = { harness: 'claude' as const, prompt: 'Say the word.' }
     expect(await backend.recorded(reply)).toBe(false)
-    const folder = mockClaudeHarness.folder(fixture.claudeTranscripts)
-    await mkdir(folder, { recursive: true })
-    await writeFile(
-      path.join(folder, 'one.jsonl'),
-      `${mockClaudeHarness.replyMark(reply.prompt)}\n`,
-    )
-    expect(await backend.recorded(reply)).toBe(true)
+    const cwd = path.join(root, 'project')
+    await mkdir(cwd, { recursive: true })
+    const child = spawn(run.executables.claude, ['--session-id', CLAUDE_SESSION_ID], { cwd })
+    try {
+      await once(child.stdout, 'data')
+      child.stdin.write(`${ESCAPE}[200~${reply.prompt}${ESCAPE}[201~\r`)
+      expect(await eventually(() => backend.recorded(reply))).toBe(true)
+    } finally {
+      child.kill()
+    }
   }))
 
-// Codex nests its rollouts under dated folders, so the reading walks the whole tree.
-test('reads a recorded Codex turn out of a nested transcript tree', () =>
-  started(async ({ fixture, backend }) => {
+// The mock app-server keeps the Turn in the thread it answers `thread/read` with.
+test('reads a Codex prompt the mock app-server took into its thread', () =>
+  started(async ({ backend, run }) => {
     const reply = { harness: 'codex' as const, prompt: 'Carry on.' }
     expect(await backend.recorded(reply)).toBe(false)
-    const nested = path.join(
-      mockCodexHarness.folder(fixture.codexTranscripts),
-      'one',
-      'two',
-      'three',
-    )
-    await mkdir(nested, { recursive: true })
-    await writeFile(
-      path.join(nested, 'rollout-one.jsonl'),
-      `{"message":"${mockCodexHarness.replyMark(reply.prompt)}"}\n`,
-    )
-    expect(await backend.recorded(reply)).toBe(true)
+    const child = spawn(run.executables.codex, [])
+    const send = (message: object) => child.stdin.write(`${JSON.stringify(message)}\n`)
+    try {
+      send({ id: 1, method: 'initialize', params: {} })
+      send({ id: 2, method: 'thread/start', params: { cwd: '/project' } })
+      const threadId = '00000000-0000-4000-8000-000000000001'
+      send({
+        id: 3,
+        method: 'turn/start',
+        params: { threadId, input: [{ type: 'text', text: reply.prompt }] },
+      })
+      expect(await eventually(() => backend.recorded(reply))).toBe(true)
+    } finally {
+      child.kill()
+    }
   }))

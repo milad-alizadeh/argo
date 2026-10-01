@@ -1,10 +1,11 @@
-// The Claude adapter's own answers about its mock (#2308): where the executable goes, where the
-// transcripts land, and the words the mock answers a prompt with.
+// The Claude adapter's own answers about its mock (#2308): where the executable goes, the words the
+// mock answers a prompt with, and how the Agent SDK reads them back.
 import { chmod, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import type { MockHarness } from '../mock-cli'
-import { MOCK_CLAUDE_TRANSCRIPTS_ENV, mockClaudeFolder } from './mock-claude-transcripts'
+import { claudeSessionMessages, claudeSessions } from './claude-sdk-reader'
+import { MOCK_CLAUDE_TRANSCRIPTS_ENV } from './mock-claude-transcripts'
 
 // A run always starts in `apps/desktop`; `import.meta` is unavailable once Playwright loads this as CommonJS.
 const MOCK_CLAUDE = path.join(process.cwd(), 'mocks', 'cli', 'claude', 'mock-claude.ts')
@@ -22,8 +23,18 @@ export async function writeMockClaude(root: string, transcripts: string) {
   return executable
 }
 
+// The transcript root is `<CLAUDE_CONFIG_DIR>/projects`, where the SDK looks.
+async function recordedByClaude(_root: string, transcripts: string, mark: string) {
+  const configDirectory = path.dirname(transcripts)
+  for (const session of await claudeSessions(configDirectory)) {
+    const messages = await claudeSessionMessages(configDirectory, session.sessionId)
+    if (messages.some((message) => JSON.stringify(message.message).includes(mark))) return true
+  }
+  return false
+}
+
 export const mockClaudeHarness: MockHarness = {
   write: writeMockClaude,
-  folder: mockClaudeFolder,
   replyMark: (prompt) => `Mock Claude read: ${prompt}`,
+  recorded: recordedByClaude,
 }

@@ -1,0 +1,12 @@
+// A vendor recording: each call a real CLI or SDK answered, under a file named for its version.
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import process from 'node:process'
+
+export type RecordedCall = { method: string; params: Record<string, unknown>; result: unknown }
+
+// A run always starts in `apps/desktop`; Playwright loads this as CommonJS, without `import.meta`.
+export function readRecordedCalls(...file: string[]): RecordedCall[] {
+  const recording = path.join(process.cwd(), 'mocks', 'cli', ...file)
+  return (JSON.parse(readFileSync(recording, 'utf8')) as { calls: RecordedCall[] }).calls
+}

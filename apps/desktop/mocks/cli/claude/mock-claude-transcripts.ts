@@ -9,8 +9,3 @@ export const MOCK_CLAUDE_TRANSCRIPTS_ENV = 'ARGO_CLAUDE_TRANSCRIPTS'
 export function claudeProjectFolder(transcripts: string, cwd: string) {
   return path.join(transcripts, cwd.replace(/[^a-zA-Z0-9]/g, '-'))
 }
-
-// The mock writes each Session beside the fixtures, so every transcript it writes is under this root.
-export function mockClaudeFolder(transcripts: string) {
-  return transcripts
-}

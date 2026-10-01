@@ -79,6 +79,12 @@ function readThread(threadId: unknown) {
   return recordedAnswer('thread/read', threadId)?.result
 }
 
+function listTurns(threadId: unknown) {
+  const thread = typeof threadId === 'string' ? started.get(threadId) : undefined
+  if (thread !== undefined) return { data: thread.turns, nextCursor: null }
+  return recordedAnswer('thread/turns/list', threadId)?.result
+}
+
 function answer(message: Request, send: Send, result: unknown) {
   if (result !== undefined) send({ id: message.id, result })
   else
@@ -97,7 +103,7 @@ export function answerStoredHistory(message: Request, send: Send): boolean {
       answer(message, send, readThread(message.params?.threadId))
       return true
     case 'thread/turns/list':
-      answer(message, send, recordedAnswer('thread/turns/list', message.params?.threadId)?.result)
+      answer(message, send, listTurns(message.params?.threadId))
       return true
     case 'thread/loaded/list':
       send({ id: message.id, result: { data: [] } })

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
 import { decodeClaudeSessionMessages } from '@/harnesses/claude/session/claude-session-history'
-import { claudeSessionMessages, claudeSessions } from '../../../mocks/cli/claude/claude-sdk-history'
+import { claudeSessionMessages, claudeSessions } from '../../../mocks/cli/claude/claude-sdk-reader'
 import type { VendorHistoryReader } from './real-session-transcript'
 
 function openClaudeVendorReader(home: string): VendorHistoryReader<SessionMessage[]> {

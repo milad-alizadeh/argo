@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import path from 'node:path'
-import { claudeSessions } from '../../../mocks/cli/claude/claude-sdk-history'
+import { claudeSessions } from '../../../mocks/cli/claude/claude-sdk-reader'
 import { waitFor } from '../claude-proof-helpers'
 import { createSessionByClick } from '../gestures'
 import { sendSessionUpdate, sessionDetails } from '../page-trpc'
