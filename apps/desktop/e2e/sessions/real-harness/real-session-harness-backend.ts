@@ -14,12 +14,7 @@ import { type VendorHistoryReader, vendorReplyAfterPrompt } from './vendor-reply
 
 const BUDGET_MS = 180_000
 const POLL_MS = 250
-const REAL_HARNESS_UNSET_ENV = [
-  'ANTHROPIC_API_KEY',
-  'OPENAI_API_KEY',
-  'ARGO_CLAUDE_TRANSCRIPTS',
-  'ARGO_CLAUDE_ARCHIVE',
-]
+const REAL_HARNESS_UNSET_ENV = ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'ARGO_CLAUDE_TRANSCRIPTS']
 const REAL_HARNESSES = { claude: realClaudeCli, codex: realCodexCli }
 // The real backend runs no ACP agent yet, so a case on another Harness is refused.
 type RealHarness = keyof typeof REAL_HARNESSES
