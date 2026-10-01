@@ -60,7 +60,7 @@ function claudeSource(): StatusSource {
       }))
       return {
         CLAUDE_CONFIG_DIR: path.join(root, 'claude-config'),
-        [SESSION_CLAUDE_SYNC_FIXTURE_ENV]: JSON.stringify({ records, delayMs: 0 }),
+        [SESSION_CLAUDE_SYNC_FIXTURE_ENV]: JSON.stringify({ records }),
         [MOCK_CLAUDE_AGENTS_ENV]: claudeAgents(root),
       }
     },

@@ -20,7 +20,7 @@ export type SessionHarnessLaunch = {
   slowReply: boolean
   adversarialSeed?: string
   // Recorded Claude SDK rows for the packaged Session-sync proof.
-  sessionSyncFixture?: { records: unknown[]; delayMs: number }
+  sessionSyncFixture?: { records: unknown[] }
   // ACP agents this launch reads as not installed, whatever the backend provides.
   uninstalledAcpAgents?: readonly AcpHarness[]
 }
