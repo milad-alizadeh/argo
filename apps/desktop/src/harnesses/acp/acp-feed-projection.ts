@@ -130,7 +130,7 @@ export class AcpFeedProjection {
     const text = `${this.text.get(id) ?? ''}${piece}`
     this.text.set(id, text)
     return role === 'reasoning'
-      ? { id, kind: 'reasoning', text, redacted: false }
+      ? { id, kind: 'reasoning', text }
       : { id, kind: 'message', role, text }
   }
 

@@ -15,7 +15,6 @@ const EVENT_PRESENTATION = {
   reasoning: 'event-context',
   media: 'event-context',
   fileChange: 'event-context',
-  search: 'event-context',
   plan: 'event-context',
   delegation: 'event-context',
   task: 'event-context',

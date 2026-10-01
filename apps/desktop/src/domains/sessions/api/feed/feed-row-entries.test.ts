@@ -35,7 +35,7 @@ const attachment: FeedContent = {
 
 const durableKinds: FeedContent[] = [
   message('m1', 'user', 'Hello'),
-  { kind: 'reasoning', id: 'r1', text: 'Thinking', redacted: false },
+  { kind: 'reasoning', id: 'r1', text: 'Thinking' },
   attachment,
   {
     kind: 'reference',
@@ -59,11 +59,9 @@ const durableKinds: FeedContent[] = [
     kind: 'command',
     id: 'c1',
     command: 'ls',
-    cwd: null,
     status: 'completed',
     output: 'a',
     stderr: null,
-    exitCode: 0,
   },
   {
     kind: 'fileChange',
@@ -71,7 +69,6 @@ const durableKinds: FeedContent[] = [
     status: 'completed',
     changes: [{ path: '/a.ts', change: 'add', diff: 'x' }],
   },
-  { kind: 'search', id: 's1', query: 'q', action: null, results: [] },
   { kind: 'plan', id: 'p1', text: 'Plan' },
   {
     kind: 'delegation',
@@ -93,10 +90,10 @@ const durableKinds: FeedContent[] = [
     description: 'Task',
     summary: null,
   },
-  { kind: 'notification', id: 'n1', category: 'info', text: 'Note', priority: null },
+  { kind: 'notification', id: 'n1', text: 'Note' },
   { kind: 'context', id: 'x1', source: 'hook', text: 'Context' },
   { kind: 'marker', id: 'mk1', marker: 'compaction', summary: null },
-  { kind: 'refusal', id: 'rf1', reason: 'model', text: null },
+  { kind: 'refusal', id: 'rf1', text: null },
   {
     kind: 'imageGeneration',
     id: 'g1',
@@ -139,8 +136,7 @@ test('every durable content kind projects to a valid entry, in history order', (
   expect(rejected).toEqual({ history: 0, live: 0, rows: 0 })
   expect(entries.filter(({ row }) => row.shape !== 'activity').flatMap(memberIds)).toEqual(
     durableKinds
-      // A status notice and a system context update are for the model, not the reader.
-      .filter((content) => content.kind !== 'notification' || content.category !== 'status')
+      // A system context update is for the model, not the reader.
       .filter((content) => content.kind !== 'context')
       .flatMap((content) => stableId(content)),
   )
@@ -195,7 +191,6 @@ const thought = (id: string, text: string): FeedContent => ({
   kind: 'reasoning',
   id,
   text,
-  redacted: false,
 })
 
 test('one transient activity row ends the rows with the Turn latest call', () => {
@@ -232,7 +227,7 @@ test('a newer thought replaces the call as the activity, and a new Turn starts e
 })
 
 test('reasoning without readable text is neither a row nor an activity', () => {
-  const unreadable: FeedContent = { kind: 'reasoning', id: 'r1', text: null, redacted: true }
+  const unreadable: FeedContent = { kind: 'reasoning', id: 'r1', text: ' ' }
   const { entries, activity } = projectFeedRowEntries({
     history: [message('m1', 'user', 'Hi'), unreadable, { ...unreadable, id: 'r2' }],
     live: [],
@@ -347,11 +342,9 @@ function command(
     kind: 'command',
     id,
     command: fields.command === undefined ? 'bun test' : fields.command,
-    cwd: null,
     status,
     output: fields.output === undefined ? null : fields.output,
     stderr: fields.stderr === undefined ? null : fields.stderr,
-    exitCode: status === 'completed' ? 0 : null,
   }
 }
 

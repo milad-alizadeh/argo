@@ -19,8 +19,7 @@ import type {
   ThreadReadResponse,
   WireMessage,
 } from '../app-server'
-import { codexCommandContent } from './codex-command-content'
-import { codexContentFromItems, userPromptContents, userPromptParts } from './codex-session-history'
+import { type CodexCollabFacts, codexFeedContent } from './codex-feed'
 import {
   approvalResponse,
   type CodexApproval,
@@ -32,7 +31,7 @@ import {
 import { dispatchCodexNotification } from './codex-session-notifications'
 import { APPROVAL_TIMEOUT_MS, inputItems } from './codex-session-protocol'
 import { followCodexSkillCommands } from './codex-skill-commands'
-import { CodexSubagentPairing } from './codex-subagent-content'
+import { readCodexNickname } from './codex-subagent-nicknames'
 import { readCodexThreadStatus } from './codex-thread-status'
 
 export type CodexLiveClient = {
@@ -42,6 +41,7 @@ export type CodexLiveClient = {
 }
 
 type Turn = ThreadReadResponse['thread']['turns'][number]
+type SubagentItem = Extract<ThreadItem, { type: 'subAgentActivity' }>
 type TurnNotice = { threadId: string; turn: Pick<Turn, 'id' | 'status'> }
 
 class CodexSessionChannel implements LiveSessionChannel {
@@ -56,7 +56,10 @@ class CodexSessionChannel implements LiveSessionChannel {
   private readonly phaseByItem = new Map<string, 'commentary' | 'final_answer' | null>()
   private readonly outputByItem = new Map<string, string>()
   private readonly commandByItem = new Map<string, Extract<FeedContent, { kind: 'command' }>>()
-  private readonly subagents: CodexSubagentPairing
+  // A Subagent activity and the collab call behind it share an id; either may land first.
+  private readonly collabById = new Map<string, CodexCollabFacts>()
+  private readonly activityById = new Map<string, SubagentItem>()
+  private readonly nicknameByThread = new Map<string, string>()
   private readonly pending = new Map<string, CodexInteraction>()
   private readonly approvalTimers = new Map<string, ReturnType<typeof setTimeout>>()
   private readonly standingAllow = new Set<string>()
@@ -78,7 +81,6 @@ class CodexSessionChannel implements LiveSessionChannel {
     },
   ) {
     this.client = client
-    this.subagents = new CodexSubagentPairing(client.request)
     this.controls = options.controls
     this.emit = (event) => options.emit(liveSessionChannelEventSchema.parse(event))
     this.unsubscribe = client.onNotification((message) => this.receive(message))
@@ -395,7 +397,8 @@ class CodexSessionChannel implements LiveSessionChannel {
     this.phaseByItem.clear()
     this.outputByItem.clear()
     this.commandByItem.clear()
-    this.subagents.clear()
+    this.collabById.clear()
+    this.activityById.clear()
     this.active = null
     void this.nextTurn()
   }
@@ -421,11 +424,7 @@ class CodexSessionChannel implements LiveSessionChannel {
     const parts = this.reasoningByItem.get(itemId) ?? []
     parts[summaryIndex] = (parts[summaryIndex] ?? '') + delta
     this.reasoningByItem.set(itemId, parts)
-    this.emitItemContent(
-      { kind: 'reasoning', id: itemId, text: parts.join('\n'), redacted: false },
-      itemId,
-      turnId,
-    )
+    this.emitItemContent({ kind: 'reasoning', id: itemId, text: parts.join('\n') }, itemId, turnId)
   }
 
   private commandOutputDelta(params: Record<string, unknown>) {
@@ -440,36 +439,46 @@ class CodexSessionChannel implements LiveSessionChannel {
     this.emitItemContent(updated, itemId, turnId)
   }
 
-  private commandItem(
-    item: Extract<ThreadItem, { type: 'commandExecution' }>,
-    turnId: string,
-    phase: 'started' | 'completed',
-  ) {
-    const command = codexCommandContent(item, phase)
-    const output =
-      phase === 'completed'
-        ? (command.output ?? this.outputByItem.get(item.id) ?? null)
-        : (this.outputByItem.get(item.id) ?? command.output)
+  private commandItem(item: Extract<ThreadItem, { type: 'commandExecution' }>, turnId: string) {
+    const [command] = codexFeedContent(item, (type) => this.reject(`item: ${type}`))
+    if (command?.kind !== 'command') return
+    const output = command.output ?? this.outputByItem.get(item.id) ?? null
     const updated = { ...command, output }
     this.commandByItem.set(item.id, updated)
     this.emitItemContent(updated, item.id, turnId)
   }
 
-  private subagentItem(item: Extract<ThreadItem, { type: 'subAgentActivity' }>, turnId: string) {
+  // Drawn at once, and again with the nickname only a read of the Subagent's own thread gives.
+  private subagentItem(item: SubagentItem, turnId: string) {
+    this.activityById.set(item.id, item)
     const commandId = this.active?.commandId ?? null
-    const redraw = (content: FeedContent) =>
-      this.emitFeed({ type: 'content', commandId, turnId, vendorEventId: content.id, content })
-    this.emitItemContent(this.subagents.activity(item, redraw), item.id, turnId)
+    this.emitDelegation(item, commandId, turnId)
+    if (this.nicknameByThread.has(item.agentThreadId)) return
+    void readCodexNickname(this.client.request, item.agentThreadId).then((nickname) => {
+      if (nickname === null) return
+      this.nicknameByThread.set(item.agentThreadId, nickname)
+      this.emitDelegation(item, commandId, turnId)
+    })
   }
 
   private collabItem(item: Extract<ThreadItem, { type: 'collabAgentToolCall' }>, turnId: string) {
-    const delegation = this.subagents.collab(item)
-    if (delegation !== null) this.emitItemContent(delegation, item.id, turnId)
+    this.collabById.set(item.id, { prompt: item.prompt, model: item.model })
+    const activity = this.activityById.get(item.id)
+    if (activity !== undefined)
+      this.emitDelegation(activity, this.active?.commandId ?? null, turnId)
   }
 
-  private userItem(item: Extract<ThreadItem, { type: 'userMessage' }>, turnId: string) {
-    for (const content of userPromptContents(item.id, userPromptParts(item.content)))
-      this.emitItemContent(content, item.id, turnId)
+  private emitDelegation(item: SubagentItem, commandId: string | null, turnId: string) {
+    const nickname = this.nicknameByThread.get(item.agentThreadId)
+    const reject = (type: string) => this.reject(`item: ${type}`)
+    for (const content of codexFeedContent(item, reject, this.collabById.get(item.id)))
+      this.emitFeed({
+        type: 'content',
+        commandId,
+        turnId,
+        vendorEventId: item.id,
+        content: content.kind === 'delegation' && nickname ? { ...content, nickname } : content,
+      })
   }
 
   private itemNotification(params: Record<string, unknown>, phase: 'started' | 'completed') {
@@ -480,7 +489,7 @@ class CodexSessionChannel implements LiveSessionChannel {
         item: ThreadItem
       }
       if (threadId !== this.nativeId || this.active?.turnId !== turnId) return
-      if (item.type === 'commandExecution') return this.commandItem(item, turnId, phase)
+      if (item.type === 'commandExecution') return this.commandItem(item, turnId)
       if (item.type === 'subAgentActivity') return this.subagentItem(item, turnId)
       if (item.type === 'collabAgentToolCall') return this.collabItem(item, turnId)
       // A started edit already names its files, so the Feed shows it before the patch lands.
@@ -496,15 +505,11 @@ class CodexSessionChannel implements LiveSessionChannel {
   }
 
   private completedItem(item: ThreadItem, turnId: string) {
-    if (item.type === 'userMessage') return this.userItem(item, turnId)
     if (item.type !== 'agentMessage') {
-      let projected: FeedContent[]
-      try {
-        projected = codexContentFromItems([item])
-      } catch {
-        return this.reject(`item/completed: ${item.type}`)
-      }
-      for (const content of projected) this.emitItemContent(content, item.id, turnId)
+      for (const content of codexFeedContent(item, (type) =>
+        this.reject(`item/completed: ${type}`),
+      ))
+        this.emitItemContent(content, item.id, turnId)
       return
     }
     this.phaseByItem.set(item.id, item.phase)
