@@ -15,7 +15,7 @@ import type {
   SessionSummaryList,
   SessionSummaryReader,
 } from '@/domains/sessions/api/session-discovery'
-import type { Harness } from '@/harnesses/harness'
+import { type Harness, harnessSessionKey } from '@/harnesses/harness'
 import type { SessionListChanges } from '../api'
 import {
   type SessionSyncStatus,
@@ -80,10 +80,6 @@ function saveSummaries(
   summaries: readonly SessionSummary[],
 ): void {
   changes.changed(saveSessionBatch(database, harness, matchSessionsToProjects(database, summaries)))
-}
-
-function discoveryKey({ harness, nativeId }: { harness: Harness; nativeId: string }): string {
-  return `${harness}:${nativeId}`
 }
 
 type DiscoverFinished = {
@@ -303,7 +299,7 @@ export const sessionSyncSupervisorMachine = setup({
     discoverSession: enqueueActions(({ context, event, enqueue }) => {
       assertEvent(event, 'Discover')
       const registration = context.harnesses[event.harness]
-      const key = discoveryKey(event)
+      const key = harnessSessionKey(event)
       if (registration === undefined || context.discovering[key] === true) return
       enqueue.spawnChild('discover', {
         id: `session-discover-${key}`,
@@ -324,7 +320,7 @@ export const sessionSyncSupervisorMachine = setup({
     }),
     releaseDiscovery: enqueueActions(({ event, enqueue }) => {
       assertEvent(event, 'DiscoverFinished')
-      const key = discoveryKey(event)
+      const key = harnessSessionKey(event)
       enqueue(stopChild(`session-discover-${key}`))
       enqueue.assign({
         discovering: ({ context: current }) => {

@@ -1,7 +1,8 @@
 import { utimesSync, writeFileSync } from 'node:fs'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import type { sessionTable } from '@/database/session/schema'
-import { ExternalSessionRoster, RUNNING_QUIET_LIMIT_MS } from '@/domains/sessions/main/api'
+import { ExternalSessionRoster } from '@/domains/sessions/main/api'
+import { RUNNING_QUIET_LIMIT_MS } from '@/domains/sessions/main/api/external-session-roster'
 import {
   mockCodexExternalThreads,
   notLoadedError,
