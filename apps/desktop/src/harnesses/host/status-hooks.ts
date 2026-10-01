@@ -1,7 +1,8 @@
 // The status hooks Argo installs in a Harness's user-level config, in the `hooks` table shape both
 // Harnesses share: each event names a list of matcher groups. The adapter supplies the storage, the
 // group shape and its tool names; the install, the removal and the reading are the same for all.
-import { connect } from 'node:net'
+import { existsSync } from 'node:fs'
+import path from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 import { z } from 'zod'
 import { commandActivityLabel, type LiveActivity } from '@/domains/sessions/api/feed-activity'
@@ -53,76 +54,75 @@ const hookCommand = (harness: Harness, socketPath: string) =>
 // Writes the event lists `next` returns; undefined leaves an event as it is.
 async function change(
   hooks: ExternalSessionHooks,
-  next: (event: StatusHookEvent, groups: unknown[]) => Promise<unknown[] | null | undefined>,
+  next: (event: StatusHookEvent, groups: unknown[]) => unknown[] | null | undefined,
 ): Promise<void> {
   const { parsed, write } = await openTable(hooks)
   const changes = new Map<StatusHookEvent, unknown[] | null>()
   for (const event of STATUS_HOOK_EVENTS) {
-    const groups = await next(event, parsed[event] ?? [])
+    const groups = next(event, parsed[event] ?? [])
     if (groups !== undefined) changes.set(event, groups)
   }
   if (changes.size > 0) await write(changes)
 }
 
-function stringsIn(value: unknown): string[] {
-  if (typeof value === 'string') return [value]
-  if (typeof value === 'object' && value !== null) return Object.values(value).flatMap(stringsIn)
-  return []
+// What `change` writes for an event: undefined when nothing moved, null when no group is left.
+const settle = (before: unknown[], after: unknown[]) => {
+  if (isDeepStrictEqual(before, after)) return undefined
+  return after.length === 0 ? null : after
 }
 
-// The socket an Argo group of any launch names, or undefined for a group that is not Argo's.
-function argoSocket(
-  harness: Harness,
-  hooks: ExternalSessionHooks,
-  group: unknown,
-): string | undefined {
-  const [head = '', tail = ''] = hookCommand(harness, '\0').split('\0')
-  for (const text of stringsIn(group)) {
-    if (text.length < head.length + tail.length) continue
-    if (!text.startsWith(head) || !text.endsWith(tail)) continue
-    const socket = text.slice(head.length, text.length - tail.length).replaceAll(`'\\''`, "'")
-    if (isDeepStrictEqual(group, hooks.group(hookCommand(harness, socket)))) return socket
-  }
-  return undefined
+// Drops the trailing groups `removable` names. Codex keys a hook's trust by its group's position
+// (codex-rs/hooks/src/engine/discovery.rs, 0.157), so a group before a kept one stays put.
+function trimTail(groups: unknown[], removable: (group: unknown) => boolean): unknown[] {
+  let end = groups.length
+  while (end > 0 && removable(groups[end - 1])) end -= 1
+  return groups.slice(0, end)
 }
 
-// A socket answers while its Argo runs; a stopped or crashed one leaves none, or a file nobody
-// accepts on. A connection that neither lands nor fails within a second counts as live.
-const socketAnswers = (socketPath: string) =>
-  new Promise<boolean>((resolve) => {
-    const socket = connect(socketPath)
-    const settle = (answers: boolean) => {
-      socket.destroy()
-      resolve(answers)
-    }
-    socket.setTimeout(1000, () => settle(true))
-    socket.once('connect', () => settle(true))
-    socket.once('error', () => settle(false))
-  })
+const commandGroupSchema = z.object({ hooks: z.tuple([z.looseObject({ command: z.string() })]) })
+const SOCKET_COMMAND =
+  /^curl -s -m 1 --unix-socket '((?:[^']|'\\'')*)' --data-binary @- http:\/\/localhost\/h\/[a-z]+ \|\| true$/
 
-// Appends Argo's group to each event the adapter names that lacks it, and drops the groups of any
-// other Argo launch whose socket no longer answers, so a stopped or crashed one leaves none behind.
+// An Argo group of any launch whose app data folder is gone, so no Argo will listen on it again.
+function isOrphanGroup(harness: Harness, hooks: ExternalSessionHooks, group: unknown): boolean {
+  const command = commandGroupSchema.safeParse(group).data?.hooks[0].command ?? ''
+  const socket = SOCKET_COMMAND.exec(command)?.[1]?.replaceAll(`'\\''`, "'")
+  if (socket === undefined) return false
+  const argo = isDeepStrictEqual(group, hooks.group(hookCommand(harness, socket)))
+  return argo && !existsSync(path.dirname(socket))
+}
+
+// The command Argo wrote before #3022, which posted every payload to a TCP port other dev servers use.
+const portCommand = (harness: Harness, event: StatusHookEvent) =>
+  `curl -s -m 1 --data-binary @- http://127.0.0.1:4321/h/${harness}/${event} || true`
+
+// Puts Argo's group in each event the adapter names that lacks it: in the first orphan's place,
+// else at the end. Trailing orphans go, and so does every port group, since it leaks payloads.
 export function installStatusHooks(
   harness: Harness,
   hooks: ExternalSessionHooks,
   socketPath: string,
 ): Promise<void> {
   const group = hooks.group(hookCommand(harness, socketPath))
-  const answers = new Map<string, Promise<boolean>>()
-  const live = (socket: string) => {
-    if (!answers.has(socket)) answers.set(socket, socketAnswers(socket))
-    return answers.get(socket) as Promise<boolean>
-  }
-  return change(hooks, async (event, groups) => {
-    const kept: unknown[] = []
-    for (const each of groups) {
-      const socket = argoSocket(harness, hooks, each)
-      if (socket === undefined || socket === socketPath || (await live(socket))) kept.push(each)
+  return change(hooks, (event, groups) => {
+    const port = hooks.group(portCommand(harness, event))
+    const isPort = (each: unknown) => isDeepStrictEqual(each, port)
+    const own = (each: unknown) => isDeepStrictEqual(each, group)
+    const orphan = (each: unknown) =>
+      !own(each) && (isPort(each) || isOrphanGroup(harness, hooks, each))
+    const next = [...groups]
+    if (hooks.events.includes(event) && !next.some(own)) {
+      const slot = next.findIndex(orphan)
+      if (slot === -1) next.push(group)
+      else next[slot] = group
     }
-    const add = hooks.events.includes(event) && !kept.some((each) => isDeepStrictEqual(each, group))
-    if (add) kept.push(group)
-    if (!add && kept.length === groups.length) return undefined
-    return kept.length === 0 ? null : kept
+    return settle(
+      groups,
+      trimTail(
+        next.filter((each) => !isPort(each)),
+        orphan,
+      ),
+    )
   })
 }
 
@@ -133,11 +133,12 @@ export function removeStatusHooks(
   socketPath: string,
 ): Promise<void> {
   const group = hooks.group(hookCommand(harness, socketPath))
-  return change(hooks, async (_event, groups) => {
-    const kept = groups.filter((each) => !isDeepStrictEqual(each, group))
-    if (kept.length === groups.length) return undefined
-    return kept.length === 0 ? null : kept
-  })
+  return change(hooks, (_event, groups) =>
+    settle(
+      groups,
+      groups.filter((each) => !isDeepStrictEqual(each, group)),
+    ),
+  )
 }
 
 const payloadSchema = z.looseObject({

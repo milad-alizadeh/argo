@@ -3,6 +3,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { isDeepStrictEqual } from 'node:util'
 import { claudeSettingsFile } from '@/harnesses/claude/session/claude-status-hooks'
 
 const REAL_HOME = os.userInfo().homedir
@@ -13,28 +14,30 @@ const REAL_CONFIG_FILES = [
 // An Argo status hook command, in the socket form or the earlier port form.
 const ARGO_HOOK = /curl [^"\n]*(?:127\.0\.0\.1:\d+|localhost)\/h\/(?:claude|codex)\b[^"\n]*/g
 
-function argoHooks(): Set<string> {
-  return new Set(
-    REAL_CONFIG_FILES.flatMap((file) => {
-      try {
-        return [...readFileSync(file, 'utf8').matchAll(ARGO_HOOK)].map(
-          ([hook]) => `${file}: ${hook}`,
-        )
-      } catch {
-        return []
-      }
-    }),
-  )
+// Each real config's Argo hook commands, in file order.
+function argoHooks(): string[] {
+  return REAL_CONFIG_FILES.flatMap((file) => {
+    try {
+      return [...readFileSync(file, 'utf8').matchAll(ARGO_HOOK)].map(([hook]) => `${file}: ${hook}`)
+    } catch {
+      return []
+    }
+  })
 }
 
-// Playwright's global setup, whose returned step is its teardown: the run fails when a real config
-// holds an Argo status hook it did not hold before, so a leak from a case stays red. A hook the
-// installed app or a dev run wrote is the person's own.
-export default function noArgoHooksAddedToRealConfig(): () => void {
+// Playwright's global setup, whose returned step is its teardown: the run fails when a real config's
+// Argo status hooks differ from before it, added, removed or rewritten. Hooks already there are the
+// person's own, from the installed app or a dev run.
+export default function realConfigArgoHooksUnchanged(): () => void {
   const before = argoHooks()
   return () => {
-    const added = [...argoHooks()].filter((hook) => !before.has(hook))
-    if (added.length > 0) throw new Error(`Argo status hooks leaked into ${added.join(' and ')}.`)
+    const after = argoHooks()
+    if (isDeepStrictEqual(after, before)) return
+    const added = after.filter((hook) => !before.includes(hook))
+    const removed = before.filter((hook) => !after.includes(hook))
+    throw new Error(
+      `Argo status hooks in the real config changed. Added: ${added.join(', ') || 'none'}. Removed: ${removed.join(', ') || 'none'}.`,
+    )
   }
 }
 

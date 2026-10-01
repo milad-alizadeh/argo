@@ -4,7 +4,7 @@ import { isolateHarnessFolders } from './mocks/cli/real-user-config'
 
 // The app installs its status hooks in the Harness config folders at launch, so a case that names
 // none gets throwaway folders, never the person's own. The runner deletes them on exit, and its
-// teardown fails when the run added an Argo hook to the person's own config.
+// teardown fails when the run changed an Argo hook in the person's own config.
 process.once('exit', isolateHarnessFolders())
 
 // One project per flow under `e2e/` (#2325). Every case launches the app against its own root
