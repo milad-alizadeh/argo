@@ -139,5 +139,20 @@ function testOrphanedGroups(
     await seedStop(hooks, [argoGroup(hooks), port, userGroup(hooks)])
     await installStatusHooks(harness, hooks, SOCKET)
     assert.deepEqual((await read())[EVENT], [argoGroup(hooks), userGroup(hooks)])
+    await seedStop(hooks, [port, userGroup(hooks)])
+    await installStatusHooks(harness, hooks, SOCKET)
+    assert.deepEqual((await read())[EVENT], [argoGroup(hooks), userGroup(hooks)])
+  })
+
+  test(`a ${harness} install with its own group in place keeps an orphan before a kept group and writes nothing`, async (context) => {
+    const { hooks, read } = await storage(context, false)
+    const { orphan } = await folders(context)
+    await installStatusHooks(harness, hooks, SOCKET)
+    const steady = [socketGroup(harness, hooks, orphan), userGroup(hooks), argoGroup(hooks)]
+    await seedStop(hooks, steady)
+    const { hooks: again, counter } = counted(hooks)
+    await installStatusHooks(harness, again, SOCKET)
+    assert.equal(counter.writes, 0)
+    assert.deepEqual((await read())[EVENT], steady)
   })
 }

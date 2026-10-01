@@ -71,8 +71,8 @@ const settle = (before: unknown[], after: unknown[]) => {
   return after.length === 0 ? null : after
 }
 
-// Drops the trailing groups `removable` names. Codex keys a hook's trust by its group's position
-// (codex-rs/hooks/src/engine/discovery.rs, 0.157), so a group before a kept one stays put.
+// Drops the trailing groups `removable` names. A Harness may key hook trust by group position
+// (#3066), so a group before a kept one stays put.
 function trimTail(groups: unknown[], removable: (group: unknown) => boolean): unknown[] {
   let end = groups.length
   while (end > 0 && removable(groups[end - 1])) end -= 1
