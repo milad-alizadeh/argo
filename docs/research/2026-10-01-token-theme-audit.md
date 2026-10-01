@@ -184,7 +184,7 @@ The full [styling audit](2026-10-01-styling-reuse-audit.md) provides every locat
 
 Two separate `gpt-6-sol` agents at medium effort studied current primary sources. [Token architecture research](2026-10-01-token-architecture-practices.md) covers token layers, intent, CSS ownership, and tooling. [Theme-management research](2026-10-01-theme-management-practices.md) covers shadcn bindings, Electron, first paint, accessibility, and non-CSS consumers.
 
-[The proposed architecture](2026-10-01-token-theme-system.md) converts those findings into a small shared contract, ownership rules, and a migration with acceptance criteria. It preserves the user's requirement for a separate shadcn adaptation layer. The detailed vendor drift workflow follows after the current audit and architecture workflow.
+[The proposed architecture](2026-10-01-token-theme-system.md) converts those findings into a small shared contract, ownership rules, and a migration with acceptance criteria. It preserves the user's requirement for a separate shadcn adaptation layer. The separately completed [shadcn adaptation and drift workflow](2026-10-01-shadcn-adaptation-workflow.md) explains the Empty example, class merging, preserved defaults, source provenance, and updates.
 
 ## Limits
 

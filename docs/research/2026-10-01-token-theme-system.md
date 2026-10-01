@@ -4,7 +4,7 @@
 
 Keep CSS as the authored visual contract. Keep shadcn's existing semantic names where they already express the role. Give app typography, owner-specific geometry, reusable recipes, and runtime measurements explicit owners. Resolve theme identity and appearance once, then send the same result to every consumer.
 
-This is a proposed migration, not an implemented system. The color examples demonstrate the contract and do not approve a new palette. The separate shadcn adaptation and update workflow follows the current research workflow.
+This is a proposed migration, not an implemented system. The color examples demonstrate the contract and do not approve a new palette. The separately completed [shadcn adaptation and update workflow](2026-10-01-shadcn-adaptation-workflow.md) gives the detailed process for preserved defaults and opt-in app compositions.
 
 ## Decisions
 
