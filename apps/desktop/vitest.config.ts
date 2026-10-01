@@ -34,7 +34,12 @@ const nodeProject = {
   resolve: {
     alias: desktopAlias(directory),
   },
-  test: { name: 'node', environment: 'node' as const, include: ['src/**/*.vitest.ts'] },
+  test: {
+    name: 'node',
+    environment: 'node' as const,
+    include: ['src/**/*.vitest.ts'],
+    setupFiles: ['mocks/cli/throwaway-harness-folders.vitest-setup.ts'],
+  },
 }
 
 export default defineConfig({

@@ -1,7 +1,7 @@
 // The person's own Harness config files, found from the account's home whatever HOME or the
 // Harness folders are set to. A test records them first and fails if a hook install touched one.
 import assert from 'node:assert/strict'
-import { statSync } from 'node:fs'
+import { mkdtempSync, rmSync, statSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -37,5 +37,18 @@ export function isolateHarnessFolders(root: string): () => void {
     for (const [name, value] of saved)
       if (value === undefined) delete process.env[name]
       else process.env[name] = value
+  }
+}
+
+// Points both Harness folders at throwaway ones for a whole test run, so a test that names none
+// cannot reach the person's own; returns the step that deletes them.
+export function isolateHarnessFoldersForRun(): () => void {
+  const folders = (['CLAUDE_CONFIG_DIR', 'CODEX_HOME'] as const).map((name) => {
+    const folder = mkdtempSync(path.join(os.tmpdir(), `argo-test-${name.toLowerCase()}-`))
+    process.env[name] = folder
+    return folder
+  })
+  return () => {
+    for (const folder of folders) rmSync(folder, { recursive: true, force: true })
   }
 }

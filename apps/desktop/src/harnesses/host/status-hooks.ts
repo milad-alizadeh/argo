@@ -3,20 +3,11 @@
 import { z } from 'zod'
 import { commandActivityLabel, type LiveActivity } from '@/domains/sessions/api/feed-activity'
 import type { Harness } from '@/harnesses/harness'
-import type { ExternalHookReading } from '@/harnesses/registration'
-
-// The events both Harnesses name alike; each was seen firing from its CLI (#2976).
-const STATUS_HOOK_EVENTS = [
-  'SessionStart',
-  'UserPromptSubmit',
-  'PreToolUse',
-  'PermissionRequest',
-  'PostToolUse',
-  'Stop',
-  'SessionEnd',
-] as const
-export const statusHookEventSchema = z.enum(STATUS_HOOK_EVENTS)
-export type StatusHookEvent = z.infer<typeof statusHookEventSchema>
+import {
+  type ExternalHookReading,
+  STATUS_HOOK_EVENTS,
+  type StatusHookEvent,
+} from '@/harnesses/registration'
 
 // Each event list an install or a removal changes; null deletes the event.
 export type HookTableChanges = Map<StatusHookEvent, unknown[] | null>

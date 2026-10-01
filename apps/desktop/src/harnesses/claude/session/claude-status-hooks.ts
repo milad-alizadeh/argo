@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { lstat, mkdir, readFile, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { z } from 'zod'
@@ -18,8 +18,11 @@ async function readSettings(file: string): Promise<Record<string, unknown>> {
   try {
     text = await readFile(file, 'utf8')
   } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return {}
-    throw error
+    if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error
+    // A link to a file that is gone is refused, so the write cannot create its target (ADR-0041).
+    if ((await lstat(file).catch(() => null)) !== null)
+      throw new Error(`${file} links to a file that is gone.`)
+    return {}
   }
   return settingsSchema.parse(JSON.parse(text))
 }

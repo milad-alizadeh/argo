@@ -18,7 +18,6 @@ import type { SessionLiveInput, SessionStartInput } from '@/domains/sessions/mai
 import type { HarnessInfo } from '@/harnesses/harness-catalog'
 import { identifierSchema } from '@/shared/validation'
 import type { Harness } from './harness'
-import type { StatusHookEvent } from './host/status-hooks'
 
 export const liveSessionChannelEventSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('identity'), nativeId: identifierSchema }),
@@ -59,6 +58,19 @@ export type ExternalActivityReading = {
   // The interface could not answer yet; the host reads again on the next tick.
   retry: boolean
 }
+
+// The status hook events both Harnesses name alike; each was seen firing from its CLI (#2976).
+export const STATUS_HOOK_EVENTS = [
+  'SessionStart',
+  'UserPromptSubmit',
+  'PreToolUse',
+  'PermissionRequest',
+  'PostToolUse',
+  'Stop',
+  'SessionEnd',
+] as const
+export const statusHookEventSchema = z.enum(STATUS_HOOK_EVENTS)
+export type StatusHookEvent = z.infer<typeof statusHookEventSchema>
 
 // What one hook event says about a Session.
 export type ExternalHookReading = {

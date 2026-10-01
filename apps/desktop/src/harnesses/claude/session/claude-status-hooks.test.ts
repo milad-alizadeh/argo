@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { lstat, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { after, type TestContext, test } from 'node:test'
@@ -117,6 +117,25 @@ for (const [label, text] of [
     await assert.rejects(hooksOf().remove())
     assert.equal(await readFile(settings, 'utf8'), text)
   })
+
+test('a settings link to a file that is gone is not written, and its target is not made', async (context) => {
+  const { root, settings } = await claudeFolder(context)
+  const target = path.join(root, 'gone.json')
+  await symlink(target, settings)
+  await assert.rejects(hooksOf().install(4321))
+  assert.ok((await lstat(settings)).isSymbolicLink())
+  await assert.rejects(stat(target))
+})
+
+test('a settings link to a file is written through, keeping the link', async (context) => {
+  const { root, settings } = await claudeFolder(context)
+  const target = path.join(root, 'dotfiles-settings.json')
+  await writeFile(target, JSON.stringify({ model: 'opus' }))
+  await symlink(target, settings)
+  await hooksOf().install(4321)
+  assert.ok((await lstat(settings)).isSymbolicLink())
+  assert.deepEqual((await readJson(target)).hooks.Stop, [argoGroup(4321, 'Stop')])
+})
 
 // A child process, because Bun reads HOME once at start and a change to it here moves nothing.
 test('without CLAUDE_CONFIG_DIR the install writes the settings in the home Claude folder', async (context) => {

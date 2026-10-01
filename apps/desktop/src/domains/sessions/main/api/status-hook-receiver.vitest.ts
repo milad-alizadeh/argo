@@ -1,4 +1,6 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { createServer, request } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import { afterAll, afterEach, beforeEach, expect, test, vi } from 'vitest'
@@ -10,8 +12,8 @@ import { clientBackedByMock, writeMockCodex } from '@/mocks/cli/codex/mock-codex
 import { guardRealUserConfig, isolateHarnessFolders } from '@/mocks/cli/real-user-config'
 import { hookEvent, hookTurn, postHook } from '@/mocks/cli/status-hooks'
 import { insertSession, liveSession, sessionListCaller } from '@/mocks/sessions/session-list-caller'
-import { ExternalSessionHooks } from './external-session-hooks'
 import { ExternalSessionPoll, RUNNING_QUIET_LIMIT_MS } from './external-session-poll'
+import { installsStatusHooks, StatusHookReceiver } from './status-hook-receiver'
 
 const SESSION = '00000000-0000-4000-8000-0000000000b1'
 const OTHER = '00000000-0000-4000-8000-0000000000b2'
@@ -29,7 +31,7 @@ let caller: ReturnType<typeof sessionListCaller>
 let liveActors: Record<string, unknown>
 let discovered: string[]
 let poll: ExternalSessionPoll
-let receiver: ExternalSessionHooks
+let receiver: StatusHookReceiver
 
 beforeEach(async () => {
   root = await mkdtemp(path.join(os.tmpdir(), 'argo-status-hooks-'))
@@ -56,7 +58,8 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-async function start() {
+// Builds the poll and the receiver; `listen` false leaves the receiver unstarted.
+async function start({ listen = true } = {}) {
   const harnesses = [
     { harness: 'claude' as const, external: createClaudeExternalSessions(agents.executable) },
     {
@@ -71,8 +74,8 @@ async function start() {
     hasLiveChannel: (sessionId) => Object.hasOwn(liveActors, sessionId),
     discover: ({ nativeId }) => discovered.push(nativeId),
   })
-  receiver = new ExternalSessionHooks({ poll, harnesses })
-  await receiver.start()
+  receiver = new StatusHookReceiver({ poll, harnesses })
+  if (listen) await receiver.start()
 }
 
 const saved = (harness: HookHarness, id = SESSION) =>
@@ -216,4 +219,129 @@ test('settings Argo cannot parse are not written, the failure is counted, and th
   saved('claude')
   await listedRunning(SESSION)
   expect((await row()).status).toBe('running')
+})
+
+test('an acceptance run never installs, and a proof run only in Harness folders it names', () => {
+  const named = { CLAUDE_CONFIG_DIR: '/tmp/claude', CODEX_HOME: '/tmp/codex' }
+  expect(installsStatusHooks({ acceptance: true, proof: false }, named)).toBe(false)
+  expect(installsStatusHooks({ acceptance: false, proof: true }, {})).toBe(false)
+  expect(
+    installsStatusHooks({ acceptance: false, proof: true }, { CLAUDE_CONFIG_DIR: '/tmp/claude' }),
+  ).toBe(false)
+  expect(installsStatusHooks({ acceptance: false, proof: true }, named)).toBe(true)
+  expect(installsStatusHooks({ acceptance: false, proof: false }, {})).toBe(true)
+})
+
+test('a port the hooks name that another Argo holds is left to it, and this one stays on the poll', async () => {
+  const other = createServer()
+  await new Promise<void>((resolve) => other.listen(0, '127.0.0.1', resolve))
+  const port = (other.address() as AddressInfo).port
+  try {
+    await createClaudeExternalSessions(null).hooks?.install(port)
+    const settings = path.join(process.env.CLAUDE_CONFIG_DIR as string, 'settings.json')
+    const before = await readFile(settings, 'utf8')
+    quietWarnings()
+    await start()
+    expect(receiver.port).toBe(0)
+    expect(await readFile(settings, 'utf8')).toBe(before)
+    expect(
+      await createCodexExternalSessions(
+        codex.request,
+        process.env.CODEX_HOME as string,
+      ).hooks?.installedPort(),
+    ).toBeNull()
+    saved('claude')
+    await listedRunning(SESSION)
+    expect((await row()).status).toBe('running')
+  } finally {
+    other.close()
+  }
+})
+
+test('a stop before the start finishes leaves nothing listening and installs nothing', async () => {
+  await start({ listen: false })
+  const starting = receiver.start()
+  receiver.stop()
+  await starting
+  expect(receiver.port).toBe(0)
+  expect(await createClaudeExternalSessions(null).hooks?.installedPort()).toBeNull()
+})
+
+// Posts as a browser page or a rebound DNS name would, with its own headers.
+function postWithHeaders(headers: Record<string, string>): Promise<number | undefined> {
+  const { event, payload } = hookEvent('claude', 'UserPromptSubmit', SESSION)
+  return new Promise((resolve, reject) => {
+    const sent = request(
+      {
+        host: '127.0.0.1',
+        port: receiver.port,
+        method: 'POST',
+        path: `/h/claude/${event}`,
+        headers,
+      },
+      (response) => resolve(response.statusCode),
+    )
+    sent.on('error', reject)
+    sent.end(JSON.stringify(payload))
+  })
+}
+
+test('a post with an Origin or a Host other than the loopback port is rejected', async () => {
+  await start()
+  saved('claude')
+  quietWarnings()
+  expect(await postWithHeaders({ Origin: 'https://example.com' })).toBe(400)
+  expect(await postWithHeaders({ Host: `attacker.example:${receiver.port}` })).toBe(400)
+  poll.flush()
+  expect((await row()).status).toBe('idle')
+  expect(await postWithHeaders({})).toBe(204)
+})
+
+test.each(HARNESSES)(
+  'a %s PreToolUse that lands after its PermissionRequest keeps permission',
+  async (harness) => {
+    await start()
+    saved(harness)
+    await post(harness, hookEvent(harness, 'UserPromptSubmit', SESSION))
+    await post(harness, hookEvent(harness, 'PermissionRequest', SESSION))
+    await post(harness, hookEvent(harness, 'PreToolUse', SESSION))
+    expect((await row()).status).toBe('permission')
+    await post(harness, hookEvent(harness, 'PostToolUse', SESSION))
+    expect((await row()).status).toBe('running')
+  },
+)
+
+test('a Session listed before the hooks fire keeps its status once they do, until the quiet limit', async () => {
+  await start()
+  saved('claude')
+  saved('claude', OTHER)
+  await listedRunning(SESSION)
+  const now = Date.now()
+  vi.spyOn(Date, 'now').mockReturnValue(now)
+  await post('claude', hookEvent('claude', 'Stop', OTHER))
+  await poll.tick()
+  poll.flush()
+  expect((await row()).status).toBe('running')
+  vi.spyOn(Date, 'now').mockReturnValue(now + RUNNING_QUIET_LIMIT_MS)
+  await poll.tick()
+  poll.flush()
+  expect((await row()).status).toBe('unknown')
+})
+
+test('an asking row is not timed out by the quiet limit', async () => {
+  await start()
+  saved('codex')
+  await poll.tick()
+  const now = Date.now()
+  vi.spyOn(Date, 'now').mockReturnValue(now)
+  const question = hookTurn('codex', 'questionTurn', SESSION).find(
+    ({ event }) => event === 'PreToolUse',
+  )
+  if (question === undefined) throw new Error('The question Turn names no PreToolUse.')
+  await post('codex', question)
+  expect((await row()).status).toBe('asking')
+  vi.spyOn(Date, 'now').mockReturnValue(now + RUNNING_QUIET_LIMIT_MS)
+  await poll.tick()
+  poll.flush()
+  expect((await row()).status).toBe('asking')
 })

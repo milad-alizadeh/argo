@@ -1,0 +1,2 @@
+[test]
+preload = ["./mocks/cli/throwaway-harness-folders.bun.ts"]

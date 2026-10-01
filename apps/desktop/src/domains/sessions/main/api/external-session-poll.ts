@@ -3,13 +3,13 @@ import { and, eq, ne, notInArray, type SQL } from 'drizzle-orm'
 import { sessionTable } from '@/database/session/schema'
 import { projectFeedRowEntries } from '@/domains/sessions/api/feed'
 import { type Harness, type HarnessSession, harnessSessionKey } from '@/harnesses/harness'
-import type { StatusHookEvent } from '@/harnesses/host/status-hooks'
 import type {
   ExternalActivityReading,
   ExternalHookReading,
   ExternalSessionStatus,
   ExternalSessions,
   LiveExternalSession,
+  StatusHookEvent,
 } from '@/harnesses/registration'
 import {
   harnessSessionId,
@@ -19,9 +19,16 @@ import {
 } from './session-update'
 
 const EXTERNAL_POLL_MS = 2_000
-// A killed terminal writes nothing more, so a settled waiting or running status this quiet shows
-// unknown; an approval dismissed with Esc sends no hook event either.
+// A killed terminal writes nothing more, so a settled running or permission status this quiet
+// shows unknown; an approval dismissed with Esc sends no hook event either.
 export const RUNNING_QUIET_LIMIT_MS = 5 * 60_000
+const GOES_QUIET: Record<ExternalSessionStatus, boolean> = {
+  running: true,
+  permission: true,
+  asking: false,
+  idle: false,
+  unknown: false,
+}
 // Each Session's row reaches SQLite at most once a window, with its newest values.
 const WRITE_WINDOW_MS = 500
 
@@ -73,8 +80,7 @@ const sameStamp = (left: TranscriptStamp, right: TranscriptStamp) =>
 function shownStatus(tracked: TrackedSession, at: number): ExternalSessionStatus | null {
   const { status } = tracked
   if (status === null) return tracked.listed
-  const settles = status === 'idle' || status === 'unknown'
-  return !settles && at - tracked.changedAt >= RUNNING_QUIET_LIMIT_MS ? 'unknown' : status
+  return GOES_QUIET[status] && at - tracked.changedAt >= RUNNING_QUIET_LIMIT_MS ? 'unknown' : status
 }
 
 const newTracked = (
@@ -175,7 +181,12 @@ export class ExternalSessionPoll {
     const tracked = live.get(session.nativeId) ?? newTracked(null, null)
     live.set(session.nativeId, tracked)
     tracked.changedAt = Date.now()
-    if (reading.status !== null) tracked.status = reading.status
+    // PreToolUse is async, so it can land after the PermissionRequest it precedes.
+    const held =
+      event === 'PreToolUse' &&
+      reading.status === 'running' &&
+      (tracked.status === 'permission' || tracked.status === 'asking')
+    if (reading.status !== null && !held) tracked.status = reading.status
     this.#update(session, {
       activityAt: tracked.changedAt,
       ...(reading.activity === null ? {} : { activity: reading.activity }),
@@ -227,10 +238,17 @@ export class ExternalSessionPoll {
     if (!this.#closed.has(harness)) this.#closeAll(harness, current)
   }
 
-  // A hook-fed Harness's Sessions are not listed, so only the quiet limit changes them.
+  // A hook-fed Harness's Sessions are not listed, so only the quiet limit changes them. A listed
+  // status becomes a settled one, since a Session started before the install fires no hook.
   #showQuiet(harness: Harness): void {
-    for (const [nativeId, tracked] of this.#live.get(harness) ?? [])
+    for (const [nativeId, tracked] of this.#live.get(harness) ?? []) {
+      if (tracked.status === null && tracked.listed !== null) {
+        tracked.status = tracked.listed
+        tracked.changedAt = Date.now()
+      }
+      tracked.listed = null
       this.#show({ harness, nativeId }, tracked, Date.now())
+    }
   }
 
   // The same object across ticks, so a read that lands mid-tick is kept.
