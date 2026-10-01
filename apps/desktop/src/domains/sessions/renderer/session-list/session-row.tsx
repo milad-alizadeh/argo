@@ -9,7 +9,6 @@ import { HarnessLogo } from '../harness'
 import { SessionTitle } from '../prompt'
 import type { Session, SessionExtras, SessionId, SessionPlan } from '../types'
 import type { SelectionModifier } from './hooks/session-list-selection'
-import './session-row.css'
 
 // One row of the list, for the virtualizer's estimate and for the spinner and skeleton rows.
 export const SESSION_LIST_ROW_HEIGHT = 56
@@ -27,6 +26,14 @@ const STATUS_VARIANTS = {
   unknown: 'unknown',
   idle: 'idle',
 } as const satisfies Record<Session['status'], SessionStatusVariant>
+
+const STATUS_MARK = {
+  active: 'bg-active shadow-state-glow animate-[pulse_1.6s_ease-in-out_infinite]',
+  attention: 'bg-warn shadow-[0_0_5px_color-mix(in_srgb,var(--color-warn)_35%,transparent)]',
+  failed: 'bg-danger',
+  idle: 'bg-idle',
+  unknown: 'bg-transparent shadow-state-outline',
+} satisfies Record<SessionStatusVariant, string>
 
 function selectionModifierOf(event: {
   shiftKey: boolean
@@ -117,6 +124,34 @@ function SessionPlanBar({ plan, running }: { plan: SessionPlan; running: boolean
 
 type RowSession = Session & Pick<SessionExtras, 'plan'>
 
+function SessionRowMark({ session, unavailable }: { session: RowSession; unavailable: boolean }) {
+  const running = session.status === 'running'
+  const harness = harnessSchema.safeParse(session.harness)
+  const statusVariant = unavailable ? 'failed' : STATUS_VARIANTS[session.status]
+  return (
+    <span aria-hidden="true" className="relative flex h-5 w-4 shrink-0 items-center">
+      <span className="absolute inset-0 flex items-center mask-[radial-gradient(circle_at_calc(100%+var(--size-session-list-status-cutout)-var(--size-state-dot)/2)_calc(100%-var(--size-state-dot)/2),transparent_calc(var(--size-state-dot)/2+var(--size-session-list-status-cutout)),black_calc(var(--size-state-dot)/2+var(--size-session-list-status-cutout)))]">
+        <span
+          className={
+            running
+              ? 'inline-flex animate-[spin_2.4s_linear_infinite] motion-reduce:animate-none'
+              : 'inline-flex'
+          }
+          data-active={running}
+          data-slot="harness-logo"
+        >
+          {harness.success ? <HarnessLogo harness={harness.data} /> : null}
+        </span>
+      </span>
+      <span
+        className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full transition-[background-color,box-shadow,opacity] duration-(--duration-attention) ease-(--ease-emphasized) motion-reduce:animate-none motion-reduce:transition-none ${STATUS_MARK[statusVariant]}`}
+        data-variant={statusVariant}
+        data-slot="session-status"
+      />
+    </span>
+  )
+}
+
 function SessionMetadata({ now, session }: { now: number; session: RowSession }) {
   // Main's link alone, so the row names the Ticket the list files it under.
   const ticketKey = session.ticket?.key ?? null
@@ -175,9 +210,6 @@ export const SessionRow = memo(function SessionRow({
   const focusHighlight = pointerFocused
     ? 'focus-visible:outline-2 focus-visible:outline-transparent focus-visible:ring-0'
     : 'focus-visible:ring-2 focus-visible:ring-ring'
-  const running = session.status === 'running'
-  // The Session index stores an open Harness string (ADR-0021); an unknown one draws no logo.
-  const harness = harnessSchema.safeParse(session.harness)
   const statusVariant = unavailable ? 'failed' : STATUS_VARIANTS[session.status]
   // A modifier click selects instead of opening; an archived row takes no part in a bulk selection.
   function handleRowClick(event: MouseEvent) {
@@ -206,18 +238,7 @@ export const SessionRow = memo(function SessionRow({
       tabIndex={tabbable ? 0 : -1}
       type="button"
     >
-      <span aria-hidden="true" className="relative flex h-5 w-4 shrink-0 items-center">
-        <span className="session-list-harness-mark">
-          <span data-active={running} data-slot="harness-logo">
-            {harness.success ? <HarnessLogo harness={harness.data} /> : null}
-          </span>
-        </span>
-        <span
-          className="session-list-session-status absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full"
-          data-variant={statusVariant}
-          data-slot="session-status"
-        />
-      </span>
+      <SessionRowMark session={session} unavailable={unavailable} />
       {/* The status dot's colour, in words for a reader it never reaches. */}
       {unavailable ? null : (
         <span className="sr-only">{t(`events.liveStatus.${session.status}`)}</span>
