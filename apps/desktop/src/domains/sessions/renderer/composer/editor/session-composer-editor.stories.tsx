@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { Button } from '@/platform/renderer/components/ui/button'
 import type { ComposerEditing } from '../editing/composer-editing'
@@ -81,6 +82,30 @@ function UnsettledSendStory({ onSend }: { onSend: ComposerFormProps['onSend'] })
       plan={null}
       sessionId="unsettled-session"
     />
+  )
+}
+
+// The draft lands, then a control is pressed before the next frame (#3036).
+function PressedAsTheDraftLandsStory({ onSend }: { onSend: ComposerFormProps['onSend'] }) {
+  const [loading, setLoading] = useState(true)
+  const pressed = useRef<HTMLButtonElement>(null)
+  return (
+    <>
+      <Button
+        onClick={() => {
+          flushSync(() => setLoading(false))
+          queueMicrotask(() => pressed.current?.focus())
+        }}
+        type="button"
+        variant="outline"
+      >
+        Load the draft and press
+      </Button>
+      <Button ref={pressed} type="button" variant="outline">
+        Pressed control
+      </Button>
+      <ComposerForm focusOnMount loading={loading} onSend={onSend} sessionId="landing-session" />
+    </>
   )
 }
 
@@ -439,5 +464,18 @@ export const SkillMentionPaste: Story = {
     await expect(composer.querySelector('svg')).not.toBeNull()
     await expect(composer).not.toHaveTextContent('[$implement]')
     await expect(composer).toHaveTextContent('go')
+  },
+}
+
+// Focus asked for on arrival lands with the draft, so it never takes focus back from a later press.
+export const PressAsTheDraftLandsKeepsFocus: Story = {
+  render: (args) => <PressedAsTheDraftLandsStory onSend={args.onSend} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const pressed = canvas.getByRole('button', { name: 'Pressed control' })
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Load the draft and press' }))
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    await expect(pressed).toHaveFocus()
   },
 }
