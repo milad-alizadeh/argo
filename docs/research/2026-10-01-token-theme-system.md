@@ -2,6 +2,8 @@
 
 2026-10-01. Proposal based on [the source audit](2026-10-01-token-theme-audit.md), [styling usage](2026-10-01-styling-reuse-audit.md), and two independent studies: [token architecture](2026-10-01-token-architecture-practices.md) and [theme management](2026-10-01-theme-management-practices.md).
 
+The user later clarified that the app is not live. [The clean-slate plan](2026-10-01-clean-slate-design-system-plan.md) is now the recommended implementation direction. It replaces the migration sequence and single-file source layout below. The shared semantic roles and ownership evidence remain relevant.
+
 Keep CSS as the authored visual contract. Keep shadcn's existing semantic names where they already express the role. Give app typography, owner-specific geometry, reusable recipes, and runtime measurements explicit owners. Resolve theme identity and appearance once, then send the same result to every consumer.
 
 This is a proposed migration, not an implemented system. The color examples demonstrate the contract and do not approve a new palette. The separately completed [shadcn adaptation and update workflow](2026-10-01-shadcn-adaptation-workflow.md) gives the detailed process for preserved defaults and opt-in app compositions.

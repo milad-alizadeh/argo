@@ -6,6 +6,8 @@ The desktop app has a written token contract and useful shared roles. Its implem
 
 The problem is larger than repeated colors. The system needs explicit rules for shared intent, local geometry, component composition, and theme changes. This audit provides source evidence for that work. It does not change the app or claim that every candidate is a bug.
 
+The current recommendation is [the clean-slate plan](2026-10-01-clean-slate-design-system-plan.md). The user clarified that the app is not live and does not need a migration sequence.
+
 ## Scope and method
 
 The active target is `apps/desktop`. `apps/macOS` is deprecated. `docs/designs/tokens.css` belongs to its closed design archive under [the design stack](../design-stack.md). Do not merge those historical palettes into the desktop contract.
@@ -137,6 +139,20 @@ Move owner-specific geometry beside its owner. Keep cross-owner dimensions globa
 
 [The design-value lint override](../../biome.jsonc#L282) and general code gates do not prove unique declarations, complete palettes, valid utility role names, native/CSS equality, or same-appearance theme redraw. Add tests for those behaviors and declarations during implementation. Do not call this research a rendered accessibility audit.
 
+### 13. Agent instructions do not define the typography boundary
+
+[The desktop instructions](../../apps/desktop/AGENTS.md#L45) require a typography role for every visible string. They do not distinguish app-owned text from a registry-owned text slot. The rule does not explicitly require an Argo `type-*` class, but it also does not explain when an unadapted registry default satisfies it.
+
+[The design contract](../design-stack.md#L9) forbids hand edits to `ui/`. It describes composition when a registry shape is missing, without defining typography adaptation for an existing shape. This leaves agents without a complete ownership rule.
+
+The [typography test](../../apps/desktop/src/platform/renderer/styles/typography-contract.test.ts#L24) is more specific than the prose. It positively requires remapping `text-sm`, `text-base`, and `text-xs` to app roles. It also asserts a particular generated Button class string at line 30. Those assertions preserve the current practice, rather than the requested registry-default contract.
+
+The test's source scan covers selected product folders and excludes stories. It searches source text for banned size classes. It does not prove that every visible string has a valid role, that an inherited role is intentional, or that the browser renders the requested recipe.
+
+The [focus instruction](../../apps/desktop/AGENTS.md#L68) says shadcn draws its own ring, while the global CSS changes that ring's output. The [typography stylesheet](../../apps/desktop/src/platform/renderer/styles/typography.css#L2) explicitly describes its repeated selectors as precedence over generated defaults. These are current instruction, assertion, and styling conflicts. This audit does not establish their historical cause.
+
+The clean-slate policy accepts registry typography for direct registry use. App-owned text and deliberately adapted slots use approved app recipes. Intentional inheritance counts. The design contract owns this boundary, and the agent instructions point to it. [The consolidated plan](2026-10-01-clean-slate-design-system-plan.md#5-make-the-rules-and-tests-match-the-system) gives proposed wording and separate checks for registry and app styling.
+
 ## Duplicate decisions
 
 Equal values need four different actions. A repeated name in the same block is a collision. Two names for one intent can merge. Two roles with equal current values can remain distinct. A vendor contract can require a name even without an app reader.
@@ -184,7 +200,7 @@ The full [styling audit](2026-10-01-styling-reuse-audit.md) provides every locat
 
 Two separate `gpt-6-sol` agents at medium effort studied current primary sources. [Token architecture research](2026-10-01-token-architecture-practices.md) covers token layers, intent, CSS ownership, and tooling. [Theme-management research](2026-10-01-theme-management-practices.md) covers shadcn bindings, Electron, first paint, accessibility, and non-CSS consumers.
 
-[The proposed architecture](2026-10-01-token-theme-system.md) converts those findings into a small shared contract, ownership rules, and a migration with acceptance criteria. It preserves the user's requirement for a separate shadcn adaptation layer. The separately completed [shadcn adaptation and drift workflow](2026-10-01-shadcn-adaptation-workflow.md) explains the Empty example, class merging, preserved defaults, source provenance, and updates.
+[The earlier architecture](2026-10-01-token-theme-system.md) records the original migration proposal. [The clean-slate plan](2026-10-01-clean-slate-design-system-plan.md) replaces that sequence after the user clarified that the app is not live. It combines the audit with [the additional official shadcn research](2026-10-01-shadcn-official-workflows.md). The separately completed [shadcn adaptation and drift workflow](2026-10-01-shadcn-adaptation-workflow.md) explains the Empty example, class merging, preserved defaults, source provenance, and updates.
 
 ## Limits
 
