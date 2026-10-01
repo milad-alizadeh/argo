@@ -67,17 +67,6 @@ const REPLY_DELAY_MS = readMockReplyDelayMs()
 const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
 let turnIndex = 0
 
-// Another Codex client renames a thread in the shared store, so a list re-reads names from it.
-function storedNames(): Map<string, string> {
-  try {
-    return new Map(
-      storedThreads().flatMap((thread) => (thread.name ? [[thread.id, thread.name]] : [])),
-    )
-  } catch {
-    return new Map()
-  }
-}
-
 function finish(active: ActiveTurn, status: 'completed' | 'interrupted' | 'failed') {
   const { thread, turn, prompt } = active
   if (turn.status !== 'inProgress') return
@@ -293,21 +282,20 @@ function handle(message: Request) {
   if (method === 'initialized') return
   if (method === 'initialize') return send({ id, result: {} })
   if (method === 'model/list') return send({ id, result: recordedCodexModels })
-  if (method === 'thread/list') {
-    const names = storedNames()
+  // Other Codex clients write and rename threads in the shared store, so a list reads it each time.
+  if (method === 'thread/list')
     return send({
       id,
       result: {
-        data: threads.map(({ id: threadId, cwd, updatedAt, name }) => ({
+        data: storedThreads().map(({ id: threadId, cwd, updatedAt, name }) => ({
           id: threadId,
           cwd,
           updatedAt,
-          name: names.get(threadId) ?? name,
+          name,
         })),
         nextCursor: null,
       },
     })
-  }
   if (method === 'thread/start' && path.basename(String(params.cwd)) === MOCK_START_REFUSED_FOLDER)
     return send({ id, error: { code: -32000, message: 'Mock Codex cannot start here.' } })
   if (method === 'thread/start') {

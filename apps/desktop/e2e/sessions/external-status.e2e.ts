@@ -14,11 +14,11 @@ import {
   recordedClaudeAgent,
 } from '../../mocks/cli/claude/mock-claude-agents'
 import { writeMockClaude } from '../../mocks/cli/claude/mock-claude-cli'
-import { claudeProjectFolder } from '../../mocks/cli/claude/mock-claude-transcripts'
 import { MOCK_CODEX_USER_HOOKS_FILE } from '../../mocks/cli/codex/fixtures/mock-codex-skills-config'
 import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { holdCodexWriterLock } from '../../mocks/cli/codex/mock-codex-external-threads'
 import { hookEvent, postHook } from '../../mocks/cli/status-hooks'
+import { newFixturePath } from '../../mocks/sessions/mock-transcript-files'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
@@ -61,8 +61,11 @@ function claudeSource(): StatusSource {
   const answer = (root: string, session: ExternalSession, status: 'busy' | 'idle') =>
     writeFile(claudeAgents(root), JSON.stringify([recordedClaudeAgent(session.nativeId, status)]))
   async function writeTurn(root: string, session: ExternalSession) {
-    const folder = claudeProjectFolder(path.join(claudeConfig(root), 'projects'), cwd)
-    await mkdir(folder, { recursive: true })
+    const file = await newFixturePath(
+      path.join(claudeConfig(root), 'projects'),
+      session.nativeId,
+      cwd,
+    )
     const prompt = {
       type: 'user',
       cwd,
@@ -72,7 +75,7 @@ function claudeSource(): StatusSource {
       parentUuid: null,
       message: { role: 'user', content: [{ type: 'text', text: TURN_PROMPT }] },
     }
-    await writeFile(path.join(folder, `${session.nativeId}.jsonl`), `${JSON.stringify(prompt)}\n`)
+    await writeFile(file, `${JSON.stringify(prompt)}\n`)
   }
   return {
     harness: 'claude',
@@ -194,7 +197,7 @@ const rowTitled = (page: Page, title: string) =>
   page.locator(PERSISTED_ROW).filter({ hasText: title })
 
 for (const createSource of [claudeSource, codexSource]) {
-  test(`a ${createSource().harness} Session running elsewhere keeps its Session List row in place and shows its turn`, async ({
+  test(`a ${createSource().harness} Session running elsewhere keeps its Session List row in place and shows its Turn in its Feed`, async ({
     root,
     applicationUnderTest,
   }) => {
@@ -216,6 +219,12 @@ for (const createSource of [claudeSource, codexSource]) {
 
       await source.closeTurn(root, older)
       await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/, { timeout: 10_000 })
+
+      await openSessionByClick(
+        page,
+        String(await rowTitled(page, OLDER).getAttribute('data-session-id')),
+      )
+      await expect(page.locator(ACTIVE_FEED)).toContainText(TURN_PROMPT)
     } finally {
       await closeApplication(application)
       await source.stop()
@@ -258,33 +267,6 @@ for (const createSource of [claudeSource, codexSource]) {
       await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/)
     } finally {
       await application.close()
-      await source.stop()
-    }
-  })
-}
-
-for (const createSource of [claudeSource, codexSource]) {
-  test(`a ${createSource().harness} Session running elsewhere shows its finished Turn in its Feed`, async ({
-    root,
-    applicationUnderTest,
-  }) => {
-    const source = createSource()
-    const { application, page, older } = await launch(root, applicationUnderTest, source)
-    try {
-      const row = rowTitled(page, OLDER)
-      const dot = row.locator('[data-slot="session-status"]')
-      await expect(rowTitled(page, NEWER)).toHaveCount(1, { timeout: 30_000 })
-      await expect(async () => {
-        await source.openTurn(root, older)
-        await expect(dot).toHaveAttribute('data-variant', 'active', { timeout: 3_000 })
-      }).toPass({ timeout: 20_000 })
-      await source.closeTurn(root, older)
-      await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/, { timeout: 10_000 })
-
-      await openSessionByClick(page, String(await row.getAttribute('data-session-id')))
-      await expect(page.locator(ACTIVE_FEED)).toContainText(TURN_PROMPT)
-    } finally {
-      await closeApplication(application)
       await source.stop()
     }
   })
