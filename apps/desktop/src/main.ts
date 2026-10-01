@@ -20,7 +20,6 @@ import {
   ExternalSessionPoll,
   listComposerCommandsFor,
   SessionListChanges,
-  watchLinkedTickets,
   watchSessionList,
 } from '@/domains/sessions/main/api'
 import {
@@ -49,7 +48,6 @@ import {
   type TicketOperationSupervisorActor,
   ticketWriter,
 } from '@/domains/tickets/main/operations'
-import { createSessionTicketLinkStoreFromDatabase } from '@/domains/tickets/main/session-links'
 import {
   reportWindowVisibility,
   TicketChanges,
@@ -255,7 +253,6 @@ function routerForWindow(options: {
       supervisor: actors.sessions,
       changes: sessionListChanges,
       ticketSource: (projectId) => projectTicketScope(domains.connections, projectId),
-      ticketLinks: createSessionTicketLinkStoreFromDatabase(database),
       readers: sessionServices.readers,
       acceptsAttachments: (harness) => registry[harness].acceptsAttachments,
       chooseAttachmentFiles: () => chooseAttachmentFiles(window),
@@ -395,8 +392,7 @@ function liveChannelCheck(actors: WindowActors) {
 }
 
 // The Session services the app runs once, not per window: one set of Feed readers, the Session
-// List's live status and linked Ticket announcements, and the stored rows of Sessions that run
-// outside Argo.
+// List's live status announcements, and the stored rows of Sessions that run outside Argo.
 function startSessionServices(actors: WindowActors, database: Database, registry: HarnessRegistry) {
   const context = { database, changes: sessionListChanges }
   const hasLiveChannel = liveChannelCheck(actors)
@@ -418,17 +414,11 @@ function startSessionServices(actors: WindowActors, database: Database, registry
       actors.sessionSync.send({ type: 'Discover', harness, nativeId }),
   })
   const stopSessionList = watchSessionList({ ...context, supervisor: actors.sessions })
-  const { connections, changes: ticketChanges } = currentTicketServices()
-  const linkedTickets = watchLinkedTickets(
-    { ...context, ticketSource: (projectId) => projectTicketScope(connections, projectId) },
-    ticketChanges,
-  )
   externalSessions.start()
   return {
     readers,
     stop: () => {
       stopSessionList()
-      linkedTickets.stop()
       externalSessions.stop()
     },
   }

@@ -3,7 +3,6 @@ import type { BrowserContext, ElectronApplication } from 'playwright-core'
 import { hubotUser, octocatUser } from '@/mocks/tickets/provider-inputs'
 import { ADA } from '../../mocks/providers/linear/mock-linear-cast'
 import { finishRecording, test as packagedTest, startRecording } from '../packaged-proof'
-import { seedLinkedSessions } from './fixtures/linked-sessions.fixture'
 import { launch, prepare, type TicketFixture } from './fixtures/tickets.fixture'
 import {
   accountsDialog,
@@ -89,20 +88,16 @@ export const test = packagedTest.extend<{
   ticketState: TicketState
   // The main process's active poll in milliseconds; null keeps the minute.
   ticketPollMs: number | null
-  // A Claude and a Codex Session linked to #273, saved before the first launch.
-  linkedSessions: boolean
   tickets: Tickets
 }>({
   ticketState: ['none', { option: true }],
   ticketPollMs: [null, { option: true }],
-  linkedSessions: [false, { option: true }],
   tickets: async (
-    { root, applicationUnderTest, ticketState, ticketPollMs, linkedSessions, performanceProfile },
+    { root, applicationUnderTest, ticketState, ticketPollMs, performanceProfile },
     use,
     testInfo,
   ) => {
     const fixture = await prepare(root, applicationUnderTest, ticketPollMs)
-    if (linkedSessions) seedLinkedSessions(fixture.userData)
     let application: ElectronApplication | undefined
     let traced: BrowserContext | undefined
     const open = async () => {

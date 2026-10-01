@@ -9,7 +9,6 @@ import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
 import { deleteComposerDraft, draftTurnConfigurationSchema, readComposerDraft } from '../database'
 import { type LiveSessionSupervisorActor, SessionSubmitRejectedError } from '../live'
-import type { SessionListChanges } from './session-list-changes'
 
 const t = initTRPC.create()
 const commandSchema = z.strictObject({
@@ -54,16 +53,6 @@ export type SessionProcedureContext = {
     draftId: string,
   ) => Promise<{ id: string; path: string }>
   acceptsAttachments: (harness: Harness) => boolean
-  // The asserted Session to Ticket link store the Ticket domain owns (ADR-0017).
-  // Mirrors that store's `connect` type, so sessions/main does not import tickets/main.
-  ticketLinks: {
-    connect: (
-      sessionId: string,
-      ticket: { projectId: string; key: string },
-      createdAt: string,
-    ) => Promise<void>
-  }
-  changes: SessionListChanges
 }
 type SupervisorDraftRequest = {
   context: SessionProcedureContext
@@ -161,19 +150,6 @@ function sendSessionDraft(input: SupervisorDraftRequest) {
   })
 }
 
-// A new Session's first draft Ticket becomes its primary Ticket (#2151); a later send only refers.
-async function linkFirstTicket(
-  context: SessionProcedureContext,
-  draft: NonNullable<ReturnType<typeof readComposerDraft>>,
-  sessionId: string,
-): Promise<void> {
-  const [first] = draft.ticketContext
-  if (draft.target.type !== 'project' || first === undefined) return
-  const ticket = { projectId: draft.target.projectId, key: first.key }
-  await context.ticketLinks.connect(sessionId, ticket, new Date().toISOString())
-  context.changes.changed([sessionId])
-}
-
 async function sendToSupervisor(
   context: SessionProcedureContext,
   input: SessionSubmitInput,
@@ -186,7 +162,7 @@ async function sendToSupervisor(
   const command = commandForDraft(draft, input)
   const request = { context, draft, command }
   const startInput = draft.target.type === 'project' ? await prepareProjectDraft(request) : null
-  const accepted = await new Promise<{ sessionId: string }>((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const reply = { resolve, reject }
     if (startInput !== null) {
       context.supervisor.send({
@@ -197,11 +173,6 @@ async function sendToSupervisor(
       })
     } else sendSessionDraft({ ...request, reply })
   })
-  // The Turn is already accepted, so a failed link write is reported and never fails the send.
-  await linkFirstTicket(context, draft, accepted.sessionId).catch((error: unknown) =>
-    console.warn('The new Session could not be linked to its Ticket.', error),
-  )
-  return accepted
 }
 
 export function sessionSubmitProcedure(context: SessionProcedureContext) {

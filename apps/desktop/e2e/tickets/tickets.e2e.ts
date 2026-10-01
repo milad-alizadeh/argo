@@ -38,7 +38,6 @@ import {
   proveLinearStatusRefused,
 } from './cases/linear.case'
 import { proveGitHubLinkedTicket, proveLinearLinkedTicket } from './cases/linked.case'
-import { proveLinkedSessionsFollowTicket } from './cases/linked-sessions.case'
 import { proveGitHubMissing, proveLinearMissing } from './cases/missing.case'
 import { proveAutomaticRefresh } from './cases/refresh.case'
 import { proveSearchBeyondIndex, proveSearchFilters } from './cases/search.case'
@@ -101,13 +100,6 @@ test.describe('with a GitHub repository polled quickly', () => {
     proveAutomaticRefresh(tickets.run(), PROOF_POLL_MS))
   test('omitted Tickets resolve as moved or deleted', ({ tickets }) =>
     proveGitHubMissing(tickets.run(), PROOF_POLL_MS))
-
-  test.describe('with a linked Claude and Codex Session', () => {
-    test.use({ linkedSessions: true })
-
-    test('linked Sessions follow a renamed Ticket', ({ tickets }) =>
-      proveLinkedSessionsFollowTicket(tickets.run()))
-  })
 })
 
 test.describe('with a Linear team', () => {
