@@ -67,6 +67,8 @@ export type ExternalSessionHooks = {
   // The config's `hooks` table, and the write of the event lists a change sets. Throws, writing
   // nothing, when it cannot read the config.
   open: () => Promise<{ table: unknown; write: (changes: HookTableChanges) => Promise<void> }>
+  // The status hook events the CLI sends.
+  events: readonly string[]
   // Argo's matcher group running `command`, in the Harness's config shape.
   group: (command: string) => unknown
   // The tool a Session asks the person a question through.

@@ -4,22 +4,32 @@ import { lstat, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import type { PostToolUseHookInput } from '@anthropic-ai/claude-agent-sdk'
+import type {
+  PermissionDeniedHookInput,
+  PostToolUseFailureHookInput,
+  PostToolUseHookInput,
+  StopFailureHookInput,
+} from '@anthropic-ai/claude-agent-sdk'
 import { installStatusHooks, removeStatusHooks } from '@/harnesses/host/status-hooks'
 import { testStatusHookInstall } from '@/mocks/cli/status-hook-install-suite'
 import { type HOOK_FIXTURES, hookReadings } from '@/mocks/cli/status-hooks'
 import { createClaudeStatusHooks } from './claude-status-hooks'
 
-// The docs fixture's PostToolUse carries what the Agent SDK says Claude sends with one.
-type FixturePostToolUse = Extract<
-  (typeof HOOK_FIXTURES.claude.bashTurn)[number]['payload'],
-  { tool_response: unknown }
->
-true satisfies [FixturePostToolUse] extends [never]
+// Each docs fixture payload of `Shape` carries what the Agent SDK says Claude sends with `Input`.
+type Payload = (typeof HOOK_FIXTURES.claude)['bashTurn' | 'failureTurn'][number]['payload']
+type Carries<Shape, Input> = [Extract<Payload, Shape>] extends [never]
   ? false
-  : FixturePostToolUse extends Omit<PostToolUseHookInput, 'hook_event_name'>
+  : Extract<Payload, Shape> extends Omit<Input, 'hook_event_name'>
     ? true
     : false
+true satisfies Carries<{ tool_response: unknown }, PostToolUseHookInput>
+true satisfies Carries<{ is_interrupt: unknown }, PostToolUseFailureHookInput>
+true satisfies Carries<{ reason: unknown; tool_use_id: unknown }, PermissionDeniedHookInput>
+// JSON types the error code as a string.
+true satisfies Carries<
+  { error: unknown; last_assistant_message: unknown },
+  Omit<StopFailureHookInput, 'error'> & { error: string }
+>
 
 const settings = path.join(process.env.CLAUDE_CONFIG_DIR as string, 'settings.json')
 const USER_SETTINGS = {
@@ -117,6 +127,18 @@ test('each Claude event of a Bash Turn sets its status, and PreToolUse its activ
     ['PostToolUse', 'running', null],
     ['Stop', 'idle', null],
     ['SessionEnd', 'idle', null],
+  ])
+})
+
+test('a failed or denied Claude tool ends its permission prompt, and a failed Turn shows idle', () => {
+  assert.deepEqual(hookReadings('claude', createClaudeStatusHooks(), 'failureTurn'), [
+    ['UserPromptSubmit', 'running', null],
+    ['PreToolUse', 'running', 'Run test suite'],
+    ['PermissionRequest', 'permission', null],
+    ['PostToolUseFailure', 'running', null],
+    ['PreToolUse', 'running', 'Remove the build folder'],
+    ['PermissionDenied', 'running', null],
+    ['StopFailure', 'idle', null],
   ])
 })
 

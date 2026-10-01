@@ -7,7 +7,7 @@ import {
   removeStatusHooks,
 } from '@/harnesses/host/status-hooks'
 import type { ExternalSessionHooks } from '@/harnesses/registration'
-import { HOOK_FIXTURES, type HookHarness } from './status-hooks'
+import { type HookHarness, recordedHookEvents } from './status-hooks'
 
 // A Harness's hooks over storage that starts with the user's own hooks table, or with none.
 type HookStorage = (
@@ -33,13 +33,13 @@ function counted(hooks: ExternalSessionHooks) {
 
 // The install, the port change and the removal every Harness's hooks share, over its storage.
 export function testStatusHookInstall(harness: HookHarness, storage: HookStorage): void {
-  const events = HOOK_FIXTURES[harness].bashTurn.map(({ event }) => event)
+  const events = recordedHookEvents(harness)
   const argoGroup = (hooks: ExternalSessionHooks, port: number, event: string) =>
     hooks.group(
       `curl -s -m 1 --data-binary @- http://127.0.0.1:${port}/h/${harness}/${event} || true`,
     )
 
-  test(`a ${harness} install into no hooks adds one group per recorded event, naming the port`, async (context) => {
+  test(`a ${harness} install into no hooks adds one group per event the fixture records, naming the port`, async (context) => {
     const { hooks, read } = await storage(context, false)
     await installStatusHooks(harness, hooks, 4321)
     const table = await read()

@@ -8,8 +8,6 @@ import { STATUS_HOOK_EVENTS } from '@/harnesses/host/status-hooks'
 import type { ExternalSessionHooks, HookTableChanges } from '@/harnesses/registration'
 import { writeDocument } from '@/platform/main/storage/portable-file'
 
-STATUS_HOOK_EVENTS satisfies readonly HookEvent[]
-
 export const ASK_USER_QUESTION_TOOL = 'AskUserQuestion'
 
 // The user settings Claude reads its hooks from (https://code.claude.com/docs/en/hooks).
@@ -55,6 +53,7 @@ export function createClaudeStatusHooks(): ExternalSessionHooks {
     },
     group: (command) =>
       ({ hooks: [{ type: 'command', command, async: true }] }) satisfies HookGroup,
+    events: STATUS_HOOK_EVENTS satisfies readonly HookEvent[],
     questionTool: ASK_USER_QUESTION_TOOL,
     activityTool: {
       name: 'Bash',

@@ -7,15 +7,18 @@ import { commandActivityLabel, type LiveActivity } from '@/domains/sessions/api/
 import type { Harness } from '@/harnesses/harness'
 import type { ExternalSessionHooks, ExternalSessionStatus } from '@/harnesses/registration'
 
-// The events Argo installs, each seen firing from both CLIs (#2976), and the status each sets; null
-// leaves the status as it is.
+// The events Argo can install and the status each sets; null leaves the status as it is. Each
+// adapter names the ones its CLI sends. A failed tool or Turn ends a permission prompt too.
 const EVENT_STATUS = {
   SessionStart: null,
   UserPromptSubmit: 'running',
   PreToolUse: 'running',
   PermissionRequest: 'permission',
+  PermissionDenied: 'running',
   PostToolUse: 'running',
+  PostToolUseFailure: 'running',
   Stop: 'idle',
+  StopFailure: 'idle',
   SessionEnd: 'idle',
 } as const satisfies Record<string, ExternalSessionStatus | null>
 export type StatusHookEvent = keyof typeof EVENT_STATUS
@@ -72,13 +75,15 @@ async function change(
   if (changes.size > 0) await write(changes)
 }
 
-// Appends Argo's group to each event, or rewrites it where it stands when it names another port.
+// Appends Argo's group to each event the adapter names, or rewrites it where it stands when it
+// names another port.
 export function installStatusHooks(
   harness: Harness,
   hooks: ExternalSessionHooks,
   port: number,
 ): Promise<void> {
   return change(hooks, (event, groups) => {
+    if (!hooks.events.includes(event)) return undefined
     const argoPort = argoPortOf(hooks, harness, event)
     const group = hooks.group(hookCommand(harness, port, event))
     const index = groups.findIndex((each) => argoPort(each) !== null)

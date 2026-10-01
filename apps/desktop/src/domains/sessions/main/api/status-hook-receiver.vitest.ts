@@ -2,7 +2,7 @@ import { createServer, request } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { z } from 'zod'
-import { installStatusHooks } from '@/harnesses/host/status-hooks'
+import { installStatusHooks, STATUS_HOOK_EVENTS } from '@/harnesses/host/status-hooks'
 import type { ExternalSessionHooks, LiveExternalSession } from '@/harnesses/registration'
 import { postHook } from '@/mocks/cli/status-hooks'
 import { insertSession, liveSession, sessionListCaller } from '@/mocks/sessions/session-list-caller'
@@ -30,6 +30,7 @@ function stubHarness() {
         },
       }
     },
+    events: STATUS_HOOK_EVENTS,
     group: (command) => ({ command }),
     questionTool: 'ask',
     activityTool: { name: 'shell', input: z.looseObject({ command: z.string().optional() }) },

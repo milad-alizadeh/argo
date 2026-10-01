@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { STATUS_HOOK_EVENTS } from '@/harnesses/host/status-hooks'
+import type { StatusHookEvent } from '@/harnesses/host/status-hooks'
 import type { ExternalSessionHooks } from '@/harnesses/registration'
 import type {
   CodexRequest,
@@ -10,10 +10,16 @@ import type {
   ManagedHooksRequirements,
 } from '../app-server'
 
-STATUS_HOOK_EVENTS satisfies readonly Exclude<
-  keyof ManagedHooksRequirements,
-  'managedDir' | 'windowsManagedDir'
->[]
+// Codex sends no failure events.
+const EVENTS = [
+  'SessionStart',
+  'UserPromptSubmit',
+  'PreToolUse',
+  'PermissionRequest',
+  'PostToolUse',
+  'Stop',
+  'SessionEnd',
+] as const satisfies readonly (StatusHookEvent & keyof ManagedHooksRequirements)[]
 
 // `config/read` with `includeLayers`: each layer names its source, its version and its raw config.
 const layersSchema = z.object({
@@ -70,6 +76,7 @@ export function createCodexStatusHooks(request: CodexRequest): ExternalSessionHo
     group: (command) => ({
       hooks: [{ type: 'command', command, async: true } satisfies CommandHandler],
     }),
+    events: EVENTS,
     questionTool: 'request_user_input',
     activityTool: { name: 'Bash', input: z.looseObject({ command: z.string().min(1).optional() }) },
   }

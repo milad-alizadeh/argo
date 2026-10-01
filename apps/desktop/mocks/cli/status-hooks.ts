@@ -6,14 +6,28 @@ import claude from './claude/fixtures/hooks-claude-docs.json' with { type: 'json
 import codex from './codex/fixtures/hooks-codex-0.157.0.json' with { type: 'json' }
 
 export type HookHarness = 'claude' | 'codex'
-type HookTurn = 'bashTurn' | 'questionTurn'
+type HookTurn = 'bashTurn' | 'questionTurn' | 'failureTurn'
 export type PostedHook = { event: string; payload: Record<string, unknown> }
 
 export const HOOK_FIXTURES = { claude, codex } as const
 
+const turnsOf = (harness: HookHarness) =>
+  HOOK_FIXTURES[harness] as unknown as Partial<Record<HookTurn, PostedHook[]>>
+
+// Every event a Harness's fixture Turns send.
+export const recordedHookEvents = (harness: HookHarness) => [
+  ...new Set(
+    Object.values(turnsOf(harness))
+      .filter((turn) => Array.isArray(turn))
+      .flatMap((turn) => turn.map(({ event }) => event)),
+  ),
+]
+
 // One fixture Turn's events in order, each naming `nativeId`.
 export function hookTurn(harness: HookHarness, turn: HookTurn, nativeId: string): PostedHook[] {
-  return HOOK_FIXTURES[harness][turn].map(({ event, payload }) => ({
+  const events = turnsOf(harness)[turn]
+  if (events === undefined) throw new Error(`No ${turn} in the ${harness} fixture.`)
+  return events.map(({ event, payload }) => ({
     event,
     payload: { ...structuredClone(payload), session_id: nativeId },
   }))
