@@ -26,6 +26,7 @@ export const harnessCatalogMachine = setup({
       catalog: HarnessCatalog
       failure: string | null
       invalidResponseCount: number
+      loadCount: number
     },
     events: {} as HarnessCatalogEvent,
   },
@@ -46,6 +47,7 @@ export const harnessCatalogMachine = setup({
     catalog: unavailableCatalog(),
     failure: null,
     invalidResponseCount: 0,
+    loadCount: 0,
   },
   states: {
     Idle: {
@@ -63,6 +65,7 @@ export const harnessCatalogMachine = setup({
           target: 'Ready',
           actions: assign({
             catalog: ({ event }) => event.output,
+            loadCount: ({ context }) => context.loadCount + 1,
             invalidResponseCount: ({ context, event }) =>
               context.invalidResponseCount +
               event.output.harnesses.filter(

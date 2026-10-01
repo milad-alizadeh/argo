@@ -255,12 +255,21 @@ function useSessionComposerSend(input: {
 }
 
 function useCatalogRead(harness: HarnessControl) {
+  const queryClient = useQueryClient()
   const catalogQuery = useQuery(trpc.harnessCatalogRead.queryOptions({ harness: harness.harness }))
   const catalogRefresh = useMutation(trpc.harnessCatalogRefresh.mutationOptions())
   const refreshCatalog = () =>
     catalogRefresh.mutate(
       { harness: harness.harness },
-      { onSettled: () => void catalogQuery.refetch() },
+      {
+        // The refresh answers with the new catalog, so a second read would only load it again.
+        onSuccess: (result) =>
+          queryClient.setQueryData(
+            trpc.harnessCatalogRead.queryKey({ harness: harness.harness }),
+            result,
+          ),
+        onError: () => void catalogQuery.refetch(),
+      },
     )
   return { catalogQuery, refreshCatalog }
 }

@@ -11,9 +11,6 @@ third-party ones plus Argo's own, kept in this package's `skills/`), and the
 a scaffolder of its own; it is gone, and everything it did beyond the install is now written down
 as steps in [`setup-argo-skills`](skills/setup-argo-skills/SKILL.md) for an agent to follow.
 
-The one file left in `bin/` is `hooks-sync.mts`, which projects the repo-root `hooks.json` into
-each harness. It is not an installer.
-
 ## Project-agnostic by design — set up per project
 
 This package is the **single source** for Argo's skills; it depends on no particular project,
@@ -23,8 +20,9 @@ installs its own copy under `.claude/skills/` and `.agents/skills/`, recorded in
 — supporting files such as `setup-quality-gates/templates/` live inside the skill folder and travel
 with it, so a skill behaves the same in any project without reading back into this package.
 
-Argo Desktop's own `.claude/skills/` are therefore *installed output* of that per-project flow,
-not source. The source is only ever here, and it distributes only via GitHub: even this monorepo
+Argo Desktop's own `.claude/skills/` and `.agents/skills/` are therefore *installed output* of
+that per-project flow, not source. This repo commits that output, so every worktree has the
+skills without a copy step. The source is only ever here, and it distributes only via GitHub: even this monorepo
 installs its own skills with the same command, so an edit to one of Argo's skills needs a push to
 `main` before a reinstall sees it.
 
@@ -67,18 +65,9 @@ than a pinned revision, because Argo's lock entries carry no `ref`.
 Installing skills is all `skills add` does. The rest of a consumer's setup is prose in
 [`setup-argo-skills`](skills/setup-argo-skills/SKILL.md), followed by an agent by hand: rescuing
 the consumer's own skills from a name collision before they are overwritten, seeding
-`.rtk/filters.toml`, copying `hooks.json` and the hooks it names and projecting them, adding the
-`.gitignore` lines, and reporting what the always-on frontmatter now costs every turn.
+`.rtk/filters.toml`, adding the `.gitignore` lines, and reporting what the always-on frontmatter now costs every turn.
 
-The guardrail hooks are hand-work today. They live in
-`packages/argo-skills/skills/setup-argo-skills/hooks/`. A project copies them only after the user
-opts in. `skills add` installs the source files, but it does not install the hooks into a project.
-
-**What does not change when they do**: installing them stays a separate yes. They impose Argo's
-worktree discipline on the project — the edit guard refuses an edit outside a worktree and the
-reaper assumes `.claude/worktrees/` — and that is a decision a consuming project makes, not a side
-effect of wanting the skills. See the repo root's `hooks.json` and AGENTS.md "Cross-CLI guardrail
-hooks".
+Argo ships no hooks.
 
 ## The manifest — `skills-lock.json`
 
@@ -92,8 +81,8 @@ It is **not a version pin.** Entries carry no `ref`, so a restore installs whate
 default branch holds today; `computedHash` is content identity, not a lock.
 
 Nothing verifies the manifest without installing from it. There is no dry run, so an edit here is proved
-by running the install in a checkout and reading what appeared under `.claude/skills`, never by a
-diff, since neither skills directory is tracked.
+by running the install in a checkout and reading the `git diff` it leaves under `.agents/skills/`
+and `.claude/skills/`.
 
 ### Add a bundled skill
 
@@ -101,7 +90,7 @@ Because the lock enumerates skills by name, adding one is an explicit act:
 
 ```bash
 npx skills add mattpocock/skills --skill <name>   # writes the entry into skills-lock.json
-git add skills-lock.json && git commit
+git add skills-lock.json .agents/skills .claude/skills && git commit
 ```
 
 Same for one of Argo's own — edit it under `skills/`, push to `main`, then reinstall.

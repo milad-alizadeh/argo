@@ -90,7 +90,7 @@ function useSessionEvidence(sessionId: string | null) {
 
 // The Session's Feed. A new Session's pending id draws on New Session from Enter, then on the
 // Session it was named until that Session's own Feed shows a prompt, whatever the Harness. New
-// Session keeps it across the naming render.
+// Session keeps it across the naming render only.
 function useSessionFeed(selectedSessionId: string | null, running: boolean) {
   const { projectId, sessionId } = useParams()
   const [starting, setStarting] = useState<{
@@ -103,6 +103,13 @@ function useSessionFeed(selectedSessionId: string | null, running: boolean) {
       setStarting(pendingId === null ? null : { projectId, pendingId, sessionId: named }),
     [projectId],
   )
+  // A move to any route but the named Session drops the start, so New Session draws no old prompt.
+  const route = `${projectId}/${sessionId}`
+  const [seenRoute, setSeenRoute] = useState(route)
+  if (seenRoute !== route) {
+    setSeenRoute(route)
+    if (starting !== null && sessionId !== starting.sessionId) setStarting(null)
+  }
   const shown =
     starting !== null &&
     starting.projectId === projectId &&
