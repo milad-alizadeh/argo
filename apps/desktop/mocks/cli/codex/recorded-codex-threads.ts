@@ -11,7 +11,8 @@ import type {
   ThreadTurnsListParams,
   ThreadTurnsListResponse,
 } from '@/harnesses/codex/app-server'
-import { codexRecording as recorded } from './recordings/thread-history-codex.ts'
+import { recordedCodexHistory as recorded } from '../../recordings/codex-app-server'
+import type { RecordingMetadata } from '../../recordings/recording'
 
 export type RecordedCodexCall =
   | { method: 'thread/list'; params: ThreadListParams; result: ThreadListResponse }
@@ -24,7 +25,7 @@ export type RecordedCodexCall =
 type RecordedConfigLayer = Omit<ConfigLayer, 'disabledReason'> &
   Partial<Pick<ConfigLayer, 'disabledReason'>>
 
-export type CodexRecording = { version: string; calls: RecordedCodexCall[] }
+export type CodexRecording = RecordingMetadata & { calls: RecordedCodexCall[] }
 
 export type RecordedThread = ThreadReadResponse['thread']
 

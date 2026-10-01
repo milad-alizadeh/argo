@@ -3,7 +3,8 @@ import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { fileURLToPath } from 'node:url'
+import { MOCK_CODEX_VERSION } from '@/mocks/cli/codex/mock-codex-cli'
+import { recordedCodexModels } from '@/mocks/recordings/codex-app-server'
 import {
   type CodexChannel,
   CodexUnavailableError,
@@ -17,15 +18,7 @@ test('owns requests through one process and closes it on shutdown', async () => 
   const server = path.join(directory, 'server.mjs')
   const starts = path.join(directory, 'starts')
   const closed = path.join(directory, 'closed')
-  const recordedCatalog = await readFile(
-    fileURLToPath(
-      new URL(
-        '../../../../mocks/cli/codex/fixtures/model-list-codex-0.147.0.json',
-        import.meta.url,
-      ),
-    ),
-    'utf8',
-  )
+  const recordedCatalog = JSON.stringify(recordedCodexModels)
   const script = `import { appendFileSync, writeFileSync } from 'node:fs'; import { createInterface } from 'node:readline';
 appendFileSync(${JSON.stringify(starts)}, 'started\\n');
 const catalog = JSON.parse(${JSON.stringify(recordedCatalog)});
@@ -39,13 +32,13 @@ createInterface({ input: process.stdin }).on('line', (line) => {
   await writeFile(server, script)
   await writeFile(
     executable,
-    `#!/bin/sh\nif [ "$1" = "--version" ]; then echo 'codex 0.147.0'; exit 0; fi\nexec "${process.execPath}" "${server}"\n`,
+    `#!/bin/sh\nif [ "$1" = "--version" ]; then echo 'codex-cli ${MOCK_CODEX_VERSION}'; exit 0; fi\nexec "${process.execPath}" "${server}"\n`,
   )
   await chmod(executable, 0o755)
   const client = createCodexAppServerClient({
     resolveExecutable: async () => ({
       executable,
-      version: 'codex 0.147.0',
+      version: `codex-cli ${MOCK_CODEX_VERSION}`,
     }),
   })
   try {
@@ -70,7 +63,7 @@ test('cancels an unanswered request when the client shuts down', async () => {
   await writeFile(executable, `#!/bin/sh\nexec "${process.execPath}" "${server}"\n`)
   await chmod(executable, 0o755)
   const client = createCodexAppServerClient({
-    resolveExecutable: async () => ({ executable, version: 'codex 0.147.0' }),
+    resolveExecutable: async () => ({ executable, version: `codex-cli ${MOCK_CODEX_VERSION}` }),
   })
   try {
     const request = client.request('model/list', {}, (value) => value)
@@ -121,7 +114,10 @@ test('forwards server notifications and responses through the client API', async
     close: () => {},
   }
   const client = createCodexAppServerClient({
-    resolveExecutable: async () => ({ executable: 'codex', version: 'codex 0.147.0' }),
+    resolveExecutable: async () => ({
+      executable: 'codex',
+      version: `codex-cli ${MOCK_CODEX_VERSION}`,
+    }),
     openChannel: () => channel,
   })
   const notifications: WireMessage[] = []

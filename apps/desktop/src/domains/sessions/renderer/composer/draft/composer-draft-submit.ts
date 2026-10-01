@@ -136,7 +136,7 @@ async function submitDraft({
   })
 }
 
-function cancelSaveTimer(saveTimer: React.RefObject<Map<string, number>>, owner: string) {
+export function cancelSaveTimer(saveTimer: React.RefObject<Map<string, number>>, owner: string) {
   const timer = saveTimer.current.get(owner)
   if (timer === undefined) return
   window.clearTimeout(timer)
