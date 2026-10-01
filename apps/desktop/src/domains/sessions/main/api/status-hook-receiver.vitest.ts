@@ -6,8 +6,8 @@ import path from 'node:path'
 import { afterAll, afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { createClaudeExternalSessions } from '@/harnesses/claude/session'
 import type { CodexAppServerClient } from '@/harnesses/codex/app-server'
-import type { ExternalSessions } from '@/harnesses/registration'
 import { createCodexExternalSessions } from '@/harnesses/codex/session'
+import type { ExternalSessions } from '@/harnesses/registration'
 import { mockClaudeAgentsCli } from '@/mocks/cli/claude/mock-claude-agents'
 import { clientBackedByMock, writeMockCodex } from '@/mocks/cli/codex/mock-codex-driver'
 import { guardRealUserConfig, isolateHarnessFolders } from '@/mocks/cli/real-user-config'
@@ -74,9 +74,7 @@ async function start({ listen = true, listed = Promise.resolve() } = {}) {
     { harness: 'claude' as const, external: held(createClaudeExternalSessions(agents.executable)) },
     {
       harness: 'codex' as const,
-      external: held(
-        createCodexExternalSessions(codex.request, process.env.CODEX_HOME as string),
-      ),
+      external: held(createCodexExternalSessions(codex.request, process.env.CODEX_HOME as string)),
     },
   ]
   poll = new ExternalSessionPoll({

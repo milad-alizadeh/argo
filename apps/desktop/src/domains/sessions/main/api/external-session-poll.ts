@@ -236,12 +236,22 @@ export class ExternalSessionPoll {
       if (external.readActivity !== undefined) await this.#readChange(session, tracked)
       this.#show(session, tracked, Date.now())
     }
+    this.#unlisted(harness, previous, current)
+    if (!this.#closed.has(harness)) this.#closeAll(harness, current)
+  }
+
+  // A Session the listing missed leaves, unless a hook event set its status, which outranks it.
+  #unlisted(
+    harness: Harness,
+    previous: ReadonlyMap<string, TrackedSession> | undefined,
+    current: Map<string, TrackedSession>,
+  ): void {
+    const readsActivity = this.#external.get(harness)?.readActivity !== undefined
     for (const [nativeId, tracked] of previous ?? []) {
       if (current.has(nativeId)) continue
       if (tracked.hooked) current.set(nativeId, tracked)
-      else this.#leave({ harness, nativeId }, tracked, external.readActivity !== undefined)
+      else this.#leave({ harness, nativeId }, tracked, readsActivity)
     }
-    if (!this.#closed.has(harness)) this.#closeAll(harness, current)
   }
 
   // A hook-fed Harness's Sessions are not listed, so only the quiet limit changes them. A listed
