@@ -4,13 +4,11 @@ import os from 'node:os'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
 import { installStatusHooks } from '@/harnesses/host/status-hooks'
-import recorded from '@/mocks/cli/codex/fixtures/config-read-codex-0.157.0.json' with {
-  type: 'json',
-}
 import {
   createMockCodexSkillsAndConfig,
   MOCK_CODEX_USER_HOOKS_FILE,
 } from '@/mocks/cli/codex/fixtures/mock-codex-skills-config'
+import { recordedCall } from '@/mocks/cli/codex/recorded-codex-threads'
 import { testStatusHookInstall } from '@/mocks/cli/status-hook-install-suite'
 import { hookReadings } from '@/mocks/cli/status-hooks'
 import type { CodexRequest } from '../app-server'
@@ -21,7 +19,9 @@ function codex(context: TestContext, userHooks: boolean) {
   const home = mkdtempSync(path.join(os.tmpdir(), 'argo-codex-hooks-'))
   context.after(() => rmSync(home, { recursive: true, force: true }))
   const file = path.join(home, MOCK_CODEX_USER_HOOKS_FILE)
-  const user = recorded.layers.find((layer) => layer.name.type === 'user')?.config
+  const user = recordedCall('config/read').result.layers.find(
+    (layer) => layer.name.type === 'user',
+  )?.config
   if (userHooks) writeFileSync(file, JSON.stringify((user as { hooks?: unknown }).hooks))
   const writes: { params: unknown; version: unknown }[] = []
   let answer: Record<string, unknown> = {}

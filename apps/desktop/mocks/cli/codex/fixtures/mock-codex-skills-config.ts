@@ -4,7 +4,7 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, watch, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import recordedConfig from './config-read-codex-0.157.0.json' with { type: 'json' }
+import { recordedCall } from '../recorded-codex-threads.ts'
 
 export const MOCK_CODEX_SKILLS_FILE_ENV = 'ARGO_CODEX_SKILLS_FILE'
 export const MOCK_CODEX_AUTO_COMPACT_LIMIT_ENV = 'ARGO_CODEX_AUTO_COMPACT_LIMIT'
@@ -56,7 +56,7 @@ export function createMockCodexSkillsAndConfig(
 
   function readConfig(params: Request['params']) {
     const config = { [AUTO_COMPACT_KEY]: limit }
-    const layers = recordedConfig.layers.map((layer) =>
+    const layers = recordedCall('config/read').result.layers.map((layer) =>
       layer.name.type === 'user'
         ? { ...layer, version: version(), config: { hooks: hooks() } }
         : layer,

@@ -28,7 +28,6 @@
     "test:live-claude-display": "node tools/run-tool.mts tools/claude/message-display.ts",
     "capture:cockpit": "node tools/run-tool.mts tools/cockpit/capture.ts",
     "measure:cockpit": "node tools/run-tool.mts tools/cockpit/measure.ts",
-    "record:codex-config-read": "node tools/run-tool.mts tools/record-codex-config-read.ts",
     "measure:feed-history": "node tools/run-tool.mts tools/sessions/measure-feed-history.ts",
     "measure:session-list": "node tools/run-tool.mts tools/sessions/measure-session-list.ts",
     "measure:session-open": "node tools/run-tool.mts tools/sessions/open-session-cost.ts",
