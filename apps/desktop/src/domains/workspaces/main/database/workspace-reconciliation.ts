@@ -50,8 +50,9 @@ async function discoveredRoots(projectPath: string): Promise<DiscoveredRoot[]> {
   const roots = new Map<string, boolean>()
   if (main !== null) roots.set(await realpath(main).catch(() => main), true)
   for (const candidate of linked) {
-    const resolved = await realpath(candidate).catch(() => candidate)
-    if (!roots.has(resolved)) roots.set(resolved, false)
+    // A worktree deleted without `git worktree prune` still has its gitdir entry.
+    const resolved = await realpath(candidate).catch(() => null)
+    if (resolved !== null && !roots.has(resolved)) roots.set(resolved, false)
   }
   return [...roots].map(([root, isMain]) => ({ path: root, main: isMain }))
 }
@@ -92,5 +93,14 @@ export async function reconcileWorkspaces(
   const context = { database, project, known, roots }
   reconcileMain(context)
   reconcileImported(context)
-  return readWorkspaces(database, project.id)
+  // A removed worktree keeps its row for the Sessions that name it, but is no longer offered.
+  const present = new Set(roots.map((root) => root.path))
+  const workspaces = readWorkspaces(database, project.id)
+  const resolved = await Promise.all(
+    workspaces.map((candidate) => realpath(candidate.path).catch(() => null)),
+  )
+  return workspaces.filter((candidate, index) => {
+    const found = resolved[index]
+    return candidate.kind === 'main' || (found != null && present.has(found))
+  })
 }

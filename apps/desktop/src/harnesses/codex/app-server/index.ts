@@ -4,7 +4,7 @@ export type {
   RequestID,
   WireMessage,
 } from './codex-app-server-client'
-export { isThreadNotLoaded } from './codex-app-server-client'
+export { CodexUnavailableError, isThreadNotLoaded } from './codex-app-server-client'
 export type { JsonValue } from './protocol-generated/serde_json/json-value'
 export type { AgentMessageDeltaNotification } from './protocol-generated/v2/agent-message-delta-notification'
 export type { ConfigWriteResponse } from './protocol-generated/v2/config-write-response'

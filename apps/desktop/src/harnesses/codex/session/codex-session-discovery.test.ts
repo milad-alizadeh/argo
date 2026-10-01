@@ -5,7 +5,12 @@ import externalThreads from '../../../../mocks/cli/codex/fixtures/external-threa
 import recordedResponses from '../../../../mocks/cli/codex/fixtures/session-sync-codex-0.157.0.json' with {
   type: 'json',
 }
-import type { CodexRequest, Thread, ThreadListResponse } from '../app-server'
+import {
+  type CodexRequest,
+  CodexUnavailableError,
+  type Thread,
+  type ThreadListResponse,
+} from '../app-server'
 import {
   createCodexSessionSummaryList,
   createCodexSessionSummaryReader,
@@ -140,6 +145,13 @@ test('fails a Codex scan when the page envelope is malformed', async () => {
     createCodexSessionSummaryList((async (_method, _params, parse) =>
       parse({ data: [], nextCursor: 7 })) as CodexRequest)({ knownNativeIds: [] }),
   ).rejects.toThrow()
+})
+
+test('lists no Sessions, rather than failing the scan, on a machine without Codex', async () => {
+  const result = await createCodexSessionSummaryList((async () => {
+    throw new CodexUnavailableError()
+  }) as CodexRequest)({ knownNativeIds: ['previously-saved'] })
+  expect(result).toEqual({ records: [], skipped: 0 })
 })
 
 test('propagates a failed read for a known Session so Session sync can retry', async () => {

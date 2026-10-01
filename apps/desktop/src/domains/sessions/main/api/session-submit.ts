@@ -1,3 +1,4 @@
+import { stat } from 'node:fs/promises'
 import { initTRPC, TRPCError } from '@trpc/server'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -85,6 +86,13 @@ function rejectUnsupportedAttachments(
   })
 }
 
+function isDirectory(folder: string): Promise<boolean> {
+  return stat(folder).then(
+    (found) => found.isDirectory(),
+    () => false,
+  )
+}
+
 async function prepareProjectDraft(
   input: Omit<SupervisorDraftRequest, 'reply'>,
 ): Promise<SessionStartInput | null> {
@@ -106,6 +114,9 @@ async function prepareProjectDraft(
       : resolveWorkspacePath(context.database, { projectId: target.projectId, workspaceId }))
   if (workspaceId === null || cwd === null)
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'workspace-not-in-project' })
+  // A Harness given a missing folder fails in its own way, or not at all, so every one stops here.
+  if (!(await isDirectory(cwd)))
+    throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'workspace-missing' })
   return {
     ...command,
     harness: target.harness,

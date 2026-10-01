@@ -19,6 +19,7 @@ import { proveSessionDiagram } from './cases/diagram.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
 import { proveNewSessionSkipsUninstalledHarness } from './cases/new-session-harness.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
+import { proveRemovedWorkLocation } from './cases/removed-work-location.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveContract } from './cases/session-list-contract.case'
 import { provePackagedSessionListSelection } from './cases/session-list-interaction.case'
@@ -49,6 +50,10 @@ test('session-list-contract', async ({ session }) => {
 
 test('session-shell', async ({ session }) => {
   await proveSessionShell(session.page())
+})
+
+test('session-removed-work-location', async ({ session }) => {
+  await proveRemovedWorkLocation(session.page(), session.fixture.project)
 })
 
 test.describe('session refresh progress', () => {

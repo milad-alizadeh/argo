@@ -45,7 +45,7 @@ beforeEach(async () => {
       projectId,
       kind: 'main',
       displayName: 'Main checkout',
-      path: '/current/repo',
+      path: userData,
     })
     .run()
 })
@@ -149,7 +149,7 @@ test('saves a Project draft target without changing its content and sends from t
       projectId,
       kind: 'imported',
       displayName: 'Selected worktree',
-      path: '/selected/repo',
+      path: os.tmpdir(),
     })
     .run()
   const draftContent = { ...content, attachments: [] }
@@ -192,7 +192,7 @@ test('saves a Project draft target without changing its content and sends from t
     commandId: 'target-only-command',
   })
   expect(submitted).toMatchObject({
-    input: { harness: 'claude', workspaceId: 'workspace-2', cwd: '/selected/repo' },
+    input: { harness: 'claude', workspaceId: 'workspace-2', cwd: os.tmpdir() },
   })
 })
 
@@ -220,7 +220,7 @@ test('resolves the Workspace path in main and deletes an accepted new-Session dr
   await expect(submitCreated(api, created)).resolves.toEqual({ sessionId: 'session-1' })
   expect(submitted).toMatchObject({
     pendingId: `optimistic:${created.id}:${created.revision}`,
-    input: { cwd: '/current/repo', projectId, workspaceId, prompt: content.prompt },
+    input: { cwd: userData, projectId, workspaceId, prompt: content.prompt },
   })
   await expect(api.composerDraftRead(created.target)).resolves.toBeNull()
 })
@@ -285,19 +285,19 @@ test('retains a newer draft revision when the accepted Session loses the delete 
   })
 })
 
-test('retains a new-Session draft after submission fails', async () => {
+test('retains a new-Session draft after submission fails or its Workspace folder is gone', async () => {
   const created = await createProjectDraft()
+  let starts = 0
   const api = caller((event) => {
+    starts += 1
     if (event.type === 'Start') event.reply.reject(new Error('Harness failed.'))
   })
 
-  await expect(
-    api.sessionSubmit({
-      draftId: created.id,
-      expectedRevision: created.revision,
-      commandId: 'command-1',
-    }),
-  ).rejects.toThrow('Harness failed.')
+  await expect(submitCreated(api, created)).rejects.toThrow('Harness failed.')
+  await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
+  await rm(userData, { recursive: true, force: true })
+  await expect(submitCreated(api, created)).rejects.toThrow('workspace-missing')
+  expect(starts).toBe(1)
   await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
 })
 
