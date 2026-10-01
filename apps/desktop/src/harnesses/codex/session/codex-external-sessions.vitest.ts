@@ -266,13 +266,22 @@ test('a Session whose writer crashed mid-Turn shows unknown', async () => {
   expect((await row(RUNNING)).status).toBe('unknown')
 })
 
-test('the first tick closes every saved Session it does not find live', async () => {
+test('the first tick closes every Session an earlier run saved that it does not find live', async () => {
   saved(RUNNING, { status: 'unknown' })
   saved(OTHER, { status: 'running' })
+  // A poll made now finds these rows as an earlier run left them.
+  poll.stop()
+  startPoll()
   await threads.open(RUNNING)
   await tickAndWrite()
   expect((await row(RUNNING)).status).toBe('unknown')
   expect((await row(OTHER)).status).toBe('idle')
+})
+
+test('a Session saved after startup keeps unknown through the first tick', async () => {
+  saved(OTHER)
+  await tickAndWrite()
+  expect((await row(OTHER)).status).toBe('unknown')
 })
 
 test('a new Session with no row is discovered once, and its status lands once the row exists', async () => {
@@ -371,10 +380,42 @@ test('one Session’s updates within the write window reach SQLite as one write'
   expect(announced).toEqual([[RUNNING]])
 })
 
-test('lock files that name no thread are counted and reported', async () => {
+test('lock files that name no thread are counted and reported once per count', async () => {
   const warn = quietWarnings()
   threads.stray('notes.txt')
   threads.stray('not-a-thread.lock')
   await tickAndWrite()
-  expect(warn).toHaveBeenCalledWith('Rejected 2 unrecognised codex live Session record(s).')
+  await tickAndWrite()
+  threads.stray('other.lock')
+  await tickAndWrite()
+  expect(warn.mock.calls).toEqual([
+    ['Rejected 2 unrecognised codex live Session record(s).'],
+    ['Rejected 3 unrecognised codex live Session record(s).'],
+  ])
+})
+
+test('Codex’s own coordination lock is not counted as a record', async () => {
+  const warn = quietWarnings()
+  threads.stray('.coordination.lock')
+  await threads.open(RUNNING)
+  await tickAndWrite()
+  expect(warn).not.toHaveBeenCalled()
+  expect(discovered).toEqual([RUNNING])
+})
+
+test('a locked thread with no rollout yet logs nothing and is read once it stores one', async () => {
+  const warn = quietWarnings()
+  saved(RUNNING, { status: 'idle' })
+  await threads.open(RUNNING, null)
+  await tickAndWrite()
+  await tickAndWrite()
+  expect(warn).not.toHaveBeenCalled()
+  expect((await row(RUNNING)).status).toBe('idle')
+  threads.append(RUNNING, 'session_meta\n')
+  await tickAndWrite()
+  threads.answer(RUNNING, 'running')
+  threads.append(RUNNING, 'x\n')
+  await tickAndWrite()
+  expect(threads.turnsReads).toEqual([RUNNING])
+  expect((await row(RUNNING)).status).toBe('running')
 })

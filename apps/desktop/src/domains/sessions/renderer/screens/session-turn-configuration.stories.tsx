@@ -11,12 +11,10 @@ import { queryClient } from '@/platform/renderer/trpc-client'
 import type { SessionTurnConfiguration } from '../types'
 import { SessionScreenView } from './session-screen-view'
 
-const SESSION_ID = 'live-turn-configuration'
-
 // A live Claude Session whose next Turn runs on whatever `reply` says the Harness used.
-function liveRow() {
+function liveRow(sessionId: string) {
   return sessionRow({
-    id: SESSION_ID,
+    id: sessionId,
     posture: 'live',
     name: 'Turn turnConfiguration Session',
     status: 'idle',
@@ -26,13 +24,15 @@ function liveRow() {
 }
 
 // Each run starts from the opening Turn, so a replay in the Storybook UI proves the same thing.
-function withBridge(reply: SessionTurnConfiguration) {
+// Each story owns its Session: a composer's draft writes can outlast its story.
+function withBridge(sessionId: string, reply: SessionTurnConfiguration) {
   const sent: unknown[] = []
   return {
     sent,
+    sessionId,
     beforeEach: () => {
       sent.length = 0
-      const row = liveRow()
+      const row = liveRow(sessionId)
       const host = sessionSelectionHost([row])
       const hosted = window.argo
       window.argo = {
@@ -41,7 +41,7 @@ function withBridge(reply: SessionTurnConfiguration) {
           if (request.path !== 'sessionSubmit') return hosted.trpc(request)
           sent.push(request.input)
           host.change([{ ...row, turnConfiguration: reply }])
-          return { id: request.id, result: { data: { sessionId: SESSION_ID } } }
+          return { id: request.id, result: { data: { sessionId } } }
         }) as typeof window.argo.trpc,
       }
       return host
@@ -58,9 +58,7 @@ const meta = {
       <div className="h-dvh w-full">
         <QueryClientProvider client={queryClient}>
           <MemoryRouter
-            initialEntries={[
-              parameters.route ?? `/projects/storybook-project/sessions/${SESSION_ID}`,
-            ]}
+            initialEntries={[`/projects/storybook-project/sessions/${parameters.sessionId}`]}
           >
             <Routes>
               <Route path="/projects/:projectId/sessions/:sessionId" element={<Story />} />
@@ -92,19 +90,26 @@ async function sendWithMaxEffort(canvasElement: HTMLElement) {
   return trigger
 }
 
-const refused = withBridge({ model: 'claude-opus-5', effort: 'high', mode: 'default' })
+const refused = withBridge('live-turn-configuration-refused', {
+  model: 'claude-opus-5',
+  effort: 'high',
+  mode: 'default',
+})
 
 // The Send names a saved draft, and the composer keeps the draft's choice: nothing reads the
 // Harness's report back into it, so a refused Effort stays chosen and no message appears.
 export const RefusedChoiceStays: Story = {
+  parameters: { sessionId: refused.sessionId },
   beforeEach: refused.beforeEach,
   play: async ({ canvasElement }) => {
     const trigger = await sendWithMaxEffort(canvasElement)
     // A Send names its draft, and the draft carries the prompt and the chosen configuration.
     await expect(refused.sent.at(-1)).toMatchObject({
-      draftId: `selection-draft-${SESSION_ID}`,
+      draftId: `selection-draft-${refused.sessionId}`,
     })
-    await expect(savedSelectionDraft({ type: 'session', sessionId: SESSION_ID })).toMatchObject({
+    await expect(
+      savedSelectionDraft({ type: 'session', sessionId: refused.sessionId }),
+    ).toMatchObject({
       prompt: 'Think hard about the driver.',
       turnConfiguration: { model: 'opus', effort: 'max', mode: 'manual' },
     })
@@ -114,9 +119,14 @@ export const RefusedChoiceStays: Story = {
   },
 }
 
-const accepted = withBridge({ model: 'claude-opus-5', effort: 'max', mode: 'default' })
+const accepted = withBridge('live-turn-configuration-accepted', {
+  model: 'claude-opus-5',
+  effort: 'max',
+  mode: 'default',
+})
 
 export const AcceptedChoiceStays: Story = {
+  parameters: { sessionId: accepted.sessionId },
   beforeEach: accepted.beforeEach,
   play: async ({ canvasElement }) => {
     const trigger = await sendWithMaxEffort(canvasElement)
