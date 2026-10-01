@@ -123,7 +123,7 @@ export const test = packagedTest.extend<{
       await finishRecording(performanceProfile, traced, testInfo)
     } finally {
       await performanceProfile?.stop()
-      if (application) await closeApplication(application)
+      await closeApplication(application)
       await fixture.github.close()
       await fixture.linear.close()
     }

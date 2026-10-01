@@ -45,7 +45,6 @@ test('starts and stops the packaged Session sync worker', async ({
         { timeout: 10_000 },
       )
       .toMatch(/^(ready|failed)$/)
-    await page.close()
   } finally {
     await closeApplication(application)
   }

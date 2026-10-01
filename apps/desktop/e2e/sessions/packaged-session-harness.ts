@@ -133,7 +133,7 @@ export async function createPackagedSessionHarness(request: {
     launch: open,
     restart: async (beforeOpen?: () => Promise<void>) => {
       await closing()
-      if (application) await closeApplication(application)
+      await closeApplication(application)
       await beforeOpen?.()
       return open()
     },
@@ -142,9 +142,7 @@ export async function createPackagedSessionHarness(request: {
       if (page === undefined) throw new Error('The packaged app did not launch.')
       return page
     },
-    close: async () => {
-      if (application) await closeApplication(application)
-    },
+    close: () => closeApplication(application),
     isPackaged: () => application?.evaluate(({ app }) => app.isPackaged),
     recentConsole: () => recentConsole,
   }

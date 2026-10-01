@@ -23,7 +23,10 @@ export async function applicationUnderTest(root: string): Promise<string> {
 // Quits Argo and waits for its `quit` event, then kills the process: Electron's native teardown
 // after that holds no lock and runs no Argo code, yet on a saturated machine it can starve for
 // minutes on background-priority threads (#3042), and `close()` would wait for all of it.
-export async function closeApplication(application: ElectronApplication): Promise<void> {
+export async function closeApplication(
+  application: ElectronApplication | undefined,
+): Promise<void> {
+  if (application === undefined) return
   await application
     .evaluate(
       ({ app }) =>
