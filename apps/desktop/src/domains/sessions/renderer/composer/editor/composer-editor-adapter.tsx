@@ -51,7 +51,7 @@ export function ComposerEditorAdapter({
         documentPrompt.current = markdown
         if (markdown !== currentPrompt.current) {
           pendingPrompts.current.push(markdown)
-          // Render now: an Enter in the next task sends the draft React holds, not the editor's (#3020).
+          // Render now, so an Enter in the next task sends this text and not the last render's (#3020).
           flushSync(() => onPromptChange(markdown))
         }
       }}
