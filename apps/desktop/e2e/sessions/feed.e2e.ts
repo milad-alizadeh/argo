@@ -27,7 +27,7 @@ import { appendProse } from './fixtures/feed.fixture'
 import { writeWindowFillerSessions } from './fixtures/session-list-window.fixture'
 import { openSessionByClick } from './gestures'
 import { sessionDetails } from './page-trpc'
-import { assertTranscriptFeedCorpus } from './real-harness/transcript-feed-corpus'
+import { assertVendorFeedCorpus, readRealVendorCorpus } from './real-harness/transcript-feed-corpus'
 import { expect, test } from './session-proof-run'
 
 test.describe('with no Project selected', () => {
@@ -187,14 +187,11 @@ test.describe('with real Session transcript corpora', () => {
         '<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>',
       budgetTurnConfiguration: true,
     })
-    const home = path.join(session.root, 'home')
-    await assertTranscriptFeedCorpus({
-      roots: {
-        claude: path.join(home, '.claude', 'projects'),
-        codex: path.join(home, '.codex', 'sessions'),
-      },
+    const corpus = await readRealVendorCorpus({
+      home: path.join(session.root, 'home'),
       sessionIds: { claude: claudeSessionId, codex: codexSessionId },
     })
+    await assertVendorFeedCorpus(corpus)
   })
 })
 
@@ -216,8 +213,13 @@ test.describe('session-claude-rename', () => {
   })
 })
 
-test('session-codex-thread-name', async ({ session }) => {
-  await proveCodexThreadName(session.page(), session.fixture.codexTranscripts)
+test.describe('session-codex-thread-name', () => {
+  // The rename lands in the mock Codex store; a real Codex never reads it.
+  test.skip(({ sessionBackend }) => sessionBackend !== 'mock', 'Writes the mock Codex store.')
+
+  test('session-codex-thread-name', async ({ session }) => {
+    await proveCodexThreadName(session.page(), session.root)
+  })
 })
 
 test.describe('with a slow Harness', () => {

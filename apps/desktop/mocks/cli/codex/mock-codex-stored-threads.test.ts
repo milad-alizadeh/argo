@@ -15,7 +15,10 @@ test('answers stored history with the recorded app-server responses', async () =
     const read = recordedCall('thread/read')
     assert.deepEqual(await client.request('thread/read', read.params, identity), read.result)
     const turns = recordedCall('thread/turns/list')
-    assert.deepEqual(await client.request('thread/turns/list', turns.params, identity), turns.result)
+    assert.deepEqual(
+      await client.request('thread/turns/list', turns.params, identity),
+      turns.result,
+    )
   } finally {
     client.shutdown()
   }

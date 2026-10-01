@@ -76,7 +76,12 @@ function codexThread(request: {
 export const CODEX_PARENT = 'codexParent'
 export const CODEX_FIXTURES = [CODEX_PARENT, 'codexChild']
 
-// The Codex threads the mock app-server starts with, in the state file its executable reads.
+// The state file the mock Codex app-server answers from, in `thread/read`'s shape.
+export function codexThreadsFile(root: string) {
+  return path.join(root, 'codex-state.json')
+}
+
+// The Codex threads the mock app-server starts with.
 async function writeCodexThreads(root, codexTranscripts) {
   const cwd = proofCwd(codexTranscripts, 'codex')
   const threads = [
@@ -95,7 +100,7 @@ async function writeCodexThreads(root, codexTranscripts) {
       turns: [{ id: 'turn-2', prompt: 'Continue the check', reply: 'Continuing' }],
     }),
   ]
-  await writeFile(path.join(root, 'codex-state.json'), JSON.stringify(threads))
+  await writeFile(codexThreadsFile(root), JSON.stringify(threads))
 }
 
 // One more turn on a Session already measured, written the way the Harness writes one: appended to

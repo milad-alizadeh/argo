@@ -2,12 +2,16 @@ import { expect, test } from 'bun:test'
 import { mkdir, mkdtemp, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import type { CodexRequest } from '@/harnesses/codex/app-server'
+import { readCodexSessionHistory } from '@/harnesses/codex/session/codex-session-history'
+import { recordedThread } from '../../../mocks/cli/codex/recorded-codex-threads'
 import type { SessionFixture } from '../session-harness-backend'
 import {
   createRealSessionHarnessBackend,
   prepareRealSessionHome,
   resolveRealSessionExecutables,
 } from './real-session-harness-backend'
+import { replyAfterPrompt } from './real-session-transcript'
 
 async function inTemporaryRoot(read: (root: string) => Promise<void>) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-real-backend-'))
@@ -114,30 +118,12 @@ test('leaves transcript roots unset and launches under its isolated HOME', async
     expect(run.launchEnv({ slowReply: false }).HOME).toBe(path.join(root, 'home'))
   }))
 
-test('recognizes an assistant record after the prompt in a real Claude transcript', async () =>
-  inTemporaryRoot(async (root) => {
-    const { backend, run } = await startedRealBackend(root)
-    const transcript = path.join(
-      run.launchEnv({ slowReply: false }).HOME,
-      '.claude',
-      'projects',
-      'run.jsonl',
-    )
-    await mkdir(path.dirname(transcript), { recursive: true })
-    // The reader follows the record chain, so the reply names the prompt as its parent.
-    const prompt = {
-      type: 'user',
-      uuid: 'user',
-      parentUuid: null,
-      message: { content: 'Reply with ACK.' },
-    }
-    const reply = {
-      type: 'assistant',
-      uuid: 'assistant',
-      parentUuid: 'user',
-      message: { content: 'ACK' },
-    }
-    await writeFile(transcript, `${JSON.stringify(prompt)}\n${JSON.stringify(reply)}\n`)
+test('recognizes a reply after the prompt in a recorded Codex thread read', async () => {
+  const thread = recordedThread('Continue the check')
+  const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse({ thread })) as CodexRequest
+  const content = await readCodexSessionHistory(request, thread.id)
 
-    expect(await backend.recorded({ harness: 'claude', prompt: 'Reply with ACK.' })).toBe(true)
-  }))
+  expect(replyAfterPrompt(content, 'Continue the check')).toEqual({ size: content.length })
+  expect(replyAfterPrompt(content, 'A prompt never sent')).toBeNull()
+})

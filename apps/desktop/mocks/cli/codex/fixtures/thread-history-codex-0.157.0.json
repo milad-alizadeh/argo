@@ -14,9 +14,7 @@
               {
                 "environmentId": "local",
                 "cwd": "/tmp/argo-2982/project-codex",
-                "runtimeWorkspaceRoots": [
-                  "/tmp/argo-2982/project-codex"
-                ]
+                "runtimeWorkspaceRoots": ["/tmp/argo-2982/project-codex"]
               }
             ],
             "extra": null,
@@ -58,9 +56,7 @@
               {
                 "environmentId": "local",
                 "cwd": "/tmp/argo-2982/project-codex",
-                "runtimeWorkspaceRoots": [
-                  "/tmp/argo-2982/project-codex"
-                ]
+                "runtimeWorkspaceRoots": ["/tmp/argo-2982/project-codex"]
               }
             ],
             "extra": null,
@@ -102,9 +98,7 @@
               {
                 "environmentId": "local",
                 "cwd": "/tmp/argo-2982/project-codex",
-                "runtimeWorkspaceRoots": [
-                  "/tmp/argo-2982/project-codex"
-                ]
+                "runtimeWorkspaceRoots": ["/tmp/argo-2982/project-codex"]
               }
             ],
             "extra": null,
@@ -158,9 +152,7 @@
             {
               "environmentId": "local",
               "cwd": "/tmp/argo-2982/project-codex",
-              "runtimeWorkspaceRoots": [
-                "/tmp/argo-2982/project-codex"
-              ]
+              "runtimeWorkspaceRoots": ["/tmp/argo-2982/project-codex"]
             }
           ],
           "extra": null,
@@ -367,9 +359,7 @@
             {
               "environmentId": "local",
               "cwd": "/tmp/argo-2982/project-codex",
-              "runtimeWorkspaceRoots": [
-                "/tmp/argo-2982/project-codex"
-              ]
+              "runtimeWorkspaceRoots": ["/tmp/argo-2982/project-codex"]
             }
           ],
           "extra": null,
@@ -503,9 +493,7 @@
             {
               "environmentId": "local",
               "cwd": "/tmp/argo-2982/project-codex",
-              "runtimeWorkspaceRoots": [
-                "/tmp/argo-2982/project-codex"
-              ]
+              "runtimeWorkspaceRoots": ["/tmp/argo-2982/project-codex"]
             }
           ],
           "extra": null,

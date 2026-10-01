@@ -4,8 +4,8 @@ import type { Database } from '@/database/database'
 import { sessionCommandTable } from '@/database/session/command-schema'
 import type { CodexRequest } from '@/harnesses/codex/app-server'
 import { hasCodexSessionTurn } from '@/harnesses/codex/session'
-import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { recordedThread } from '@/mocks/cli/codex/recorded-codex-threads'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
 import {
   bindSessionCommand,
   claimSessionCommand,

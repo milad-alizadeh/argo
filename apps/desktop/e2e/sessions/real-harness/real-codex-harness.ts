@@ -1,6 +1,44 @@
+import { chmod, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { openCodexHistoryReader } from '@/harnesses/codex/session/codex-history-lines'
-import { assistantAfterPrompt } from './real-session-transcript'
+import type { ThreadReadResponse } from '@/harnesses/codex/app-server'
+import { createCodexAppServerClient } from '@/harnesses/codex/app-server/codex-app-server-client'
+import { readCodexSessionHistory } from '@/harnesses/codex/session/codex-session-history'
+import type { VendorHistoryReader } from './real-session-transcript'
+
+type CodexThread = ThreadReadResponse['thread']
+
+// The real `codex app-server`, run under the throwaway HOME through Argo's own client.
+async function openCodexVendorReader(
+  home: string,
+  executable: string,
+): Promise<VendorHistoryReader<CodexThread>> {
+  const wrapper = path.join(path.dirname(home), 'codex-vendor-reader')
+  await writeFile(wrapper, `#!/bin/sh\nexport HOME='${home}'\nexec '${executable}' "$@"\n`)
+  await chmod(wrapper, 0o755)
+  const client = createCodexAppServerClient({
+    resolveExecutable: async () => ({ executable: wrapper, version: '' }),
+  })
+  return {
+    sessionIds: async () => {
+      const listed = await client.request(
+        'thread/list',
+        { limit: 100, sourceKinds: ['cli', 'vscode', 'appServer'] },
+        (value) => value as { data: { id: string }[] },
+      )
+      return listed.data.map((thread) => thread.id)
+    },
+    records: async (threadId) =>
+      (
+        await client.request(
+          'thread/read',
+          { threadId, includeTurns: true },
+          (value) => value as ThreadReadResponse,
+        )
+      ).thread,
+    content: (threadId) => readCodexSessionHistory(client.request, threadId),
+    close: () => client.shutdown(),
+  }
+}
 
 export const realCodexCli = {
   authentication: ['login', 'status'],
@@ -8,6 +46,5 @@ export const realCodexCli = {
   linked: [],
   label: 'Codex',
   transcripts: (home: string) => path.join(home, '.codex', 'sessions'),
-  replyAfterPrompt: (folder: string, prompt: string) =>
-    assistantAfterPrompt(folder, prompt, () => openCodexHistoryReader()),
+  openReader: openCodexVendorReader,
 }

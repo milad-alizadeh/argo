@@ -3,7 +3,6 @@ import { copyFile, mkdir, rm, symlink } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
-import { codexStatePath } from '../../../mocks/cli/codex/codex-state-store'
 import type {
   SessionFixture,
   SessionHarnessBackend,
@@ -11,6 +10,7 @@ import type {
 } from '../session-harness-backend'
 import { realClaudeCli } from './real-claude-harness'
 import { realCodexCli } from './real-codex-harness'
+import { type VendorHistoryReader, vendorReplyAfterPrompt } from './real-session-transcript'
 
 const BUDGET_MS = 180_000
 const POLL_MS = 250
@@ -94,6 +94,18 @@ function replyKey({ harness, prompt }: SessionReply) {
   return `${harness}:${prompt}`
 }
 
+// The real backend points the app at its own transcript roots under `home` rather than at the
+// fixture tree directly (`transcripts: null` below), so the seeded fixtures land there too (#2650).
+// A symlink, not a copy, so a case's later write to the fixture root reaches the file the app watches.
+async function linkFixtureTranscripts(home: string, fixture: SessionFixture) {
+  const fixtureTranscripts = { claude: fixture.claudeTranscripts, codex: fixture.codexTranscripts }
+  for (const harness of Object.keys(REAL_HARNESSES) as RealHarness[]) {
+    const transcripts = REAL_HARNESSES[harness].transcripts(home)
+    await rm(transcripts, { recursive: true, force: true })
+    await symlink(fixtureTranscripts[harness], transcripts)
+  }
+}
+
 export function createRealSessionHarnessBackend(
   options: {
     findExecutable?: ExecutableFinder
@@ -103,13 +115,15 @@ export function createRealSessionHarnessBackend(
 ): SessionHarnessBackend {
   const findExecutable = options.findExecutable ?? findExecutableOnLoginShellPath
   const sourceHome = options.home ?? process.env.HOME ?? ''
-  const transcriptRoots = {} as Record<RealHarness, string>
+  const readers = new Map<RealHarness, VendorHistoryReader<unknown>>()
   const observedSizes = new Map<string, number>()
   const verifyAuthentication = options.verifyAuthentication ?? verifyRealSessionAuthentication
 
   const reply = (entry: SessionReply) => {
     const harness = realHarness(entry.harness)
-    return REAL_HARNESSES[harness].replyAfterPrompt(transcriptRoots[harness], entry.prompt)
+    const reader = readers.get(harness)
+    if (reader === undefined) throw new Error(`The real ${harness} reader is not open.`)
+    return vendorReplyAfterPrompt(reader, entry.prompt)
   }
 
   return {
@@ -118,30 +132,12 @@ export function createRealSessionHarnessBackend(
     start: async ({ root, fixture }: { root: string; fixture: SessionFixture }) => {
       const executables = resolveRealSessionExecutables(findExecutable)
       const home = await prepareRealSessionHome(root, sourceHome)
-      const fixtureTranscripts = {
-        claude: fixture.claudeTranscripts,
-        codex: fixture.codexTranscripts,
-      }
-      for (const harness of Object.keys(REAL_HARNESSES) as RealHarness[]) {
-        transcriptRoots[harness] = REAL_HARNESSES[harness].transcripts(home)
-        // The real backend points the app at its own transcript roots under `home` rather than at
-        // the fixture tree directly (`transcripts: null` below), so the 15 seeded fixtures the
-        // harness wrote to `root/<harness>-transcripts` have to land there too (#2650). A symlink,
-        // not a copy, so a case's later write to the fixture root (a live append, a restart) reaches
-        // the same file the running app watches, instead of a snapshot taken once at launch.
-        await rm(transcriptRoots[harness], { recursive: true, force: true })
-        await symlink(fixtureTranscripts[harness], transcriptRoots[harness])
-      }
-      // Codex's thread name lives beside `sessions/`, not inside it (ADR-0042), so the directory
-      // symlink above never carries it; give it the same live link the sessions tree gets.
-      const codexState = codexStatePath(transcriptRoots.codex)
-      await rm(codexState, { force: true })
-      await symlink(codexStatePath(fixtureTranscripts.codex), codexState)
-      // Authentication's own CLI invocation is the first process to touch `home/.codex`, and (at
-      // least for Codex) it starts a local database at the exact path above; run it only once that
-      // path is already the symlink, or its process outlives this call holding the pre-symlink
-      // file open, and every symlinked reader/writer afterward reaches an orphaned copy (#2650).
+      await linkFixtureTranscripts(home, fixture)
       verifyAuthentication(executables, home)
+      for (const harness of Object.keys(REAL_HARNESSES) as RealHarness[]) {
+        readers.get(harness)?.close()
+        readers.set(harness, await REAL_HARNESSES[harness].openReader(home, executables[harness]))
+      }
       return {
         executables,
         transcripts: null,

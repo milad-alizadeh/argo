@@ -1,20 +1,20 @@
 import assert from 'node:assert/strict'
-import { readdir, readFile } from 'node:fs/promises'
-import path from 'node:path'
+import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
 import { feedEntryRows, projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
 import { type SessionFeedRow, sessionFeedRowSchema } from '@/domains/sessions/api/feed/feed-rows'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import { openClaudeHistoryReader } from '@/harnesses/claude/session/claude-history-lines'
-import { openCodexHistoryReader } from '@/harnesses/codex/session/codex-history-lines'
+import { decodeClaudeSessionMessages } from '@/harnesses/claude/session/claude-session-history'
+import type { CodexRequest, ThreadReadResponse } from '@/harnesses/codex/app-server'
+import { readCodexSessionHistory } from '@/harnesses/codex/session/codex-session-history'
+import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
+import { realClaudeCli } from './real-claude-harness'
+import { realCodexCli } from './real-codex-harness'
 
-// One reader per transcript file, the way a real read follows that file.
-const READERS = {
-  claude: openClaudeHistoryReader,
-  codex: openCodexHistoryReader,
-} as const
-// Only the Harnesses whose transcript files the corpus can read.
-type TranscriptHarness = keyof typeof READERS
-const TRANSCRIPT_HARNESSES = Object.keys(READERS) as TranscriptHarness[]
+type CodexThread = ThreadReadResponse['thread']
+// What each Harness's own history reader returned: the Agent SDK's messages, Codex's thread read.
+export type VendorCorpus = { claude: readonly SessionMessage[]; codex: CodexThread }
+type TranscriptHarness = keyof VendorCorpus
+const TRANSCRIPT_HARNESSES: TranscriptHarness[] = ['claude', 'codex']
 
 const RAW_TAG = /<\/?[a-z][a-z0-9_-]*(?:\s[^>]*)?>/i
 const PASTED_BLOCK = /<pasted_content id="([^"]+)">([\s\S]*?)<\/pasted_content id="\1">/g
@@ -35,60 +35,48 @@ function stringsIn(value: unknown): string[] {
   return []
 }
 
-// Tag checks read the record's text, so a JSON escape cannot hide `id="…"`.
-function recordText(line: string): string {
-  try {
-    return stringsIn(JSON.parse(line)).join('\n')
-  } catch {
-    return line
+// Tag checks read every string the vendor returned for one record.
+function recordText(record: unknown): string {
+  return stringsIn(record).join('\n')
+}
+
+function envelopeIn(record: unknown, envelope: string) {
+  return new RegExp(`<${envelope}(?:\\s|>)`, 'i').test(recordText(record))
+}
+
+function tagged(record: unknown, name: string): string | null {
+  return recordText(record).match(new RegExp(`<${name}>([\\s\\S]*?)</${name}>`))?.[1] ?? null
+}
+
+function claudeRecordId(record: unknown): string | null {
+  if (typeof record !== 'object' || record === null || !('uuid' in record)) return null
+  return typeof record.uuid === 'string' ? record.uuid : null
+}
+
+// The vendor records the envelopes are looked for in: one per message or thread item.
+function recordsOf(harness: TranscriptHarness, corpus: VendorCorpus): unknown[] {
+  switch (harness) {
+    case 'claude':
+      return [...corpus.claude]
+    case 'codex':
+      return corpus.codex.turns.flatMap((turn) => turn.items)
   }
 }
 
-function envelopeIn(line: string, envelope: string) {
-  return new RegExp(`<${envelope}(?:\\s|>)`, 'i').test(recordText(line))
-}
-
-function tagged(line: string, name: string): string | null {
-  return recordText(line).match(new RegExp(`<${name}>([\\s\\S]*?)</${name}>`))?.[1] ?? null
-}
-
-function claudeRecordId(line: string): string | null {
-  try {
-    const record = JSON.parse(line) as { uuid?: unknown }
-    return typeof record.uuid === 'string' ? record.uuid : null
-  } catch {
-    return null
-  }
-}
-
-async function transcriptPaths(root: string): Promise<string[]> {
-  const entries = await readdir(root, { withFileTypes: true }).catch(() => [])
-  const paths: string[] = []
-  for (const entry of entries) {
-    const entryPath = path.join(root, entry.name)
-    if (entry.isDirectory()) paths.push(...(await transcriptPaths(entryPath)))
-    else if (entry.name.endsWith('.jsonl')) paths.push(entryPath)
-  }
-  return paths
-}
-
-function contentOf(
-  harness: TranscriptHarness,
-  files: readonly (readonly string[])[],
-): FeedContent[] {
-  const content: FeedContent[] = []
-  for (const lines of files) {
-    const read = READERS[harness]()
-    for (const line of lines) {
-      const change = read([line])
-      // A rewritten line asks for a full read and publishes no events of its own.
-      if (change.type !== 'appended') continue
-      for (const event of change.events) {
-        if (event.type === 'content') content.push(event.content)
-      }
+// The Feed content Argo projects from the same vendor read.
+async function contentOf(harness: TranscriptHarness, corpus: VendorCorpus): Promise<FeedContent[]> {
+  switch (harness) {
+    case 'claude':
+      return decodeClaudeSessionMessages(corpus.claude)
+    case 'codex': {
+      const request = (async (
+        _method: string,
+        _params: unknown,
+        parse: (value: unknown) => unknown,
+      ) => parse({ thread: corpus.codex })) as CodexRequest
+      return readCodexSessionHistory(request, corpus.codex.id)
     }
   }
-  return content
 }
 
 function rowsOf(harness: TranscriptHarness, content: readonly FeedContent[]): SessionFeedRow[] {
@@ -129,12 +117,12 @@ function assertNoProseTag(harness: TranscriptHarness, rows: readonly SessionFeed
 
 function assertTaskNotification(
   harness: TranscriptHarness,
-  lines: readonly string[],
+  records: readonly unknown[],
   rows: readonly SessionFeedRow[],
 ) {
-  for (const line of lines) {
-    if (!envelopeIn(line, 'task-notification')) continue
-    const summary = tagged(line, 'summary') ?? tagged(line, 'result')
+  for (const record of records) {
+    if (!envelopeIn(record, 'task-notification')) continue
+    const summary = tagged(record, 'summary') ?? tagged(record, 'result')
     assert.ok(summary !== null && summary !== '', `${harness} task notification named no summary`)
     assert.ok(
       rows.some((row) => {
@@ -142,18 +130,18 @@ function assertTaskNotification(
         const subagent = row.shape === 'subagent'
         return (task || subagent) && row.text?.includes(summary) === true
       }),
-      `${harness} task notification was not a task row: ${line}`,
+      `${harness} task notification was not a task row: ${recordText(record)}`,
     )
   }
 }
 
 function assertPastedContent(
   harness: TranscriptHarness,
-  lines: readonly string[],
+  records: readonly unknown[],
   rows: readonly SessionFeedRow[],
 ) {
-  const expected = lines.flatMap((line) =>
-    [...recordText(line).matchAll(PASTED_BLOCK)].flatMap((match) => {
+  const expected = records.flatMap((record) =>
+    [...recordText(record).matchAll(PASTED_BLOCK)].flatMap((match) => {
       const id = match[1]
       return id === undefined ? [] : [{ id, text: (match[2] ?? '').trim() }]
     }),
@@ -174,40 +162,40 @@ function commandSource(call: ToolCall): string {
 
 function assertBashInput(
   harness: TranscriptHarness,
-  lines: readonly string[],
+  records: readonly unknown[],
   rows: readonly SessionFeedRow[],
 ) {
   const calls = toolCalls(rows)
-  for (const line of lines) {
-    if (!envelopeIn(line, 'bash-input')) continue
-    const command = tagged(line, 'bash-input')
+  for (const record of records) {
+    if (!envelopeIn(record, 'bash-input')) continue
+    const command = tagged(record, 'bash-input')
     assert.ok(command !== null, `${harness} bash input named no command`)
     assert.ok(
       calls.some(
         (call) => call.kind === 'command' && call.text === command && call.status === 'running',
       ),
-      `${harness} bash input was not a running command row: ${line}`,
+      `${harness} bash input was not a running command row: ${recordText(record)}`,
     )
   }
 }
 
 function assertBashOutput({
   harness,
-  lines,
+  records,
   rows,
   envelope,
 }: {
   harness: TranscriptHarness
-  lines: readonly string[]
+  records: readonly unknown[]
   rows: readonly SessionFeedRow[]
   envelope: 'bash-stdout' | 'bash-stderr'
 }) {
   const calls = toolCalls(rows)
-  for (const line of lines) {
-    if (!envelopeIn(line, envelope)) continue
-    const id = claudeRecordId(line)
-    const body = tagged(line, envelope)
-    assert.ok(id !== null, `${harness} ${envelope} line named no record`)
+  for (const record of records) {
+    if (!envelopeIn(record, envelope)) continue
+    const id = claudeRecordId(record)
+    const body = tagged(record, envelope)
+    assert.ok(id !== null, `${harness} ${envelope} record carried no uuid`)
     assert.ok(
       calls.some((call) => {
         if (call.kind !== 'command' || call.id !== id || call.status !== 'succeeded') return false
@@ -215,7 +203,7 @@ function assertBashOutput({
         if (RAW_TAG.test(source) || RAW_TAG.test(call.text ?? '')) return false
         return body === null || body === '' || source.includes(body)
       }),
-      `${harness} ${envelope} was not a command row: ${line}`,
+      `${harness} ${envelope} was not a command row: ${recordText(record)}`,
     )
   }
 }
@@ -223,112 +211,105 @@ function assertBashOutput({
 function assertEnvelope({
   harness,
   envelope,
-  lines,
+  records,
   rows,
 }: {
   harness: TranscriptHarness
   envelope: RequiredEnvelope
-  lines: readonly string[]
+  records: readonly unknown[]
   rows: readonly SessionFeedRow[]
 }) {
   switch (envelope) {
     case 'task-notification':
-      assertTaskNotification(harness, lines, rows)
+      assertTaskNotification(harness, records, rows)
       return
     case 'pasted_content':
-      assertPastedContent(harness, lines, rows)
+      assertPastedContent(harness, records, rows)
       return
     case 'bash-input':
-      assertBashInput(harness, lines, rows)
+      assertBashInput(harness, records, rows)
       return
     case 'bash-stdout':
     case 'bash-stderr':
-      assertBashOutput({ harness, lines, rows, envelope })
+      assertBashOutput({ harness, records, rows, envelope })
       return
   }
 }
 
-function observedEnvelopes(harness: TranscriptHarness, lines: readonly string[]) {
+function observedEnvelopes(harness: TranscriptHarness, records: readonly unknown[]) {
   const observed = new Set<RequiredEnvelope>()
-  for (const line of lines) {
+  for (const record of records) {
     for (const envelope of REQUIRED_ENVELOPES[harness]) {
-      if (envelopeIn(line, envelope)) observed.add(envelope)
+      if (envelopeIn(record, envelope)) observed.add(envelope)
     }
   }
   return observed
 }
 
-async function sessionFiles(root: string, sessionId: string): Promise<string[][]> {
-  const files = (await transcriptPaths(root)).filter((filePath) => filePath.includes(sessionId))
-  assert.ok(files.length > 0, `${sessionId} recorded no transcript`)
-  const groups: string[][] = []
-  for (const filePath of files) {
-    const lines = (await readFile(filePath, 'utf8'))
-      .split('\n')
-      .filter((line) => line.trim() !== '')
-    if (lines.length > 0) groups.push(lines)
-  }
-  return groups
+function missingEnvelopes(
+  corpus: VendorCorpus,
+  expectedEnvelopes: Partial<Record<TranscriptHarness, readonly RequiredEnvelope[]>>,
+): string[] {
+  return TRANSCRIPT_HARNESSES.flatMap((harness) => {
+    const observed = observedEnvelopes(harness, recordsOf(harness, corpus))
+    const expected = expectedEnvelopes[harness] ?? REQUIRED_ENVELOPES[harness]
+    return expected
+      .filter((envelope) => !observed.has(envelope))
+      .map((envelope) => `${harness}:${envelope}`)
+  })
 }
 
-async function waitForRequiredEnvelopes(options: {
-  roots: Record<TranscriptHarness, string>
-  sessionIds: Record<TranscriptHarness, string>
-  expectedEnvelopes: Partial<Record<TranscriptHarness, readonly RequiredEnvelope[]>>
-  waitMs: number
-}) {
-  const { roots, sessionIds, expectedEnvelopes, waitMs } = options
-  const deadline = Date.now() + waitMs
-  for (;;) {
-    const missing: string[] = []
-    for (const harness of TRANSCRIPT_HARNESSES) {
-      const files = (await transcriptPaths(roots[harness])).filter((filePath) =>
-        filePath.includes(sessionIds[harness]),
-      )
-      const texts = await Promise.all(
-        files.map((filePath) => readFile(filePath, 'utf8').catch(() => '')),
-      )
-      const expected = expectedEnvelopes[harness] ?? REQUIRED_ENVELOPES[harness]
-      for (const envelope of expected) {
-        const present = texts.some((fileText) =>
-          fileText.split('\n').some((line) => line.trim() !== '' && envelopeIn(line, envelope)),
-        )
-        if (!present) missing.push(`${harness}:${envelope}`)
-      }
-    }
-    if (missing.length === 0) return
-    if (Date.now() >= deadline) {
-      throw new Error(`Real transcript corpus missed required envelopes: ${missing.join(', ')}`)
-    }
-    await new Promise((resolve) => setTimeout(resolve, ENVELOPE_POLL_MS))
-  }
-}
-
-export async function assertTranscriptFeedCorpus(options: {
-  roots: Record<TranscriptHarness, string>
+// Polls the real CLIs' own readers under the throwaway HOME until both Sessions hold every envelope.
+export async function readRealVendorCorpus(options: {
+  home: string
   sessionIds: Record<TranscriptHarness, string>
   expectedEnvelopes?: Partial<Record<TranscriptHarness, readonly RequiredEnvelope[]>>
-  waitMs?: number
-}): Promise<void> {
-  const {
-    roots,
-    sessionIds,
-    expectedEnvelopes = REQUIRED_ENVELOPES,
-    waitMs = ENVELOPE_WAIT_MS,
-  } = options
-  await waitForRequiredEnvelopes({ roots, sessionIds, expectedEnvelopes, waitMs })
+}): Promise<VendorCorpus> {
+  const { home, sessionIds, expectedEnvelopes = REQUIRED_ENVELOPES } = options
+  const codex = findExecutableOnLoginShellPath('codex')
+  if (codex === null) throw new Error('codex is not available on PATH.')
+  const readers = {
+    claude: await realClaudeCli.openReader(home, ''),
+    codex: await realCodexCli.openReader(home, codex),
+  }
+  try {
+    const deadline = Date.now() + ENVELOPE_WAIT_MS
+    for (;;) {
+      const corpus = {
+        claude: await readers.claude.records(sessionIds.claude).catch(() => []),
+        codex: await readers.codex
+          .records(sessionIds.codex)
+          .catch(() => ({ id: sessionIds.codex, turns: [] }) as unknown as CodexThread),
+      }
+      const missing = missingEnvelopes(corpus, expectedEnvelopes)
+      if (missing.length === 0) return corpus
+      if (Date.now() >= deadline)
+        throw new Error(`Real vendor corpus missed required envelopes: ${missing.join(', ')}`)
+      await new Promise((resolve) => setTimeout(resolve, ENVELOPE_POLL_MS))
+    }
+  } finally {
+    readers.claude.close()
+    readers.codex.close()
+  }
+}
+
+export async function assertVendorFeedCorpus(
+  corpus: VendorCorpus,
+  expectedEnvelopes: Partial<
+    Record<TranscriptHarness, readonly RequiredEnvelope[]>
+  > = REQUIRED_ENVELOPES,
+): Promise<void> {
   for (const harness of TRANSCRIPT_HARNESSES) {
-    const files = await sessionFiles(roots[harness], sessionIds[harness])
-    const lines = files.flat()
-    const rows = rowsOf(harness, contentOf(harness, files))
+    const records = recordsOf(harness, corpus)
+    const rows = rowsOf(harness, await contentOf(harness, corpus))
     assertNoProseTag(harness, rows)
-    const observed = observedEnvelopes(harness, lines)
+    const observed = observedEnvelopes(harness, records)
     const expected = expectedEnvelopes[harness] ?? REQUIRED_ENVELOPES[harness]
     assert.deepEqual(
       [...observed].sort(),
       [...expected].sort(),
-      `${harness} transcript corpus did not exercise every required raw-tag shape`,
+      `${harness} vendor corpus did not exercise every required raw-tag shape`,
     )
-    for (const envelope of expected) assertEnvelope({ harness, envelope, lines, rows })
+    for (const envelope of expected) assertEnvelope({ harness, envelope, records, rows })
   }
 }

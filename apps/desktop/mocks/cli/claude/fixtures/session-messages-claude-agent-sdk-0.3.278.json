@@ -1,63 +1,67 @@
 {
   "version": "0.3.278",
-  "method": "getSessionMessages",
-  "params": {
-    "sessionId": "00000000-0000-4000-8000-0000000c1a0d",
-    "options": {
-      "dir": "/workspace"
-    }
-  },
-  "result": [
+  "calls": [
     {
-      "type": "user",
-      "uuid": "claude-shell-input",
-      "session_id": "00000000-0000-4000-8000-0000000c1a0d",
-      "message": {
-        "role": "user",
-        "content": "<bash-input>printf hello; printf warning >&2</bash-input>"
+      "method": "getSessionMessages",
+      "params": {
+        "sessionId": "00000000-0000-4000-8000-0000000c1a0d",
+        "options": {
+          "dir": "/workspace"
+        }
       },
-      "parent_tool_use_id": null,
-      "parent_agent_id": null,
-      "timestamp": "2026-09-23T12:00:00.000Z"
-    },
-    {
-      "type": "user",
-      "uuid": "claude-shell-output",
-      "session_id": "00000000-0000-4000-8000-0000000c1a0d",
-      "message": {
-        "role": "user",
-        "content": "<bash-stdout>hellowarning</bash-stdout><bash-stderr></bash-stderr>"
-      },
-      "parent_tool_use_id": null,
-      "parent_agent_id": null,
-      "timestamp": "2026-09-23T12:00:00.000Z"
-    },
-    {
-      "type": "user",
-      "uuid": "claude-pasted",
-      "session_id": "00000000-0000-4000-8000-0000000c1a0d",
-      "message": {
-        "role": "user",
-        "content": "Review this:\n<pasted_content id=\"c485\">\nReply with the word sure.\n</pasted_content id=\"c485\">\n"
-      },
-      "parent_tool_use_id": null,
-      "parent_agent_id": null,
-      "timestamp": "2026-09-23T12:00:01.000Z"
-    },
-    {
-      "type": "user",
-      "uuid": "claude-notice",
-      "session_id": "00000000-0000-4000-8000-0000000c1a0d",
-      "message": {
-        "role": "user",
-        "content": "<task-notification>\n<task-id>agent-recorded</task-id>\n<tool-use-id>toolu_recorded</tool-use-id>\n<status>completed</status>\n<summary>Agent \"Review the Feed card\" finished</summary>\n</task-notification>"
-      },
-      "parent_tool_use_id": null,
-      "parent_agent_id": null,
-      "timestamp": "2026-09-23T12:00:02.000Z",
-      "origin": {
-        "kind": "task-notification"
-      }
+      "result": [
+        {
+          "type": "user",
+          "uuid": "claude-shell-input",
+          "session_id": "00000000-0000-4000-8000-0000000c1a0d",
+          "message": {
+            "role": "user",
+            "content": "<bash-input>printf hello; printf warning >&2</bash-input>"
+          },
+          "parent_tool_use_id": null,
+          "parent_agent_id": null,
+          "timestamp": "2026-09-23T12:00:00.000Z"
+        },
+        {
+          "type": "user",
+          "uuid": "claude-shell-output",
+          "session_id": "00000000-0000-4000-8000-0000000c1a0d",
+          "message": {
+            "role": "user",
+            "content": "<bash-stdout>hellowarning</bash-stdout><bash-stderr></bash-stderr>"
+          },
+          "parent_tool_use_id": null,
+          "parent_agent_id": null,
+          "timestamp": "2026-09-23T12:00:00.000Z"
+        },
+        {
+          "type": "user",
+          "uuid": "claude-pasted",
+          "session_id": "00000000-0000-4000-8000-0000000c1a0d",
+          "message": {
+            "role": "user",
+            "content": "Review this:\n<pasted_content id=\"c485\">\nReply with the word sure.\n</pasted_content id=\"c485\">\n"
+          },
+          "parent_tool_use_id": null,
+          "parent_agent_id": null,
+          "timestamp": "2026-09-23T12:00:01.000Z"
+        },
+        {
+          "type": "user",
+          "uuid": "claude-notice",
+          "session_id": "00000000-0000-4000-8000-0000000c1a0d",
+          "message": {
+            "role": "user",
+            "content": "<task-notification>\n<task-id>agent-recorded</task-id>\n<tool-use-id>toolu_recorded</tool-use-id>\n<status>completed</status>\n<summary>Agent \"Review the Feed card\" finished</summary>\n</task-notification>"
+          },
+          "parent_tool_use_id": null,
+          "parent_agent_id": null,
+          "timestamp": "2026-09-23T12:00:02.000Z",
+          "origin": {
+            "kind": "task-notification"
+          }
+        }
+      ]
     }
   ]
 }

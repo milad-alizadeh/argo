@@ -14,8 +14,7 @@ const started = new Map<string, StoredThread>()
 function recordedAnswer(method: string, threadId: unknown): RecordedCall | undefined {
   return recorded.find(
     (call) =>
-      call.method === method &&
-      (threadId === undefined || call.params.threadId === threadId),
+      call.method === method && (threadId === undefined || call.params.threadId === threadId),
   )
 }
 
