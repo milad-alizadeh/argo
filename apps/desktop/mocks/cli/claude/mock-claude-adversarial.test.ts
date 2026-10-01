@@ -122,24 +122,37 @@ test('a seeded Claude stall leaves the Turn open', async () => {
   }
 })
 
+function isRunning(pid: number) {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
+}
+
 test('a seeded Permission holds while the mock accepts a second queued Turn', async () => {
   let capture = ''
+  let hookPidFile = ''
   const run = await started('seed-0', async (root) => {
     const pluginRoot = path.join(root, 'plugin')
     capture = path.join(root, 'permission.json')
-    const release = path.join(root, 'release')
+    hookPidFile = path.join(root, 'hook.pid')
     await mkdir(pluginRoot)
     const hook = path.join(pluginRoot, 'permission-hook.sh')
+    // Holds until the mock or this test process exits, so no outcome leaves it running (#3057).
     await writeFile(
       hook,
-      `#!/bin/sh\ncat > "${capture}"\nwhile [ ! -f "${release}" ]; do sleep 0.01; done\n`,
+      `#!/bin/sh\necho $$ > "${hookPidFile}"\ncat > "${capture}"\nwhile kill -0 $PPID 2>/dev/null && kill -0 ${process.pid} 2>/dev/null; do sleep 0.01; done\n`,
     )
     await chmod(hook, 0o700)
     return { pluginRoot }
   })
+  let hookPid = 0
   try {
     send(run.child, 'First Turn waits on Permission.')
     await waitFor(async () => (await readFile(capture, 'utf8').catch(() => '')).length > 0)
+    hookPid = Number(await readFile(hookPidFile, 'utf8'))
     send(run.child, 'Second Turn waits behind it.')
     await waitFor(async () => {
       const transcript = await readFile(run.transcript, 'utf8').catch(() => '')
@@ -151,4 +164,5 @@ test('a seeded Permission holds while the mock accepts a second queued Turn', as
     await once(run.child, 'exit')
     await rm(run.root, { recursive: true, force: true })
   }
+  await waitFor(async () => !isRunning(hookPid))
 })
