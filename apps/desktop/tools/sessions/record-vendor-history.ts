@@ -29,6 +29,7 @@ import type {
   CodexRecording,
   RecordedCodexCall,
 } from '../../mocks/cli/codex/recorded-codex-threads'
+import { RECORDED_PROMPTS } from '../../mocks/cli/recorded-prompts'
 
 // Recorded paths read as this mock home, which a selected Project scopes out.
 const MOCK_HOME = '/Users/x'
@@ -238,7 +239,6 @@ async function writeRecording(
     `// Written by \`bun run record:vendor-history\`; do not edit by hand.
 import type { Recorded } from '../../recorded.ts'
 import type { ${recording.type} } from '../${recording.loader}.ts'
-import { RECORDED_PROMPTS } from '../../mocks/cli/recorded-prompts'
 
 export const ${recording.name}: Recorded<${recording.type}> = ${body}
 `,
