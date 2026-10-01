@@ -273,16 +273,23 @@ export const RetriesUnavailableCatalog: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: TRIGGER })
+    // A failure with no named reason is read again when the menu opens.
     await userEvent.click(trigger)
-    await expect(page().getByRole('alert')).toHaveTextContent('Codex is unavailable. Try again.')
+    await waitFor(() => expect(page().getByRole('radiogroup', { name: 'Model' })).toBeVisible())
+    await expect(page().getByRole('radio', { name: /GPT-5.6-Terra/ })).toBeChecked()
+  },
+}
+
+export const RefreshesUnreadableCatalog: Story = {
+  render: () => <CatalogStory harness="claude" failed />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: TRIGGER }))
+    await waitFor(() => expect(page().getByRole('alert')).toBeVisible())
     await expectRoleHidden('radiogroup', 'Model')
     await userEvent.click(page().getByRole('button', { name: 'Refresh models' }))
-    await expect(canvas.getByRole('button', { name: TRIGGER })).toHaveAccessibleName(
-      'Choose Turn configuration: Codex, GPT-5.6-Terra, Balances speed and reasoning',
-    )
     await userEvent.click(canvas.getByRole('button', { name: TRIGGER }))
-    await expect(page().getByRole('radiogroup', { name: 'Model' })).toBeVisible()
-    await expect(page().getByRole('radio', { name: /GPT-5.6-Terra/ })).toBeChecked()
+    await waitFor(() => expect(page().getByRole('radiogroup', { name: 'Model' })).toBeVisible())
   },
 }
 
