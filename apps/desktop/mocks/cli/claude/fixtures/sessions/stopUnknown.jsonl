@@ -1,7 +1,0 @@
-{"type": "last-prompt", "leafUuid": "u-root-1", "sessionId": "stopUnknown"}
-{"type": "user", "cwd": "/Users/x/tree", "timestamp": "2026-07-20T16:00:01.000Z", "uuid": "u-root-1", "parentUuid": null, "message": {"role": "user", "content": "First"}}
-{"type": "assistant", "cwd": "/Users/x/tree", "timestamp": "2026-07-20T16:00:02.000Z", "uuid": "u-a-1", "parentUuid": "u-root-1", "message": {"role": "assistant", "stop_reason": "stop_sequence", "content": [{"type": "text", "text": "\u2026"}]}}
-{"type": "user", "cwd": "/Users/x/tree", "timestamp": "2026-07-20T16:00:03.000Z", "uuid": "u-turn-2", "parentUuid": "u-a-1", "message": {"role": "user", "content": "Second"}}
-{"type": "assistant", "cwd": "/Users/x/tree", "timestamp": "2026-07-20T16:00:04.000Z", "uuid": "u-a-2", "parentUuid": "u-turn-2", "message": {"role": "assistant", "stop_reason": "max_tokens", "content": [{"type": "text", "text": "\u2026"}]}}
-{"type": "user", "cwd": "/Users/x/tree", "timestamp": "2026-07-20T16:00:05.000Z", "uuid": "u-turn-3", "parentUuid": "u-a-2", "message": {"role": "user", "content": "Third"}}
-{"type": "user", "cwd": "/Users/x/tree", "timestamp": "2026-07-20T16:00:06.000Z", "uuid": "u-turn-4", "parentUuid": "u-turn-3", "message": {"role": "user", "content": "Fourth"}}

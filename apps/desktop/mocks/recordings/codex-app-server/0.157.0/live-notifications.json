@@ -1,0 +1,114 @@
+{
+  "producer": "codex-app-server",
+  "version": "0.157.0",
+  "recordedAt": "2026-09-28T11:45:30.133000Z",
+  "payload": {
+    "producer": "codex-cli 0.157.0 app-server",
+    "messages": [
+      {
+        "method": "thread/status/changed",
+        "params": {
+          "threadId": "01a0e7d5-8a93-7ea3-b03b-39de1ddbe469",
+          "status": {
+            "type": "active",
+            "activeFlags": []
+          }
+        },
+        "emittedAtMs": 1790595926944
+      },
+      {
+        "method": "turn/started",
+        "params": {
+          "threadId": "01a0e7d5-8a93-7ea3-b03b-39de1ddbe469",
+          "turn": {
+            "id": "01a0e7d5-8b8b-7712-bbe5-b36bdf8686fd",
+            "items": [],
+            "itemsView": "notLoaded",
+            "status": "inProgress",
+            "error": null,
+            "startedAt": 1790595926,
+            "completedAt": null,
+            "durationMs": null
+          }
+        },
+        "emittedAtMs": 1790595926944
+      },
+      {
+        "method": "item/completed",
+        "params": {
+          "item": {
+            "type": "userMessage",
+            "id": "01a0e7d5-9379-73a3-a3be-8d81b396c55f",
+            "clientId": null,
+            "content": [
+              {
+                "type": "text",
+                "text": "Reply OK.",
+                "text_elements": []
+              }
+            ]
+          },
+          "threadId": "01a0e7d5-8a93-7ea3-b03b-39de1ddbe469",
+          "turnId": "01a0e7d5-8b8b-7712-bbe5-b36bdf8686fd",
+          "completedAtMs": 1790595928955
+        },
+        "emittedAtMs": 1790595928957
+      },
+      {
+        "method": "item/completed",
+        "params": {
+          "item": {
+            "type": "agentMessage",
+            "id": "msg_033b655099c41202016aba5359e75087d297fd565cbc71c153",
+            "text": "OK",
+            "phase": "final_answer",
+            "memoryCitation": null,
+            "delivery": null,
+            "questions": null
+          },
+          "threadId": "01a0e7d5-8a93-7ea3-b03b-39de1ddbe469",
+          "turnId": "01a0e7d5-8b8b-7712-bbe5-b36bdf8686fd",
+          "completedAtMs": 1790595930038
+        },
+        "emittedAtMs": 1790595930041
+      },
+      {
+        "method": "thread/status/changed",
+        "params": {
+          "threadId": "01a0e7d5-8a93-7ea3-b03b-39de1ddbe469",
+          "status": {
+            "type": "idle"
+          }
+        },
+        "emittedAtMs": 1790595930133
+      },
+      {
+        "method": "turn/completed",
+        "params": {
+          "threadId": "01a0e7d5-8a93-7ea3-b03b-39de1ddbe469",
+          "turn": {
+            "id": "01a0e7d5-8b8b-7712-bbe5-b36bdf8686fd",
+            "items": [
+              {
+                "type": "agentMessage",
+                "id": "msg_033b655099c41202016aba5359e75087d297fd565cbc71c153",
+                "text": "OK",
+                "phase": "final_answer",
+                "memoryCitation": null,
+                "delivery": null,
+                "questions": null
+              }
+            ],
+            "itemsView": "summary",
+            "status": "completed",
+            "error": null,
+            "startedAt": 1790595926,
+            "completedAt": 1790595930,
+            "durationMs": 3200
+          }
+        },
+        "emittedAtMs": 1790595930133
+      }
+    ]
+  }
+}

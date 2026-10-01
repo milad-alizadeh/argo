@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
@@ -7,21 +7,13 @@ import type { LiveSessionChannelEvent } from '@/harnesses/registration'
 import { MOCK_CODEX_SKILLS_FILE_ENV } from '@/mocks/cli/codex/fixtures/mock-codex-skills-config'
 import { clientBackedByMock, writeMockCodex } from '@/mocks/cli/codex/mock-codex-driver'
 import { openLiveSession, waitFor } from '@/mocks/cli/codex/mock-codex-live-session'
+import { recordedCodexSkills } from '@/mocks/recordings/codex-app-server'
 import { createCodexRegistration } from '../registration'
 
 type Listed = Extract<LiveSessionChannelEvent, { type: 'commands' }>
 
 async function recordedSkills(): Promise<Record<string, unknown>[]> {
-  const recorded = JSON.parse(
-    await readFile(
-      new URL(
-        '../../../../mocks/cli/codex/fixtures/skills-list-codex-0.157.0.json',
-        import.meta.url,
-      ),
-      'utf8',
-    ),
-  )
-  return recorded.data[0].skills
+  return structuredClone(recordedCodexSkills.data[0]?.skills ?? [])
 }
 
 async function codexServingSkills(skills: unknown[]) {

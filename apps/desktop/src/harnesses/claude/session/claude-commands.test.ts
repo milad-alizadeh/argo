@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
@@ -7,6 +7,7 @@ import type { SessionStartInput } from '@/domains/sessions/main/api'
 import type { LiveSessionChannelEvent } from '@/harnesses/registration'
 import { writeMockClaude } from '@/mocks/cli/claude/mock-claude-cli'
 import { MOCK_CLAUDE_COMMANDS_FILE_ENV } from '@/mocks/cli/claude/mock-claude-sdk-stream'
+import { recordedClaudeCommands } from '@/mocks/recordings/claude-cli'
 import { SESSION_CLAUDE_EXECUTABLE_ENV } from '../proof-protocol'
 import { createClaudeRegistration } from '../registration'
 
@@ -21,15 +22,7 @@ async function waitFor(check: () => boolean, label: string) {
 }
 
 async function recordedCommands(): Promise<Record<string, unknown>[]> {
-  return JSON.parse(
-    await readFile(
-      new URL(
-        '../../../../mocks/cli/claude/fixtures/supported-commands-claude-2.1.286.json',
-        import.meta.url,
-      ),
-      'utf8',
-    ),
-  )
+  return structuredClone(recordedClaudeCommands)
 }
 
 // The registration reads both variables when it lists or spawns, so each test sets its own.
