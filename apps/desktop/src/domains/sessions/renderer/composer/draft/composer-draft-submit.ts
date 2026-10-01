@@ -1,5 +1,9 @@
 import { isTRPCClientError } from '@trpc/client'
 import { useCallback } from 'react'
+import {
+  type SessionSubmitRejection,
+  sessionSubmitRejectionSchema,
+} from '@/domains/sessions/api/session-submit-rejection'
 import type { AppRouter } from '@/platform/main/trpc-router'
 import type { RouterInputs } from '@/platform/renderer/trpc-client'
 import type { ComposerEditing } from '../editing/composer-editing'
@@ -13,9 +17,11 @@ type PersistedDraft = {
   owner: string
   fingerprint: string
 }
-type DraftSubmitResult =
-  | { outcome: 'accepted'; sessionId: string }
-  | { outcome: 'rejected' | 'uncertain' }
+// A rejection names its reason when main knows why the Turn never reached the Harness.
+export type DraftSubmitFailure =
+  | { outcome: 'rejected'; reason: SessionSubmitRejection | null }
+  | { outcome: 'uncertain' }
+type DraftSubmitResult = { outcome: 'accepted'; sessionId: string } | DraftSubmitFailure
 export type ComposerDraftActionInput = {
   persist: (content: DraftContent) => Promise<PersistedDraft>
   persisted: React.RefObject<Map<string, PersistedDraft>>
@@ -106,7 +112,7 @@ async function submitDraft({
 }) {
   const editing = input.latestEditing.current
   if (editing === null || turnConfiguration === null || input.owner === null)
-    return { outcome: 'rejected' as const }
+    return { outcome: 'rejected', reason: null } satisfies DraftSubmitResult
   cancelSaveTimer(input.saveTimer, input.owner)
   input.setSendFailure((failure) => (failure?.owner === input.owner ? null : failure))
   const saved = await persistDraft({
@@ -119,7 +125,7 @@ async function submitDraft({
     setSaveFailureOwner: input.setSaveFailureOwner,
   })
   return saved === null
-    ? { outcome: 'rejected' as const }
+    ? ({ outcome: 'rejected', reason: null } satisfies DraftSubmitResult)
     : sendPersistedDraft({
         saved,
         editing,
@@ -180,19 +186,20 @@ async function sendPersistedDraft(input: {
     input.setSendFailure((failure) => (failure?.owner === input.owner ? null : failure))
     return { outcome: 'accepted', sessionId: result.sessionId } satisfies DraftSubmitResult
   } catch (error) {
-    const outcome = definiteRejection(error) ? 'rejected' : 'uncertain'
-    input.setSendFailure({ owner: input.owner, outcome })
-    return { outcome } satisfies DraftSubmitResult
+    const failure = submitFailure(error)
+    input.setSendFailure({ owner: input.owner, outcome: failure.outcome })
+    return failure
   }
 }
 
-function definiteRejection(error: unknown): boolean {
-  if (!isTRPCClientError<AppRouter>(error)) return false
-  return (
-    error.data?.code === 'BAD_REQUEST' ||
-    error.data?.code === 'NOT_FOUND' ||
-    error.data?.code === 'PRECONDITION_FAILED'
-  )
+function submitFailure(error: unknown): DraftSubmitFailure {
+  if (!isTRPCClientError<AppRouter>(error)) return { outcome: 'uncertain' }
+  const code = error.data?.code
+  if (code !== 'BAD_REQUEST' && code !== 'NOT_FOUND' && code !== 'PRECONDITION_FAILED')
+    return { outcome: 'uncertain' }
+  // Any other message keeps the plain rejection text.
+  const reason = sessionSubmitRejectionSchema.safeParse(error.message)
+  return { outcome: 'rejected', reason: reason.success ? reason.data : null }
 }
 
 function submitSavedDraft(saved: PersistedDraft, submit: ComposerDraftSubmitInput['submit']) {

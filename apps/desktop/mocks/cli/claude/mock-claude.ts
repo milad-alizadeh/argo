@@ -7,6 +7,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
 import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversarial-turns.ts'
+import { MOCK_START_REFUSED_FOLDER } from '../mock-cli.ts'
 import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { MOCK_CLAUDE_AGENTS_ENV } from './mock-claude-agents.ts'
 import { createMockClaudeHooks } from './mock-claude-hooks.ts'
@@ -67,6 +68,10 @@ if (arguments_.includes('--help')) {
 const [transcriptRoot] = arguments_
 const agentSdk = arguments_.includes('stream-json')
 const transcripts = agentSdk ? process.env[MOCK_CLAUDE_TRANSCRIPTS_ENV] : transcriptRoot
+if (agentSdk && path.basename(process.cwd()) === MOCK_START_REFUSED_FOLDER) {
+  process.stderr.write('Mock Claude cannot start here.\n')
+  process.exit(1)
+}
 
 function flagValue(flag: string): string | null {
   const index = arguments_.indexOf(flag)

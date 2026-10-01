@@ -5,6 +5,7 @@ import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
+import type { SessionSubmitRejection } from '@/domains/sessions/api/session-submit-rejection'
 import { resolveWorkspacePath } from '@/domains/workspaces/main'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
@@ -86,6 +87,10 @@ function rejectUnsupportedAttachments(
   })
 }
 
+function rejection(reason: SessionSubmitRejection) {
+  return new TRPCError({ code: 'PRECONDITION_FAILED', message: reason })
+}
+
 function isDirectory(folder: string): Promise<boolean> {
   return stat(folder).then(
     (found) => found.isDirectory(),
@@ -103,7 +108,7 @@ async function prepareProjectDraft(
   const created =
     target.workspaceId === null
       ? await context.ensureManagedWorkspace(target.projectId, draft.id).catch(() => {
-          throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'worktree-create-failed' })
+          throw rejection('worktree-create-failed')
         })
       : null
   const workspaceId = created?.id ?? target.workspaceId
@@ -115,8 +120,7 @@ async function prepareProjectDraft(
   if (workspaceId === null || cwd === null)
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'workspace-not-in-project' })
   // A Harness given a missing folder fails in its own way, or not at all, so every one stops here.
-  if (!(await isDirectory(cwd)))
-    throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'workspace-missing' })
+  if (!(await isDirectory(cwd))) throw rejection('workspace-missing')
   return {
     ...command,
     harness: target.harness,

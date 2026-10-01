@@ -1,4 +1,4 @@
-import { and, eq, inArray, ne, or } from 'drizzle-orm'
+import { and, eq, inArray, isNull, ne, or } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { sessionCommandTable } from '@/database/session/command-schema'
 import type { Harness } from '@/harnesses/harness'
@@ -98,6 +98,19 @@ export function createSessionCommandStore(database: Database) {
     },
     record: (commandId: string, status: CommandStatus) =>
       recordCommand(database, commandId, status),
+    // A command the Harness never named a Session for was not sent, so its draft may be sent again.
+    release(commandId: string) {
+      database
+        .delete(sessionCommandTable)
+        .where(
+          and(
+            eq(sessionCommandTable.commandId, commandId),
+            isNull(sessionCommandTable.sessionId),
+            isNull(sessionCommandTable.nativeId),
+          ),
+        )
+        .run()
+    },
     markUnresolvedUncertain() {
       database
         .update(sessionCommandTable)

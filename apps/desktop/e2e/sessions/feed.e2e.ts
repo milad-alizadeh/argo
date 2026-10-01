@@ -16,7 +16,7 @@ import { proveDelegationCards } from './cases/delegation-card.case'
 import { proveSessionDiagram } from './cases/diagram.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
-import { proveRemovedWorkLocation } from './cases/removed-work-location.case'
+import { proveRefusedStart, proveRemovedWorkLocation } from './cases/removed-work-location.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveContract } from './cases/session-list-contract.case'
 import { provePackagedSessionListSelection } from './cases/session-list-interaction.case'
@@ -50,6 +50,10 @@ test('session-shell', async ({ session }) => {
 
 test('session-removed-work-location', async ({ session }) => {
   await proveRemovedWorkLocation(session.page(), session.fixture.project)
+})
+
+test('session-refused-start', async ({ session }) => {
+  await proveRefusedStart(session.page(), session.fixture.project)
 })
 
 test.describe('session refresh progress', () => {

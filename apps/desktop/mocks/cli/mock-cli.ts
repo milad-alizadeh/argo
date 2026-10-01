@@ -1,3 +1,7 @@
+// A Session started in a folder of this name fails before the mock names it, as a CLI that cannot
+// launch or refuses the start does (#3013).
+export const MOCK_START_REFUSED_FOLDER = 'mock-start-refused'
+
 // What the mock backend needs from one Harness adapter (#2308). Each adapter answers for its own
 // mock, and the backend registers the answers rather than branching on a Harness (ADR-0024).
 export type MockHarness = {
