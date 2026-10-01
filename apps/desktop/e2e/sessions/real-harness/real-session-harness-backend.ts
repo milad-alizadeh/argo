@@ -20,6 +20,9 @@ const REAL_HARNESS_UNSET_ENV = [
   'ARGO_CLAUDE_TRANSCRIPTS',
   'ARGO_CODEX_TRANSCRIPTS',
   'ARGO_CLAUDE_ARCHIVE',
+  // The isolated HOME holds both config folders, with the copied logins.
+  'CLAUDE_CONFIG_DIR',
+  'CODEX_HOME',
 ]
 const REAL_HARNESSES = { claude: realClaudeCli, codex: realCodexCli }
 // The real backend runs no ACP agent yet, so a case on another Harness is refused.

@@ -1,0 +1,238 @@
+{
+  "capture": "Not recorded: built from the payload examples in the Claude Code hooks reference (https://code.claude.com/docs/en/hooks), which every event shares with claude 2.1.286 per the #2976 spike. One Turn runs Bash after a permission prompt; one asks a question with AskUserQuestion.",
+  "bashTurn": [
+    {
+      "event": "SessionStart",
+      "payload": {
+        "session_id": "3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01",
+        "transcript_path": "/Users/person/.claude/projects/-Users-person-project/3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01.jsonl",
+        "cwd": "/Users/person/project",
+        "hook_event_name": "SessionStart",
+        "source": "startup",
+        "model": "claude-opus-5"
+      }
+    },
+    {
+      "event": "UserPromptSubmit",
+      "payload": {
+        "session_id": "3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01",
+        "transcript_path": "/Users/person/.claude/projects/-Users-person-project/3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01.jsonl",
+        "cwd": "/Users/person/project",
+        "hook_event_name": "UserPromptSubmit",
+        "prompt": "Run the tests",
+        "permission_mode": "default"
+      }
+    },
+    {
+      "event": "PreToolUse",
+      "payload": {
+        "session_id": "3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01",
+        "transcript_path": "/Users/person/.claude/projects/-Users-person-project/3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01.jsonl",
+        "cwd": "/Users/person/project",
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Bash",
+        "tool_input": {
+          "command": "npm test",
+          "description": "Run test suite",
+          "timeout": 120000,
+          "run_in_background": false
+        },
+        "tool_use_id": "toolu_01ABC123",
+        "permission_mode": "default"
+      }
+    },
+    {
+      "event": "PermissionRequest",
+      "payload": {
+        "session_id": "3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01",
+        "transcript_path": "/Users/person/.claude/projects/-Users-person-project/3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01.jsonl",
+        "cwd": "/Users/person/project",
+        "hook_event_name": "PermissionRequest",
+        "tool_name": "Bash",
+        "tool_input": {
+          "command": "npm test",
+          "description": "Run test suite",
+          "timeout": 120000,
+          "run_in_background": false
+        },
+        "permission_mode": "default"
+      }
+    },
+    {
+      "event": "PostToolUse",
+      "payload": {
+        "session_id": "3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01",
+        "transcript_path": "/Users/person/.claude/projects/-Users-person-project/3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01.jsonl",
+        "cwd": "/Users/person/project",
+        "hook_event_name": "PostToolUse",
+        "tool_name": "Bash",
+        "tool_input": {
+          "command": "npm test",
+          "description": "Run test suite",
+          "timeout": 120000,
+          "run_in_background": false
+        },
+        "tool_use_id": "toolu_01ABC123",
+        "tool_output": "42 tests passed"
+      }
+    },
+    {
+      "event": "Stop",
+      "payload": {
+        "session_id": "3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01",
+        "transcript_path": "/Users/person/.claude/projects/-Users-person-project/3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01.jsonl",
+        "cwd": "/Users/person/project",
+        "hook_event_name": "Stop",
+        "last_assistant_message": "The tests pass.",
+        "permission_mode": "default"
+      }
+    },
+    {
+      "event": "SessionEnd",
+      "payload": {
+        "session_id": "3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01",
+        "transcript_path": "/Users/person/.claude/projects/-Users-person-project/3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01.jsonl",
+        "cwd": "/Users/person/project",
+        "hook_event_name": "SessionEnd",
+        "reason": "prompt_input_exit"
+      }
+    }
+  ],
+  "questionTurn": [
+    {
+      "event": "SessionStart",
+      "payload": {
+        "session_id": "3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01",
+        "transcript_path": "/Users/person/.claude/projects/-Users-person-project/3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01.jsonl",
+        "cwd": "/Users/person/project",
+        "hook_event_name": "SessionStart",
+        "source": "startup",
+        "model": "claude-opus-5"
+      }
+    },
+    {
+      "event": "UserPromptSubmit",
+      "payload": {
+        "session_id": "3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01",
+        "transcript_path": "/Users/person/.claude/projects/-Users-person-project/3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01.jsonl",
+        "cwd": "/Users/person/project",
+        "hook_event_name": "UserPromptSubmit",
+        "prompt": "Ask me a colour",
+        "permission_mode": "default"
+      }
+    },
+    {
+      "event": "PreToolUse",
+      "payload": {
+        "session_id": "3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01",
+        "transcript_path": "/Users/person/.claude/projects/-Users-person-project/3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01.jsonl",
+        "cwd": "/Users/person/project",
+        "hook_event_name": "PreToolUse",
+        "tool_name": "AskUserQuestion",
+        "tool_input": {
+          "questions": [
+            {
+              "question": "Which colour?",
+              "header": "Colour",
+              "options": [
+                {
+                  "label": "Red",
+                  "description": "Choose red."
+                },
+                {
+                  "label": "Blue",
+                  "description": "Choose blue."
+                }
+              ],
+              "multiSelect": false
+            }
+          ]
+        },
+        "tool_use_id": "toolu_01DEF456",
+        "permission_mode": "default"
+      }
+    },
+    {
+      "event": "PermissionRequest",
+      "payload": {
+        "session_id": "3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01",
+        "transcript_path": "/Users/person/.claude/projects/-Users-person-project/3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01.jsonl",
+        "cwd": "/Users/person/project",
+        "hook_event_name": "PermissionRequest",
+        "tool_name": "AskUserQuestion",
+        "tool_input": {
+          "questions": [
+            {
+              "question": "Which colour?",
+              "header": "Colour",
+              "options": [
+                {
+                  "label": "Red",
+                  "description": "Choose red."
+                },
+                {
+                  "label": "Blue",
+                  "description": "Choose blue."
+                }
+              ],
+              "multiSelect": false
+            }
+          ]
+        },
+        "permission_mode": "default"
+      }
+    },
+    {
+      "event": "PostToolUse",
+      "payload": {
+        "session_id": "3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01",
+        "transcript_path": "/Users/person/.claude/projects/-Users-person-project/3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01.jsonl",
+        "cwd": "/Users/person/project",
+        "hook_event_name": "PostToolUse",
+        "tool_name": "AskUserQuestion",
+        "tool_input": {
+          "questions": [
+            {
+              "question": "Which colour?",
+              "header": "Colour",
+              "options": [
+                {
+                  "label": "Red",
+                  "description": "Choose red."
+                },
+                {
+                  "label": "Blue",
+                  "description": "Choose blue."
+                }
+              ],
+              "multiSelect": false
+            }
+          ]
+        },
+        "tool_use_id": "toolu_01DEF456",
+        "tool_output": "Red"
+      }
+    },
+    {
+      "event": "Stop",
+      "payload": {
+        "session_id": "3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01",
+        "transcript_path": "/Users/person/.claude/projects/-Users-person-project/3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01.jsonl",
+        "cwd": "/Users/person/project",
+        "hook_event_name": "Stop",
+        "last_assistant_message": "Red it is.",
+        "permission_mode": "default"
+      }
+    },
+    {
+      "event": "SessionEnd",
+      "payload": {
+        "session_id": "3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01",
+        "transcript_path": "/Users/person/.claude/projects/-Users-person-project/3f0d6a52-1c1e-4c38-9a59-1d2f4b1b7e01.jsonl",
+        "cwd": "/Users/person/project",
+        "hook_event_name": "SessionEnd",
+        "reason": "prompt_input_exit"
+      }
+    }
+  ]
+}

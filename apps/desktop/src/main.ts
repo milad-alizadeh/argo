@@ -17,6 +17,7 @@ import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import {
   clearWorkingStatuses,
+  ExternalSessionHooks,
   ExternalSessionPoll,
   listComposerCommandsFor,
   SessionListChanges,
@@ -402,23 +403,26 @@ function startSessionServices(actors: WindowActors, database: Database, registry
     hasLiveChannel,
     readHistory: (harness, target) => registry[harness].readHistory(target),
   })
-  // #2976 switches this poll off while hooks are on.
+  const harnesses = harnessSchema.options.flatMap((harness) => {
+    const external = registry[harness].externalSessions
+    return external === undefined ? [] : [{ harness, external }]
+  })
   const externalSessions = new ExternalSessionPoll({
     ...context,
-    harnesses: harnessSchema.options.flatMap((harness) => {
-      const external = registry[harness].externalSessions
-      return external === undefined ? [] : [{ harness, external }]
-    }),
+    harnesses,
     hasLiveChannel,
     discover: ({ harness, nativeId }) =>
       actors.sessionSync.send({ type: 'Discover', harness, nativeId }),
   })
   const stopSessionList = watchSessionList({ ...context, supervisor: actors.sessions })
   externalSessions.start()
+  const statusHooks = new ExternalSessionHooks({ poll: externalSessions, harnesses })
+  void statusHooks.start()
   return {
     readers,
     stop: () => {
       stopSessionList()
+      statusHooks.stop()
       externalSessions.stop()
     },
   }

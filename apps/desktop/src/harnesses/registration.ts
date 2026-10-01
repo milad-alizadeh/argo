@@ -4,6 +4,7 @@ import {
   type ComposerCommandListing,
   composerCommandSchema,
 } from '@/domains/sessions/api/composer-commands'
+import type { LiveActivity } from '@/domains/sessions/api/feed-activity'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { Permission, PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { Question, QuestionAnswer } from '@/domains/sessions/api/questions'
@@ -17,6 +18,7 @@ import type { SessionLiveInput, SessionStartInput } from '@/domains/sessions/mai
 import type { HarnessInfo } from '@/harnesses/harness-catalog'
 import { identifierSchema } from '@/shared/validation'
 import type { Harness } from './harness'
+import type { StatusHookEvent } from './host/status-hooks'
 
 export const liveSessionChannelEventSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('identity'), nativeId: identifierSchema }),
@@ -58,6 +60,29 @@ export type ExternalActivityReading = {
   retry: boolean
 }
 
+// What one hook event says about a Session.
+export type ExternalHookReading = {
+  nativeId: string
+  // null leaves the status as it is.
+  status: ExternalSessionStatus | null
+  // null keeps the stored line.
+  activity: LiveActivity | null
+}
+
+// Hooks Argo installs once in the Harness's user-level config, so they fire for every Session.
+// Each posts its payload to Argo's receiver on 127.0.0.1 (#2976).
+export type ExternalSessionHooks = {
+  // Merges Argo's entries naming `port` into the config, keeping every other entry where it is;
+  // changes nothing when they are there. Throws, writing nothing, when it cannot read the config.
+  install: (port: number) => Promise<void>
+  // Deletes exactly the entries Argo wrote.
+  remove: () => Promise<void>
+  // The port the installed entries name, or null when none are installed.
+  installedPort: () => Promise<number | null>
+  // One posted payload, or null for a shape the Harness does not document.
+  read: (event: StatusHookEvent, payload: unknown) => ExternalHookReading | null
+}
+
 // How the external Session poll reads Sessions this Harness runs outside Argo. The host owns the loop,
 // the transcript stat, the diff and every write, and skips a Session with a live Argo channel.
 // Argo parses no transcript content: the host only stats the path (ADR-0047).
@@ -70,6 +95,8 @@ export type ExternalSessions = {
   // Harness. `changedAt` is when the host last saw the transcript change. Absent means the
   // listing's status alone, with no activity line.
   readActivity?: (nativeId: string, changedAt: number) => Promise<ExternalActivityReading>
+  // Once its hooks fire, they replace this Harness's poll.
+  hooks?: ExternalSessionHooks
 }
 
 export type LiveSessionChannelEvent = z.infer<typeof liveSessionChannelEventSchema>
