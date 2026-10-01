@@ -14,6 +14,10 @@ export type LiveActivity = z.infer<typeof liveActivitySchema>
 export type FeedActivityState = { activity: LiveActivity | null; callId: string | null }
 export const EMPTY_FEED_ACTIVITY: FeedActivityState = { activity: null, callId: null }
 
+function isOpen(status: string): boolean {
+  return status === 'pending' || status === 'running' || status === 'paused'
+}
+
 function callActivity(content: FeedContent): { id: string; activity: LiveActivity } | null {
   switch (content.kind) {
     case 'tool':
@@ -25,10 +29,7 @@ function callActivity(content: FeedContent): { id: string; activity: LiveActivit
           ...(content.presentation?.agentDescription === undefined
             ? {}
             : { agentDescription: content.presentation.agentDescription }),
-          open:
-            content.status === 'pending' ||
-            content.status === 'running' ||
-            content.status === 'paused',
+          open: isOpen(content.status),
         },
       }
     case 'command':
@@ -37,10 +38,7 @@ function callActivity(content: FeedContent): { id: string; activity: LiveActivit
         activity: {
           label: commandActivityLabel(content.command),
           kind: 'command',
-          open:
-            content.status === 'pending' ||
-            content.status === 'running' ||
-            content.status === 'paused',
+          open: isOpen(content.status),
         },
       }
     case 'fileChange':
@@ -49,10 +47,7 @@ function callActivity(content: FeedContent): { id: string; activity: LiveActivit
         activity: {
           label: content.changes.at(-1)?.path ?? content.id,
           kind: 'edited',
-          open:
-            content.status === 'pending' ||
-            content.status === 'running' ||
-            content.status === 'paused',
+          open: isOpen(content.status),
         },
       }
     default:
