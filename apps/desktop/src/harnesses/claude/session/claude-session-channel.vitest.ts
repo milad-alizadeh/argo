@@ -13,6 +13,7 @@ const vendor = vi.hoisted(() => ({
   recordedEvents: [] as unknown[],
   commands: [] as unknown[],
   executable: undefined as string | undefined,
+  commandsHeld: null as Promise<void> | null,
 }))
 
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
@@ -51,6 +52,7 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
         vendor.interrupts += 1
       },
       async supportedCommands() {
+        await vendor.commandsHeld
         return vendor.commands
       },
       close() {
@@ -77,6 +79,12 @@ async function until(check: () => boolean) {
     await new Promise((resolve) => setTimeout(resolve, 1))
   }
   throw new Error('Claude channel did not produce the expected event.')
+}
+
+async function untilFeedBody(events: unknown[], type: string) {
+  await until(() =>
+    events.some((event) => (event as { body?: { type: string } }).body?.type === type),
+  )
 }
 
 function interactiveControls(): LiveSessionControls {
@@ -204,11 +212,7 @@ test('answers Claude Permission and Question requests through the channel', asyn
     suggestions: [],
   } as Parameters<CanUseTool>[2]
   const permission = canUseTool('Bash', {}, options)
-  await until(() =>
-    events.some(
-      (event) => (event as { type: string; body?: { type: string } }).body?.type === 'permission',
-    ),
-  )
+  await untilFeedBody(events, 'permission')
   expect(await channel.answerPermission('permission-1', 'allow')).toBe(true)
   expect(await permission).toMatchObject({ behavior: 'allow' })
 
@@ -226,17 +230,46 @@ test('answers Claude Permission and Question requests through the channel', asyn
     },
     { ...options, requestId: 'question-1', toolUseID: 'tool-2' },
   )
-  await until(() =>
-    events.some(
-      (event) => (event as { type: string; body?: { type: string } }).body?.type === 'question',
-    ),
-  )
+  await untilFeedBody(events, 'question')
   expect(await channel.answerQuestion('question-1', [{ kind: 'options', indices: [1] }])).toBe(true)
   expect(await question).toMatchObject({
     behavior: 'allow',
     updatedInput: { answers: { 'Which option?': 'First' } },
   })
   channel.close()
+})
+
+// The vendor asks for a Permission while the reader still waits on its commands (#3049).
+test('holds a Permission asked before the Session is identified until its identity arrives', async () => {
+  vendor.prompts = []
+  vendor.recordedEvents = []
+  vendor.canUseTool = null
+  let releaseCommands!: () => void
+  vendor.commandsHeld = new Promise((resolve) => {
+    releaseCommands = resolve
+  })
+  const events: unknown[] = []
+  const channel = claudeSessionChannelOpener(null)(first, interactiveControls(), (event) =>
+    events.push(event),
+  )
+  try {
+    await until(() => vendor.canUseTool !== null)
+    const canUseTool = vendor.canUseTool as CanUseTool | null
+    if (canUseTool === null) throw new Error('Claude did not receive the control callback.')
+    const permission = canUseTool('Bash', {}, {
+      requestId: 'permission-1',
+      toolUseID: 'tool-1',
+      signal: new AbortController().signal,
+      suggestions: [],
+    } as Parameters<CanUseTool>[2])
+    releaseCommands()
+    await untilFeedBody(events, 'permission')
+    expect(await channel.answerPermission('permission-1', 'allow')).toBe(true)
+    expect(await permission).toMatchObject({ behavior: 'allow' })
+  } finally {
+    vendor.commandsHeld = null
+    channel.close()
+  }
 })
 
 import { readFileSync } from 'node:fs'

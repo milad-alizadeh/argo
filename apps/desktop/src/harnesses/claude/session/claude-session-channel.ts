@@ -87,6 +87,11 @@ class ClaudeSessionChannel implements LiveSessionChannel {
   private open = true
   private activeCommandId: string
   private nativeId: string | null = null
+  private resolveIdentity!: (nativeId: string | null) => void
+  // The vendor runs its tool callback while this reader may not have taken the init message yet.
+  private identity = new Promise<string | null>((resolve) => {
+    this.resolveIdentity = resolve
+  })
   private rejected = 0
   private interruptRequested = false
   private opened = false
@@ -202,12 +207,17 @@ class ClaudeSessionChannel implements LiveSessionChannel {
     }
   }
 
+  private identify(nativeId: string) {
+    this.nativeId = nativeId
+    this.resolveIdentity(nativeId)
+  }
+
   private emitOutput(message: ClaudeOutput) {
     if (message.type === 'system' && message.subtype === 'commands_changed')
       this.publishCommands(message.commands)
     if (message.type === 'assistant' || message.type === 'stream_event') this.markTurnStarted()
     if (message.type === 'system' && message.subtype === 'init' && !this.opened) {
-      this.nativeId = message.session_id
+      this.identify(message.session_id)
       this.emit({ type: 'identity', nativeId: message.session_id })
     }
     if (message.type === 'assistant') this.liveText.settle(message.message.id)
@@ -238,7 +248,7 @@ class ClaudeSessionChannel implements LiveSessionChannel {
     if (message.is_error && !this.interruptRequested) throw new Error('Claude Session turn failed.')
     this.markTurnStarted()
     this.interruptRequested = false
-    this.nativeId = message.session_id
+    this.identify(message.session_id)
     this.emitStatus('idle')
     if (!this.opened) {
       this.opened = true
@@ -278,7 +288,7 @@ class ClaudeSessionChannel implements LiveSessionChannel {
           ? undefined
           : createClaudeToolControl({
               controls: this.controls,
-              nativeId: () => this.nativeId,
+              nativeId: () => this.identity,
               commandId: () => this.activeCommandId,
               emit: (body) => this.emitFeed(body),
               reject: () => {
@@ -301,6 +311,7 @@ class ClaudeSessionChannel implements LiveSessionChannel {
       if (this.rejected > 0)
         console.warn(`Rejected ${this.rejected} unsupported Claude live shape(s).`)
       this.open = false
+      this.resolveIdentity(null)
       this.wakeInput()
       this.session?.close()
       this.emitClosed()
