@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync, watch } from 'node:fs'
+import { MOCK_CLAUDE_VERSION } from './mock-claude-cli.ts'
 
 // The command list the CLI reports, from the JSON file this names, shaped like
 // fixtures/supported-commands-claude-2.1.286.json. A rewrite of it pushes `commands_changed`.
@@ -241,7 +242,7 @@ function writeInitialization(sessionId: string) {
       type: 'system',
       subtype: 'init',
       apiKeySource: 'none',
-      claude_code_version: '2.1.0',
+      claude_code_version: MOCK_CLAUDE_VERSION,
       cwd: process.cwd(),
       tools: [],
       mcp_servers: [],

@@ -6,7 +6,7 @@ import { HorizontalRulePlugin } from '@lexical/react/LexicalHorizontalRulePlugin
 import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import type { LexicalEditor } from 'lexical'
-import { type RefObject, useEffect, useMemo, useState } from 'react'
+import { type RefObject, useLayoutEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
 import type { Harness } from '@/harnesses/harness'
@@ -30,13 +30,11 @@ import {
 function FocusOnMountPlugin({ enabled, onFocused }: { enabled: boolean; onFocused?: () => void }) {
   const [editor] = useLexicalComposerContext()
 
-  useEffect(() => {
+  // Focus lands in the commit that makes the editor usable, so no press can come in between (#3036).
+  useLayoutEffect(() => {
     if (!enabled) return
-    const frame = window.requestAnimationFrame(() => {
-      editor.focus()
-      onFocused?.()
-    })
-    return () => window.cancelAnimationFrame(frame)
+    editor.focus()
+    onFocused?.()
   }, [editor, enabled, onFocused])
 
   return null

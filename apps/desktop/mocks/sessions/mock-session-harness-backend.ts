@@ -1,12 +1,14 @@
 // The backend every packaged Session proof runs against today: each adapter's mock Harness written
 // beside the fixture tree, and both transcript roots pointed at that tree (#2308).
-import { readdir, readFile } from 'node:fs/promises'
+import { writeFileSync } from 'node:fs'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import type { Page } from 'playwright-core'
 import type { Harness } from '@/domains/sessions/renderer/harness/harnesses'
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
+  SESSION_MOCK_REPLY_HOLD_FILE_ENV,
 } from '@/harnesses/proof-protocol'
 import type {
   SessionFixture,
@@ -20,8 +22,6 @@ import { mockCodexHarness } from '../cli/codex/mock-codex-cli'
 import type { MockHarness } from '../cli/mock-cli'
 import { signedInHarnessEnvironment } from '../cli/signed-in-harness'
 
-// Long enough for a case to read the app's wait state before the mock answers (#2119).
-const SLOW_REPLY_MS = 2_000
 const BUDGET_MS = 30_000
 const HISTORY = { name: 'Session history' }
 
@@ -40,17 +40,12 @@ function transcriptRoots(root: string, fixture: SessionFixture): Record<Harness,
   }
 }
 
-async function transcriptHolds(folder: string, mark: string) {
-  const names = await readdir(folder, { recursive: true }).catch(() => [])
-  const records = await Promise.all(
-    names.map((name) => readFile(path.join(folder, name), 'utf8').catch(() => '')),
-  )
-  return records.some((record) => record.includes(mark))
-}
-
 export function createMockSessionHarnessBackend(): SessionHarnessBackend {
-  // Where each mock writes its transcripts, filled in by `start` before any case runs.
-  const folders: Record<Harness, string> = { claude: '', codex: '', 'claude-acp': '' }
+  // The proof root and each mock's transcript root, filled in by `start` before any case runs.
+  let proofRoot = ''
+  let roots: Record<Harness, string> = { claude: '', codex: '', 'claude-acp': '' }
+  // A slow Harness holds the claude reply while this file exists; `waitForReply` deletes it.
+  let replyHold = ''
   const mark = ({ harness, prompt }: SessionReply) => MOCKS[harness].replyMark(prompt)
   const feedMark = (page: Page, reply: SessionReply) =>
     page.getByRole('region', HISTORY).getByText(mark(reply))
@@ -59,25 +54,28 @@ export function createMockSessionHarnessBackend(): SessionHarnessBackend {
     name: 'mock',
     budgetMs: BUDGET_MS,
     start: async ({ root, fixture }) => {
-      const roots = transcriptRoots(root, fixture)
+      proofRoot = root
+      roots = transcriptRoots(root, fixture)
       const executables: Record<Harness, string> = {
         claude: '',
         codex: '',
         'claude-acp': '',
       }
       for (const harness of Object.keys(MOCKS) as Harness[]) {
-        folders[harness] = MOCKS[harness].folder(roots[harness])
         executables[harness] = await MOCKS[harness].write(root, roots[harness])
       }
       const signedIn = await signedInHarnessEnvironment(root)
+      replyHold = path.join(root, 'mock-reply-hold')
       return {
         executables,
         transcripts: { claude: roots.claude, codex: roots.codex },
         launchEnv: ({ slowReply, adversarialSeed }) => {
           if (adversarialSeed !== undefined) console.info(`Session mock seed: ${adversarialSeed}`)
+          if (slowReply) writeFileSync(replyHold, '')
           return {
             ...signedIn,
-            [SESSION_MOCK_REPLY_DELAY_MS_ENV]: String(slowReply ? SLOW_REPLY_MS : 0),
+            [SESSION_MOCK_REPLY_DELAY_MS_ENV]: '0',
+            ...(slowReply ? { [SESSION_MOCK_REPLY_HOLD_FILE_ENV]: replyHold } : {}),
             ...(adversarialSeed === undefined
               ? {}
               : { [SESSION_MOCK_ADVERSARIAL_SEED_ENV]: adversarialSeed }),
@@ -85,8 +83,12 @@ export function createMockSessionHarnessBackend(): SessionHarnessBackend {
         },
       }
     },
-    waitForReply: (page, reply) => feedMark(page, reply).first().waitFor({ timeout: BUDGET_MS }),
+    waitForReply: async (page, reply) => {
+      await rm(replyHold, { force: true })
+      await feedMark(page, reply).first().waitFor({ timeout: BUDGET_MS })
+    },
     replied: async (page, reply) => (await feedMark(page, reply).count()) > 0,
-    recorded: (reply) => transcriptHolds(folders[reply.harness], mark(reply)),
+    recorded: (reply) =>
+      MOCKS[reply.harness].recorded(proofRoot, roots[reply.harness], mark(reply)),
   }
 }

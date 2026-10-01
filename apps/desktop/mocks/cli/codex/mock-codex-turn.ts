@@ -2,7 +2,6 @@ import { appendFileSync } from 'node:fs'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
 import { sendPlanUpdate } from './fixtures/mock-codex-plan.ts'
 import { completeTurn } from './fixtures/mock-codex-responses.ts'
-import { recordStalledTurn, recordTurn } from './fixtures/mock-codex-transcript.ts'
 import { askQuestion } from './mock-ask-question.ts'
 import { scheduleThreadLifecycle } from './mock-codex-lifecycle.ts'
 
@@ -99,16 +98,6 @@ function asksQuestion(text: string, plan: ReturnType<typeof nextAdversarialTurn>
   return text.includes('ASK') || plan?.permissionBeforeReply === true
 }
 
-function recordMockTurn(
-  threadId: unknown,
-  text: string,
-  plan: ReturnType<typeof nextAdversarialTurn>,
-) {
-  if (typeof threadId !== 'string') return
-  if (plan?.outcome === 'stall') recordStalledTurn(threadId)
-  else recordTurn(threadId, text)
-}
-
 export function createMockTurnStartHandler(options: {
   adversarialSeed: string | undefined
   echoFile: string | undefined
@@ -123,7 +112,6 @@ export function createMockTurnStartHandler(options: {
     const input = Array.isArray(params.input) ? params.input : []
     const text = typeof input[0]?.text === 'string' ? input[0].text : ''
     const plan = nextAdversarialTurn(options.adversarialSeed, options.nextTurnIndex())
-    recordMockTurn(threadId, text, plan)
     if (options.echoFile && !text.includes('ASK'))
       appendFileSync(options.echoFile, `${JSON.stringify(text)}\n`)
     const turnId = `mock-turn-${options.nextThreadCounter()}-${Date.now()}`

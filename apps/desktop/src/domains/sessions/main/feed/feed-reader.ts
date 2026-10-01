@@ -36,7 +36,12 @@ export type SessionFeedReaderContext = {
   database: Database
   journal: SessionEventJournal
   hasLiveChannel: (sessionId: string) => boolean
-  readHistory: (harness: Harness, target: SessionHistoryTarget) => Promise<FeedContent[]>
+  // The signal takes a read still waiting for a slot back when its Feed closes.
+  readHistory: (
+    harness: Harness,
+    target: SessionHistoryTarget,
+    signal: AbortSignal,
+  ) => Promise<FeedContent[]>
   // Carries each reading's activity to the Session List, and any write that moved the history.
   changes: SessionListChanges
 }
@@ -137,7 +142,9 @@ class FeedReader {
   #completion: SessionFeedRow[] = []
   #state: ReadState = 'loading'
   #error: SessionError | null = null
-  #read = 0
+  #inFlight = false
+  #followUp = false
+  readonly #abort = new AbortController()
   #stopped = false
   #reading: FeedReading | null = null
   #textTimer: ReturnType<typeof setTimeout> | null = null
@@ -177,26 +184,38 @@ class FeedReader {
     return this.#observers.size > 0
   }
 
-  // Every call starts a real read; a later read's answer replaces an earlier one's.
+  // One read at a time; a call during it asks for one more read once it ends.
   refresh(): void {
-    const read = ++this.#read
     this.#readKey = historyKey(storedHistory(this.#context.database, this.#chain.sessionId))
+    if (this.#inFlight) this.#followUp = true
+    else this.#startRead()
+  }
+
+  #startRead(): void {
+    this.#inFlight = true
+    this.#followUp = false
     if (this.#state !== 'ready') this.#settle('loading', this.#error)
     void this.#readHistory().then(
-      (content) => {
-        if (this.#stopped || read !== this.#read) return
-        this.#history = content
-        this.#settle('ready', null)
-      },
-      (error: unknown) => {
-        if (this.#stopped || read !== this.#read) return
-        this.#settle('failed', readFailure(error))
-      },
+      (content) =>
+        this.#endRead(() => {
+          this.#history = content
+          this.#settle('ready', null)
+        }),
+      (error: unknown) => this.#endRead(() => this.#settle('failed', readFailure(error))),
     )
+  }
+
+  // A result that lands after the Feed closed is dropped.
+  #endRead(settle: () => void): void {
+    this.#inFlight = false
+    if (this.#stopped) return
+    settle()
+    if (this.#followUp) this.#startRead()
   }
 
   stop(): void {
     this.#stopped = true
+    this.#abort.abort()
     for (const stop of this.#stops.splice(0)) stop()
     this.#cancelText()
     this.#observers.clear()
@@ -223,7 +242,7 @@ class FeedReader {
 
   async #readHistory(): Promise<FeedContent[]> {
     const stored = sessionHistoryIdentity(this.#context.database, this.#chain.sessionId)
-    return this.#context.readHistory(stored.harness, this.#target(stored))
+    return this.#context.readHistory(stored.harness, this.#target(stored), this.#abort.signal)
   }
 
   #retain(event: SessionLiveEvent, live: boolean): void {

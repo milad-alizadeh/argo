@@ -24,10 +24,8 @@ export async function openHiddenWindow(
   return page
 }
 
-// The launch redirects `/` to a Project's Sessions, with or without a ready Harness, and a hash
-// set before that lands is replaced.
+// A route set at any point of the launch is kept: the launch's own redirect yields to it.
 export async function openRoute(page: Page, route: string) {
-  await page.waitForFunction(() => /^#\/projects\/[^/]+\//.test(window.location.hash))
   await page.evaluate((hash) => {
     window.location.hash = hash
   }, route)
