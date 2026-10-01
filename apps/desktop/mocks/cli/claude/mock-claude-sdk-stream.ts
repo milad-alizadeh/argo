@@ -11,7 +11,8 @@ const INITIALIZATION_DELAY_MS = 50
 const STREAM_PROBE = 'FeedStreamProbe'
 const STREAM_DELTAS = 300
 const STREAM_DELTA_INTERVAL_MS = 10
-// A `PLAN` prompt writes a TodoWrite Plan with one of its two steps done, as the Codex mock does.
+// A `PLAN` prompt creates two tasks and completes one, as the real CLI's TaskCreate and TaskUpdate
+// calls do in fixtures/claude-task-plan-stream.jsonl, and as the Codex mock does.
 const PLAN_PROBE = 'PLAN'
 const MODELS = [
   {
@@ -148,18 +149,28 @@ function writeAssistantContent(sessionId: string, content: Record<string, unknow
   )
 }
 
+function writeToolResult(sessionId: string, toolUseId: string, text: string) {
+  process.stdout.write(
+    `${JSON.stringify({ type: 'user', session_id: sessionId, uuid: randomUUID(), parent_tool_use_id: null, message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: toolUseId, content: text }] } })}\n`,
+  )
+}
+
 function writePlan(sessionId: string) {
-  writeAssistantContent(sessionId, {
-    type: 'tool_use',
-    id: randomUUID(),
-    name: 'TodoWrite',
-    input: {
-      todos: [
-        { content: 'Read the Session protocol', status: 'completed', activeForm: 'Reading' },
-        { content: 'Project the live Plan', status: 'in_progress', activeForm: 'Projecting' },
-      ],
-    },
-  })
+  const call = (name: string, input: Record<string, unknown>, result: string) => {
+    const id = randomUUID()
+    writeAssistantContent(sessionId, { type: 'tool_use', id, name, input })
+    writeToolResult(sessionId, id, result)
+  }
+  for (const [taskId, subject] of [
+    ['1', 'Read the Session protocol'],
+    ['2', 'Project the live Plan'],
+  ])
+    call(
+      'TaskCreate',
+      { subject, description: subject },
+      `Task #${taskId} created successfully: ${subject}`,
+    )
+  call('TaskUpdate', { taskId: '1', status: 'completed' }, 'Updated task #1 status')
 }
 
 function writeActivity(sessionId: string) {
