@@ -99,8 +99,8 @@ export async function reconcileWorkspaces(
   const resolved = await Promise.all(
     workspaces.map((candidate) => realpath(candidate.path).catch(() => null)),
   )
-  return workspaces.filter(
-    (candidate, index) =>
-      candidate.kind === 'main' || present.has(resolved[index] ?? candidate.path),
-  )
+  return workspaces.filter((candidate, index) => {
+    const found = resolved[index]
+    return candidate.kind === 'main' || (found != null && present.has(found))
+  })
 }
