@@ -48,8 +48,27 @@ describe('the tree Forge is given', () => {
     expect(manifest.devDependencies?.['node-pty']).toBeUndefined()
   })
 
-  // The second lockfile is the cost #1791 accepted. Its whole value is being the same answer as
-  // package.json, so a bump in one and not the other is the failure to catch.
+  // The second lockfile is the cost #1791 accepted. Dependabot updates only bun.lock (#3075), so a
+  // bump reaches the package step's `npm ci` with this lock stale; this fails it in seconds instead.
+  test('the second lockfile records the dependencies package.json names', () => {
+    const manifest = json(path.join(desktopRoot, 'package.json'))
+    const lockRoot = json(path.join(desktopRoot, 'package-lock.json')).packages['']
+    const stale = ['dependencies', 'devDependencies'].flatMap((field) =>
+      [...new Set([...Object.keys(manifest[field]), ...Object.keys(lockRoot[field])])]
+        .filter((name) => manifest[field][name] !== lockRoot[field][name])
+        .map(
+          (name) =>
+            `${field}.${name}: package.json ${manifest[field][name]}, lock ${lockRoot[field][name]}`,
+        ),
+    )
+    if (stale.length > 0)
+      throw new Error(
+        `apps/desktop/package-lock.json is stale:\n  ${stale.join('\n  ')}\n` +
+          'Run `npm install --package-lock-only --workspaces=false` in apps/desktop. For a vendor ' +
+          'bump, follow "Vendor updates" in docs/agents/testing.md.',
+      )
+  })
+
   test('the second lockfile pins the same node-pty as the manifest', () => {
     const manifest = json(path.join(desktopRoot, 'package.json'))
     const lock = json(path.join(desktopRoot, 'package-lock.json'))
