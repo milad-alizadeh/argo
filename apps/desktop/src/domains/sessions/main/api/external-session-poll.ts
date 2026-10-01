@@ -239,7 +239,7 @@ export class ExternalSessionPoll {
       const sessionId = harnessSessionId(this.#context.database, session)
       if (sessionId !== undefined && this.#context.hasLiveChannel(sessionId)) continue
       this.#leaving.delete(harnessSessionKey(session))
-      const tracked = this.#track(listed, known?.get(listed.nativeId))
+      const tracked = this.#carry(listed, known?.get(listed.nativeId), current.get(listed.nativeId))
       current.set(listed.nativeId, tracked)
       if (sessionId === undefined) this.#discover(session, tracked)
       if (external.readActivity !== undefined) await this.#readChange(session, tracked)
@@ -266,6 +266,20 @@ export class ExternalSessionPoll {
     if (rejected > 0 && rejected !== this.#rejected.get(harness))
       console.warn(`Rejected ${rejected} unrecognised ${harness} live Session record(s).`)
     this.#rejected.set(harness, rejected)
+  }
+
+  // A hook that landed during this tick made its own record, whose newer fields win.
+  #carry(
+    listed: LiveExternalSession,
+    before: TrackedSession | undefined,
+    hooked: TrackedSession | undefined,
+  ): TrackedSession {
+    const tracked = this.#track(listed, before ?? hooked)
+    if (hooked === undefined || hooked === tracked) return tracked
+    tracked.status = hooked.status ?? tracked.status
+    tracked.changedAt = hooked.changedAt
+    tracked.shown = hooked.shown
+    return tracked
   }
 
   // The same object across ticks, so a read that lands mid-tick is kept. A late transcript keeps a
