@@ -1,4 +1,7 @@
 import { expect, test } from 'bun:test'
+import externalThreads from '../../../../mocks/cli/codex/fixtures/external-threads-codex-0.157.0.json' with {
+  type: 'json',
+}
 import recordedResponses from '../../../../mocks/cli/codex/fixtures/session-sync-codex-0.157.0.json' with {
   type: 'json',
 }
@@ -187,4 +190,11 @@ test('counts a thread whose preview or cwd breaks the generated Thread type', as
       nextCursor: null,
     })) as CodexRequest)({ knownNativeIds: [] })
   expect(result).toEqual({ records: [], skipped: 2 })
+})
+
+test('gets null for a locked thread Codex has not stored yet, so discovery asks again', async () => {
+  const getSummary = createCodexSessionSummaryReader((async () => {
+    throw new Error(externalThreads.readNotLoaded.message)
+  }) as CodexRequest)
+  expect(await getSummary('01a0f5af-03d4-7891-87e5-bbbfd9058beb')).toBeNull()
 })
