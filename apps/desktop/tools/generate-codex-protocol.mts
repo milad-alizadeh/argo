@@ -11,6 +11,7 @@ const temporary = mkdtempSync(path.join(tmpdir(), 'argo-codex-protocol-'))
 const roots = [
   'v2/ThreadItem.ts',
   'v2/ThreadReadResponse.ts',
+  'v2/ThreadListResponse.ts',
   'v2/AgentMessageDeltaNotification.ts',
   'v2/ReasoningSummaryTextDeltaNotification.ts',
   'v2/SkillsListParams.ts',
