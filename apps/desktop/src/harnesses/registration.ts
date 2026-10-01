@@ -84,6 +84,8 @@ export type ExternalSessions = {
   // Called every poll tick, one call at a time. Reads only a vendor listing or small records, such
   // as a lock probe. Throws when its source cannot answer; the rows then keep what they show.
   listLive: () => Promise<LiveExternalSessionList>
+  // Child IDs from the vendor's metadata API. The host reads no child transcript for this count.
+  listSubagents?: (nativeId: string) => Promise<string[]>
   // Called after a Session's transcript changed or after it left the list, never at start.
   // Answers from a vendor interface, not the transcript; calls run one at a time across every
   // Harness. `changedAt` is when the host last saw the transcript change. Absent means the

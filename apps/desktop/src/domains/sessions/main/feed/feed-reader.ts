@@ -31,6 +31,7 @@ import {
 import type { Harness } from '@/harnesses/harness'
 import type { SessionListChanges } from '../api'
 import { updateSession } from '../api'
+import { saveSessionSubagentFacts } from '../database'
 import type { SessionEventJournal } from '../live'
 import { sessionHistoryIdentity } from '../session-history-identity'
 import { pendingFeedReading } from './pending-feed-reading'
@@ -58,6 +59,7 @@ const encoder = new TextEncoder()
 
 // Streamed text publishes at most once a window; any other event publishes at once.
 export const FEED_TEXT_COALESCE_MS = 100
+const SUBAGENT_FEED_REFRESH_MS = 2_000
 
 // Assistant text and reasoning arrive as snapshot after snapshot of the same row.
 function isStreamedText(event: SessionLiveEvent): boolean {
@@ -150,7 +152,9 @@ class FeedReader {
   readonly #abort = new AbortController()
   #stopped = false
   #reading: FeedReading | null = null
+  #indexedSubagents: string | null = null
   #textTimer: ReturnType<typeof setTimeout> | null = null
+  #subagentRefresh: ReturnType<typeof setInterval> | null = null
   readonly #projector = new FeedRowProjector()
 
   constructor(context: SessionFeedReaderContext, chain: FeedChain, parent: ParentFeed | null) {
@@ -161,7 +165,10 @@ class FeedReader {
 
   start(): void {
     if (this.#parent === null) this.#attachLive()
-    else this.#stops.push(this.#parent.observe((reading) => this.#receiveParent(reading)))
+    else {
+      this.#subagentRefresh = setInterval(() => this.refresh(), SUBAGENT_FEED_REFRESH_MS)
+      this.#stops.push(this.#parent.observe((reading) => this.#receiveParent(reading)))
+    }
     const { sessionId } = this.#chain
     // This reader's own activity write moves nothing in the key.
     this.#stops.push(
@@ -229,6 +236,7 @@ class FeedReader {
   stop(): void {
     this.#stopped = true
     this.#abort.abort()
+    if (this.#subagentRefresh !== null) clearInterval(this.#subagentRefresh)
     for (const stop of this.#stops.splice(0)) stop()
     this.#cancelText()
     this.#observers.clear()
@@ -281,6 +289,15 @@ class FeedReader {
   #receiveParent(reading: FeedReading): void {
     const subagentId = this.#chain.subagentId
     if (subagentId === null) return
+    const subagent = reading.subagents.find(({ id }) => id === subagentId)
+    const finished =
+      subagent?.state === 'completed' ||
+      subagent?.state === 'failed' ||
+      subagent?.state === 'interrupted'
+    if (finished && this.#subagentRefresh !== null) {
+      clearInterval(this.#subagentRefresh)
+      this.#subagentRefresh = null
+    }
     const completion = subagentCompletionRows(feedEntryRows(reading.entries), subagentId)
     if (JSON.stringify(completion) === JSON.stringify(this.#completion)) return
     this.#completion = completion
@@ -309,6 +326,15 @@ class FeedReader {
     const status = events.findLast((event) => event.type === 'status')
     const { sessionId, subagentId } = this.#chain
     const rows = feedEntryRows(entries)
+    const subagents = subagentId === null ? feedSubagents(rows) : []
+    if (subagentId === null) {
+      const indexKey = JSON.stringify(subagents.map(({ id, label, state }) => [id, label, state]))
+      if (indexKey !== this.#indexedSubagents) {
+        if (saveSessionSubagentFacts(this.#context.database, sessionId, subagents) > 0)
+          this.#context.changes.changed([sessionId])
+        this.#indexedSubagents = indexKey
+      }
+    }
     const reading = feedReading({
       sessionId,
       chainId: subagentId ?? sessionId,
@@ -317,7 +343,7 @@ class FeedReader {
       pendingPermissionId: pendingPermission(events),
       liveStatus: status?.type === 'status' ? status.status : null,
       entries,
-      subagents: subagentId === null ? feedSubagents(rows) : [],
+      subagents,
     })
     if (reading.revision === this.#reading?.revision) return
     this.#reading = reading

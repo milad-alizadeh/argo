@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
+import { listSubagents } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
 import type {
   ExternalSessionStatus,
@@ -97,5 +98,9 @@ export function createClaudeExternalSessions(
     }))
     return { sessions, rejected }
   }
-  return { listLive, hooks: createClaudeStatusHooks(settingsFile) }
+  return {
+    listLive,
+    listSubagents: (nativeId) => listSubagents(nativeId),
+    hooks: createClaudeStatusHooks(settingsFile),
+  }
 }

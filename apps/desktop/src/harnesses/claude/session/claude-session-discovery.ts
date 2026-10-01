@@ -1,12 +1,19 @@
 import { existsSync } from 'node:fs'
 import { setTimeout as sleep } from 'node:timers/promises'
-import { getSessionInfo, listSessions, type SDKSessionInfo } from '@anthropic-ai/claude-agent-sdk'
+import {
+  getSessionInfo,
+  listSessions,
+  listSubagents,
+  type SDKSessionInfo,
+} from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
 import type {
+  SessionSubagentLink,
   SessionSummary,
   SessionSummaryListInput,
   SessionSummaryListResult,
 } from '@/domains/sessions/api/session-discovery'
+import { identifierSchema } from '@/shared/validation'
 import { SESSION_CLAUDE_SYNC_FIXTURE_ENV } from '../proof-protocol'
 
 // Only the SDKSessionInfo fields discovery reads; the SDK types own the rest.
@@ -27,6 +34,7 @@ const claudeSessionSchema: z.ZodType<
 export type ClaudeSessionReader = {
   list: typeof listSessions
   get: (nativeId: string) => Promise<SDKSessionInfo | undefined>
+  listSubagents: (nativeId: string, cwd: string | null) => Promise<string[]>
 }
 
 function proofClaudeSessionReader(): ClaudeSessionReader | undefined {
@@ -55,6 +63,7 @@ function proofClaudeSessionReader(): ClaudeSessionReader | undefined {
       await pause()
       return parsed.records.find((record) => record.sessionId === nativeId)
     },
+    listSubagents: async () => [],
   }
 }
 
@@ -62,6 +71,7 @@ function systemClaudeSessionReader(): ClaudeSessionReader {
   return {
     list: () => listSessions({ includeProgrammatic: false }),
     get: (nativeId) => getSessionInfo(nativeId),
+    listSubagents: (nativeId, cwd) => listSubagents(nativeId, cwd === null ? {} : { dir: cwd }),
   }
 }
 
@@ -78,6 +88,27 @@ function parseClaudeSession(raw: SDKSessionInfo): SessionSummary | null {
       : { preview: summary }),
     ...(firstPrompt === undefined ? {} : { firstPrompt }),
     ...(cwd === undefined ? {} : { cwd }),
+  }
+}
+
+async function childLinks(
+  reader: ClaudeSessionReader,
+  session: SessionSummary,
+): Promise<{ links: SessionSubagentLink[]; skipped: number }> {
+  try {
+    const childIds: unknown = await reader.listSubagents(session.nativeId, session.cwd ?? null)
+    if (!Array.isArray(childIds)) throw new Error('The SDK returned no Subagent ID list.')
+    const links: SessionSubagentLink[] = []
+    let skipped = 0
+    for (const nativeId of new Set(childIds)) {
+      if (identifierSchema.safeParse(nativeId).success)
+        links.push({ nativeId, parentNativeId: session.nativeId })
+      else skipped += 1
+    }
+    return { links, skipped }
+  } catch (error) {
+    console.warn(`Could not list Claude Subagents for ${session.nativeId}:`, error)
+    return { links: [], skipped: 1 }
   }
 }
 
@@ -98,12 +129,28 @@ export async function listClaudeSessionSummaries(
     const session = await reader.get(nativeId)
     if (session !== undefined) remember(session)
   }
-  return { records: [...records.values()], skipped }
+  const sessions = [...records.values()]
+  const subagents: SessionSubagentLink[] = []
+  for (let offset = 0; offset < sessions.length; offset += 4) {
+    const batch = await Promise.all(
+      sessions.slice(offset, offset + 4).map((session) => childLinks(reader, session)),
+    )
+    for (const result of batch) {
+      subagents.push(...result.links)
+      skipped += result.skipped
+    }
+  }
+  return {
+    records: [...records.values()],
+    skipped,
+    ...(subagents.length === 0 ? {} : { subagents }),
+  }
 }
 
 export async function getClaudeSessionSummary(
   nativeId: string,
-  reader: ClaudeSessionReader = proofClaudeSessionReader() ?? systemClaudeSessionReader(),
+  reader: Pick<ClaudeSessionReader, 'get'> = proofClaudeSessionReader() ??
+    systemClaudeSessionReader(),
 ): Promise<SessionSummary | null> {
   const raw = await reader.get(nativeId)
   if (raw === undefined) return null

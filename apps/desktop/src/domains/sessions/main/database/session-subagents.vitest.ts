@@ -3,7 +3,11 @@ import type { Database } from '@/database/database'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { insertProject, migratedDatabase } from '@/mocks/database/migrated-database'
 import { saveSessionBatch } from '../sync'
-import { saveSessionSubagents, storedSessionSubagents } from './session-subagents'
+import {
+  saveDiscoveredSessionSubagents,
+  saveSessionSubagents,
+  storedSessionSubagents,
+} from './session-subagents'
 
 let database: Database
 
@@ -57,5 +61,19 @@ test('records a running Session’s Subagents', () => {
 
   expect(storedSessionSubagents(database, [parent]).get(parent)).toEqual([
     { id: 'agent-a', label: 'Survey', state: 'completed' },
+  ])
+})
+
+test('a later ID scan adds children without downgrading known states', () => {
+  saveSessionBatch(database, {
+    harness: 'claude',
+    records: [{ nativeId: 'parent', projectId: 'project-1', cwd: '/repo', activityAt: 10 }],
+  })
+  const parent = argoId('parent')
+  saveSessionSubagents(database, parent, [delegation('agent-a', 'completed', 'Review')])
+  expect(saveDiscoveredSessionSubagents(database, parent, ['agent-a', 'agent-b'])).toBe(1)
+  expect(storedSessionSubagents(database, [parent]).get(parent)).toEqual([
+    { id: 'agent-a', label: 'Review', state: 'completed' },
+    { id: 'agent-b', label: null, state: 'unknown' },
   ])
 })

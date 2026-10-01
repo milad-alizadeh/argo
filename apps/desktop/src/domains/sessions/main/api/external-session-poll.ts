@@ -2,6 +2,7 @@ import { stat } from 'node:fs/promises'
 import { and, eq, lte, ne, notInArray, type SQL, sql } from 'drizzle-orm'
 import { sessionTable } from '@/database/session/schema'
 import { projectFeedRowEntries } from '@/domains/sessions/api/feed'
+import { saveDiscoveredSessionSubagents } from '@/domains/sessions/main/database'
 import { type Harness, type HarnessSession, harnessSessionKey } from '@/harnesses/harness'
 import type { ExternalHookReading } from '@/harnesses/host/status-hooks'
 import type {
@@ -10,6 +11,7 @@ import type {
   ExternalSessions,
   LiveExternalSession,
 } from '@/harnesses/registration'
+import { isIdentifier } from '@/shared/validation'
 import {
   harnessSessionId,
   type SessionUpdate,
@@ -59,6 +61,8 @@ type TrackedSession = {
   // The last read could not answer yet, so the next tick reads again.
   retry: boolean
   discovered: boolean
+  subagentsFailed: boolean
+  subagentsRejected: number
 }
 
 // A Session waiting its turn, being read, or being read with one more read asked for after it.
@@ -96,6 +100,8 @@ const newTracked = (
   shown: null,
   retry: false,
   discovered: false,
+  subagentsFailed: false,
+  subagentsRejected: 0,
 })
 
 // The stored status and activity of Sessions that run outside Argo, from one poll. Each tick lists
@@ -233,6 +239,7 @@ export class ExternalSessionPoll {
       current.set(listed.nativeId, tracked)
       if (sessionId === undefined) this.#discover(session, tracked)
       if (external.readActivity !== undefined) await this.#readChange(session, tracked)
+      await this.#indexSubagents(session, sessionId, tracked)
       this.#show(session, tracked, Date.now())
       this.#refreshUnstamped(session, sessionId, tracked)
     }
@@ -240,6 +247,33 @@ export class ExternalSessionPoll {
       if (!current.has(nativeId))
         this.#leave({ harness, nativeId }, tracked, external.readActivity !== undefined)
     if (previous === undefined) this.#closeAll(harness, current)
+  }
+
+  async #indexSubagents(
+    session: HarnessSession,
+    sessionId: string | undefined,
+    tracked: TrackedSession,
+  ): Promise<void> {
+    const listSubagents = this.#external.get(session.harness)?.listSubagents
+    if (sessionId === undefined || listSubagents === undefined) return
+    try {
+      const ids: unknown = await listSubagents(session.nativeId)
+      if (!Array.isArray(ids)) throw new Error('The vendor returned no Subagent ID list.')
+      const valid = ids.filter(isIdentifier)
+      const rejected = ids.length - valid.length
+      if (rejected > 0 && rejected !== tracked.subagentsRejected)
+        console.warn(`Rejected ${rejected} unrecognised ${session.harness} Subagent ID(s).`)
+      tracked.subagentsRejected = rejected
+      tracked.subagentsFailed = false
+      if (
+        saveDiscoveredSessionSubagents(this.#context.database, sessionId, [...new Set(valid)]) > 0
+      )
+        this.#context.changes.changed([sessionId])
+    } catch (error) {
+      if (!tracked.subagentsFailed)
+        console.warn(`Could not list ${session.harness} Subagents for ${session.nativeId}:`, error)
+      tracked.subagentsFailed = true
+    }
   }
 
   // No transcript means no activity write, so an open Feed with no hook yet reads each tick.

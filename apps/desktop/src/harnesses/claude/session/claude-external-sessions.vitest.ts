@@ -28,7 +28,10 @@ beforeEach(() => {
     harnesses: [
       {
         harness: 'claude',
-        external: createClaudeExternalSessions(agents.executable, '/dev/null/settings.json'),
+        external: {
+          ...createClaudeExternalSessions(agents.executable, '/dev/null/settings.json'),
+          listSubagents: async () => [],
+        },
       },
     ],
     hasLiveChannel: (sessionId) => Object.hasOwn(liveActors, sessionId),
@@ -61,6 +64,38 @@ async function rowOf(id: string) {
 }
 
 const quietWarnings = () => vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+test('a live external Claude Session adds child IDs to its closed roster count', async () => {
+  saved(BUSY)
+  poll.stop()
+  let childIds = ['agent-one']
+  poll = new ExternalSessionPoll({
+    database: caller.database,
+    changes: caller.sessionListChanges,
+    harnesses: [
+      {
+        harness: 'claude',
+        external: {
+          listLive: async () => ({
+            sessions: [{ nativeId: BUSY, status: 'running', transcript: null }],
+            rejected: 0,
+          }),
+          listSubagents: async () => childIds,
+        },
+      },
+    ],
+    hasLiveChannel: () => false,
+    discover: () => {},
+    refreshFeed: () => {},
+  })
+  await tickAndWrite()
+  expect((await caller.list({ projectId: 'project-1' })).rows[0]?.subagents).toEqual([
+    { id: 'agent-one', label: null, state: 'unknown' },
+  ])
+  childIds = ['agent-one', 'agent-two']
+  await tickAndWrite()
+  expect((await caller.list({ projectId: 'project-1' })).rows[0]?.subagents).toHaveLength(2)
+})
 
 test('the recorded idle, busy and waiting Sessions show idle, running and asking', async () => {
   for (const id of [IDLE, BUSY, WAITING]) saved(id, { status: 'running' })

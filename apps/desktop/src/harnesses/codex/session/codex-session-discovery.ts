@@ -5,6 +5,7 @@ import type {
   SessionSummaryList,
   SessionSummaryReader,
 } from '@/domains/sessions/api/session-discovery'
+import { identifierSchema } from '@/shared/validation'
 import {
   CODEX_SESSION_SOURCE_KINDS,
   type CodexRequest,
@@ -19,9 +20,9 @@ const threadSchema: z.ZodType<
   Pick<Thread, 'id' | 'updatedAt' | 'parentThreadId'> &
     Partial<Pick<Thread, 'name' | 'preview' | 'cwd' | 'model' | 'reasoningEffort'>>
 > = z.object({
-  id: z.string().min(1),
+  id: identifierSchema,
   updatedAt: z.number().int().nonnegative(),
-  parentThreadId: z.string().nullable(),
+  parentThreadId: identifierSchema.nullable(),
   name: z.string().nullable().optional(),
   preview: z.string().optional(),
   cwd: z.string().optional(),

@@ -152,7 +152,9 @@ export const UnknownSubagent: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Subagents · 1' }))
     const unknown = await screen.findByRole('group', { name: 'Unknown' })
-    await expect(within(unknown).getByRole('menuitem', { name: /Codex child/ })).toBeVisible()
+    await waitFor(() =>
+      expect(within(unknown).getByRole('menuitem', { name: /Codex child/ })).toBeVisible(),
+    )
     await expect(screen.queryByRole('group', { name: 'Finished' })).toBeNull()
   },
 }

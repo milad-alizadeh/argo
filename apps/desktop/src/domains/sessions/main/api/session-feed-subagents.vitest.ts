@@ -1,5 +1,6 @@
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { sessionTable } from '@/database/session/schema'
+import { sessionSubagent } from '@/database/session-subagent/schema'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import {
   chainReads,
@@ -13,6 +14,7 @@ import {
   rowIds,
   sessionId,
 } from '@/mocks/sessions/session-feed-harness'
+import { SessionListChanges } from './session-list-changes'
 
 registerFeedDatabase()
 
@@ -86,6 +88,52 @@ test('a Subagent chain reads its own history through the same Observe and Refres
   await reads.chain('agent-1').answer([message('c1', 'assistant', 'Done reading')])
   expect(child.latest()?.entries[0]?.row).toMatchObject({ text: 'Done reading' })
   child.subscription.unsubscribe()
+})
+
+test('a parent history read indexes its child for the closed roster', async () => {
+  const reads = chainReads()
+  const changes = new SessionListChanges()
+  const announced: string[][] = []
+  const stop = changes.subscribe((ids) => announced.push([...ids]))
+  const parent = await observe({ readHistory: reads.readHistory, changes })
+  const started = delegation('call-1', 'started')
+  await reads.chain(null).answer([started])
+  expect(database.select().from(sessionSubagent).all()).toMatchObject([
+    { sessionId, subagentId: 'agent-1', label: 'Survey adapters', state: 'running' },
+  ])
+  expect(announced).toEqual([[sessionId]])
+  await parent.caller.sessionFeedRefresh({ sessionId })
+  await reads.chain(null).answer([started])
+  expect(announced).toEqual([[sessionId]])
+  parent.subscription.unsubscribe()
+  stop()
+})
+
+test('an open child feed reads new messages while its parent is still running', async () => {
+  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+  const reads = chainReads()
+  const child = await observe({ readHistory: reads.readHistory }, sessionId, 'agent-1')
+  try {
+    await reads.chain(null).answer([delegation('call-1', 'started')])
+    await reads.chain('agent-1').answer([message('c1', 'assistant', 'First')])
+    vi.advanceTimersByTime(2_000)
+    expect(reads.chain('agent-1').pending).toHaveLength(1)
+    await reads.chain('agent-1').answer([message('c1', 'assistant', 'Updated')])
+    expect(child.latest()?.entries[0]?.row).toMatchObject({ text: 'Updated' })
+    await child.caller.sessionFeedRefresh({ sessionId })
+    await reads
+      .chain(null)
+      .answer([
+        delegation('call-1', 'started'),
+        delegation('call-1:response', 'responded', { status: 'completed' }),
+      ])
+    await reads.chain('agent-1').answer([message('c1', 'assistant', 'Updated')])
+    vi.advanceTimersByTime(2_000)
+    expect(reads.chain('agent-1').pending).toHaveLength(0)
+  } finally {
+    child.subscription.unsubscribe()
+    vi.useRealTimers()
+  }
 })
 
 test('the parent lists its Subagents, and a response ends the Subagent Feed once', async () => {
