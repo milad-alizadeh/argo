@@ -30,10 +30,13 @@ export type ClaudeSessionReader = {
 function proofClaudeSessionReader(): ClaudeSessionReader | undefined {
   const fixture = process.env[SESSION_CLAUDE_SYNC_FIXTURE_ENV]
   if (fixture === undefined) return undefined
-  // Each record is checked by claudeSessionSchema, as a listed one is.
+  // An object here; claudeSessionSchema checks its fields, as it does a listed one.
+  const sessionObject = z.custom<SDKSessionInfo>(
+    (value) => typeof value === 'object' && value !== null,
+  )
   const parsed = z
     .strictObject({
-      records: z.array(z.custom<SDKSessionInfo>()),
+      records: z.array(sessionObject),
       delayMs: z.number().int().nonnegative(),
     })
     .parse(JSON.parse(fixture))
@@ -47,7 +50,7 @@ function proofClaudeSessionReader(): ClaudeSessionReader | undefined {
     },
     get: async (nativeId) => {
       await pause()
-      return parsed.records.find((record) => record?.sessionId === nativeId)
+      return parsed.records.find((record) => record.sessionId === nativeId)
     },
   }
 }
@@ -79,19 +82,18 @@ export async function listClaudeSessionSummaries(
   input: SessionSummaryListInput & { reader?: ClaudeSessionReader },
 ): Promise<SessionSummaryListResult> {
   const reader = input.reader ?? proofClaudeSessionReader() ?? systemClaudeSessionReader()
-  const sessions = [...(await reader.list())]
-  const listedIds = new Set(sessions.map((session) => session.sessionId))
-  for (const nativeId of input.knownNativeIds) {
-    if (listedIds.has(nativeId)) continue
-    const session = await reader.get(nativeId)
-    if (session !== undefined) sessions.push(session)
-  }
   const records = new Map<string, SessionSummary>()
   let skipped = 0
-  for (const session of sessions) {
+  const remember = (session: SDKSessionInfo) => {
     const record = parseClaudeSession(session)
     if (record === null) skipped += 1
     else records.set(record.nativeId, record)
+  }
+  for (const session of await reader.list()) remember(session)
+  for (const nativeId of input.knownNativeIds) {
+    if (records.has(nativeId)) continue
+    const session = await reader.get(nativeId)
+    if (session !== undefined) remember(session)
   }
   return { records: [...records.values()], skipped }
 }

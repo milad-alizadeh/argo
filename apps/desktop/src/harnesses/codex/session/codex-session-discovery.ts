@@ -32,21 +32,21 @@ function parseThread(raw: unknown): SessionSummary | null {
   }
 }
 
-// Undefined when Codex no longer stores the thread, null when its shape is unrecognised.
+// A found thread carries a null record when its shape is unrecognised.
 async function readCodexThread(
   request: CodexRequest,
   nativeId: string,
-): Promise<SessionSummary | null | undefined> {
+): Promise<{ found: false } | { found: true; record: SessionSummary | null }> {
   try {
     const thread = await request(
       'thread/read',
       { threadId: nativeId, includeTurns: false },
       (value) => z.object({ thread: z.unknown() }).parse(value).thread,
     )
-    return parseThread(thread)
+    return { found: true, record: parseThread(thread) }
   } catch (error) {
     if (error instanceof Error && /thread.*(?:not found|does not exist)/i.test(error.message))
-      return undefined
+      return { found: false }
     throw error
   }
 }
@@ -84,8 +84,8 @@ export function createCodexSessionSummaryList(request: CodexRequest): SessionSum
     for (const raw of await listCodexThreads(request)) remember(parseThread(raw))
     for (const nativeId of knownNativeIds) {
       if (records.has(nativeId)) continue
-      const record = await readCodexThread(request, nativeId)
-      if (record !== undefined) remember(record)
+      const thread = await readCodexThread(request, nativeId)
+      if (thread.found) remember(thread.record)
     }
     return { records: [...records.values()], skipped }
   }
@@ -93,9 +93,10 @@ export function createCodexSessionSummaryList(request: CodexRequest): SessionSum
 
 export function createCodexSessionSummaryReader(request: CodexRequest): SessionSummaryReader {
   return async (nativeId) => {
-    const record = await readCodexThread(request, nativeId)
-    if (record === null)
+    const thread = await readCodexThread(request, nativeId)
+    if (!thread.found) return null
+    if (thread.record === null)
       console.warn(`Rejected an unrecognised Codex Session summary for ${nativeId}.`)
-    return record ?? null
+    return thread.record
   }
 }

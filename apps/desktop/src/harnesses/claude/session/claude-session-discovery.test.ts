@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import type { SDKSessionInfo } from '@anthropic-ai/claude-agent-sdk'
 import { getClaudeSessionSummary, listClaudeSessionSummaries } from './claude-session-discovery'
 
 const ID_ONE = '00000000-0000-4000-8000-000000000001'
@@ -61,6 +62,18 @@ test('leaves out a custom title Claude does not report', async () => {
     },
   })
   expect(result.records[0]).not.toHaveProperty('customTitle')
+})
+
+test('counts a Session whose custom title breaks the SDKSessionInfo type', async () => {
+  const outsideType = { sessionId: ID_ONE, summary: 'Cleared', lastModified: 1, customTitle: null }
+  const result = await listClaudeSessionSummaries({
+    knownNativeIds: [],
+    reader: {
+      list: async () => [outsideType as unknown as SDKSessionInfo],
+      get: async () => undefined,
+    },
+  })
+  expect(result).toEqual({ records: [], skipped: 1 })
 })
 
 test('gets one Session summary without listing, and null for one Claude does not know', async () => {
