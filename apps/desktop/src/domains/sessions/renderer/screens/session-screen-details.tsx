@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer'
 import type { WorkspaceActions, WorkspaceCockpit } from '@/domains/workspaces/renderer'
+import type { Harness } from '@/harnesses/harness'
 import type { CatalogReadResult } from '@/harnesses/harness-catalog'
 import { harnessLabel } from '@/harnesses/presentation-registry'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
@@ -21,7 +22,7 @@ import {
   useDurableComposerDraft,
 } from '../composer'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
-import type { HarnessControl } from '../harness'
+import { type HarnessControl, useAvailableHarnesses } from '../harness'
 import type { ComposerPlan, Session, SessionExtras } from '../types'
 import { draftTarget } from './session-draft-target'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
@@ -106,6 +107,18 @@ function workspaceControl(
   }
 }
 
+// The saved Harness to switch to, or null to keep the current one. One that cannot start a Session
+// stays unpicked (#3005); 'unknown' means availability is still being read.
+function rememberedHarness(
+  current: Harness,
+  saved: Harness,
+  available: readonly Harness[] | null,
+): Harness | 'unknown' | null {
+  if (current === saved) return null
+  if (available === null) return 'unknown'
+  return available.includes(saved) ? saved : null
+}
+
 function useSessionComposerDraft(input: {
   identity: ComposerIdentity
   harness: HarnessControl
@@ -123,6 +136,7 @@ function useSessionComposerDraft(input: {
     workspace: workspaceCockpit,
   })
   const [restoredProjectId, setRestoredProjectId] = useState<string | null>(null)
+  const availableHarnesses = useAvailableHarnesses()
   const projectId = identity.kind === 'draft' ? identity.projectId : null
   // Opening a Session forgets the restore, so the next new-Session composer restores its target.
   if (projectId === null && restoredProjectId !== null) setRestoredProjectId(null)
@@ -136,14 +150,17 @@ function useSessionComposerDraft(input: {
       return
     }
     if (loadedTarget.type !== 'project' || loadedTarget.projectId !== projectId) return
-    if (harness.harness !== loadedTarget.harness) {
-      harness.onChange?.(loadedTarget.harness)
+    const remembered = rememberedHarness(harness.harness, loadedTarget.harness, availableHarnesses)
+    if (remembered === 'unknown') return
+    if (remembered !== null) {
+      harness.onChange?.(remembered)
       return
     }
     const savedChoice = loadedTarget.workspaceId ?? 'new'
     if (workspaceCockpit.choice !== savedChoice) workspaceActions.selectWorkspace(savedChoice)
     setRestoredProjectId(projectId)
   }, [
+    availableHarnesses,
     harness.harness,
     harness.onChange,
     loadedTarget,
@@ -361,6 +378,7 @@ function SessionComposer({
     catalogFailure,
     refreshCatalog: draft === null ? onRetryCatalog : onRefreshCatalog,
     workspace: workspaceControl(identity, workspaceCockpit, workspaceActions),
+    // #2968 fills context usage.
     contextTokens: session?.contextTokens,
     contextWindowTokens: session?.contextWindowTokens,
     disabled: questionPending || catalogBlocked || (draft?.loadFailed === true && !draft.hasDraft),
@@ -452,6 +470,7 @@ export function SessionHandoffFacts({
   onNavigate?: (path: string) => void
 }) {
   const { t } = useTranslation('sessions')
+  // #2969 fills the handoff links.
   if (session === null || (!session.handoffTo && !session.handoffFrom) || !onNavigate) return null
   return (
     <section aria-label={t('handoff.label')} className="p-4 type-meta text-muted-foreground">

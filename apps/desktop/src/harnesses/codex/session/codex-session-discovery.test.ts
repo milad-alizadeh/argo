@@ -1,4 +1,7 @@
 import { expect, test } from 'bun:test'
+import externalThreads from '../../../../mocks/cli/codex/fixtures/external-threads-codex-0.157.0.json' with {
+  type: 'json',
+}
 import recordedResponses from '../../../../mocks/cli/codex/fixtures/session-sync-codex-0.157.0.json' with {
   type: 'json',
 }
@@ -202,4 +205,25 @@ test('reads the Model and Effort a thread records, and leaves out what it record
     { nativeId: 'configured', activityAt: 1000, model: 'gpt-5.5', effort: 'high' },
     { nativeId: 'unconfigured', activityAt: 1000 },
   ])
+})
+
+// The error Codex 0.157.0 answers thread/read with for an id that is not a UUID.
+const INVALID_THREAD_ID_MESSAGE =
+  'invalid thread id: invalid character: expected an optional prefix of `urn:uuid:` followed by [0-9a-fA-F-], found `p` at 1'
+
+test('skips a previously saved Session whose id Codex cannot parse, and syncs the rest', async () => {
+  const result = await createCodexSessionSummaryList((async (method: string, params, parse) => {
+    if (method === 'thread/list') return parse({ data: [], nextCursor: null })
+    if ((params as { threadId: string }).threadId === 'proof-codex')
+      throw new Error(INVALID_THREAD_ID_MESSAGE)
+    return parse({ thread: { id: SAVED_ID, updatedAt: 2 } })
+  }) as CodexRequest)({ knownNativeIds: ['proof-codex', SAVED_ID] })
+  expect(result).toEqual({ records: [{ nativeId: SAVED_ID, activityAt: 2000 }], skipped: 0 })
+})
+
+test('gets null for a locked thread Codex has not stored yet, so discovery asks again', async () => {
+  const getSummary = createCodexSessionSummaryReader((async () => {
+    throw new Error(externalThreads.readNotLoaded.message)
+  }) as CodexRequest)
+  expect(await getSummary('01a0f5af-03d4-7891-87e5-bbbfd9058beb')).toBeNull()
 })

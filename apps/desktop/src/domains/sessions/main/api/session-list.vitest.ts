@@ -436,3 +436,29 @@ test('reads an archived Session by ID and says it is archived, and nothing for a
     database.$client.close()
   }
 })
+
+for (const harness of ['claude', 'codex'] as const)
+  test(`the list and the detail read return a linked ${harness} Session's Ticket, and none unlinked`, async () => {
+    const { database, list, details } = sessionListCaller()
+    try {
+      insertSession(database, { id: IDS[0], harness, nativeId: 'linked', createdAt: 20 })
+      insertSession(database, { id: IDS[1], harness, nativeId: 'unlinked', createdAt: 10 })
+      insertTicketLink(database, { sessionId: IDS[0], key: '#2973', title: 'Join the Ticket' })
+
+      const { rows } = await list({ projectId: 'project-1' })
+      const linked = await details({ sessionId: IDS[0] })
+      const unlinked = await details({ sessionId: IDS[1] })
+
+      assert.deepEqual(
+        rows.map(({ id, ticket }) => [id, ticket?.key ?? null, ticket?.title ?? null]),
+        [
+          [IDS[0], '#2973', 'Join the Ticket'],
+          [IDS[1], null, null],
+        ],
+      )
+      assert.deepEqual([linked?.ticket?.key, linked?.ticket?.title], ['#2973', 'Join the Ticket'])
+      assert.equal(unlinked?.ticket, null)
+    } finally {
+      database.$client.close()
+    }
+  })
