@@ -14,13 +14,16 @@ import {
 
 // Only the Thread fields discovery reads; the generated types own the rest.
 const threadSchema: z.ZodType<
-  Pick<Thread, 'id' | 'updatedAt'> & Partial<Pick<Thread, 'name' | 'preview' | 'cwd'>>
+  Pick<Thread, 'id' | 'updatedAt'> &
+    Partial<Pick<Thread, 'name' | 'preview' | 'cwd' | 'model' | 'reasoningEffort'>>
 > = z.object({
   id: z.string().min(1),
   updatedAt: z.number().int().nonnegative(),
   name: z.string().nullable().optional(),
   preview: z.string().optional(),
   cwd: z.string().optional(),
+  model: z.string().nullable().optional(),
+  reasoningEffort: z.string().nullable().optional(),
 })
 const pageSchema: z.ZodType<Pick<ThreadListResponse, 'nextCursor'> & { data: unknown[] }> =
   z.object({ data: z.array(z.unknown()), nextCursor: z.string().nullable() })
@@ -35,6 +38,16 @@ function parseThread(raw: unknown): SessionSummary | null {
     ...(thread.name === undefined ? {} : { customTitle: thread.name }),
     ...(thread.preview === undefined ? {} : { preview: thread.preview }),
     ...(thread.cwd === undefined ? {} : { cwd: thread.cwd }),
+    // A thread records no Mode; a live channel saves the one it ran with.
+    ...(thread.model == null && thread.reasoningEffort == null
+      ? {}
+      : {
+          turnConfiguration: {
+            model: thread.model ?? null,
+            effort: thread.reasoningEffort ?? null,
+            mode: null,
+          },
+        }),
   }
 }
 

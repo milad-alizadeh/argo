@@ -27,21 +27,14 @@ export function seedSingleProject(userData: string, project: { id: string; path:
   database.$client.close()
 }
 
-export async function repository(folder) {
+export async function repository(folder: string) {
   await mkdir(folder, { recursive: true })
   await run('git', ['-C', folder, 'init', '--quiet'])
   return folder
 }
 
-// A folder with no git root in it. The chooser can be answered with one, so the app has to turn it
-// away by name rather than by failing to read it.
-async function folder(at) {
-  await mkdir(at, { recursive: true })
-  return at
-}
-
 // A caller that already holds the app under test passes it; a standalone tool gets its own.
-export async function prepare(root, application?) {
+export async function prepare(root: string, application?: string) {
   application ??= await applicationUnderTest(root)
   const userData = path.join(root, 'userData')
   const projectPath = path.join(root, 'example')
@@ -56,15 +49,15 @@ export async function prepare(root, application?) {
     projectPath,
     databasePath: applicationDatabasePath,
     beta: await repository(path.join(root, 'beta')),
-    moved: path.join(root, 'beta-moved'),
-    relocated: path.join(root, 'beta-relocated'),
-    plain: await folder(path.join(root, 'plain')),
   }
 }
 
 // One launch of the app against the fixture's own application data. A restart is another
 // call to this, which is the only honest way to prove what survives one.
-export async function launch(fixture, environment: Record<string, string> = {}) {
+export async function launch(
+  fixture: { application: string; userData: string },
+  environment: Record<string, string> = {},
+) {
   return electron.launch({
     ...launchCommand(fixture.application),
     env: {

@@ -31,15 +31,6 @@ const TURN = new RegExp(`${ESCAPE}\\[200~([\\s\\S]*?)${ESCAPE}\\[201~[\\r\\n]`)
 // Turn, and Argo's `driver.rename` reads that record back with source `custom` (issue #2134).
 const RENAME = /^\/rename (.+)$/
 const REPLY_DELAY_MS = readMockReplyDelayMs()
-// A fresh SDK session has to push its opening prompt before the SDK will even identify it
-// (mock-claude-sdk-stream.ts's own comment on that constraint), so this process can otherwise
-// record that prompt's reply before the app's own identify → authorize → paint round trip
-// finishes and the Session List shows the row (`session-created-by-click`, #e2e-real-cheap-models). A
-// resumed session's row already exists, so only a session this process is creating fresh needs
-// the floor. 50ms cleared 0/50 on a local machine but still lost the race twice in one CI run
-// (once on the initial attempt, once on its retry), so a loaded CI runner's own round trip is
-// routinely slower than that; 300ms is still negligible next to a real CLI's reply time.
-const SDK_FRESH_SESSION_REPLY_FLOOR_MS = 300
 const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
 let turnIndex = 0
 
@@ -140,10 +131,6 @@ let pending = ''
 if (process.stdin.isTTY) process.stdin.setRawMode(true)
 process.stdin.setEncoding('utf8')
 if (agentSdk) {
-  const isFreshSession = flagValue('--resume') === null
-  const sdkReplyDelayMs = isFreshSession
-    ? Math.max(REPLY_DELAY_MS, SDK_FRESH_SESSION_REPLY_FLOOR_MS)
-    : REPLY_DELAY_MS
   startMockClaudeSdkStream(sessionId, (prompt, sdkWaitForPermission, ids) =>
     replyToSdkPrompt({
       ids,
@@ -155,7 +142,7 @@ if (agentSdk) {
       recordUser: (text, uuid) => write('user', { role: 'user', content: text }, uuid),
       nextPlan: () =>
         adversarialSeed === undefined ? null : adversarialTurn(adversarialSeed, turnIndex++),
-      replyDelayMs: sdkReplyDelayMs,
+      replyDelayMs: REPLY_DELAY_MS,
       writeReply,
     }),
   )

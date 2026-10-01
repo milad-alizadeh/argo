@@ -57,10 +57,10 @@ function codexThread(request: { name: string; cwd: string; updatedAt: string; ti
 }
 
 export const CODEX_PARENT = 'codexParent'
-export const CODEX_FIXTURES = [CODEX_PARENT, 'codexChild']
+export const CODEX_FIXTURES = [CODEX_PARENT, 'codexChild'] as const
 
 // The Codex threads the mock app-server starts with.
-async function writeCodexThreads(root, codexTranscripts) {
+async function writeCodexThreads(root: string, codexTranscripts: string) {
   const cwd = proofCwd(codexTranscripts, 'codex')
   const threads = [
     codexThread({
@@ -81,7 +81,7 @@ async function writeCodexThreads(root, codexTranscripts) {
 
 // One more turn on a Session already measured, written the way the Harness writes one: appended to
 // the file it belongs to.
-const grownTurn = (transcripts) =>
+const grownTurn = (transcripts: string) =>
   `${JSON.stringify({
     type: 'assistant',
     cwd: proofCwd(transcripts, 'stranded'),
@@ -96,7 +96,7 @@ const grownTurn = (transcripts) =>
     },
   })}\n`
 
-export async function growStranded(transcripts) {
+export async function growStranded(transcripts: string) {
   await appendFile(fixturePath(transcripts, 'strandedResume'), grownTurn(transcripts))
 }
 
@@ -110,7 +110,7 @@ async function newestRecord(transcripts: string, name: string) {
   return messages.at(-1)?.uuid ?? null
 }
 
-export async function appendProse(transcripts, uuid, text) {
+export async function appendProse(transcripts: string, uuid: string, text: string) {
   const transcript = fixturePath(transcripts, 'prose')
   await appendFile(
     transcript,
@@ -131,8 +131,8 @@ export async function appendProse(transcripts, uuid, text) {
 
 // The Session List shows only for a selected Project (#2307), so only the empty-window case leaves it unset.
 export async function prepare(
-  root,
-  application,
+  root: string,
+  application: string,
   { projectSelected }: { projectSelected: boolean },
 ) {
   // The Harnesses record a working directory with its links resolved, so every path here is too.
@@ -159,6 +159,6 @@ export async function prepare(
 
 const PROOF_PROJECT_ID = 'session-proof-project'
 
-function seedProject(userData, project) {
+function seedProject(userData: string, project: string) {
   seedSingleProject(userData, { id: PROOF_PROJECT_ID, path: project })
 }

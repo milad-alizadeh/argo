@@ -79,6 +79,60 @@ test('a write that changes nothing announces nothing', async () => {
   }
 })
 
+test('stores Model, Effort, Mode and Plan progress, reads them back, and announces only a change', async () => {
+  const { database, details, sessionListChanges, stopWatching } = sessionListCaller()
+  insertSession(database, { id: IDS[0], nativeId: 'native-0' })
+  const announced: (readonly string[])[] = []
+  sessionListChanges.subscribe((sessionIds) => announced.push(sessionIds))
+  const context = { database, changes: sessionListChanges }
+  const written = { model: 'opus', effort: 'high', mode: 'plan' }
+  try {
+    assert.equal(
+      updateSession(context, IDS[0], {
+        turnConfiguration: written,
+        planProgress: { completed: 1, total: 3 },
+      }),
+      true,
+    )
+    await settled()
+    assert.deepEqual(announced, [[IDS[0]]])
+    const row = await details({ sessionId: IDS[0] })
+    assert.deepEqual(row?.turnConfiguration, written)
+    assert.deepEqual(row?.planProgress, { completed: 1, total: 3 })
+
+    updateSession(context, IDS[0], {
+      turnConfiguration: written,
+      planProgress: { completed: 1, total: 3 },
+    })
+    await settled()
+    assert.deepEqual(announced, [[IDS[0]]])
+
+    updateSession(context, IDS[0], { planProgress: { completed: 2, total: 3 } })
+    await settled()
+    assert.deepEqual(announced, [[IDS[0]], [IDS[0]]])
+    assert.deepEqual((await details({ sessionId: IDS[0] }))?.planProgress, {
+      completed: 2,
+      total: 3,
+    })
+  } finally {
+    stopWatching()
+    database.$client.close()
+  }
+})
+
+test('a Session never written has no Model, Effort, Mode or Plan progress', async () => {
+  const { database, details, stopWatching } = sessionListCaller()
+  insertSession(database, { id: IDS[0], nativeId: 'native-0' })
+  try {
+    const row = await details({ sessionId: IDS[0] })
+    assert.deepEqual(row?.turnConfiguration, { model: null, effort: null, mode: null })
+    assert.equal(row?.planProgress, null)
+  } finally {
+    stopWatching()
+    database.$client.close()
+  }
+})
+
 test('a restart clears working statuses and keeps settled ones', () => {
   const { client, context, statusesNow } = sessionsWithStatuses(['permission', 'idle', 'unknown'])
   try {

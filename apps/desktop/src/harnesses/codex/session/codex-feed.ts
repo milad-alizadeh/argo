@@ -1,5 +1,11 @@
-import type { FeedContent, MediaSource, PromptFile } from '@/domains/sessions/api/feed-content'
-import type { JsonValue, ThreadItem, UserInput } from '../app-server'
+import { z } from 'zod'
+import {
+  type FeedContent,
+  type MediaSource,
+  type PromptFile,
+  planContent,
+} from '@/domains/sessions/api/feed-content'
+import type { JsonValue, ThreadItem, TurnPlanUpdatedNotification, UserInput } from '../app-server'
 import { en as copy } from '../locales'
 import { codexTaskNotification } from './codex-task-notification'
 
@@ -222,4 +228,44 @@ export function codexFeedContent(
 export function codexCollabFacts(items: readonly ThreadItem[]): Map<string, CodexCollabFacts> {
   const calls = items.filter((item) => item.type === 'collabAgentToolCall')
   return new Map(calls.map(({ id, prompt, model }) => [id, { prompt, model }]))
+}
+
+// A live Plan update states every step; history keeps none of them.
+const planNotificationSchema: z.ZodType<Omit<TurnPlanUpdatedNotification, 'explanation'>> =
+  z.object({
+    threadId: z.string().min(1),
+    turnId: z.string().min(1),
+    plan: z.array(
+      z.object({ step: z.string(), status: z.enum(['pending', 'inProgress', 'completed']) }),
+    ),
+  })
+
+// Null rejects the shape.
+export function readCodexPlan(
+  params: unknown,
+): { threadId: string; turnId: string; content: Extract<FeedContent, { kind: 'plan' }> } | null {
+  const parsed = planNotificationSchema.safeParse(params)
+  if (!parsed.success) return null
+  const { threadId, turnId, plan } = parsed.data
+  const steps = plan.map(({ step, status }) => ({ text: step, done: status === 'completed' }))
+  return { threadId, turnId, content: planContent(`${turnId}:plan`, steps) }
+}
+
+// A live agent message as its deltas and completion report it.
+export type CodexMessageFacts = {
+  itemId: string
+  turnId: string
+  role: 'user' | 'assistant'
+  text: string
+  phase?: 'commentary' | 'final_answer' | null
+}
+
+export function codexMessageContent(message: CodexMessageFacts): FeedContent {
+  return {
+    kind: 'message',
+    id: message.itemId,
+    role: message.role,
+    text: message.text,
+    ...(message.phase !== undefined ? { phase: message.phase } : {}),
+  }
 }

@@ -19,7 +19,13 @@ import type {
   ThreadReadResponse,
   WireMessage,
 } from '../app-server'
-import { type CodexCollabFacts, codexFeedContent } from './codex-feed'
+import {
+  type CodexCollabFacts,
+  type CodexMessageFacts,
+  codexFeedContent,
+  codexMessageContent,
+  readCodexPlan,
+} from './codex-feed'
 import {
   approvalResponse,
   type CodexApproval,
@@ -162,6 +168,13 @@ class CodexSessionChannel implements LiveSessionChannel {
       this.lastStatus = body.status
     }
     this.emit({ type: 'feed', body })
+  }
+
+  private planUpdated(params: Record<string, unknown>) {
+    const plan = readCodexPlan(params)
+    if (plan === null) return this.reject('turn/plan/updated')
+    if (plan.threadId === this.nativeId && this.active?.turnId === plan.turnId)
+      this.emitItemContent(plan.content, plan.content.id, plan.turnId)
   }
 
   private threadStatusChanged(params: Record<string, unknown>) {
@@ -351,6 +364,7 @@ class CodexSessionChannel implements LiveSessionChannel {
       messageDelta: (params) => this.messageDelta(params),
       reasoningSummaryDelta: (params) => this.reasoningSummaryDelta(params),
       commandOutputDelta: (params) => this.commandOutputDelta(params),
+      planUpdated: (params) => this.planUpdated(params),
       itemNotification: (params, phase) => this.itemNotification(params, phase),
       skillsChanged: () => this.skills?.changed(),
     })
@@ -528,24 +542,8 @@ class CodexSessionChannel implements LiveSessionChannel {
     this.emitFeed({ type: 'content', commandId, turnId, vendorEventId: itemId, content })
   }
 
-  private emitMessage(message: {
-    itemId: string
-    turnId: string
-    role: 'user' | 'assistant'
-    text: string
-    phase?: 'commentary' | 'final_answer' | null
-  }) {
-    this.emitItemContent(
-      {
-        kind: 'message',
-        id: message.itemId,
-        role: message.role,
-        text: message.text,
-        ...(message.phase !== undefined ? { phase: message.phase } : {}),
-      },
-      message.itemId,
-      message.turnId,
-    )
+  private emitMessage(message: CodexMessageFacts) {
+    this.emitItemContent(codexMessageContent(message), message.itemId, message.turnId)
   }
 
   private fail(error: unknown) {

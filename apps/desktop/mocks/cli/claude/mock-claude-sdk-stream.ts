@@ -11,6 +11,9 @@ const INITIALIZATION_DELAY_MS = 50
 const STREAM_PROBE = 'FeedStreamProbe'
 const STREAM_DELTAS = 300
 const STREAM_DELTA_INTERVAL_MS = 10
+// A `PLAN` prompt creates two tasks and completes one, as the real CLI's TaskCreate and TaskUpdate
+// calls do in fixtures/claude-task-plan-stream.jsonl, and as the Codex mock does.
+const PLAN_PROBE = 'PLAN'
 const MODELS = [
   {
     value: 'fable',
@@ -122,6 +125,7 @@ export function startMockClaudeSdkStream(
     const text = promptText(input)
     if (text === null) return
     if (text.includes('FeedActivityProbe')) writeActivity(sessionId)
+    if (text.includes(PLAN_PROBE)) writePlan(sessionId)
     const ids = {
       user: typeof input.uuid === 'string' ? input.uuid : randomUUID(),
       reply: randomUUID(),
@@ -139,12 +143,39 @@ export function startMockClaudeSdkStream(
   })
 }
 
+function writeAssistantContent(sessionId: string, content: Record<string, unknown>) {
+  process.stdout.write(
+    `${JSON.stringify({ type: 'assistant', session_id: sessionId, uuid: randomUUID(), parent_tool_use_id: null, message: { id: randomUUID(), type: 'message', role: 'assistant', model: 'claude-opus-4-6', content: [content], stop_reason: null, stop_sequence: null, usage: { input_tokens: 0, output_tokens: 0 } } })}\n`,
+  )
+}
+
+function writeToolResult(sessionId: string, toolUseId: string, text: string) {
+  process.stdout.write(
+    `${JSON.stringify({ type: 'user', session_id: sessionId, uuid: randomUUID(), parent_tool_use_id: null, message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: toolUseId, content: text }] } })}\n`,
+  )
+}
+
+function writePlan(sessionId: string) {
+  const call = (name: string, input: Record<string, unknown>, result: string) => {
+    const id = randomUUID()
+    writeAssistantContent(sessionId, { type: 'tool_use', id, name, input })
+    writeToolResult(sessionId, id, result)
+  }
+  for (const [taskId, subject] of [
+    ['1', 'Read the Session protocol'],
+    ['2', 'Project the live Plan'],
+  ])
+    call(
+      'TaskCreate',
+      { subject, description: subject },
+      `Task #${taskId} created successfully: ${subject}`,
+    )
+  call('TaskUpdate', { taskId: '1', status: 'completed' }, 'Updated task #1 status')
+}
+
 function writeActivity(sessionId: string) {
   const toolUseId = randomUUID()
-  const message = (content: Record<string, unknown>) =>
-    process.stdout.write(
-      `${JSON.stringify({ type: 'assistant', session_id: sessionId, uuid: randomUUID(), parent_tool_use_id: null, message: { id: randomUUID(), type: 'message', role: 'assistant', model: 'claude-opus-4-6', content: [content], stop_reason: null, stop_sequence: null, usage: { input_tokens: 0, output_tokens: 0 } } })}\n`,
-    )
+  const message = (content: Record<string, unknown>) => writeAssistantContent(sessionId, content)
   setTimeout(() => {
     process.stdout.write(
       `${JSON.stringify({ type: 'tool_progress', session_id: sessionId, uuid: randomUUID(), tool_use_id: toolUseId, tool_name: 'Bash', parent_tool_use_id: null, elapsed_time_seconds: 0 })}\n`,

@@ -4,14 +4,14 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+import type { Harness } from '@/harnesses/harness'
 import { MOCK_START_REFUSED_FOLDER } from '@/mocks/cli/mock-cli'
 import { chooseHarness, openNewSessionByClick, sessionListIds } from '../gestures'
 
 const run = promisify(execFile)
 const WORKSPACE_MISSING =
   'The work location folder no longer exists, so the Turn was not sent. Choose another work location. Your draft is still saved.'
-const HARNESS_LABELS: Record<SessionHarness, string> = { claude: 'Claude Code', codex: 'Codex' }
+const HARNESS_LABELS: Record<Harness, string> = { claude: 'Claude Code', codex: 'Codex' }
 
 function git(folder: string, args: string[]) {
   const identity = ['-c', 'user.name=Argo', '-c', 'user.email=argo@example.invalid']
@@ -49,7 +49,7 @@ async function sendRefused(page: Page, prompt: string, reason: string) {
   expect(await sessionListIds(page)).toEqual(known)
 }
 
-async function proveOne(page: Page, project: string, harness: SessionHarness) {
+async function proveOne(page: Page, project: string, harness: Harness) {
   const name = `removed-${harness}`
   const worktree = path.join(path.dirname(project), name)
   await git(project, ['worktree', 'add', '--quiet', '-b', name, worktree])
