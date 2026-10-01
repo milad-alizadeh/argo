@@ -363,9 +363,7 @@ test('draws the activity the Session’s Feed published under its title', async 
         open: true,
       },
     })
-    assert.deepEqual(await activityOf(), [
-      { label: 'Ran bun test', kind: 'command', open: true, tool: 'command', target: null },
-    ])
+    assert.deepEqual(await activityOf(), [{ label: 'Ran bun test', kind: 'command', open: true }])
     updateSession(context, IDS[1], { activity: null })
     assert.deepEqual(await activityOf(), [null])
   } finally {

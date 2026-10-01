@@ -124,7 +124,7 @@ test('the listing gives no line: a busy Session keeps its stored line, and shows
   await tickAndWrite()
   expect(await rowOf(BUSY)).toEqual({
     status: 'running',
-    activity: { ...STORED_LINE, tool: 'command', target: null },
+    activity: STORED_LINE,
   })
   agents.answer([])
   await tickAndWrite()
@@ -172,8 +172,6 @@ test('a Session Argo runs shows its live channel, and the listing writes nothing
     label: 'Live line',
     kind: 'command',
     open: true,
-    tool: 'Bash',
-    target: null,
   } as const
   liveActors[WAITING] = liveSession('Sending', 'running', line)
   agents.answer(agents.recorded().filter(({ sessionId }) => sessionId === WAITING))

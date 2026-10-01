@@ -26,7 +26,6 @@ import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { ticketContent } from '@/database/ticket-content/schema'
 import { ticketContentSelectSchema } from '@/database/ticket-content/validation'
 import { type LiveActivity, liveActivitySchema } from '@/domains/sessions/api/feed'
-import { feedActivitySchema } from '@/domains/sessions/api/feed-activity'
 import { sessionListInputSchema } from '@/domains/sessions/api/session-list-input'
 import { identifierSchema } from '@/shared/validation'
 import { type StoredSubagent, storedSessionSubagents } from '../database'
@@ -67,7 +66,7 @@ export const sessionListRowSchema = z.strictObject({
   name: z.string(),
   status: sessionSelectSchema.shape.status,
   updatedAt: z.iso.datetime(),
-  activity: feedActivitySchema.nullable(),
+  activity: liveActivitySchema.nullable(),
   subagents: z.array(sessionSubagentSchema),
   ticket: sessionTicketSchema.nullable(),
   archived: z.boolean(),
@@ -109,12 +108,6 @@ function storedActivity(stored: string | null): LiveActivity | null {
   return null
 }
 
-// The Feed's activity names no tool or target, so the row keeps its kind as the tool.
-function observedActivity(stored: string | null): z.infer<typeof feedActivitySchema> | null {
-  const activity = storedActivity(stored)
-  return activity === null ? null : { ...activity, tool: activity.kind, target: null }
-}
-
 function liveProjection(context: Pick<SessionListContext, 'supervisor'>, sessionId: string) {
   const actor = liveSessionActorFor(context.supervisor, sessionId)
   if (actor === undefined) return null
@@ -153,7 +146,7 @@ function sessionListRow(
     status: liveStatus ?? row.status,
     updatedAt: new Date(row.activityAt ?? row.updatedAt).toISOString(),
     // A live channel's own activity outranks the stored line, which no Feed reader keeps fresh.
-    activity: live?.activity ?? observedActivity(row.activity),
+    activity: live?.activity ?? storedActivity(row.activity),
     subagents,
     ticket: linkedTicket(row.ticket),
     archived: row.archived,

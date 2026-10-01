@@ -13,8 +13,6 @@ import { createCodexExternalSessions } from './codex-external-sessions'
 const RUNNING = '01a0f52a-3d1e-7c72-baf4-294547d9af51'
 const OTHER = '01a0f52a-3d1e-7c72-baf4-294547d9af52'
 const STORED_LINE = { label: 'Stored line', kind: 'command', open: true }
-// How the Session List draws the stored line: its kind stands in for the tool.
-const SHOWN_LINE = { ...STORED_LINE, tool: 'command', target: null }
 
 let caller: ReturnType<typeof sessionListCaller>
 let discovered: string[]
@@ -94,7 +92,7 @@ test('startup reads no history: the first tick keeps the stored status and line'
   await threads.open(RUNNING)
   await tickAndWrite()
   expect(threads.turnsReads).toEqual([])
-  expect(await row(RUNNING)).toEqual({ ...before, status: 'idle', activity: SHOWN_LINE })
+  expect(await row(RUNNING)).toEqual({ ...before, status: 'idle', activity: STORED_LINE })
 })
 
 test('a running Session with no Feed open stores its status and newest command', async () => {
@@ -193,7 +191,7 @@ test('a Turn with no step yet keeps the stored line', async () => {
   threads.answer(RUNNING, 'crashed')
   threads.append(RUNNING, 'x\n')
   await tickAndWrite()
-  expect(await row(RUNNING)).toMatchObject({ status: 'running', activity: SHOWN_LINE })
+  expect(await row(RUNNING)).toMatchObject({ status: 'running', activity: STORED_LINE })
 })
 
 test('a thread no process has loaded, with its lock held, shows idle', async () => {
@@ -232,7 +230,7 @@ test('a read that fails later keeps the stored status and line', async () => {
   })
   threads.append(RUNNING, 'x\n')
   await tickAndWrite()
-  expect(await row(RUNNING)).toMatchObject({ status: 'idle', activity: SHOWN_LINE })
+  expect(await row(RUNNING)).toMatchObject({ status: 'idle', activity: STORED_LINE })
   expect(warn).toHaveBeenCalled()
 })
 
@@ -244,7 +242,7 @@ test('a turns page of an unrecognised shape is rejected, reported and keeps the 
   threads.answer(RUNNING, { page: { data: [{ id: 'turn', items: 'not a list' }] } })
   threads.append(RUNNING, 'x\n')
   await tickAndWrite()
-  expect((await row(RUNNING)).activity).toEqual(SHOWN_LINE)
+  expect((await row(RUNNING)).activity).toEqual(STORED_LINE)
   expect(warn).toHaveBeenCalledWith('Rejected 1 unrecognised Codex turns page.')
 })
 
