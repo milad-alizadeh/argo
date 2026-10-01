@@ -76,7 +76,8 @@ function send(child: ReturnType<typeof spawn>, prompt: string) {
 }
 
 async function waitFor(read: () => Promise<boolean>) {
-  for (let attempt = 0; attempt < 30; attempt += 1) {
+  const deadline = Date.now() + 5_000
+  while (Date.now() < deadline) {
     if (await read()) return
     await new Promise((resolve) => setTimeout(resolve, 10))
   }
@@ -87,8 +88,7 @@ test('a seeded Claude reply survives a split through a multi-byte character', as
   const run = await started('alpha')
   try {
     send(run.child, 'Keep this complete.')
-    await new Promise((resolve) => setTimeout(resolve, 150))
-    assert.ok(
+    await waitFor(async () =>
       (await sessionTexts(run)).some(
         (text) =>
           text.startsWith('assistant: ') &&
