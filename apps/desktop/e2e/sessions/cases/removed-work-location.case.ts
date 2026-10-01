@@ -1,5 +1,4 @@
-// A Send that never reaches the Harness fails with its reason and keeps the draft, the same way for
-// every Harness: a worktree removed after it was picked (#3007), and a CLI that fails at start (#3013).
+// A Send that never reaches the Harness shows its reason and keeps the draft, for every Harness.
 import { execFile } from 'node:child_process'
 import path from 'node:path'
 import { promisify } from 'node:util'
