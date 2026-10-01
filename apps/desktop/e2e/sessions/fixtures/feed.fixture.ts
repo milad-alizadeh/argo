@@ -1,8 +1,8 @@
 // The disk state every packaged Session case launches the app against, and the mutations that
 // prove a re-read reaches the file system rather than a cache.
-import { appendFile, mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, realpath, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { pointShellOutputAtRoot } from '../../../mocks/sessions/mock-shell-output'
+import { claudeSessionMessages } from '../../../mocks/cli/claude/claude-sdk-history'
 import {
   fixturePath,
   fixtureSessionId,
@@ -124,11 +124,11 @@ export async function growStranded(transcripts) {
   await appendFile(fixturePath(transcripts, 'strandedResume'), grownTurn(transcripts))
 }
 
-// The Harness reads a transcript as the parent chain from its newest record, so each append extends it.
-async function newestRecord(transcript) {
-  const lines = (await readFile(transcript, 'utf8')).split('\n').filter((line) => line !== '')
-  const uuids = lines.map((line) => JSON.parse(line).uuid).filter((uuid) => uuid !== undefined)
-  return uuids.at(-1) ?? null
+// The Harness reads a transcript as the parent chain from its newest record, so each append extends
+// it. The Agent SDK's reader names that record.
+async function newestRecord(transcripts: string, name: string) {
+  const messages = await claudeSessionMessages(path.dirname(transcripts), fixtureSessionId(name))
+  return messages.at(-1)?.uuid ?? null
 }
 
 export async function appendProse(transcripts, uuid, text) {
@@ -140,7 +140,7 @@ export async function appendProse(transcripts, uuid, text) {
       cwd: proofCwd(transcripts, 'prose'),
       timestamp: '2026-07-21T09:31:00.000Z',
       uuid,
-      parentUuid: await newestRecord(transcript),
+      parentUuid: await newestRecord(transcripts, 'prose'),
       message: {
         role: 'assistant',
         stop_reason: 'end_turn',
@@ -161,7 +161,6 @@ export async function prepare(
   const claudeTranscripts = path.join(base, 'claude-config', 'projects')
   const codexTranscripts = path.join(base, 'codex-home', 'sessions')
   await writeFixtureTree(claudeTranscripts, FIXTURES)
-  await pointShellOutputAtRoot(claudeTranscripts, root)
   await mkdir(codexTranscripts, { recursive: true })
   await writeCodexThreads(root, codexTranscripts)
   const userData = path.join(root, 'userData')

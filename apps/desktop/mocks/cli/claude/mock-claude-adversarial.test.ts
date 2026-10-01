@@ -7,8 +7,8 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { readClaudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
+import { claudeSessionMessages } from './claude-sdk-history.ts'
 import { writeMockClaude } from './mock-claude-cli.ts'
-import { claudeProjectFolder } from './mock-claude-transcripts.ts'
 
 const ESCAPE = String.fromCharCode(27)
 
@@ -41,16 +41,19 @@ test('the Claude mock exposes models and modes through the SDK catalog reader', 
   }
 })
 
+const SESSION_ID = '00000000-0000-4000-8000-00000000ad01'
+
 async function started(seed: string, prepare?: (root: string) => Promise<Prepared>) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-adversarial-claude-'))
-  const transcripts = path.join(root, 'transcripts')
+  const configDirectory = path.join(root, 'claude-config')
+  const transcripts = path.join(configDirectory, 'projects')
   const executable = await writeMockClaude(root, transcripts)
   const prepared = await prepare?.(root)
   const child = spawn(
     executable,
     [
       '--session-id',
-      'adversarial-session',
+      SESSION_ID,
       ...(prepared?.pluginRoot === undefined ? [] : ['--plugin-dir', prepared.pluginRoot]),
     ],
     {
@@ -59,14 +62,13 @@ async function started(seed: string, prepare?: (root: string) => Promise<Prepare
   )
   child.stdin.setDefaultEncoding('utf8')
   await once(child.stdout, 'data')
-  return {
-    child,
-    root,
-    transcript: path.join(
-      claudeProjectFolder(transcripts, process.cwd()),
-      'adversarial-session.jsonl',
-    ),
-  }
+  return { child, root, configDirectory }
+}
+
+// The Session as the Agent SDK reads it back, one string per message.
+async function sessionTexts(run: { configDirectory: string }) {
+  const messages = await claudeSessionMessages(run.configDirectory, SESSION_ID).catch(() => [])
+  return messages.map((message) => `${message.type}: ${JSON.stringify(message.message)}`)
 }
 
 function send(child: ReturnType<typeof spawn>, prompt: string) {
@@ -86,8 +88,13 @@ test('a seeded Claude reply survives a split through a multi-byte character', as
   try {
     send(run.child, 'Keep this complete.')
     await new Promise((resolve) => setTimeout(resolve, 150))
-    const transcript = await readFile(run.transcript, 'utf8')
-    assert.match(transcript, /Mock Claude read: Keep this complete\. 🦜/)
+    assert.ok(
+      (await sessionTexts(run)).some(
+        (text) =>
+          text.startsWith('assistant: ') &&
+          text.includes('Mock Claude read: Keep this complete. 🦜'),
+      ),
+    )
   } finally {
     run.child.kill()
     await once(run.child, 'exit')
@@ -113,8 +120,7 @@ test('a seeded Claude stall leaves the Turn open', async () => {
     send(run.child, 'Stall this Turn.')
     await new Promise((resolve) => setTimeout(resolve, 150))
     assert.equal(run.child.exitCode, null)
-    const transcript = await readFile(run.transcript, 'utf8')
-    assert.doesNotMatch(transcript, /Mock Claude read:/)
+    assert.ok(!(await sessionTexts(run)).some((text) => text.includes('Mock Claude read:')))
   } finally {
     run.child.kill()
     await once(run.child, 'exit')
@@ -142,8 +148,8 @@ test('a seeded Permission holds while the mock accepts a second queued Turn', as
     await waitFor(async () => (await readFile(capture, 'utf8').catch(() => '')).length > 0)
     send(run.child, 'Second Turn waits behind it.')
     await waitFor(async () => {
-      const transcript = await readFile(run.transcript, 'utf8').catch(() => '')
-      return (transcript.match(/"type":"user"/g) ?? []).length === 2
+      const texts = await sessionTexts(run)
+      return texts.filter((text) => text.startsWith('user: ')).length === 2
     })
     assert.match(await readFile(capture, 'utf8'), /"tool_name":"Bash"/)
   } finally {

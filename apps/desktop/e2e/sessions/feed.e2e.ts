@@ -200,9 +200,9 @@ test('session-codex-resume', async ({ session, backend }) => {
 })
 
 test.describe('session-claude-rename', () => {
-  // The rename read-back checks `mock-claude/<id>.jsonl` directly (#2134): a real Claude writes
-  // its own transcript somewhere under the real CLI's home, not that fixture layout.
-  test.skip(({ sessionBackend }) => sessionBackend !== 'mock', 'Reads the mock transcript path.')
+  // The rename read-back reads the fixture's Claude config folder (#2134); a real Claude writes
+  // under the real backend's own HOME instead.
+  test.skip(({ sessionBackend }) => sessionBackend !== 'mock', 'Reads the fixture config folder.')
 
   test('session-claude-rename', async ({ session, backend }) => {
     await proveClaudeRename(session.page(), {
