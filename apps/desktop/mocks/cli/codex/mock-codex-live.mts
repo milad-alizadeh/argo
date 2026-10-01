@@ -13,8 +13,16 @@ type Item = {
   text?: string
   content?: Array<{ type: string; text: string }>
 }
-type Turn = { id: string; status: string; items: Item[] }
-type Thread = { id: string; cwd: string; updatedAt: number; name?: string; turns: Turn[] }
+type Turn = { id: string; status: string; items: Item[]; completedAt?: number }
+// `path` is the thread's rollout, as `thread/read` names it.
+type Thread = {
+  id: string
+  cwd: string
+  updatedAt: number
+  name?: string
+  path?: string
+  turns: Turn[]
+}
 type ActiveTurn = { thread: Thread; turn: Turn; prompt: string }
 const statePath = process.env.ARGO_CODEX_E2E_STATE
 if (statePath === undefined) throw new Error('Missing ARGO_CODEX_E2E_STATE')
@@ -23,6 +31,15 @@ try {
   threads = JSON.parse(readFileSync(statePath, 'utf8')) as Thread[]
 } catch (error) {
   if (!(error instanceof Error) || !('code' in error) || error.code !== 'ENOENT') throw error
+}
+// Another process's thread is stored on disk, so its newest Turn is read from there each time.
+function newestStoredTurn(threadId: string) {
+  const stored = JSON.parse(readFileSync(statePath as string, 'utf8')) as Thread[]
+  const turn = stored.find((candidate) => candidate.id === threadId)?.turns.at(-1)
+  if (turn === undefined) return []
+  const completedAt =
+    turn.status === 'inProgress' ? null : (turn.completedAt ?? Math.floor(Date.now() / 1000))
+  return [{ ...turn, completedAt }]
 }
 const save = () => writeFileSync(statePath, JSON.stringify(threads))
 const send = (message: unknown) => process.stdout.write(`${JSON.stringify(message)}\n`)
@@ -283,8 +300,15 @@ function handle(message: Request) {
   const thread = threads.find((candidate) => candidate.id === params.threadId)
   if (thread === undefined)
     return send({ id, error: { code: -32000, message: 'Thread not found' } })
+  handleThread(message, thread)
+}
+
+// A request about one stored thread.
+function handleThread({ id, method, params = {} }: Request, thread: Thread) {
   if (method === 'thread/resume') return send({ id, result: { thread: { id: thread.id } } })
   if (method === 'thread/read') return send({ id, result: { thread } })
+  if (method === 'thread/turns/list')
+    return send({ id, result: { data: newestStoredTurn(thread.id), nextCursor: null } })
   if (method === 'turn/start') return startTurn(id, params, thread)
   if (method === 'turn/interrupt') {
     send({ id, result: {} })

@@ -2,12 +2,13 @@
 // flags Argo launches with and writes each Turn it is sent where the real CLI writes transcripts.
 
 import { randomUUID } from 'node:crypto'
-import { appendFileSync, mkdirSync } from 'node:fs'
+import { appendFileSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
 import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversarial-turns.ts'
 import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
+import { MOCK_CLAUDE_AGENTS_ENV } from './mock-claude-agents.ts'
 import { createMockClaudeHooks } from './mock-claude-hooks.ts'
 import { replyToSdkPrompt } from './mock-claude-sdk-reply.ts'
 import { startMockClaudeSdkStream } from './mock-claude-sdk-stream.ts'
@@ -41,6 +42,18 @@ const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
 let turnIndex = 0
 
 const arguments_ = process.argv.slice(2)
+// `claude agents --json` prints the answer file a test writes; with none, it fails as before.
+if (arguments_.slice(1).join(' ') === 'agents --json') {
+  const answer = process.env[MOCK_CLAUDE_AGENTS_ENV]
+  try {
+    if (answer === undefined) throw new Error('No agents answer is set.')
+    process.stdout.write(readFileSync(answer, 'utf8'))
+    process.exit(0)
+  } catch {
+    process.stderr.write('agents failed\n')
+    process.exit(1)
+  }
+}
 if (arguments_.includes('--version')) {
   process.stdout.write('2.1.0\n')
   process.exit(0)
