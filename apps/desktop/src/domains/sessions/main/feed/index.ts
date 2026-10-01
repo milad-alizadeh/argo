@@ -3,3 +3,4 @@ export {
   type SessionFeedReaderContext,
   SessionFeedReaders,
 } from './feed-reader'
+export { HistoryReadLimit } from './history-read-limit'

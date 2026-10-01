@@ -28,7 +28,7 @@ import {
   markUnresolvedSessionCommandsUnknown,
   reconcileUnknownSessionCommands,
 } from '@/domains/sessions/main/database'
-import { SessionFeedReaders } from '@/domains/sessions/main/feed'
+import { HistoryReadLimit, SessionFeedReaders } from '@/domains/sessions/main/feed'
 import {
   type LiveSessionSupervisorActor,
   liveSessionActorFor,
@@ -402,7 +402,8 @@ function startSessionServices(actors: WindowActors, database: Database, registry
     ...context,
     journal: currentSessionEventJournal(),
     hasLiveChannel,
-    readHistory: (harness, target) => registry[harness].readHistory(target),
+    readHistory: (harness, target, signal) =>
+      historyReads.run(() => registry[harness].readHistory(target), signal),
   })
   const harnesses = harnessSchema.options.flatMap((harness) => {
     const external = registry[harness].externalSessions
@@ -514,6 +515,8 @@ function createWindow({
 
 let applicationDatabase: Database | undefined
 const sessionListChanges = new SessionListChanges()
+// Every vendor history read in the process, Feed or command recovery, waits on this one limit.
+const historyReads = new HistoryReadLimit()
 let sessionServices: SessionServices | undefined
 let sessionEventJournal: SessionEventJournal | undefined
 let sessionInteractionBroker: SessionInteractionBroker | undefined
@@ -578,9 +581,11 @@ async function ready(actor: AppActor): Promise<void> {
   const registry = harnessRegistry
   void reconcileUnknownSessionCommands(
     applicationDatabase,
-    (harness, target) => registry[harness].readHistory(target),
+    (harness, target) => historyReads.run(() => registry[harness].readHistory(target)),
     (harness, nativeId, turnId) =>
-      registry[harness].hasTurn?.(nativeId, turnId) ?? Promise.resolve(false),
+      historyReads.run(
+        () => registry[harness].hasTurn?.(nativeId, turnId) ?? Promise.resolve(false),
+      ),
   ).catch((error) => console.error('Session command recovery failed.', error))
   void reconcileTicketWriteIntentsAtStartup(applicationDatabase).catch((error) =>
     console.error('Ticket write intent recovery failed.', error),
