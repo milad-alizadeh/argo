@@ -19,6 +19,7 @@ import {
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live'
 import { saveReadTicket } from '@/domains/tickets/main/database/ticket-upsert'
 import { TicketChanges } from '@/domains/tickets/main/sync'
+import { commit } from '@/domains/tickets/main/sync/ticket-sync-machine'
 import {
   insertProject,
   insertWorkspace,
@@ -117,8 +118,8 @@ export function sessionListCaller({
     changes: subscribeChanges,
     sessionListChanges: changes,
     ticketChanges,
-    // Settles once the watcher has read every linked Ticket it starts from.
-    ticketsWatched: () => tickets.ready,
+    // Settles once every linked Ticket read the watcher has queued so far has finished.
+    ticketsWatched: tickets.settled,
     stopWatching,
     statusChanged: mock.statusChanged,
     renames,
@@ -194,6 +195,17 @@ export function saveTicket(
       blockedBy: null,
     },
   )
+}
+
+// Saves a Ticket as a scan commits a page: the write, then the scope's change notice.
+export function commitTicket(
+  database: Database,
+  changes: TicketChanges,
+  ticket: Parameters<typeof saveTicket>[1],
+) {
+  const unread = () => Promise.reject(new Error('This commit reads no provider.'))
+  const dependencies = { database, changed: changes.changed, readPage: unread, readTicket: unread }
+  commit({ dependencies, target: TICKET_SCOPE }, (written) => saveTicket(written, ticket))
 }
 
 // Links a Session to a Ticket by key, as the user asserts it.

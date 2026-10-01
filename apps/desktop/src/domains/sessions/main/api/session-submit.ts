@@ -55,6 +55,7 @@ export type SessionProcedureContext = {
   ) => Promise<{ id: string; path: string }>
   acceptsAttachments: (harness: Harness) => boolean
   // The asserted Session to Ticket link store the Ticket domain owns (ADR-0017).
+  // Mirrors that store's `connect` type, so sessions/main does not import tickets/main.
   ticketLinks: {
     connect: (
       sessionId: string,
