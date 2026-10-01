@@ -4,7 +4,7 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+import type { Harness } from '@/harnesses/harness'
 import { chooseHarness, openNewSessionByClick, sessionListIds } from '../gestures'
 
 const run = promisify(execFile)
@@ -31,7 +31,7 @@ async function chooseWorkLocation(page: Page, name: string) {
   await expect(page.getByRole('button', { name: `Work location: ${name}` })).toBeVisible()
 }
 
-async function proveOne(page: Page, project: string, harness: SessionHarness) {
+async function proveOne(page: Page, project: string, harness: Harness) {
   const name = `removed-${harness}`
   const worktree = path.join(path.dirname(project), name)
   await git(project, ['worktree', 'add', '--quiet', '-b', name, worktree])
