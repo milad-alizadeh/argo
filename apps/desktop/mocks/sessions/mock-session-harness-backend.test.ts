@@ -4,6 +4,7 @@ import { once } from 'node:events'
 import { mkdir, mkdtemp, rm, stat } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { createInterface } from 'node:readline'
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
@@ -13,9 +14,9 @@ import type {
   SessionHarnessBackend,
   SessionHarnessRun,
 } from '../../e2e/sessions/session-harness-backend'
-import { CLAUDE_HISTORY_RECORDING } from '../cli/claude/recorded-claude-sessions'
-import { CODEX_HISTORY_RECORDING } from '../cli/codex/recorded-codex-threads'
-import { readRecordingVersion } from '../cli/recorded-calls'
+import { claudeRecording } from '../cli/claude/recorded-claude-sessions'
+import { writeMockCodex } from '../cli/codex/mock-codex-driver'
+import { codexRecording } from '../cli/codex/recorded-codex-threads'
 import { signedInHarnessEnvironment } from '../cli/signed-in-harness'
 import { createMockSessionHarnessBackend } from './mock-session-harness-backend'
 
@@ -117,10 +118,20 @@ test('reads a Codex prompt the mock app-server took into its thread', () =>
     expect(await backend.recorded(reply)).toBe(false)
     const child = spawn(run.executables.codex, [])
     const send = (message: object) => child.stdin.write(`${JSON.stringify(message)}\n`)
+    const replies = createInterface({ input: child.stdout })[Symbol.asyncIterator]()
+    // The reply to request `id`, skipping notifications and other replies.
+    const answerTo = async (id: number) => {
+      for (;;) {
+        const { value, done } = await replies.next()
+        if (done) throw new Error(`The mock app-server closed before answering request ${id}.`)
+        const message = JSON.parse(value)
+        if (message.id === id) return message.result
+      }
+    }
     try {
       send({ id: 1, method: 'initialize', params: {} })
       send({ id: 2, method: 'thread/start', params: { cwd: '/project' } })
-      const threadId = '00000000-0000-4000-8000-000000000001'
+      const threadId = (await answerTo(2)).thread.id
       send({
         id: 3,
         method: 'turn/start',
@@ -141,9 +152,13 @@ async function printedVersion(executable: string) {
 }
 
 test('each mock CLI reports the version its recordings came from', () =>
-  started(async ({ run }) => {
-    const claude = readRecordingVersion(...CLAUDE_HISTORY_RECORDING)
-    expect(await printedVersion(run.executables.claude)).toBe(`${claude} (Claude Code)`)
-    const codex = readRecordingVersion(...CODEX_HISTORY_RECORDING)
-    expect(await printedVersion(run.executables.codex)).toBe(`codex-cli ${codex}`)
+  started(async ({ root, run }) => {
+    expect(await printedVersion(run.executables.claude)).toBe(
+      `${claudeRecording.version} (Claude Code)`,
+    )
+    const codex = `codex-cli ${codexRecording.version}`
+    expect(await printedVersion(run.executables.codex)).toBe(codex)
+    expect(
+      await printedVersion(await writeMockCodex(await mkdtemp(path.join(root, 'driver-')))),
+    ).toBe(codex)
   }))

@@ -1,12 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync, watch } from 'node:fs'
+import { MOCK_CLAUDE_VERSION } from './mock-claude-cli.ts'
 
 // The command list the CLI reports, from the JSON file this names, shaped like
 // fixtures/supported-commands-claude-2.1.286.json. A rewrite of it pushes `commands_changed`.
 export const MOCK_CLAUDE_COMMANDS_FILE_ENV = 'ARGO_CLAUDE_COMMANDS_FILE'
-
-// The CLI version the Claude recordings under fixtures/ came from.
-export const MOCK_CLAUDE_VERSION = '2.1.286'
 
 const INITIALIZATION_DELAY_MS = 50
 // A `FeedStreamProbe` prompt streams its reply as text deltas, as the real CLI's partial messages do.

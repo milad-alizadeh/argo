@@ -9,9 +9,10 @@ import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harne
 import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversarial-turns.ts'
 import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { MOCK_CLAUDE_AGENTS_ENV } from './mock-claude-agents.ts'
+import { MOCK_CLAUDE_VERSION } from './mock-claude-cli.ts'
 import { createMockClaudeHooks } from './mock-claude-hooks.ts'
 import { replyToSdkPrompt } from './mock-claude-sdk-reply.ts'
-import { MOCK_CLAUDE_VERSION, startMockClaudeSdkStream } from './mock-claude-sdk-stream.ts'
+import { startMockClaudeSdkStream } from './mock-claude-sdk-stream.ts'
 import { claudeProjectFolder, MOCK_CLAUDE_TRANSCRIPTS_ENV } from './mock-claude-transcripts.ts'
 import { settleMockClaudeTurn } from './mock-claude-turn.ts'
 

@@ -3,9 +3,16 @@
 import { chmod, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import type { MockHarness } from '../mock-cli'
-import { claudeSessionMessages, claudeSessions } from './claude-sdk-reader'
-import { MOCK_CLAUDE_TRANSCRIPTS_ENV } from './mock-claude-transcripts'
+import {
+  claudeSessionMessages,
+  claudeSessions,
+} from '../../../e2e/sessions/real-harness/claude-vendor-reader.ts'
+import type { MockHarness } from '../mock-cli.ts'
+import { claudeConfigDirectory, MOCK_CLAUDE_TRANSCRIPTS_ENV } from './mock-claude-transcripts.ts'
+import { claudeRecording } from './recorded-claude-sessions.ts'
+
+// The CLI version the Claude recordings under fixtures/ came from.
+export const MOCK_CLAUDE_VERSION = claudeRecording.version
 
 // A run always starts in `apps/desktop`; `import.meta` is unavailable once Playwright loads this as CommonJS.
 const MOCK_CLAUDE = path.join(process.cwd(), 'mocks', 'cli', 'claude', 'mock-claude.ts')
@@ -23,9 +30,8 @@ export async function writeMockClaude(root: string, transcripts: string) {
   return executable
 }
 
-// The transcript root is `<CLAUDE_CONFIG_DIR>/projects`, where the SDK looks.
 async function recordedByClaude(_root: string, transcripts: string, mark: string) {
-  const configDirectory = path.dirname(transcripts)
+  const configDirectory = claudeConfigDirectory(transcripts)
   for (const session of await claudeSessions(configDirectory)) {
     const messages = await claudeSessionMessages(configDirectory, session.sessionId)
     if (messages.some((message) => JSON.stringify(message.message).includes(mark))) return true

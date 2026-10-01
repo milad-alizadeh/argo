@@ -7,6 +7,7 @@ import {
 } from '@/harnesses/claude/proof-protocol'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
+import { claudeConfigDirectory } from '../../mocks/cli/claude/mock-claude-transcripts'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { launchCommand } from '../application-under-test'
 import type {
@@ -37,7 +38,7 @@ function keepRecentConsole(page: Page, lines: string[]) {
 function transcriptEnv(transcripts: SessionHarnessRun['transcripts']): Record<string, string> {
   if (transcripts === null) return {}
   return {
-    CLAUDE_CONFIG_DIR: path.dirname(transcripts.claude),
+    CLAUDE_CONFIG_DIR: claudeConfigDirectory(transcripts.claude),
     CODEX_HOME: path.dirname(transcripts.codex),
   }
 }

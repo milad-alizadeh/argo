@@ -28,7 +28,7 @@ import { appendProse } from './fixtures/feed.fixture'
 import { writeWindowFillerSessions } from './fixtures/session-list-window.fixture'
 import { openSessionByClick } from './gestures'
 import { sessionDetails } from './page-trpc'
-import { assertVendorFeedCorpus, readRealVendorCorpus } from './real-harness/transcript-feed-corpus'
+import { assertVendorFeedCorpus, readRealVendorCorpus } from './real-harness/vendor-feed-corpus'
 import { expect, test } from './session-proof-run'
 
 test.describe('with no Project selected', () => {

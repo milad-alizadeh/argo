@@ -2,15 +2,12 @@ import { expect, test } from 'bun:test'
 import { mkdir, mkdtemp, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { readCodexSessionHistory } from '@/harnesses/codex/session/codex-session-history'
-import { recordedThread, threadReadRequest } from '../../../mocks/cli/codex/recorded-codex-threads'
 import type { SessionFixture } from '../session-harness-backend'
 import {
   createRealSessionHarnessBackend,
   prepareRealSessionHome,
   resolveRealSessionExecutables,
 } from './real-session-harness-backend'
-import { replyAfterPrompt } from './real-session-transcript'
 
 async function inTemporaryRoot(read: (root: string) => Promise<void>) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-real-backend-'))
@@ -116,11 +113,3 @@ test('leaves transcript roots unset and launches under its isolated HOME', async
     expect(run.transcripts).toBeNull()
     expect(run.launchEnv({ slowReply: false }).HOME).toBe(path.join(root, 'home'))
   }))
-
-test('recognizes a reply after the prompt in a recorded Codex thread read', async () => {
-  const thread = recordedThread('Continue the check')
-  const content = await readCodexSessionHistory(threadReadRequest(thread), thread.id)
-
-  expect(replyAfterPrompt(content, 'Continue the check')).toEqual({ size: content.length })
-  expect(replyAfterPrompt(content, 'A prompt never sent')).toBeNull()
-})

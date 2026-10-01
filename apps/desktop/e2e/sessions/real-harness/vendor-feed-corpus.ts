@@ -10,13 +10,13 @@ import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path
 import { threadReadRequest } from '../../../mocks/cli/codex/recorded-codex-threads'
 import { realClaudeCli } from './real-claude-harness'
 import { realCodexCli } from './real-codex-harness'
-import type { VendorHistoryReader } from './real-session-transcript'
+import type { VendorHistoryReader } from './vendor-reply'
 
 type CodexThread = ThreadReadResponse['thread']
 // What each Harness's own history reader returned: the Agent SDK's messages, Codex's thread read.
 export type VendorCorpus = { claude: readonly SessionMessage[]; codex: CodexThread }
-type TranscriptHarness = keyof VendorCorpus
-const TRANSCRIPT_HARNESSES: TranscriptHarness[] = ['claude', 'codex']
+type VendorHarness = keyof VendorCorpus
+const VENDOR_HARNESSES: VendorHarness[] = ['claude', 'codex']
 
 const RAW_TAG = /<\/?[a-z][a-z0-9_-]*(?:\s[^>]*)?>/i
 const PASTED_BLOCK = /<pasted_content id="([^"]+)">([\s\S]*?)<\/pasted_content id="\1">/g
@@ -27,7 +27,7 @@ const REQUIRED_ENVELOPES = {
 const ENVELOPE_WAIT_MS = 120_000
 const ENVELOPE_POLL_MS = 250
 
-type RequiredEnvelope = (typeof REQUIRED_ENVELOPES)[TranscriptHarness][number]
+type RequiredEnvelope = (typeof REQUIRED_ENVELOPES)[VendorHarness][number]
 type ToolCall = Extract<SessionFeedRow, { shape: 'tool' }>
 
 function stringsIn(value: unknown): string[] {
@@ -56,7 +56,7 @@ function claudeRecordId(record: unknown): string | null {
 }
 
 // The vendor records the envelopes are looked for in: one per message or thread item.
-function recordsOf(harness: TranscriptHarness, corpus: VendorCorpus): unknown[] {
+function recordsOf(harness: VendorHarness, corpus: VendorCorpus): unknown[] {
   switch (harness) {
     case 'claude':
       return [...corpus.claude]
@@ -66,7 +66,7 @@ function recordsOf(harness: TranscriptHarness, corpus: VendorCorpus): unknown[] 
 }
 
 // The Feed content Argo projects from the same vendor read.
-async function contentOf(harness: TranscriptHarness, corpus: VendorCorpus): Promise<FeedContent[]> {
+async function contentOf(harness: VendorHarness, corpus: VendorCorpus): Promise<FeedContent[]> {
   switch (harness) {
     case 'claude':
       return decodeClaudeSessionMessages(corpus.claude)
@@ -75,7 +75,7 @@ async function contentOf(harness: TranscriptHarness, corpus: VendorCorpus): Prom
   }
 }
 
-function rowsOf(harness: TranscriptHarness, content: readonly FeedContent[]): SessionFeedRow[] {
+function rowsOf(harness: VendorHarness, content: readonly FeedContent[]): SessionFeedRow[] {
   const projected = projectFeedRowEntries({ history: content, live: [] })
   assert.equal(
     projected.rejected.history + projected.rejected.rows,
@@ -105,14 +105,14 @@ function proseTexts(rows: readonly SessionFeedRow[]): string[] {
   return rows.flatMap((row) => (row.shape === 'prose' ? [row.text] : []))
 }
 
-function assertNoProseTag(harness: TranscriptHarness, rows: readonly SessionFeedRow[]) {
+function assertNoProseTag(harness: VendorHarness, rows: readonly SessionFeedRow[]) {
   for (const text of proseTexts(rows)) {
     assert.equal(RAW_TAG.test(text), false, `${harness} prose holds a raw tag: ${text}`)
   }
 }
 
 function assertTaskNotification(
-  harness: TranscriptHarness,
+  harness: VendorHarness,
   records: readonly unknown[],
   rows: readonly SessionFeedRow[],
 ) {
@@ -132,7 +132,7 @@ function assertTaskNotification(
 }
 
 function assertPastedContent(
-  harness: TranscriptHarness,
+  harness: VendorHarness,
   records: readonly unknown[],
   rows: readonly SessionFeedRow[],
 ) {
@@ -157,7 +157,7 @@ function commandSource(call: ToolCall): string {
 }
 
 function assertBashInput(
-  harness: TranscriptHarness,
+  harness: VendorHarness,
   records: readonly unknown[],
   rows: readonly SessionFeedRow[],
 ) {
@@ -181,7 +181,7 @@ function assertBashOutput({
   rows,
   envelope,
 }: {
-  harness: TranscriptHarness
+  harness: VendorHarness
   records: readonly unknown[]
   rows: readonly SessionFeedRow[]
   envelope: 'bash-stdout' | 'bash-stderr'
@@ -210,7 +210,7 @@ function assertEnvelope({
   records,
   rows,
 }: {
-  harness: TranscriptHarness
+  harness: VendorHarness
   envelope: RequiredEnvelope
   records: readonly unknown[]
   rows: readonly SessionFeedRow[]
@@ -232,7 +232,7 @@ function assertEnvelope({
   }
 }
 
-function observedEnvelopes(harness: TranscriptHarness, records: readonly unknown[]) {
+function observedEnvelopes(harness: VendorHarness, records: readonly unknown[]) {
   const observed = new Set<RequiredEnvelope>()
   for (const record of records) {
     for (const envelope of REQUIRED_ENVELOPES[harness]) {
@@ -244,9 +244,9 @@ function observedEnvelopes(harness: TranscriptHarness, records: readonly unknown
 
 function missingEnvelopes(
   corpus: VendorCorpus,
-  expectedEnvelopes: Partial<Record<TranscriptHarness, readonly RequiredEnvelope[]>>,
+  expectedEnvelopes: Partial<Record<VendorHarness, readonly RequiredEnvelope[]>>,
 ): string[] {
-  return TRANSCRIPT_HARNESSES.flatMap((harness) => {
+  return VENDOR_HARNESSES.flatMap((harness) => {
     const observed = observedEnvelopes(harness, recordsOf(harness, corpus))
     const expected = expectedEnvelopes[harness] ?? REQUIRED_ENVELOPES[harness]
     return expected
@@ -260,7 +260,7 @@ async function readVendorCorpus(
     claude: VendorHistoryReader<SessionMessage[]>
     codex: VendorHistoryReader<CodexThread>
   },
-  sessionIds: Record<TranscriptHarness, string>,
+  sessionIds: Record<VendorHarness, string>,
 ): Promise<VendorCorpus> {
   return {
     claude: await readers.claude.records(sessionIds.claude),
@@ -271,8 +271,8 @@ async function readVendorCorpus(
 // Polls the real CLIs' own readers under the throwaway HOME until both Sessions hold every envelope.
 export async function readRealVendorCorpus(options: {
   home: string
-  sessionIds: Record<TranscriptHarness, string>
-  expectedEnvelopes?: Partial<Record<TranscriptHarness, readonly RequiredEnvelope[]>>
+  sessionIds: Record<VendorHarness, string>
+  expectedEnvelopes?: Partial<Record<VendorHarness, readonly RequiredEnvelope[]>>
 }): Promise<VendorCorpus> {
   const { home, sessionIds, expectedEnvelopes = REQUIRED_ENVELOPES } = options
   const codex = findExecutableOnLoginShellPath('codex')
@@ -309,10 +309,10 @@ export async function readRealVendorCorpus(options: {
 export async function assertVendorFeedCorpus(
   corpus: VendorCorpus,
   expectedEnvelopes: Partial<
-    Record<TranscriptHarness, readonly RequiredEnvelope[]>
+    Record<VendorHarness, readonly RequiredEnvelope[]>
   > = REQUIRED_ENVELOPES,
 ): Promise<void> {
-  for (const harness of TRANSCRIPT_HARNESSES) {
+  for (const harness of VENDOR_HARNESSES) {
     const records = recordsOf(harness, corpus)
     const rows = rowsOf(harness, await contentOf(harness, corpus))
     assertNoProseTag(harness, rows)

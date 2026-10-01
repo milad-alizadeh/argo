@@ -75,7 +75,8 @@ function handleRequest(message: Request) {
 function startThread(message: Request) {
   threadCounter += 1
   const threadId = threadIdFor(threadCounter)
-  const cwd = typeof message.params?.cwd === 'string' ? message.params.cwd : null
+  // The real app-server falls back to its own working directory.
+  const cwd = typeof message.params?.cwd === 'string' ? message.params.cwd : process.cwd()
   rememberThread(threadId, cwd)
   send({ id: message.id, result: { thread: { id: threadId } } })
 }

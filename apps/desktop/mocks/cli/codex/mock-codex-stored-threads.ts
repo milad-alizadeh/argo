@@ -1,18 +1,28 @@
 // The stored history the mock app-server answers with: the real CLI's recorded answers, plus the
 // threads this process started. No rollout file or state store is read.
 import type { ThreadReadResponse } from '@/harnesses/codex/app-server'
-import { type RecordedCall, recordedCalls } from './recorded-codex-threads.ts'
+import type { RecordedCall } from '../recorded-calls.ts'
+import { recordedCall, recordedCalls } from './recorded-codex-threads.ts'
 
 type Request = { id?: unknown; method?: string; params?: Record<string, unknown> }
 type Send = (message: Record<string, unknown>) => void
 type StoredThread = ThreadReadResponse['thread']
-type StoredTurn = StoredThread['turns'][number]
 
-const recorded = recordedCalls()
+// A recorded thread, its first Turn and that Turn's prompt: the shapes a started thread copies.
+function recordedTemplates() {
+  const thread = (recordedCall('thread/read').result as ThreadReadResponse).thread
+  const turn = thread.turns[0]
+  const prompt = turn?.items.find((item) => item.type === 'userMessage')
+  if (turn === undefined || prompt === undefined)
+    throw new Error('The recorded Codex thread has no prompted Turn to copy.')
+  return { thread, turn, prompt }
+}
+const templates = recordedTemplates()
+
 const started = new Map<string, StoredThread>()
 
 function recordedAnswer(method: string, threadId: unknown): RecordedCall | undefined {
-  return recorded.find(
+  return recordedCalls.find(
     (call) =>
       call.method === method && (threadId === undefined || call.params.threadId === threadId),
   )
@@ -20,31 +30,39 @@ function recordedAnswer(method: string, threadId: unknown): RecordedCall | undef
 
 const now = () => Math.floor(Date.now() / 1000)
 
-// Only the fields Argo reads; the recorded threads carry the rest.
-export function rememberThread(threadId: string, cwd: string | null) {
+export function rememberThread(threadId: string, cwd: string) {
   started.set(threadId, {
+    ...templates.thread,
     id: threadId,
+    sessionId: threadId,
     cwd,
+    path: null,
     name: null,
     preview: '',
     createdAt: now(),
     updatedAt: now(),
+    recencyAt: now(),
     status: { type: 'idle' },
     turns: [],
-  } as unknown as StoredThread)
+  })
 }
 
 function recordPrompt(threadId: string, text: string) {
   const thread = started.get(threadId)
   if (thread === undefined) return
   const turnId = `stored-turn-${thread.turns.length + 1}`
+  const prompt = {
+    ...templates.prompt,
+    id: `stored-user-${turnId}`,
+    content: [{ type: 'text' as const, text, text_elements: [] }],
+  }
   const turn = {
+    ...templates.turn,
     id: turnId,
-    status: 'completed',
-    items: [
-      { id: `stored-user-${turnId}`, type: 'userMessage', content: [{ type: 'text', text }] },
-    ],
-  } as unknown as StoredTurn
+    startedAt: now(),
+    completedAt: now(),
+    items: [prompt],
+  }
   started.set(threadId, {
     ...thread,
     preview: thread.preview === '' ? text : thread.preview,

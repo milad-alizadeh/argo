@@ -2,7 +2,7 @@
 // prove a re-read reaches the file system rather than a cache.
 import { appendFile, mkdir, realpath, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { claudeSessionMessages } from '../../../mocks/cli/claude/claude-sdk-reader'
+import { claudeConfigDirectory } from '../../../mocks/cli/claude/mock-claude-transcripts'
 import { mockCodexStateFile } from '../../../mocks/cli/codex/mock-codex-cli'
 import { recordedThread } from '../../../mocks/cli/codex/recorded-codex-threads'
 import {
@@ -14,6 +14,7 @@ import {
 } from '../../../mocks/sessions/mock-transcript-files'
 import { makeProjectLocallyReady } from '../../projects/fixtures/locally-ready-project'
 import { repository, seedSingleProject } from '../../projects/fixtures/project.fixture'
+import { claudeSessionMessages } from '../real-harness/claude-vendor-reader'
 
 export const FIXTURES = [
   'resumeParent',
@@ -102,7 +103,10 @@ export async function growStranded(transcripts) {
 // The Harness reads a transcript as the parent chain from its newest record, so each append extends
 // it. The Agent SDK's reader names that record.
 async function newestRecord(transcripts: string, name: string) {
-  const messages = await claudeSessionMessages(path.dirname(transcripts), fixtureSessionId(name))
+  const messages = await claudeSessionMessages(
+    claudeConfigDirectory(transcripts),
+    fixtureSessionId(name),
+  )
   return messages.at(-1)?.uuid ?? null
 }
 

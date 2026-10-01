@@ -10,7 +10,7 @@ import type {
 } from '../session-harness-backend'
 import { realClaudeCli } from './real-claude-harness'
 import { realCodexCli } from './real-codex-harness'
-import { type VendorHistoryReader, vendorReplyAfterPrompt } from './real-session-transcript'
+import { type VendorHistoryReader, vendorReplyAfterPrompt } from './vendor-reply'
 
 const BUDGET_MS = 180_000
 const POLL_MS = 250
@@ -18,7 +18,6 @@ const REAL_HARNESS_UNSET_ENV = [
   'ANTHROPIC_API_KEY',
   'OPENAI_API_KEY',
   'ARGO_CLAUDE_TRANSCRIPTS',
-  'ARGO_CODEX_TRANSCRIPTS',
   'ARGO_CLAUDE_ARCHIVE',
 ]
 const REAL_HARNESSES = { claude: realClaudeCli, codex: realCodexCli }
@@ -156,7 +155,7 @@ export function createRealSessionHarnessBackend(
         }
         if (Date.now() >= deadline) {
           throw new Error(
-            `No assistant transcript record followed the ${entry.harness} prompt before timeout.`,
+            `No assistant reply followed the ${entry.harness} prompt in its vendor history before timeout.`,
           )
         }
         await new Promise((resolve) => setTimeout(resolve, POLL_MS))

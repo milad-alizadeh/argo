@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
-import path from 'node:path'
-import { claudeSessions } from '../../../mocks/cli/claude/claude-sdk-reader'
+import { claudeConfigDirectory } from '../../../mocks/cli/claude/mock-claude-transcripts'
 import { waitFor } from '../claude-proof-helpers'
 import { createSessionByClick } from '../gestures'
 import { sendSessionUpdate, sessionDetails } from '../page-trpc'
+import { claudeSessions } from '../real-harness/claude-vendor-reader'
 
 const RENAMED = 'Ticket: fix the Session List badge'
 
@@ -18,7 +18,7 @@ export async function proveClaudeRename(page, { backend, transcripts }) {
   await sendSessionUpdate(page, { sessionIds: [sessionId], title: RENAMED })
 
   // The Harness's own reader shows the title Argo wrote into the Session.
-  const configDirectory = path.dirname(transcripts)
+  const configDirectory = claudeConfigDirectory(transcripts)
   await waitFor(async () =>
     (await claudeSessions(configDirectory)).some((session) => session.customTitle === RENAMED),
   )

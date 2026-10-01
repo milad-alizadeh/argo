@@ -1,17 +1,12 @@
 // Real Agent SDK 0.3.278 answers, read once from Claude CLI 2.1.286 transcripts in a throwaway
 // CLAUDE_CONFIG_DIR.
 import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
-import { type RecordedCall, readRecordedCalls } from '../recorded-calls.ts'
+import type { RecordedCall } from '../recorded-calls.ts'
+import recording from './fixtures/session-history-claude-2.1.286.json' with { type: 'json' }
 
-export const CLAUDE_HISTORY_RECORDING = [
-  'claude',
-  'fixtures',
-  'session-history-claude-2.1.286.json',
-]
+export { recording as claudeRecording }
 
-export function recordedCalls(): RecordedCall[] {
-  return readRecordedCalls(...CLAUDE_HISTORY_RECORDING)
-}
+const recordedCalls: readonly RecordedCall[] = recording.calls
 
 function firstPrompt(messages: SessionMessage[]): unknown {
   return messages.find((message) => message.type === 'user')?.message
@@ -19,7 +14,7 @@ function firstPrompt(messages: SessionMessage[]): unknown {
 
 // The Session whose first prompt is `prompt`, as `getSessionMessages` answered it.
 export function recordedSession(prompt: string): SessionMessage[] {
-  const session = recordedCalls()
+  const session = recordedCalls
     .flatMap((call) =>
       call.method === 'getSessionMessages' ? [call.result as SessionMessage[]] : [],
     )

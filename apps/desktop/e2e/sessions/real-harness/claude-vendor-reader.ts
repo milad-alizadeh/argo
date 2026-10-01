@@ -7,16 +7,24 @@ import {
   type SessionMessage,
 } from '@anthropic-ai/claude-agent-sdk'
 
+// Reads queue here, so no read sees another's `CLAUDE_CONFIG_DIR`.
+let previousRead: Promise<unknown> = Promise.resolve()
+
 // The SDK reads `CLAUDE_CONFIG_DIR` on each call, so a read points it at the given folder.
-async function inConfigDirectory<T>(configDirectory: string, read: () => Promise<T>): Promise<T> {
-  const previous = process.env.CLAUDE_CONFIG_DIR
-  process.env.CLAUDE_CONFIG_DIR = configDirectory
-  try {
-    return await read()
-  } finally {
-    if (previous === undefined) delete process.env.CLAUDE_CONFIG_DIR
-    else process.env.CLAUDE_CONFIG_DIR = previous
+function inConfigDirectory<T>(configDirectory: string, read: () => Promise<T>): Promise<T> {
+  const run = async () => {
+    const previous = process.env.CLAUDE_CONFIG_DIR
+    process.env.CLAUDE_CONFIG_DIR = configDirectory
+    try {
+      return await read()
+    } finally {
+      if (previous === undefined) delete process.env.CLAUDE_CONFIG_DIR
+      else process.env.CLAUDE_CONFIG_DIR = previous
+    }
   }
+  const result = previousRead.then(run)
+  previousRead = result.catch(() => undefined)
+  return result
 }
 
 export function claudeSessionMessages(

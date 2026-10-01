@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 import { recordedSession } from '../../../mocks/cli/claude/recorded-claude-sessions'
 import { recordedThread } from '../../../mocks/cli/codex/recorded-codex-threads'
-import { assertVendorFeedCorpus, type VendorCorpus } from './transcript-feed-corpus'
+import { assertVendorFeedCorpus, type VendorCorpus } from './vendor-feed-corpus'
 
 const CLAUDE_TOOL_CALLS =
   'Run the composer check: run the shell command echo argo-recorded with the Bash tool, then edit notes.txt to replace old with new. Reply with one short sentence.'
