@@ -16,6 +16,7 @@ import { proveDelegationCards } from './cases/delegation-card.case'
 import { proveSessionDiagram } from './cases/diagram.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
+import { provePromptLatency } from './cases/prompt-latency.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveContract } from './cases/session-list-contract.case'
 import { provePackagedSessionListSelection } from './cases/session-list-interaction.case'
@@ -41,6 +42,10 @@ test.describe('with no Project selected', () => {
 
 test('session-list-contract', async ({ session }) => {
   await proveContract(session.page())
+})
+
+test('session-created-by-click', async ({ session, backend }) => {
+  await proveSessionCreatedByClick(session.page(), backend)
 })
 
 test('session-shell', async ({ session }) => {
@@ -237,6 +242,10 @@ test.describe('with a slow Harness', () => {
 
   test('session-reply-wait', async ({ session, backend }) => {
     await proveReplyWait(session.page(), backend)
+  })
+
+  test('session-prompt-latency', async ({ session, backend }) => {
+    await provePromptLatency(session.page(), backend)
   })
 
   test('session-duplicate-send', async ({ session, backend }) => {

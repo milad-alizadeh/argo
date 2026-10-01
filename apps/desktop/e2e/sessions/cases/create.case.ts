@@ -7,7 +7,7 @@ import type { SessionHarnessBackend } from '../session-harness-backend'
 
 const PROMPT = 'Reply with one short acknowledgement.'
 
-// The mock folder starts empty, so the Session List row must precede a Harness transcript.
+// The mock folder starts empty, so the one new Session List row is the Session this gesture made.
 export async function proveSessionCreatedByClick(
   page: Page,
   backend: SessionHarnessBackend,
