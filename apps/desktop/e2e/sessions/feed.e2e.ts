@@ -15,6 +15,7 @@ import { proveSessionCreatedByClick } from './cases/create.case'
 import { proveDelegationCards } from './cases/delegation-card.case'
 import { proveSessionDiagram } from './cases/diagram.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
+import { proveNewSessionSkipsUninstalledHarness } from './cases/new-session-harness.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveContract } from './cases/session-list-contract.case'
@@ -146,6 +147,15 @@ test.describe('with the Claude ACP agent', () => {
   })
   test('session-claude-acp-controls', async ({ session, backend }) => {
     await proveClaudeAcpControls(session.page(), backend)
+  })
+})
+
+test.describe('with no Claude ACP agent installed', () => {
+  test.use({ uninstalledAcpAgents: ['claude-acp'] })
+
+  test('session-new-uses-installed-harness', async ({ session }) => {
+    test.slow(true, 'The case restarts the app twice.')
+    await proveNewSessionSkipsUninstalledHarness(session.page(), session.restart)
   })
 })
 

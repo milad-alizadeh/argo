@@ -10,6 +10,7 @@ import { useWorkspaces } from '@/domains/workspaces/renderer'
 import { DEFAULT_HARNESS, type Harness } from '@/harnesses/harness'
 import { useSessionPermission, useSessionQuestion } from '../composer'
 import { useFeedReading } from '../feed'
+import { useAvailableHarnesses } from '../harness'
 import { workInspectorReveal } from '../inspector'
 import type { Session, SessionEvidence, SessionExtras } from '../types'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work'
@@ -99,7 +100,9 @@ export function useSessionScreenModel() {
   const { session, loaded: sessionLoaded } = useSessionDetails(selectedSessionId)
   const feedRunning = sessionTurnRunning(session)
   const sessionFeed = useFeedReading(selectedSessionId, null, feedRunning)
-  const [lastHarness, chooseHarness] = useState<Harness>(DEFAULT_HARNESS)
+  const [pickedHarness, chooseHarness] = useState<Harness | null>(null)
+  const availableHarnesses = useAvailableHarnesses()
+  const lastHarness = pickedHarness ?? availableHarnesses?.[0] ?? DEFAULT_HARNESS
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const permission = useSessionPermission(selectedSessionId)
   const question = useSessionQuestion(selectedSessionId)
