@@ -78,6 +78,9 @@ function launchEnvironment(
     ...(run.executables['claude-acp'] === undefined
       ? {}
       : { [acpExecutableOverride('claude-acp')]: run.executables['claude-acp'] }),
+    ...Object.fromEntries(
+      (launch.uninstalledAcpAgents ?? []).map((agent) => [acpExecutableOverride(agent), '']),
+    ),
     ...(syncFixture === undefined
       ? {}
       : { [SESSION_CLAUDE_SYNC_FIXTURE_ENV]: JSON.stringify(syncFixture) }),
