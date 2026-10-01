@@ -132,6 +132,7 @@
   /* The state dot sits on the title's optical centre: half of what the title's line box has left
      over once the dot is in it. Derived, never nudged, so it follows the type scale. */
   --size-state-dot: 6px;
+  --size-session-list-status-cutout: 2px;
   --spacing-dot-inset: calc((var(--text-body) * 1.45 - var(--size-state-dot)) / 2);
   /* Half the state dot: what runs under a Session is drawn smaller than the Session's own state,
      in the Session's own column. */
