@@ -1,33 +1,23 @@
 import { expect, test } from 'bun:test'
-import { z } from 'zod'
 import recordedResponses from '../../../../mocks/cli/codex/fixtures/session-sync-codex-0.157.0.json' with {
   type: 'json',
 }
-import type { CodexRequest } from '../app-server/codex-app-server-client'
+import type { CodexRequest, Thread, ThreadListResponse } from '../app-server'
 import {
   createCodexSessionSummaryList,
   createCodexSessionSummaryReader,
-  readCodexSessions,
 } from './codex-session-discovery'
 
 const FIRST_ID = 'thread-first'
 const KNOWN_ID = 'thread-known'
 const SAVED_ID = 'thread-previously-saved'
-const recordedPageSchema = z.object({
-  data: z.array(
-    z.object({
-      id: z.string(),
-      updatedAt: z.number(),
-      name: z.string().nullable().optional(),
-      preview: z.string().nullable().optional(),
-      cwd: z.string().nullable().optional(),
-    }),
-  ),
-  nextCursor: z.string().nullable(),
-})
-const recordedReadSchema = z.object({
-  thread: recordedPageSchema.shape.data.element,
-})
+// The recording keeps only the Thread fields discovery reads.
+type RecordedThread = Pick<Thread, 'id' | 'updatedAt' | 'name'> &
+  Partial<Pick<Thread, 'preview' | 'cwd'>>
+const recorded: {
+  pages: (Pick<ThreadListResponse, 'nextCursor'> & { data: RecordedThread[] })[]
+  read: { thread: RecordedThread }
+} = recordedResponses
 
 function requestFor(responses: Map<string, unknown>, calls: unknown[]): CodexRequest {
   return (async (method: string, params: unknown, parse: (value: unknown) => unknown) => {
@@ -53,15 +43,17 @@ function expectedCalls(): unknown[] {
     { method: 'thread/list', params: listParams },
     {
       method: 'thread/list',
-      params: { ...listParams, cursor: recordedResponses.pages[0]?.nextCursor },
+      params: { ...listParams, cursor: recorded.pages[0]?.nextCursor },
     },
     { method: 'thread/read', params: { threadId: SAVED_ID, includeTurns: false } },
   ]
 }
 
 function recordedRequest(calls: unknown[]) {
-  const firstPage = recordedPageSchema.parse(recordedResponses.pages[0])
-  const secondPage = recordedPageSchema.parse(recordedResponses.pages[1])
+  const { pages, read: readResponse } = structuredClone(recorded)
+  const [firstPage, secondPage] = pages
+  if (firstPage === undefined || secondPage === undefined)
+    throw new Error('Invalid recorded Codex fixture.')
   const firstRecord = firstPage.data[0]
   const duplicateRecord = secondPage.data[0]
   const knownRecord = secondPage.data[1]
@@ -69,7 +61,7 @@ function recordedRequest(calls: unknown[]) {
     throw new Error('Invalid recorded Codex fixture.')
   firstRecord.id = FIRST_ID
   firstPage.data = [firstRecord]
-  firstPage.data.push({ id: 'bad-record', updatedAt: Number.NaN })
+  firstPage.data.push({ id: 'bad-record', updatedAt: Number.NaN, name: null })
   duplicateRecord.id = FIRST_ID
   duplicateRecord.name = null
   delete duplicateRecord.preview
@@ -77,7 +69,6 @@ function recordedRequest(calls: unknown[]) {
   knownRecord.id = KNOWN_ID
   secondPage.data = [duplicateRecord, knownRecord]
   secondPage.nextCursor = null
-  const readResponse = recordedReadSchema.parse(recordedResponses.read)
   readResponse.thread.id = SAVED_ID
   return {
     request: requestFor(
@@ -130,43 +121,42 @@ test('pages interactive Codex threads, deduplicates IDs, and reads known missing
   expect(calls).toEqual(expectedCalls())
 })
 
+test('lists a page that carries fields discovery does not read', async () => {
+  const result = await createCodexSessionSummaryList((async (_method, _params, parse) =>
+    parse({
+      data: [{ id: FIRST_ID, updatedAt: 1, laterVendorField: true }],
+      nextCursor: null,
+      backwardsCursor: null,
+      laterVendorField: true,
+    })) as CodexRequest)({ knownNativeIds: [] })
+  expect(result).toEqual({ records: [{ nativeId: FIRST_ID, activityAt: 1000 }], skipped: 0 })
+})
+
 test('fails a Codex scan when the page envelope is malformed', async () => {
   await expect(
-    readCodexSessions({
-      request: (async (_method, _params, parse) =>
-        parse({ data: [], nextCursor: 7 })) as CodexRequest,
-      knownNativeIds: [],
-      reportMalformed: () => {},
-    }),
+    createCodexSessionSummaryList((async (_method, _params, parse) =>
+      parse({ data: [], nextCursor: 7 })) as CodexRequest)({ knownNativeIds: [] }),
   ).rejects.toThrow()
 })
 
 test('propagates a failed read for a known Session so Session sync can retry', async () => {
   await expect(
-    readCodexSessions({
-      request: (async (method: string, _params, _parse) => {
-        if (method === 'thread/list') return { data: [], nextCursor: null }
-        throw new Error('app-server read failed')
-      }) as CodexRequest,
-      knownNativeIds: ['previously-saved'],
-      reportMalformed: () => {},
-    }),
+    createCodexSessionSummaryList((async (method: string, _params, _parse) => {
+      if (method === 'thread/list') return { data: [], nextCursor: null }
+      throw new Error('app-server read failed')
+    }) as CodexRequest)({ knownNativeIds: ['previously-saved'] }),
   ).rejects.toThrow('app-server read failed')
 })
 
 test('skips a previously saved thread that Codex has removed', async () => {
   const calls: unknown[] = []
-  const result = await readCodexSessions({
-    request: (async (method: string, _params, parse) => {
-      calls.push(method)
-      if (method === 'thread/list') return parse({ data: [], nextCursor: null })
-      throw new Error('Thread not found')
-    }) as CodexRequest,
-    knownNativeIds: ['removed-thread'],
-    reportMalformed: () => {},
-  })
+  const result = await createCodexSessionSummaryList((async (method: string, _params, parse) => {
+    calls.push(method)
+    if (method === 'thread/list') return parse({ data: [], nextCursor: null })
+    throw new Error('Thread not found')
+  }) as CodexRequest)({ knownNativeIds: ['removed-thread'] })
 
-  expect(result).toEqual([])
+  expect(result).toEqual({ records: [], skipped: 0 })
   expect(calls).toEqual(['thread/list', 'thread/read'])
 })
 
@@ -185,4 +175,16 @@ test('gets one thread summary without listing, and null for a thread Codex does 
   })
   expect(await getSummary('missing')).toBeNull()
   expect(calls).toEqual(['thread/read', 'thread/read'])
+})
+
+test('counts a thread whose preview or cwd breaks the generated Thread type', async () => {
+  const result = await createCodexSessionSummaryList((async (_method, _params, parse) =>
+    parse({
+      data: [
+        { id: 'null-preview', updatedAt: 1, preview: null },
+        { id: 'null-cwd', updatedAt: 1, cwd: null },
+      ],
+      nextCursor: null,
+    })) as CodexRequest)({ knownNativeIds: [] })
+  expect(result).toEqual({ records: [], skipped: 2 })
 })
