@@ -10,7 +10,7 @@ import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversaria
 import { MOCK_START_REFUSED_FOLDER } from '../mock-cli.ts'
 import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { MOCK_CLAUDE_AGENTS_ENV } from './mock-claude-agents.ts'
-import { MOCK_CLAUDE_VERSION } from './mock-claude-cli.ts'
+import { MOCK_CLAUDE_HELP, MOCK_CLAUDE_VERSION } from './mock-claude-cli.ts'
 import { createMockClaudeHooks } from './mock-claude-hooks.ts'
 import { replyToSdkPrompt } from './mock-claude-sdk-reply.ts'
 import { startMockClaudeSdkStream } from './mock-claude-sdk-stream.ts'
@@ -52,9 +52,7 @@ if (arguments_.includes('--version')) {
   process.exit(0)
 }
 if (arguments_.includes('--help')) {
-  process.stdout.write(
-    '  --permission-mode <mode> Permission mode to use for the session (choices: "acceptEdits", "auto", "bypassPermissions", "manual", "dontAsk", "plan")\n',
-  )
+  process.stdout.write(`${MOCK_CLAUDE_HELP}\n`)
   process.exit(0)
 }
 const [transcriptRoot] = arguments_

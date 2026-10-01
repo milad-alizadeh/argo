@@ -3,7 +3,7 @@
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import recorded from './fixtures/agents-claude-2.1.286.json' with { type: 'json' }
+import { recordedClaudeAgents as recorded } from '@/mocks/recordings/claude-cli'
 
 type RecordedEntry = Record<string, unknown> & { sessionId: string }
 

@@ -1,16 +1,10 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { codexModelCatalogFixture } from '@/mocks/sessions/codex-model-catalog.fixture'
+import { recordedCodexModels as recordedResponse } from '@/mocks/recordings/codex-app-server'
+import { codexModelCatalogFixture } from '@/mocks/recordings/codex-model-catalog'
 import type { CodexRequest } from './app-server/codex-app-server-client'
 import { codexHarnessInfo, readCodexHarnessInfo, readModelCatalog } from './catalog'
 
-const recordedResponse: unknown = JSON.parse(
-  readFileSync(
-    new URL('../../../mocks/cli/codex/fixtures/model-list-codex-0.147.0.json', import.meta.url),
-    'utf8',
-  ),
-)
 const catalog = codexModelCatalogFixture()
 
 test('decodes the advertised model names and reasoning efforts', () => {
@@ -21,12 +15,20 @@ test('normalizes Codex defaults and excludes hidden models at the Harness bounda
   const info = codexHarnessInfo(catalog)
   assert.equal(info.availability, 'available')
   if (info.availability !== 'available') throw new Error('Codex fixture should be available.')
-  assert.equal(info.defaultModelId, 'gpt-live')
+  assert.equal(info.defaultModelId, 'gpt-6-astra')
   assert.deepEqual(
     info.models.map(({ value }) => value),
-    ['gpt-live'],
+    [
+      'gpt-6-astra',
+      'gpt-6-sol',
+      'gpt-6-luna',
+      'gpt-5.6-sol',
+      'gpt-5.6-terra',
+      'gpt-5.6-luna',
+      'gpt-5.5',
+    ],
   )
-  assert.equal(info.models[0]?.defaultEffort, 'focused')
+  assert.equal(info.models[0]?.defaultEffort, 'medium')
 })
 
 test('names a Codex reasoning effort in the words every Harness uses', () => {
@@ -61,11 +63,11 @@ test('reports an unrecognized model/list response as a counted Harness failure',
   }
 })
 
-test('decodes a recorded response from codex 0.147.0', () => {
+test('decodes the current recorded Codex model response', () => {
   const decoded = readModelCatalog(recordedResponse)
-  assert.equal(decoded.data[0]?.model, 'gpt-5.6-sol')
+  assert.equal(decoded.data[0]?.model, 'gpt-6-astra')
   assert.equal(decoded.data[0]?.supportedReasoningEfforts[0]?.reasoningEffort, 'low')
-  assert.equal(decoded.data.length, 5)
+  assert.equal(decoded.data.length, 9)
 })
 
 test('reads every model/list page before publishing Codex choices', async () => {
@@ -76,7 +78,7 @@ test('reads every model/list page before publishing Codex choices', async () => 
     const page =
       cursor === undefined
         ? { data: [catalog.data[0]], nextCursor: 'second' }
-        : { data: catalog.data.slice(1), nextCursor: null }
+        : { data: catalog.data.slice(1, 2), nextCursor: null }
     return parse(page)
   }
   const info = await readCodexHarnessInfo(request)
@@ -85,6 +87,6 @@ test('reads every model/list page before publishing Codex choices', async () => 
   if (info.availability === 'available')
     assert.deepEqual(
       info.models.map(({ value }) => value),
-      ['gpt-live'],
+      ['gpt-6-astra', 'gpt-6-sol'],
     )
 })

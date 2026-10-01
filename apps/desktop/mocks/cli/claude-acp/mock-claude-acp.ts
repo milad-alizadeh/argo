@@ -23,8 +23,8 @@ import {
   type SessionUpdate,
 } from '@agentclientprotocol/sdk'
 import { readMockReplyDelayMs } from '@/harnesses/proof-protocol'
+import { recordedAcpDiscovery as recorded } from '@/mocks/recordings/claude-acp'
 import { MOCK_CLAUDE_ACP_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
-import recorded from './fixtures/session-discovery-0.84.0.json' with { type: 'json' }
 import { mockClaudeAcpFolder, mockClaudeAcpReply } from './mock-claude-acp-transcripts.ts'
 
 process.title = MOCK_CLAUDE_ACP_PROCESS_TITLE

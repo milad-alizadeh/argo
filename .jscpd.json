@@ -14,6 +14,6 @@
     "**/*.stories.tsx",
     "prototypes/**",
     "**/skills/**/templates/**",
-    "apps/desktop/mocks/cli/*/recordings/**"
+    "apps/desktop/mocks/recordings/*/*/**"
   ]
 }
