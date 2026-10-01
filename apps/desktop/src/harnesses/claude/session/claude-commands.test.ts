@@ -23,7 +23,10 @@ async function waitFor(check: () => boolean, label: string) {
 async function recordedCommands(): Promise<Record<string, unknown>[]> {
   return JSON.parse(
     await readFile(
-      path.join(process.cwd(), 'mocks/cli/claude/fixtures/supported-commands-claude-2.1.286.json'),
+      new URL(
+        '../../../../mocks/cli/claude/fixtures/supported-commands-claude-2.1.286.json',
+        import.meta.url,
+      ),
       'utf8',
     ),
   )

@@ -14,7 +14,10 @@ type Listed = Extract<LiveSessionChannelEvent, { type: 'commands' }>
 async function recordedSkills(): Promise<Record<string, unknown>[]> {
   const recorded = JSON.parse(
     await readFile(
-      path.join(process.cwd(), 'mocks/cli/codex/fixtures/skills-list-codex-0.157.0.json'),
+      new URL(
+        '../../../../mocks/cli/codex/fixtures/skills-list-codex-0.157.0.json',
+        import.meta.url,
+      ),
       'utf8',
     ),
   )

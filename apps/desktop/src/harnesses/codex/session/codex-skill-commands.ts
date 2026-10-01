@@ -38,17 +38,17 @@ function skillRows(listing: unknown, reject: (shape: string) => void): unknown[]
 // Without a folder, the home folder stands in, so only personal skills are listed.
 export async function readCodexSkillCommands(
   request: CodexRequest,
-  input: { cwd: string | null; reject: (shape: string) => void },
+  input: { cwd: string | null; reject: (shape: string) => void; forceReload?: boolean },
 ): Promise<ComposerCommand[]> {
   const listing = await request(
     'skills/list',
-    { cwds: [input.cwd ?? os.homedir()] },
+    { cwds: [input.cwd ?? os.homedir()], forceReload: input.forceReload ?? false },
     (value) => value,
   )
   return readComposerCommands(skillRows(listing, input.reject), input.reject)
 }
 
-// Lists once, then again on each `changed`; a list that answers late never replaces a newer one.
+// Lists once, then again past Codex's cache on each `changed`; a late answer never replaces a newer one.
 export function followCodexSkillCommands(input: {
   request: CodexRequest
   cwd: string
@@ -58,17 +58,18 @@ export function followCodexSkillCommands(input: {
 }): { changed: () => void; stop: () => void } {
   let stopped = false
   let latest = 0
-  const changed = () => {
+  const list = (forceReload: boolean) => {
     latest += 1
     const asked = latest
-    readCodexSkillCommands(input.request, input).then(
+    readCodexSkillCommands(input.request, { ...input, forceReload }).then(
       (commands) => {
         if (!stopped && !input.closed() && asked === latest) input.onCommands(commands)
       },
-      () => input.reject('skills/list'),
+      (error: unknown) => console.warn('Could not list Codex skills.', error),
     )
   }
-  changed()
+  const changed = () => list(true)
+  list(false)
   return {
     changed,
     stop: () => {
