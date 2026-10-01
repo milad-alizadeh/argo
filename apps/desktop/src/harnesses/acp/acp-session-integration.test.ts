@@ -27,6 +27,14 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
+function openPermissionSession(controls: LiveSessionControls, events: LiveSessionChannelEvent[]) {
+  return createAcpRegistrations()['claude-acp'].openLiveSession?.(
+    mockAcpSessionInput(root, 'Request ACP permission'),
+    controls,
+    (event) => events.push(event),
+  )
+}
+
 describe('the Claude ACP registration', () => {
   test('counts malformed vendor summaries and keeps the valid records', async () => {
     const valid = recorded.listing.result.sessions[0]
@@ -208,11 +216,7 @@ describe('the Claude ACP interruptions', () => {
       decidePermission: () => false,
       decideQuestion: () => false,
     }
-    const channel = createAcpRegistrations()['claude-acp'].openLiveSession?.(
-      mockAcpSessionInput(root, 'Request ACP permission'),
-      controls,
-      (event) => events.push(event),
-    )
+    const channel = openPermissionSession(controls, events)
     await waitForMockAcpEvent(events, 'turn.completed')
     expect(offered).toBe(false)
     expect(events.some((event) => event.type === 'feed' && event.body.type === 'permission')).toBe(
@@ -239,11 +243,7 @@ describe('the Claude ACP interruptions', () => {
       decidePermission: () => false,
       decideQuestion: () => false,
     }
-    const channel = createAcpRegistrations()['claude-acp'].openLiveSession?.(
-      mockAcpSessionInput(root, 'Request ACP permission'),
-      controls,
-      (event) => events.push(event),
-    )
+    const channel = openPermissionSession(controls, events)
     await new Promise<void>((resolve, reject) => {
       const deadline = Date.now() + 5_000
       const check = () => {
