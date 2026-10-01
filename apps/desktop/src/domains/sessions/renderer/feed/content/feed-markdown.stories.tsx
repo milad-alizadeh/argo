@@ -1,10 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { preloadForStories } from '@/mocks/platform/story-preload'
 import { loadCodeLanguage } from '../../ai-elements'
 import { roleColors } from './appearance-probe'
 import { FeedMarkdown } from './feed-markdown'
 import { drawDiagram } from './feed-mermaid'
 import { RICH_MARKDOWN, SAMPLE_PICTURE, SAMPLE_TYPESCRIPT } from './feed-samples'
+
+const loadTypeScript = preloadForStories(() => loadCodeLanguage('ts'))
 
 const meta = {
   title: 'Sessions/Feed/Markdown',
@@ -53,8 +56,7 @@ export const Formatted: Story = {
 
 export const UnlabelledFence: Story = {
   args: { text: ['```', SAMPLE_TYPESCRIPT, '```'].join('\n') },
-  // Grammars and Mermaid load on first use, so each play times its drawing, not a cold load.
-  loaders: [() => loadCodeLanguage('ts')],
+  loaders: [loadTypeScript],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('img', { name: 'TypeScript file' })).toBeVisible()
@@ -148,7 +150,7 @@ export const LinksFromKeyboard: Story = {
 
 const DIAGRAM_SOURCE = 'flowchart LR\n  Backlog --> Ticket --> Session'
 const DIAGRAM_MARKDOWN = ['```mermaid', DIAGRAM_SOURCE, '```'].join('\n')
-const loadMermaid = () => drawDiagram('mermaid-preload', DIAGRAM_SOURCE, false)
+const loadMermaid = preloadForStories(() => drawDiagram('mermaid-preload', DIAGRAM_SOURCE, false))
 
 export const Diagram: Story = {
   args: { text: DIAGRAM_MARKDOWN },

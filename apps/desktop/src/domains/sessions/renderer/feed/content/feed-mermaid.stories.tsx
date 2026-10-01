@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { preloadForStories } from '@/mocks/platform/story-preload'
 import { drawDiagram, FeedMermaid } from './feed-mermaid'
 
 const FLOWCHART = 'flowchart LR\n  Backlog --> Ticket --> Session'
+const loadMermaid = preloadForStories(() => drawDiagram('mermaid-preload', FLOWCHART, false))
 
 const meta = {
   title: 'Sessions/Feed/Mermaid',
@@ -15,8 +17,7 @@ const meta = {
     ),
   ],
   args: { source: FLOWCHART },
-  // Mermaid loads on first use, so the play times the drawing rather than a cold module load.
-  loaders: [() => drawDiagram('mermaid-preload', FLOWCHART, false)],
+  loaders: [loadMermaid],
 } satisfies Meta<typeof FeedMermaid>
 
 export default meta
