@@ -87,6 +87,18 @@ async function untilFeedBody(events: unknown[], type: string) {
   )
 }
 
+// Asks the channel's tool callback for Permission `permission-1` to run Bash.
+function askBashPermission() {
+  const canUseTool = vendor.canUseTool as CanUseTool | null
+  if (canUseTool === null) throw new Error('Claude did not receive the control callback.')
+  return canUseTool('Bash', {}, {
+    requestId: 'permission-1',
+    toolUseID: 'tool-1',
+    signal: new AbortController().signal,
+    suggestions: [],
+  } as Parameters<CanUseTool>[2])
+}
+
 function interactiveControls(): LiveSessionControls {
   let decidePermission!: (decision: 'allow') => void
   let decideQuestion!: (answers: [{ kind: 'options'; indices: number[] }]) => void
@@ -254,20 +266,47 @@ test('holds a Permission asked before the Session is identified until its identi
   )
   try {
     await until(() => vendor.canUseTool !== null)
-    const canUseTool = vendor.canUseTool as CanUseTool | null
-    if (canUseTool === null) throw new Error('Claude did not receive the control callback.')
-    const permission = canUseTool('Bash', {}, {
-      requestId: 'permission-1',
-      toolUseID: 'tool-1',
-      signal: new AbortController().signal,
-      suggestions: [],
-    } as Parameters<CanUseTool>[2])
+    const permission = askBashPermission()
     releaseCommands()
     await untilFeedBody(events, 'permission')
     expect(await channel.answerPermission('permission-1', 'allow')).toBe(true)
     expect(await permission).toMatchObject({ behavior: 'allow' })
   } finally {
     vendor.commandsHeld = null
+    channel.close()
+  }
+})
+
+// The id from init can change on a later result, as after /clear; the answer must use the current id.
+test('asks and answers a Permission under the Session id the latest result carried', async () => {
+  vendor.prompts = []
+  vendor.recordedEvents = [{ type: 'system', subtype: 'init', session_id: 'native-0' }]
+  vendor.canUseTool = null
+  let asked: string | null = null
+  let decide!: () => void
+  const controls: LiveSessionControls = {
+    ...interactiveControls(),
+    requestPermission: async ({ nativeId }) => {
+      asked = nativeId
+      return new Promise((resolve) => {
+        decide = () => resolve('allow')
+      })
+    },
+    decidePermission: (nativeId) => {
+      if (nativeId !== asked) return false
+      decide()
+      return true
+    },
+  }
+  const events: unknown[] = []
+  const channel = claudeSessionChannelOpener(null)(first, controls, (event) => events.push(event))
+  try {
+    await until(() => events.some((event) => (event as { type: string }).type === 'turn.completed'))
+    const permission = askBashPermission()
+    await untilFeedBody(events, 'permission')
+    expect(await channel.answerPermission('permission-1', 'allow')).toBe(true)
+    expect(await permission).toMatchObject({ behavior: 'allow' })
+  } finally {
     channel.close()
   }
 })

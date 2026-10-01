@@ -288,7 +288,10 @@ class ClaudeSessionChannel implements LiveSessionChannel {
           ? undefined
           : createClaudeToolControl({
               controls: this.controls,
-              nativeId: () => this.identity,
+              nativeId: async () => {
+                await this.identity
+                return this.nativeId
+              },
               commandId: () => this.activeCommandId,
               emit: (body) => this.emitFeed(body),
               reject: () => {
@@ -344,6 +347,7 @@ class ClaudeSessionChannel implements LiveSessionChannel {
 
   close(): void {
     this.open = false
+    this.resolveIdentity(null)
     this.wakeInput()
     this.session?.close()
     this.emitClosed()
