@@ -1,9 +1,9 @@
 // The Session List dot follows each Harness's live status events, pushed without a poll (#2850).
 import path from 'node:path'
 import { _electron as electron, type Page } from 'playwright-core'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/harnesses/claude/proof-protocol'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
+import type { Harness } from '@/harnesses/harness'
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
@@ -64,7 +64,7 @@ async function startSession(
     prompt,
     configuration = 'first model',
   }: {
-    harness: SessionHarness
+    harness: Harness
     prompt: string
     configuration?: 'first model' | 'last model at lowest effort'
   },

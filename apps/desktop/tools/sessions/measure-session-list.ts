@@ -153,7 +153,7 @@ async function mainSnapshot(application: ElectronApplication): Promise<MainSnaps
       rendererWorkingSetMb: Math.round(
         app
           .getAppMetrics()
-          .filter((metric) => metric.type === 'Renderer' || metric.type === 'Tab')
+          .filter((metric) => metric.type === 'Tab')
           .reduce((sum, metric) => sum + (metric.memory?.workingSetSize ?? 0), 0) / 1024,
       ),
       ipc: structuredClone(ipc),
@@ -375,8 +375,6 @@ async function launchEnvironment(root: string, fixture: Fixture) {
     ].join(':'),
     CLAUDE_CONFIG_DIR: claudeConfig,
     CODEX_HOME: codexHome,
-    [claudeProof.SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.claudeTranscripts,
-    [codexProof.SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.codexTranscripts,
     [claudeProof.SESSION_CLAUDE_EXECUTABLE_ENV]: mock.executables.claude,
     [codexProof.SESSION_CODEX_EXECUTABLE_ENV]: mock.executables.codex,
     ...mock.launchEnv({ slowReply: false }),
@@ -409,6 +407,7 @@ async function readyPage(application: ElectronApplication, started: number) {
   page.setDefaultTimeout(WAIT_MS)
   await application.evaluate(({ BrowserWindow }, size) => {
     const mainWindow = BrowserWindow.getAllWindows()[0]
+    if (mainWindow === undefined) throw new Error('The app opened no window.')
     mainWindow.setContentSize(size.width, size.height)
   }, VIEWPORT)
   await page.waitForFunction(
@@ -424,7 +423,11 @@ async function readyPage(application: ElectronApplication, started: number) {
     throw new Error(`Expected at least ${SESSION_COUNT - ARCHIVED_COUNT} Sessions, got ${total}.`)
   const startupMs = Number((performance.now() - started).toFixed(2))
   const startup = await mainSnapshot(application)
-  await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].show())
+  await application.evaluate(({ BrowserWindow }) => {
+    const window = BrowserWindow.getAllWindows()[0]
+    if (window === undefined) throw new Error('The app opened no window.')
+    window.show()
+  })
   await armIpc(application)
   await armFrames(page)
   return { page, sidebar, startupMs, startup }
@@ -577,7 +580,7 @@ async function reportRun(request: {
 async function measureApplication(request: {
   fixture: Fixture
   corpus: Corpus
-  environment: NodeJS.ProcessEnv
+  environment: Record<string, string>
 }) {
   const { fixture, corpus, environment } = request
   const started = performance.now()

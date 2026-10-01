@@ -10,14 +10,8 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { type ElectronApplication, _electron as electron, type Page } from 'playwright-core'
-import {
-  SESSION_CLAUDE_EXECUTABLE_ENV,
-  SESSION_CLAUDE_TRANSCRIPTS_ENV,
-} from '@/harnesses/claude/proof-protocol'
-import {
-  SESSION_CODEX_EXECUTABLE_ENV,
-  SESSION_CODEX_TRANSCRIPTS_ENV,
-} from '@/harnesses/codex/proof-protocol'
+import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/harnesses/claude/proof-protocol'
+import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { applicationUnderTest, launchCommand } from '../../e2e/application-under-test'
 import { prepare } from '../../e2e/sessions/fixtures/feed.fixture'
@@ -171,8 +165,6 @@ async function launchSession(root: string, fixture: Fixture) {
     ...process.env,
     CLAUDE_CONFIG_DIR: claudeConfig,
     CODEX_HOME: codexHome,
-    [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.claudeTranscripts,
-    [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.codexTranscripts,
     [SESSION_CLAUDE_EXECUTABLE_ENV]: run.executables.claude,
     [SESSION_CODEX_EXECUTABLE_ENV]: run.executables.codex,
     ...run.launchEnv({ slowReply: false }),
@@ -187,7 +179,7 @@ async function launchSession(root: string, fixture: Fixture) {
   const page = await application.firstWindow()
   page.setDefaultTimeout(STEP_TIMEOUT_MS)
   await application.evaluate(({ BrowserWindow }, viewport) => {
-    BrowserWindow.getAllWindows()[0].setContentSize(viewport.width, viewport.height)
+    BrowserWindow.getAllWindows()[0]?.setContentSize(viewport.width, viewport.height)
   }, VIEWPORT)
   await page.waitForFunction(
     (viewport) => window.innerWidth === viewport.width && window.innerHeight === viewport.height,

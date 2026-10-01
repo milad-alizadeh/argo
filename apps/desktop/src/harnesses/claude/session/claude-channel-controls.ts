@@ -137,16 +137,16 @@ async function askPermission(
 
 export function createClaudeToolControl(input: {
   controls: LiveSessionControls
-  nativeId: () => string | null
+  nativeId: () => Promise<string | null>
   commandId: () => string
   emit: (body: SessionLiveEventBody) => void
   reject: () => void
 }): CanUseTool {
   return async (toolName, toolInput, options) => {
-    const nativeId = input.nativeId()
+    const commandId = input.commandId()
+    const nativeId = await input.nativeId()
     if (nativeId === null)
       return { behavior: 'deny', message: 'Session interaction is unavailable.' }
-    const commandId = input.commandId()
     const identity = {
       commandId,
       turnId: commandId,

@@ -22,7 +22,6 @@
   "include": [
     "e2e/**/*.ts",
     "mocks/**/*.ts",
-    "tools/**/*.ts",
     "src/harnesses/claude/integration/**/*.ts",
     "src/harnesses/codex/integration/**/*.ts",
     "src/platform/contract/appearance.test.ts",
