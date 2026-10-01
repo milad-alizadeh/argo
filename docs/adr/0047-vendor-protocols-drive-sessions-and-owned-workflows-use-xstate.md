@@ -53,8 +53,11 @@ The app machine owns the shared Codex client through the registration's shutdown
 app-server machine exists. The Harness catalog machine lives under
 `src/platform/main/harness-catalog/`.
 
-A Session without a live channel has no Feed change signal. Its Feed stays as last read until the
-reader reopens it or asks for Refresh. Its row's status and activity line come from the poll in
+A Session without a live channel reads its Feed through the vendor when the Feed opens, and again
+when a hook event or the poll moves its row's activity time or status (#2978). A Session the
+listing gives no transcript reads its open Feed on each poll tick until a hook fires for it. Each
+read goes through the Feed's one read in flight and one follow-up; a closed Feed reads nothing.
+Its row lists no Subagents, and its row's status and activity line come from the poll in
 ADR-0048.
 
 ## Amendment · Codex live Session channel · 2026-09-28

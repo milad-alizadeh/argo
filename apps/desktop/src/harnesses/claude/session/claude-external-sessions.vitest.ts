@@ -33,6 +33,7 @@ beforeEach(() => {
     ],
     hasLiveChannel: (sessionId) => Object.hasOwn(liveActors, sessionId),
     discover: ({ nativeId }) => discovered.push(nativeId),
+    refreshFeed: () => {},
   })
 })
 
