@@ -27,7 +27,6 @@
     "desktop:stop": "bun run --cwd apps/desktop dev:stop",
     "format-and-lint": "biome check . --error-on-warnings",
     "format-and-lint:fix": "biome check . --write",
-    "hooks:sync": "node packages/argo-skills/bin/hooks-sync.mts",
     "install:electron": "node node_modules/electron/install.js",
     "quality": "bun run format-and-lint && bun run quality:types && bun run quality:duplication && bun run quality:boundaries && bun run quality:dead-code",
     "quality:boundaries": "depcruise --config .dependency-cruiser.json apps/desktop/src apps/desktop/mocks apps/desktop/e2e",
@@ -38,11 +37,8 @@
     "test": "turbo run test && bun run test:codex-transport",
     "test:storybook": "turbo run test:storybook --filter=@argo/desktop",
     "test:codex-transport": "node --test prototypes/codex-transport/channel.test.ts",
-    "test:hooks": "node --test 'packages/argo-skills/skills/setup-argo-skills/hooks/*.test.mts'",
     "typecheck:codex-transport": "tsc --noEmit -p prototypes/codex-transport/tsconfig.json",
-    "typecheck:scripts": "tsc --noEmit -p tsconfig.scripts.json",
-    "worktrees:gc": "sh packages/argo-skills/skills/setup-argo-skills/hooks/worktree-gc.sh",
-    "worktrees:sweep": "sh packages/argo-skills/skills/setup-argo-skills/hooks/worktree-gc.sh --artifacts"
+    "typecheck:scripts": "tsc --noEmit -p tsconfig.scripts.json"
   },
   "workspaces": [
     "packages/*",
