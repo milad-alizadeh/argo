@@ -6,13 +6,34 @@ import { mockStartInput } from './mock-codex-channel.ts'
 
 type FeedBody = Extract<LiveSessionChannelEvent, { type: 'feed' }>['body']
 
+// Every event a live Session emits wakes the waits, so a wait keeps no clock of its own.
+const wakers = new Set<() => void>()
+
+// Settles once `check` holds after an emitted event; the test runner bounds how long it waits.
+export function waitFor(check: () => boolean): Promise<void> {
+  if (check()) return Promise.resolve()
+  return new Promise((resolve) => {
+    const wake = () => {
+      if (!check()) return
+      wakers.delete(wake)
+      resolve()
+    }
+    wakers.add(wake)
+  })
+}
+
 // A live Session channel over a real app-server client, with every event it emits recorded.
 export function openLiveSession(
   client: CodexAppServerClient,
   input: SessionLiveInput = mockStartInput,
 ) {
   const events: LiveSessionChannelEvent[] = []
-  const channel = openCodexSessionChannel(input, client, { emit: (event) => events.push(event) })
+  const channel = openCodexSessionChannel(input, client, {
+    emit: (event) => {
+      events.push(event)
+      for (const wake of wakers) wake()
+    },
+  })
   const feed = () =>
     events.flatMap((event): FeedBody[] => (event.type === 'feed' ? [event.body] : []))
   return {

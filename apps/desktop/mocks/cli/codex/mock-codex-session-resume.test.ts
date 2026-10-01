@@ -6,8 +6,8 @@ import path from 'node:path'
 import { test } from 'node:test'
 import type { SessionSendInput } from '@/domains/sessions/main/api/session-submit'
 import { mockStartInput } from './mock-codex-channel.ts'
-import { clientBackedByMock, mockCodexExecutable, waitFor } from './mock-codex-driver.ts'
-import { openLiveSession } from './mock-codex-live-session.ts'
+import { clientBackedByMock, mockCodexExecutable } from './mock-codex-driver.ts'
+import { openLiveSession, waitFor } from './mock-codex-live-session.ts'
 
 test('sends a follow-up Turn to a Codex Session this window does not hold yet', async () => {
   const echoFile = path.join(await mkdtemp(path.join(os.tmpdir(), 'argo-codex-echo-')), 'echo')
@@ -17,7 +17,7 @@ test('sends a follow-up Turn to a Codex Session this window does not hold yet', 
     ...mockStartInput,
     prompt: 'Open the resume proof.',
   })
-  await waitFor(() => first.has('turn.completed'), 'the first Turn to complete')
+  await waitFor(() => first.has('turn.completed'))
   const nativeId = first.nativeId()
   assert.ok(nativeId)
   first.channel.close()
@@ -40,7 +40,7 @@ test('sends a follow-up Turn to a Codex Session this window does not hold yet', 
   }
   const resumed = openLiveSession(resumedClient, resume)
   try {
-    await waitFor(() => resumed.has('turn.completed'), 'the resumed Turn to complete')
+    await waitFor(() => resumed.has('turn.completed'))
     assert.equal(resumed.nativeId(), nativeId)
     assert.equal(resumed.has('failure'), false)
     assert.match(await readFile(echoFile, 'utf8'), /Carry on after the restart\./)

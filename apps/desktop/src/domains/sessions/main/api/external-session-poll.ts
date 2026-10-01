@@ -96,7 +96,8 @@ export class ExternalSessionPoll {
   readonly #pending = new Map<string, { session: HarnessSession; update: SessionUpdate }>()
   readonly #reads = new Map<string, ReadState>()
   readonly #queue: HarnessSession[] = []
-  #reading = false
+  // The read queue's drain, while one runs.
+  #draining: Promise<void> | null = null
   #writeTimer: ReturnType<typeof setTimeout> | null = null
   #ticking: Promise<void> | null = null
   #interval: ReturnType<typeof setInterval> | null = null
@@ -136,6 +137,11 @@ export class ExternalSessionPoll {
         const tracked = this.#tracked(session)
         if (tracked !== undefined) tracked.shown = null
       }
+  }
+
+  // Settles once every read asked for so far has landed, for a test that waits on them.
+  readsSettled(): Promise<void> {
+    return this.#draining ?? Promise.resolve()
   }
 
   stop(): void {
@@ -269,7 +275,7 @@ export class ExternalSessionPoll {
   #read(session: HarnessSession): void {
     if (this.#stopped || !this.#asksForRead(harnessSessionKey(session))) return
     this.#queue.push(session)
-    void this.#drain()
+    this.#draining ??= this.#drain()
   }
 
   // Whether a new read starts, after recording the ask against the Session's read state.
@@ -290,14 +296,13 @@ export class ExternalSessionPoll {
     }
   }
 
+  // Clears itself in the same turn the queue empties, so a later ask starts a new drain.
   async #drain(): Promise<void> {
-    if (this.#reading) return
-    this.#reading = true
     try {
       for (let session = this.#queue.shift(); session !== undefined; session = this.#queue.shift())
         await this.#readOne(session)
     } finally {
-      this.#reading = false
+      this.#draining = null
     }
   }
 
