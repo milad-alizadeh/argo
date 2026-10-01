@@ -7,6 +7,8 @@ import { STATUS_HOOK_EVENTS } from '@/harnesses/host/status-hooks'
 import type { ExternalSessionHooks, LiveExternalSession } from '@/harnesses/registration'
 import { postHook } from '@/mocks/cli/status-hooks'
 import { insertSession, liveSession, sessionListCaller } from '@/mocks/sessions/session-list-caller'
+import { SessionFeedReaders } from '../feed'
+import { SessionEventJournal } from '../live'
 import { ExternalSessionPoll, RUNNING_QUIET_LIMIT_MS } from './external-session-poll'
 import { StatusHookReceiver } from './status-hook-receiver'
 
@@ -52,6 +54,8 @@ let caller: ReturnType<typeof sessionListCaller>
 let liveActors: Record<string, unknown>
 let discovered: string[]
 let poll: ExternalSessionPoll
+let feeds: SessionFeedReaders
+let readHistory: ReturnType<typeof vi.fn<() => Promise<[]>>>
 let receiver: StatusHookReceiver
 let folder: string
 let socketPath: string
@@ -63,12 +67,22 @@ beforeEach(() => {
   liveActors = {}
   caller = sessionListCaller({ sessions: liveActors })
   discovered = []
+  const hasLiveChannel = (sessionId: string) => Object.hasOwn(liveActors, sessionId)
+  readHistory = vi.fn(async () => [] as [])
+  feeds = new SessionFeedReaders({
+    database: caller.database,
+    journal: new SessionEventJournal(),
+    hasLiveChannel,
+    changes: caller.sessionListChanges,
+    readHistory,
+  })
   poll = new ExternalSessionPoll({
     database: caller.database,
     changes: caller.sessionListChanges,
     harnesses: [{ harness: 'claude', external: harness.external }],
-    hasLiveChannel: (sessionId) => Object.hasOwn(liveActors, sessionId),
+    hasLiveChannel,
     discover: ({ nativeId }) => discovered.push(nativeId),
+    refreshFeed: (sessionId) => feeds.refresh({ sessionId, subagentId: null }),
   })
   receiver = new StatusHookReceiver({
     poll,
@@ -114,6 +128,23 @@ async function atQuietLimit(now: number) {
   vi.spyOn(Date, 'now').mockReturnValue(now + RUNNING_QUIET_LIMIT_MS)
   await poll.tick()
   poll.flush()
+}
+
+// Opens the Session's Feed, and gives the vendor reads it has started once each settles.
+async function openFeed(id = SESSION) {
+  const close = feeds.observe({ sessionId: id, subagentId: null }, () => {})
+  const reads = async () => {
+    await new Promise((resolve) => setImmediate(resolve))
+    return readHistory.mock.calls.length
+  }
+  expect(await reads()).toBe(1)
+  return { close, reads }
+}
+
+// Each event gets its own activity time, so two in one millisecond still move the row.
+function steppedClock() {
+  let now = Date.now()
+  vi.spyOn(Date, 'now').mockImplementation(() => (now += 1_000))
 }
 
 const quietWarnings = () => vi.spyOn(console, 'warn').mockImplementation(() => {})
@@ -228,4 +259,61 @@ test('a socket left by an Argo that did not close is replaced', async () => {
   await receiver.start()
   saved()
   expect(await post('UserPromptSubmit')).toBe(204)
+})
+
+test('an open external Feed reads again on each hook event, and a closed one does not', async () => {
+  await receiver.start()
+  saved()
+  steppedClock()
+  const feed = await openFeed()
+  for (const [event, reads] of [
+    ['UserPromptSubmit', 2],
+    ['PostToolUse', 3],
+    ['Stop', 4],
+  ] as const) {
+    await post(event, SESSION, 'shell')
+    expect(await feed.reads()).toBe(reads)
+  }
+  feed.close()
+  await post('UserPromptSubmit')
+  expect(await feed.reads()).toBe(4)
+})
+
+test('a Session with no transcript reads its open Feed each tick until a hook fires', async () => {
+  await receiver.start()
+  saved()
+  const feed = await openFeed()
+  await listedRunning(SESSION)
+  const afterFirst = await feed.reads()
+  await listedRunning(SESSION)
+  expect(await feed.reads()).toBeGreaterThan(afterFirst)
+  await post('Stop')
+  const hooked = await feed.reads()
+  await listedRunning(SESSION)
+  await listedRunning(SESSION)
+  expect(await feed.reads()).toBe(hooked)
+  feed.close()
+})
+
+test('a Session that leaves the listing reads its open Feed once more', async () => {
+  await receiver.start()
+  saved()
+  await listedRunning(SESSION)
+  await post('UserPromptSubmit')
+  const feed = await openFeed()
+  await listedRunning()
+  expect(await feed.reads()).toBe(2)
+  expect((await row()).status).toBe('idle')
+  feed.close()
+})
+
+test('a Session Argo runs reads its Feed from its live channel, not on hook events or ticks', async () => {
+  await receiver.start()
+  saved()
+  liveActors[SESSION] = liveSession('Sending', 'running')
+  const feed = await openFeed()
+  await post('PostToolUse', SESSION, 'shell')
+  await listedRunning(SESSION)
+  expect(await feed.reads()).toBe(1)
+  feed.close()
 })

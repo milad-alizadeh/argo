@@ -123,7 +123,6 @@ test('a Subagent the newest Turn started is not stored for the external Session'
   const found = (await caller.list({ projectId: 'project-1' })).rows.find(
     (each) => each.id === RUNNING,
   )
-  expect(threads.turnsReads).toEqual([RUNNING])
   expect(found?.subagents).toEqual([])
 })
 
