@@ -18,10 +18,12 @@ const usageSchema = z.strictObject({
 
 export function sessionWorkReadProcedures() {
   return {
+    // #2970 reads the shell tail.
     sessionShellOutput: t.procedure
       .input(z.strictObject({ sessionId: identifierSchema, shellId: identifierSchema }))
       .output(shellOutputSchema)
       .query(() => ({ state: 'absent' as const })),
+    // No ticket yet: a Harness read of Subagent tokens and model fills this.
     sessionSubagentUsage: t.procedure
       .input(z.strictObject({ sessionId: identifierSchema }))
       .output(usageSchema)

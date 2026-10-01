@@ -335,6 +335,22 @@ export const EnterOnAnEmptyOrWhitespaceComposerSendsNothing: Story = {
   },
 }
 
+// No pause between keys: the Enter lands before React renders the typed text (#3020).
+export const EnterRightAfterTypingSendsTheTypedText: Story = {
+  render: (args) => <UnsettledSendStory onSend={args.onSend} />,
+  args: { onSend: fn(() => new Promise<boolean>(() => {})) },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.setup({ delay: null }).keyboard('Send this at once.{Enter}')
+
+    await expect(args.onSend).toHaveBeenCalledTimes(1)
+    await expect(args.onSend).toHaveBeenCalledWith('Send this at once.', null, [])
+  },
+}
+
 // An Enter that confirms an IME composition belongs to the input method, not to the send, and the
 // browser marks that press `isComposing`.
 export const EnterConfirmingAnImeCompositionSendsNothing: Story = {

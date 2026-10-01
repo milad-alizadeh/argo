@@ -107,8 +107,10 @@ markup you did not author, naming the vendored element on the same line (example
 ## Running the app
 
 Test the running app through its worktree's debugging port: from that worktree run `bun run dev`,
-read `debugPort` from `bun run desktop:status`, then `npx -y agent-browser@0.37.1 connect
-<debugPort>`. Never attach to a generic Electron process or write a separate CDP client.
+read `debugPort` from `bun run desktop:status`, then `npx -y agent-browser@0.37.1 --session
+<worktree folder name> connect <debugPort>`, and pass the same `--session` to every later
+agent-browser command so other agents' commands stay out of your window. Never attach to a generic
+Electron process or write a separate CDP client.
 
 To profile jank, dropped frames, re-renders or white flashes, read `docs/agents/profiling.md`
 first.

@@ -303,6 +303,7 @@ export class AcpSessionChannel implements LiveSessionChannel {
     } finally {
       clearTimeout(timeout)
       client.close()
+      await client.exited
       this.emitClosed()
     }
   }
