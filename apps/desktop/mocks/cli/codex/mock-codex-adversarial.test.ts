@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
 import { mockStartInput } from './mock-codex-channel.ts'
-import { clientBackedByMock, mockCodexExecutable, waitFor } from './mock-codex-driver.ts'
-import { openLiveSession } from './mock-codex-live-session.ts'
+import { clientBackedByMock, mockCodexExecutable } from './mock-codex-driver.ts'
+import { openLiveSession, waitFor } from './mock-codex-live-session.ts'
 
 async function startSeeded(seed: string, prompt: string) {
   const client = clientBackedByMock(
@@ -15,7 +15,7 @@ async function startSeeded(seed: string, prompt: string) {
 test('a seeded Codex reply survives a split through a multi-byte character', async () => {
   const { client, session } = await startSeeded('alpha', 'Keep this complete.')
   try {
-    await waitFor(() => session.has('turn.completed'), 'the seeded Turn to complete')
+    await waitFor(() => session.has('turn.completed'))
     assert.deepEqual(session.assistantText().at(-1), 'Mock Codex read: Keep this complete. 🦜')
     assert.equal(session.statuses().at(-1), 'idle')
   } finally {
@@ -28,14 +28,8 @@ test('a seeded Codex failure and stall stay visible as distinct adverse states',
   const failing = await startSeeded('seed-3', 'Fail this Turn.')
   const stalled = await startSeeded('seed-17', 'Stall this Turn.')
   try {
-    await waitFor(
-      () => failing.session.statuses().at(-1) === 'unknown',
-      'the failed Turn to report',
-    )
-    await waitFor(
-      () => stalled.session.statuses().at(-1) === 'running',
-      'the stalled Turn to start',
-    )
+    await waitFor(() => failing.session.statuses().at(-1) === 'unknown')
+    await waitFor(() => stalled.session.statuses().at(-1) === 'running')
     await new Promise((resolve) => setTimeout(resolve, 150))
     assert.equal(failing.session.statuses().at(-1), 'unknown')
     assert.equal(failing.session.has('turn.completed'), true)

@@ -3,6 +3,7 @@
 // a mock and a real Claude/Codex CLI, so a case that drives a live Turn just names the backend it
 // needs and lets the project (`sessions` or `real-sessions`, `playwright.config.ts`) decide which
 // one it gets, rather than living in a second curated file (#e2e-real-cheap-models).
+import { rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
@@ -30,6 +31,7 @@ import { ACTIVE_FEED } from './feed-selectors'
 import { appendProse } from './fixtures/feed.fixture'
 import { writeWindowFillerSessions } from './fixtures/session-list-window.fixture'
 import { openSessionByClick } from './gestures'
+import { sessionSyncHoldFile } from './packaged-session-harness'
 import { sessionDetails, sessionRows } from './page-trpc'
 import { assertTranscriptFeedCorpus } from './real-harness/transcript-feed-corpus'
 import { expect, test } from './session-proof-run'
@@ -57,7 +59,6 @@ test('session-removed-work-location', async ({ session }) => {
 test.describe('session refresh progress', () => {
   test.use({
     sessionSyncFixture: {
-      delayMs: 500,
       records: [
         {
           sessionId: 'bb458b6d-bcf3-4fe6-9586-65930e6185a0',
@@ -79,10 +80,14 @@ test.describe('session refresh progress', () => {
     const refresh = page.getByRole('menuitem', { name: 'Refresh Sessions' })
     await filter.click()
     await expect(refresh).toBeEnabled()
+    // The held sync stays running until the case has read it, however slow the machine is.
+    const hold = sessionSyncHoldFile(session.root)
+    await writeFile(hold, '')
     await refresh.click()
     await expect(page.getByRole('progressbar', { name: 'Session refresh progress' })).toBeVisible()
     await filter.click()
     await expect(refresh).toBeDisabled()
+    await rm(hold)
     await expect(refresh).toBeEnabled()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('progressbar')).toHaveCount(0)
