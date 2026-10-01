@@ -4,10 +4,9 @@ import { MOCK_CODEX_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
 import { compactionItem, completeTurn } from './fixtures/mock-codex-responses.ts'
 import { createMockCodexSkillsAndConfig } from './fixtures/mock-codex-skills-config.ts'
-import { rememberThreadCwd } from './fixtures/mock-codex-transcript.ts'
 import { handleAskReply } from './mock-ask-question.ts'
 import { readMockCodexRequest } from './mock-codex-request.ts'
-import { answerStoredHistory, rememberThread, resumeErrorFor } from './mock-codex-stored-threads.ts'
+import { answerStoredHistory, rememberThread } from './mock-codex-stored-threads.ts'
 import { createMockTurnStartHandler } from './mock-codex-turn.ts'
 
 process.title = MOCK_CODEX_PROCESS_TITLE
@@ -77,24 +76,12 @@ function startThread(message: Request) {
   threadCounter += 1
   const threadId = threadIdFor(threadCounter)
   const cwd = typeof message.params?.cwd === 'string' ? message.params.cwd : null
-  if (cwd !== null) rememberThreadCwd(threadId, cwd)
-  rememberThread({
-    id: threadId,
-    cwd,
-    name: null,
-    updatedAt: Math.floor(Date.now() / 1000),
-    status: { type: 'idle' },
-    turns: [],
-  })
+  rememberThread(threadId, cwd)
   send({ id: message.id, result: { thread: { id: threadId } } })
 }
 
 function resumeThread(message: Request) {
   const threadId = message.params?.threadId
-  const error = resumeErrorFor(threadId)
-  if (error !== undefined) return send({ id: message.id, error: { code: -32000, message: error } })
-  const cwd = message.params?.cwd
-  if (typeof threadId === 'string' && typeof cwd === 'string') rememberThreadCwd(threadId, cwd)
   send({ id: message.id, result: { thread: { id: threadId } } })
 }
 

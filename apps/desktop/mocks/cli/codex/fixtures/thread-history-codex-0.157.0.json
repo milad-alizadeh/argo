@@ -1,0 +1,630 @@
+{
+  "version": "0.157.0",
+  "calls": [
+    {
+      "method": "thread/list",
+      "params": {
+        "limit": 50
+      },
+      "result": {
+        "data": [
+          {
+            "id": "01a0f545-0af1-7562-91cd-9e2935526e3a",
+            "environments": [
+              {
+                "environmentId": "local",
+                "cwd": "/tmp/argo-2982/project-codex",
+                "runtimeWorkspaceRoots": [
+                  "/tmp/argo-2982/project-codex"
+                ]
+              }
+            ],
+            "extra": null,
+            "sessionId": "01a0f545-0af1-7562-91cd-9e2935526e3a",
+            "forkedFromId": null,
+            "parentThreadId": null,
+            "preview": "<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>",
+            "ephemeral": false,
+            "section": null,
+            "sectionEnteredAt": null,
+            "projectId": null,
+            "historyMode": "paginated",
+            "modelProvider": "openai",
+            "model": "gpt-5.6-luna",
+            "reasoningEffort": "low",
+            "createdAt": 1790821337,
+            "updatedAt": 1790821342,
+            "recencyAt": 1790821338,
+            "status": {
+              "type": "idle"
+            },
+            "path": "/private/tmp/argo-2982/codex-rec/sessions/2026/10/01/rollout-2026-10-01T03-22-17-01a0f545-0af1-7562-91cd-9e2935526e3a.jsonl",
+            "cwd": "/tmp/argo-2982/project-codex",
+            "cliVersion": "0.157.0",
+            "originator": "argo-recorder",
+            "source": "vscode",
+            "canAcceptDirectInput": null,
+            "threadSource": null,
+            "agentNickname": null,
+            "agentRole": null,
+            "gitInfo": null,
+            "name": null,
+            "daybreakEnabled": null,
+            "turns": []
+          },
+          {
+            "id": "01a0f544-f8c3-7861-a92a-a3c0acfe0d16",
+            "environments": [
+              {
+                "environmentId": "local",
+                "cwd": "/tmp/argo-2982/project-codex",
+                "runtimeWorkspaceRoots": [
+                  "/tmp/argo-2982/project-codex"
+                ]
+              }
+            ],
+            "extra": null,
+            "sessionId": "01a0f544-f8c3-7861-a92a-a3c0acfe0d16",
+            "forkedFromId": null,
+            "parentThreadId": null,
+            "preview": "Continue the check",
+            "ephemeral": false,
+            "section": null,
+            "sectionEnteredAt": null,
+            "projectId": null,
+            "historyMode": "paginated",
+            "modelProvider": "openai",
+            "model": "gpt-5.6-luna",
+            "reasoningEffort": "low",
+            "createdAt": 1790821333,
+            "updatedAt": 1790821337,
+            "recencyAt": 1790821333,
+            "status": {
+              "type": "idle"
+            },
+            "path": "/private/tmp/argo-2982/codex-rec/sessions/2026/10/01/rollout-2026-10-01T03-22-13-01a0f544-f8c3-7861-a92a-a3c0acfe0d16.jsonl",
+            "cwd": "/tmp/argo-2982/project-codex",
+            "cliVersion": "0.157.0",
+            "originator": "argo-recorder",
+            "source": "vscode",
+            "canAcceptDirectInput": null,
+            "threadSource": null,
+            "agentNickname": null,
+            "agentRole": null,
+            "gitInfo": null,
+            "name": null,
+            "daybreakEnabled": null,
+            "turns": []
+          },
+          {
+            "id": "01a0f544-863f-76c1-a3e7-2959e90fb092",
+            "environments": [
+              {
+                "environmentId": "local",
+                "cwd": "/tmp/argo-2982/project-codex",
+                "runtimeWorkspaceRoots": [
+                  "/tmp/argo-2982/project-codex"
+                ]
+              }
+            ],
+            "extra": null,
+            "sessionId": "01a0f544-863f-76c1-a3e7-2959e90fb092",
+            "forkedFromId": null,
+            "parentThreadId": null,
+            "preview": "Run Codex check",
+            "ephemeral": false,
+            "section": null,
+            "sectionEnteredAt": null,
+            "projectId": null,
+            "historyMode": "paginated",
+            "modelProvider": "openai",
+            "model": "gpt-5.6-luna",
+            "reasoningEffort": "low",
+            "createdAt": 1790821303,
+            "updatedAt": 1790821333,
+            "recencyAt": 1790821304,
+            "status": {
+              "type": "idle"
+            },
+            "path": "/private/tmp/argo-2982/codex-rec/sessions/2026/10/01/rollout-2026-10-01T03-21-43-01a0f544-863f-76c1-a3e7-2959e90fb092.jsonl",
+            "cwd": "/tmp/argo-2982/project-codex",
+            "cliVersion": "0.157.0",
+            "originator": "argo-recorder",
+            "source": "vscode",
+            "canAcceptDirectInput": null,
+            "threadSource": null,
+            "agentNickname": null,
+            "agentRole": null,
+            "gitInfo": null,
+            "name": null,
+            "daybreakEnabled": null,
+            "turns": []
+          }
+        ],
+        "nextCursor": null,
+        "backwardsCursor": "2026-10-01T02:22:17.893Z"
+      }
+    },
+    {
+      "method": "thread/read",
+      "params": {
+        "threadId": "01a0f544-863f-76c1-a3e7-2959e90fb092",
+        "includeTurns": true
+      },
+      "result": {
+        "thread": {
+          "id": "01a0f544-863f-76c1-a3e7-2959e90fb092",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/argo-2982/project-codex",
+              "runtimeWorkspaceRoots": [
+                "/tmp/argo-2982/project-codex"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a0f544-863f-76c1-a3e7-2959e90fb092",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "Run Codex check",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "openai",
+          "model": "gpt-5.6-luna",
+          "reasoningEffort": "low",
+          "createdAt": 1790821303,
+          "updatedAt": 1790821333,
+          "recencyAt": 1790821304,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/private/tmp/argo-2982/codex-rec/sessions/2026/10/01/rollout-2026-10-01T03-21-43-01a0f544-863f-76c1-a3e7-2959e90fb092.jsonl",
+          "cwd": "/private/tmp/argo-2982/project-codex",
+          "cliVersion": "0.157.0",
+          "originator": "argo-recorder",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": [
+            {
+              "id": "01a0f544-86f5-79a1-86ad-e236e6f1aa42",
+              "items": [
+                {
+                  "type": "userMessage",
+                  "id": "01a0f544-954a-78c3-9960-329c4aa7b4a8",
+                  "clientId": null,
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Run Codex check",
+                      "text_elements": []
+                    }
+                  ]
+                },
+                {
+                  "type": "reasoning",
+                  "id": "rs_00a7a4cb3e60d601016abdc3bd8ef087d28c2fd5d0d02657a3",
+                  "summary": [],
+                  "content": []
+                },
+                {
+                  "type": "agentMessage",
+                  "id": "msg_00a7a4cb3e60d601016abdc3be30ec87d2ae33a9d33a244068",
+                  "text": "I’ll inspect the project’s available checks and run the appropriate one.",
+                  "phase": "commentary",
+                  "memoryCitation": null,
+                  "delivery": null,
+                  "questions": null
+                },
+                {
+                  "type": "commandExecution",
+                  "id": "exec-c9c3eb00-8ac3-48db-8e50-4ef9ac2a5290",
+                  "pluginId": null,
+                  "scriptPath": null,
+                  "command": "/bin/zsh -lc \"pwd && rg --files -g '\"'!*node_modules*'\"' -g '\"'!*.lock'\"' | head -80 && printf '\\\\nScripts/configs:\\\\n' && rg -n '\\\"(check|test|lint|typecheck)\\\"|codex check|Codex check' package.json pyproject.toml Makefile justfile README* 2>/dev/null | head -80\"",
+                  "cwd": "/tmp/argo-2982/project-codex",
+                  "processId": "39750",
+                  "source": "unifiedExecStartup",
+                  "status": "completed",
+                  "commandActions": [
+                    {
+                      "type": "unknown",
+                      "command": "pwd && rg --files -g '!*node_modules*' -g '!*.lock' | head -80 && printf '\\nScripts/configs:\\n' && rg -n '\"(check|test|lint|typecheck)\"|codex check|Codex check' package.json pyproject.toml Makefile justfile README* 2>/dev/null | head -80"
+                    }
+                  ],
+                  "aggregatedOutput": "/tmp/argo-2982/project-codex\n\nScripts/configs:\nzsh:1: no matches found: README*\n",
+                  "exitCode": 0,
+                  "durationMs": 0
+                },
+                {
+                  "type": "reasoning",
+                  "id": "rs_00a7a4cb3e60d601016abdc3c26f9087d29319c9a30aa7b648",
+                  "summary": [],
+                  "content": []
+                },
+                {
+                  "type": "commandExecution",
+                  "id": "exec-ed2f08c1-26a2-4929-82d8-b59d4a50dd69",
+                  "pluginId": null,
+                  "scriptPath": null,
+                  "command": "/bin/zsh -lc 'ls -la && find . -maxdepth 2 -type f -print | head -100'",
+                  "cwd": "/tmp/argo-2982/project-codex",
+                  "processId": "96897",
+                  "source": "unifiedExecStartup",
+                  "status": "completed",
+                  "commandActions": [
+                    {
+                      "type": "listFiles",
+                      "command": "ls -la",
+                      "path": null
+                    },
+                    {
+                      "type": "listFiles",
+                      "command": "find . -maxdepth 2 -type f -print",
+                      "path": "."
+                    }
+                  ],
+                  "aggregatedOutput": "total 0\ndrwxr-xr-x@ 3 milad  wheel   96 Oct  1 03:21 .\ndrwxr-xr-x@ 6 milad  wheel  192 Oct  1 03:21 ..\ndrwxr-xr-x@ 9 milad  wheel  288 Oct  1 03:21 .git\n./.git/config\n./.git/HEAD\n./.git/description\n",
+                  "exitCode": 0,
+                  "durationMs": 0
+                },
+                {
+                  "type": "reasoning",
+                  "id": "rs_00a7a4cb3e60d601016abdc3c5e02887d28a7c26a58cce9f25",
+                  "summary": [],
+                  "content": []
+                },
+                {
+                  "type": "reasoning",
+                  "id": "rs_00a7a4cb3e60d601016abdc3d3815487d28ca1cb02499677b3",
+                  "summary": [],
+                  "content": []
+                },
+                {
+                  "type": "agentMessage",
+                  "id": "msg_00a7a4cb3e60d601016abdc3d46eb487d2ac97c816bac38094",
+                  "text": "Codex check couldn’t run: the workspace contains only an empty Git repository—no source files, configuration, or check scripts. Git also encountered restricted cache permissions.",
+                  "phase": "final_answer",
+                  "memoryCitation": null,
+                  "delivery": null,
+                  "questions": null
+                }
+              ],
+              "itemsView": "full",
+              "status": "completed",
+              "error": null,
+              "startedAt": 1790821304,
+              "completedAt": 1790821333,
+              "durationMs": 29044
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a0f544-863f-76c1-a3e7-2959e90fb092"
+      },
+      "result": {
+        "data": [
+          {
+            "id": "01a0f544-86f5-79a1-86ad-e236e6f1aa42",
+            "items": [
+              {
+                "type": "userMessage",
+                "id": "01a0f544-954a-78c3-9960-329c4aa7b4a8",
+                "clientId": null,
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Run Codex check",
+                    "text_elements": []
+                  }
+                ]
+              },
+              {
+                "type": "agentMessage",
+                "id": "msg_00a7a4cb3e60d601016abdc3d46eb487d2ac97c816bac38094",
+                "text": "Codex check couldn’t run: the workspace contains only an empty Git repository—no source files, configuration, or check scripts. Git also encountered restricted cache permissions.",
+                "phase": "final_answer",
+                "memoryCitation": null,
+                "delivery": null,
+                "questions": null
+              }
+            ],
+            "itemsView": "summary",
+            "status": "completed",
+            "error": null,
+            "startedAt": 1790821304,
+            "completedAt": 1790821333,
+            "durationMs": 29044
+          }
+        ],
+        "nextCursor": null,
+        "backwardsCursor": "{\"requestedThreadId\":\"01a0f544-863f-76c1-a3e7-2959e90fb092\",\"rolloutOrdinal\":1,\"includeAnchor\":true,\"scope\":{\"kind\":\"turns\"}}"
+      }
+    },
+    {
+      "method": "thread/read",
+      "params": {
+        "threadId": "01a0f544-f8c3-7861-a92a-a3c0acfe0d16",
+        "includeTurns": true
+      },
+      "result": {
+        "thread": {
+          "id": "01a0f544-f8c3-7861-a92a-a3c0acfe0d16",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/argo-2982/project-codex",
+              "runtimeWorkspaceRoots": [
+                "/tmp/argo-2982/project-codex"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a0f544-f8c3-7861-a92a-a3c0acfe0d16",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "Continue the check",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "openai",
+          "model": "gpt-5.6-luna",
+          "reasoningEffort": "low",
+          "createdAt": 1790821333,
+          "updatedAt": 1790821337,
+          "recencyAt": 1790821333,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/private/tmp/argo-2982/codex-rec/sessions/2026/10/01/rollout-2026-10-01T03-22-13-01a0f544-f8c3-7861-a92a-a3c0acfe0d16.jsonl",
+          "cwd": "/private/tmp/argo-2982/project-codex",
+          "cliVersion": "0.157.0",
+          "originator": "argo-recorder",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": [
+            {
+              "id": "01a0f544-f965-7a21-b085-56d4f8808782",
+              "items": [
+                {
+                  "type": "userMessage",
+                  "id": "01a0f545-019e-7e03-ac98-6120375c2fa9",
+                  "clientId": null,
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Continue the check",
+                      "text_elements": []
+                    }
+                  ]
+                },
+                {
+                  "type": "reasoning",
+                  "id": "rs_037b94ca171276d5016abdc3d888d487d282beafdedfd5156c",
+                  "summary": [],
+                  "content": []
+                },
+                {
+                  "type": "agentMessage",
+                  "id": "msg_037b94ca171276d5016abdc3d92b3087d29b6307627c7a1279",
+                  "text": "What would you like me to continue checking? Please share the file, command, or previous check you mean.",
+                  "phase": "final_answer",
+                  "memoryCitation": null,
+                  "delivery": null,
+                  "questions": null
+                }
+              ],
+              "itemsView": "full",
+              "status": "completed",
+              "error": null,
+              "startedAt": 1790821333,
+              "completedAt": 1790821337,
+              "durationMs": 4360
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a0f544-f8c3-7861-a92a-a3c0acfe0d16"
+      },
+      "result": {
+        "data": [
+          {
+            "id": "01a0f544-f965-7a21-b085-56d4f8808782",
+            "items": [
+              {
+                "type": "userMessage",
+                "id": "01a0f545-019e-7e03-ac98-6120375c2fa9",
+                "clientId": null,
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Continue the check",
+                    "text_elements": []
+                  }
+                ]
+              },
+              {
+                "type": "agentMessage",
+                "id": "msg_037b94ca171276d5016abdc3d92b3087d29b6307627c7a1279",
+                "text": "What would you like me to continue checking? Please share the file, command, or previous check you mean.",
+                "phase": "final_answer",
+                "memoryCitation": null,
+                "delivery": null,
+                "questions": null
+              }
+            ],
+            "itemsView": "summary",
+            "status": "completed",
+            "error": null,
+            "startedAt": 1790821333,
+            "completedAt": 1790821337,
+            "durationMs": 4360
+          }
+        ],
+        "nextCursor": null,
+        "backwardsCursor": "{\"requestedThreadId\":\"01a0f544-f8c3-7861-a92a-a3c0acfe0d16\",\"rolloutOrdinal\":1,\"includeAnchor\":true,\"scope\":{\"kind\":\"turns\"}}"
+      }
+    },
+    {
+      "method": "thread/read",
+      "params": {
+        "threadId": "01a0f545-0af1-7562-91cd-9e2935526e3a",
+        "includeTurns": true
+      },
+      "result": {
+        "thread": {
+          "id": "01a0f545-0af1-7562-91cd-9e2935526e3a",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/argo-2982/project-codex",
+              "runtimeWorkspaceRoots": [
+                "/tmp/argo-2982/project-codex"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a0f545-0af1-7562-91cd-9e2935526e3a",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "openai",
+          "model": "gpt-5.6-luna",
+          "reasoningEffort": "low",
+          "createdAt": 1790821337,
+          "updatedAt": 1790821342,
+          "recencyAt": 1790821338,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/private/tmp/argo-2982/codex-rec/sessions/2026/10/01/rollout-2026-10-01T03-22-17-01a0f545-0af1-7562-91cd-9e2935526e3a.jsonl",
+          "cwd": "/private/tmp/argo-2982/project-codex",
+          "cliVersion": "0.157.0",
+          "originator": "argo-recorder",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": [
+            {
+              "id": "01a0f545-0b91-7671-b09b-7b41665fc070",
+              "items": [
+                {
+                  "type": "userMessage",
+                  "id": "01a0f545-13d6-75f2-bc6d-22722e701b80",
+                  "clientId": null,
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>",
+                      "text_elements": []
+                    }
+                  ]
+                },
+                {
+                  "type": "reasoning",
+                  "id": "rs_0b6d807c72c421c5016abdc3dd5e1487d2aa7c327a22ba5642",
+                  "summary": [],
+                  "content": []
+                },
+                {
+                  "type": "agentMessage",
+                  "id": "msg_0b6d807c72c421c5016abdc3ddbd2c87d29a58e1c2de21d83a",
+                  "text": "The corpus task has completed successfully.",
+                  "phase": "final_answer",
+                  "memoryCitation": null,
+                  "delivery": null,
+                  "questions": null
+                }
+              ],
+              "itemsView": "full",
+              "status": "completed",
+              "error": null,
+              "startedAt": 1790821338,
+              "completedAt": 1790821342,
+              "durationMs": 4013
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a0f545-0af1-7562-91cd-9e2935526e3a"
+      },
+      "result": {
+        "data": [
+          {
+            "id": "01a0f545-0b91-7671-b09b-7b41665fc070",
+            "items": [
+              {
+                "type": "userMessage",
+                "id": "01a0f545-13d6-75f2-bc6d-22722e701b80",
+                "clientId": null,
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>",
+                    "text_elements": []
+                  }
+                ]
+              },
+              {
+                "type": "agentMessage",
+                "id": "msg_0b6d807c72c421c5016abdc3ddbd2c87d29a58e1c2de21d83a",
+                "text": "The corpus task has completed successfully.",
+                "phase": "final_answer",
+                "memoryCitation": null,
+                "delivery": null,
+                "questions": null
+              }
+            ],
+            "itemsView": "summary",
+            "status": "completed",
+            "error": null,
+            "startedAt": 1790821338,
+            "completedAt": 1790821342,
+            "durationMs": 4013
+          }
+        ],
+        "nextCursor": null,
+        "backwardsCursor": "{\"requestedThreadId\":\"01a0f545-0af1-7562-91cd-9e2935526e3a\",\"rolloutOrdinal\":1,\"includeAnchor\":true,\"scope\":{\"kind\":\"turns\"}}"
+      }
+    }
+  ]
+}

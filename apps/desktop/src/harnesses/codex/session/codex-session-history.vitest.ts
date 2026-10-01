@@ -1,11 +1,8 @@
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { afterEach, expect, test, vi } from 'vitest'
-import { scanRollouts } from '../../../../mocks/cli/codex/mock-codex-rollout-history.ts'
+import { expect, test, vi } from 'vitest'
+import { recordedThread } from '../../../../mocks/cli/codex/recorded-codex-threads.ts'
 import type { CodexRequest } from '../app-server'
 import { hasCodexSessionTurn, readCodexSessionHistory } from './codex-session-history'
-
-afterEach(() => vi.unstubAllEnvs())
 
 function warningSpy() {
   return vi.spyOn(console, 'warn').mockImplementation(() => {})
@@ -16,13 +13,8 @@ function singleItemRequest(item: Record<string, unknown>): CodexRequest {
     parse({ thread: { turns: [{ items: [item] }] } })) as CodexRequest
 }
 
-test('projects recorded Codex user and agent messages into Feed content', async () => {
-  vi.stubEnv(
-    'ARGO_CODEX_TRANSCRIPTS',
-    fileURLToPath(new URL('../../../../mocks/cli/codex/fixtures/sessions', import.meta.url)),
-  )
-  const thread = scanRollouts().find((candidate) => candidate.id === 'rollout-codexChild')
-  if (thread === undefined) throw new Error('The recorded Codex thread is missing.')
+test('projects a recorded Codex thread read into Feed content', async () => {
+  const thread = recordedThread('Continue the check')
   const calls: unknown[] = []
   const request = (async (method: string, params: unknown, parse: (value: unknown) => unknown) => {
     calls.push({ method, params })
@@ -30,18 +22,32 @@ test('projects recorded Codex user and agent messages into Feed content', async 
   }) as CodexRequest
 
   await expect(readCodexSessionHistory(request, thread.id)).resolves.toEqual([
-    { kind: 'message', id: 'codex-child-u1', role: 'user', text: 'Continue the check' },
-    { kind: 'message', id: 'codex-child-a1', role: 'assistant', text: 'Continuing' },
+    {
+      kind: 'message',
+      id: '01a0f545-019e-7e03-ac98-6120375c2fa9',
+      role: 'user',
+      text: 'Continue the check',
+    },
+    {
+      kind: 'reasoning',
+      id: 'rs_037b94ca171276d5016abdc3d888d487d282beafdedfd5156c',
+      redacted: false,
+      text: null,
+    },
+    {
+      kind: 'message',
+      id: 'msg_037b94ca171276d5016abdc3d92b3087d29b6307627c7a1279',
+      role: 'assistant',
+      phase: 'final_answer',
+      text: 'What would you like me to continue checking? Please share the file, command, or previous check you mean.',
+    },
   ])
   const recordedTurnId = thread.turns[0]?.id
   if (recordedTurnId === undefined) throw new Error('The recorded Codex turn is missing.')
   await expect(hasCodexSessionTurn(request, thread.id, recordedTurnId)).resolves.toBe(true)
   await expect(hasCodexSessionTurn(request, thread.id, 'missing-turn')).resolves.toBe(false)
-  expect(calls).toEqual([
-    { method: 'thread/read', params: { threadId: 'rollout-codexChild', includeTurns: true } },
-    { method: 'thread/read', params: { threadId: 'rollout-codexChild', includeTurns: true } },
-    { method: 'thread/read', params: { threadId: 'rollout-codexChild', includeTurns: true } },
-  ])
+  const read = { method: 'thread/read', params: { threadId: thread.id, includeTurns: true } }
+  expect(calls).toEqual([read, read, read])
 })
 
 test('shows known markers and rejects unrecognized item types', async () => {

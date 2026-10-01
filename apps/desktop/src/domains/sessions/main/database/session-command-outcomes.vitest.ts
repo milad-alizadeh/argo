@@ -1,12 +1,11 @@
-import { fileURLToPath } from 'node:url'
 import { eq } from 'drizzle-orm'
-import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, expect, test } from 'vitest'
 import type { Database } from '@/database/database'
 import { sessionCommandTable } from '@/database/session/command-schema'
 import type { CodexRequest } from '@/harnesses/codex/app-server'
 import { hasCodexSessionTurn } from '@/harnesses/codex/session'
 import { migratedDatabase } from '@/mocks/database/migrated-database'
-import { scanRollouts } from '../../../../../mocks/cli/codex/mock-codex-rollout-history'
+import { recordedThread } from '@/mocks/cli/codex/recorded-codex-threads'
 import {
   bindSessionCommand,
   claimSessionCommand,
@@ -30,7 +29,6 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  vi.unstubAllEnvs()
   database.$client.close()
 })
 
@@ -63,13 +61,9 @@ test('records only command control facts and prevents a duplicate vendor call', 
 })
 
 test('restart checks a recorded Codex turn before resolving an uncertain send', async () => {
-  vi.stubEnv(
-    'ARGO_CODEX_TRANSCRIPTS',
-    fileURLToPath(new URL('../../../../../mocks/cli/codex/fixtures/sessions', import.meta.url)),
-  )
-  const thread = scanRollouts().find((candidate) => candidate.id === 'rollout-codexChild')
-  const turnId = thread?.turns[0]?.id
-  if (thread === undefined || turnId === undefined) throw new Error('Recorded Codex turn missing.')
+  const thread = recordedThread('Continue the check')
+  const turnId = thread.turns[0]?.id
+  if (turnId === undefined) throw new Error('Recorded Codex turn missing.')
   const codexCommand = { ...command, harness: 'codex' as const, nativeId: thread.id }
   claimSessionCommand(database, codexCommand)
   bindSessionCommand(database, command.commandId, { turnId })
