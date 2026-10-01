@@ -107,3 +107,22 @@ export const Empty: Story = {
     ).toBeVisible()
   },
 }
+
+// A Session read back from its row knows only its step count, not the steps.
+export const StepCountOnly: Story = {
+  args: { plan: { state: 'counted', completed: 1, total: 2 } },
+  play: async ({ canvasElement }) => {
+    const trigger = await opensPlan(canvasElement)
+    await expect(trigger).toHaveTextContent('Step 1/2')
+    const popover = await shownPlanContent(trigger)
+    await expect(popover.getByRole('progressbar', { name: '1 of 2 steps completed' })).toBeVisible()
+    await expect(popover.queryByRole('list', { name: 'Task plan' })).toBeNull()
+  },
+}
+
+export const NoPlan: Story = {
+  args: { plan: null },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).queryByRole('button', { name: 'Open task plan' })).toBeNull()
+  },
+}

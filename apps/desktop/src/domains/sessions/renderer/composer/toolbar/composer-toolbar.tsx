@@ -4,7 +4,7 @@ import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import type { HarnessControl } from '../../harness'
-import type { SessionPlan } from '../../types'
+import type { ComposerPlan } from '../../types'
 import { useComposerEditing } from '../editing/composer-editing-context'
 import { SessionPlanPopover } from '../layout/session-plan-popover'
 import { ModeMenu } from './mode-menu'
@@ -43,7 +43,7 @@ export function ComposerToolbar({
   interruptRef,
   plan,
 }: {
-  plan: SessionPlan | null
+  plan: ComposerPlan | null
   disabled?: boolean
   sendAvailable?: boolean
   onOpenContextPicker: () => void

@@ -189,3 +189,42 @@ test('keeps the first committed batch when the second batch fails', async () => 
     client.close()
   }
 })
+
+function storedTurnConfiguration(client: ReturnType<typeof createDatabase>['client']) {
+  const row = client.prepare('SELECT turn_configuration FROM session').get() as {
+    turn_configuration: string | null
+  }
+  return row.turn_configuration === null ? null : JSON.parse(row.turn_configuration)
+}
+
+test('saves a found Model and Effort, and keeps them when a later scan finds none', () => {
+  const { client, database } = createDatabase()
+  const found = { model: 'gpt-5.5', effort: 'high', mode: null }
+  try {
+    saveSessionBatch(database, 'codex', [{ nativeId: ID, activityAt: 1, turnConfiguration: found }])
+    assert.deepEqual(storedTurnConfiguration(client), found)
+    saveSessionBatch(database, 'codex', [{ nativeId: ID, activityAt: 2 }])
+    assert.deepEqual(storedTurnConfiguration(client), found)
+  } finally {
+    client.close()
+  }
+})
+
+test('keeps a live-saved Model and Effort when a later scan finds older ones', () => {
+  const { client, database } = createDatabase()
+  const live = { model: 'gpt-5.6', effort: 'low', mode: null }
+  try {
+    saveSessionBatch(database, 'codex', [{ nativeId: ID, activityAt: 1 }])
+    client.prepare('UPDATE session SET turn_configuration = ?').run(JSON.stringify(live))
+    saveSessionBatch(database, 'codex', [
+      {
+        nativeId: ID,
+        activityAt: 2,
+        turnConfiguration: { model: 'gpt-5.5', effort: 'high', mode: null },
+      },
+    ])
+    assert.deepEqual(storedTurnConfiguration(client), live)
+  } finally {
+    client.close()
+  }
+})

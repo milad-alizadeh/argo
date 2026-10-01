@@ -129,6 +129,44 @@ test('draws a Skill call as a skill row that names the skill only', () => {
   expect(projection.project({ ...call, id: 'call-skill:result', input: null })).toEqual([])
 })
 
+function todoCall(todos: Record<string, string>[]): Extract<FeedContent, { kind: 'tool' }> {
+  return {
+    kind: 'tool',
+    id: 'message-1',
+    callId: 'call-todo',
+    name: 'TodoWrite',
+    status: 'running',
+    input: { todos },
+    output: null,
+    summary: null,
+  }
+}
+
+test('draws a TodoWrite call as a Plan with its steps done and in total', () => {
+  const projection = new ClaudeFeedProjection()
+  const call = todoCall([
+    { content: 'Read the code', status: 'completed', activeForm: 'Reading the code' },
+    { content: 'Write the test', status: 'in_progress', activeForm: 'Writing the test' },
+    { content: 'Ship it', status: 'pending', activeForm: 'Shipping it' },
+  ])
+
+  expect(projection.project(call)).toEqual([
+    {
+      id: 'message-1',
+      kind: 'plan',
+      text: '- Read the code\n- Write the test\n- Ship it',
+      progress: { completed: 1, total: 3 },
+    },
+  ])
+  expect(projection.project({ ...call, id: 'call-todo:result', input: null })).toEqual([])
+})
+
+test('leaves a TodoWrite call it cannot read as the tool call it is', () => {
+  const call = todoCall([{ content: 'Read the code', status: 'skipped' }])
+
+  expect(new ClaudeFeedProjection().project(call)).toEqual([call])
+})
+
 test('leaves a slash command as the command it ran', () => {
   const projection = new ClaudeFeedProjection()
 

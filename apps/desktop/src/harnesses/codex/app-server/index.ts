@@ -18,4 +18,5 @@ export type { ThreadReadParams } from './protocol-generated/v2/thread-read-param
 export type { ThreadReadResponse } from './protocol-generated/v2/thread-read-response'
 export type { ThreadTurnsListParams } from './protocol-generated/v2/thread-turns-list-params'
 export type { ThreadTurnsListResponse } from './protocol-generated/v2/thread-turns-list-response'
+export type { TurnPlanUpdatedNotification } from './protocol-generated/v2/turn-plan-updated-notification'
 export type { UserInput } from './protocol-generated/v2/user-input'
