@@ -1,4 +1,4 @@
-import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { initTRPC } from '@trpc/server'
 import { afterAll, afterEach, beforeEach, expect, test, vi } from 'vitest'
@@ -8,9 +8,9 @@ import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/harnesses/claude/proof-protocol
 import type { CodexAppServerClient } from '@/harnesses/codex/app-server'
 import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
 import type { mockClaudeAgentsCli } from '@/mocks/cli/claude/mock-claude-agents'
-import { claudeProjectFolder } from '@/mocks/cli/claude/mock-claude-transcripts'
-import { holdCodexWriterLock } from '@/mocks/cli/codex/mock-codex-external-threads'
-import { mockExternalClis } from '@/mocks/cli/mock-external-clis'
+import { claudeExternalWriter } from '@/mocks/cli/claude/mock-claude-external-writer'
+import { codexExternalWriter } from '@/mocks/cli/codex/mock-codex-external-writer'
+import { type ExternalWriter, mockExternalClis } from '@/mocks/cli/mock-external-clis'
 import { guardRealUserConfig } from '@/mocks/cli/real-user-config'
 import { hookEvent, postHook } from '@/mocks/cli/status-hooks'
 import { collect } from '@/mocks/sessions/session-feed-harness'
@@ -43,7 +43,7 @@ let reads: number
 // Holds every vendor read until the test opens it.
 let gate: Promise<void>
 let openGate: () => void
-let releases: (() => Promise<void>)[]
+let writers: ExternalWriter[]
 let codexHistory: string
 
 beforeEach(async () => {
@@ -61,7 +61,7 @@ beforeEach(async () => {
   registry = createHarnessRegistry(codex)
   caller = sessionListCaller()
   live = new Set()
-  releases = []
+  writers = []
   reads = 0
   gate = Promise.resolve()
 })
@@ -69,7 +69,7 @@ beforeEach(async () => {
 afterEach(async () => {
   receiver?.stop()
   poll?.stop()
-  for (const release of releases) await release()
+  for (const writer of writers) await writer.exit()
   vi.unstubAllEnvs()
   vi.restoreAllMocks()
   caller.stopWatching()
@@ -139,115 +139,15 @@ async function shows(feed: { latest: () => FeedReading | undefined }, expected: 
   )
 }
 
-// What a CLI running outside Argo writes as its Session goes on, read back only through the vendor.
-type ExternalWriter = {
-  say: (role: 'user' | 'assistant', text: string) => void
-  delegate: () => void
-  listLive: () => Promise<void>
-  exit: () => Promise<void>
-}
-
-function claudeWriter(): ExternalWriter {
-  const folder = claudeProjectFolder(
-    path.join(process.env.CLAUDE_CONFIG_DIR as string, 'projects'),
-    cwd,
-  )
-  mkdirSync(folder, { recursive: true })
-  const file = path.join(folder, `${SESSION}.jsonl`)
-  let parentUuid: string | null = null
-  let count = 0
-  const write = (type: 'user' | 'assistant', content: unknown) => {
-    count += 1
-    const uuid = `00000000-0000-4000-8000-${String(count).padStart(12, '0')}`
-    const record = {
-      type,
-      cwd,
-      sessionId: SESSION,
-      timestamp: new Date(Date.UTC(2026, 9, 1, 10, 0, count)).toISOString(),
-      uuid,
-      parentUuid,
-      message:
-        type === 'user'
-          ? { role: 'user', content }
-          : { role: 'assistant', stop_reason: 'end_turn', content },
-    }
-    appendFileSync(file, `${JSON.stringify(record)}\n`)
-    parentUuid = uuid
-  }
-  return {
-    say: (role, text) => write(role, role === 'user' ? text : [{ type: 'text', text }]),
-    delegate: () => {
-      write('assistant', [
-        {
-          type: 'tool_use',
-          id: 'agent-call',
-          name: 'Agent',
-          input: { description: 'Review feed', subagent_type: 'reviewer', prompt: 'Review.' },
-        },
-      ])
-      // The launch result names the Subagent, as the recorded `delegationHistory` one does.
-      const launched =
-        'Async agent launched successfully.\nagentId: a0d1e2f3a4b5c6d7e (internal ID)'
-      write('user', [{ type: 'tool_result', tool_use_id: 'agent-call', content: launched }])
-    },
-    listLive: async () => {
-      agents.answer([{ ...agents.recorded()[1], sessionId: SESSION }])
-    },
-    exit: async () => agents.answer([]),
-  }
-}
-
-function codexWriter(): ExternalWriter {
-  const items: unknown[] = []
-  const write = () =>
-    writeFileSync(
-      codexHistory,
-      JSON.stringify({
-        threads: [
-          {
-            id: SESSION,
-            cwd,
-            name: null,
-            updatedAt: 1_790_000_000,
-            status: { type: 'idle' },
-            turns: [{ id: 'turn-1', status: 'completed', startedAt: 1_790_000_000, items }],
-          },
-        ],
-      }),
-    )
-  return {
-    say: (role, text) => {
-      const id = `item-${items.length + 1}`
-      items.push(
-        role === 'user'
-          ? { type: 'userMessage', id, content: [{ type: 'text', text, text_elements: [] }] }
-          : { type: 'agentMessage', id, text, phase: null },
-      )
-      write()
-    },
-    delegate: () => {
-      for (const kind of ['started', 'completed'])
-        items.push({
-          type: 'subAgentActivity',
-          id: `agent-${kind}`,
-          kind,
-          agentThreadId: 'agent-thread',
-          agentPath: '/root/review_feed',
-        })
-      write()
-    },
-    listLive: async () => {
-      releases.push(await holdCodexWriterLock(process.env.CODEX_HOME as string, SESSION))
-    },
-    exit: async () => {
-      for (const release of releases.splice(0)) await release()
-    },
-  }
+const WRITERS: Record<FeedHarness, () => ExternalWriter> = {
+  claude: () => claudeExternalWriter({ sessionId: SESSION, cwd, agents }),
+  codex: () => codexExternalWriter({ sessionId: SESSION, cwd, historyFile: codexHistory }),
 }
 
 function external(harness: FeedHarness): ExternalWriter {
   insertSession(caller.database, { id: SESSION, harness, nativeId: SESSION, cwd, status: 'idle' })
-  const writer = harness === 'claude' ? claudeWriter() : codexWriter()
+  const writer = WRITERS[harness]()
+  writers.push(writer)
   writer.say('user', 'Say hello')
   return writer
 }

@@ -182,10 +182,10 @@ export class ExternalSessionPoll {
     this.#reads.clear()
   }
 
-  // One status hook event; the poll is off for its Harness from then on.
+  // One status hook event. An event from a saved external Session turns the poll off for its
+  // Harness; Argo's own CLI probes and Sessions fire the hooks too, and prove nothing about them.
   hookEvent(harness: Harness, event: StatusHookEvent, reading: ExternalHookReading): void {
     if (this.#stopped) return
-    this.#firing.add(harness)
     const session = { harness, nativeId: reading.nativeId }
     const sessionId = harnessSessionId(this.#context.database, session)
     if (sessionId === undefined) {
@@ -193,6 +193,7 @@ export class ExternalSessionPoll {
       return
     }
     if (this.#context.hasLiveChannel(sessionId)) return
+    this.#firing.add(harness)
     if (READS_FEED[event]) this.#context.refreshFeed(sessionId)
     const live = this.#live.get(harness) ?? new Map<string, TrackedSession>()
     this.#live.set(harness, live)

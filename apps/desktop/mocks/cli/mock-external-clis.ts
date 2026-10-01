@@ -33,3 +33,12 @@ export async function mockExternalClis(
     },
   }
 }
+
+// What a CLI running outside Argo writes as its Session goes on, for Argo to read back only through
+// the vendor; `exit` takes the Session out of the live listing.
+export type ExternalWriter = {
+  say: (role: 'user' | 'assistant', text: string) => void
+  delegate: () => void
+  listLive: () => Promise<void>
+  exit: () => Promise<void>
+}

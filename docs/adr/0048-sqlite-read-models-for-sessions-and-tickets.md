@@ -38,9 +38,11 @@ Each Session's status, line and `activityAt` merge into at most one SQLite write
 restart still resets every working status to `unknown` until the poll settles one. Argo installs
 status hooks in each Harness's user-level config at launch, with no switch, and listens on one
 loopback port. If the port the hooks name is busy, another Argo owns them, so this one rewrites
-nothing and stays on the poll. Once a Harness's hooks fire, its listing stops, each listed status
-becomes a settled one under the quiet limit, and hook events set its rows; events for a Session
-with no saved row are ignored, except that a start asks Session sync to discover it (#2976).
+nothing and stays on the poll. Once a Harness's hooks fire for a saved external Session, its
+listing stops, each listed status becomes a settled one under the quiet limit, and hook events set
+its rows. Argo's own CLI probes and Sessions fire the hooks too, so their events leave the poll on.
+Events for a Session with no saved row are ignored, except that a start asks Session sync to
+discover it (#2976).
 
 An external Session's open Feed reads its whole history through the vendor when it opens, on each
 hook event that adds to it, and on each poll tick until a hook fires for that Session, as ADR-0047
