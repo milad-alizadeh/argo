@@ -1,6 +1,3 @@
-import { existsSync } from 'node:fs'
-import { setTimeout as sleep } from 'node:timers/promises'
-
 // The reply gap a packaged proof gives the mock Harnesses. Omitted means their current, immediate
 // reply behavior, so the ordinary proof cases retain their existing timing.
 export const SESSION_MOCK_REPLY_DELAY_MS_ENV = 'ARGO_MOCK_REPLY_DELAY_MS'
@@ -13,11 +10,6 @@ export function readMockReplyDelayMs(): number {
 // While this file exists, each mock Harness holds its start, so it neither names the Session nor
 // replies; a case reads the app before the Harness answers with no race against time (#3052).
 export const SESSION_MOCK_START_HOLD_FILE_ENV = 'ARGO_MOCK_START_HOLD_FILE'
-
-// Waits while a proof's hold file exists; the proof releases the hold by deleting the file.
-export async function waitWhileHoldFileExists(file: string | undefined) {
-  while (file !== undefined && existsSync(file)) await sleep(20)
-}
 
 // Opts a packaged proof into a replayable adverse transport plan; unset keeps ordinary mock behavior.
 export const SESSION_MOCK_ADVERSARIAL_SEED_ENV = 'ARGO_MOCK_ADVERSARIAL_SEED'

@@ -5,6 +5,7 @@ import {
   type FeedReading,
   feedReadingRows,
 } from '@/domains/sessions/api/feed'
+import { pendingSessionDraft } from '@/domains/sessions/api/pending-session'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import { reconnectingSubscription } from '@/platform/renderer/reconnecting-subscription'
 import { queryClient, trpcClient } from '@/platform/renderer/trpc-client'
@@ -101,7 +102,8 @@ export function useFeedReading(
 ) {
   const { reconnect, lost } = useFeedSubscription(sessionId, subagentId)
   const refresh = useMemo(() => {
-    if (sessionId === null) return null
+    // A pending Session has no reader to refresh; its Feed is the prompt it was sent.
+    if (sessionId === null || pendingSessionDraft(sessionId) !== null) return null
     return () => {
       if (lost) return reconnect.current?.()
       void trpcClient.sessionFeedRefresh.mutate({ sessionId, subagentId }).then(

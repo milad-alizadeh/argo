@@ -174,8 +174,8 @@ function useSessionComposerSend(input: {
         if (starts) input.onStartingSession(pendingSessionId(saved))
       },
     })
-    if (starts) input.onStartingSession(null)
     if (result?.outcome !== 'accepted') {
+      if (starts) input.onStartingSession(null)
       const outcome = result?.outcome ?? 'rejected'
       input.onFailure(outcome)
       return outcome

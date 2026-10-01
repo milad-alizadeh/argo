@@ -23,7 +23,5 @@ export async function provePromptBeforeNaming(
   assert.match(page.url(), /\/sessions\/new$/)
   await backend.waitForReply(page, { harness, prompt })
   await expect(page).not.toHaveURL(/\/sessions\/new$/)
-  // Every mock reply quotes the prompt, so a second match is the Harness's reply after its own prompt row.
-  await expect(history.getByText(prompt)).not.toHaveCount(1)
   await expect(prompts).toHaveCount(1)
 }

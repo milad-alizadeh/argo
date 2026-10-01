@@ -86,6 +86,27 @@ function useSessionEvidence(sessionId: string | null) {
   return { evidence: opened?.sessionId === sessionId ? opened.evidence : null, setEvidence }
 }
 
+// New Session draws its pending Session's Feed from Enter until the Harness names it. A later New
+// Session screen, here or in another Project, starts with none.
+function useStartingSession() {
+  const { projectId, sessionId } = useParams()
+  const route = `${projectId}/${sessionId}`
+  const [starting, setStarting] = useState<{ route: string; sessionId: string | null }>({
+    route,
+    sessionId: null,
+  })
+  const setStartingSessionId = useCallback(
+    (startingSessionId: string | null) => setStarting({ route, sessionId: startingSessionId }),
+    [route],
+  )
+  // Leaving the screen drops the pending id, so coming back to the same route shows none.
+  if (starting.route !== route) setStarting({ route, sessionId: null })
+  return {
+    startingSessionId: starting.route === route ? starting.sessionId : null,
+    setStartingSessionId,
+  }
+}
+
 export function useSessionScreenModel() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
@@ -93,8 +114,7 @@ export function useSessionScreenModel() {
   const [cockpit, projectActions] = useProjects()
   const [workspaceCockpit, workspaceActions] = useWorkspaces(cockpit.project?.id ?? null)
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
-  // New Session draws its pending Session's Feed from Enter until the Harness names it.
-  const [startingSessionId, setStartingSessionId] = useState<string | null>(null)
+  const { startingSessionId, setStartingSessionId } = useStartingSession()
   const feedSessionId = sessionId === 'new' ? startingSessionId : selectedSessionId
   const { evidence, setEvidence } = useSessionEvidence(selectedSessionId)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
