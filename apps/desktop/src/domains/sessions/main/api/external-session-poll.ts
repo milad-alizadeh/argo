@@ -2,7 +2,6 @@ import { stat } from 'node:fs/promises'
 import { and, eq, lte, ne, notInArray, type SQL, sql } from 'drizzle-orm'
 import { sessionTable } from '@/database/session/schema'
 import { projectFeedRowEntries } from '@/domains/sessions/api/feed'
-import { saveDiscoveredSessionSubagents } from '@/domains/sessions/main/database'
 import { type Harness, type HarnessSession, harnessSessionKey } from '@/harnesses/harness'
 import type { ExternalHookReading } from '@/harnesses/host/status-hooks'
 import type {
@@ -12,6 +11,7 @@ import type {
   LiveExternalSession,
 } from '@/harnesses/registration'
 import { isIdentifier } from '@/shared/validation'
+import { saveDiscoveredSessionSubagents } from '../database'
 import {
   harnessSessionId,
   type SessionUpdate,
