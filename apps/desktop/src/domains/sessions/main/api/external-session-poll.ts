@@ -189,12 +189,7 @@ export class ExternalSessionPoll {
     const tracked = live?.get(session.nativeId) ?? newTracked(null, null)
     live?.set(session.nativeId, tracked)
     tracked.changedAt = Date.now()
-    // PreToolUse is async, so it can land after the PermissionRequest it precedes.
-    const held =
-      event === 'PreToolUse' &&
-      reading.status === 'running' &&
-      (tracked.status === 'permission' || tracked.status === 'asking')
-    if (reading.status !== null && !held) tracked.status = reading.status
+    if (reading.status !== null) tracked.status = reading.status
     this.#update(session, {
       activityAt: tracked.changedAt,
       ...(reading.activity === null ? {} : { activity: reading.activity }),
