@@ -19,9 +19,12 @@ import {
 const FIRST_ID = 'thread-first'
 const KNOWN_ID = 'thread-known'
 const SAVED_ID = 'thread-previously-saved'
+// These IDs are recorded in thread-read-subagents-codex-0.157.0.json.
+const PARENT_ID = 'thread-parent'
+const CHILD_ID = 'thread-child-review'
 // The recording keeps only the Thread fields discovery reads.
 type RecordedThread = Pick<Thread, 'id' | 'updatedAt' | 'name'> &
-  Partial<Pick<Thread, 'preview' | 'cwd'>>
+  Partial<Pick<Thread, 'parentThreadId' | 'preview' | 'cwd'>>
 const recorded: {
   pages: (Pick<ThreadListResponse, 'nextCursor'> & { data: RecordedThread[] })[]
   read: { thread: RecordedThread }
@@ -39,7 +42,16 @@ function requestFor(responses: Map<string, unknown>, calls: unknown[]): CodexReq
 }
 
 function expectedCalls(): unknown[] {
-  const sources = ['cli', 'vscode', 'appServer']
+  const sources = [
+    'cli',
+    'vscode',
+    'appServer',
+    'subAgent',
+    'subAgentReview',
+    'subAgentCompact',
+    'subAgentThreadSpawn',
+    'subAgentOther',
+  ]
   const listParams = {
     limit: 100,
     sortKey: 'updated_at',
@@ -68,16 +80,20 @@ function recordedRequest(calls: unknown[]) {
   if (firstRecord === undefined || duplicateRecord === undefined || knownRecord === undefined)
     throw new Error('Invalid recorded Codex fixture.')
   firstRecord.id = FIRST_ID
+  firstRecord.parentThreadId = null
   firstPage.data = [firstRecord]
   firstPage.data.push({ id: 'bad-record', updatedAt: Number.NaN, name: null })
   duplicateRecord.id = FIRST_ID
+  duplicateRecord.parentThreadId = null
   duplicateRecord.name = null
   delete duplicateRecord.preview
   delete duplicateRecord.cwd
   knownRecord.id = KNOWN_ID
+  knownRecord.parentThreadId = null
   secondPage.data = [duplicateRecord, knownRecord]
   secondPage.nextCursor = null
   readResponse.thread.id = SAVED_ID
+  readResponse.thread.parentThreadId = null
   return {
     request: requestFor(
       new Map<string, unknown>([
@@ -132,7 +148,7 @@ test('pages interactive Codex threads, deduplicates IDs, and reads known missing
 test('lists a page that carries fields discovery does not read', async () => {
   const result = await createCodexSessionSummaryList((async (_method, _params, parse) =>
     parse({
-      data: [{ id: FIRST_ID, updatedAt: 1, laterVendorField: true }],
+      data: [{ id: FIRST_ID, updatedAt: 1, parentThreadId: null, laterVendorField: true }],
       nextCursor: null,
       backwardsCursor: null,
       laterVendorField: true,
@@ -180,7 +196,7 @@ test('gets one thread summary without listing, and null for a thread Codex does 
   const getSummary = createCodexSessionSummaryReader((async (method: string, params, parse) => {
     calls.push(method)
     if ((params as { threadId: string }).threadId === 'missing') throw new Error('Thread not found')
-    return parse({ thread: { id: 'new-thread', updatedAt: 4, cwd: '/repo' } })
+    return parse({ thread: { id: 'new-thread', updatedAt: 4, parentThreadId: null, cwd: '/repo' } })
   }) as CodexRequest)
 
   expect(await getSummary('new-thread')).toEqual({
@@ -192,12 +208,49 @@ test('gets one thread summary without listing, and null for a thread Codex does 
   expect(calls).toEqual(['thread/read', 'thread/read'])
 })
 
+test('reports child threads separately from root Session summaries', async () => {
+  const result = await createCodexSessionSummaryList((async (_method, _params, parse) =>
+    parse({
+      data: [
+        { id: PARENT_ID, updatedAt: 2, parentThreadId: null },
+        { id: CHILD_ID, updatedAt: 1, parentThreadId: PARENT_ID },
+        { id: 'thread-child-review-deep', updatedAt: 1, parentThreadId: CHILD_ID },
+      ],
+      nextCursor: null,
+    })) as CodexRequest)({ knownNativeIds: [] })
+
+  expect(result.records.map(({ nativeId }) => nativeId)).toEqual([PARENT_ID])
+  expect(result.subagents).toEqual([
+    { nativeId: CHILD_ID, parentNativeId: PARENT_ID },
+    { nativeId: 'thread-child-review-deep', parentNativeId: PARENT_ID },
+  ])
+})
+
+test('reports a previously saved child thread for roster reconciliation', async () => {
+  const result = await createCodexSessionSummaryList((async (method: string, params, parse) => {
+    if (method === 'thread/list') return parse({ data: [], nextCursor: null })
+    return parse({
+      thread: {
+        id: (params as { threadId: string }).threadId,
+        updatedAt: 1,
+        parentThreadId: PARENT_ID,
+      },
+    })
+  }) as CodexRequest)({ knownNativeIds: ['old-child'] })
+
+  expect(result).toEqual({
+    records: [],
+    skipped: 0,
+    subagents: [{ nativeId: 'old-child', parentNativeId: PARENT_ID }],
+  })
+})
+
 test('counts a thread whose preview or cwd breaks the generated Thread type', async () => {
   const result = await createCodexSessionSummaryList((async (_method, _params, parse) =>
     parse({
       data: [
-        { id: 'null-preview', updatedAt: 1, preview: null },
-        { id: 'null-cwd', updatedAt: 1, cwd: null },
+        { id: 'null-preview', updatedAt: 1, parentThreadId: null, preview: null },
+        { id: 'null-cwd', updatedAt: 1, parentThreadId: null, cwd: null },
       ],
       nextCursor: null,
     })) as CodexRequest)({ knownNativeIds: [] })
@@ -208,8 +261,20 @@ test('reads the Model and Effort a thread records, and leaves out what it record
   const result = await createCodexSessionSummaryList((async (_method, _params, parse) =>
     parse({
       data: [
-        { id: 'configured', updatedAt: 1, model: 'gpt-5.5', reasoningEffort: 'high' },
-        { id: 'unconfigured', updatedAt: 1, model: null, reasoningEffort: null },
+        {
+          id: 'configured',
+          updatedAt: 1,
+          parentThreadId: null,
+          model: 'gpt-5.5',
+          reasoningEffort: 'high',
+        },
+        {
+          id: 'unconfigured',
+          updatedAt: 1,
+          parentThreadId: null,
+          model: null,
+          reasoningEffort: null,
+        },
       ],
       nextCursor: null,
     })) as CodexRequest)({ knownNativeIds: [] })
@@ -232,7 +297,7 @@ test('skips a previously saved Session whose id Codex cannot parse, and syncs th
     if (method === 'thread/list') return parse({ data: [], nextCursor: null })
     if ((params as { threadId: string }).threadId === 'proof-codex')
       throw new Error(INVALID_THREAD_ID_MESSAGE)
-    return parse({ thread: { id: SAVED_ID, updatedAt: 2 } })
+    return parse({ thread: { id: SAVED_ID, updatedAt: 2, parentThreadId: null } })
   }) as CodexRequest)({ knownNativeIds: ['proof-codex', SAVED_ID] })
   expect(result).toEqual({ records: [{ nativeId: SAVED_ID, activityAt: 2000 }], skipped: 0 })
 })

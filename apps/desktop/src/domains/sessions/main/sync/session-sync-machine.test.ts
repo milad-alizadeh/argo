@@ -54,6 +54,88 @@ test('moves from Idle through Fetching and Saving to Ready', async () => {
   }
 })
 
+test('saves previously stored child IDs even when the scan has no Session records', async () => {
+  let saved:
+    | {
+        records: string[]
+        subagents: { nativeId: string; parentNativeId: string }[]
+      }
+    | undefined
+  const actor = createActor(
+    sessionSyncMachine.provide({
+      actors: {
+        save: fromPromise(async ({ input }) => {
+          saved = {
+            records: input.records.map((record) => record.nativeId),
+            subagents: input.subagents,
+          }
+        }),
+      },
+    }),
+    {
+      input: {
+        ...input,
+        harness: 'codex',
+        listSessionSummaries: async () => ({
+          records: [],
+          skipped: 0,
+          subagents: [{ nativeId: 'old-child', parentNativeId: 'root-thread' }],
+        }),
+      },
+    },
+  ).start()
+  try {
+    actor.send({ type: 'Start' })
+    await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+    assert.deepEqual(saved, {
+      records: [],
+      subagents: [{ nativeId: 'old-child', parentNativeId: 'root-thread' }],
+    })
+  } finally {
+    actor.stop()
+  }
+})
+
+test('saves child links after every root batch has been written', async () => {
+  const batches: {
+    records: string[]
+    subagents: { nativeId: string; parentNativeId: string }[]
+  }[] = []
+  const actor = createActor(
+    sessionSyncMachine.provide({
+      actors: {
+        save: fromPromise(async ({ input: batch }) => {
+          batches.push({
+            records: batch.records.map((record) => record.nativeId),
+            subagents: batch.subagents,
+          })
+        }),
+      },
+    }),
+    {
+      input: {
+        ...input,
+        listSessionSummaries: async () => ({
+          records: twoBatchRecords,
+          skipped: 0,
+          subagents: [{ nativeId: 'child-thread', parentNativeId: 'native-50' }],
+        }),
+      },
+    },
+  ).start()
+  try {
+    actor.send({ type: 'Start' })
+    await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+    assert.equal(batches[0]?.records.length, SESSION_SYNC_BATCH_SIZE)
+    assert.deepEqual(batches[0]?.subagents, [])
+    assert.deepEqual(batches[1]?.subagents, [
+      { nativeId: 'child-thread', parentNativeId: 'native-50' },
+    ])
+  } finally {
+    actor.stop()
+  }
+})
+
 test('fails after three fetch attempts', async () => {
   let attempts = 0
   const actor = createActor(

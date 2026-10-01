@@ -1,5 +1,6 @@
 import { assign, fromPromise, setup } from 'xstate'
 import type {
+  SessionSubagentLink,
   SessionSummary,
   SessionSummaryList,
   SessionSummaryListResult,
@@ -19,6 +20,7 @@ export const sessionSyncMachine = setup({
       knownNativeIds: string[]
       listSessionSummaries: SessionSummaryList
       records: SessionSummary[]
+      subagents: SessionSubagentLink[]
       processed: number
       skipped: number
       failure: string | null
@@ -64,6 +66,7 @@ export const sessionSyncMachine = setup({
       void,
       {
         records: SessionSummary[]
+        subagents: SessionSubagentLink[]
       }
     >(async () => {
       throw new Error('The session sync saver is not configured.')
@@ -72,7 +75,8 @@ export const sessionSyncMachine = setup({
   guards: {
     canRetryFetch: ({ context }) => context.fetchAttempts < 2,
     hasFetchedRecords: ({ event }) =>
-      event.type === 'xstate.done.actor.fetch' && event.output.records.length > 0,
+      event.type === 'xstate.done.actor.fetch' &&
+      (event.output.records.length > 0 || (event.output.subagents?.length ?? 0) > 0),
     hasMoreBatches: ({ context }) =>
       context.processed +
         Math.min(SESSION_SYNC_BATCH_SIZE, context.records.length - context.processed) <
@@ -81,6 +85,7 @@ export const sessionSyncMachine = setup({
   actions: {
     reset: assign({
       records: [],
+      subagents: [],
       processed: 0,
       skipped: 0,
       failure: null,
@@ -89,6 +94,8 @@ export const sessionSyncMachine = setup({
     rememberFetched: assign({
       records: ({ event }) =>
         event.type === 'xstate.done.actor.fetch' ? event.output.records : [],
+      subagents: ({ event }) =>
+        event.type === 'xstate.done.actor.fetch' ? (event.output.subagents ?? []) : [],
       skipped: ({ event }) => (event.type === 'xstate.done.actor.fetch' ? event.output.skipped : 0),
       failure: null,
     }),
@@ -117,6 +124,7 @@ export const sessionSyncMachine = setup({
     knownNativeIds: input.knownNativeIds,
     listSessionSummaries: input.listSessionSummaries,
     records: [],
+    subagents: [],
     processed: 0,
     skipped: 0,
     failure: null,
@@ -179,6 +187,12 @@ export const sessionSyncMachine = setup({
             context.processed,
             context.processed + SESSION_SYNC_BATCH_SIZE,
           ),
+          subagents:
+            context.processed +
+              Math.min(SESSION_SYNC_BATCH_SIZE, context.records.length - context.processed) >=
+            context.records.length
+              ? context.subagents
+              : [],
         }),
         onDone: [
           {

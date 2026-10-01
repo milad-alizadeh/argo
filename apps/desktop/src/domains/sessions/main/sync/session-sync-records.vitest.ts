@@ -11,7 +11,19 @@ import {
   migratedDatabase,
 } from '@/mocks/database/migrated-database'
 import { sessionSyncMachine } from './session-sync-machine'
-import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
+import {
+  knownSessionIds,
+  matchSessionsToProjects,
+  saveSessionBatch as writeSessionBatch,
+} from './session-sync-records'
+
+function saveSessionBatch(
+  database: Parameters<typeof writeSessionBatch>[0],
+  harness: Parameters<typeof writeSessionBatch>[1]['harness'],
+  records: Parameters<typeof writeSessionBatch>[1]['records'],
+) {
+  return writeSessionBatch(database, { harness, records })
+}
 
 const ID = '00000000-0000-4000-8000-000000000001'
 
@@ -145,6 +157,51 @@ test('keeps Codex Session identity while syncing title, preview, and cwd changes
       preview: 'Latest preview',
       cwd: '/third',
     })
+  } finally {
+    client.close()
+  }
+})
+
+test('links known Codex child rows to their parent without replacing saved metadata', () => {
+  const { client, database } = createDatabase()
+  try {
+    saveSessionBatch(database, 'codex', [
+      { nativeId: 'child-thread', customTitle: 'Reader title', cwd: '/repo' },
+      { nativeId: 'root-thread', customTitle: 'Root title' },
+    ])
+    const parent = client
+      .prepare('SELECT argo_id FROM session WHERE harness = ? AND native_id = ?')
+      .get('codex', 'root-thread') as { argo_id: string }
+    const changedIds = writeSessionBatch(database, {
+      harness: 'codex',
+      records: [],
+      subagents: [{ nativeId: 'child-thread', parentNativeId: 'root-thread' }],
+    })
+    assert.deepEqual(changedIds, [parent.argo_id])
+    assert.deepEqual(
+      Object.assign(
+        {},
+        client
+          .prepare('SELECT custom_title, cwd FROM session WHERE native_id = ?')
+          .get('child-thread'),
+      ),
+      { custom_title: 'Reader title', cwd: '/repo' },
+    )
+    assert.deepEqual(
+      Object.assign(
+        {},
+        client.prepare('SELECT custom_title FROM session WHERE native_id = ?').get('root-thread'),
+      ),
+      { custom_title: 'Root title' },
+    )
+
+    saveSessionBatch(database, 'codex', [{ nativeId: 'child-thread' }])
+    assert.equal(
+      client
+        .prepare('SELECT subagent_id FROM session_subagent WHERE session_id = ?')
+        .get(parent.argo_id)?.subagent_id,
+      'child-thread',
+    )
   } finally {
     client.close()
   }

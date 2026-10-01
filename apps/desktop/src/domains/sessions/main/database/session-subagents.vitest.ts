@@ -43,9 +43,10 @@ function argoId(nativeId: string): string {
 }
 
 test('records a running Session’s Subagents', () => {
-  saveSessionBatch(database, 'claude', [
-    { nativeId: 'parent', projectId: 'project-1', cwd: '/repo', activityAt: 10 },
-  ])
+  saveSessionBatch(database, {
+    harness: 'claude',
+    records: [{ nativeId: 'parent', projectId: 'project-1', cwd: '/repo', activityAt: 10 }],
+  })
   const parent = argoId('parent')
 
   expect(saveSessionSubagents(database, parent, [delegation('agent-a', 'running', 'Survey')])).toBe(

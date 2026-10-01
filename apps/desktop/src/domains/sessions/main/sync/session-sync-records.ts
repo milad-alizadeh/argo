@@ -1,10 +1,11 @@
 import path from 'node:path'
-import { eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
+import { sessionSubagent } from '@/database/session-subagent/schema'
 import { workspace } from '@/database/workspace/schema'
-import type { SessionSummary } from '@/domains/sessions/api/session-discovery'
+import type { SessionSubagentLink, SessionSummary } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
 import { createSessionUpsert } from '../database'
 
@@ -76,13 +77,51 @@ export function matchSessionsToProjects(
 
 export function saveSessionBatch(
   database: Database,
-  harness: Harness,
-  records: readonly SessionSummary[],
+  {
+    harness,
+    records,
+    subagents = [],
+  }: {
+    harness: Harness
+    records: readonly SessionSummary[]
+    subagents?: readonly SessionSubagentLink[]
+  },
 ): string[] {
   const upsert = createSessionUpsert(database)
   database.$client.exec('BEGIN IMMEDIATE')
   try {
     const sessionIds = records.map((record) => upsert({ ...record, harness }))
+    if (subagents.length > 0) {
+      const parentRows = database
+        .select({ argoId: sessionTable.argoId, nativeId: sessionTable.nativeId })
+        .from(sessionTable)
+        .where(
+          and(
+            eq(sessionTable.harness, harness),
+            inArray(sessionTable.nativeId, [
+              ...new Set(subagents.map(({ parentNativeId }) => parentNativeId)),
+            ]),
+          ),
+        )
+        .all()
+      const parentIds = new Map(parentRows.map(({ nativeId, argoId }) => [nativeId, argoId]))
+      const links = subagents.flatMap(({ nativeId, parentNativeId }) => {
+        const sessionId = parentIds.get(parentNativeId)
+        return sessionId === undefined
+          ? []
+          : [{ sessionId, subagentId: nativeId, label: null, state: 'unknown' as const }]
+      })
+      if (links.length > 0) {
+        const changedParents = database
+          .insert(sessionSubagent)
+          .values(links)
+          .onConflictDoNothing()
+          .returning({ sessionId: sessionSubagent.sessionId })
+          .all()
+          .map(({ sessionId }) => sessionId)
+        sessionIds.push(...changedParents)
+      }
+    }
     database.$client.exec('COMMIT')
     return sessionIds
   } catch (error) {
