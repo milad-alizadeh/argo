@@ -57,7 +57,8 @@ A Session without a live channel reads its Feed through the vendor when the Feed
 when a hook event or the poll moves its row's activity time or status (#2978). A Session the
 listing gives no transcript reads its open Feed on each poll tick until a hook fires for it. Each
 read goes through the Feed's one read in flight and one follow-up; a closed Feed reads nothing.
-Its row lists no Subagents, and its row's status and activity line come from the poll in ADR-0048.
+Its row lists no Subagents, and its row's status and activity line come from the poll in
+ADR-0048.
 
 ## Amendment · Codex live Session channel · 2026-09-28
 

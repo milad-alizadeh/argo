@@ -141,7 +141,7 @@ async function openFeed(id = SESSION) {
   return { close, reads }
 }
 
-// Each event gets its own activity time, so two in one millisecond still move the row.
+// The test writes each event at once, not in one write window, so each needs its own activity time.
 function steppedClock() {
   let now = Date.now()
   vi.spyOn(Date, 'now').mockImplementation(() => (now += 1_000))
@@ -286,12 +286,24 @@ test('a Session with no transcript reads its open Feed each tick until a hook fi
   await listedRunning(SESSION)
   const afterFirst = await feed.reads()
   await listedRunning(SESSION)
-  expect(await feed.reads()).toBeGreaterThan(afterFirst)
+  expect(await feed.reads()).toBe(afterFirst + 1)
   await post('Stop')
   const hooked = await feed.reads()
   await listedRunning(SESSION)
   await listedRunning(SESSION)
   expect(await feed.reads()).toBe(hooked)
+  feed.close()
+})
+
+test('a hook before the first listing still stops the tick reads', async () => {
+  await receiver.start()
+  saved()
+  const feed = await openFeed()
+  await post('Stop')
+  await listedRunning(SESSION)
+  const listed = await feed.reads()
+  await listedRunning(SESSION)
+  expect(await feed.reads()).toBe(listed)
   feed.close()
 })
 

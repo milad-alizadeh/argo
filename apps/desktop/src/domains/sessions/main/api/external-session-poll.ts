@@ -59,8 +59,6 @@ type TrackedSession = {
   // The last read could not answer yet, so the next tick reads again.
   retry: boolean
   discovered: boolean
-  // A status hook fired for it, so the tick stops reading its Feed.
-  hooked: boolean
 }
 
 // A Session waiting its turn, being read, or being read with one more read asked for after it.
@@ -98,7 +96,6 @@ const newTracked = (
   shown: null,
   retry: false,
   discovered: false,
-  hooked: false,
 })
 
 // The stored status and activity of Sessions that run outside Argo, from one poll. Each tick lists
@@ -119,6 +116,8 @@ export class ExternalSessionPoll {
   readonly #failing = new Set<Harness>()
   // Each Harness's last reported count of unrecognised live records, so a count is reported once.
   readonly #rejected = new Map<Harness, number>()
+  // Sessions a status hook fired for, even before the first listing; a tick reads no Feed for them.
+  readonly #hooked = new Set<string>()
   readonly #pending = new Map<string, { session: HarnessSession; update: SessionUpdate }>()
   readonly #reads = new Map<string, ReadState>()
   readonly #queue: HarnessSession[] = []
@@ -189,12 +188,12 @@ export class ExternalSessionPoll {
       return
     }
     if (this.#context.hasLiveChannel(sessionId)) return
+    this.#hooked.add(harnessSessionKey(session))
     // Before the first listing there is no live map, so that listing still closes stale rows.
     const live = this.#live.get(harness)
     const tracked = live?.get(session.nativeId) ?? newTracked(null, null)
     live?.set(session.nativeId, tracked)
     tracked.changedAt = Date.now()
-    tracked.hooked = true
     // PreToolUse is async, so it can land after the PermissionRequest it precedes.
     const held =
       event === 'PreToolUse' &&
@@ -240,7 +239,7 @@ export class ExternalSessionPoll {
       if (sessionId === undefined) this.#discover(session, tracked)
       if (external.readActivity !== undefined) await this.#readChange(session, tracked)
       this.#show(session, tracked, Date.now())
-      this.#refreshUnstamped(sessionId, tracked)
+      this.#refreshUnstamped(session, sessionId, tracked)
     }
     for (const [nativeId, tracked] of previous ?? [])
       if (!current.has(nativeId))
@@ -249,9 +248,13 @@ export class ExternalSessionPoll {
   }
 
   // No transcript means no activity write, so an open Feed with no hook yet reads each tick.
-  #refreshUnstamped(sessionId: string | undefined, tracked: TrackedSession): void {
-    if (sessionId !== undefined && tracked.transcript === null && !tracked.hooked)
-      this.#context.refreshFeed(sessionId)
+  #refreshUnstamped(
+    session: HarnessSession,
+    sessionId: string | undefined,
+    tracked: TrackedSession,
+  ): void {
+    if (sessionId === undefined || tracked.transcript !== null) return
+    if (!this.#hooked.has(harnessSessionKey(session))) this.#context.refreshFeed(sessionId)
   }
 
   #reportRejected(harness: Harness, rejected: number): void {
