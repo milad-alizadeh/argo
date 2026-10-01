@@ -9,7 +9,7 @@ import type { HarnessPresentation } from './harness-presentation'
 export const HARNESS_PRESENTATIONS: Record<Harness, HarnessPresentation> = {
   claude: claudePresentation,
   codex: codexPresentation,
-  ...byAcpAgent(() => acpPresentation),
+  ...byAcpAgent(acpPresentation),
 }
 
 // The product name every surface uses; a sign-in row uses the short one.

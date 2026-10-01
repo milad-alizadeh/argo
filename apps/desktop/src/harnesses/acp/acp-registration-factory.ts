@@ -1,18 +1,28 @@
+import { spawn } from 'node:child_process'
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { SessionUpdate } from '@agentclientprotocol/sdk'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
 import type { HarnessSignInDriver } from '@/domains/harness-signin/main'
+import type { HarnessSignInOutcome } from '@/domains/harness-signin/main/harness-sign-in'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
 import type { Harness } from '@/harnesses/harness'
 import { type HarnessInfo, notInstalled } from '@/harnesses/harness-catalog'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
+import { runLoginProcess } from '@/harnesses/host/run-login-process'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { type AcpAgentEntry, type AcpHarness, byAcpAgent } from './acp-agents'
 import { acpHarnessInfo } from './acp-catalog'
-import { type AcpAgentCommand, connectAcpAgent, errorDetail, isAuthRequired } from './acp-client'
+import {
+  type AcpAgentCommand,
+  type AcpAuthMethod,
+  type AcpClient,
+  connectAcpAgent,
+  errorDetail,
+  isAuthRequired,
+} from './acp-client'
 import { AcpFeedProjection } from './acp-feed-projection'
 import { acpExecutableOverride } from './acp-proof-protocol'
 import { AcpSessionChannel, acpPermissionOutcome } from './acp-session-channel'
@@ -122,7 +132,39 @@ async function readAcpReadiness(
   }
 }
 
-// Runs the first sign-in method the agent handles itself; Argo offers no terminal sign-in.
+// Relaunches the agent with the method's args, headless; exit 0 means signed in.
+function runTerminalSignIn(
+  command: AcpAgentCommand,
+  method: Extract<AcpAuthMethod, { kind: 'terminal' }>,
+  signal: AbortSignal,
+): Promise<HarnessSignInOutcome> {
+  const child = spawn(command.executable, [...command.args, ...method.args], {
+    env: { ...command.env, ...method.env },
+    stdio: 'ignore',
+  })
+  return runLoginProcess(child, signal)
+}
+
+async function runAgentSignIn(
+  client: AcpClient,
+  method: Extract<AcpAuthMethod, { kind: 'agent' }>,
+  signal: AbortSignal,
+): Promise<HarnessSignInOutcome> {
+  const cancel = () => client.close()
+  signal.addEventListener('abort', cancel, { once: true })
+  try {
+    await client.authenticate(method.id)
+    return 'completed'
+  } catch (error) {
+    if (signal.aborted) return 'canceled'
+    console.warn(`The ACP agent sign-in failed: ${errorDetail(error)}`)
+    return 'failed'
+  } finally {
+    signal.removeEventListener('abort', cancel)
+  }
+}
+
+// Runs a method the agent handles itself first, else the first terminal method it offers.
 function acpSignInDriver(
   findCommand: () => AcpAgentCommand | null,
   checkReadiness: () => Promise<HarnessReadiness>,
@@ -137,22 +179,26 @@ function acpSignInDriver(
         return null
       })
       if (client === null) return 'failed'
-      const cancel = () => client.close()
-      signal.addEventListener('abort', cancel, { once: true })
+      if (signal.aborted) {
+        client.close()
+        return 'canceled'
+      }
+      const method =
+        client.authMethods.find(({ kind }) => kind === 'agent') ?? client.authMethods[0]
       try {
-        const method = client.authMethods.find(({ runsInAgent }) => runsInAgent)
         if (method === undefined) {
-          console.warn('The ACP agent offers no sign-in method Argo can run.')
+          console.warn('The ACP agent offers no sign-in method.')
           return 'failed'
         }
-        await client.authenticate(method.id)
-        return 'completed'
-      } catch (error) {
-        if (signal.aborted) return 'canceled'
-        console.warn(`The ACP agent sign-in failed: ${errorDetail(error)}`)
-        return 'failed'
+        switch (method.kind) {
+          case 'agent':
+            return await runAgentSignIn(client, method, signal)
+          case 'terminal':
+            // The relaunch is a separate process, so this connection is done.
+            client.close()
+            return await runTerminalSignIn(command, method, signal)
+        }
       } finally {
-        signal.removeEventListener('abort', cancel)
         client.close()
       }
     },

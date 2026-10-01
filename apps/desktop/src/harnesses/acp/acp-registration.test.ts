@@ -193,6 +193,40 @@ describe('an ACP agent that needs a login', () => {
     })
   })
 
+  const terminalLogin = {
+    ...needsLogin,
+    MOCK_ACP_LOGIN_METHOD: 'terminal',
+    ANTHROPIC_API_KEY: 'key',
+  }
+
+  test('signs in by running the terminal method the agent offers, as claude-agent-acp does', async () => {
+    const registration = createAcpRegistration({
+      ...mockAgent(terminalLogin),
+      unsetEnv: ['ANTHROPIC_API_KEY'],
+    })
+    expect(await registration.checkReadiness()).toMatchObject({ state: 'signed-out' })
+    expect(await registration.signIn.login(new AbortController().signal)).toBe('completed')
+    expect(await registration.checkReadiness()).toMatchObject({ state: 'ready' })
+  })
+
+  test('fails the sign-in when the terminal relaunch exits non-zero', async () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const registration = createAcpRegistration(mockAgent(terminalLogin))
+      expect(await registration.signIn.login(new AbortController().signal)).toBe('failed')
+      expect(await registration.checkReadiness()).toMatchObject({ state: 'signed-out' })
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  test('cancels a sign-in aborted before the agent answered', async () => {
+    const registration = createAcpRegistration(mockAgent(terminalLogin))
+    const controller = new AbortController()
+    controller.abort()
+    expect(await registration.signIn.login(controller.signal)).toBe('canceled')
+  })
+
   test('signs in through the method the agent advertises, then reads ready', async () => {
     const registration = createAcpRegistration(mockAgent(needsLogin))
     expect(await registration.signIn.login(new AbortController().signal)).toBe('completed')

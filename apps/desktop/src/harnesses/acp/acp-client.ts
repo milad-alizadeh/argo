@@ -47,12 +47,17 @@ const initializeSchema = z.object({
   authMethods: z.array(z.unknown()).optional(),
   agentInfo: z.object({ name: z.string(), version: z.string() }).nullish(),
 })
-// `AuthMethod` in the SDK's types.gen.d.ts: no `type` means `agent`, which `authenticate` runs.
-const authMethodSchema = z.object({
-  id: z.string().min(1),
-  name: z.string(),
-  type: z.enum(['agent', 'terminal']).optional(),
-})
+// `AuthMethod` in the SDK's types.gen.d.ts; no `type` means `agent`, which `authenticate` runs.
+const authMethodSchema = z.union([
+  z.object({ id: z.string().min(1), name: z.string(), type: z.literal('agent').optional() }),
+  z.object({
+    id: z.string().min(1),
+    name: z.string(),
+    type: z.literal('terminal'),
+    args: z.array(z.string()).optional(),
+    env: z.record(z.string(), z.string()).optional(),
+  }),
+])
 // Each option is read where it is used (`acpConfigSelect`), so only the list is checked here.
 const configOptionsSchema = z.object({ configOptions: z.array(z.unknown()).nullish() })
 const sessionSchema = configOptionsSchema.extend({ sessionId: z.string().min(1) })
@@ -68,7 +73,9 @@ type AcpCapabilities = {
   closeSession: boolean
 }
 
-type AcpAuthMethod = { id: string; name: string; runsInAgent: boolean }
+export type AcpAuthMethod =
+  | { kind: 'agent'; id: string }
+  | { kind: 'terminal'; id: string; args: readonly string[]; env: Readonly<Record<string, string>> }
 
 type AcpSession = {
   sessionId: string
@@ -133,11 +140,11 @@ function authMethodsOf(advertised: readonly unknown[] | undefined): AcpAuthMetho
   })
   const rejected = (advertised?.length ?? 0) - methods.length
   if (rejected > 0) console.warn(`Skipped ${rejected} unreadable ACP sign-in method(s).`)
-  return methods.map(({ id, name, type }) => ({
-    id,
-    name,
-    runsInAgent: type !== 'terminal',
-  }))
+  return methods.map((method) =>
+    method.type === 'terminal'
+      ? { kind: 'terminal', id: method.id, args: method.args ?? [], env: method.env ?? {} }
+      : { kind: 'agent', id: method.id },
+  )
 }
 
 function sessionOf(response: unknown): AcpSession {
@@ -193,7 +200,8 @@ async function initialize(agent: ClientContext, exited: Promise<void>) {
     await Promise.race([
       agent.request(methods.agent.initialize, {
         protocolVersion: PROTOCOL_VERSION,
-        clientCapabilities: {},
+        // Argo runs a terminal sign-in headless, as it runs `claude auth login`.
+        clientCapabilities: { auth: { terminal: true } },
         clientInfo: { name: 'argo', version: '1' },
       }),
       exited.then(() => {
