@@ -14,7 +14,7 @@ export async function writeMockCodexLive(root: string) {
   const state = mockCodexStateFile(root)
   await writeFile(
     executable,
-    `#!/bin/sh\nif [ "$1" = "--version" ]; then echo 'codex-cli 0.147.0'; exit 0; fi\nif [ "$1" = "login" ]; then echo 'Logged in using ChatGPT'; exit 0; fi\nexport ARGO_CODEX_E2E_STATE="\${ARGO_CODEX_E2E_STATE:-${state}}"\nexec "${bun}" "${server}"\n`,
+    `#!/bin/sh\nif [ "$1" = "--version" ]; then echo 'codex-cli 0.157.0'; exit 0; fi\nif [ "$1" = "login" ]; then echo 'Logged in using ChatGPT'; exit 0; fi\nexport ARGO_CODEX_E2E_STATE="\${ARGO_CODEX_E2E_STATE:-${state}}"\nexec "${bun}" "${server}"\n`,
   )
   await chmod(executable, 0o755)
   return executable

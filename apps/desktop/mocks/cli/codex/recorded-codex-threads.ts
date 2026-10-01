@@ -4,8 +4,10 @@ import { type RecordedCall, readRecordedCalls } from '../recorded-calls.ts'
 
 export type RecordedThread = ThreadReadResponse['thread']
 
+export const CODEX_HISTORY_RECORDING = ['codex', 'fixtures', 'thread-history-codex-0.157.0.json']
+
 export function recordedCalls(): RecordedCall[] {
-  return readRecordedCalls('codex', 'fixtures', 'thread-history-codex-0.157.0.json')
+  return readRecordedCalls(...CODEX_HISTORY_RECORDING)
 }
 
 // The first recorded answer to `method`.

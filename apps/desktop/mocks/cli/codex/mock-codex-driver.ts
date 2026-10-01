@@ -20,7 +20,7 @@ export async function writeMockCodex(root: string, env: Record<string, string> =
     .join('')
   await writeFile(
     executable,
-    `#!/bin/sh\nif [ "$1" = "--version" ]; then printf 'codex 0.147.0\\n'; exit 0; fi\n${exports}exec "${process.execPath}" --no-warnings --import "${aliasHooks}" "${fixture}" "$@"\n`,
+    `#!/bin/sh\nif [ "$1" = "--version" ]; then printf 'codex-cli 0.157.0\\n'; exit 0; fi\n${exports}exec "${process.execPath}" --no-warnings --import "${aliasHooks}" "${fixture}" "$@"\n`,
   )
   await chmod(executable, 0o755)
   return executable
@@ -33,7 +33,7 @@ export async function mockCodexExecutable(env?: Record<string, string>) {
 // The app-server client every window shares, pointed at one mock executable.
 export function clientBackedByMock(executable: string) {
   return createCodexAppServerClient({
-    resolveExecutable: async () => ({ executable, version: 'codex 0.147.0' }),
+    resolveExecutable: async () => ({ executable, version: 'codex-cli 0.157.0' }),
   })
 }
 

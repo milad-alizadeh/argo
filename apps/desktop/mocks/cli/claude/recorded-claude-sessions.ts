@@ -1,14 +1,37 @@
-// The Agent SDK 0.3.278 `getSessionMessages` answer, read from a throwaway CLAUDE_CONFIG_DIR.
+// Real Agent SDK 0.3.278 answers, read once from Claude CLI 2.1.286 transcripts in a throwaway
+// CLAUDE_CONFIG_DIR.
 import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
-import { readRecordedCalls } from '../recorded-calls.ts'
+import { type RecordedCall, readRecordedCalls } from '../recorded-calls.ts'
 
-// The source transcript was the hand-written envelope corpus; the SDK's reading of it is real.
-export function recordedSessionMessages(): SessionMessage[] {
-  const call = readRecordedCalls(
-    'claude',
-    'fixtures',
-    'session-messages-claude-agent-sdk-0.3.278.json',
-  ).find((candidate) => candidate.method === 'getSessionMessages')
-  if (call === undefined) throw new Error('No recorded Claude getSessionMessages answer.')
-  return call.result as SessionMessage[]
+export const CLAUDE_HISTORY_RECORDING = [
+  'claude',
+  'fixtures',
+  'session-history-claude-2.1.286.json',
+]
+
+export function recordedCalls(): RecordedCall[] {
+  return readRecordedCalls(...CLAUDE_HISTORY_RECORDING)
+}
+
+function firstPrompt(messages: SessionMessage[]): unknown {
+  return messages.find((message) => message.type === 'user')?.message
+}
+
+// The Session whose first prompt is `prompt`, as `getSessionMessages` answered it.
+export function recordedSession(prompt: string): SessionMessage[] {
+  const session = recordedCalls()
+    .flatMap((call) =>
+      call.method === 'getSessionMessages' ? [call.result as SessionMessage[]] : [],
+    )
+    .find((messages) => {
+      const message = firstPrompt(messages)
+      return (
+        typeof message === 'object' &&
+        message !== null &&
+        'content' in message &&
+        message.content === prompt
+      )
+    })
+  if (session === undefined) throw new Error(`No recorded Claude Session opens with ${prompt}.`)
+  return session
 }

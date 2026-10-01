@@ -5,6 +5,9 @@ import { readFileSync, watch } from 'node:fs'
 // fixtures/supported-commands-claude-2.1.286.json. A rewrite of it pushes `commands_changed`.
 export const MOCK_CLAUDE_COMMANDS_FILE_ENV = 'ARGO_CLAUDE_COMMANDS_FILE'
 
+// The CLI version the Claude recordings under fixtures/ came from.
+export const MOCK_CLAUDE_VERSION = '2.1.286'
+
 const INITIALIZATION_DELAY_MS = 50
 // A `FeedStreamProbe` prompt streams its reply as text deltas, as the real CLI's partial messages do.
 const STREAM_PROBE = 'FeedStreamProbe'
@@ -189,7 +192,7 @@ function writeInitialization(sessionId: string) {
       type: 'system',
       subtype: 'init',
       apiKeySource: 'none',
-      claude_code_version: '2.1.0',
+      claude_code_version: MOCK_CLAUDE_VERSION,
       cwd: process.cwd(),
       tools: [],
       mcp_servers: [],

@@ -13,6 +13,9 @@ import type {
   SessionHarnessBackend,
   SessionHarnessRun,
 } from '../../e2e/sessions/session-harness-backend'
+import { CLAUDE_HISTORY_RECORDING } from '../cli/claude/recorded-claude-sessions'
+import { CODEX_HISTORY_RECORDING } from '../cli/codex/recorded-codex-threads'
+import { readRecordingVersion } from '../cli/recorded-calls'
 import { signedInHarnessEnvironment } from '../cli/signed-in-harness'
 import { createMockSessionHarnessBackend } from './mock-session-harness-backend'
 
@@ -127,4 +130,20 @@ test('reads a Codex prompt the mock app-server took into its thread', () =>
     } finally {
       child.kill()
     }
+  }))
+
+async function printedVersion(executable: string) {
+  const child = spawn(executable, ['--version'])
+  const chunks: Buffer[] = []
+  child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk))
+  await once(child, 'close')
+  return Buffer.concat(chunks).toString('utf8').trim()
+}
+
+test('each mock CLI reports the version its recordings came from', () =>
+  started(async ({ run }) => {
+    const claude = readRecordingVersion(...CLAUDE_HISTORY_RECORDING)
+    expect(await printedVersion(run.executables.claude)).toBe(`${claude} (Claude Code)`)
+    const codex = readRecordingVersion(...CODEX_HISTORY_RECORDING)
+    expect(await printedVersion(run.executables.codex)).toBe(`codex-cli ${codex}`)
   }))

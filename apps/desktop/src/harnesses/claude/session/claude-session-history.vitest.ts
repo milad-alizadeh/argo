@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
 import { expect, test } from 'vitest'
+import { recordedSession } from '@/mocks/cli/claude/recorded-claude-sessions'
 import { decodeClaudeSessionMessages } from './claude-session-history'
 
 function recordedMessages(name: string): SessionMessage[] {
@@ -15,10 +16,37 @@ function recordedMessages(name: string): SessionMessage[] {
     .filter((entry) => entry.type === 'user' || entry.type === 'assistant')
 }
 
-test('decodes Claude user and assistant content without system messages', () => {
-  expect(decodeClaudeSessionMessages(recordedMessages('parityProse'))).toEqual([
-    { kind: 'message', id: 'pr-p', role: 'user', text: 'Say hello, then confirm.' },
-    { kind: 'message', id: 'pr-a', role: 'assistant', text: 'Hello there. Confirmed.' },
+test('decodes a real Claude Session the Agent SDK read back', () => {
+  expect(decodeClaudeSessionMessages(recordedSession('Say hello, then confirm.'))).toEqual([
+    {
+      kind: 'message',
+      id: '64e0ef8d-2563-4053-83c7-4354aa5f54f6',
+      role: 'user',
+      text: 'Say hello, then confirm.',
+    },
+    {
+      kind: 'message',
+      id: 'msg_011CfaqRRGWufqb3CsUuQkjm',
+      role: 'assistant',
+      text: "Hello! Confirmed. I'm up and running in `/Users/x/prose` and ready to help.",
+    },
+  ])
+})
+
+// Claude CLI 2.1.286 writes a thought with its signature and no text.
+test('decodes a real Claude thought as reasoning before the reply', () => {
+  const thought = recordedSession(
+    'Ultrathink: is 221 prime? Reason before answering, then answer in one sentence.',
+  )
+  expect(decodeClaudeSessionMessages(thought)).toEqual([
+    expect.objectContaining({ kind: 'message', role: 'user' }),
+    { kind: 'reasoning', id: 'msg_011CfaqV3LX1rAfBRRTgAgWZ', text: '', redacted: false },
+    {
+      kind: 'message',
+      id: 'msg_011CfaqV3LX1rAfBRRTgAgWZ',
+      role: 'assistant',
+      text: 'No, 221 is not prime, because 221 = 13 × 17.',
+    },
   ])
 })
 

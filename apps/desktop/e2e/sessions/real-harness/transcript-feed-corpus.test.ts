@@ -1,17 +1,20 @@
 import { expect, test } from 'bun:test'
-import { recordedSessionMessages } from '../../../mocks/cli/claude/recorded-claude-sessions'
+import { recordedSession } from '../../../mocks/cli/claude/recorded-claude-sessions'
 import { recordedThread } from '../../../mocks/cli/codex/recorded-codex-threads'
 import { assertVendorFeedCorpus, type VendorCorpus } from './transcript-feed-corpus'
 
+const CLAUDE_TOOL_CALLS =
+  'Run the composer check: run the shell command echo argo-recorded with the Bash tool, then edit notes.txt to replace old with new. Reply with one short sentence.'
 const CODEX_NOTICE =
   '<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>'
 
 function recordedCorpus(): VendorCorpus {
-  return { claude: recordedSessionMessages(), codex: recordedThread(CODEX_NOTICE) }
+  return { claude: recordedSession(CLAUDE_TOOL_CALLS), codex: recordedThread(CODEX_NOTICE) }
 }
 
 test('projects the recorded Claude and Codex vendor reads into Feed rows', async () => {
-  await assertVendorFeedCorpus(recordedCorpus(), { codex: ['task-notification'] })
+  // A headless Claude run writes none of the raw-tag shapes; the decoder's envelope tests cover them.
+  await assertVendorFeedCorpus(recordedCorpus(), { claude: [], codex: ['task-notification'] })
 })
 
 test('rejects a task notification the decoder left in prose', async () => {

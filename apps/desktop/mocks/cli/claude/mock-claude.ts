@@ -10,7 +10,7 @@ import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversaria
 import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { createMockClaudeHooks } from './mock-claude-hooks.ts'
 import { replyToSdkPrompt } from './mock-claude-sdk-reply.ts'
-import { startMockClaudeSdkStream } from './mock-claude-sdk-stream.ts'
+import { MOCK_CLAUDE_VERSION, startMockClaudeSdkStream } from './mock-claude-sdk-stream.ts'
 import { claudeProjectFolder, MOCK_CLAUDE_TRANSCRIPTS_ENV } from './mock-claude-transcripts.ts'
 import { settleMockClaudeTurn } from './mock-claude-turn.ts'
 
@@ -42,7 +42,7 @@ let turnIndex = 0
 
 const arguments_ = process.argv.slice(2)
 if (arguments_.includes('--version')) {
-  process.stdout.write('2.1.0\n')
+  process.stdout.write(`${MOCK_CLAUDE_VERSION} (Claude Code)\n`)
   process.exit(0)
 }
 if (arguments_.includes('--help')) {
