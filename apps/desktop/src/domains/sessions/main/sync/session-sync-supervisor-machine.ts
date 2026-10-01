@@ -19,8 +19,8 @@ import type {
 import { type Harness, harnessSessionKey } from '@/harnesses/harness'
 import type { SessionListChanges } from '../api'
 import {
-  type SessionSyncStatus,
   IDLE_SESSION_SYNC_STATUS,
+  type SessionSyncStatus,
   sessionSyncStatusSchema,
 } from '../session-sync-status'
 import { sessionSyncMachine } from './session-sync-machine'
@@ -350,7 +350,10 @@ export const sessionSyncSupervisorMachine = setup({
     recordStatus: assign({
       status: ({ context, event }) => {
         assertEvent(event, 'SyncStatus')
-        return { ...context.status, [event.harness]: event.status }
+        return {
+          ...context.status,
+          [event.harness]: event.status,
+        }
       },
     }),
   },
@@ -365,7 +368,10 @@ export const sessionSyncSupervisorMachine = setup({
     discovering: {},
     harnesses: input.harnesses,
     status: Object.fromEntries(
-      Object.keys(input.harnesses).map((harness) => [harness, IDLE_SESSION_SYNC_STATUS]),
+      Object.keys(input.harnesses).map((harness) => [
+        harness,
+        IDLE_SESSION_SYNC_STATUS,
+      ]),
     ),
   }),
   states: {

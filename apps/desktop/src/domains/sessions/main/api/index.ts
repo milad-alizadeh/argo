@@ -1,4 +1,4 @@
-export { ExternalSessionPoll } from './external-session-poll'
+export { ExternalSessionPoll, RUNNING_QUIET_LIMIT_MS } from './external-session-poll'
 export { listComposerCommandsFor } from './session-composer-commands'
 export { watchSessionList } from './session-list'
 export { SessionListChanges } from './session-list-changes'
