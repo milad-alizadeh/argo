@@ -233,16 +233,14 @@ test('a stop before the start finishes leaves nothing listening and installs not
   expect(harness.state.table).toBeUndefined()
 })
 
-test('a PreToolUse that lands after its PermissionRequest keeps permission', async () => {
+test('a running tool that lands after its PermissionRequest clears the needs-input status', async () => {
   await receiver.start()
   saved()
   await listedRunning(SESSION)
   await post('UserPromptSubmit')
   await post('PermissionRequest', SESSION, 'shell')
   await post('PreToolUse', SESSION, 'shell')
-  expect(await row()).toEqual({ status: 'permission', activity: 'shell' })
-  await post('PostToolUse', SESSION, 'shell')
-  expect((await row()).status).toBe('running')
+  expect(await row()).toEqual({ status: 'running', activity: 'shell' })
 })
 
 test('a hook status outranks the listed one on later ticks', async () => {
