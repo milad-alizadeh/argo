@@ -33,17 +33,11 @@
 // Gated on an agent marker (CLAUDECODE, or ARGO_HOOK_AGENT for markerless harnesses like Codex)
 // so it never touches the human's own workflow. decide() is pure string logic; the publish
 // namespaces it reads are set once by the entrypoint below, from the descriptor.
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { Verdict, WorktreeGuardConfiguration } from './hook-io.mts'
-import {
-  ALLOW,
-  readWorktreeGuard,
-  resolveProjectDir,
-  runGuard,
-  toolCall,
-  underAgent,
-} from './hook-io.mts'
+import type { Verdict } from './hook-io.mts'
+import { ALLOW, resolveProjectDir, runGuard, toolCall, underAgent } from './hook-io.mts'
 import { afterGitOptions, invocation, segments, tokenize, unexpanded } from './shell-commands.mts'
 
 // The opt-out. An environment assignment rather than a flag, because it survives being placed in
@@ -75,13 +69,27 @@ function pushesNonBranch(refspec: string): boolean {
 
 const DELETE_FLAGS = ['--delete', '-d']
 
-// Namespaces that publish rather than carry work, from `worktreeGuard.publishBranches` in the
-// same descriptor the naming guard reads. A design page's branch is the case: it joins to no
+/** The `prOwnershipGuard` block of `hooks.json`. Every field is optional. */
+export type PrOwnershipGuardConfiguration = { publishBranches?: string[] }
+
+/** The block as the project's descriptor holds it. Missing or malformed reads as `{}`. */
+function readConfiguration(root: string): PrOwnershipGuardConfiguration {
+  const descriptor = path.join(root, 'hooks.json')
+  if (!existsSync(descriptor)) return {}
+  try {
+    return JSON.parse(readFileSync(descriptor, 'utf8')).prOwnershipGuard ?? {}
+  } catch {
+    return {}
+  }
+}
+
+// Namespaces that publish rather than carry work, from `prOwnershipGuard.publishBranches` in
+// `hooks.json`. A design page's branch is the case: it joins to no
 // ticket, it never merges, and `/ship` has no step that pushes it, so a guard reserving the push
 // to `/ship` would leave the process with no way to publish at all. Unconfigured, this is empty
 // and every push is judged as work, which is the right default.
 let publishPrefixes: string[] = []
-export function configurePublish(config: WorktreeGuardConfiguration = {}): string[] {
+export function configurePublish(config: PrOwnershipGuardConfiguration = {}): string[] {
   publishPrefixes = config.publishBranches || []
   return publishPrefixes
 }
@@ -144,7 +152,7 @@ export function decide({
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   await runGuard((payload) => {
-    configurePublish(readWorktreeGuard(resolveProjectDir(payload.cwd || process.cwd())))
+    configurePublish(readConfiguration(resolveProjectDir(payload.cwd || process.cwd())))
     return decide({ ...toolCall(payload), isAgent: underAgent() })
   })
 }

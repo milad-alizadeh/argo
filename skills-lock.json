@@ -197,13 +197,13 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/visual-exploration/SKILL.md",
-      "computedHash": "b1f4f60b60ec2c3b114841b4e6264cebc41b45d96d350bbf28b6b757892c3b24"
+      "computedHash": "cfc426d9bc5857c6f5bc82f46b3c380618fa7206bd4854c7c8b8a2431c8dc36f"
     },
     "visual-foundation": {
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/visual-foundation/SKILL.md",
-      "computedHash": "3a2c45f38f4aaba3cbb5737d704c6a0777e45a1bedab37f537adaeea075ac7e6"
+      "computedHash": "f0a2ab627e3e5af83b4e3b6758d50022e6c8e08c1ad3e390b0bf7d0e3acdf792"
     },
     "wait-what": {
       "source": "mattpocock/skills",

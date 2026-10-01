@@ -21,6 +21,9 @@
     "includes": [
       "**",
       "!docs",
+      // KIND — installed skills are vendored output of `npx skills`, recorded in skills-lock.json.
+      "!.agents/skills",
+      "!.claude/skills",
       "!lint/biome/fixtures",
       "!apps/desktop/package-manifest.json",
       "!apps/desktop/src/platform/renderer/components/ui/accordion.tsx",

@@ -19,10 +19,6 @@ Argo contains the skills bundle and the Argo Desktop app in `apps/desktop`.
 
 ## Work and land
 
-Make every change, including docs and configuration, in a worktree under
-`.claude/worktrees/`. Read-only work may stay in the main checkout. Naming,
-resuming, recovery, and subagents: `docs/agents/worktrees.md`.
-
 CI is the gate; `bun run quality` is the local subset. Run it after review and fixes.
 See `docs/agents/quality-gates.md` for exemptions and fail-open traps. Never suppress a
 failure inline or raise a global cap. For a Node major switch, reinstall dependencies because

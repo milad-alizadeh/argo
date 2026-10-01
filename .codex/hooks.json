@@ -5,27 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/worktree-guard.mts\""
-          }
-        ],
-        "matcher": "Edit|Write|NotebookEdit|Bash|EnterWorktree"
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
             "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/pr-ownership-guard.mts\""
-          }
-        ],
-        "matcher": "Bash"
-      }
-    ],
-    "PostToolUse": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/worktree-guard.mts\""
           }
         ],
         "matcher": "Bash"
@@ -37,18 +17,6 @@
           {
             "type": "command",
             "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/task-list-nudge.mts\""
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh \"$(git rev-parse --show-toplevel)/packages/argo-skills/skills/setup-argo-skills/hooks/worktree-gc.sh\"",
-            "timeout": 60,
-            "statusMessage": "Reaping landed worktrees"
           }
         ]
       }
