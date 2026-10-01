@@ -19,9 +19,9 @@ export const sessionTable = sqliteTable(
     activityAt: integer('activity_at'),
     // The Session List order: lower first, then newest `createdAt`. Drag and drop will set it.
     sortOrder: integer('sort_order').notNull().default(0),
-    // The last activity line a Feed read, as JSON, so an idle row keeps it with no Feed reader.
+    // The last activity line, as JSON, so an idle row keeps it with no Feed reader.
     activity: text('activity'),
-    // The last status the history watcher saw; a live channel's own status outranks it.
+    // The last status the external Session poll stored; a live channel's own status outranks it.
     status: text('status', { enum: SESSION_STATUSES }).notNull().default('unknown'),
     ...timestampColumns(),
   },

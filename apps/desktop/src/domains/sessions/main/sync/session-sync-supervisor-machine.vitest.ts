@@ -20,7 +20,6 @@ const fetchingStatus = {
   processed: 0,
   total: null,
   skipped: 0,
-  lastSuccessfulSyncAt: null,
   failure: null,
 }
 type SyncEvent =
@@ -138,7 +137,6 @@ test('keeps a Codex sync failure out of Claude status', () => {
       processed: 0,
       total: null,
       skipped: 0,
-      lastSuccessfulSyncAt: null,
       failure: 'Codex app-server is unavailable.',
     },
   })

@@ -58,7 +58,6 @@ const IDLE_SYNC_STATUS: SessionSyncStatus = {
   processed: 0,
   total: null,
   skipped: 0,
-  lastSuccessfulSyncAt: null,
   failure: null,
 }
 let syncStatus = IDLE_SYNC_STATUS

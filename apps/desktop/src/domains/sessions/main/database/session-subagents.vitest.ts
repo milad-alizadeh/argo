@@ -1,10 +1,9 @@
 import { afterEach, beforeEach, expect, test } from 'vitest'
 import type { Database } from '@/database/database'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import { insertProject, migratedDatabase } from '@/mocks/database/migrated-database'
 import { saveSessionBatch } from '../sync'
-import { recordLiveSubagents, storedSessionSubagents } from './session-subagents'
+import { saveSessionSubagents, storedSessionSubagents } from './session-subagents'
 
 let database: Database
 
@@ -43,40 +42,19 @@ function argoId(nativeId: string): string {
   return row.argo_id
 }
 
-function contentEvent(content: FeedContent): SessionLiveEventBody {
-  return { type: 'content', commandId: null, turnId: null, vendorEventId: null, content }
-}
-
 test('records a running Session’s Subagents', () => {
   saveSessionBatch(database, 'claude', [
     { nativeId: 'parent', projectId: 'project-1', cwd: '/repo', activityAt: 10 },
   ])
   const parent = argoId('parent')
 
-  recordLiveSubagents(database, {
-    harness: 'claude',
-    nativeId: 'parent',
-    events: [contentEvent(delegation('agent-a', 'running', 'Survey'))],
-  })
-  recordLiveSubagents(database, {
-    harness: 'claude',
-    nativeId: 'parent',
-    events: [contentEvent(delegation('agent-a', 'completed', null))],
-  })
+  expect(saveSessionSubagents(database, parent, [delegation('agent-a', 'running', 'Survey')])).toBe(
+    1,
+  )
+  expect(saveSessionSubagents(database, parent, [delegation('agent-a', 'running', null)])).toBe(0)
+  saveSessionSubagents(database, parent, [delegation('agent-a', 'completed', null)])
 
   expect(storedSessionSubagents(database, [parent]).get(parent)).toEqual([
     { id: 'agent-a', label: 'Survey', state: 'completed' },
   ])
-})
-
-test('ignores a live Subagent whose Session is not stored', () => {
-  recordLiveSubagents(database, {
-    harness: 'claude',
-    nativeId: 'absent',
-    events: [contentEvent(delegation('agent-a', 'running', null))],
-  })
-
-  expect(database.$client.prepare('SELECT count(*) AS rows FROM session_subagent').get()).toEqual({
-    rows: 0,
-  })
 })

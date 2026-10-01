@@ -3,6 +3,7 @@ import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionArchive } from '@/database/session-archive/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
+import type { FeedActivityState } from '@/domains/sessions/api/feed-activity'
 import {
   sessionDetailsProcedure,
   sessionListChangedProcedure,
@@ -61,7 +62,6 @@ type SessionListCallerOptions = {
   sessions?: Record<string, unknown>
   supervisor?: LiveSessionSupervisorActor
   database?: Database
-  observeFeed?: (sessionId: string) => () => void
   rename?: (request: RenameRequest) => Promise<void>
 }
 
@@ -70,7 +70,6 @@ export function sessionListCaller({
   sessions = {},
   supervisor,
   database = migratedDatabase(),
-  observeFeed = () => () => {},
   rename = async () => {},
 }: SessionListCallerOptions = {}) {
   const mock = mockSupervisor(sessions)
@@ -86,7 +85,7 @@ export function sessionListCaller({
       await rename(request)
     },
   }
-  const stopWatching = watchSessionList(context, observeFeed)
+  const stopWatching = watchSessionList(context)
   const caller = initTRPC
     .create()
     .router({
@@ -117,13 +116,18 @@ export function sessionListCaller({
 
 export const settled = () => new Promise((resolve) => setTimeout(resolve, 0))
 
-export function liveSession(state: string, status: string | null = null) {
+export function liveSession(
+  state: string,
+  status: string | null = null,
+  activity: FeedActivityState['activity'] = null,
+) {
   return {
     getSnapshot: () => ({
       value: state,
       matches: (candidate: string) => candidate === state,
       context: {
         status,
+        activity: { activity, callId: null },
         turnConfiguration: { model: 'claude-sonnet', effort: 'high', mode: 'default' },
       },
     }),

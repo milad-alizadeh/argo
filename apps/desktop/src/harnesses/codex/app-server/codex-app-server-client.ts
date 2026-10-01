@@ -63,6 +63,11 @@ type RequestParams = {
     threadId: string
     includeTurns: boolean
   }
+  'thread/turns/list': {
+    threadId: string
+    limit: number
+    itemsView: 'full'
+  }
   'skills/list': SkillsListParams
   'config/read': ConfigReadParams
   'config/value/write': ConfigValueWriteParams

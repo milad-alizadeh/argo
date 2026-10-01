@@ -12,10 +12,7 @@ import type {
   SessionSummaryReader,
 } from '@/domains/sessions/api/session-discovery'
 import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
-import {
-  type SessionLiveEventBody,
-  sessionLiveEventBodySchema,
-} from '@/domains/sessions/api/session-live-event'
+import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import type { SessionLiveInput, SessionStartInput } from '@/domains/sessions/main/api'
 import type { HarnessInfo } from '@/harnesses/harness-catalog'
 import { identifierSchema } from '@/shared/validation'
@@ -36,24 +33,44 @@ export const liveSessionChannelEventSchema = z.discriminatedUnion('type', [
   }),
 ])
 
-// Where a Harness writes Session history, and how it reads the lines it appends.
-export type HistoryFiles = {
-  directory: string
-  // The Session or Subagent id a history file belongs to, or null for a file that holds none.
-  ownerOf: (relativePath: string) => string | null
-  // A reader for the lines appended after `existing`, the newest complete lines already in the file.
-  openReader: (existing: readonly string[]) => (lines: readonly string[]) => HistoryChange
-  // Whether a history line opens a turn, closes one, or says nothing about turns.
-  turnOf: (line: string) => HistoryTurnMarker | null
+// The Session status a Harness's own interface gives an external Session (ADR-0048).
+export type ExternalSessionStatus = 'running' | 'permission' | 'asking' | 'idle' | 'unknown'
+
+// One Session open outside Argo now, as its Harness's own listing names it.
+export type LiveExternalSession = {
+  nativeId: string
+  // The status the listing gives; null when only an activity read can tell.
+  status: ExternalSessionStatus | null
+  // The transcript the host stats each tick; null while the Harness cannot name it yet.
+  transcript: string | null
 }
 
-export type HistoryTurn = 'open' | 'closed'
-// The turn a marker names, where the Harness writes one; a close for another turn is stale.
-export type HistoryTurnMarker = { turn: HistoryTurn; turnId: string | null }
+// Every live external Session, and how many records had a shape or value the Harness rejected.
+type LiveExternalSessionList = { sessions: LiveExternalSession[]; rejected: number }
 
-export type HistoryChange =
-  | { type: 'appended'; events: SessionLiveEventBody[] }
-  | { type: 'rewritten' }
+// What a Harness's own interface says a Session is doing now.
+export type ExternalActivityReading = {
+  // The newest Turn's Feed content; the host finds the activity line with the Feed's own rules.
+  turn: readonly FeedContent[]
+  // The status the interface settles; null leaves the stored one.
+  status: ExternalSessionStatus | null
+  // The interface could not answer yet; the host reads again on the next tick.
+  retry: boolean
+}
+
+// How the external Session poll reads Sessions this Harness runs outside Argo. The host owns the loop,
+// the transcript stat, the diff and every write, and skips a Session with a live Argo channel.
+// Argo parses no transcript content: the host only stats the path (ADR-0047).
+export type ExternalSessions = {
+  // Called every poll tick, one call at a time. Reads only a vendor listing or small records, such
+  // as a lock probe. Throws when its source cannot answer; the rows then keep what they show.
+  listLive: () => Promise<LiveExternalSessionList>
+  // Called after a Session's transcript changed or after it left the list, never at start.
+  // Answers from a vendor interface, not the transcript; calls run one at a time across every
+  // Harness. `changedAt` is when the host last saw the transcript change. Absent means the
+  // listing's status alone, with no activity line.
+  readActivity?: (nativeId: string, changedAt: number) => Promise<ExternalActivityReading>
+}
 
 export type LiveSessionChannelEvent = z.infer<typeof liveSessionChannelEventSchema>
 export type LiveSessionCommand = Pick<
@@ -90,7 +107,8 @@ export type HarnessRegistration<Id extends Harness = Harness> = HarnessReadiness
   readCatalog: () => Promise<HarnessInfo>
   readHistory: (target: SessionHistoryTarget) => Promise<FeedContent[]>
   hasTurn?: (nativeId: string, turnId: string) => Promise<boolean>
-  historyFiles?: HistoryFiles
+  // Absent for a Harness that runs only Sessions Argo starts.
+  externalSessions?: ExternalSessions
   openLiveSession?: (
     input: SessionLiveInput,
     controls: LiveSessionControls | undefined,

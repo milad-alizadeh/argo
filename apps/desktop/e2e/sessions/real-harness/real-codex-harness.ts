@@ -1,6 +1,6 @@
 import path from 'node:path'
-import { openCodexHistoryReader } from '@/harnesses/codex/session/codex-history-lines'
 import { assistantAfterPrompt } from './real-session-transcript'
+import { TRANSCRIPT_CONTENT } from './transcript-history'
 
 export const realCodexCli = {
   authentication: ['login', 'status'],
@@ -9,5 +9,5 @@ export const realCodexCli = {
   label: 'Codex',
   transcripts: (home: string) => path.join(home, '.codex', 'sessions'),
   replyAfterPrompt: (folder: string, prompt: string) =>
-    assistantAfterPrompt(folder, prompt, () => openCodexHistoryReader()),
+    assistantAfterPrompt(folder, prompt, TRANSCRIPT_CONTENT.codex),
 }

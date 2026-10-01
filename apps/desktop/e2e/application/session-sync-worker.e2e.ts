@@ -1,6 +1,5 @@
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { _electron as electron } from 'playwright-core'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { launchCommand } from '../application-under-test'
@@ -19,24 +18,33 @@ test('starts and stops the packaged Session sync worker', async ({
   })
   try {
     const page = await application.firstWindow()
+    await page.waitForFunction(() => typeof window.argo?.trpcSubscribe === 'function')
+    // Combined status: a Harness CLI the runner lacks fails its scan, so a settled scan is the proof.
     await expect
       .poll(
-        () => {
-          const client = new DatabaseSync(path.join(userData, 'argo.sqlite'))
-          try {
-            const row = client
-              .prepare("SELECT phase FROM session_sync_status WHERE harness = 'claude'")
-              .get()
-            return row?.phase ?? null
-          } catch {
-            return null
-          } finally {
-            client.close()
-          }
-        },
+        () =>
+          page.evaluate(async () => {
+            const id = Math.floor(Math.random() * 1_000_000_000)
+            return await new Promise<string | null>((resolve) => {
+              let stop = () => {}
+              void window.argo
+                .trpcSubscribe(
+                  { id, path: 'sessionSyncStatus', type: 'subscription', input: null },
+                  (message) => {
+                    if (message.id !== id || message.type !== 'data') return
+                    stop()
+                    resolve((message.result.data as { status: { phase: string } }).status.phase)
+                  },
+                )
+                .then((unsubscribe) => {
+                  stop = unsubscribe
+                })
+                .catch(() => resolve(null))
+            })
+          }),
         { timeout: 10_000 },
       )
-      .toBe('ready')
+      .toMatch(/^(ready|failed)$/)
     await page.close()
   } finally {
     await application.close()

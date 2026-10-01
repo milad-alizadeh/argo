@@ -22,9 +22,7 @@ export const sessionSyncMachine = setup({
       processed: number
       skipped: number
       failure: string | null
-      lastSuccessfulSyncAt: string | null
       fetchAttempts: number
-      saveAttempts: number
     },
     events: {} as
       | {
@@ -73,7 +71,6 @@ export const sessionSyncMachine = setup({
   },
   guards: {
     canRetryFetch: ({ context }) => context.fetchAttempts < 2,
-    canRetrySave: ({ context }) => context.saveAttempts < 2,
     hasFetchedRecords: ({ event }) =>
       event.type === 'xstate.done.actor.fetch' && event.output.records.length > 0,
     hasMoreBatches: ({ context }) =>
@@ -88,18 +85,15 @@ export const sessionSyncMachine = setup({
       skipped: 0,
       failure: null,
       fetchAttempts: 0,
-      saveAttempts: 0,
     }),
     rememberFetched: assign({
       records: ({ event }) =>
         event.type === 'xstate.done.actor.fetch' ? event.output.records : [],
       skipped: ({ event }) => (event.type === 'xstate.done.actor.fetch' ? event.output.skipped : 0),
+      failure: null,
     }),
     countFetchAttempt: assign({
       fetchAttempts: ({ context }) => context.fetchAttempts + 1,
-    }),
-    countSaveAttempt: assign({
-      saveAttempts: ({ context }) => context.saveAttempts + 1,
     }),
     rememberFailure: assign({
       failure: ({ event }) => {
@@ -112,11 +106,6 @@ export const sessionSyncMachine = setup({
       processed: ({ context }) =>
         context.processed +
         Math.min(SESSION_SYNC_BATCH_SIZE, context.records.length - context.processed),
-      saveAttempts: 0,
-      failure: null,
-    }),
-    rememberCompleted: assign({
-      lastSuccessfulSyncAt: () => new Date().toISOString(),
       failure: null,
     }),
   },
@@ -131,9 +120,7 @@ export const sessionSyncMachine = setup({
     processed: 0,
     skipped: 0,
     failure: null,
-    lastSuccessfulSyncAt: null,
     fetchAttempts: 0,
-    saveAttempts: 0,
   }),
   on: {
     Shutdown: '.Closed',
@@ -163,10 +150,7 @@ export const sessionSyncMachine = setup({
           },
           {
             target: 'Ready',
-            actions: [
-              'rememberFetched',
-              'rememberCompleted',
-            ],
+            actions: 'rememberFetched',
           },
         ],
         onError: [
@@ -205,27 +189,14 @@ export const sessionSyncMachine = setup({
           },
           {
             target: 'Ready',
-            actions: [
-              'rememberBatchSaved',
-              'rememberCompleted',
-            ],
+            actions: 'rememberBatchSaved',
           },
         ],
-        onError: [
-          {
-            guard: 'canRetrySave',
-            target: 'Saving',
-            reenter: true,
-            actions: [
-              'countSaveAttempt',
-              'rememberFailure',
-            ],
-          },
-          {
-            target: 'Failed',
-            actions: 'rememberFailure',
-          },
-        ],
+        // A save already waited out busy_timeout, so a failure stops the scan until the next Refresh.
+        onError: {
+          target: 'Failed',
+          actions: 'rememberFailure',
+        },
       },
     },
     Ready: {

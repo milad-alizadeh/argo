@@ -2,6 +2,28 @@
 
 Status: accepted · 2026-09-21
 
+## Amendment · external Session presence (#2940) · 2026-10-01
+
+A Session that runs outside Argo gets its row's status from one poll source for each Harness,
+and only these:
+
+- Claude: `claude agents --json`, the agent view's documented way to read Session state from
+  outside Claude Code. Its output is validated when read. It gives a status and no activity line.
+  Argo reads no `~/.claude/sessions/<pid>.json` pid file.
+- Codex: a non-blocking flock probe on `~/.codex/thread-writer-locks/<id>.lock` says the thread is
+  open. Node has no flock, so a host helper runs a `/usr/bin/perl` one-liner that takes
+  `LOCK_EX|LOCK_NB` and lets go. The host may `stat` the rollout path as a change signal and reads
+  none of its content. When the rollout changed, or the lock is no longer held, the adapter asks
+  app-server `thread/turns/list` for the newest Turn. A Turn with `completedAt` is idle. A Turn
+  without it is running while the lock is held, and unknown once the lock is free, because a crash
+  leaves the Turn unfinished too. "Thread not loaded" with the lock held is idle. An error within
+  2 seconds of a change is a Turn still starting: it reads as running, and the next poll asks again.
+
+These reads change no Session and drive no resume. This amends the decision below that supersedes
+ADR-0040's file and process liveness checks, for the lock probe only. The rule that Argo does not
+parse transcript or rollout files stands. Hooks, when the user turns them on, replace both poll
+sources (#2976).
+
 ## Amendment · main-owned root Feed reading (#2824) · 2026-09-28
 
 A root Session's Feed has one main-process reader. It attaches to the event journal before it reads
@@ -29,8 +51,9 @@ The app machine owns the shared Codex client through the registration's shutdown
 app-server machine exists. The Harness catalog machine lives under
 `src/platform/main/harness-catalog/`.
 
-A Session without a live channel is only as fresh as its Harness's history watcher. Without a
-change signal its Feed stays as last read until the reader reopens it or asks for Refresh.
+A Session without a live channel has no Feed change signal. Its Feed stays as last read until the
+reader reopens it or asks for Refresh. Its row's status and activity line come from the poll in
+ADR-0048.
 
 ## Amendment · Codex live Session channel · 2026-09-28
 

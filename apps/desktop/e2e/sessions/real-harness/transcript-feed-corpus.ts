@@ -4,17 +4,11 @@ import path from 'node:path'
 import { feedEntryRows, projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
 import { type SessionFeedRow, sessionFeedRowSchema } from '@/domains/sessions/api/feed/feed-rows'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import { openClaudeHistoryReader } from '@/harnesses/claude/session/claude-history-lines'
-import { openCodexHistoryReader } from '@/harnesses/codex/session/codex-history-lines'
+import { TRANSCRIPT_CONTENT } from './transcript-history'
 
-// One reader per transcript file, the way a real read follows that file.
-const READERS = {
-  claude: openClaudeHistoryReader,
-  codex: openCodexHistoryReader,
-} as const
 // Only the Harnesses whose transcript files the corpus can read.
-type TranscriptHarness = keyof typeof READERS
-const TRANSCRIPT_HARNESSES = Object.keys(READERS) as TranscriptHarness[]
+type TranscriptHarness = keyof typeof TRANSCRIPT_CONTENT
+const TRANSCRIPT_HARNESSES = Object.keys(TRANSCRIPT_CONTENT) as TranscriptHarness[]
 
 const RAW_TAG = /<\/?[a-z][a-z0-9_-]*(?:\s[^>]*)?>/i
 const PASTED_BLOCK = /<pasted_content id="([^"]+)">([\s\S]*?)<\/pasted_content id="\1">/g
@@ -76,19 +70,7 @@ function contentOf(
   harness: TranscriptHarness,
   files: readonly (readonly string[])[],
 ): FeedContent[] {
-  const content: FeedContent[] = []
-  for (const lines of files) {
-    const read = READERS[harness]()
-    for (const line of lines) {
-      const change = read([line])
-      // A rewritten line asks for a full read and publishes no events of its own.
-      if (change.type !== 'appended') continue
-      for (const event of change.events) {
-        if (event.type === 'content') content.push(event.content)
-      }
-    }
-  }
-  return content
+  return files.flatMap((lines) => TRANSCRIPT_CONTENT[harness](lines))
 }
 
 function rowsOf(harness: TranscriptHarness, content: readonly FeedContent[]): SessionFeedRow[] {

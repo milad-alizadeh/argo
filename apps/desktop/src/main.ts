@@ -17,23 +17,20 @@ import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import {
   clearWorkingStatuses,
+  ExternalSessionPoll,
   listComposerCommandsFor,
   SessionListChanges,
-  updateHarnessSession,
-  WatchedSessionStatus,
   watchSessionList,
 } from '@/domains/sessions/main/api'
 import {
   markUnresolvedSessionCommandsUnknown,
   reconcileUnknownSessionCommands,
-  recordLiveSubagents,
 } from '@/domains/sessions/main/database'
 import { SessionFeedReaders } from '@/domains/sessions/main/feed'
 import {
   type LiveSessionSupervisorActor,
   liveSessionActorFor,
   SessionEventJournal,
-  SessionHistoryFollowers,
   SessionInteractionBroker,
 } from '@/domains/sessions/main/live'
 import type { SessionSyncSupervisorActor } from '@/domains/sessions/main/sync'
@@ -62,7 +59,6 @@ import {
 import { projectTicketScope } from '@/domains/tickets/main/ticket-connection'
 import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { harnessSchema } from '@/harnesses/harness'
-import { tailSessionHistory, watchHistoryActivity } from '@/harnesses/host/history-watch'
 import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
 import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
@@ -384,9 +380,8 @@ function attachWindowTrpc({
   return attachTrpcTransport({ window, rendererURL, router, context: undefined })
 }
 
-// The app's one set of Feed readers, fed by history files and the live Session actors.
-function sessionFeedReaders(actors: WindowActors, database: Database, registry: HarnessRegistry) {
-  const hasLiveChannel = (sessionId: string) => {
+function liveChannelCheck(actors: WindowActors) {
+  return (sessionId: string) => {
     const session = liveSessionActorFor(actors.sessions, sessionId)
     return (
       session !== undefined &&
@@ -394,59 +389,37 @@ function sessionFeedReaders(actors: WindowActors, database: Database, registry: 
       !session.getSnapshot().matches('Closed')
     )
   }
-  const journal = currentSessionEventJournal()
-  const historyFollowers = new SessionHistoryFollowers(
-    journal,
-    (harness, target, changed) => {
-      const files = registry[harness].historyFiles
-      return files === undefined
-        ? () => {}
-        : tailSessionHistory(files, target.subagentId ?? target.nativeId, changed)
-    },
-    hasLiveChannel,
-  )
-  return new SessionFeedReaders({
-    database,
-    journal,
-    hasLiveChannel,
-    readHistory: (harness, target) => registry[harness].readHistory(target),
-    followHistory: (followed, invalidate) => historyFollowers.follow(followed, invalidate),
-    changes: sessionListChanges,
-  })
 }
 
-// The Session watchers the app runs once: every history write moves its Session's row, and each
-// working Session keeps a Feed reader open for its activity line.
+// The Session services the app runs once, not per window: one set of Feed readers, the Session
+// List's live status announcements, and the stored rows of Sessions that run outside Argo.
 function startSessionServices(actors: WindowActors, database: Database, registry: HarnessRegistry) {
-  const readers = sessionFeedReaders(actors, database, registry)
   const context = { database, changes: sessionListChanges }
-  const watchedStatus = new WatchedSessionStatus((session) =>
-    updateHarnessSession(context, session, { status: 'unknown' }),
-  )
-  const stops = [
-    watchSessionList({ ...context, supervisor: actors.sessions }, (sessionId) =>
-      readers.observe({ sessionId, subagentId: null }, () => {}),
-    ),
-  ]
-  for (const harness of harnessSchema.options) {
-    const files = registry[harness].historyFiles
-    if (files === undefined) continue
-    stops.push(
-      watchHistoryActivity(files, (owner, turn, events) => {
-        const at = Date.now()
-        const session = { harness, nativeId: owner }
-        const status = watchedStatus.record({ ...session, turn, at })
-        recordLiveSubagents(database, { ...session, events })
-        if (!updateHarnessSession(context, session, { status, activityAt: at }))
-          actors.sessionSync.send({ type: 'Discover', harness, nativeId: owner })
-      }),
-    )
-  }
+  const hasLiveChannel = liveChannelCheck(actors)
+  const readers = new SessionFeedReaders({
+    ...context,
+    journal: currentSessionEventJournal(),
+    hasLiveChannel,
+    readHistory: (harness, target) => registry[harness].readHistory(target),
+  })
+  // #2976 switches this poll off while hooks are on.
+  const externalSessions = new ExternalSessionPoll({
+    ...context,
+    harnesses: harnessSchema.options.flatMap((harness) => {
+      const external = registry[harness].externalSessions
+      return external === undefined ? [] : [{ harness, external }]
+    }),
+    hasLiveChannel,
+    discover: ({ harness, nativeId }) =>
+      actors.sessionSync.send({ type: 'Discover', harness, nativeId }),
+  })
+  const stopSessionList = watchSessionList({ ...context, supervisor: actors.sessions })
+  externalSessions.start()
   return {
     readers,
     stop: () => {
-      for (const stop of stops) stop()
-      watchedStatus.dispose()
+      stopSessionList()
+      externalSessions.stop()
     },
   }
 }
