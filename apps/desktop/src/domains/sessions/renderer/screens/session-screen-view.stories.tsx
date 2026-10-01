@@ -39,8 +39,6 @@ const SESSION_ROWS = [
       label: 'Ran bun run quality',
       kind: 'command',
       open: false,
-      tool: 'Bash',
-      target: 'bun run quality',
     },
     plan: {
       state: 'available',
@@ -82,8 +80,6 @@ const SESSION_ROWS = [
       label: 'Read feed-document.tsx',
       kind: 'read',
       open: false,
-      tool: 'Read',
-      target: 'feed-document.tsx',
     },
     contextTokens: 18_000,
   }),

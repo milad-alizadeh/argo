@@ -245,8 +245,6 @@ export const OpenCommandReadsRunning: Story = {
           label: 'Ran bun run quality',
           kind: 'command',
           open: true,
-          tool: 'Bash',
-          target: 'bun run quality',
         },
         status: 'running',
         name: 'Gate the branch',
@@ -258,8 +256,6 @@ export const OpenCommandReadsRunning: Story = {
           label: 'Ran bun run quality',
           kind: 'command',
           open: true,
-          tool: 'Bash',
-          target: 'bun run quality',
         },
         status: 'idle',
         name: 'Gated the branch',
@@ -287,8 +283,6 @@ function concurrentActivityRows(activityBySession: Record<string, string>) {
             label: activityBySession[name],
             kind: 'command' as const,
             open: true,
-            tool: 'command',
-            target: null,
           },
   }))
 }
@@ -358,8 +352,6 @@ export const CommentaryActivityDrawsMarkdown: Story = {
           label: '**Checking** the `tool-groups.ts` order',
           kind: 'thought',
           open: true,
-          tool: 'thought',
-          target: null,
         },
         status: 'running',
         name: 'Order the group phrases',
@@ -371,8 +363,6 @@ export const CommentaryActivityDrawsMarkdown: Story = {
           label: 'Ran ls *.ts *.tsx',
           kind: 'command',
           open: false,
-          tool: 'Bash',
-          target: 'ls *.ts *.tsx',
         },
         status: 'idle',
         name: 'List the sources',
@@ -396,8 +386,6 @@ export const SessionListStructure: Story = {
           label: 'Watch PR checks',
           kind: 'command',
           open: false,
-          tool: 'Bash',
-          target: 'RTK_DISABLED=1 gh pr checks 2062 --watch',
         },
         status: 'running',
         plan: {
@@ -653,7 +641,6 @@ export const CompletedRefreshFeedbackDisappears: Story = {
     await canvas.findByRole('progressbar', { name: 'Session refresh progress' })
     publishSessionSyncStatus({
       phase: 'ready',
-      lastSuccessfulSyncAt: new Date().toISOString(),
     })
     await waitFor(() => expect(canvas.queryByRole('progressbar')).toBeNull())
     await expect(canvas.queryByRole('status')).toBeNull()

@@ -192,7 +192,7 @@ export const sessionSyncMachine = setup({
             actions: 'rememberBatchSaved',
           },
         ],
-        // A synchronous SQLite write that failed once fails the same way again.
+        // A save already waited out busy_timeout, so a failure stops the scan until the next Refresh.
         onError: {
           target: 'Failed',
           actions: 'rememberFailure',
