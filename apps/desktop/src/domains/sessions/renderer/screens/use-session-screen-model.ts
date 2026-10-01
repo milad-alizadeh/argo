@@ -9,7 +9,7 @@ import type { FeedSubagent } from '@/domains/sessions/api/feed'
 import { useWorkspaces } from '@/domains/workspaces/renderer'
 import { DEFAULT_HARNESS, type Harness } from '@/harnesses/harness'
 import { useSessionPermission, useSessionQuestion } from '../composer'
-import { useFeedReading } from '../feed'
+import { isFeedRowPrompt, useFeedReading } from '../feed'
 import { useAvailableHarnesses } from '../harness'
 import { workInspectorReveal } from '../inspector'
 import type { Session, SessionEvidence, SessionExtras } from '../types'
@@ -88,24 +88,33 @@ function useSessionEvidence(sessionId: string | null) {
   return { evidence: opened?.sessionId === sessionId ? opened.evidence : null, setEvidence }
 }
 
-// New Session draws its pending Session's Feed from Enter until the Harness names it. A later New
-// Session screen, here or in another Project, starts with none.
-function useStartingSession() {
+// The Session's Feed. A new Session's pending id draws on New Session from Enter, then on the
+// Session it was named until that Session's own Feed shows a prompt, whatever the Harness. New
+// Session keeps it across the naming render.
+function useSessionFeed(selectedSessionId: string | null, running: boolean) {
   const { projectId, sessionId } = useParams()
-  const route = `${projectId}/${sessionId}`
-  const [starting, setStarting] = useState<{ route: string; sessionId: string | null }>({
-    route,
-    sessionId: null,
-  })
-  const setStartingSessionId = useCallback(
-    (startingSessionId: string | null) => setStarting({ route, sessionId: startingSessionId }),
-    [route],
+  const [starting, setStarting] = useState<{
+    projectId: string | undefined
+    pendingId: string
+    sessionId: string
+  } | null>(null)
+  const onStartingSession = useCallback(
+    (pendingId: string | null, named = 'new') =>
+      setStarting(pendingId === null ? null : { projectId, pendingId, sessionId: named }),
+    [projectId],
   )
-  // Leaving the screen drops the pending id, so coming back to the same route shows none.
-  if (starting.route !== route) setStarting({ route, sessionId: null })
+  const shown =
+    starting !== null &&
+    starting.projectId === projectId &&
+    (sessionId === 'new' || sessionId === starting.sessionId)
+  const startingSessionId = shown ? starting.pendingId : null
+  const startingFeed = useFeedReading(startingSessionId)
+  const namedFeed = useFeedReading(selectedSessionId, null, running)
+  const holdsPrompt = startingFeed.feed !== null && !namedFeed.feed?.rows.some(isFeedRowPrompt)
   return {
-    startingSessionId: starting.route === route ? starting.sessionId : null,
-    setStartingSessionId,
+    ...(holdsPrompt ? startingFeed : namedFeed),
+    feedSessionId: holdsPrompt ? startingSessionId : selectedSessionId,
+    onStartingSession,
   }
 }
 
@@ -116,13 +125,11 @@ export function useSessionScreenModel() {
   const [cockpit, projectActions] = useProjects()
   const [workspaceCockpit, workspaceActions] = useWorkspaces(cockpit.project?.id ?? null)
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
-  const { startingSessionId, setStartingSessionId } = useStartingSession()
-  const feedSessionId = sessionId === 'new' ? startingSessionId : selectedSessionId
   const { evidence, setEvidence } = useSessionEvidence(selectedSessionId)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
   const { session, loaded: sessionLoaded } = useSessionDetails(selectedSessionId)
   const feedRunning = sessionTurnRunning(session)
-  const sessionFeed = useFeedReading(feedSessionId, null, feedRunning)
+  const sessionFeed = useSessionFeed(selectedSessionId, feedRunning)
   const [pickedHarness, chooseHarness] = useState<Harness | null>(null)
   const availableHarnesses = useAvailableHarnesses()
   const lastHarness = pickedHarness ?? availableHarnesses?.[0] ?? DEFAULT_HARNESS
@@ -141,8 +148,6 @@ export function useSessionScreenModel() {
     onJumpToLatestChange,
     isNewSession: sessionId === 'new',
     selectedSessionId,
-    feedSessionId,
-    onStartingSession: setStartingSessionId,
     ...sessionFeed,
     feedRunning,
     navigate,

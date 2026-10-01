@@ -19,7 +19,6 @@ import {
   feedContentSchema,
   type PlanProgress,
 } from '@/domains/sessions/api/feed-content'
-import { pendingSessionDraft } from '@/domains/sessions/api/pending-session'
 import type { SessionError } from '@/domains/sessions/api/session-error'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
@@ -333,9 +332,10 @@ export class SessionFeedReaders {
   }
 
   observe(chain: FeedChain, observer: Observer): () => void {
-    const pending = chain.subagentId === null ? pendingSessionDraft(chain.sessionId) : null
+    const pending =
+      chain.subagentId === null ? pendingFeedReading(this.#context.database, chain.sessionId) : null
     if (pending !== null) {
-      observer(pendingFeedReading(this.#context.database, chain.sessionId, pending))
+      observer(pending)
       return () => {}
     }
     const key = feedChainKey(chain)

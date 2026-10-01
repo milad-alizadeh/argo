@@ -10,7 +10,6 @@ import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
   SESSION_MOCK_REPLY_HOLD_FILE_ENV,
-  SESSION_MOCK_START_HOLD_FILE_ENV,
 } from '@/harnesses/proof-protocol'
 import type {
   SessionFixture,
@@ -76,15 +75,6 @@ test('holds the reply back only when a case asks for a slow Harness', () =>
       [SESSION_MOCK_REPLY_DELAY_MS_ENV]: '0',
     })
     const hold = run.launchEnv({ slowReply: true })[SESSION_MOCK_REPLY_HOLD_FILE_ENV]
-    expect(hold !== undefined && existsSync(hold)).toBe(true)
-  }))
-
-test('holds the start only when a case asks for it', () =>
-  started(async ({ run }) => {
-    expect(run.launchEnv({ slowReply: false })[SESSION_MOCK_START_HOLD_FILE_ENV]).toBeUndefined()
-    const hold = run.launchEnv({ slowReply: false, heldStart: true })[
-      SESSION_MOCK_START_HOLD_FILE_ENV
-    ]
     expect(hold !== undefined && existsSync(hold)).toBe(true)
   }))
 

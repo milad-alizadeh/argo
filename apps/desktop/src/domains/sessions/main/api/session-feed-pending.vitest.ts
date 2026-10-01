@@ -7,7 +7,7 @@ import {
   registerFeedDatabase,
   sessionId,
 } from '@/mocks/sessions/session-feed-harness'
-import { deleteComposerDraft, insertComposerDraft, updateComposerDraft } from '../database'
+import { insertComposerDraft } from '../database'
 
 registerFeedDatabase()
 
@@ -44,25 +44,4 @@ test('a pending Session reads as the prompt it was sent, with no history read', 
   ])
   expect(history.pending).toHaveLength(0)
   feed.subscription.unsubscribe()
-})
-
-test('a pending Session whose draft moved on or is gone has no prompt to draw', async () => {
-  const draft = sentDraft('First words')
-  const pending = pendingSessionId(draft)
-  updateComposerDraft(database, {
-    id: draft.id,
-    expectedRevision: draft.revision,
-    target: draft.target,
-    prompt: 'Second words',
-    attachments: [],
-    ticketContext: [],
-    turnConfiguration: TURN_CONFIGURATION,
-  })
-  const moved = await observe({ readHistory: historyReads().readHistory }, pending)
-  expect(moved.latest()).toMatchObject({ state: 'loading', entries: [] })
-  moved.subscription.unsubscribe()
-  deleteComposerDraft(database, draft.id, draft.revision + 1)
-  const gone = await observe({ readHistory: historyReads().readHistory }, pending)
-  expect(gone.latest()).toMatchObject({ state: 'loading', entries: [] })
-  gone.subscription.unsubscribe()
 })

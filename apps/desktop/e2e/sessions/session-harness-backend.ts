@@ -46,8 +46,7 @@ export type SessionHarnessBackend = {
   // 3. The wall time one case may take, in milliseconds.
   readonly budgetMs: number
   start: (request: { root: string; fixture: SessionFixture }) => Promise<SessionHarnessRun>
-  // 4. How a case waits for a reply, releasing a held start, and what it reads to know one has not
-  // arrived yet.
+  // 4. How a case waits for a reply, and what it reads to know one has not arrived yet.
   waitForReply: (page: Page, reply: SessionReply) => Promise<void>
   // Whether the Feed already shows the reply.
   replied: (page: Page, reply: SessionReply) => Promise<boolean>

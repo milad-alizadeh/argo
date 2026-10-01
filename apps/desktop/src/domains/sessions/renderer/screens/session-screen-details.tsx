@@ -41,8 +41,8 @@ type SessionScreenDetailsProps = {
   cockpit: Cockpit
   workspaceCockpit: WorkspaceCockpit
   workspaceActions: WorkspaceActions
-  // A new Session's pending id from its saved prompt until its start settles, then null.
-  onStartingSession: (sessionId: string | null) => void
+  // A new Session's pending id from its saved prompt, and the Session route that draws it.
+  onStartingSession: (pendingId: string | null, sessionId?: string) => void
 }
 
 type SessionsTranslator = ReturnType<typeof useTranslation<'sessions'>>['t']
@@ -196,7 +196,7 @@ function useSessionComposerSend(input: {
   identity: ComposerIdentity
   projectId: string | null
   onFailure: (outcome: 'rejected' | 'uncertain') => void
-  onStartingSession: (sessionId: string | null) => void
+  onStartingSession: SessionScreenDetailsProps['onStartingSession']
 }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -205,17 +205,20 @@ function useSessionComposerSend(input: {
     turnConfiguration: TurnConfiguration | null,
     attachments: DraftContent['attachments'],
   ) => {
+    let pendingId = null as string | null
+    const onSaved = (saved: { id: string; revision: number }) => {
+      pendingId = pendingSessionId(saved)
+      input.onStartingSession(pendingId)
+    }
     const starts = input.identity.kind === 'draft'
     const result = await input.draft?.submit({
       prompt,
       turnConfiguration,
       attachments,
-      onSaved: (saved) => {
-        if (starts) input.onStartingSession(pendingSessionId(saved))
-      },
+      ...(starts ? { onSaved } : {}),
     })
     if (result?.outcome !== 'accepted') {
-      if (starts) input.onStartingSession(null)
+      input.onStartingSession(null)
       const outcome = result?.outcome ?? 'rejected'
       input.onFailure(outcome)
       return outcome
@@ -224,6 +227,8 @@ function useSessionComposerSend(input: {
       void queryClient.invalidateQueries({
         queryKey: trpc.workspaceList.queryKey({ projectId: input.projectId }),
       })
+      // The named Session draws the prompt until its own Feed shows it, whatever the Harness.
+      input.onStartingSession(pendingId, result.sessionId)
       navigate(`/projects/${input.projectId}/sessions/${result.sessionId}`, { replace: true })
     }
     return 'accepted'

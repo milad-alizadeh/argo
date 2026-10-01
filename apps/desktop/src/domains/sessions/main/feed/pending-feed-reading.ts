@@ -2,10 +2,8 @@ import path from 'node:path'
 import type { Database } from '@/database/database'
 import { type FeedReading, FeedRowProjector, feedReading } from '@/domains/sessions/api/feed'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import type { pendingSessionDraft } from '@/domains/sessions/api/pending-session'
+import { pendingSessionDraft } from '@/domains/sessions/api/pending-session'
 import { type ComposerDraftValue, readComposerDraft } from '../database'
-
-type PendingDraft = NonNullable<ReturnType<typeof pendingSessionDraft>>
 
 // The prompt as the Session's first Feed row, drawn by the same projection as a Harness's row.
 function promptContent(draft: ComposerDraftValue): FeedContent {
@@ -27,13 +25,11 @@ function promptContent(draft: ComposerDraftValue): FeedContent {
   }
 }
 
-// A pending Session's Feed is the prompt it was sent; the named Session's Feed replaces it. A draft
-// that is gone or moved on has no prompt to show, so its Feed stays loading.
-export function pendingFeedReading(
-  database: Database,
-  sessionId: string,
-  pending: PendingDraft,
-): FeedReading {
+// A pending Session's Feed is the prompt it was sent; null for any other Session. A draft that is
+// gone or moved on has no prompt to show, so its Feed stays loading.
+export function pendingFeedReading(database: Database, sessionId: string): FeedReading | null {
+  const pending = pendingSessionDraft(sessionId)
+  if (pending === null) return null
   const draft = readComposerDraft(database, pending.draftId)
   const sent = draft?.revision === pending.revision ? draft : null
   const { entries } = new FeedRowProjector().project({
