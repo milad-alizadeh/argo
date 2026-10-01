@@ -9,9 +9,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@keyframes session-list-status-pulse {
+@keyframes status-light-blink {
   50% {
-    box-shadow: var(--shadow-state-glow);
+    opacity: 0.45;
   }
 }
 

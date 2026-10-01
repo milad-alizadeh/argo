@@ -28,7 +28,7 @@ const STATUS_VARIANTS = {
 } as const satisfies Record<Session['status'], SessionStatusVariant>
 
 const STATUS_MARK = {
-  active: 'bg-active animate-[session-list-status-pulse_1.6s_ease-in-out_infinite]',
+  active: 'bg-active shadow-state-glow animate-[status-light-blink_1.6s_ease-in-out_infinite]',
   attention: 'bg-warn shadow-[0_0_5px_color-mix(in_srgb,var(--color-warn)_35%,transparent)]',
   failed: 'bg-danger',
   idle: 'bg-idle',
