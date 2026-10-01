@@ -45,7 +45,11 @@ async function readCodexThread(
     )
     return { found: true, record: parseThread(thread) }
   } catch (error) {
-    if (error instanceof Error && /thread.*(?:not found|does not exist)/i.test(error.message))
+    // An id Codex cannot parse names no thread it could ever return (0.157.0 answers -32600).
+    if (
+      error instanceof Error &&
+      /thread.*(?:not found|does not exist)|^invalid thread id:/i.test(error.message)
+    )
       return { found: false }
     throw error
   }

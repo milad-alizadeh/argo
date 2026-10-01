@@ -24,10 +24,11 @@ import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
 import { proveToolCalls } from './cases/tool-calls.case'
 import { proveLiveCodexModelChoices } from './cases/turn-configuration.case'
+import { ACTIVE_FEED } from './feed-selectors'
 import { appendProse } from './fixtures/feed.fixture'
 import { writeWindowFillerSessions } from './fixtures/session-list-window.fixture'
 import { openSessionByClick } from './gestures'
-import { sessionDetails } from './page-trpc'
+import { sessionDetails, sessionRows } from './page-trpc'
 import { assertTranscriptFeedCorpus } from './real-harness/transcript-feed-corpus'
 import { expect, test } from './session-proof-run'
 
@@ -167,6 +168,24 @@ test.describe('with the real Claude SDK history', () => {
     const live = await sessionDetails(restarted, sessionId)
     expect(live?.posture).toBe('live')
   })
+})
+
+// Hook and lifecycle frames update a Session but draw no Feed row, for each Harness alike (#3003).
+test('session-feed-hides-lifecycle-events', async ({ session, backend }) => {
+  const page = session.page()
+  for (const harness of ['claude', 'codex'] as const) {
+    const sessionId = await proveSessionCreatedByClick(page, backend, {
+      harness,
+      prompt: `Reply once for the ${harness} lifecycle proof.`,
+    })
+    await expect
+      .poll(async () => (await sessionRows(page)).find((row) => row.id === sessionId)?.status)
+      .toBe('idle')
+    const feed = page.locator(ACTIVE_FEED)
+    await expect(feed.locator('[data-feed-row]').first()).toBeVisible()
+    await expect(feed.getByText('Unsupported item')).toHaveCount(0)
+    await expect(feed.getByText('Status updated')).toHaveCount(0)
+  }
 })
 
 // A skip that reads only the worker's backend decides before the case launches anything.
