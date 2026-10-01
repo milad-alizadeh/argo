@@ -4,7 +4,6 @@ import {
   type ComposerCommandListing,
   composerCommandSchema,
 } from '@/domains/sessions/api/composer-commands'
-import type { LiveActivity } from '@/domains/sessions/api/feed-activity'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { Permission, PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { Question, QuestionAnswer } from '@/domains/sessions/api/questions'
@@ -59,40 +58,23 @@ export type ExternalActivityReading = {
   retry: boolean
 }
 
-// The status hook events both Harnesses name alike; each was seen firing from its CLI (#2976).
-export const STATUS_HOOK_EVENTS = [
-  'SessionStart',
-  'UserPromptSubmit',
-  'PreToolUse',
-  'PermissionRequest',
-  'PostToolUse',
-  'Stop',
-  'SessionEnd',
-] as const
-export const statusHookEventSchema = z.enum(STATUS_HOOK_EVENTS)
-export type StatusHookEvent = z.infer<typeof statusHookEventSchema>
+// Each status hook event list an install or a removal changes; null deletes the event.
+export type HookTableChanges = ReadonlyMap<string, unknown[] | null>
 
-// What one hook event says about a Session.
-export type ExternalHookReading = {
-  nativeId: string
-  // null leaves the status as it is.
-  status: ExternalSessionStatus | null
-  // null keeps the stored line.
-  activity: LiveActivity | null
-}
-
-// Hooks Argo installs once in the Harness's user-level config, so they fire for every Session.
-// Each posts its payload to Argo's receiver on 127.0.0.1 (#2976).
+// Hooks Argo installs once in the Harness's user-level config, so they fire for every Session, and
+// posts to Argo's Unix socket. The host owns the install and the reading (#2976).
 export type ExternalSessionHooks = {
-  // Merges Argo's entries naming `port` into the config, keeping every other entry where it is;
-  // changes nothing when they are there. Throws, writing nothing, when it cannot read the config.
-  install: (port: number) => Promise<void>
-  // Deletes exactly the entries Argo wrote.
-  remove: () => Promise<void>
-  // The port the installed entries name, or null when none are installed.
-  installedPort: () => Promise<number | null>
-  // One posted payload, or null for a shape the Harness does not document.
-  read: (event: StatusHookEvent, payload: unknown) => ExternalHookReading | null
+  // The config's `hooks` table, and the write of the event lists a change sets. Throws, writing
+  // nothing, when it cannot read the config.
+  open: () => Promise<{ table: unknown; write: (changes: HookTableChanges) => Promise<void> }>
+  // The status hook events the CLI sends.
+  events: readonly string[]
+  // Argo's matcher group running `command`, in the Harness's config shape.
+  group: (command: string) => unknown
+  // The tool a Session asks the person a question through.
+  questionTool: string
+  // The shell tool, whose description, else command, is the activity line.
+  activityTool: { name: string; input: z.ZodType<{ command?: string; description?: string }> }
 }
 
 // How the external Session poll reads Sessions this Harness runs outside Argo. The host owns the loop,
@@ -107,7 +89,6 @@ export type ExternalSessions = {
   // Harness. `changedAt` is when the host last saw the transcript change. Absent means the
   // listing's status alone, with no activity line.
   readActivity?: (nativeId: string, changedAt: number) => Promise<ExternalActivityReading>
-  // Once its hooks fire, they replace this Harness's poll.
   hooks?: ExternalSessionHooks
 }
 

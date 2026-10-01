@@ -13,6 +13,7 @@ const vendor = vi.hoisted(() => ({
   recordedEvents: [] as unknown[],
   commands: [] as unknown[],
   executable: undefined as string | undefined,
+  commandsHeld: null as Promise<void> | null,
 }))
 
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
@@ -51,6 +52,7 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
         vendor.interrupts += 1
       },
       async supportedCommands() {
+        await vendor.commandsHeld
         return vendor.commands
       },
       close() {
@@ -77,6 +79,24 @@ async function until(check: () => boolean) {
     await new Promise((resolve) => setTimeout(resolve, 1))
   }
   throw new Error('Claude channel did not produce the expected event.')
+}
+
+async function untilFeedBody(events: unknown[], type: string) {
+  await until(() =>
+    events.some((event) => (event as { body?: { type: string } }).body?.type === type),
+  )
+}
+
+// Asks the channel's tool callback for Permission `permission-1` to run Bash.
+function askBashPermission() {
+  const canUseTool = vendor.canUseTool as CanUseTool | null
+  if (canUseTool === null) throw new Error('Claude did not receive the control callback.')
+  return canUseTool('Bash', {}, {
+    requestId: 'permission-1',
+    toolUseID: 'tool-1',
+    signal: new AbortController().signal,
+    suggestions: [],
+  } as Parameters<CanUseTool>[2])
 }
 
 function interactiveControls(): LiveSessionControls {
@@ -204,11 +224,7 @@ test('answers Claude Permission and Question requests through the channel', asyn
     suggestions: [],
   } as Parameters<CanUseTool>[2]
   const permission = canUseTool('Bash', {}, options)
-  await until(() =>
-    events.some(
-      (event) => (event as { type: string; body?: { type: string } }).body?.type === 'permission',
-    ),
-  )
+  await untilFeedBody(events, 'permission')
   expect(await channel.answerPermission('permission-1', 'allow')).toBe(true)
   expect(await permission).toMatchObject({ behavior: 'allow' })
 
@@ -226,17 +242,73 @@ test('answers Claude Permission and Question requests through the channel', asyn
     },
     { ...options, requestId: 'question-1', toolUseID: 'tool-2' },
   )
-  await until(() =>
-    events.some(
-      (event) => (event as { type: string; body?: { type: string } }).body?.type === 'question',
-    ),
-  )
+  await untilFeedBody(events, 'question')
   expect(await channel.answerQuestion('question-1', [{ kind: 'options', indices: [1] }])).toBe(true)
   expect(await question).toMatchObject({
     behavior: 'allow',
     updatedInput: { answers: { 'Which option?': 'First' } },
   })
   channel.close()
+})
+
+// The vendor asks for a Permission while the reader still waits on its commands (#3049).
+test('holds a Permission asked before the Session is identified until its identity arrives', async () => {
+  vendor.prompts = []
+  vendor.recordedEvents = []
+  vendor.canUseTool = null
+  let releaseCommands!: () => void
+  vendor.commandsHeld = new Promise((resolve) => {
+    releaseCommands = resolve
+  })
+  const events: unknown[] = []
+  const channel = claudeSessionChannelOpener(null)(first, interactiveControls(), (event) =>
+    events.push(event),
+  )
+  try {
+    await until(() => vendor.canUseTool !== null)
+    const permission = askBashPermission()
+    releaseCommands()
+    await untilFeedBody(events, 'permission')
+    expect(await channel.answerPermission('permission-1', 'allow')).toBe(true)
+    expect(await permission).toMatchObject({ behavior: 'allow' })
+  } finally {
+    vendor.commandsHeld = null
+    channel.close()
+  }
+})
+
+// The id from init can change on a later result, as after /clear; the answer must use the current id.
+test('asks and answers a Permission under the Session id the latest result carried', async () => {
+  vendor.prompts = []
+  vendor.recordedEvents = [{ type: 'system', subtype: 'init', session_id: 'native-0' }]
+  vendor.canUseTool = null
+  let asked: string | null = null
+  let decide!: () => void
+  const controls: LiveSessionControls = {
+    ...interactiveControls(),
+    requestPermission: async ({ nativeId }) => {
+      asked = nativeId
+      return new Promise((resolve) => {
+        decide = () => resolve('allow')
+      })
+    },
+    decidePermission: (nativeId) => {
+      if (nativeId !== asked) return false
+      decide()
+      return true
+    },
+  }
+  const events: unknown[] = []
+  const channel = claudeSessionChannelOpener(null)(first, controls, (event) => events.push(event))
+  try {
+    await until(() => events.some((event) => (event as { type: string }).type === 'turn.completed'))
+    const permission = askBashPermission()
+    await untilFeedBody(events, 'permission')
+    expect(await channel.answerPermission('permission-1', 'allow')).toBe(true)
+    expect(await permission).toMatchObject({ behavior: 'allow' })
+  } finally {
+    channel.close()
+  }
 })
 
 import { readFileSync } from 'node:fs'
@@ -376,4 +448,30 @@ test('streams system task updates, notices, and markers, and counts an unknown s
   expect(await closingWarnings(channel)).toContainEqual([
     'Rejected 1 unsupported Claude live shape(s).',
   ])
+})
+
+test('draws no Feed content and counts nothing for recorded hook and lifecycle frames', async () => {
+  vendor.prompts = []
+  vendor.releaseSecond = null
+  vendor.recordedEvents = readFileSync(
+    new URL(
+      '../../../../mocks/cli/claude/fixtures/claude-lifecycle-frames-2.1.286.jsonl',
+      import.meta.url,
+    ),
+    'utf8',
+  )
+    .trim()
+    .split('\n')
+    .map((line) => JSON.parse(line))
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  try {
+    const { channel, content } = await completedTurn()
+    expect(content.filter((entry) => entry.kind !== 'message')).toEqual([])
+    channel.close()
+    // The channel reports its rejected count after the vendor stream ends.
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(warn).not.toHaveBeenCalled()
+  } finally {
+    warn.mockRestore()
+  }
 })

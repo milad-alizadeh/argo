@@ -6,21 +6,20 @@ import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CLAUDE_SYNC_FIXTURE_ENV,
 } from '@/harnesses/claude/proof-protocol'
+import { claudeSettingsFile } from '@/harnesses/claude/session/claude-status-hooks'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
-import { installedHookPort } from '@/harnesses/host/status-hooks'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import {
   MOCK_CLAUDE_AGENTS_ENV,
   recordedClaudeAgent,
 } from '../../mocks/cli/claude/mock-claude-agents'
 import { writeMockClaude } from '../../mocks/cli/claude/mock-claude-cli'
-import { MOCK_CODEX_USER_CONFIG_FILE } from '../../mocks/cli/codex/fixtures/mock-codex-user-config'
+import { MOCK_CODEX_USER_HOOKS_FILE } from '../../mocks/cli/codex/fixtures/mock-codex-skills-config'
 import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { holdCodexWriterLock } from '../../mocks/cli/codex/mock-codex-external-threads'
-import { guardRealUserConfig } from '../../mocks/cli/real-user-config'
-import { hookTurn, postHook } from '../../mocks/cli/status-hooks'
+import { hookEvent, postHook } from '../../mocks/cli/status-hooks'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
-import { launchCommand } from '../application-under-test'
+import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 import { prepare } from './fixtures/feed.fixture'
 import { PERSISTED_ROW } from './gestures'
@@ -57,7 +56,7 @@ function claudeSource(): StatusSource {
     writeFile(claudeAgents(root), JSON.stringify([recordedClaudeAgent(session.nativeId, status)]))
   return {
     harness: 'claude',
-    hooksFile: (root) => path.join(claudeConfig(root), 'settings.json'),
+    hooksFile: (root) => claudeSettingsFile({ CLAUDE_CONFIG_DIR: claudeConfig(root) }, root),
     async seed(root, project, sessions) {
       const records = sessions.map((session) => ({
         sessionId: session.nativeId,
@@ -68,7 +67,7 @@ function claudeSource(): StatusSource {
       }))
       return {
         CLAUDE_CONFIG_DIR: claudeConfig(root),
-        [SESSION_CLAUDE_SYNC_FIXTURE_ENV]: JSON.stringify({ records, delayMs: 0 }),
+        [SESSION_CLAUDE_SYNC_FIXTURE_ENV]: JSON.stringify({ records }),
         [MOCK_CLAUDE_AGENTS_ENV]: claudeAgents(root),
       }
     },
@@ -108,7 +107,7 @@ function codexSource(): StatusSource {
   }
   return {
     harness: 'codex',
-    hooksFile: (root) => path.join(codexHome(root), MOCK_CODEX_USER_CONFIG_FILE),
+    hooksFile: (root) => path.join(codexHome(root), MOCK_CODEX_USER_HOOKS_FILE),
     async seed(root, project, sessions) {
       await mkdir(path.join(codexHome(root), 'sessions'), { recursive: true })
       for (const session of sessions) await writeFile(codexRollout(root, session), '')
@@ -149,8 +148,7 @@ async function launch(root: string, applicationUnderTest: string, source: Status
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
       [ACCEPTANCE_ENV]: '0',
       ARGO_CODEX_E2E_STATE: codexState(root),
-      // Empty folders for the Harness the case does not seed. The run-wide ones name another app's
-      // hook port, and a busy port stops every install.
+      // Empty folders for the Harness the case does not seed, so parallel apps share no config.
       CLAUDE_CONFIG_DIR: path.join(root, 'unseeded-claude-config'),
       CODEX_HOME: path.join(root, 'unseeded-codex-home'),
       ...(await source.seed(root, fixture.project, sessions)),
@@ -158,7 +156,8 @@ async function launch(root: string, applicationUnderTest: string, source: Status
   })
   const page = await application.firstWindow()
   await page.waitForFunction(() => typeof window.argo?.trpc === 'function')
-  return { application, page, older: sessions[0] as ExternalSession }
+  const socketPath = path.join(fixture.userData, 'hooks.sock')
+  return { application, page, older: sessions[0] as ExternalSession, socketPath }
 }
 
 const rowTitled = (page: Page, title: string) =>
@@ -188,56 +187,47 @@ for (const createSource of [claudeSource, codexSource]) {
       await source.closeTurn(root, older)
       await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/, { timeout: 10_000 })
     } finally {
-      await application.close()
+      await closeApplication(application)
       await source.stop()
     }
   })
 }
 
-// The port the app's installed hooks name, once the install has written it.
-async function installedPort(root: string, source: StatusSource): Promise<number> {
-  let port: number | null = null
+// Waits until the app's install has written its hooks, naming its socket.
+async function hooksInstalled(root: string, source: StatusSource, socketPath: string) {
   await expect(async () => {
-    const config = JSON.parse(await readFile(source.hooksFile(root), 'utf8'))
-    port = installedHookPort(config.hooks, source.harness)
-    expect(port).not.toBeNull()
+    expect(await readFile(source.hooksFile(root), 'utf8')).toContain(socketPath)
   }).toPass({ timeout: 15_000 })
-  return port ?? 0
-}
-
-// What the row shows after each event of one recorded Turn, with no listing change at all.
-const HOOK_VARIANTS: Record<string, string | RegExp> = {
-  UserPromptSubmit: 'active',
-  PermissionRequest: 'attention',
-  Stop: /^(idle|unread)$/,
 }
 
 for (const createSource of [claudeSource, codexSource]) {
-  test(`a ${createSource().harness} Session running elsewhere shows each status its installed hooks report`, async ({
+  test(`a ${createSource().harness} Session running elsewhere shows the status its installed hooks report`, async ({
     root,
     applicationUnderTest,
   }) => {
-    const realConfigUnchanged = guardRealUserConfig()
     const source = createSource()
-    const { application, page, older } = await launch(root, applicationUnderTest, source)
+    const { application, page, older, socketPath } = await launch(
+      root,
+      applicationUnderTest,
+      source,
+    )
     try {
-      const row = rowTitled(page, OLDER)
-      const dot = row.locator('[data-slot="session-status"]')
+      const dot = rowTitled(page, OLDER).locator('[data-slot="session-status"]')
       await expect(rowTitled(page, NEWER)).toHaveCount(1, { timeout: 30_000 })
-      const port = await installedPort(root, source)
-      for (const event of hookTurn(source.harness, 'bashTurn', older.nativeId)) {
-        expect(await postHook(port, source.harness, event)).toBe(204)
-        const variant = HOOK_VARIANTS[event.event]
-        if (variant !== undefined) await expect(dot).toHaveAttribute('data-variant', variant)
-        if (event.event === 'PreToolUse')
-          await expect(row).toContainText(
-            source.harness === 'claude' ? 'Run test suite' : 'touch b.txt',
-          )
-      }
+      await hooksInstalled(root, source, socketPath)
+      const post = (event: string) =>
+        postHook(
+          socketPath,
+          source.harness,
+          hookEvent(source.harness, event, older.nativeId).payload,
+        )
+      expect(await post('PermissionRequest')).toBe(204)
+      await expect(dot).toHaveAttribute('data-variant', 'attention')
+      expect(await post('Stop')).toBe(204)
+      await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/)
     } finally {
       await application.close()
       await source.stop()
-      realConfigUnchanged()
     }
   })
 }

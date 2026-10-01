@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync, watch } from 'node:fs'
+import {
+  SESSION_MOCK_START_HOLD_FILE_ENV,
+  waitWhileHoldFileExists,
+} from '@/harnesses/proof-protocol'
+import { MOCK_CLAUDE_VERSION } from './mock-claude-cli.ts'
 
 // The command list the CLI reports, from the JSON file this names, shaped like
 // fixtures/supported-commands-claude-2.1.286.json. A rewrite of it pushes `commands_changed`.
@@ -10,6 +15,9 @@ const INITIALIZATION_DELAY_MS = 50
 const STREAM_PROBE = 'FeedStreamProbe'
 const STREAM_DELTAS = 300
 const STREAM_DELTA_INTERVAL_MS = 10
+// A `PLAN` prompt creates two tasks and completes one, as the real CLI's TaskCreate and TaskUpdate
+// calls do in fixtures/claude-task-plan-stream.jsonl, and as the Codex mock does.
+const PLAN_PROBE = 'PLAN'
 const MODELS = [
   {
     value: 'fable',
@@ -92,7 +100,10 @@ export function startMockClaudeSdkStream(
     ids: MockTurnIds,
   ) => Promise<string>,
 ) {
-  writeInitialization(sessionId)
+  // The real CLI names the Session in its `init`; every prompt waits behind it.
+  const initialized = waitWhileHoldFileExists(process.env[SESSION_MOCK_START_HOLD_FILE_ENV]).then(
+    () => writeInitialization(sessionId),
+  )
   pushCommandChanges(sessionId)
   let pending = ''
   const pendingPermissions = new Map<string, () => void>()
@@ -119,12 +130,16 @@ export function startMockClaudeSdkStream(
       return
     }
     const text = promptText(input)
-    if (text === null) return
+    if (text !== null) void initialized.then(() => answerPrompt(input, text))
+  }
+  const answerPrompt = (input: { uuid?: unknown }, text: string) => {
     if (text.includes('FeedActivityProbe')) writeActivity(sessionId)
+    if (text.includes(PLAN_PROBE)) writePlan(sessionId)
     const ids = {
       user: typeof input.uuid === 'string' ? input.uuid : randomUUID(),
       reply: randomUUID(),
     }
+    writeCommandLifecycle(sessionId, ids.user)
     const streamed = text.includes(STREAM_PROBE) ? writeStream(sessionId, ids.reply) : null
     void Promise.all([reply(text, waitForPermission, ids), streamed]).then(([response]) =>
       setTimeout(() => writeReply(sessionId, response, ids.reply), INITIALIZATION_DELAY_MS),
@@ -137,12 +152,39 @@ export function startMockClaudeSdkStream(
   })
 }
 
+function writeAssistantContent(sessionId: string, content: Record<string, unknown>) {
+  process.stdout.write(
+    `${JSON.stringify({ type: 'assistant', session_id: sessionId, uuid: randomUUID(), parent_tool_use_id: null, message: { id: randomUUID(), type: 'message', role: 'assistant', model: 'claude-opus-4-6', content: [content], stop_reason: null, stop_sequence: null, usage: { input_tokens: 0, output_tokens: 0 } } })}\n`,
+  )
+}
+
+function writeToolResult(sessionId: string, toolUseId: string, text: string) {
+  process.stdout.write(
+    `${JSON.stringify({ type: 'user', session_id: sessionId, uuid: randomUUID(), parent_tool_use_id: null, message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: toolUseId, content: text }] } })}\n`,
+  )
+}
+
+function writePlan(sessionId: string) {
+  const call = (name: string, input: Record<string, unknown>, result: string) => {
+    const id = randomUUID()
+    writeAssistantContent(sessionId, { type: 'tool_use', id, name, input })
+    writeToolResult(sessionId, id, result)
+  }
+  for (const [taskId, subject] of [
+    ['1', 'Read the Session protocol'],
+    ['2', 'Project the live Plan'],
+  ])
+    call(
+      'TaskCreate',
+      { subject, description: subject },
+      `Task #${taskId} created successfully: ${subject}`,
+    )
+  call('TaskUpdate', { taskId: '1', status: 'completed' }, 'Updated task #1 status')
+}
+
 function writeActivity(sessionId: string) {
   const toolUseId = randomUUID()
-  const message = (content: Record<string, unknown>) =>
-    process.stdout.write(
-      `${JSON.stringify({ type: 'assistant', session_id: sessionId, uuid: randomUUID(), parent_tool_use_id: null, message: { id: randomUUID(), type: 'message', role: 'assistant', model: 'claude-opus-4-6', content: [content], stop_reason: null, stop_sequence: null, usage: { input_tokens: 0, output_tokens: 0 } } })}\n`,
-    )
+  const message = (content: Record<string, unknown>) => writeAssistantContent(sessionId, content)
   setTimeout(() => {
     process.stdout.write(
       `${JSON.stringify({ type: 'tool_progress', session_id: sessionId, uuid: randomUUID(), tool_use_id: toolUseId, tool_name: 'Bash', parent_tool_use_id: null, elapsed_time_seconds: 0 })}\n`,
@@ -183,13 +225,44 @@ function writeStream(sessionId: string, messageId: string): Promise<void> {
   })
 }
 
+// Frames the real CLI 2.1.286 sends around a Turn (fixtures/claude-lifecycle-frames-2.1.286.jsonl).
+function writeFrame(frame: Record<string, unknown>) {
+  process.stdout.write(`${JSON.stringify({ ...frame, uuid: randomUUID() })}\n`)
+}
+
+function writeSessionStartHook(sessionId: string) {
+  const hook = {
+    type: 'system',
+    hook_id: randomUUID(),
+    hook_name: 'SessionStart:startup',
+    hook_event: 'SessionStart',
+    session_id: sessionId,
+  }
+  writeFrame({ ...hook, subtype: 'hook_started' })
+  writeFrame({
+    ...hook,
+    subtype: 'hook_response',
+    output: '',
+    stdout: '',
+    stderr: '',
+    exit_code: 0,
+    outcome: 'success',
+  })
+}
+
+function writeCommandLifecycle(sessionId: string, commandId: string) {
+  for (const state of ['queued', 'started'])
+    writeFrame({ type: 'command_lifecycle', command_uuid: commandId, state, session_id: sessionId })
+}
+
 function writeInitialization(sessionId: string) {
+  writeSessionStartHook(sessionId)
   process.stdout.write(
     `${JSON.stringify({
       type: 'system',
       subtype: 'init',
       apiKeySource: 'none',
-      claude_code_version: '2.1.0',
+      claude_code_version: MOCK_CLAUDE_VERSION,
       cwd: process.cwd(),
       tools: [],
       mcp_servers: [],
@@ -233,6 +306,15 @@ function writeReply(sessionId: string, response: string, messageId: string) {
   process.stdout.write(
     `${JSON.stringify({ type: 'assistant', session_id: sessionId, uuid: randomUUID(), parent_tool_use_id: null, message: { id: messageId, type: 'message', role: 'assistant', model: 'claude-opus-4-6', content: [{ type: 'text', text: response }], stop_reason: 'end_turn', stop_sequence: null, usage: { input_tokens: 0, output_tokens: 0 } } })}\n`,
   )
+  writeFrame({
+    type: 'system',
+    subtype: 'post_turn_summary',
+    summarizes_uuid: messageId,
+    status_category: 'completed',
+    status_detail: response,
+    needs_action: '',
+    session_id: sessionId,
+  })
   process.stdout.write(
     `${JSON.stringify({ type: 'result', subtype: 'success', duration_ms: 0, duration_api_ms: 0, is_error: false, num_turns: 1, result: response, stop_reason: 'end_turn', total_cost_usd: 0, usage: { input_tokens: 0, output_tokens: 0 }, modelUsage: {}, permission_denials: [], session_id: sessionId, uuid: randomUUID() })}\n`,
   )

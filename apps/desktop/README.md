@@ -323,7 +323,7 @@ then `ARGO_E2E_PACKAGED=1 bunx playwright test`. No command here runs the app yo
 | `bun run test:e2e` | Every flow under `e2e/`, one Playwright project per flow: `projects`, `sessions`, `tickets`. `bun run turbo run test:e2e --filter=@argo/desktop` caches the run. |
 | `bun run test:e2e -- --project=sessions` | One flow alone. A file path such as `e2e/sessions/journeys.e2e.ts` narrows it further. |
 | `ARGO_E2E_REAL=1 bun run test:e2e -- --project=real-sessions` | The Session journeys against the locally signed-in Claude and Codex CLIs, under an isolated home directory. CI never sets `ARGO_E2E_REAL`. |
-| `bun run capture:cockpit` | After `bun run build:vite`, one PNG per deck state and appearance, in `out/cockpit-captures`. |
+| `bun run capture:cockpit` | After `bun run build:vite`, one PNG per screen, in `out/cockpit-captures`. |
 | `bun run measure:cockpit` | After `bun run build:vite`, startup and idle evidence, printed as JSON. The evidence comes from the Vite build. Set `ARGO_E2E_PACKAGED=1` after `bun run build` to measure the packaged app. |
 
 Test assets sit outside `src/`. `e2e/<flow>/` holds `*.e2e.ts` files, their `cases/*.case.ts` and

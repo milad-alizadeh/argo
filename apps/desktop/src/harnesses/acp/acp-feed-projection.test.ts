@@ -8,6 +8,26 @@ function projectAll(updates: SessionUpdate[]) {
 }
 
 describe('AcpFeedProjection', () => {
+  test('draws a Plan with its steps done and in total', () => {
+    const { rows } = projectAll([
+      {
+        sessionUpdate: 'plan',
+        entries: [
+          { content: 'Read the code', status: 'completed', priority: 'high' },
+          { content: 'Write the test', status: 'in_progress', priority: 'medium' },
+        ],
+      },
+    ])
+    expect(rows).toEqual([
+      {
+        id: 'acp-plan',
+        kind: 'plan',
+        text: '- Read the code\n- Write the test',
+        progress: { completed: 1, total: 2 },
+      },
+    ])
+  })
+
   test('grows one message row across chunks that share a message id', () => {
     const { rows } = projectAll([
       {

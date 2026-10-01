@@ -27,8 +27,8 @@ function reportDifferences(assertion: PackageManifestAssertion): void {
       ...assertion.differences.map((difference) => `  ${difference}`),
       '',
       '`+` is in the package and not in the manifest; `-` is in the manifest and not in the',
-      'package. Both fail. If the new shape is the one to ship, regenerate with',
-      '`bun run desktop:manifest --write` and review the diff.',
+      'package. Both fail. If the new shape is the one to ship, run these in apps/desktop:',
+      '`bun run build`, then `bun run desktop:manifest --write`, then review the diff.',
       '',
     ].join('\n'),
   )

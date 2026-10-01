@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { mockStartInput } from './mock-codex-channel.ts'
-import { clientBackedByMock, mockCodexExecutable, waitFor } from './mock-codex-driver.ts'
-import { openLiveSession } from './mock-codex-live-session.ts'
+import { clientBackedByMock, mockCodexExecutable } from './mock-codex-driver.ts'
+import { openLiveSession, waitFor } from './mock-codex-live-session.ts'
 
 const SETTLE_MS = 150
 
@@ -18,7 +18,7 @@ for (const [verb, prompt] of [
     const client = clientBackedByMock(await mockCodexExecutable())
     const session = openLiveSession(client, { ...mockStartInput, prompt })
     try {
-      await waitFor(() => session.statuses().length > 0, 'the Turn to start')
+      await waitFor(() => session.statuses().length > 0)
       await pause()
       assert.equal(session.statuses().at(-1), 'running')
       assert.equal(session.has('closed'), false)
@@ -37,7 +37,7 @@ test('unsubscribes when it closes a managed Session', async () => {
     prompt: 'Close this managed Session.',
   })
   try {
-    await waitFor(() => session.has('turn.started'), 'the Turn to start')
+    await waitFor(() => session.has('turn.started'))
     session.channel.close()
     const emitted = session.events.length
     assert.equal(session.events.at(-1)?.type, 'closed')

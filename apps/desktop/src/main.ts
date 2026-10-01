@@ -18,7 +18,6 @@ import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-
 import {
   clearWorkingStatuses,
   ExternalSessionPoll,
-  installsStatusHooks,
   listComposerCommandsFor,
   SessionListChanges,
   StatusHookReceiver,
@@ -67,8 +66,8 @@ import { attachAppearanceWatch } from '@/platform/main/appearance'
 import type { AppActor } from '@/platform/main/application/app-machine'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {
+  accountDataDirectory,
   DEVELOPMENT_APPLICATION_NAME,
-  developmentStoreDirectories,
 } from '@/platform/main/development/account-store'
 import {
   developmentIdentityArgument,
@@ -180,15 +179,13 @@ async function chooseAttachmentFiles(window: BrowserWindow): Promise<string[]> {
 // Account access and the Connection store, created once: the Ticket scans and every window share them.
 function createTicketServices(database: Database) {
   const userData = app.getPath('userData')
-  const { accountData, connectionData } = developmentStoreDirectories({
-    userData,
-    appData: app.getPath('appData'),
-    instance: DEVELOPMENT_INSTANCE,
-  })
   const access = createAccountAccess({
     userData,
-    accountData,
-    connectionData,
+    accountData: accountDataDirectory({
+      userData,
+      appData: app.getPath('appData'),
+      instance: DEVELOPMENT_INSTANCE,
+    }),
     endpoints: providerEndpoints(PROOF_ENABLED),
     providers: PROVIDER_REGISTRY,
     cipher: safeStorageCipher,
@@ -415,16 +412,17 @@ function startSessionServices(actors: WindowActors, database: Database, registry
     hasLiveChannel,
     discover: ({ harness, nativeId }) =>
       actors.sessionSync.send({ type: 'Discover', harness, nativeId }),
-    refreshFeed: (sessionId) => readers.refresh({ sessionId, subagentId: null }),
   })
   const stopSessionList = watchSessionList({ ...context, supervisor: actors.sessions })
   externalSessions.start()
-  const statusHooks = installsStatusHooks(
-    { acceptance: ACCEPTANCE_ENABLED, proof: PROOF_ENABLED },
-    process.env,
-  )
-    ? new StatusHookReceiver({ poll: externalSessions, harnesses })
-    : null
+  // An acceptance run installs nothing, so it cannot write the person's own config (ADR-0041).
+  const statusHooks = ACCEPTANCE_ENABLED
+    ? null
+    : new StatusHookReceiver({
+        poll: externalSessions,
+        harnesses,
+        socketPath: path.join(app.getPath('userData'), 'hooks.sock'),
+      })
   statusHooks?.start().catch((error) => console.warn('Could not start the status hooks:', error))
   return {
     readers,
@@ -524,12 +522,7 @@ let sessionInteractionBroker: SessionInteractionBroker | undefined
 let ticketServices: TicketServices | undefined
 
 async function prepare() {
-  const { projectData } = developmentStoreDirectories({
-    userData: app.getPath('userData'),
-    appData: app.getPath('appData'),
-    instance: DEVELOPMENT_INSTANCE,
-  })
-  applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
+  applicationDatabase = openDatabase(app.getPath('userData'), { packaged: app.isPackaged })
   clearWorkingStatuses(applicationDatabase)
   markUnresolvedSessionCommandsUnknown(applicationDatabase)
   markInterruptedTicketScans(applicationDatabase)

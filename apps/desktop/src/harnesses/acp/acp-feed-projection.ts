@@ -6,7 +6,11 @@ import type {
   ToolCallUpdate,
   ToolKind,
 } from '@agentclientprotocol/sdk'
-import type { FeedContent, ToolPresentation } from '@/domains/sessions/api/feed-content'
+import {
+  type FeedContent,
+  planContent,
+  type ToolPresentation,
+} from '@/domains/sessions/api/feed-content'
 
 type ToolContent = Extract<FeedContent, { kind: 'tool' }>
 type Role = 'user' | 'assistant' | 'reasoning'
@@ -179,11 +183,13 @@ export class AcpFeedProjection {
         return this.tool(update)
       case 'plan':
         this.run = null
-        return {
-          id: 'acp-plan',
-          kind: 'plan',
-          text: update.entries.map((entry) => `- ${entry.content}`).join('\n'),
-        }
+        return planContent(
+          'acp-plan',
+          update.entries.map((entry) => ({
+            text: entry.content,
+            done: entry.status === 'completed',
+          })),
+        )
       // Session metadata the Feed does not draw.
       case 'available_commands_update':
       case 'current_mode_update':

@@ -117,8 +117,8 @@ imports and 1 duplicate export. Working through that list found:
 
 - Four real bugs: stale relative imports in `apps/desktop/mocks/` and `apps/desktop/tools/` left
   over from a facet reorganisation, pointing at files that had moved or never existed at that
-  path. `tsconfig.e2e.json` sets `noCheck: true` over those directories, so nothing else in the
-  repository would have caught them. Knip's own resolution run found these; a person did not.
+  path. `tsconfig.e2e.json` sets `noCheck: true` over `mocks/`, so nothing else in the repository
+  would have caught the ones there; `tools/` has the strict `tsconfig.tools.json` (#3068). Knip's own resolution run found these; a person did not.
 - Three stories importing `Meta`/`StoryObj` from `@storybook/react` instead of this repository's
   own `@storybook/react-vite`, out of step with every other story file. Knip's Storybook plugin
   would have covered the framework's own package.

@@ -1,9 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
+import { preloadForStories } from '@/mocks/platform/story-preload'
+import { loadCodeLanguage } from '../ai-elements'
+import { drawDiagram } from '../feed/content/feed-mermaid'
 import { SessionEvidenceInspector } from './session-evidence-inspector'
 
 const DIAGRAM_SOURCE = 'flowchart LR\n  Backlog --> Ticket --> Session'
+const loadTypeScript = preloadForStories(() => loadCodeLanguage('ts'))
+const loadMermaid = preloadForStories(() => drawDiagram('mermaid-preload', DIAGRAM_SOURCE, false))
 
 const command = {
   shape: 'tool' as const,
@@ -154,13 +159,12 @@ export const ReadDocument: Story = {
       },
     },
   },
+  loaders: [loadTypeScript],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText(/worktree-names\.mts/)).toBeVisible()
-    // The highlighter loads its grammar on first use, which takes over a second under a full run.
-    await waitFor(
-      () => expect(canvasElement.querySelector('code[data-highlighted="true"]')).not.toBeNull(),
-      { timeout: 5000 },
+    await waitFor(() =>
+      expect(canvasElement.querySelector('code[data-highlighted="true"]')).not.toBeNull(),
     )
   },
 }
@@ -182,13 +186,10 @@ export const Diagram: Story = {
       source: DIAGRAM_SOURCE,
     },
   },
+  loaders: [loadMermaid],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getAllByText('Diagram')).toHaveLength(2)
-    // Mermaid loads on first use in the whole file; under a full suite run that import plus its
-    // own parse/render can outrun 5s, same cold-start cost the highlighter comment above notes.
-    await waitFor(() => expect(canvasElement.querySelector('svg')).not.toBeNull(), {
-      timeout: 10000,
-    })
+    await waitFor(() => expect(canvasElement.querySelector('svg')).not.toBeNull())
   },
 }

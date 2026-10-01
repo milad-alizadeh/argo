@@ -1,103 +1,75 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { after, type TestContext, test } from 'node:test'
-import type { ExternalSessionHooks } from '@/harnesses/registration'
-import { MOCK_CODEX_USER_CONFIG_FILE } from '@/mocks/cli/codex/fixtures/mock-codex-user-config'
-import { clientBackedByMock, writeMockCodex } from '@/mocks/cli/codex/mock-codex-driver'
-import { guardRealUserConfig } from '@/mocks/cli/real-user-config'
-import { EXPECTED_HOOK_EVENTS, expectedHookGroup } from '@/mocks/cli/status-hooks'
-import { createCodexExternalSessions } from './codex-external-sessions'
+import { type TestContext, test } from 'node:test'
+import { installStatusHooks } from '@/harnesses/host/status-hooks'
+import {
+  createMockCodexSkillsAndConfig,
+  MOCK_CODEX_USER_HOOKS_FILE,
+} from '@/mocks/cli/codex/fixtures/mock-codex-skills-config'
+import { recordedCall } from '@/mocks/cli/codex/recorded-codex-threads'
+import { testStatusHookInstall } from '@/mocks/cli/status-hook-install-suite'
+import { hookReadings, recordedHookEvents } from '@/mocks/cli/status-hooks'
+import type { CodexRequest } from '../app-server'
+import { createCodexStatusHooks } from './codex-status-hooks'
 
-const realConfigUnchanged = guardRealUserConfig()
-after(realConfigUnchanged)
-
-const EVENTS = EXPECTED_HOOK_EVENTS
-const argoGroup = (port: number, event: string) => expectedHookGroup('codex', port, event)
-const USER_STOP = { hooks: [{ type: 'command', command: 'say done' }] }
-const USER_BASH = { matcher: '^Bash$', hooks: [{ type: 'command', command: './check.sh' }] }
-// The trust Codex records for a reviewed hook sits in the same table.
-const TRUST = { 'config.toml:stop:0:0': { trusted_hash: 'sha256:1' } }
-const USER_CONFIG = {
-  model: 'gpt-5.5',
-  hooks: { Stop: [USER_STOP], PreToolUse: [USER_BASH], state: TRUST },
+// The mock app-server over a fresh CODEX_HOME, seeded with the recorded user hooks or with none.
+function codex(context: TestContext, userHooks: boolean) {
+  const home = mkdtempSync(path.join(os.tmpdir(), 'argo-codex-hooks-'))
+  context.after(() => rmSync(home, { recursive: true, force: true }))
+  const file = path.join(home, MOCK_CODEX_USER_HOOKS_FILE)
+  const user = recordedCall('config/read').result.layers.find(
+    (layer) => layer.name.type === 'user',
+  )?.config
+  if (userHooks) writeFileSync(file, JSON.stringify((user as { hooks?: unknown }).hooks))
+  const writes: { params: unknown; version: unknown }[] = []
+  let answer: Record<string, unknown> = {}
+  const answerConfig = createMockCodexSkillsAndConfig((message) => (answer = message), home)
+  const request = (async (method, params, parse) => {
+    answerConfig({ id: 1, method, params: params as Record<string, unknown> })
+    const result = answer.result as { version?: unknown }
+    if (method === 'config/value/write') writes.push({ params, version: result.version })
+    return parse(result)
+  }) as CodexRequest
+  const read = async () => (existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {})
+  return { hooks: createCodexStatusHooks(request), read, writes }
 }
 
-// A mock app-server with its own throwaway CODEX_HOME, where it keeps the user config layer.
-async function codex(context: TestContext, config?: string) {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-hooks-'))
-  const codexHome = path.join(root, 'codex-home')
-  await mkdir(codexHome)
-  const file = path.join(codexHome, MOCK_CODEX_USER_CONFIG_FILE)
-  if (config !== undefined) await writeFile(file, config)
-  const client = clientBackedByMock(await writeMockCodex(root, { CODEX_HOME: codexHome }))
-  context.after(async () => {
-    client.shutdown()
-    await rm(root, { recursive: true, force: true })
+testStatusHookInstall('codex', async (context, userHooks) => codex(context, userHooks))
+
+test('a Codex install writes each event it changes through config/value/write, chaining versions', async (context) => {
+  const { hooks, writes } = codex(context, true)
+  await installStatusHooks('codex', hooks, '/tmp/argo/hooks.sock')
+  assert.equal(writes.length, recordedHookEvents('codex').length)
+  writes.forEach(({ params }, index) => {
+    const { keyPath, mergeStrategy, expectedVersion, filePath } = params as Record<string, unknown>
+    assert.match(String(keyPath), /^hooks\.[A-Za-z]+$/)
+    assert.equal(mergeStrategy, 'replace')
+    if (index > 0) assert.equal(expectedVersion, writes[index - 1]?.version)
+    assert.equal(filePath, undefined)
   })
-  const hooks = createCodexExternalSessions(client.request, codexHome).hooks
-  assert.ok(hooks)
-  return { hooks: hooks as ExternalSessionHooks, file }
-}
-
-const readJson = async (file: string) => JSON.parse(await readFile(file, 'utf8'))
-
-test('an install into an empty Codex config adds one entry per event, naming the port', async (context) => {
-  const { hooks, file } = await codex(context)
-  await hooks.install(4321)
-  const written = await readJson(file)
-  assert.deepEqual(Object.keys(written.hooks), EVENTS)
-  for (const event of EVENTS) assert.deepEqual(written.hooks[event], [argoGroup(4321, event)])
-  assert.equal(await hooks.installedPort(), 4321)
 })
 
-test('an install keeps every other key, hook and trust record in place, and a second install writes nothing', async (context) => {
-  const { hooks, file } = await codex(context, JSON.stringify(USER_CONFIG))
-  await hooks.install(4321)
-  const written = await readJson(file)
-  assert.equal(written.model, 'gpt-5.5')
-  assert.deepEqual(written.hooks.state, TRUST)
-  assert.deepEqual(written.hooks.Stop, [USER_STOP, argoGroup(4321, 'Stop')])
-  assert.deepEqual(written.hooks.PreToolUse, [USER_BASH, argoGroup(4321, 'PreToolUse')])
-
-  // The mock writes indented JSON, so any write would change this compact text.
-  const before = JSON.stringify(written)
-  await writeFile(file, before)
-  await hooks.install(4321)
-  assert.equal(await readFile(file, 'utf8'), before)
-})
-
-test('a new port rewrites only Argo entries, where they stand', async (context) => {
-  const { hooks, file } = await codex(context, JSON.stringify(USER_CONFIG))
-  await hooks.install(4321)
-  const installed = await readJson(file)
-  installed.hooks.Stop.push(USER_BASH)
-  await writeFile(file, JSON.stringify(installed))
-  await hooks.install(5555)
-  assert.deepEqual((await readJson(file)).hooks.Stop, [
-    USER_STOP,
-    argoGroup(5555, 'Stop'),
-    USER_BASH,
+test('each Codex event of a Bash Turn sets its status, and PreToolUse its activity line', (context) => {
+  assert.deepEqual(hookReadings('codex', codex(context, false).hooks, 'bashTurn'), [
+    ['SessionStart', null, null],
+    ['UserPromptSubmit', 'running', null],
+    ['PreToolUse', 'running', 'Ran touch b.txt'],
+    ['PermissionRequest', 'permission', null],
+    ['PostToolUse', 'running', null],
+    ['Stop', 'idle', null],
+    ['SessionEnd', 'idle', null],
   ])
-  assert.equal(await hooks.installedPort(), 5555)
 })
 
-test('the removal deletes exactly the entries Argo wrote', async (context) => {
-  const { hooks, file } = await codex(context, JSON.stringify(USER_CONFIG))
-  await hooks.install(4321)
-  await hooks.remove()
-  assert.deepEqual(await readJson(file), USER_CONFIG)
-  assert.equal(await hooks.installedPort(), null)
+test('a Codex request_user_input shows asking until it is answered', (context) => {
+  assert.deepEqual(hookReadings('codex', codex(context, false).hooks, 'questionTurn'), [
+    ['SessionStart', null, null],
+    ['UserPromptSubmit', 'running', null],
+    ['PreToolUse', 'asking', null],
+    ['PostToolUse', 'running', null],
+    ['Stop', 'idle', null],
+    ['SessionEnd', 'idle', null],
+  ])
 })
-
-for (const [label, text] of [
-  ['Codex cannot read', '{ "hooks": '],
-  ['has an event value that is not a list', '{ "hooks": { "Stop": {} } }'],
-] as const)
-  test(`a config that ${label} is not written`, async (context) => {
-    const { hooks, file } = await codex(context, text)
-    await assert.rejects(hooks.install(4321))
-    await assert.rejects(hooks.remove())
-    assert.equal(await readFile(file, 'utf8'), text)
-  })

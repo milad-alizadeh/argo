@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 import {
   createHashRouter,
-  Navigate,
   Outlet,
   type RouteObject,
+  replace,
   useLocation,
   useMatches,
 } from 'react-router'
@@ -24,6 +24,7 @@ import { TicketsSidebar } from '@/domains/tickets/renderer/sidebar'
 import { DESTINATION_PATHS, DESTINATIONS, navigateCommand } from '@/platform/contract/commands'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
+import { queryClient, trpc } from '@/platform/renderer/trpc-client'
 
 type CockpitRouteHandle = {
   sidebar: ReactNode
@@ -34,6 +35,10 @@ const sidebarByPage = {
   sessions: <SessionList />,
   tickets: <TicketsSidebar />,
 } as const
+
+// The launch passes through these on its way to a Project's Sessions. A gate drawn on one stops
+// or races that redirect, and the redirect then replaces any route set meanwhile (#2996).
+const LAUNCH_REDIRECTS = new Set(['/', '/projects'])
 
 function isCockpitRouteHandle(handle: unknown): handle is CockpitRouteHandle {
   return typeof handle === 'object' && handle !== null && 'sidebar' in handle
@@ -60,10 +65,10 @@ export function CockpitRouteLayout() {
 
   if (cockpit.status === 'empty') return <EmptyProjectScreen />
   // Saved Sessions remain readable without a Harness. Other surfaces keep the sign-in gate.
-  const opensSavedSessions =
-    location.pathname === '/projects' || location.pathname.includes('/sessions')
+  const opensSavedSessions = location.pathname.includes('/sessions')
   if (
     !opensSavedSessions &&
+    !LAUNCH_REDIRECTS.has(location.pathname) &&
     readiness.data &&
     !readiness.data.some((harness) => harness.state === 'ready')
   ) {
@@ -85,8 +90,8 @@ export const cockpitRoutes: RouteObject[] = [
   {
     element: <CockpitRouteLayout />,
     children: [
-      { index: true, element: <Navigate replace to="/projects" /> },
-      { path: '/projects', element: <ProjectIndexRedirect /> },
+      { index: true, loader: () => replace('/projects'), HydrateFallback: EmptyOutlet },
+      { path: '/projects', loader: firstProjectSessions, HydrateFallback: EmptyOutlet },
       {
         path: '/projects/:projectId/sessions',
         handle: { sidebar: sidebarByPage.sessions } satisfies CockpitRouteHandle,
@@ -116,9 +121,13 @@ export const cockpitRoutes: RouteObject[] = [
 
 export const cockpitRouter = createHashRouter(cockpitRoutes)
 
-function ProjectIndexRedirect() {
-  const [cockpit] = useProjects()
-  return cockpit.project ? (
-    <Navigate replace to={`/projects/${cockpit.project.id}/sessions`} />
-  ) : null
+// A loader redirect yields to a newer navigation, such as a hash write during the launch.
+async function firstProjectSessions() {
+  const projects = await queryClient.fetchQuery(trpc.projectList.queryOptions()).catch(() => [])
+  return projects[0] ? replace(`/projects/${projects[0].id}/sessions`) : null
+}
+
+// The shell draws while the Project list loads, with nothing in its outlet yet.
+function EmptyOutlet() {
+  return null
 }

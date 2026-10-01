@@ -9,7 +9,8 @@ import type { FeedSubagent } from '@/domains/sessions/api/feed'
 import { useWorkspaces } from '@/domains/workspaces/renderer'
 import { DEFAULT_HARNESS, type Harness } from '@/harnesses/harness'
 import { useSessionPermission, useSessionQuestion } from '../composer'
-import { useFeedReading } from '../feed'
+import { isFeedRowPrompt, useFeedReading } from '../feed'
+import { useAvailableHarnesses } from '../harness'
 import { workInspectorReveal } from '../inspector'
 import type { Session, SessionEvidence, SessionExtras } from '../types'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work'
@@ -34,6 +35,7 @@ function useWorkInspector({
   feedSubagents: readonly FeedSubagent[]
 }) {
   const subagents = sessionScreenSubagents(feedSubagents, session?.subagents ?? [])
+  // #2970 fills the shell commands.
   const shell = session?.shell?.find((command) => command.id === work.shellId) ?? null
   const delegation = pickedSubagent(subagents, work)
   const delegationFeed = useDelegationFeed(
@@ -86,6 +88,36 @@ function useSessionEvidence(sessionId: string | null) {
   return { evidence: opened?.sessionId === sessionId ? opened.evidence : null, setEvidence }
 }
 
+// The Session's Feed. A new Session's pending id draws on New Session from Enter, then on the
+// Session it was named until that Session's own Feed shows a prompt, whatever the Harness. New
+// Session keeps it across the naming render.
+function useSessionFeed(selectedSessionId: string | null, running: boolean) {
+  const { projectId, sessionId } = useParams()
+  const [starting, setStarting] = useState<{
+    projectId: string | undefined
+    pendingId: string
+    sessionId: string
+  } | null>(null)
+  const onStartingSession = useCallback(
+    (pendingId: string | null, named = 'new') =>
+      setStarting(pendingId === null ? null : { projectId, pendingId, sessionId: named }),
+    [projectId],
+  )
+  const shown =
+    starting !== null &&
+    starting.projectId === projectId &&
+    (sessionId === 'new' || sessionId === starting.sessionId)
+  const startingSessionId = shown ? starting.pendingId : null
+  const startingFeed = useFeedReading(startingSessionId)
+  const namedFeed = useFeedReading(selectedSessionId, null, running)
+  const holdsPrompt = startingFeed.feed !== null && !namedFeed.feed?.rows.some(isFeedRowPrompt)
+  return {
+    ...(holdsPrompt ? startingFeed : namedFeed),
+    feedSessionId: holdsPrompt ? startingSessionId : selectedSessionId,
+    onStartingSession,
+  }
+}
+
 export function useSessionScreenModel() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
@@ -97,8 +129,10 @@ export function useSessionScreenModel() {
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
   const { session, loaded: sessionLoaded } = useSessionDetails(selectedSessionId)
   const feedRunning = sessionTurnRunning(session)
-  const sessionFeed = useFeedReading(selectedSessionId, null, feedRunning)
-  const [lastHarness, chooseHarness] = useState<Harness>(DEFAULT_HARNESS)
+  const sessionFeed = useSessionFeed(selectedSessionId, feedRunning)
+  const [pickedHarness, chooseHarness] = useState<Harness | null>(null)
+  const availableHarnesses = useAvailableHarnesses()
+  const lastHarness = pickedHarness ?? availableHarnesses?.[0] ?? DEFAULT_HARNESS
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const permission = useSessionPermission(selectedSessionId)
   const question = useSessionQuestion(selectedSessionId)

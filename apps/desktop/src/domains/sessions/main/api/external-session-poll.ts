@@ -1,15 +1,14 @@
 import { stat } from 'node:fs/promises'
-import { and, eq, ne, notInArray, type SQL } from 'drizzle-orm'
+import { and, eq, lte, ne, notInArray, type SQL, sql } from 'drizzle-orm'
 import { sessionTable } from '@/database/session/schema'
 import { projectFeedRowEntries } from '@/domains/sessions/api/feed'
 import { type Harness, type HarnessSession, harnessSessionKey } from '@/harnesses/harness'
+import type { ExternalHookReading } from '@/harnesses/host/status-hooks'
 import type {
   ExternalActivityReading,
-  ExternalHookReading,
   ExternalSessionStatus,
   ExternalSessions,
   LiveExternalSession,
-  StatusHookEvent,
 } from '@/harnesses/registration'
 import {
   harnessSessionId,
@@ -31,16 +30,6 @@ const GOES_QUIET: Record<ExternalSessionStatus, boolean> = {
 }
 // Each Session's row reaches SQLite at most once a window, with its newest values.
 const WRITE_WINDOW_MS = 500
-// The hook events after which the Session's history holds something new for its open Feed.
-const READS_FEED: Record<StatusHookEvent, boolean> = {
-  SessionStart: false,
-  UserPromptSubmit: true,
-  PreToolUse: false,
-  PermissionRequest: false,
-  PostToolUse: true,
-  Stop: true,
-  SessionEnd: false,
-}
 
 export type ExternalSessionPollContext = SessionUpdateContext & {
   harnesses: readonly { harness: Harness; external: ExternalSessions }[]
@@ -48,8 +37,6 @@ export type ExternalSessionPollContext = SessionUpdateContext & {
   hasLiveChannel: (sessionId: string) => boolean
   // A live external Session with no saved row.
   discover: (session: HarnessSession) => void
-  // Asks the Session's open Feed to read again; a closed Feed reads nothing.
-  refreshFeed: (sessionId: string) => void
 }
 
 // What a transcript stat compares between ticks; Argo reads none of the file's content.
@@ -70,8 +57,6 @@ type TrackedSession = {
   // The last read could not answer yet, so the next tick reads again.
   retry: boolean
   discovered: boolean
-  // A hook event set its status, so no listing overwrites it.
-  hooked: boolean
 }
 
 // A Session waiting its turn, being read, or being read with one more read asked for after it.
@@ -109,7 +94,6 @@ const newTracked = (
   shown: null,
   retry: false,
   discovered: false,
-  hooked: false,
 })
 
 // The stored status and activity of Sessions that run outside Argo, from one poll. Each tick lists
@@ -117,25 +101,24 @@ const newTracked = (
 // that changed or left, and diffs the list against the last tick's. The first sight of a transcript
 // only records its stamp, so startup reads nothing. Updates merge into one write per Session a
 // window, and activity reads run one at a time, since one vendor read can take a large file whole.
-// Once a Harness's status hooks fire, their events set its statuses and its listing stops. A
-// Session's open Feed reads again on its hook events, or on each tick until one fires for it and
-// once more when it leaves.
 export class ExternalSessionPoll {
   readonly #context: ExternalSessionPollContext
   readonly #external: ReadonlyMap<Harness, ExternalSessions>
+  // The newest row before this run; an upsert keeps a row's rowid, and a new row gets a higher one.
+  readonly #lastEarlierRow: number
   // Each Harness's live Sessions at its last tick; absent before its first.
   readonly #live = new Map<Harness, Map<string, TrackedSession>>()
   // Sessions that left the list and wait for their last read, by Harness and native ID.
   readonly #leaving = new Map<string, TrackedSession>()
   // Harnesses whose last listing failed, so a failure is reported once until one succeeds.
   readonly #failing = new Set<Harness>()
-  // Harnesses whose status hooks have fired, and those whose saved rows the first listing closed.
-  readonly #firing = new Set<Harness>()
-  readonly #closed = new Set<Harness>()
+  // Each Harness's last reported count of unrecognised live records, so a count is reported once.
+  readonly #rejected = new Map<Harness, number>()
   readonly #pending = new Map<string, { session: HarnessSession; update: SessionUpdate }>()
   readonly #reads = new Map<string, ReadState>()
   readonly #queue: HarnessSession[] = []
-  #reading = false
+  // The read queue's drain, while one runs.
+  #draining: Promise<void> | null = null
   #writeTimer: ReturnType<typeof setTimeout> | null = null
   #ticking: Promise<void> | null = null
   #interval: ReturnType<typeof setInterval> | null = null
@@ -144,6 +127,9 @@ export class ExternalSessionPoll {
   constructor(context: ExternalSessionPollContext) {
     this.#context = context
     this.#external = new Map(context.harnesses.map(({ harness, external }) => [harness, external]))
+    this.#lastEarlierRow =
+      context.database.select({ rowid: sql<number | null>`max(rowid)` }).from(sessionTable).get()
+        ?.rowid ?? 0
   }
 
   start(): void {
@@ -174,6 +160,11 @@ export class ExternalSessionPoll {
       }
   }
 
+  // Settles once every read asked for so far has landed, for a test that waits on them.
+  readsSettled(): Promise<void> {
+    return this.#draining ?? Promise.resolve()
+  }
+
   stop(): void {
     this.flush()
     this.#stopped = true
@@ -182,10 +173,10 @@ export class ExternalSessionPoll {
     this.#reads.clear()
   }
 
-  // One status hook event. An event from a saved external Session turns the poll off for its
-  // Harness; Argo's own CLI probes and Sessions fire the hooks too, and prove nothing about them.
-  hookEvent(harness: Harness, event: StatusHookEvent, reading: ExternalHookReading): void {
+  // One status hook event; Argo's own Sessions are left to their live channel.
+  hookEvent(harness: Harness, reading: ExternalHookReading): void {
     if (this.#stopped) return
+    const { event } = reading
     const session = { harness, nativeId: reading.nativeId }
     const sessionId = harnessSessionId(this.#context.database, session)
     if (sessionId === undefined) {
@@ -193,14 +184,11 @@ export class ExternalSessionPoll {
       return
     }
     if (this.#context.hasLiveChannel(sessionId)) return
-    this.#firing.add(harness)
-    if (READS_FEED[event]) this.#context.refreshFeed(sessionId)
-    const live = this.#live.get(harness) ?? new Map<string, TrackedSession>()
-    this.#live.set(harness, live)
-    const tracked = live.get(session.nativeId) ?? newTracked(null, null)
-    live.set(session.nativeId, tracked)
+    // Before the first listing there is no live map, so that listing still closes stale rows.
+    const live = this.#live.get(harness)
+    const tracked = live?.get(session.nativeId) ?? newTracked(null, null)
+    live?.set(session.nativeId, tracked)
     tracked.changedAt = Date.now()
-    tracked.hooked = true
     // PreToolUse is async, so it can land after the PermissionRequest it precedes.
     const held =
       event === 'PreToolUse' &&
@@ -212,15 +200,11 @@ export class ExternalSessionPoll {
       ...(reading.activity === null ? {} : { activity: reading.activity }),
     })
     this.#show(session, tracked, tracked.changedAt)
-    if (event === 'SessionEnd') live.delete(session.nativeId)
+    if (event === 'SessionEnd') live?.delete(session.nativeId)
   }
 
   async #tickAll(): Promise<void> {
     for (const { harness, external } of this.#context.harnesses) {
-      if (this.#firing.has(harness) && this.#closed.has(harness)) {
-        this.#showQuiet(harness)
-        continue
-      }
       try {
         await this.#tickHarness(harness, external)
         this.#failing.delete(harness)
@@ -236,8 +220,7 @@ export class ExternalSessionPoll {
   async #tickHarness(harness: Harness, external: ExternalSessions): Promise<void> {
     const list = await external.listLive()
     if (this.#stopped) return
-    if (list.rejected > 0)
-      console.warn(`Rejected ${list.rejected} unrecognised ${harness} live Session record(s).`)
+    this.#reportRejected(harness, list.rejected)
     const previous = this.#live.get(harness)
     const current = new Map<string, TrackedSession>()
     this.#live.set(harness, current)
@@ -251,46 +234,17 @@ export class ExternalSessionPoll {
       if (sessionId === undefined) this.#discover(session, tracked)
       if (external.readActivity !== undefined) await this.#readChange(session, tracked)
       this.#show(session, tracked, Date.now())
-      this.#pollFeed(session, tracked)
     }
-    this.#unlisted(harness, previous, current)
-    if (!this.#closed.has(harness)) this.#closeAll(harness, current)
+    for (const [nativeId, tracked] of previous ?? [])
+      if (!current.has(nativeId))
+        this.#leave({ harness, nativeId }, tracked, external.readActivity !== undefined)
+    if (previous === undefined) this.#closeAll(harness, current)
   }
 
-  // A Session the listing missed leaves, unless a hook event set its status, which outranks it.
-  #unlisted(
-    harness: Harness,
-    previous: ReadonlyMap<string, TrackedSession> | undefined,
-    current: Map<string, TrackedSession>,
-  ): void {
-    const readsActivity = this.#external.get(harness)?.readActivity !== undefined
-    for (const [nativeId, tracked] of previous ?? []) {
-      if (current.has(nativeId)) continue
-      if (tracked.hooked) current.set(nativeId, tracked)
-      else this.#leave({ harness, nativeId }, tracked, readsActivity)
-    }
-  }
-
-  // A hook-fed Harness's Sessions are not listed, so only the quiet limit changes them. A listed
-  // status becomes a settled one, since a Session started before the install fires no hook.
-  #showQuiet(harness: Harness): void {
-    for (const [nativeId, tracked] of this.#live.get(harness) ?? []) {
-      if (tracked.status === null && tracked.listed !== null) {
-        tracked.status = tracked.listed
-        tracked.changedAt = Date.now()
-      }
-      tracked.listed = null
-      this.#show({ harness, nativeId }, tracked, Date.now())
-      this.#pollFeed({ harness, nativeId }, tracked)
-    }
-  }
-
-  // A Session whose hooks have not fired has its open Feed read again each tick.
-  #pollFeed(session: HarnessSession, tracked: TrackedSession): void {
-    if (tracked.hooked) return
-    const sessionId = harnessSessionId(this.#context.database, session)
-    if (sessionId !== undefined && !this.#context.hasLiveChannel(sessionId))
-      this.#context.refreshFeed(sessionId)
+  #reportRejected(harness: Harness, rejected: number): void {
+    if (rejected > 0 && rejected !== this.#rejected.get(harness))
+      console.warn(`Rejected ${rejected} unrecognised ${harness} live Session record(s).`)
+    this.#rejected.set(harness, rejected)
   }
 
   // The same object across ticks, so a read that lands mid-tick is kept.
@@ -303,7 +257,7 @@ export class ExternalSessionPoll {
     if (before.transcript !== transcript) {
       before.transcript = transcript
       before.stamp = null
-      if (!before.hooked) before.status = null
+      before.status = null
     }
     return before
   }
@@ -330,8 +284,6 @@ export class ExternalSessionPoll {
   #leave(session: HarnessSession, tracked: TrackedSession, readsActivity: boolean): void {
     const sessionId = harnessSessionId(this.#context.database, session)
     if (sessionId !== undefined && this.#context.hasLiveChannel(sessionId)) return
-    // The CLI can write its last Turn after the tick before it left.
-    if (sessionId !== undefined) this.#context.refreshFeed(sessionId)
     this.#update(session, { status: 'idle' })
     if (!readsActivity) return
     this.#leaving.set(harnessSessionKey(session), tracked)
@@ -355,7 +307,8 @@ export class ExternalSessionPoll {
     if (this.#stopped) return
     const key = harnessSessionKey(session)
     const pending = this.#pending.get(key)?.update
-    this.#pending.set(key, { session, update: { ...pending, ...update } })
+    const subagents = [...(pending?.subagents ?? []), ...(update.subagents ?? [])]
+    this.#pending.set(key, { session, update: { ...pending, ...update, subagents } })
     this.#writeTimer ??= setTimeout(() => this.flush(), WRITE_WINDOW_MS)
   }
 
@@ -363,7 +316,7 @@ export class ExternalSessionPoll {
   #read(session: HarnessSession): void {
     if (this.#stopped || !this.#asksForRead(harnessSessionKey(session))) return
     this.#queue.push(session)
-    void this.#drain()
+    this.#draining ??= this.#drain()
   }
 
   // Whether a new read starts, after recording the ask against the Session's read state.
@@ -384,14 +337,13 @@ export class ExternalSessionPoll {
     }
   }
 
+  // Clears itself in the same turn the queue empties, so a later ask starts a new drain.
   async #drain(): Promise<void> {
-    if (this.#reading) return
-    this.#reading = true
     try {
       for (let session = this.#queue.shift(); session !== undefined; session = this.#queue.shift())
         await this.#readOne(session)
     } finally {
-      this.#reading = false
+      this.#draining = null
     }
   }
 
@@ -415,11 +367,12 @@ export class ExternalSessionPoll {
   }
 
   // The line is the newest Turn's activity by the Feed's own rules; none keeps the stored line.
-  // An external Session stores no Subagents.
   #receive(session: HarnessSession, reading: ExternalActivityReading | null): void {
     if (reading !== null) {
       const { activity } = projectFeedRowEntries({ history: reading.turn, live: [] })
-      if (activity !== null) this.#update(session, { activity })
+      const subagents = reading.turn.filter((content) => content.kind === 'delegation')
+      if (activity !== null || subagents.length > 0)
+        this.#update(session, { ...(activity === null ? {} : { activity }), subagents })
     }
     const tracked = this.#tracked(session)
     if (tracked === undefined) {
@@ -439,12 +392,12 @@ export class ExternalSessionPoll {
     return this.#live.get(session.harness)?.get(session.nativeId)
   }
 
-  // The first tick closes every saved Session it does not find live, in one write. A live
-  // channel's own status outranks the stored one, so a Session Argo runs needs no exception.
+  // The first tick closes every Session an earlier run saved and it does not find live, in one
+  // write. A live channel's own status outranks the stored one, so a Session Argo runs needs none.
   #closeAll(harness: Harness, live: ReadonlyMap<string, TrackedSession>): void {
-    this.#closed.add(harness)
     const conditions: SQL[] = [eq(sessionTable.harness, harness), ne(sessionTable.status, 'idle')]
     if (live.size > 0) conditions.push(notInArray(sessionTable.nativeId, [...live.keys()]))
+    conditions.push(lte(sql`rowid`, this.#lastEarlierRow))
     const closed = this.#context.database
       .update(sessionTable)
       .set({ status: 'idle' })

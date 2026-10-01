@@ -18,6 +18,12 @@ function definedMetadata(input: SessionUpsertInput): Partial<SessionUpsertMetada
   ) as Partial<SessionUpsertMetadata>
 }
 
+// A scan fills Model, Effort and Mode only while empty, so it never overwrites a newer live save.
+function reportedOnlyWhileEmpty(input: SessionUpsertInput) {
+  const reported = input.turnConfiguration ? JSON.stringify(input.turnConfiguration) : null
+  return { turnConfiguration: sql`coalesce(${sessionTable.turnConfiguration}, ${reported})` }
+}
+
 export function createSessionUpsert(database: Database): SessionUpsert {
   return (input) => {
     const validatedInput = sessionInsertSchema.parse(input)
@@ -36,6 +42,7 @@ export function createSessionUpsert(database: Database): SessionUpsert {
         firstPrompt: validatedInput.firstPrompt ?? null,
         cwd: validatedInput.cwd ?? null,
         activityAt: validatedInput.activityAt ?? null,
+        turnConfiguration: validatedInput.turnConfiguration ?? null,
         // A Session found in history is ordered by when it was last active, not when Argo saw it.
         createdAt: validatedInput.activityAt ?? Date.now(),
       })
@@ -43,6 +50,7 @@ export function createSessionUpsert(database: Database): SessionUpsert {
         target: [sessionTable.harness, sessionTable.nativeId],
         set: {
           ...metadata,
+          ...reportedOnlyWhileEmpty(validatedInput),
           harness: validatedInput.harness,
           updatedAt: sql`MAX(CAST(unixepoch('subsec') * 1000 AS INTEGER), ${sessionTable.updatedAt} + 1)`,
         },

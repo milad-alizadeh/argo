@@ -1,10 +1,14 @@
-import { Database } from 'bun:sqlite'
 import { readFileSync, writeFileSync } from 'node:fs'
-import path from 'node:path'
 import { createInterface } from 'node:readline'
-import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
+import {
+  readMockReplyDelayMs,
+  SESSION_MOCK_ADVERSARIAL_SEED_ENV,
+  SESSION_MOCK_START_HOLD_FILE_ENV,
+  waitWhileHoldFileExists,
+} from '@/harnesses/proof-protocol'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
 import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
+import { sendPlanUpdate } from './fixtures/mock-codex-plan.ts'
 import { createMockCodexSkillsAndConfig } from './fixtures/mock-codex-skills-config.ts'
 
 type Item = {
@@ -49,21 +53,13 @@ const REPLY_DELAY_MS = readMockReplyDelayMs()
 const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
 let turnIndex = 0
 
-// Codex Desktop names a thread in the state store beside `sessions/`, which `thread/list` reads.
+// Another Codex client renames a thread in the shared store, so a list re-reads names from it.
 function storedNames(): Map<string, string> {
-  const home = process.env.CODEX_HOME
-  if (home === undefined) return new Map()
-  let store: Database | null = null
   try {
-    store = new Database(path.join(home, 'state_5.sqlite'), { readonly: true })
-    const rows = store
-      .query("SELECT id, name FROM threads WHERE trim(coalesce(name, '')) != ''")
-      .all() as { id: string; name: string }[]
-    return new Map(rows.map((row) => [row.id, row.name.trim()]))
+    const stored = JSON.parse(readFileSync(statePath, 'utf8')) as Thread[]
+    return new Map(stored.flatMap((thread) => (thread.name ? [[thread.id, thread.name]] : [])))
   } catch {
     return new Map()
-  } finally {
-    store?.close()
   }
 }
 
@@ -181,6 +177,16 @@ function notifyFeedActivity(active: ActiveTurn) {
   )
 }
 
+function notifyPlan({ thread, turn, prompt }: ActiveTurn) {
+  sendPlanUpdate({
+    text: prompt,
+    threadId: thread.id,
+    turnId: turn.id,
+    send,
+    beforeTurnStart: false,
+  })
+}
+
 function notifyTurn(active: ActiveTurn) {
   const { thread, turn, prompt } = active
   send({
@@ -192,6 +198,7 @@ function notifyTurn(active: ActiveTurn) {
     params: { threadId: thread.id, turnId: turn.id, item: turn.items[0] },
   })
   if (prompt.includes('FeedActivityProbe')) notifyFeedActivity(active)
+  notifyPlan(active)
   if (prompt === 'Need approval') {
     const requestId = `approval-${turn.id}`
     pending.set(requestId, active)
@@ -295,7 +302,11 @@ function handle(message: Request) {
     }
     threads.push(thread)
     save()
-    return send({ id, result: { thread: { id: thread.id } } })
+    // Codex names the thread in this answer, so a held start holds it back.
+    void waitWhileHoldFileExists(process.env[SESSION_MOCK_START_HOLD_FILE_ENV]).then(() =>
+      send({ id, result: { thread: { id: thread.id } } }),
+    )
+    return
   }
   const thread = threads.find((candidate) => candidate.id === params.threadId)
   if (thread === undefined)

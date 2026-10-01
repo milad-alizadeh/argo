@@ -1,6 +1,7 @@
 import type { VirtualItem } from '@tanstack/virtual-core'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { pendingSessionDraft } from '@/domains/sessions/api/pending-session'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
@@ -113,11 +114,11 @@ export function BasicFeed({
   const document = feed !== null && feed.sessionId === selectedSessionId ? feed : null
   // The selected Feed has no history row to settle its first read (#2102).
   const { retry, retryToken } = useFeedRetry(onRetryFeed)
-  // A Session the cockpit has only just named has no reading to wait on, so it never stalls.
+  // A Session its Harness has not named yet has no reading to wait on, so it never stalls.
   const awaitingFeed =
     failure === null &&
     selectedSessionId !== null &&
-    !selectedSessionId.startsWith('optimistic:') &&
+    pendingSessionDraft(selectedSessionId) === null &&
     (document === null || (running && awaitingAssistantReply(document.rows)))
   const stalled = useStallTimer(
     awaitingFeed ? `${selectedSessionId}:${retryToken}` : false,

@@ -82,8 +82,10 @@ function liveStatuses(entries: readonly unknown[]) {
 
 // The interactive Sessions Claude runs outside Argo, with their status, from `claude agents
 // --json`. It gives no activity line, and Argo reads no transcript or pid file for one (ADR-0047).
-// The status hooks replace it once they fire.
-export function createClaudeExternalSessions(executable: string | null): ExternalSessions {
+export function createClaudeExternalSessions(
+  executable: string | null,
+  settingsFile: string,
+): ExternalSessions {
   async function listLive() {
     if (executable === null) throw new Error('No claude executable was found.')
     const { stdout } = await run(executable, ['agents', '--json'], { timeout: AGENTS_TIMEOUT_MS })
@@ -95,5 +97,5 @@ export function createClaudeExternalSessions(executable: string | null): Externa
     }))
     return { sessions, rejected }
   }
-  return { listLive, hooks: createClaudeStatusHooks() }
+  return { listLive, hooks: createClaudeStatusHooks(settingsFile) }
 }

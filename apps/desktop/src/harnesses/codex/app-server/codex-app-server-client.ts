@@ -191,10 +191,21 @@ class CodexProtocolError extends Error {
   }
 }
 
+// Codex's answer for a thread it finds neither loaded nor stored, such as one with no rollout yet.
+export const isThreadNotLoaded = (error: unknown) =>
+  error instanceof Error && /thread not loaded/i.test(error.message)
+
 // Conflicting app-server processes can hold the same upstream SQLite locks indefinitely (#2653).
 export class CodexRequestTimeoutError extends Error {
   constructor(method: string) {
     super(`Codex app-server did not answer ${method} in time`)
+  }
+}
+
+// No `codex` on this machine, so Argo cannot read any Codex Session.
+export class CodexUnavailableError extends Error {
+  constructor() {
+    super('Codex executable is unavailable.')
   }
 }
 
@@ -403,7 +414,8 @@ function openProcess(executable: string): CodexChannel {
 async function resolveCodexExecutable(signal: AbortSignal): Promise<CodexExecutable | null> {
   const executable =
     process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('codex')
-  if (executable === null) return null
+  // An empty override pins a machine with no Codex, as the sign-in override does.
+  if (!executable) return null
   const version = await executableVersion(executable)
   if (signal.aborted) throw signal.reason
   return {
@@ -547,7 +559,7 @@ class CodexAppServerClientInstance implements CodexAppServerClient {
     this.assertActive(currentGeneration)
     if (resolved === null) {
       this.closeChannel()
-      throw new Error('Codex executable is unavailable.')
+      throw new CodexUnavailableError()
     }
     if (this.matchesCurrent(resolved)) return this.channel as CodexChannel
     this.closeChannel()
