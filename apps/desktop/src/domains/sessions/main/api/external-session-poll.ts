@@ -58,6 +58,8 @@ type TrackedSession = {
   // The last read could not answer yet, so the next tick reads again.
   retry: boolean
   discovered: boolean
+  // A hook event set its status, so no listing overwrites it.
+  hooked: boolean
 }
 
 // A Session waiting its turn, being read, or being read with one more read asked for after it.
@@ -95,6 +97,7 @@ const newTracked = (
   shown: null,
   retry: false,
   discovered: false,
+  hooked: false,
 })
 
 // The stored status and activity of Sessions that run outside Argo, from one poll. Each tick lists
@@ -181,6 +184,7 @@ export class ExternalSessionPoll {
     const tracked = live.get(session.nativeId) ?? newTracked(null, null)
     live.set(session.nativeId, tracked)
     tracked.changedAt = Date.now()
+    tracked.hooked = true
     // PreToolUse is async, so it can land after the PermissionRequest it precedes.
     const held =
       event === 'PreToolUse' &&
@@ -232,9 +236,11 @@ export class ExternalSessionPoll {
       if (external.readActivity !== undefined) await this.#readChange(session, tracked)
       this.#show(session, tracked, Date.now())
     }
-    for (const [nativeId, tracked] of previous ?? [])
-      if (!current.has(nativeId))
-        this.#leave({ harness, nativeId }, tracked, external.readActivity !== undefined)
+    for (const [nativeId, tracked] of previous ?? []) {
+      if (current.has(nativeId)) continue
+      if (tracked.hooked) current.set(nativeId, tracked)
+      else this.#leave({ harness, nativeId }, tracked, external.readActivity !== undefined)
+    }
     if (!this.#closed.has(harness)) this.#closeAll(harness, current)
   }
 
@@ -261,7 +267,7 @@ export class ExternalSessionPoll {
     if (before.transcript !== transcript) {
       before.transcript = transcript
       before.stamp = null
-      before.status = null
+      if (!before.hooked) before.status = null
     }
     return before
   }

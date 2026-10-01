@@ -6,6 +6,7 @@ import path from 'node:path'
 import { afterAll, afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { createClaudeExternalSessions } from '@/harnesses/claude/session'
 import type { CodexAppServerClient } from '@/harnesses/codex/app-server'
+import type { ExternalSessions } from '@/harnesses/registration'
 import { createCodexExternalSessions } from '@/harnesses/codex/session'
 import { mockClaudeAgentsCli } from '@/mocks/cli/claude/mock-claude-agents'
 import { clientBackedByMock, writeMockCodex } from '@/mocks/cli/codex/mock-codex-driver'
@@ -58,13 +59,24 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-// Builds the poll and the receiver; `listen` false leaves the receiver unstarted.
-async function start({ listen = true } = {}) {
+// Builds the poll and the receiver; `listen` false leaves the receiver unstarted, and each
+// listing waits for `listed` before it returns.
+async function start({ listen = true, listed = Promise.resolve() } = {}) {
+  const held = (external: ExternalSessions): ExternalSessions => ({
+    ...external,
+    listLive: async () => {
+      const list = await external.listLive()
+      await listed
+      return list
+    },
+  })
   const harnesses = [
-    { harness: 'claude' as const, external: createClaudeExternalSessions(agents.executable) },
+    { harness: 'claude' as const, external: held(createClaudeExternalSessions(agents.executable)) },
     {
       harness: 'codex' as const,
-      external: createCodexExternalSessions(codex.request, process.env.CODEX_HOME as string),
+      external: held(
+        createCodexExternalSessions(codex.request, process.env.CODEX_HOME as string),
+      ),
     },
   ]
   poll = new ExternalSessionPoll({
@@ -345,3 +357,20 @@ test('an asking row is not timed out by the quiet limit', async () => {
   poll.flush()
   expect((await row()).status).toBe('asking')
 })
+
+test.each(HARNESSES)(
+  'a %s hook event during the first listing is not reset by that listing',
+  async (harness) => {
+    let finishListing = () => {}
+    await start({ listed: new Promise<void>((resolve) => (finishListing = resolve)) })
+    saved(harness)
+    agents.answer([])
+    const listing = poll.tick()
+    await post(harness, hookEvent(harness, 'UserPromptSubmit', SESSION))
+    expect((await row()).status).toBe('running')
+    finishListing()
+    await listing
+    poll.flush()
+    expect((await row()).status).toBe('running')
+  },
+)
