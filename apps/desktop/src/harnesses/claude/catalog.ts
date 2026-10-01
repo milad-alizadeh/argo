@@ -7,6 +7,9 @@ import { claudeHarnessInfo } from './catalog-projection'
 export type { ClaudeModelCatalog } from './catalog-projection'
 export { claudeHarnessInfo, claudeModelCatalogSchema } from './catalog-projection'
 
+// Both reads below start the CLI at once, so one budget covers each; a busy launch can take seconds.
+const CATALOG_READ_TIMEOUT_MS = 10_000
+
 export async function readClaudeHarnessInfo(executablePath: string | null): Promise<HarnessInfo> {
   if (executablePath === null) return unavailable('claude')
   try {
@@ -31,18 +34,23 @@ export async function readClaudeHarnessInfo(executablePath: string | null): Prom
 // SDK 0.3.278 initializes with models but does not list supported modes; ask the installed CLI.
 function readSupportedPermissionModes(executablePath: string): Promise<string[]> {
   return new Promise((resolve, reject) => {
-    execFile(executablePath, ['--help'], { encoding: 'utf8', timeout: 3_000 }, (error, stdout) => {
-      if (error !== null) {
-        reject(error)
-        return
-      }
-      const modes = permissionModesFromHelp(stdout)
-      if (modes.length === 0) {
-        reject(new InvalidPermissionModesError())
-        return
-      }
-      resolve(modes)
-    })
+    execFile(
+      executablePath,
+      ['--help'],
+      { encoding: 'utf8', timeout: CATALOG_READ_TIMEOUT_MS },
+      (error, stdout) => {
+        if (error !== null) {
+          reject(error)
+          return
+        }
+        const modes = permissionModesFromHelp(stdout)
+        if (modes.length === 0) {
+          reject(new InvalidPermissionModesError())
+          return
+        }
+        resolve(modes)
+      },
+    )
   })
 }
 
@@ -68,7 +76,10 @@ async function readSupportedModels(executablePath: string): Promise<readonly Mod
     const initialized = await Promise.race([
       session.initializationResult(),
       new Promise<never>((_resolve, reject) => {
-        timeout = setTimeout(() => reject(new Error('Claude model discovery timed out.')), 10_000)
+        timeout = setTimeout(
+          () => reject(new Error('Claude model discovery timed out.')),
+          CATALOG_READ_TIMEOUT_MS,
+        )
       }),
     ])
     return initialized.models
