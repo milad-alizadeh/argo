@@ -167,6 +167,17 @@ test('reads a Harness again when its last read failed for no named reason', asyn
   }
 })
 
+test('reads an unavailable Harness again only once without a refresh', async () => {
+  const { actor, counter } = countedCatalog(() => unavailable('claude'))
+  try {
+    const caller = testRouter(actor).createCaller({})
+    for (let read = 0; read < 3; read += 1) await caller.harnessCatalogRead({ harness: 'claude' })
+    expect(counter.loads).toBe(2)
+  } finally {
+    actor.stop()
+  }
+})
+
 test('retry reloads a failed catalog once', async () => {
   let loads = 0
   const actor = createActor(

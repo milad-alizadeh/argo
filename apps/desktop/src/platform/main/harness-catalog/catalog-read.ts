@@ -27,8 +27,12 @@ function readCatalog(actor: CatalogActor, harness: Harness, refresh = false) {
   const before = actor.getSnapshot()
   if (refresh) actor.send({ type: before.matches('Failed') ? 'Retry' : 'Refresh' })
   else if (before.matches('Idle')) actor.send({ type: 'Catalog requested' })
-  // A read that failed for no named reason may be passing, such as a CLI slow to start; read again.
-  else if (before.matches('Ready') && unexplained(selectedCatalog(actor, harness).info))
+  // A first load that failed for no named reason may be a CLI slow to start; read it again once.
+  else if (
+    before.matches('Ready') &&
+    before.context.loadCount === 1 &&
+    unexplained(selectedCatalog(actor, harness).info)
+  )
     actor.send({ type: 'Refresh' })
   const current = actor.getSnapshot()
   if (current.matches('Ready') || current.matches('Failed'))
