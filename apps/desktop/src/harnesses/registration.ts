@@ -4,6 +4,7 @@ import {
   type ComposerCommandListing,
   composerCommandSchema,
 } from '@/domains/sessions/api/composer-commands'
+import type { LiveActivity } from '@/domains/sessions/api/feed'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { Question, QuestionAnswer } from '@/domains/sessions/api/questions'
@@ -12,10 +13,7 @@ import type {
   SessionSummaryReader,
 } from '@/domains/sessions/api/session-discovery'
 import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
-import {
-  type SessionLiveEventBody,
-  sessionLiveEventBodySchema,
-} from '@/domains/sessions/api/session-live-event'
+import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import type { SessionLiveInput, SessionStartInput } from '@/domains/sessions/main/api'
 import type { HarnessInfo } from '@/harnesses/harness-catalog'
 import { identifierSchema } from '@/shared/validation'
@@ -36,27 +34,41 @@ export const liveSessionChannelEventSchema = z.discriminatedUnion('type', [
   }),
 ])
 
-// Where a Harness writes Session history, and how it reads the lines it appends.
-export type HistoryFiles = {
-  directory: string
-  // The Session or Subagent id a history file belongs to, or null for a file that holds none.
-  ownerOf: (relativePath: string) => string | null
-  // A reader for the lines appended after `existing`, the newest complete lines already in the file.
-  openReader: (existing: readonly string[]) => (lines: readonly string[]) => HistoryChange
-  // Whether a history line opens a turn, closes one, or says nothing about turns.
-  turnOf: (line: string) => HistoryTurnMarker | null
+// The roster status a Harness's own records give an external Session (ADR-0048).
+export type ExternalSessionStatus = 'running' | 'permission' | 'asking' | 'idle' | 'unknown'
+
+// One Session open outside Argo now, as its Harness's own records name it.
+export type LiveExternalSession = {
+  nativeId: string
+  // `unknown` for a value the Harness does not recognise, or when only the transcript can tell.
+  status: ExternalSessionStatus
+  // The transcript the host tails while the Session is live; null when the Harness has none.
+  transcript: string | null
 }
 
-export type HistoryTurn = 'open' | 'closed'
-// The turn a marker names, where the Harness writes one; a close for another turn is stale.
-export type HistoryTurnMarker = { turn: HistoryTurn; turnId: string | null }
+// Every live external Session, and how many records had a shape or value the Harness rejected.
+type LiveExternalSessionList = { sessions: LiveExternalSession[]; rejected: number }
 
-// A rewritten file must be read whole; its events are what the new lines alone decoded to.
-export type HistoryChange = { type: 'appended' | 'rewritten'; events: SessionLiveEventBody[] }
+// Complete lines a transcript gained. `continued` is false when they do not follow the last lines
+// handed over: the file was truncated or rewritten, or grew past the tail's window.
+export type TranscriptLines = { lines: readonly string[]; continued: boolean }
 
-// What a Session's history file gained since the last change. A read that starts again from the
-// tail window, with a fresh reader, replaces what earlier reads gave rather than extending it.
-export type HistoryActivityReading = { restarted: boolean; events: SessionLiveEventBody[] }
+// What a transcript's new lines say about its Session.
+export type TranscriptReading = {
+  // The newest activity in the lines; null keeps the line the row already shows.
+  activity: LiveActivity | null
+  // A status the lines settle, such as a turn start or end marker; null leaves the listed status.
+  status: ExternalSessionStatus | null
+}
+
+// How the roster's poll reads Sessions this Harness runs outside Argo. The host owns the loop,
+// the stat, the tail, the diff and every write, and skips a Session with a live Argo channel.
+export type ExternalSessions = {
+  // Called every poll tick. Reads only small records such as pid files and lock probes.
+  listLive: () => Promise<LiveExternalSessionList>
+  // Called with the lines a live Session's transcript gained since the last call, never at start.
+  readTranscript: (nativeId: string, lines: TranscriptLines) => Promise<TranscriptReading>
+}
 
 export type LiveSessionChannelEvent = z.infer<typeof liveSessionChannelEventSchema>
 export type LiveSessionCommand = Pick<
@@ -92,7 +104,8 @@ export type HarnessRegistration<Id extends Harness = Harness> = HarnessReadiness
   readCatalog: () => Promise<HarnessInfo>
   readHistory: (target: SessionHistoryTarget) => Promise<FeedContent[]>
   hasTurn?: (nativeId: string, turnId: string) => Promise<boolean>
-  historyFiles?: HistoryFiles
+  // Absent for a Harness that runs only Sessions Argo starts.
+  externalSessions?: ExternalSessions
   openLiveSession?: (
     input: SessionLiveInput,
     controls: LiveSessionControls | undefined,

@@ -1,22 +1,12 @@
 import { afterEach, expect, test } from 'bun:test'
-import {
-  appendFileSync,
-  copyFileSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-} from 'node:fs'
-import os from 'node:os'
+import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import { latestTurn } from '@/harnesses/host/history-watch'
 import { scanRollouts } from '../../../../mocks/cli/codex/mock-codex-rollout-history.ts'
-import type { ThreadItem } from '../app-server'
 import type { CodexRequest } from '../app-server/codex-app-server-client'
-import { codexHistoryOwner, codexHistoryTurn, openCodexHistoryReader } from './codex-history-lines'
-import { codexContentFromItems, readCodexSessionHistory } from './codex-session-history'
+import { openCodexHistoryReader } from './codex-history-lines'
+import { readCodexSessionHistory } from './codex-session-history'
 
 const FIXTURES = fileURLToPath(
   new URL('../../../../mocks/cli/codex/fixtures/sessions', import.meta.url),
@@ -88,7 +78,7 @@ test('counts a line that is not a rollout record', () => {
     expect(
       openCodexHistoryReader()([
         '{"type":"turn_context","payload":{"turn_id":"t"}}',
-        '{"type":"event_msg","payload":{"type":"token_count","info":null}}',
+        '{"type":"event_msg","payload":{"type":"item_completed","item":{"type":"Reasoning","id":"rs"}}}',
         'not json',
       ]),
     ).toEqual({ type: 'appended', events: [] })
@@ -140,243 +130,21 @@ test('counts a task notification whose status is not one Codex publishes', async
   ])
 })
 
-function completed(item: Record<string, unknown>): string {
-  return JSON.stringify({
-    type: 'event_msg',
-    payload: { type: 'item_completed', turn_id: 'turn-1', item },
-  })
-}
-
-function contents(change: ReturnType<ReturnType<typeof openCodexHistoryReader>>) {
-  return change.events.flatMap((event) => (event.type === 'content' ? [event.content] : []))
-}
-
-// Each pair is one item as a rollout records it and as `thread/read` returned it.
-const workItems = [
-  {
-    rollout: {
-      type: 'CommandExecution',
-      id: 'exec-1',
-      process_id: '1814',
-      command: ['/bin/zsh', '-lc', "rg -n 'watch|tail' src"],
-      cwd: 'file:///Users/reader/argo',
-      parsed_cmd: [{ type: 'unknown', cmd: "rg -n 'watch|tail' src" }],
-      source: 'unified_exec_startup',
-      status: 'failed',
-      stdout: '',
-      stderr: '',
-      aggregated_output: 'no matches',
-      exit_code: 1,
-      duration: { secs: 0, nanos: 7791 },
-      formatted_output: '',
-    },
-    read: {
-      type: 'commandExecution',
-      id: 'exec-1',
-      pluginId: null,
-      scriptPath: null,
-      command: `/bin/zsh -lc "rg -n 'watch|tail' src"`,
-      cwd: '/Users/reader/argo',
-      processId: '1814',
-      source: 'unifiedExecStartup',
-      status: 'failed',
-      commandActions: [],
-      aggregatedOutput: 'no matches',
-      exitCode: 1,
-      durationMs: 0,
-    },
-  },
-  {
-    rollout: {
-      type: 'FileChange',
-      id: 'edit-1',
-      changes: {
-        '/repo/app.txt': {
-          type: 'update',
-          unified_diff: '@@ -1 +1 @@\n-beta\n+gamma\n',
-          move_path: null,
-        },
-        '/repo/new.txt': { type: 'add', content: 'new\n' },
-      },
-      status: 'completed',
-      stdout: 'Success.',
-      stderr: '',
-    },
-    read: {
-      type: 'fileChange',
-      id: 'edit-1',
-      changes: [
-        {
-          path: '/repo/app.txt',
-          kind: { type: 'update', move_path: null },
-          diff: '@@ -1 +1 @@\n-beta\n+gamma\n',
-        },
-        { path: '/repo/new.txt', kind: { type: 'add' }, diff: 'new\n' },
-      ],
-      status: 'completed',
-    },
-  },
-  {
-    rollout: {
-      type: 'McpToolCall',
-      id: 'mcp-1',
-      server: 'codex_app',
-      tool: 'open_in_codex',
-      arguments: { target: { type: 'file', path: '/repo/README.md' } },
-      pluginId: 'codex-app-tools@openai-bundled',
-      status: 'completed',
-      result: { content: [{ type: 'text', text: '{"status":"queued"}' }], isError: false },
-      duration: { secs: 0, nanos: 75 },
-    },
-    read: {
-      type: 'mcpToolCall',
-      id: 'mcp-1',
-      server: 'codex_app',
-      tool: 'open_in_codex',
-      status: 'completed',
-      arguments: { target: { type: 'file', path: '/repo/README.md' } },
-      appContext: null,
-      mcpAppUi: null,
-      pluginId: 'codex-app-tools@openai-bundled',
-      readOnlyHint: null,
-      result: {
-        content: [{ type: 'text', text: '{"status":"queued"}' }],
-        structuredContent: null,
-        _meta: null,
-      },
-      error: null,
-      durationMs: 75,
-    },
-  },
-  {
-    rollout: {
-      type: 'Extension',
-      kind: 'web.search',
-      id: 'search-1',
-      query: 'codex app server',
-      action: { type: 'search', query: null, queries: ['codex app server'] },
-      results: [],
-    },
-    read: {
-      type: 'webSearch',
-      id: 'search-1',
-      query: 'codex app server',
-      action: { type: 'search', query: null, queries: ['codex app server'] },
-      results: [],
-    },
-  },
-  {
-    rollout: {
-      type: 'Reasoning',
-      id: 'rs-1',
-      summary_text: ['Tracing the watcher'],
-      raw_content: [],
-    },
-    read: { type: 'reasoning', id: 'rs-1', summary: ['Tracing the watcher'], content: [] },
-  },
-] as const
-
-test.each(workItems.map((pair) => [pair.rollout.type, pair] as const))(
-  'decodes a completed %s as thread/read does',
-  (_type, { rollout, read }) => {
-    const change = openCodexHistoryReader()([completed(rollout)])
-
-    expect(contents(change)).toEqual(codexContentFromItems([read as unknown as ThreadItem]))
-  },
-)
-
-test('asks for a full read when a rollout completes a command or an edit', () => {
-  const [command, edit] = workItems
-  const read = openCodexHistoryReader()
-
-  expect(read([completed(command.rollout)]).type).toBe('rewritten')
-  expect(read([completed(edit.rollout)]).type).toBe('rewritten')
-  expect(read([completed(workItems[4].rollout)]).type).toBe('appended')
-})
-
-test('keeps the phase of an agent message', () => {
-  const change = openCodexHistoryReader()([
-    completed({
-      type: 'AgentMessage',
-      id: 'm',
-      content: [{ type: 'Text', text: 'Tracing it' }],
-      phase: 'commentary',
-    }),
-  ])
-
-  expect(contents(change)).toEqual([
-    { kind: 'message', id: 'm', role: 'assistant', text: 'Tracing it', phase: 'commentary' },
-  ])
-})
-
-test('rejects and counts a work item in a shape it cannot read', () => {
-  const warnings: unknown[] = []
-  const warn = console.warn
-  console.warn = (message: unknown) => warnings.push(message)
-  try {
-    const change = openCodexHistoryReader()([
-      completed({ type: 'CommandExecution', id: 'c', command: 'ls' }),
-      completed({ type: 'Extension', kind: 'clock.sleep', id: 's', durationMs: 10 }),
-    ])
-    expect(change).toEqual({ type: 'rewritten', events: [] })
-  } finally {
-    console.warn = warn
-  }
-  expect(warnings).toEqual(['Rejected 1 unsupported Codex rollout line(s).'])
-})
-
-test('names the thread a rollout file belongs to', () => {
+test('asks for a full read when a rollout completes a command', () => {
   expect(
-    codexHistoryOwner(
-      '2026/09/28/rollout-2026-09-28T17-28-10-01a0e8d8-6461-7692-b276-32329518363e.jsonl',
-    ),
-  ).toBe('01a0e8d8-6461-7692-b276-32329518363e')
-  expect(codexHistoryOwner('2026/09/10/rollout-codexChild.jsonl')).toBe('rollout-codexChild')
-  expect(codexHistoryOwner('2026/09/10/session_index.jsonl')).toBeNull()
-  expect(codexHistoryOwner('2026/09/10')).toBeNull()
+    openCodexHistoryReader()([
+      '{"type":"event_msg","payload":{"type":"item_completed","item":{"type":"AgentMessage","id":"m","content":[{"type":"Text","text":"Running it"}]}}}',
+      '{"type":"event_msg","payload":{"type":"item_completed","item":{"type":"CommandExecution","id":"c","command":"ls"}}}',
+    ]),
+  ).toEqual({ type: 'rewritten' })
 })
 
-test.each([
-  ['task_started', 'open'],
-  ['task_complete', 'closed'],
-  ['turn_aborted', 'closed'],
-  ['token_count', null],
-] as const)('reads a %s event as a turn that is %p', (type, turn) => {
+test('asks for a full read when a rollout completes a file edit', () => {
   expect(
-    codexHistoryTurn(JSON.stringify({ type: 'event_msg', payload: { type, turn_id: 'turn-1' } })),
-  ).toEqual(turn === null ? null : { turn, turnId: 'turn-1' })
-})
-
-test('reads a marker without a turn id as one that names no turn', () => {
-  expect(
-    codexHistoryTurn(JSON.stringify({ type: 'event_msg', payload: { type: 'task_complete' } })),
-  ).toEqual({ turn: 'closed', turnId: null })
-})
-
-// Codex aborts a replaced turn after it starts the next one; the late abort must not end it.
-test('keeps a watched Session running when an earlier turn closes after the next starts', () => {
-  const directory = mkdtempSync(path.join(os.tmpdir(), 'argo-codex-turn-'))
-  try {
-    const file = path.join(directory, 'rollout-codexReplacedTurn.jsonl')
-    copyFileSync(path.join(FIXTURES, 'rollout-codexReplacedTurn.jsonl'), file)
-    expect(latestTurn(file, codexHistoryTurn)).toBe('open')
-
-    appendFileSync(
-      file,
-      `${JSON.stringify({
-        type: 'event_msg',
-        payload: { type: 'task_complete', turn_id: '01a0b000-0000-7000-8000-00000000b002' },
-      })}\n`,
-    )
-    expect(latestTurn(file, codexHistoryTurn)).toBe('closed')
-  } finally {
-    rmSync(directory, { recursive: true, force: true })
-  }
-})
-
-test('reads a line that is not an event as no turn change', () => {
-  expect(codexHistoryTurn('{"type":"response_item","payload":{"type":"message"}}')).toBeNull()
-  expect(codexHistoryTurn('not json')).toBeNull()
+    openCodexHistoryReader()([
+      '{"type":"event_msg","payload":{"type":"item_completed","item":{"type":"FileChange","id":"e","changes":{"/repo/app.txt":{"type":"update","unified_diff":"@@ -1 +1 @@\\n-beta\\n+gamma\\n","move_path":null}},"status":"completed"}}}',
+    ]),
+  ).toEqual({ type: 'rewritten' })
 })
 
 // The live count follows a Codex Session the same way it follows a Claude one (#2861).

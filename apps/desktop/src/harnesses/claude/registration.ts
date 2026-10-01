@@ -1,5 +1,3 @@
-import os from 'node:os'
-import path from 'node:path'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { readClaudeHarnessInfo } from './catalog'
@@ -9,13 +7,10 @@ import {
 } from './proof-protocol'
 import { createClaudeSignInDriver, createSystemClaudeReadiness } from './readiness'
 import {
-  claudeHistoryOwner,
-  claudeHistoryTurn,
   claudeSessionChannelOpener,
   claudeSessionRenamer,
   getClaudeSessionSummary,
   listClaudeSessionSummaries,
-  openClaudeHistoryReader,
   readClaudeSessionHistory,
   readClaudeSkillCommands,
 } from './session'
@@ -45,15 +40,6 @@ export function createClaudeRegistration(): HarnessRegistration<'claude'> {
         if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Claude skill shape(s).`)
         return { availability: 'listed' as const, commands }
       })
-    },
-    historyFiles: {
-      directory: path.join(
-        process.env.CLAUDE_CONFIG_DIR ?? path.join(os.homedir(), '.claude'),
-        'projects',
-      ),
-      ownerOf: claudeHistoryOwner,
-      openReader: openClaudeHistoryReader,
-      turnOf: claudeHistoryTurn,
     },
     rename: claudeSessionRenamer.rename,
     changeableTurnSettings: [],

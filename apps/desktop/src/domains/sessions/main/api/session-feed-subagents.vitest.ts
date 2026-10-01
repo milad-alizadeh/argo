@@ -161,21 +161,3 @@ test('a live Subagent event reconciles with the parent history once', async () =
   expect(rowIds(parent.latest())).toEqual(['call-1', 'call-1:message'])
   parent.subscription.unsubscribe()
 })
-
-test('a Subagent follows its own history file even while the parent is live', async () => {
-  const reads = chainReads()
-  const followed: (string | null)[] = []
-  const child = await observe(
-    {
-      readHistory: reads.readHistory,
-      followHistory: (target) => {
-        followed.push(target.target.subagentId)
-        return () => {}
-      },
-    },
-    sessionId,
-    'agent-1',
-  )
-  expect(followed).toEqual(['agent-1'])
-  child.subscription.unsubscribe()
-})

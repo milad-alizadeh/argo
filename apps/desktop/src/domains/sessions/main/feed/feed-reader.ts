@@ -25,7 +25,7 @@ import {
 import type { Harness } from '@/harnesses/harness'
 import type { SessionListChanges } from '../api'
 import { updateSession } from '../api'
-import type { SessionEventJournal, SessionHistoryFollowers } from '../live'
+import type { SessionEventJournal } from '../live'
 import { sessionHistoryIdentity } from '../session-history-identity'
 
 export type SessionFeedReaderContext = {
@@ -33,7 +33,6 @@ export type SessionFeedReaderContext = {
   journal: SessionEventJournal
   hasLiveChannel: (sessionId: string) => boolean
   readHistory: (harness: Harness, target: SessionHistoryTarget) => Promise<FeedContent[]>
-  followHistory?: SessionHistoryFollowers['follow']
   // Carries each reading's activity to the Session List, and any write that moved the history.
   changes: SessionListChanges
 }
@@ -102,14 +101,13 @@ type ParentFeed = { observe: (observer: Observer) => () => void }
 
 // One chain's Feed: a root Session attaches to live events before it reads vendor history, so an
 // event that lands during the read is reconciled rather than missed. A Subagent has no live
-// channel of its own; it follows its history file and its parent's record of it.
+// channel of its own; it reads again when its parent's record of it changes.
 class FeedReader {
   readonly #context: SessionFeedReaderContext
   readonly #chain: FeedChain
   readonly #parent: ParentFeed | null
   readonly #observers = new Set<Observer>()
   readonly #stops: (() => void)[] = []
-  #follower: { key: string; stop: () => void } | null = null
   // Where the last read found the history, so a write that moved nothing reads nothing again.
   #readKey: string | null = null
   #history: FeedContent[] = []
@@ -161,7 +159,6 @@ class FeedReader {
   refresh(): void {
     const read = ++this.#read
     this.#readKey = historyKey(storedHistory(this.#context.database, this.#chain.sessionId))
-    this.#follow()
     if (this.#state !== 'ready') this.#settle('loading', this.#error)
     void this.#readHistory().then(
       (content) => {
@@ -179,8 +176,6 @@ class FeedReader {
   stop(): void {
     this.#stopped = true
     for (const stop of this.#stops.splice(0)) stop()
-    this.#follower?.stop()
-    this.#follower = null
     this.#cancelText()
     this.#observers.clear()
   }
@@ -209,34 +204,12 @@ class FeedReader {
     return this.#context.readHistory(stored.harness, this.#target(stored))
   }
 
-  // A chain without a live channel follows its history file; each read re-checks both where
-  // that file is and whether a live channel now carries the Session instead.
-  #follow(): void {
-    const { database, followHistory, hasLiveChannel } = this.#context
-    const { sessionId, subagentId } = this.#chain
-    if (followHistory === undefined) return
-    const stored =
-      subagentId !== null || !hasLiveChannel(sessionId) ? storedHistory(database, sessionId) : null
-    const key = historyKey(stored)
-    if (key === (this.#follower?.key ?? null)) return
-    this.#follower?.stop()
-    this.#follower = null
-    if (stored === null || key === null) return
-    const stop = followHistory(
-      { sessionId, harness: stored.harness, target: this.#target(stored) },
-      () => this.refresh(),
-    )
-    this.#follower = { key, stop }
-  }
-
   #retain(event: SessionLiveEvent, live: boolean): void {
     if (canDeliver(event, live)) this.#events = retainLiveEvent(this.#events, event)
   }
 
   #receive(event: SessionLiveEvent, live: boolean): void {
     this.#retain(event, live)
-    // A status change can mean a live channel opened or closed, which moves who follows history.
-    if (event.type === 'status') this.#follow()
     const oversized =
       encoder.encode(JSON.stringify(event)).byteLength > SESSION_LIVE_REPLAY_BYTE_LIMIT
     // A settled Turn and an event too large to keep both live in vendor history now.

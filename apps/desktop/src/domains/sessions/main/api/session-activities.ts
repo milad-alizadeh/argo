@@ -1,79 +1,95 @@
-import { FeedRowProjector, type LiveActivity } from '@/domains/sessions/api/feed'
-import type {
-  SessionLiveEvent,
-  SessionLiveEventBody,
-} from '@/domains/sessions/api/session-live-event'
 import type { Harness } from '@/harnesses/harness'
-import type { HistoryActivityReading } from '@/harnesses/registration'
-import { type SessionUpdateContext, updateHarnessSession } from './session-update'
+import type { TranscriptLines, TranscriptReading } from '@/harnesses/registration'
+import {
+  type SessionUpdate,
+  type SessionUpdateContext,
+  updateHarnessSession,
+} from './session-update'
 
-// Each Session's activity line reaches SQLite at most once a window, as its newest value.
-const ACTIVITY_WRITE_MS = 500
-// The newest events a Session keeps once its current Turn's prompt lies further back.
-const RETAINED_EVENTS = 500
-
-type HarnessSession = { harness: Harness; nativeId: string }
-type SessionTurn = { session: HarnessSession; events: SessionLiveEvent[]; sequence: number }
-
-function isPrompt(event: SessionLiveEventBody): boolean {
-  return (
-    event.type === 'content' && event.content.kind === 'message' && event.content.role === 'user'
-  )
+export type HarnessSession = { harness: Harness; nativeId: string }
+type SessionActivitiesOptions = {
+  readTranscript: (session: HarnessSession, lines: TranscriptLines) => Promise<TranscriptReading>
+  // Each reading, after its activity line is queued.
+  read: (session: HarnessSession, reading: TranscriptReading) => void
+  // A Session with no saved row yet, for discovery to add.
+  unknown: (session: HarnessSession) => void
+  // Each Session's row reaches SQLite at most once a window, with its newest values.
+  writeMs?: number
 }
 
-// The events of a Session's current Turn, from the newest prompt on, which is all the activity
-// line reads.
-function currentTurn(events: SessionLiveEvent[]): SessionLiveEvent[] {
-  const prompt = events.findLastIndex(isPrompt)
-  const turn = prompt < 0 ? events : events.slice(prompt)
-  return turn.length > RETAINED_EVENTS ? turn.slice(-RETAINED_EVENTS) : turn
+const sessionKey = (session: HarnessSession) => `${session.harness}\u0000${session.nativeId}`
+
+// Lines that arrive during a read join the ones already waiting; a reset drops those.
+function joinLines(waiting: TranscriptLines | undefined, next: TranscriptLines): TranscriptLines {
+  if (waiting === undefined || !next.continued) return next
+  return { lines: [...waiting.lines, ...next.lines], continued: waiting.continued }
 }
 
-// The activity line of each Session a history watcher reads, found by the Feed's own rules from
-// the lines the watcher already decoded, and stored so the Session List opens no Feed reader.
+// External Session rows: every update merges into one write per Session a window, and each
+// Session's new transcript lines are read one batch at a time.
 export class SessionActivities {
   readonly #context: SessionUpdateContext
-  readonly #writeMs: number
-  readonly #turns = new Map<string, SessionTurn>()
-  readonly #pending = new Map<string, { session: HarnessSession; activity: LiveActivity | null }>()
+  readonly #options: SessionActivitiesOptions
+  readonly #pending = new Map<string, { session: HarnessSession; update: SessionUpdate }>()
+  // Sessions with a read in flight, and the lines that arrived during it.
+  readonly #reading = new Map<string, TranscriptLines | undefined>()
   #timer: ReturnType<typeof setTimeout> | null = null
+  #stopped = false
 
-  constructor(context: SessionUpdateContext, writeMs = ACTIVITY_WRITE_MS) {
+  constructor(context: SessionUpdateContext, options: SessionActivitiesOptions) {
     this.#context = context
-    this.#writeMs = writeMs
+    this.#options = options
   }
 
-  // A reading with no content leaves the stored line as it is, and so does an append with nothing
-  // before it here that finds no activity, since it cannot see where its Turn began.
-  publish(session: HarnessSession, { restarted, events }: HistoryActivityReading): void {
-    if (!events.some((event) => event.type === 'content')) return
-    const key = `${session.harness}\u0000${session.nativeId}`
-    const previous = restarted ? undefined : this.#turns.get(key)
-    let sequence = previous?.sequence ?? 0
-    const read = events.map((event): SessionLiveEvent => {
-      sequence += 1
-      return { ...event, sessionId: session.nativeId, sequence }
-    })
-    const turn = { session, events: currentTurn([...(previous?.events ?? []), ...read]), sequence }
-    this.#turns.set(key, turn)
-    const { activity } = new FeedRowProjector().project({ history: [], live: turn.events })
-    if (activity === null && previous === undefined && !restarted) return
-    this.#pending.set(key, { session, activity })
-    this.#timer ??= setTimeout(() => this.flush(), this.#writeMs)
+  update(session: HarnessSession, update: SessionUpdate): void {
+    if (this.#stopped) return
+    const key = sessionKey(session)
+    const pending = this.#pending.get(key)?.update
+    this.#pending.set(key, { session, update: { ...pending, ...update } })
+    this.#timer ??= setTimeout(() => this.flush(), this.#options.writeMs ?? 500)
   }
 
-  // Writes each Session's newest line; a Session never saved keeps no Turn here.
+  // Reads the lines now, or after the read in flight for the same Session ends.
+  read(session: HarnessSession, lines: TranscriptLines): void {
+    if (this.#stopped) return
+    const key = sessionKey(session)
+    if (this.#reading.has(key)) {
+      this.#reading.set(key, joinLines(this.#reading.get(key), lines))
+      return
+    }
+    this.#reading.set(key, undefined)
+    this.#options
+      .readTranscript(session, lines)
+      .then(
+        (reading) => this.#receive(session, reading),
+        (error: unknown) => console.warn('Could not read an external Session transcript:', error),
+      )
+      .finally(() => {
+        const waiting = this.#reading.get(key)
+        this.#reading.delete(key)
+        if (waiting !== undefined) this.read(session, waiting)
+      })
+  }
+
   flush(): void {
     if (this.#timer !== null) clearTimeout(this.#timer)
     this.#timer = null
-    const pending = [...this.#pending]
+    const pending = [...this.#pending.values()]
     this.#pending.clear()
-    for (const [key, { session, activity }] of pending)
-      if (!updateHarnessSession(this.#context, session, { activity })) this.#turns.delete(key)
+    for (const { session, update } of pending)
+      if (!updateHarnessSession(this.#context, session, update)) this.#options.unknown(session)
   }
 
   stop(): void {
     this.flush()
-    this.#turns.clear()
+    this.#stopped = true
+    this.#reading.clear()
+  }
+
+  #receive(session: HarnessSession, reading: TranscriptReading): void {
+    if (this.#stopped) return
+    // An idle Session keeps the last line it showed.
+    if (reading.activity !== null) this.update(session, { activity: reading.activity })
+    this.#options.read(session, reading)
   }
 }

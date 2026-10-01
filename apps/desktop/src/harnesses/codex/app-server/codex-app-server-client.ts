@@ -60,6 +60,11 @@ type RequestParams = {
     threadId: string
     includeTurns: boolean
   }
+  'thread/turns/list': {
+    threadId: string
+    limit: number
+    itemsView: 'full'
+  }
   initialize: {
     clientInfo: {
       name: string

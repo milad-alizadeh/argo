@@ -109,7 +109,8 @@ function storedActivity(stored: string | null): LiveActivity | null {
   return null
 }
 
-// A stored line names no tool or target, so the row keeps its kind as the tool.
+// The Feed's activity names no tool or target, so the row keeps its kind as the tool. It outranks
+// the live channel's own.
 function observedActivity(stored: string | null): z.infer<typeof feedActivitySchema> | null {
   const activity = storedActivity(stored)
   return activity === null ? null : { ...activity, tool: activity.kind, target: null }
@@ -152,8 +153,7 @@ function sessionListRow(
     name: row.name,
     status: liveStatus ?? row.status,
     updatedAt: new Date(row.activityAt ?? row.updatedAt).toISOString(),
-    // A live channel's own activity outranks the line the history watcher or a Feed stored.
-    activity: live?.activity ?? observedActivity(row.activity),
+    activity: observedActivity(row.activity) ?? live?.activity ?? null,
     subagents,
     ticket: linkedTicket(row.ticket),
     archived: row.archived,
@@ -329,8 +329,7 @@ export function sessionListChangedProcedure(context: SessionListContext) {
   )
 }
 
-// Announces each live status change. The rows' activity lines are stored by the history watcher,
-// so the list opens no Feed reader.
+// Announces each live status change, so every Session List reads the changed row again.
 export function watchSessionList(
   context: Pick<SessionListContext, 'supervisor' | 'changes'>,
 ): () => void {

@@ -320,20 +320,6 @@ test('observers share one reader, and Refresh reaches only an observed Feed', as
   })
 })
 
-test('an external Session reads history again when its file is rewritten', async () => {
-  const history = historyReads()
-  let rewrite = () => {}
-  const feed = await observe({
-    readHistory: history.readHistory,
-    hasLiveChannel: () => false,
-    followHistory: (_followed, invalidate) => {
-      rewrite = invalidate
-      return () => {}
-    },
-  })
-  await expectFreshRead(feed, history, () => rewrite())
-})
-
 test('a write that moves the Session’s history reads it again', async () => {
   const history = historyReads()
   const changes = new SessionListChanges()
@@ -394,38 +380,13 @@ test('the waiting Permission is the newest undecided one, not the newest event',
   feed.subscription.unsubscribe()
 })
 
-test('a Session that loses its live channel starts following its history file', async () => {
-  const history = historyReads()
-  let live = true
-  const followed: string[] = []
-  const feed = await observe({
-    readHistory: history.readHistory,
-    hasLiveChannel: () => live,
-    followHistory: ({ target }) => {
-      followed.push(target.nativeId)
-      return () => {}
-    },
-  })
-  await history.answer([])
-  expect(followed).toEqual([])
-  live = false
-  journal.append(sessionId, { type: 'status', ...identity, status: 'ended' })
-  expect(followed).toEqual(['native-1'])
-  feed.subscription.unsubscribe()
-})
-
-test('a Session missing at open follows its history once a Refresh finds it', async () => {
+test('a Session missing at open reads its history once a Refresh finds it', async () => {
   const otherId = '00000000-0000-4000-8000-000000000002'
   const history = historyReads()
-  const followed: string[] = []
   const feed = await observe(
     {
       readHistory: history.readHistory,
       hasLiveChannel: () => false,
-      followHistory: ({ target }) => {
-        followed.push(target.nativeId)
-        return () => {}
-      },
     },
     otherId,
   )
@@ -438,6 +399,5 @@ test('a Session missing at open follows its history once a Refresh finds it', as
   await feed.caller.sessionFeedRefresh({ sessionId: otherId })
   await history.answer([message('m1', 'assistant', 'Found')])
   expect(feed.latest()).toMatchObject({ state: 'ready', error: null })
-  expect(followed).toEqual(['native-2'])
   feed.subscription.unsubscribe()
 })

@@ -4,11 +4,7 @@ import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { getSessionMessages } from '@anthropic-ai/claude-agent-sdk'
-import {
-  claudeHistoryOwner,
-  claudeHistoryTurn,
-  openClaudeHistoryReader,
-} from './claude-history-lines'
+import { openClaudeHistoryReader } from './claude-history-lines'
 import { decodeClaudeSessionMessages } from './claude-session-history'
 import { claudeSkillFiles } from './claude-skill-files'
 import { readClaudeSkillDirectories } from './claude-skill-records'
@@ -67,7 +63,7 @@ test.each(['toolCalls', 'harnessNoise', 'askPending', 'recordedEdit'])(
 test.each(['prose', 'parityProse'])(
   'reports the %s transcript, whose records branch or start a second root, as a rewrite',
   (name) => {
-    expect(openClaudeHistoryReader()(recorded(name))).toMatchObject({ type: 'rewritten' })
+    expect(openClaudeHistoryReader()(recorded(name))).toEqual({ type: 'rewritten' })
   },
 )
 
@@ -91,7 +87,7 @@ test('keeps its place in the chain across appends', () => {
     read([
       '{"type":"user","uuid":"u-3","parentUuid":"u-1","message":{"role":"user","content":"fork"}}',
     ]),
-  ).toMatchObject({ type: 'rewritten' })
+  ).toEqual({ type: 'rewritten' })
 })
 
 test('takes its place in the chain from the lines already in the file', () => {
@@ -104,7 +100,7 @@ test('takes its place in the chain from the lines already in the file', () => {
     read([
       '{"type":"user","uuid":"u-3","parentUuid":"u-1","message":{"role":"user","content":"fork"}}',
     ]),
-  ).toMatchObject({ type: 'rewritten' })
+  ).toEqual({ type: 'rewritten' })
 })
 
 test('skips transcript bookkeeping and counts a line that is not a record', () => {
@@ -124,55 +120,6 @@ test('skips transcript bookkeeping and counts a line that is not a record', () =
     console.warn = warn
   }
   expect(warnings).toEqual(['Rejected 1 unsupported Claude history line(s).'])
-})
-
-test('names the Session or Subagent a transcript file belongs to', () => {
-  expect(claudeHistoryOwner('-Users-x-work/session-1.jsonl')).toBe('session-1')
-  expect(claudeHistoryOwner('-Users-x-work/session-1/subagents/agent-a1.jsonl')).toBe('a1')
-  expect(claudeHistoryOwner('-Users-x-work/session-1')).toBeNull()
-})
-
-test.each([
-  ['a prompt', '{"type":"user","uuid":"u","message":{"role":"user","content":"Fix it"}}', 'open'],
-  [
-    'a prompt with blocks',
-    '{"type":"user","uuid":"u","message":{"role":"user","content":[{"type":"text","text":"Fix it"}]}}',
-    'open',
-  ],
-  [
-    'a tool result',
-    '{"type":"user","uuid":"u","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t","content":"ok"}]}}',
-    null,
-  ],
-  [
-    'a tool call',
-    '{"type":"assistant","uuid":"a","message":{"role":"assistant","stop_reason":"tool_use","content":[]}}',
-    null,
-  ],
-  [
-    'a final answer',
-    '{"type":"assistant","uuid":"a","message":{"role":"assistant","stop_reason":"end_turn","content":[]}}',
-    'closed',
-  ],
-  ['the turn duration', '{"type":"system","subtype":"turn_duration","durationMs":10}', 'closed'],
-  [
-    'an interruption',
-    '{"type":"user","uuid":"u","message":{"role":"user","content":[{"type":"text","text":"[Request interrupted by user for tool use]"}]}}',
-    'closed',
-  ],
-  [
-    'a meta prompt',
-    '{"type":"user","uuid":"u","isMeta":true,"message":{"role":"user","content":"hidden"}}',
-    null,
-  ],
-  [
-    'a Subagent turn',
-    '{"type":"assistant","uuid":"a","isSidechain":true,"message":{"role":"assistant","stop_reason":"end_turn","content":[]}}',
-    null,
-  ],
-  ['a broken line', 'not json', null],
-] as const)('reads %s as a turn that is %p', (_name, line, turn) => {
-  expect(claudeHistoryTurn(line)).toEqual(turn === null ? null : { turn, turnId: null })
 })
 
 test('an edit result read after its call settles the edit rather than drawing a bare call', () => {

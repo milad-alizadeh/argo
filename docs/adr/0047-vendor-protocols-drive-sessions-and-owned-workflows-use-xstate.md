@@ -2,6 +2,24 @@
 
 Status: accepted · 2026-09-21
 
+## Amendment · external Session presence and tails (#2940) · 2026-10-01
+
+No vendor interface reports whether a Session that runs outside Argo is open, or what it is doing.
+To show that on its row, a Harness adapter may read four things, and only these:
+
+- Claude's `~/.claude/sessions/<pid>.json` pid files, validated when read, with a liveness check
+  of the pid.
+- A non-blocking flock probe on Codex's `~/.codex/thread-writer-locks/<id>.lock`. Node has no
+  flock, so a host helper runs a `/usr/bin/perl` one-liner that takes `LOCK_EX|LOCK_NB` and lets go.
+- A tail of the bytes a Claude transcript appended, for the activity line.
+- A tail of the bytes a Codex rollout appended, for its turn start and end markers.
+
+Each tail reads only new bytes, from an offset the host keeps, and never at startup. These reads
+change no Session and drive no resume; vendor interfaces still read the Feed and drive every live
+Session. This amends the rule above that Argo does not parse transcript or rollout files, the
+consequence that deletes transcript and rollout parsers, and the decision below that supersedes
+ADR-0040's file and process liveness checks, for these four reads only.
+
 ## Amendment · main-owned root Feed reading (#2824) · 2026-09-28
 
 A root Session's Feed has one main-process reader. It attaches to the event journal before it reads
@@ -29,8 +47,9 @@ The app machine owns the shared Codex client through the registration's shutdown
 app-server machine exists. The Harness catalog machine lives under
 `src/platform/main/harness-catalog/`.
 
-A Session without a live channel is only as fresh as its Harness's history watcher. Without a
-change signal its Feed stays as last read until the reader reopens it or asks for Refresh.
+A Session without a live channel has no Feed change signal. Its Feed stays as last read until the
+reader reopens it or asks for Refresh. Its row's status and activity line come from the poll in
+ADR-0048.
 
 ## Amendment · Codex live Session channel · 2026-09-28
 

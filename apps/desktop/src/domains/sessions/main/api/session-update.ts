@@ -87,19 +87,27 @@ export function updateSession(
   return written !== undefined
 }
 
-// Updates a Session found by its Harness's own ID. Returns false for one never saved.
-export function updateHarnessSession(
-  context: SessionUpdateContext,
+// The Argo ID of a Session found by its Harness's own ID, or undefined for one never saved.
+export function harnessSessionId(
+  database: Database,
   session: { harness: Harness; nativeId: string },
-  update: SessionUpdate,
-): boolean {
-  const sessionId = context.database
+): string | undefined {
+  return database
     .select({ id: sessionTable.argoId })
     .from(sessionTable)
     .where(
       and(eq(sessionTable.harness, session.harness), eq(sessionTable.nativeId, session.nativeId)),
     )
     .get()?.id
+}
+
+// Updates a Session found by its Harness's own ID. Returns false for one never saved.
+export function updateHarnessSession(
+  context: SessionUpdateContext,
+  session: { harness: Harness; nativeId: string },
+  update: SessionUpdate,
+): boolean {
+  const sessionId = harnessSessionId(context.database, session)
   return sessionId !== undefined && updateSession(context, sessionId, update)
 }
 

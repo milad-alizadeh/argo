@@ -171,8 +171,8 @@ const sessionSyncActor = fromCallback<
   }
 })
 
-// One Session the history watcher saw before any sync stored it. It gets that Session's summary,
-// and asks again with a growing wait while the Harness does not know it yet.
+// One Session the external Session poll saw before any sync stored it. It gets that Session's
+// summary, and asks again with a growing wait while the Harness does not know it yet.
 const sessionDiscoverActor = fromCallback<
   {
     type: 'Stop'

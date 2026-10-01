@@ -2,12 +2,35 @@
 
 Status: accepted · 2026-09-24 · Session discovery amended 2026-09-27
 
-## Amendment · watched Sessions and the Session List · 2026-09-28, 2026-09-30
+## Amendment · external Sessions and the Session List · 2026-09-28, 2026-10-01
 
-Each Harness registration names where it writes Session history, how to read the lines it
-appends, and which lines open or close a turn. When an open Feed's history file grows, Argo reads
-only the new lines. It appends their events to the live journal, unless the Session has a live
-channel. A rewritten, truncated or branched file still makes the Feed read the whole history.
+A Session that runs outside Argo, in a terminal, an IDE or another app, gets its row's status and
+activity line from one poll in main (#2940). A Harness registration that can see such Sessions
+supplies `externalSessions`: a list of the Sessions open elsewhere now, each with a status and its
+transcript path, and a reader that turns a transcript's new lines into an activity line and, where
+the lines settle one, a status. The Harness reads only small records to list them, such as a pid
+file or a lock probe (ADR-0047). The ACP Harness supplies none.
+
+The poll ticks every 2 seconds, one tick at a time. Each tick lists every Harness's open Sessions.
+For each one it stats the transcript, and only if the file grew it reads the new bytes. The tail
+keeps an offset for each file and waits for a partial last line to end. A file that shrinks, is
+rewritten, or grows past a 64 KiB window starts again from the last 64 KiB. Each Session has one
+transcript read in flight; lines that arrive during it are read together after it. The first tick
+reads no history: it starts each transcript at its end, so the stored line stands until the file
+grows. Argo starts no file watcher for Session history.
+
+The tick compares its list with the last one. A Session that is new and has no row sends
+`Discover` once. A Session that left the list shows `idle`, and the first tick stores `idle` for
+every saved Session of that Harness it does not find open. A `running` Session whose transcript has
+not grown for five minutes shows `unknown`, because a killed terminal writes nothing more. A status
+the transcript lines settle outranks the listed one while the Session stays open. A Session with a
+live Argo channel is skipped, so the channel alone owns its status and activity. A reading that
+names no activity keeps the stored line, so an idle row keeps its last line. Each Session's status,
+line and `activityAt` merge into at most one SQLite write every 500 ms. A restart still resets
+every working status to `unknown` until the first tick.
+
+An external Session's Feed reads its whole history when it opens and on Refresh. It has no change
+signal until the external Feed moves to the vendor readers.
 
 The Session List is one `sessionList` query. Its input is a Project, a filter (`active`,
 `archived` or `all`), a search over the title each row shows, and an offset and limit. That title
@@ -20,7 +43,7 @@ over the same query. Rows are sorted by `sortOrder`, then newest `createdAt`, th
 activity as `createdAt`, so a streaming turn never moves a row.
 
 Every write to a saved Session goes to SQLite first. Then the writer names the changed Session IDs
-on one app-level change signal: a sync save, a stored Subagent read, a history write, a live status
+on one app-level change signal: a sync save, a stored Subagent read, a poll write, a live status
 change, a rename, an archive, and a stored activity line. A write that changes no stored value
 names nothing. The signal joins the IDs named in one tick into one change. The
 `sessionListChanged` subscription sends only those IDs, and the renderer reads its loaded list
@@ -28,21 +51,10 @@ pages again. Only SQL filters, sorts and counts. TanStack Query
 keeps each unchanged row object, so an unchanged row does not draw again.
 Rename and archive go through one `sessionUpdate` mutation that returns the row.
 
-A history write sets the row's `activityAt`. The watcher also tracks, in memory, whether the
-file's current turn is open or closed. The newest opened turn is the current one. A close counts
-only when it names that turn or names no turn, so a late close for an earlier Codex turn leaves
-the newer turn open. The watcher stores `running` for an open turn and `idle` for a closed one on
-the Session row, in the same write as `activityAt`. Every row has a status, `unknown` until
-something is known. An open turn whose file stays quiet for five minutes is stored as `unknown`,
-because a killed terminal writes nothing more, and a restart and a shutdown reset every working
-status to `unknown`. A live channel's own status and activity outrank the stored ones. The row's
-activity line is stored on the Session row. The history watcher finds it from the lines it already
-decoded, with the Feed's own rules, and an open Feed's main reading also stores it. The watcher
-reads at most the last 256 KiB of a file for one change, and starts again from that window when a
-file is rewritten, truncated, or grows by more than the window. Each Session's line is written at
-most once every 500 ms, as its newest value. Main starts the history watchers, the status tracker
-and one set of Feed readers once for the app, not per window. The Session List opens no Feed
-reader, so listing, search, Archive and scrolling read no whole history.
+Every row has a status, `unknown` until something is known. A live channel's own status and
+activity outrank the stored ones. An open Feed's main reading also stores its activity line on the
+row. Main starts the poll and one set of Feed readers once for the app, not per window. The Session
+List opens no Feed reader, so listing, search, Archive and scrolling read no history.
 
 ## Amendment · Harness registrations for sync · 2026-09-28
 
@@ -57,8 +69,7 @@ signal itself.
 Live Feed replay is bounded. One memory journal keeps the newest 500 events and 2 MiB across all
 Sessions, and each launch starts a new generation. A cursor older than the journal, or from an
 earlier generation, reads vendor history and merges rows by stable item ID. A Session with no Argo
-live channel is only as fresh as its Harness's history watcher, as the amendment on watched
-Sessions above describes.
+live channel is only as fresh as the poll, as the amendment on external Sessions above describes.
 
 ## Amendment · Codex live Session ownership · 2026-09-28
 

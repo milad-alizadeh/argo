@@ -1,8 +1,9 @@
 import { readdir, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
-import type { HistoryChange } from '@/harnesses/registration'
+import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 
 type TranscriptMatch = { size: number }
+type HistoryChange = { type: 'appended'; events: SessionLiveEventBody[] } | { type: 'rewritten' }
 
 // A Harness's own history reader, opened fresh per transcript: it follows the record chain and
 // decodes each line into the same Feed events a real read publishes (ADR-0047).

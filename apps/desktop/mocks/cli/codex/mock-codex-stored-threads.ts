@@ -149,6 +149,11 @@ export function answerStoredHistory(message: Request, send: Send): boolean {
       } else send({ id: message.id, result: { thread } })
       return true
     }
+    case 'thread/turns/list': {
+      const thread = storedThreads().find((candidate) => candidate.id === message.params?.threadId)
+      send({ id: message.id, result: { data: thread?.turns.slice(-1) ?? [], nextCursor: null } })
+      return true
+    }
     case 'thread/loaded/list':
       send({ id: message.id, result: { data: [] } })
       return true

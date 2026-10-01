@@ -1,60 +1,14 @@
-import path from 'node:path'
 import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import type { HistoryChange, HistoryTurn, HistoryTurnMarker } from '@/harnesses/registration'
 import { decodeClaudeHistoryContent } from './claude-feed-decoder'
 import { ClaudeFeedProjection } from './claude-feed-projection'
 import { type ClaudeSkillFile, claudeSkillFiles } from './claude-skill-files'
 import { ClaudeSkillDirectoryScan } from './claude-skill-records'
 
-const CLOSING_STOP_REASONS = new Set(['end_turn', 'stop_sequence'])
-
 export function jsonObject(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null
-}
-
-function promptTexts(content: unknown): string[] | null {
-  if (typeof content === 'string') return [content]
-  if (!Array.isArray(content)) return null
-  const texts = content.flatMap((block) => {
-    const text = jsonObject(block)
-    return text?.type === 'text' && typeof text.text === 'string' ? [text.text] : []
-  })
-  return texts.length > 0 ? texts : null
-}
-
-// A person's prompt opens a turn; the final answer, the turn's duration line or an interruption
-// closes it. Claude writes no turn id, so the newest marker stands.
-export function claudeHistoryTurn(line: string): HistoryTurnMarker | null {
-  const turn = claudeTurn(line)
-  return turn === null ? null : { turn, turnId: null }
-}
-
-function claudeTurn(line: string): HistoryTurn | null {
-  const record = historyRecord(line)
-  if (record === null) return null
-  const { type, subtype, isMeta, isSidechain } = record
-  const message = jsonObject(record.message)
-  if (isSidechain === true || isMeta === true) return null
-  if (type === 'system') return subtype === 'turn_duration' ? 'closed' : null
-  if (type === 'assistant')
-    return CLOSING_STOP_REASONS.has(
-      typeof message?.stop_reason === 'string' ? message.stop_reason : '',
-    )
-      ? 'closed'
-      : null
-  if (type !== 'user') return null
-  const texts = promptTexts(message?.content)
-  if (texts === null) return null
-  return texts.some((text) => text.startsWith('[Request interrupted by user')) ? 'closed' : 'open'
-}
-
-// `<project>/<sessionId>.jsonl`, and `<project>/<sessionId>/subagents/agent-<id>.jsonl`.
-export function claudeHistoryOwner(relativePath: string): string | null {
-  if (path.extname(relativePath) !== '.jsonl') return null
-  return path.basename(relativePath, '.jsonl').replace(/^agent-/, '')
 }
 
 export function historyRecord(line: string): Record<string, unknown> | null {
@@ -87,6 +41,9 @@ function contentEvents(
       content,
     }))
 }
+
+// What the lines a transcript appended draw, or that they branched off the chain read so far.
+type HistoryChange = { type: 'appended'; events: SessionLiveEventBody[] } | { type: 'rewritten' }
 
 type ChainStep = { leaf: string | null; branched: boolean; events: SessionLiveEventBody[] }
 
@@ -173,6 +130,6 @@ export function openClaudeHistoryReader(
       events.push(...step.events)
     }
     if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Claude history line(s).`)
-    return { type: branched ? 'rewritten' : 'appended', events }
+    return branched ? { type: 'rewritten' } : { type: 'appended', events }
   }
 }
