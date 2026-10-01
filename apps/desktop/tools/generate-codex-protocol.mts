@@ -24,6 +24,8 @@ const roots = [
   'v2/ConfigReadParams.ts',
   'v2/ConfigValueWriteParams.ts',
   'v2/ConfigWriteResponse.ts',
+  'v2/ConfigLayer.ts',
+  'v2/ManagedHooksRequirements.ts',
 ]
 const destinationPath = (relativePath: string) =>
   relativePath.replace(/[^/]+\.ts$/, (name) =>

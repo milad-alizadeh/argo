@@ -37,6 +37,20 @@ const CLAUDE_MODEL = 'sonnet'
 const CODEX_MODEL = 'gpt-5.6-luna'
 const CODEX_EFFORT = 'low'
 const TURN_BUDGET_MS = 180_000
+// A user config with hooks of its own, which the status hook install must keep.
+const CODEX_USER_CONFIG = `model = "gpt-5.5"
+
+[[hooks.Stop]]
+[[hooks.Stop.hooks]]
+type = "command"
+command = "say done"
+
+[[hooks.PreToolUse]]
+matcher = "^Bash$"
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = "./check.sh"
+`
 const RECORDINGS = {
   claude: {
     file: 'mocks/cli/claude/recordings/session-history-claude.ts',
@@ -206,7 +220,26 @@ async function recordCodex(recorder: Recorder): Promise<CodexRecording> {
       )
       calls.push({ method: 'thread/turns/list', params: turnsParams, result: turns })
     }
+    calls.push(await recordCodexConfig(recorder))
     return { version: cliVersion(recorder.executables.codex), calls }
+  } finally {
+    client.shutdown()
+  }
+}
+
+// The config layers, read by a fresh app-server once the user config holds hooks; after the
+// threads, so no recorded Turn runs them.
+async function recordCodexConfig(recorder: Recorder): Promise<RecordedCodexCall> {
+  await writeFile(path.join(recorder.home, '.codex', 'config.toml'), CODEX_USER_CONFIG)
+  const client = await codexClientUnderHome(recorder.home, recorder.executables.codex)
+  try {
+    const params = { includeLayers: true }
+    const { layers } = await client.request(
+      'config/read',
+      params,
+      (value) => value as Extract<RecordedCodexCall, { method: 'config/read' }>['result'],
+    )
+    return { method: 'config/read', params, result: { layers } }
   } finally {
     client.shutdown()
   }

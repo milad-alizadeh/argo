@@ -5,7 +5,9 @@
     "OPENAI_API_KEY",
     "REALTIME_MODEL",
     "ARGO_LIVE_CLI",
-    "ARGO_DESKTOP_DEV_PORT"
+    "ARGO_DESKTOP_DEV_PORT",
+    "CLAUDE_CONFIG_DIR",
+    "CODEX_HOME"
   ],
   "tasks": {
     "build": {

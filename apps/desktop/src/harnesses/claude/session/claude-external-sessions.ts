@@ -6,6 +6,7 @@ import type {
   ExternalSessions,
   LiveExternalSession,
 } from '@/harnesses/registration'
+import { createClaudeStatusHooks } from './claude-status-hooks'
 
 const run = promisify(execFile)
 const AGENTS_TIMEOUT_MS = 10_000
@@ -81,7 +82,10 @@ function liveStatuses(entries: readonly unknown[]) {
 
 // The interactive Sessions Claude runs outside Argo, with their status, from `claude agents
 // --json`. It gives no activity line, and Argo reads no transcript or pid file for one (ADR-0047).
-export function createClaudeExternalSessions(executable: string | null): ExternalSessions {
+export function createClaudeExternalSessions(
+  executable: string | null,
+  settingsFile: string,
+): ExternalSessions {
   async function listLive() {
     if (executable === null) throw new Error('No claude executable was found.')
     const { stdout } = await run(executable, ['agents', '--json'], { timeout: AGENTS_TIMEOUT_MS })
@@ -93,5 +97,5 @@ export function createClaudeExternalSessions(executable: string | null): Externa
     }))
     return { sessions, rejected }
   }
-  return { listLive }
+  return { listLive, hooks: createClaudeStatusHooks(settingsFile) }
 }

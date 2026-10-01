@@ -1,3 +1,4 @@
+import os from 'node:os'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { readClaudeHarnessInfo } from './catalog'
@@ -9,6 +10,7 @@ import { createClaudeSignInDriver, createSystemClaudeReadiness } from './readine
 import {
   claudeSessionChannelOpener,
   claudeSessionRenamer,
+  claudeSettingsFile,
   createClaudeExternalSessions,
   getClaudeSessionSummary,
   listClaudeSessionSummaries,
@@ -29,7 +31,10 @@ export function createClaudeRegistration(): HarnessRegistration<'claude'> {
     readCatalog: () => readClaudeHarnessInfo(executable),
     readHistory: ({ nativeId, subagentId, cwd }) =>
       readClaudeSessionHistory(nativeId, cwd, subagentId),
-    externalSessions: createClaudeExternalSessions(executable),
+    externalSessions: createClaudeExternalSessions(
+      executable,
+      claudeSettingsFile(process.env, os.homedir()),
+    ),
     openLiveSession: claudeSessionChannelOpener(executable),
     listCommands: ({ cwd }) => {
       let rejected = 0
