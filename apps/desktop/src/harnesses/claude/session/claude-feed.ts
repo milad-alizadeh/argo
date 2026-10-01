@@ -213,10 +213,6 @@ function systemContent(message: System, reject: RejectClaudeShape): FeedContent[
       return notice(id, message.text)
     case 'informational':
       return notice(id, message.content)
-    case 'hook_started':
-    case 'hook_progress':
-    case 'hook_response':
-      return notice(id, message.hook_name)
     case 'plugin_install':
       return notice(id, `${message.name ?? 'Plugin'}: ${message.status}`)
     case 'local_command_output': {
@@ -251,13 +247,22 @@ function systemContent(message: System, reject: RejectClaudeShape): FeedContent[
     case 'worker_shutting_down':
     case 'elicitation_complete':
     case 'control_request_progress':
+    case 'hook_started':
+    case 'hook_progress':
+    case 'hook_response':
       return []
-    default:
-      return unknown(id, `system:${(message satisfies never as System).subtype}`, reject)
+    default: {
+      const { subtype } = message satisfies never as System
+      // The CLI sends this lifecycle fact outside the SDK's declared subtypes (2.1.286).
+      if ((subtype as string) === 'post_turn_summary') return []
+      return unknown(id, `system:${subtype}`, reject)
+    }
   }
 }
 
 function feedContent(message: SDKMessage, id: string, reject: RejectClaudeShape): FeedContent[] {
+  // The CLI sends a queued prompt's lifecycle outside the SDK's declared message types (2.1.286).
+  if ((message.type as string) === 'command_lifecycle') return []
   switch (message.type) {
     case 'assistant':
       return messageContent(message, message.message.id || id, reject)

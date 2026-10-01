@@ -2,7 +2,7 @@
 // `CODEX_HOME` whose writer locks a child process holds, real rollout files, and a stand-in
 // app-server request that answers with the recorded 0.157.0 replies.
 import { type ChildProcess, spawn } from 'node:child_process'
-import { appendFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { createInterface } from 'node:readline'
@@ -53,6 +53,11 @@ export async function holdCodexWriterLock(codexHome: string, threadId: string) {
   }
 }
 
+// The app-server's `thread/read` answer for a locked thread that has no rollout yet.
+function readNotLoadedError(threadId: string): Error {
+  return new Error(recorded.readNotLoaded.message.replace(/[0-9a-f-]{36}$/, threadId))
+}
+
 // The app-server's answers a poll asks for: a thread's stored rollout path, and its newest Turn.
 function mockAppServerRequest(answers: {
   rollout: (threadId: string) => string
@@ -61,12 +66,9 @@ function mockAppServerRequest(answers: {
   return (async (method: string, params: unknown, parse: (value: unknown) => unknown) => {
     const { threadId } = params as { threadId: string }
     if (method === 'thread/read') {
-      const thread = {
-        ...recorded.completed.read.thread,
-        id: threadId,
-        path: answers.rollout(threadId),
-      }
-      return parse({ thread })
+      const path = answers.rollout(threadId)
+      if (!existsSync(path)) throw readNotLoadedError(threadId)
+      return parse({ thread: { ...recorded.completed.read.thread, id: threadId, path } })
     }
     if (method === 'thread/turns/list') return parse(await answers.readTurns(threadId))
     throw new Error(`The mock app-server does not answer ${method}.`)
@@ -104,9 +106,9 @@ export function mockCodexExternalThreads() {
     // Each thread a `thread/turns/list` asked about, in order.
     turnsReads,
     rollout,
-    // A writer opens the thread: it takes the lock and writes the rollout.
-    async open(threadId: string, content = 'session_meta\n') {
-      writeFileSync(rollout(threadId), content)
+    // A writer opens the thread: it takes the lock and writes the rollout, unless content is null.
+    async open(threadId: string, content: string | null = 'session_meta\n') {
+      if (content !== null) writeFileSync(rollout(threadId), content)
       writeFileSync(lockFile(threadId), '')
       holders.set(threadId, await holdLock(lockFile(threadId)))
     },
