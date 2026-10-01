@@ -1,13 +1,13 @@
-// Startup and idle evidence for the cockpit under test (#1863, ceilings from #1736).
+// Startup and idle evidence for the app under test (#1863, ceilings from #1736).
 //
-//   bun run measure:cockpit -- [runs]
+//   bun run measure:desktop -- [runs]
 //
 // #1736 fixed one reference Mac, an absolute frame budget of 8.33 ms and an idle p99 ceiling of
 // 12.5 ms, and the FAIL line as the MEDIAN of five interleaved runs. So this launches the
 // app that many times and reports the median, rather than the best or the last.
 //
 // An idle `requestAnimationFrame` delta is the DISPLAY's period, not the cost of a frame: an idle
-// cockpit schedules no work, so the loop simply runs at vsync and cannot read below it. The budget
+// app schedules no work, so the loop simply runs at vsync and cannot read below it. The budget
 // is therefore taken from the display this run used and compared against 1.5 times it, which is the
 // ratio #1736's 12.5 ms holds to its 120 Hz reference panel. Only a run on that panel is JUDGED:
 // anywhere else the verdict is `unjudged` and the exit code is zero, because a period the display
@@ -22,8 +22,8 @@ import path from 'node:path'
 import process from 'node:process'
 import { closeApplication } from '../../e2e/application-under-test'
 import { launch, prepare } from '../../e2e/projects/fixtures/project.fixture'
-import { show, waitForScreen } from './cockpit-driver'
-import { firstPaint, frameDeltas, median, percentile, processLoad } from './cockpit-metrics'
+import { show, waitForScreen } from './desktop-driver'
+import { firstPaint, frameDeltas, median, percentile, processLoad } from './desktop-metrics'
 
 const RUNS = Number(process.argv[2] ?? 5)
 if (!Number.isInteger(RUNS) || RUNS < 1) {
@@ -77,7 +77,7 @@ async function measure(fixture: { application: string; userData: string }) {
 
 type Run = Awaited<ReturnType<typeof measure>>
 
-const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'argo-cockpit-measure-')))
+const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'argo-app-measure-')))
 try {
   // The fixture seeds one registered Project, so every measured launch reopens it, which is the
   // startup this ticket is about.

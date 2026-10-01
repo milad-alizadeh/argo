@@ -40,7 +40,7 @@ async function asked(held: unknown[], count: number) {
   assert.equal(held.length, count)
 }
 
-async function cockpit() {
+async function createSyncHarness() {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-ticket-race-'))
   onTestFinished(() => rm(directory, { force: true, recursive: true }))
   const database = openDatabase(directory)
@@ -81,7 +81,7 @@ async function cockpit() {
 }
 
 test('a list read asked for before a confirmed status cannot replace it, and a later read can', async () => {
-  const { operations, held, scan, listed, page } = await cockpit()
+  const { operations, held, scan, listed, page } = await createSyncHarness()
   const first = scan()
   await asked(held, 1)
   held.shift()?.(page(ticket()))
@@ -111,7 +111,7 @@ test('a list read asked for before a confirmed status cannot replace it, and a l
 })
 
 test('a list read asked for before a confirmed priority cannot replace it', async () => {
-  const { database, held, scan, listed, page } = await cockpit()
+  const { database, held, scan, listed, page } = await createSyncHarness()
   const first = scan()
   await asked(held, 1)
   held.shift()?.(page(ticket()))

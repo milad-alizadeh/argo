@@ -78,4 +78,4 @@ grouped by `group`, counted by status — degrading honestly across CLIs:
 - **Codex** → labeled subagent tree (parent/child + path addresses, **no** phases).
 - **Cursor / bare** → flat "N subagents running" (the DIRECT floor).
 
-The cockpit never invents a phase a CLI didn't report.
+Argo Desktop never invents a phase a CLI did not report.

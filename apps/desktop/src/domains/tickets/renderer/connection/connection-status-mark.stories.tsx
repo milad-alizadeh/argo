@@ -28,7 +28,7 @@ export const States: Story = {
       {(Object.keys(STATE_TEXT) as ConnectionSummary['state'][]).map((state) => (
         <p
           key={state}
-          className="flex w-(--size-cockpit-sidebar-default) items-center gap-(--spacing-shell-item) type-meta text-muted-foreground"
+          className="flex w-(--size-shell-sidebar-default) items-center gap-(--spacing-shell-item) type-meta text-muted-foreground"
         >
           <ConnectionStatusMark state={state}>GitHub · octocat</ConnectionStatusMark>
         </p>

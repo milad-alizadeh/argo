@@ -422,7 +422,7 @@ test('a search tool appends the harness failure line to its label', () => {
     history: [
       presentedTool(
         'w',
-        { kind: 'searched', label: 'Searched argo cockpit' },
+        { kind: 'searched', label: 'Searched argo app' },
         { output: 'Internal Error ()\nL0: Failed' },
       ),
     ],
@@ -434,10 +434,10 @@ test('a search tool appends the harness failure line to its label', () => {
       {
         kind: 'searched',
         status: 'succeeded',
-        label: 'Searched argo cockpit · Internal Error',
+        label: 'Searched argo app · Internal Error',
         evidence: {
           kind: 'output',
-          title: 'Searched argo cockpit',
+          title: 'Searched argo app',
           source: 'Internal Error ()\nL0: Failed',
         },
       },

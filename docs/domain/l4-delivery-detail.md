@@ -18,7 +18,7 @@ renamed or normalized).
 
 - **Check** — one observed CI check on a Delivery: **name verbatim from the code host** +
   status, DERIVED, rolling into the `ci` node. **One level only — no Job/Step tree.** **Local
-  lint/test is deliberately *not* modeled**: the cockpit observes git state (dirty/unpushed,
+  lint/test is deliberately *not* modeled**: Argo Desktop observes git state (dirty/unpushed,
   DIRECT) but never runs or parses tooling — CI is the authoritative pass/fail. Before a
   push/PR there are simply no Checks ("no CI yet"), never a reimplemented local runner.
 
