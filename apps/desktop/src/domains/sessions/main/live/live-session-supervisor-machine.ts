@@ -917,7 +917,8 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
       }),
       settleFailedCommand: ({ event }) => {
         if (event.type !== 'Session failed') return
-        if (startReachedHarness(event.nativeId)) return commands.record(event.commandId, 'uncertain')
+        if (startReachedHarness(event.nativeId))
+          return commands.record(event.commandId, 'uncertain')
         console.warn(`Harness failed before it accepted the Session start: ${event.failure}`)
         commands.release(event.commandId)
       },

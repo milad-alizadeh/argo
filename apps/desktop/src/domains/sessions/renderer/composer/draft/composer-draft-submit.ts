@@ -112,8 +112,7 @@ async function submitDraft({
   attachments: DraftContent['attachments']
 }) {
   const editing = input.latestEditing.current
-  if (editing === null || turnConfiguration === null || input.owner === null)
-    return PLAIN_REJECTION
+  if (editing === null || turnConfiguration === null || input.owner === null) return PLAIN_REJECTION
   cancelSaveTimer(input.saveTimer, input.owner)
   input.setSendFailure((failure) => (failure?.owner === input.owner ? null : failure))
   const saved = await persistDraft({
