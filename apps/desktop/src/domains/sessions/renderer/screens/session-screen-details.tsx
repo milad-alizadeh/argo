@@ -99,6 +99,17 @@ function workspaceControl(
   }
 }
 
+// A saved worktree that was removed is no longer listed, so the listed choice stands.
+function listedChoice(
+  savedWorkspaceId: string | null,
+  workspaces: WorkspaceCockpit['workspaces'],
+  current: string,
+): string {
+  const saved = savedWorkspaceId ?? 'new'
+  const listed = saved === 'new' || workspaces.some((candidate) => candidate.id === saved)
+  return listed ? saved : current
+}
+
 function useSessionComposerDraft(input: {
   identity: ComposerIdentity
   harness: HarnessControl
@@ -133,8 +144,13 @@ function useSessionComposerDraft(input: {
       harness.onChange?.(loadedTarget.harness)
       return
     }
-    const savedChoice = loadedTarget.workspaceId ?? 'new'
-    if (workspaceCockpit.choice !== savedChoice) workspaceActions.selectWorkspace(savedChoice)
+    if (workspaceCockpit.choice === null) return
+    const savedChoice = listedChoice(
+      loadedTarget.workspaceId,
+      workspaceCockpit.workspaces,
+      workspaceCockpit.choice,
+    )
+    if (savedChoice !== workspaceCockpit.choice) workspaceActions.selectWorkspace(savedChoice)
     setRestoredProjectId(projectId)
   }, [
     harness.harness,
@@ -144,6 +160,7 @@ function useSessionComposerDraft(input: {
     restoredProjectId,
     workspaceActions,
     workspaceCockpit.choice,
+    workspaceCockpit.workspaces,
   ])
   return { draft, targetRestored }
 }
