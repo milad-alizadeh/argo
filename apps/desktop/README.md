@@ -1,6 +1,6 @@
 # apps/desktop
 
-Argo's cockpit on Electron, React and TypeScript. It runs beside `apps/macOS` for the whole
+Argo Desktop uses Electron, React and TypeScript. It runs beside `apps/macOS` for the whole
 migration; nothing is removed from the Swift app until this one passes migration acceptance.
 
 The toolchain is fixed by [Choose the Electron desktop toolchain](https://github.com/milad-alizadeh/argo/issues/1732)
@@ -176,7 +176,7 @@ JS layer is byte-for-byte equivalent between the two versions. The fix is entire
 close-on-exec, and closes the master on the error path and the slave in the parent. So do not go
 looking in `unixTerminal.js` for it.
 
-`kern.tty.ptmx_max` is 511 on macOS, so on `1.1.0` a cockpit process can open about 500 PTYs in
+`kern.tty.ptmx_max` is 511 on macOS, so on `1.1.0` an Argo Desktop process can open about 500 PTYs in
 its entire lifetime however cleanly each one is closed — a hard ceiling on exactly what
 [#1791](https://github.com/milad-alizadeh/argo/issues/1791) chose node-pty to be. The `beta` tag
 ships until the fix reaches `latest`; the source tier accepts any node-pty at 1.2.0 or above, so
@@ -297,12 +297,12 @@ targets into `.vite/build` and names each output after its entry file, so two en
 entry basenames are the contract with `main` in `package.json` and the preload path in
 `src/platform/main/window/create-window.ts`.
 
-The renderer is the cockpit shell: a chrome band, a sidebar of five destinations, and one deck.
+The renderer is Argo Desktop's shell: a chrome band, a sidebar of five destinations, and one deck.
 `src/renderer/` assembles the product routes, providers, and locale catalogs.
 `src/platform/renderer/` owns browser behavior, the design system, and proven cross-domain layout.
 The shadcn CLI writes `src/platform/renderer/components/ui/`. Authors never edit those files by
 hand. Each `src/domains/*/renderer/` facet groups its renderer modules by product capability. The
-frame and the surfaces are [ADR-0038](../../docs/adr/0038-the-desktop-cockpit-is-opaque.md). The
+frame and the surfaces are [ADR-0038](../../docs/adr/0038-desktop-surfaces-are-opaque.md). The
 design workflow is [`docs/design-stack.md`](../../docs/design-stack.md). The prose rules are in
 [`apps/desktop/AGENTS.md`](AGENTS.md).
 
@@ -323,8 +323,8 @@ then `ARGO_E2E_PACKAGED=1 bunx playwright test`. No command here runs the app yo
 | `bun run test:e2e` | Every flow under `e2e/`, one Playwright project per flow: `projects`, `sessions`, `tickets`. `bun run turbo run test:e2e --filter=@argo/desktop` caches the run. |
 | `bun run test:e2e -- --project=sessions` | One flow alone. A file path such as `e2e/sessions/journeys.e2e.ts` narrows it further. |
 | `ARGO_E2E_REAL=1 bun run test:e2e -- --project=real-sessions` | The Session journeys against the locally signed-in Claude and Codex CLIs, under an isolated home directory. CI never sets `ARGO_E2E_REAL`. |
-| `bun run capture:cockpit` | After `bun run build:vite`, one PNG per screen, in `out/cockpit-captures`. |
-| `bun run measure:cockpit` | After `bun run build:vite`, startup and idle evidence, printed as JSON. The evidence comes from the Vite build. Set `ARGO_E2E_PACKAGED=1` after `bun run build` to measure the packaged app. |
+| `bun run capture:desktop` | After `bun run build:vite`, one PNG per screen, in `out/desktop-captures`. |
+| `bun run measure:desktop` | After `bun run build:vite`, startup and idle evidence, printed as JSON. The evidence comes from the Vite build. Set `ARGO_E2E_PACKAGED=1` after `bun run build` to measure the packaged app. |
 
 Test assets sit outside `src/`. `e2e/<flow>/` holds `*.e2e.ts` files, their `cases/*.case.ts` and
 `fixtures/*.fixture.ts`. `mocks/` holds the mock CLIs, mock providers and their transcripts.
@@ -336,8 +336,8 @@ None of these commands holds the real keyboard or the real mouse.
 
 ## Performance evidence
 
-`bun run measure:cockpit` launches the app five times and reports the median, which is
-the FAIL line [#1736](https://github.com/milad-alizadeh/argo/issues/1736) set. An idle cockpit
+`bun run measure:desktop` launches the app five times and reports the median, which is
+the FAIL line [#1736](https://github.com/milad-alizadeh/argo/issues/1736) set. An idle app
 schedules no work, so an idle `requestAnimationFrame` delta is the display's own period and cannot
 read below it. The budget is therefore taken from the display the run used, and the reading is
 compared against 1.5 times it, the ratio #1736's 12.5 ms holds to its 120 Hz reference panel.

@@ -1,7 +1,7 @@
 import { createInterface } from 'node:readline'
 import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
+import { recordedCodexModels } from '../../recordings/codex-app-server.ts'
 import { MOCK_CODEX_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
-import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
 import { compactionItem, completeTurn } from './fixtures/mock-codex-responses.ts'
 import { createMockCodexSkillsAndConfig } from './fixtures/mock-codex-skills-config.ts'
 import { handleAskReply } from './mock-ask-question.ts'
@@ -39,7 +39,7 @@ function handleRequest(message: Request) {
     case 'initialized':
       return
     case 'model/list':
-      return send({ id: message.id, result: MOCK_CODEX_MODEL_CATALOG })
+      return send({ id: message.id, result: recordedCodexModels })
     case 'thread/start':
       return startThread(message)
     case 'thread/resume':

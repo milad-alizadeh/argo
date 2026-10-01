@@ -111,7 +111,7 @@ export async function signIn(run: Run, user: MockUser, start: { scope: Locator; 
 }
 
 // One consent through the dialog. The browser stub loads Linear's page, which answers for Ada and
-// redirects to the cockpit's loopback, so no code is shown and none is typed.
+// redirects to the app's loopback, so no code is shown and none is typed.
 export async function signInToLinear(run: Run, start: { scope: Locator; name: string }) {
   run.fixture.linear.signIn(ADA)
   const before = (await openedURLs(run.application)).length

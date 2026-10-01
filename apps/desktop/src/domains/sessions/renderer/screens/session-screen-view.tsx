@@ -77,9 +77,9 @@ function composerFor(model: ReturnType<typeof useSessionScreenModel>) {
       harness={model.harness}
       selectedSessionId={model.selectedSessionId}
       sessionLoaded={model.sessionLoaded}
-      cockpit={model.cockpit}
+      projectState={model.projectState}
       workspaceActions={model.workspaceActions}
-      workspaceCockpit={model.workspaceCockpit}
+      workspaceState={model.workspaceState}
       onStartingSession={model.onStartingSession}
     />
   )

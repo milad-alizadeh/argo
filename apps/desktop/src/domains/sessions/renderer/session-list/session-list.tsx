@@ -136,8 +136,8 @@ export function SessionList() {
   const { t } = useTranslation('sessions')
   const { add } = useToastManager()
   const selectedSessionId = useParams().sessionId ?? null
-  const [cockpit] = useProjects()
-  const projectId = cockpit.project?.id ?? null
+  const [projectState] = useProjects()
+  const projectId = projectState.project?.id ?? null
   const sidebar = useRef<HTMLElement>(null)
   const { filter, setFilter, search, setSearch, query, sessions } = useListedSessions(projectId)
   const { onNew, onOpenTicket, onSelect } = useSessionListNavigation(projectId)

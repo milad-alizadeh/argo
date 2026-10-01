@@ -154,7 +154,7 @@ export const ICONS = {
   'language-generic': FileCodeIcon,
   'shell-output': TerminalIcon,
 
-  // The cockpit rail's own destinations.
+  // The app rail's own destinations.
   atlas: TreeStructureIcon,
 
   // Guided Project setup.

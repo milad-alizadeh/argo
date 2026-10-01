@@ -3,8 +3,8 @@
 import { request } from 'node:http'
 import { readStatusHook } from '@/harnesses/host/status-hooks'
 import type { ExternalSessionHooks } from '@/harnesses/registration'
+import { recordedCodexHooks as codex } from '../recordings/codex-app-server.ts'
 import claude from './claude/fixtures/hooks-claude-docs.json' with { type: 'json' }
-import codex from './codex/fixtures/hooks-codex-0.157.0.json' with { type: 'json' }
 
 export type HookHarness = 'claude' | 'codex'
 type HookTurn = 'bashTurn' | 'questionTurn' | 'failureTurn'
