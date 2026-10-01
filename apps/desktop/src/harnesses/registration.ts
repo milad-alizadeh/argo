@@ -15,7 +15,6 @@ import type { SessionHistoryTarget } from '@/domains/sessions/api/session-histor
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import type { SessionLiveInput, SessionStartInput } from '@/domains/sessions/main/api'
 import type { HarnessInfo } from '@/harnesses/harness-catalog'
-import type { HookTableChanges } from '@/harnesses/host/status-hooks'
 import { identifierSchema } from '@/shared/validation'
 import type { Harness } from './harness'
 
@@ -58,6 +57,9 @@ export type ExternalActivityReading = {
   // The interface could not answer yet; the host reads again on the next tick.
   retry: boolean
 }
+
+// Each status hook event list an install or a removal changes; null deletes the event.
+export type HookTableChanges = ReadonlyMap<string, unknown[] | null>
 
 // Hooks Argo installs once in the Harness's user-level config, so they fire for every Session, and
 // posts to its receiver on 127.0.0.1. The host owns the install and the reading (#2976).

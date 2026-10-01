@@ -1,6 +1,7 @@
 // The app-server's skill and config methods. Skills come from the JSON file ARGO_CODEX_SKILLS_FILE
 // names, shaped like skills-list-codex-0.157.0.json's `skills`; a rewrite of it sends `skills/changed`.
 // Like Codex, the list is cached until a request asks for `forceReload`.
+import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, watch, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import recordedConfig from './config-read-codex-0.157.0.json' with { type: 'json' }
@@ -25,20 +26,40 @@ function requestedCwd(params: Record<string, unknown> | undefined): string {
   return Array.isArray(cwds) && typeof cwds[0] === 'string' ? cwds[0] : process.cwd()
 }
 
-export function createMockCodexSkillsAndConfig(send: Send): (message: Request) => boolean {
+// The user layer's hooks table, kept in `file`.
+function userHooks(file: string) {
+  const hooks = (): Record<string, unknown> =>
+    existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {}
+  return {
+    hooks,
+    // Like codex, the version is a hash of what the layer holds.
+    version: () => `sha256:${createHash('sha256').update(JSON.stringify(hooks())).digest('hex')}`,
+    // Like codex 0.157, a null value deletes the event.
+    writeHook(event: string, value: unknown) {
+      const { [event]: _old, ...rest } = hooks()
+      writeFileSync(file, JSON.stringify(value === null ? rest : { ...rest, [event]: value }))
+    },
+  }
+}
+
+export function createMockCodexSkillsAndConfig(
+  send: Send,
+  codexHome = process.env.CODEX_HOME ?? '',
+): (message: Request) => boolean {
   const skillsFile = process.env[MOCK_CODEX_SKILLS_FILE_ENV]
   const seeded = process.env[MOCK_CODEX_AUTO_COMPACT_LIMIT_ENV]
   let limit: unknown = seeded === undefined ? null : Number(seeded)
   let cachedSkills: unknown
-  const hooksFile = path.join(process.env.CODEX_HOME ?? '', MOCK_CODEX_USER_HOOKS_FILE)
-  const hooks = () => (existsSync(hooksFile) ? JSON.parse(readFileSync(hooksFile, 'utf8')) : {})
+  const { hooks, version, writeHook } = userHooks(path.join(codexHome, MOCK_CODEX_USER_HOOKS_FILE))
   if (skillsFile !== undefined)
     watch(skillsFile, () => send({ method: 'skills/changed', params: {} })).unref()
 
   function readConfig(params: Request['params']) {
     const config = { [AUTO_COMPACT_KEY]: limit }
     const layers = recordedConfig.layers.map((layer) =>
-      layer.name.type === 'user' ? { ...layer, config: { hooks: hooks() } } : layer,
+      layer.name.type === 'user'
+        ? { ...layer, version: version(), config: { hooks: hooks() } }
+        : layer,
     )
     return { config, origins: {}, layers: params?.includeLayers === true ? layers : null }
   }
@@ -49,10 +70,9 @@ export function createMockCodexSkillsAndConfig(send: Send): (message: Request) =
     const hookKey = keyPath.startsWith('hooks.')
     if (params?.mergeStrategy !== 'replace' || (keyPath !== AUTO_COMPACT_KEY && !hookKey))
       return { error: { code: INVALID_REQUEST, message: `Mock does not write ${keyPath}` } }
-    if (hookKey)
-      writeFileSync(hooksFile, JSON.stringify({ ...hooks(), [keyPath.slice(6)]: params.value }))
+    if (hookKey) writeHook(keyPath.slice(6), params.value)
     else limit = params.value
-    const result = { status: 'ok', version: 'mock', filePath: '/mock/.codex/config.toml' }
+    const result = { status: 'ok', version: version(), filePath: '/mock/.codex/config.toml' }
     return { result: { ...result, overriddenMetadata: null } }
   }
 

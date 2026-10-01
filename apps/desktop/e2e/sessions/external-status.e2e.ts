@@ -18,7 +18,7 @@ import { MOCK_CODEX_USER_HOOKS_FILE } from '../../mocks/cli/codex/fixtures/mock-
 import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { holdCodexWriterLock } from '../../mocks/cli/codex/mock-codex-external-threads'
 import { guardRealUserConfig } from '../../mocks/cli/real-user-config'
-import { hookEvent, postHook } from '../../mocks/cli/status-hooks'
+import { argoHookUrls, hookEvent, postHook } from '../../mocks/cli/status-hooks'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
@@ -149,6 +149,10 @@ async function launch(root: string, applicationUnderTest: string, source: Status
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
       [ACCEPTANCE_ENV]: '0',
       ARGO_CODEX_E2E_STATE: codexState(root),
+      // Empty folders for the Harness the case does not seed. The run-wide ones name another app's
+      // hook port, and a busy port stops every install.
+      CLAUDE_CONFIG_DIR: path.join(root, 'unseeded-claude-config'),
+      CODEX_HOME: path.join(root, 'unseeded-codex-home'),
       ...(await source.seed(root, fixture.project, sessions)),
     },
   })
@@ -195,7 +199,7 @@ async function installedPort(root: string, source: StatusSource): Promise<number
   let port = 0
   await expect(async () => {
     const config = await readFile(source.hooksFile(root), 'utf8')
-    port = Number(/127\.0\.0\.1:(\d+)\/h\//.exec(config)?.[1])
+    port = Number(argoHookUrls(config)[0]?.[1])
     expect(port).toBeGreaterThan(0)
   }).toPass({ timeout: 15_000 })
   return port

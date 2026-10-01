@@ -1,11 +1,12 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { readFile, realpath, stat } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { HookEvent, Settings } from '@anthropic-ai/claude-agent-sdk'
 import type { BashInput } from '@anthropic-ai/claude-agent-sdk/sdk-tools'
 import { z } from 'zod'
-import { type HookTableChanges, STATUS_HOOK_EVENTS } from '@/harnesses/host/status-hooks'
-import type { ExternalSessionHooks } from '@/harnesses/registration'
+import { STATUS_HOOK_EVENTS } from '@/harnesses/host/status-hooks'
+import type { ExternalSessionHooks, HookTableChanges } from '@/harnesses/registration'
+import { writeDocument } from '@/platform/main/storage/portable-file'
 
 STATUS_HOOK_EVENTS satisfies readonly HookEvent[]
 
@@ -28,7 +29,7 @@ async function readSettings(file: string): Promise<Record<string, unknown>> {
 
 type HookGroup = NonNullable<Settings['hooks']>[string][number]
 
-// Argo's status hooks in the user settings; the whole file is written once per change.
+// Argo's status hooks in the user settings; the whole file is replaced once per change.
 export function createClaudeStatusHooks(): ExternalSessionHooks {
   const file = claudeSettingsFile(process.env, os.homedir())
   return {
@@ -41,8 +42,14 @@ export function createClaudeStatusHooks(): ExternalSessionHooks {
           else hooks[event] = groups
         const { hooks: _before, ...rest } = settings
         const next = Object.keys(hooks).length === 0 ? rest : { ...settings, hooks }
-        await mkdir(path.dirname(file), { recursive: true })
-        await writeFile(file, `${JSON.stringify(next, null, 2)}\n`)
+        // Through a rename, as the file a symlink names, keeping its mode.
+        const target = await realpath(file).catch(() => file)
+        const mode = await stat(target).then(
+          ({ mode }) => mode & 0o777,
+          () => 0o644,
+        )
+        if (!(await writeDocument(target, next, mode)))
+          throw new Error(`Could not write ${target}.`)
       }
       return { table: settings.hooks, write }
     },

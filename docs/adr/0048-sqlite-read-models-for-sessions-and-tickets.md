@@ -35,8 +35,9 @@ A Session with a live Argo channel is skipped, so the channel alone owns its sta
 and the Session List draws the channel's activity over the stored line. A reading that names no
 activity keeps the stored line, so an idle row keeps its last line. Each Session's status, line and
 `activityAt` merge into at most one SQLite write every 500 ms. A restart still resets every working
-status to `unknown` until the poll settles one. Once a Harness's status hooks fire, their events set
-its rows and its listing stops (#2976).
+status to `unknown` until the poll settles one. Once a Harness's status hooks fire for a saved
+external Session, their events set its rows and its listing stops. Argo's own CLI probes and
+Sessions fire the hooks too, so their events leave the poll on (#2976).
 
 An external Session's Feed reads its whole history when it opens and on Refresh. It has no change
 signal until the external Feed moves to the vendor readers.

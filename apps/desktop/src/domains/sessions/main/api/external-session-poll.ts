@@ -166,10 +166,10 @@ export class ExternalSessionPoll {
     this.#reads.clear()
   }
 
-  // One status hook event; the poll is off for its Harness from then on.
+  // One status hook event. One from a saved external Session turns the poll off for its Harness;
+  // Argo's own CLI probes and Sessions fire the hooks too, and prove nothing about them.
   hookEvent(harness: Harness, event: StatusHookEvent, reading: ExternalHookReading): void {
     if (this.#stopped) return
-    this.#firing.add(harness)
     const session = { harness, nativeId: reading.nativeId }
     const sessionId = harnessSessionId(this.#context.database, session)
     if (sessionId === undefined) {
@@ -177,6 +177,7 @@ export class ExternalSessionPoll {
       return
     }
     if (this.#context.hasLiveChannel(sessionId)) return
+    this.#firing.add(harness)
     const live = this.#live.get(harness) ?? new Map<string, TrackedSession>()
     this.#live.set(harness, live)
     const tracked = live.get(session.nativeId) ?? newTracked(null, null)
@@ -226,7 +227,9 @@ export class ExternalSessionPoll {
       const sessionId = harnessSessionId(this.#context.database, session)
       if (sessionId !== undefined && this.#context.hasLiveChannel(sessionId)) continue
       this.#leaving.delete(harnessSessionKey(session))
-      const tracked = this.#track(harness, listed, previous?.get(listed.nativeId))
+      // A hook event that landed during this listing is already in `current`.
+      const before = current.get(listed.nativeId) ?? previous?.get(listed.nativeId)
+      const tracked = this.#track(harness, listed, before)
       current.set(listed.nativeId, tracked)
       if (sessionId === undefined) this.#discover(session, tracked)
       if (external.readActivity !== undefined) await this.#readChange(session, tracked)

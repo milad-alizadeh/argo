@@ -159,6 +159,18 @@ test('the poll gives the status until the hooks fire, and is off once they do', 
   expect([(await row()).status, (await row(OTHER)).status]).toEqual(['idle', 'idle'])
 })
 
+test('hooks from Argo’s own probes and Sessions leave the poll on', async () => {
+  await receiver.start()
+  saved()
+  await listedRunning(SESSION)
+  await post('SessionStart', OTHER)
+  saved(OTHER)
+  liveActors[OTHER] = liveSession('Sending', 'running')
+  await post('Stop', OTHER)
+  await listedRunning()
+  expect((await row()).status).toBe('idle')
+})
+
 test('a permission row with no event for the quiet limit shows unknown, since Esc sends none', async () => {
   await receiver.start()
   saved()

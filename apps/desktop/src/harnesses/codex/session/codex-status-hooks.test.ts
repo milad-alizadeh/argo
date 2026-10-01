@@ -1,61 +1,58 @@
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { type TestContext, test } from 'node:test'
 import { installStatusHooks } from '@/harnesses/host/status-hooks'
 import recorded from '@/mocks/cli/codex/fixtures/config-read-codex-0.157.0.json' with {
   type: 'json',
 }
+import {
+  createMockCodexSkillsAndConfig,
+  MOCK_CODEX_USER_HOOKS_FILE,
+} from '@/mocks/cli/codex/fixtures/mock-codex-skills-config'
 import { testStatusHookInstall } from '@/mocks/cli/status-hook-install-suite'
 import { hookReadings } from '@/mocks/cli/status-hooks'
 import type { CodexRequest } from '../app-server'
 import { createCodexStatusHooks } from './codex-status-hooks'
 
-// An app-server that answers the recorded `config/read` with its user layer's hooks as the writes
-// left them, and records each `config/value/write`.
-function codex(userHooks: boolean) {
-  const recordedUser = recorded.layers.find((layer) => layer.name.type === 'user')
-  const userConfig = recordedUser?.config as { hooks?: Record<string, unknown> } | undefined
-  let hooks = userHooks ? structuredClone(userConfig?.hooks ?? {}) : {}
-  let version = 0
-  const writes: unknown[] = []
+// The mock app-server over a fresh CODEX_HOME, seeded with the recorded user hooks or with none.
+function codex(context: TestContext, userHooks: boolean) {
+  const home = mkdtempSync(path.join(os.tmpdir(), 'argo-codex-hooks-'))
+  context.after(() => rmSync(home, { recursive: true, force: true }))
+  const file = path.join(home, MOCK_CODEX_USER_HOOKS_FILE)
+  const user = recorded.layers.find((layer) => layer.name.type === 'user')?.config
+  if (userHooks) writeFileSync(file, JSON.stringify((user as { hooks?: unknown }).hooks))
+  const writes: { params: unknown; version: unknown }[] = []
+  let answer: Record<string, unknown> = {}
+  const answerConfig = createMockCodexSkillsAndConfig((message) => (answer = message), home)
   const request = (async (method, params, parse) => {
-    if (method === 'config/read') {
-      const layers = recorded.layers.map((layer) =>
-        layer === recordedUser
-          ? { ...layer, version: `v${version}`, config: { ...layer.config, hooks } }
-          : layer,
-      )
-      return parse({ ...recorded, layers })
-    }
-    writes.push(params)
-    const { keyPath, value } = params as { keyPath: string; value: unknown }
-    const { [keyPath.replace('hooks.', '')]: _old, ...rest } = hooks
-    hooks = value === null ? rest : { ...hooks, [keyPath.replace('hooks.', '')]: value }
-    version += 1
-    return parse({ status: 'ok', version: `v${version}`, filePath: 'config.toml' })
+    answerConfig({ id: 1, method, params: params as Record<string, unknown> })
+    const result = answer.result as { version?: unknown }
+    if (method === 'config/value/write') writes.push({ params, version: result.version })
+    return parse(result)
   }) as CodexRequest
-  return { hooks: createCodexStatusHooks(request), read: async () => hooks, writes }
+  const read = async () => (existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {})
+  return { hooks: createCodexStatusHooks(request), read, writes }
 }
 
-testStatusHookInstall('codex', async (_context, userHooks) => {
-  const { hooks, read } = codex(userHooks)
-  return { hooks, read: read as () => Promise<Record<string, unknown[]>> }
-})
+testStatusHookInstall('codex', async (context, userHooks) => codex(context, userHooks))
 
-test('a Codex install writes each event it changes through config/value/write, chaining versions', async () => {
-  const { hooks, writes } = codex(true)
+test('a Codex install writes each event it changes through config/value/write, chaining versions', async (context) => {
+  const { hooks, writes } = codex(context, true)
   await installStatusHooks('codex', hooks, 4321)
   assert.equal(writes.length, 7)
-  writes.forEach((params, index) => {
+  writes.forEach(({ params }, index) => {
     const { keyPath, mergeStrategy, expectedVersion, filePath } = params as Record<string, unknown>
     assert.match(String(keyPath), /^hooks\.[A-Za-z]+$/)
     assert.equal(mergeStrategy, 'replace')
-    assert.equal(expectedVersion, `v${index}`)
+    if (index > 0) assert.equal(expectedVersion, writes[index - 1]?.version)
     assert.equal(filePath, undefined)
   })
 })
 
-test('each Codex event of a Bash Turn sets its status, and PreToolUse its activity line', () => {
-  assert.deepEqual(hookReadings('codex', codex(false).hooks, 'bashTurn'), [
+test('each Codex event of a Bash Turn sets its status, and PreToolUse its activity line', (context) => {
+  assert.deepEqual(hookReadings('codex', codex(context, false).hooks, 'bashTurn'), [
     ['SessionStart', null, null],
     ['UserPromptSubmit', 'running', null],
     ['PreToolUse', 'running', 'Ran touch b.txt'],
@@ -66,8 +63,8 @@ test('each Codex event of a Bash Turn sets its status, and PreToolUse its activi
   ])
 })
 
-test('a Codex request_user_input shows asking until it is answered', () => {
-  assert.deepEqual(hookReadings('codex', codex(false).hooks, 'questionTurn'), [
+test('a Codex request_user_input shows asking until it is answered', (context) => {
+  assert.deepEqual(hookReadings('codex', codex(context, false).hooks, 'questionTurn'), [
     ['SessionStart', null, null],
     ['UserPromptSubmit', 'running', null],
     ['PreToolUse', 'asking', null],

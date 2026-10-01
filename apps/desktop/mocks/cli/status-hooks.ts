@@ -26,6 +26,9 @@ export function hookEvent(harness: HookHarness, event: string, nativeId: string)
   return found
 }
 
+// The Argo hook URLs a config's text names, each with its port.
+export const argoHookUrls = (text: string) => [...text.matchAll(/127\.0\.0\.1:(\d+)\/h\/\w+\/\w+/g)]
+
 // Posts one payload to the receiver as the installed hook command does; returns the HTTP status.
 export async function postHook(
   port: number,

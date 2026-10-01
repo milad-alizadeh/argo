@@ -30,9 +30,6 @@ export type ExternalHookReading = {
   activity: LiveActivity | null
 }
 
-// Each event list an install or a removal changes; null deletes the event.
-export type HookTableChanges = Map<StatusHookEvent, unknown[] | null>
-
 const hookTableSchema = z.looseObject(
   Object.fromEntries(STATUS_HOOK_EVENTS.map((event) => [event, z.array(z.unknown()).optional()])),
 )
@@ -67,7 +64,7 @@ async function change(
   next: (event: StatusHookEvent, groups: unknown[]) => unknown[] | null | undefined,
 ): Promise<void> {
   const { parsed, write } = await openTable(hooks)
-  const changes: HookTableChanges = new Map()
+  const changes = new Map<StatusHookEvent, unknown[] | null>()
   for (const event of STATUS_HOOK_EVENTS) {
     const groups = next(event, parsed[event] ?? [])
     if (groups !== undefined) changes.set(event, groups)

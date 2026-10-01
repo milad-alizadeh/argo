@@ -42,9 +42,13 @@ export class StatusHookReceiver {
   constructor(context: StatusHookReceiverContext) {
     this.#context = context
     this.#server = createServer((request, response) => {
-      void this.#receive(request).then((accepted) => {
-        response.writeHead(accepted ? 204 : 400).end()
-      })
+      this.#receive(request).then(
+        (accepted) => response.writeHead(accepted ? 204 : 400).end(),
+        (error: unknown) => {
+          console.warn('Could not take a status hook event:', error)
+          response.writeHead(500).end()
+        },
+      )
     })
   }
 
@@ -117,22 +121,25 @@ export class StatusHookReceiver {
     const [, harnessName, event = ''] = HOOK_PATH.exec(request.url ?? '') ?? []
     const harness = harnessSchema.safeParse(harnessName).data
     const hooks = this.#context.harnesses.find((each) => each.harness === harness)?.external.hooks
+    const known =
+      request.method === 'POST' &&
+      this.#fromHook(request) &&
+      harness !== undefined &&
+      hooks !== undefined &&
+      isStatusHookEvent(event)
+    if (!known) return this.#reject()
     const payload: unknown = await readBody(request)
       .then((text) => JSON.parse(text ?? ''))
       .catch(() => undefined)
-    const reading =
-      request.method === 'POST' &&
-      hooks !== undefined &&
-      isStatusHookEvent(event) &&
-      this.#fromHook(request)
-        ? readStatusHook(hooks, event, payload)
-        : null
-    if (harness === undefined || !isStatusHookEvent(event) || reading === null) {
-      this.#rejected += 1
-      console.warn(`Rejected ${this.#rejected} unrecognised status hook event(s).`)
-      return false
-    }
+    const reading = readStatusHook(hooks, event, payload)
+    if (reading === null) return this.#reject()
     this.#context.poll.hookEvent(harness, event, reading)
     return true
+  }
+
+  #reject(): false {
+    this.#rejected += 1
+    console.warn(`Rejected ${this.#rejected} unrecognised status hook event(s).`)
+    return false
   }
 }
