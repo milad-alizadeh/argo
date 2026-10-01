@@ -10,5 +10,4 @@ export type { ReasoningSummaryTextDeltaNotification } from './protocol-generated
 export type { SubAgentActivityKind } from './protocol-generated/v2/sub-agent-activity-kind'
 export type { ThreadItem } from './protocol-generated/v2/thread-item'
 export type { ThreadReadResponse } from './protocol-generated/v2/thread-read-response'
-export type { ThreadTurnsListResponse } from './protocol-generated/v2/thread-turns-list-response'
 export type { UserInput } from './protocol-generated/v2/user-input'

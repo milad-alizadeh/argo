@@ -1,5 +1,5 @@
 import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
-import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
+import type { HistoryChange, SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import { decodeClaudeHistoryContent } from './claude-feed-decoder'
 import { ClaudeFeedProjection } from './claude-feed-projection'
 import { type ClaudeSkillFile, claudeSkillFiles } from './claude-skill-files'
@@ -41,9 +41,6 @@ function contentEvents(
       content,
     }))
 }
-
-// What the lines a transcript appended draw, or that they branched off the chain read so far.
-type HistoryChange = { type: 'appended'; events: SessionLiveEventBody[] } | { type: 'rewritten' }
 
 type ChainStep = { leaf: string | null; branched: boolean; events: SessionLiveEventBody[] }
 

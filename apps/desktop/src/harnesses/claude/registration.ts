@@ -9,6 +9,7 @@ import { createClaudeSignInDriver, createSystemClaudeReadiness } from './readine
 import {
   claudeSessionChannelOpener,
   claudeSessionRenamer,
+  createClaudeExternalSessions,
   getClaudeSessionSummary,
   listClaudeSessionSummaries,
   readClaudeSessionHistory,
@@ -28,6 +29,7 @@ export function createClaudeRegistration(): HarnessRegistration<'claude'> {
     readCatalog: () => readClaudeHarnessInfo(executable),
     readHistory: ({ nativeId, subagentId, cwd }) =>
       readClaudeSessionHistory(nativeId, cwd, subagentId),
+    externalSessions: createClaudeExternalSessions(executable),
     openLiveSession: claudeSessionChannelOpener(executable),
     listCommands: ({ cwd }) => {
       let rejected = 0

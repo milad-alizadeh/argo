@@ -402,6 +402,7 @@ function startSessionServices(actors: WindowActors, database: Database, registry
     hasLiveChannel,
     readHistory: (harness, target) => registry[harness].readHistory(target),
   })
+  // #2976 switches this poll off while hooks are on.
   const externalSessions = new ExternalSessionRoster({
     ...context,
     harnesses: harnessSchema.options.flatMap((harness) => {

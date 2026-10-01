@@ -1,4 +1,4 @@
-export { ExternalSessionRoster } from './external-session-roster'
+export { ExternalSessionRoster, RUNNING_QUIET_LIMIT_MS } from './external-session-roster'
 export { listComposerCommandsFor } from './session-composer-commands'
 export { watchSessionList } from './session-list'
 export { SessionListChanges } from './session-list-changes'

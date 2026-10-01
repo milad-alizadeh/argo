@@ -109,8 +109,7 @@ function storedActivity(stored: string | null): LiveActivity | null {
   return null
 }
 
-// The Feed's activity names no tool or target, so the row keeps its kind as the tool. It outranks
-// the live channel's own.
+// The Feed's activity names no tool or target, so the row keeps its kind as the tool.
 function observedActivity(stored: string | null): z.infer<typeof feedActivitySchema> | null {
   const activity = storedActivity(stored)
   return activity === null ? null : { ...activity, tool: activity.kind, target: null }
@@ -153,7 +152,8 @@ function sessionListRow(
     name: row.name,
     status: liveStatus ?? row.status,
     updatedAt: new Date(row.activityAt ?? row.updatedAt).toISOString(),
-    activity: observedActivity(row.activity) ?? live?.activity ?? null,
+    // A live channel's own activity outranks the stored line, which no Feed reader keeps fresh.
+    activity: live?.activity ?? observedActivity(row.activity),
     subagents,
     ticket: linkedTicket(row.ticket),
     archived: row.archived,

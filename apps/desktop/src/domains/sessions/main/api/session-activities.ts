@@ -1,3 +1,4 @@
+import { projectFeedRowEntries } from '@/domains/sessions/api/feed'
 import type { Harness } from '@/harnesses/harness'
 import type { ExternalActivityReading } from '@/harnesses/registration'
 import {
@@ -9,18 +10,19 @@ import {
 export type HarnessSession = { harness: Harness; nativeId: string }
 type SessionActivitiesOptions = {
   readActivity: (session: HarnessSession) => Promise<ExternalActivityReading>
-  // Each reading, after its activity line is queued.
-  read: (session: HarnessSession, reading: ExternalActivityReading) => void
+  // Each reading after its activity line is queued, or null for a read that failed.
+  read: (session: HarnessSession, reading: ExternalActivityReading | null) => void
   // A Session with no saved row yet, for discovery to add.
   unknown: (session: HarnessSession) => void
-  // Each Session's row reaches SQLite at most once a window, with its newest values.
-  writeMs?: number
 }
+
+// Each Session's row reaches SQLite at most once a window, with its newest values.
+const WRITE_WINDOW_MS = 500
 
 // A Session waiting its turn, being read, or being read with one more read asked for after it.
 type ReadState = 'queued' | 'reading' | 'again'
 
-const sessionKey = (session: HarnessSession) => `${session.harness}\u0000${session.nativeId}`
+export const sessionKey = (session: HarnessSession) => `${session.harness}\u0000${session.nativeId}`
 
 // External Session rows: every update merges into one write per Session a window. Activity reads
 // run one at a time across every Session, since one vendor read can take a large file whole.
@@ -44,19 +46,32 @@ export class SessionActivities {
     const key = sessionKey(session)
     const pending = this.#pending.get(key)?.update
     this.#pending.set(key, { session, update: { ...pending, ...update } })
-    this.#timer ??= setTimeout(() => this.flush(), this.#options.writeMs ?? 500)
+    this.#timer ??= setTimeout(() => this.flush(), WRITE_WINDOW_MS)
   }
 
   // Asks for a read. A Session already queued is read once; one being read is read once more after.
   read(session: HarnessSession): void {
-    if (this.#stopped) return
-    const key = sessionKey(session)
-    const state = this.#reads.get(key)
-    if (state === 'reading') this.#reads.set(key, 'again')
-    if (state !== undefined) return
-    this.#reads.set(key, 'queued')
+    if (this.#stopped || !this.#asksForRead(sessionKey(session))) return
     this.#queue.push(session)
     void this.#drain()
+  }
+
+  // Whether a new read starts, after recording the ask against the Session's read state.
+  #asksForRead(key: string): boolean {
+    const state = this.#reads.get(key) ?? 'idle'
+    switch (state) {
+      case 'idle':
+        this.#reads.set(key, 'queued')
+        return true
+      case 'reading':
+        this.#reads.set(key, 'again')
+        return false
+      case 'queued':
+      case 'again':
+        return false
+      default:
+        return state satisfies never
+    }
   }
 
   flush(): void {
@@ -89,20 +104,25 @@ export class SessionActivities {
   async #readOne(session: HarnessSession): Promise<void> {
     const key = sessionKey(session)
     this.#reads.set(key, 'reading')
+    let reading: ExternalActivityReading | null = null
     try {
-      this.#receive(session, await this.#options.readActivity(session))
+      reading = await this.#options.readActivity(session)
     } catch (error) {
       // A failed read keeps the stored line.
       console.warn('Could not read an external Session activity:', error)
     }
+    this.#receive(session, reading)
     const again = this.#reads.get(key) === 'again'
     this.#reads.delete(key)
     if (again) this.read(session)
   }
 
-  #receive(session: HarnessSession, reading: ExternalActivityReading): void {
+  // The line is the newest Turn's activity by the Feed's own rules; none keeps the stored line.
+  #receive(session: HarnessSession, reading: ExternalActivityReading | null): void {
     if (this.#stopped) return
-    if (reading.activity !== null) this.update(session, { activity: reading.activity })
+    const activity =
+      reading === null ? null : projectFeedRowEntries({ history: reading.turn, live: [] }).activity
+    if (activity !== null) this.update(session, { activity })
     this.#options.read(session, reading)
   }
 }

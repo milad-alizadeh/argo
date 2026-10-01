@@ -1,3 +1,4 @@
+export { createClaudeExternalSessions } from './claude-external-sessions'
 export { claudeSessionChannelOpener } from './claude-session-channel'
 export { getClaudeSessionSummary, listClaudeSessionSummaries } from './claude-session-discovery'
 export { readClaudeSessionHistory } from './claude-session-history'

@@ -7,11 +7,32 @@ This proposal combines the first draft with two blind gap reviews and a repo sea
 "Live" means a Session that Argo runs. "External" means a Session that runs in a terminal, an IDE or
 another app.
 
+## What #2940 ships
+
+- One poll every 2 s, with one source for each Harness. No file watcher for Session history.
+  Startup reads no history.
+- Claude: `claude agents --json`, one run at a time, validated when read. `busy` is `running` and
+  `idle` is `idle`. `waiting` is `permission` for "permission prompt", "sandbox request" and
+  "worker request", and `asking` for "input needed" and "dialog open". An undocumented value shows
+  `unknown` and is counted. Several entries for one Session show the most urgent. A background
+  Session is not listed. The command gives no activity line, and Argo reads no pid file.
+- Codex: a held flock on `~/.codex/thread-writer-locks/<id>.lock` means the thread is open. The
+  first sight of a rollout only records its stat. A change in its size, modification time or inode
+  asks `thread/turns/list {limit: 1, itemsView: 'full'}`. `completedAt` set means idle. `completedAt`
+  null with the lock held means running, and with the lock free means unknown. "Thread not loaded"
+  with the lock held means idle. An error in the first 2 s after a change means running, and the
+  next poll asks again. A thread whose lock is no longer held gets one last read.
+- The Codex activity line is the newest Turn's activity by the Feed's own rules.
+- A listing that fails leaves the rows as they are and is reported once.
+- Both sources sit behind one Harness-neutral capability, `externalSessions`, so hooks can switch
+  the poll off (#2976).
+- The rest of this file is the research that led there.
+
 ## Principle
 
-Each vendor's own API answers everything that it can answer. Argo keeps a watcher only to know when
-to ask. Argo parses no transcript, with one exception: the Codex turn markers. No API reports that an
-external Codex turn is running.
+Each vendor's own API answers everything that it can answer. Argo keeps a poll only to know when
+to ask. Argo parses no transcript. A Codex writer lock tells a running external Turn from a crashed
+one, because the API reports both as unfinished.
 
 ## The matrix
 
@@ -19,16 +40,16 @@ external Codex turn is running.
 |---|---|---|---|---|
 | Claude live: status | SDK `SDKSessionStateChangedMessage` with `CLAUDE_CODE_EMIT_SESSION_STATE_EVENTS=1` | none | none | cheap |
 | Claude live: activity, Feed | SDK `query()` stream (no change) | none | none | cheap |
-| Claude external: discovery, activityAt | recursive watcher on `~/.claude/projects`, with directory events only | 1 | none | 1 watcher instead of 4,552 |
-| Claude external: status, open elsewhere | `~/.claude/sessions/<pid>.json`, grouped by `sessionId` | 1 on that folder | read small JSON files | about 15 files |
-| Claude external: activity | `getSessionMessages` when the root watcher reports a change, with a slow backstop poll while `busy` | none extra | none | 50 to 190 ms for each read, in a utilityProcess |
+| Claude external: discovery | a listed `sessionId` with no row, from `claude agents --json` | none | none | in the status run |
+| Claude external: status, open elsewhere | `claude agents --json` every 2 s, grouped by `sessionId` | none | validate the JSON array | one process run each tick |
+| Claude external: activity | none until hooks (#2976); the row keeps its stored line | none | none | none |
 | Claude external: Subagents | SDK `listSubagents`, `getSubagentMessages` | none extra | none | for each change |
 | Claude external: Feed | `getSessionMessages`, diffed by message `uuid` | none extra | none | for each change of the open Session |
 | Codex live: status | `thread/status/changed` | none | none | cheap |
 | Codex live: activity, Feed | Argo's app-server (no change) | none | none | cheap |
-| Codex external: discovery, activityAt | recursive watcher on `~/.codex/sessions`, with directory events | 1 | none | 1 watcher instead of 1,752 |
-| Codex external: open elsewhere | `~/.codex/thread-writer-locks/<id>.lock` (a hint only) | 1 on that folder | none | a spike decides how to test "held" |
-| Codex external: status | turn markers from the rollout end, on files whose lock is held | one file watcher on each held rollout | turn markers only | a handful of files |
+| Codex external: discovery, activityAt | a held lock with no row; a rollout stat change moves `activityAt` | none | none | one stat for each held lock each tick |
+| Codex external: open elsewhere | a non-blocking flock probe on `~/.codex/thread-writer-locks/<id>.lock` every 2 s | none | none | one probe process each tick |
+| Codex external: status | the newest Turn's `completedAt` from `thread/turns/list`, with the lock state | none | none | 14 ms, on a rollout change |
 | Codex external: activity | `thread/turns/list {limit:1, itemsView:'full'}` on a change | none extra | none | 14 ms, one request in flight |
 | Codex external: Subagents | spawn items in the newest Turn | none extra | none | to verify |
 | Codex external: Feed | `thread/read`, then `thread/turns/list {limit:1}` replaces the current Turn by its id | none extra | none | 14 ms for each change |
@@ -44,74 +65,65 @@ Both Harnesses write the same roster vocabulary: `starting`, `running`, `permiss
 | Source value | Roster status |
 |---|---|
 | Claude `busy` / SDK `running` | `running` |
-| Claude `waiting` with `waitingFor` "permission prompt", SDK `requires_action` on a permission | `permission` |
-| Claude `waiting` with "input needed", SDK `requires_action` on a question | `asking` |
+| Claude `waiting` with `waitingFor` "permission prompt", "sandbox request" or "worker request", SDK `requires_action` on a permission | `permission` |
+| Claude `waiting` with "input needed" or "dialog open", SDK `requires_action` on a question | `asking` |
 | Claude `idle` / SDK `idle` | `idle` |
-| Claude entry gone or process dead | `idle` (decision: `idle` or `ended`) |
-| Claude `busy` with no transcript change for some minutes | `unknown` (bug #87131) |
-| Codex markers: a turn is open | `running` |
-| Codex markers: the turn is closed | `idle` |
-| Codex: no marker, or no held lock and a recent write | `unknown` |
+| Claude Session gone from `claude agents --json` | `idle` |
+| Claude listed `busy` with no change for five minutes | `running`, since every listing is fresh |
+| Claude undocumented `status` or `waitingFor` | `unknown`, counted |
+| Codex newest Turn has `completedAt` | `idle` |
+| Codex newest Turn has no `completedAt`, lock held | `running` |
+| Codex newest Turn has no `completedAt`, lock free | `unknown` |
+| Codex "thread not loaded", lock held | `idle` |
+| Codex read-settled `running` with no rollout change for five minutes | `unknown` |
 
 Parity gap: an external Codex Session cannot show `permission` or `asking`, because no source reports
 those states. A Codex row in that state shows `running` or `unknown`. The PR states this.
+An external Claude Session shows no activity line, because `claude agents --json` gives none.
+Hooks add both (#2976).
 
 ## Rules found by the reviews
 
-1. Discovery stays. Both root watchers send `Discover` for an owner that has no row. They also move
+1. Discovery stays. A listed Session with no row gets `Discover`. A Codex rollout change moves
    `activityAt` for the roster order.
-2. Closed Sessions get a status. When a pid dies, the row gets its terminal status. At startup, a
-   sweep runs once. Every 15 s, a reconcile runs `kill(pid, 0)` and compares `procStart`, which
-   catches pid reuse.
-3. Argo's own Sessions are skipped. A pid file or a lock that belongs to Argo's process tree is
-   ignored. The live channel is the one source for those Sessions.
-4. One Session can have several entries. A `busy` entry wins. An unreadable JSON file counts as
-   missing for that read.
-5. Reads are queued. One shared queue runs `getSessionMessages` with a concurrency of 1, and it skips
-   a Session whose read is in flight. When nothing changed, the poll backs off from 2 s to 30 s.
-   Visible and selected Sessions go first.
-6. Codex requests are capped. One `thread/turns/list` runs at a time. The burst path never calls
+2. Closed Sessions get a status. A Session that leaves the listing shows `idle`; a Codex thread gets
+   one last read first. The first poll sets every saved Session it does not find live to `idle`.
+3. Argo's own Sessions are skipped. A Session with a live channel gets no write from the poll.
+4. One Session can have several Claude entries. The most urgent status wins.
+5. Reads are queued. One activity read runs at a time across all Sessions, with at most one
+   follow-up for each Session. Writes for one Session merge into one write each 500 ms.
+6. Codex requests are capped. One `thread/turns/list` runs at a time. The poll never calls
    `thread/read`.
-7. Writes keep their order. Each Session gets a sequence number. An activity result that started
-   before the newest status change is dropped. An idle Session keeps its line, as #2940 requires.
-8. The Feed diff uses UUIDs. When the last shown `uuid` is missing after a compaction, rewind or
-   `/clear`, the whole Feed is rebuilt.
-9. Sleep is covered. On the `powerMonitor` resume event, both folders are scanned again and the
-   locks are checked again.
-10. Startup reads no history. The roster shows the stored status and reads only the pid files and
-    the held locks.
-11. Vendor names stay in the adapters. The registration gets a Harness-neutral capability, for
-    example `externalPresence` (status, open elsewhere, change events) and `readActivity(nativeId)`.
-    The roster code knows no vendor names. The ACP Harness implements neither and is unchanged.
+7. An idle Session keeps its line, as #2940 requires.
+8. Startup reads no history. The first sight of a rollout only records its stat.
+9. Vendor names stay in the adapters. The registration has one Harness-neutral capability,
+   `externalSessions`: `listLive()` and an optional `readActivity(nativeId, changedAt)`. The roster
+   code knows no vendor names. The ACP Harness implements neither.
 
-## Spikes before the build
+## Spikes
 
-- utilityProcess for the SDK read. Run `getSessionMessages` in an Electron utilityProcess in the
-  packaged build. Check the bundle entry, the unpacked ASAR and CI's bun pin, which drops `@/`
-  aliases. If the spike fails, run the read in the main process with the queue above.
-- Testing "held" for a Codex lock. Node has no `flock`. Measure `lsof` on the lock folder, limited
-  to shown Sessions with a 5 s cache, against other ways. The lock stays a hint, verified on macOS
-  only.
-- Codex Subagents from `thread/turns/list` items, against the current `recordLiveSubagents` input.
+- Testing "held" for a Codex lock: a non-blocking `flock` probe from a child process, on the held
+  locks only. The lock stays a hint, verified on macOS only.
+- Codex Subagents from `thread/turns/list` items: left to the Feed change.
 
 ## Testing (the stub rule: only the CLI or the Codex app-server is mocked)
 
-- The mock app-server answers `thread/turns/list`. This covers `mock-codex-stored-threads.ts` (the
-  branch already does it) and `mock-codex-live.mts`, which answers -32601 today.
-- The home folders are injected, so a test writes `<pid>.json` with its own pid and holds a real
+- `claude agents --json` is a mock `claude` executable that prints recorded 2.1.286 output.
+- The mock app-server answers `thread/turns/list` with recorded output, and a test holds a real
   lock from a child process.
-- The public-API tests cover running with no Feed, idle keeping its line, a dead pid, a rewritten
-  file, a large append, discovery, and live winning over stored, for both Harnesses.
+- The tests read rows through the Session List. They cover running with no Feed, idle keeping its
+  line, a thread that leaves, a rewritten rollout, discovery, a failing listing, and live winning
+  over stored, for both Harnesses.
 
 ## What goes, from the repo search
 
 | Path | Lines | Verdict |
 |---|---|---|
-| `src/harnesses/host/history-watch.ts` + test | 383 + 233 | Remove. Small root watcher and marker scan helpers replace it |
+| `src/harnesses/host/history-watch.ts` + test | 383 + 233 | Remove. The poll replaces it |
 | `claude/session/claude-history-lines.ts` + test | 178 + 248 | Shrink to `jsonObject` and `historyRecord`, which skills use |
 | `codex/session/codex-history-lines.ts` + test | 165 + 253 | Shrink to the turn markers and the owner from the path, about 45 lines |
 | `domains/sessions/main/live/session-history-followers.ts` + test | 67 + 97 | Remove |
-| `domains/sessions/main/api/watched-session-status.ts` + test | 53 + 86 | Remove (the pid files and markers replace it) |
+| `domains/sessions/main/api/watched-session-status.ts` + test | 53 + 86 | Remove (the poll replaces it) |
 | `feed/feed-reader.ts` `followHistory` path | about 50 | Shrink |
 | `session-list.ts` roster Feed readers | about 45 | Remove (the branch already removes it) |
 | `database/session-subagents.ts` `recordLiveSubagents` | about 35 | Move to the SDK or app-server input |
@@ -125,9 +137,9 @@ owner helpers, `SessionHistoryFollowers`, `WatchedSessionStatus` and `HistoryFil
 
 ## Split and size
 
-1. Presence and roster (reshapes #2940). The capability, both root watchers with discovery, pid
-   files, locks, the status mapping, the activity line through the APIs, the merged write, and the
-   removal of roster Feed readers and per-file watchers. About +500 / -700.
+1. Presence and roster (#2940). The capability, the Claude listing, the Codex locks, the status
+   mapping, the Codex activity line, the merged write, and the removal of roster Feed readers and
+   per-file watchers.
 2. Live status from the vendors. The SDK state event and `thread/status/changed`. About +80 / -100.
 3. External Feed and Subagents through the APIs. Removes the decoders, the followers and the tail.
    About +700 / -2,100.

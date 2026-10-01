@@ -7,6 +7,7 @@ import { readAutoCompactLimit, writeAutoCompactLimit } from './compaction'
 import { HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV } from './proof-protocol'
 import { createCodexSignInDriver, createSystemCodexReadiness } from './readiness'
 import {
+  createCodexExternalSessions,
   createCodexSessionSummaryList,
   createCodexSessionSummaryReader,
   hasCodexSessionTurn,
@@ -31,6 +32,7 @@ export function createCodexRegistration(
     readHistory: ({ nativeId, subagentId }) =>
       readCodexSessionHistory(request, subagentId ?? nativeId),
     hasTurn: (nativeId, turnId) => hasCodexSessionTurn(request, nativeId, turnId),
+    externalSessions: createCodexExternalSessions(request, codexHome),
     openLiveSession: (input, controls, emit) =>
       openCodexSessionChannel(input, client, { emit, controls }),
     listCommands: ({ cwd }) => {

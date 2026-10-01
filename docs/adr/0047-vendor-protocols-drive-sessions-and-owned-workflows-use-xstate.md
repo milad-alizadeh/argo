@@ -4,20 +4,25 @@ Status: accepted · 2026-09-21
 
 ## Amendment · external Session presence (#2940) · 2026-10-01
 
-No vendor interface reports whether a Session that runs outside Argo is open. To show that on its
-row, a Harness adapter may read two small records, and only these:
+A Session that runs outside Argo gets its row's status from one poll source for each Harness,
+and only these:
 
-- Claude's `~/.claude/sessions/<pid>.json` pid files, validated when read, with a liveness check
-  of the pid.
-- A non-blocking flock probe on Codex's `~/.codex/thread-writer-locks/<id>.lock`. Node has no
-  flock, so a host helper runs a `/usr/bin/perl` one-liner that takes `LOCK_EX|LOCK_NB` and lets go.
+- Claude: `claude agents --json`, the agent view's documented way to read Session state from
+  outside Claude Code. Its output is validated when read. It gives a status and no activity line.
+  Argo reads no `~/.claude/sessions/<pid>.json` pid file.
+- Codex: a non-blocking flock probe on `~/.codex/thread-writer-locks/<id>.lock` says the thread is
+  open. Node has no flock, so a host helper runs a `/usr/bin/perl` one-liner that takes
+  `LOCK_EX|LOCK_NB` and lets go. The host may `stat` the rollout path as a change signal and reads
+  none of its content. When the rollout changed, or the lock is no longer held, the adapter asks
+  app-server `thread/turns/list` for the newest Turn. A Turn with `completedAt` is idle. A Turn
+  without it is running while the lock is held, and unknown once the lock is free, because a crash
+  leaves the Turn unfinished too. "Thread not loaded" with the lock held is idle. An error within
+  2 seconds of a change is a Turn still starting: it reads as running, and the next poll asks again.
 
-The host may also `stat` a live Session's transcript or rollout path, as a change signal. Argo
-reads none of that file's content. When the file changed, the adapter asks a vendor interface what
-the Session is doing: the Agent SDK's `getSessionMessages` for Claude, and app-server
-`thread/turns/list` for Codex. These reads change no Session and drive no resume. This amends the
-decision below that supersedes ADR-0040's file and process liveness checks, for the two records
-only. The rule that Argo does not parse transcript or rollout files stands.
+These reads change no Session and drive no resume. This amends the decision below that supersedes
+ADR-0040's file and process liveness checks, for the lock probe only. The rule that Argo does not
+parse transcript or rollout files stands. Hooks, when the user turns them on, replace both poll
+sources (#2976).
 
 ## Amendment · main-owned root Feed reading (#2824) · 2026-09-28
 

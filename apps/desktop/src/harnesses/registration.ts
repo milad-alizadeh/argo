@@ -4,7 +4,6 @@ import {
   type ComposerCommandListing,
   composerCommandSchema,
 } from '@/domains/sessions/api/composer-commands'
-import type { LiveActivity } from '@/domains/sessions/api/feed'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { Question, QuestionAnswer } from '@/domains/sessions/api/questions'
@@ -34,38 +33,43 @@ export const liveSessionChannelEventSchema = z.discriminatedUnion('type', [
   }),
 ])
 
-// The roster status a Harness's own records give an external Session (ADR-0048).
+// The roster status a Harness's own interface gives an external Session (ADR-0048).
 export type ExternalSessionStatus = 'running' | 'permission' | 'asking' | 'idle' | 'unknown'
 
-// One Session open outside Argo now, as its Harness's own small records name it.
+// One Session open outside Argo now, as its Harness's own listing names it.
 export type LiveExternalSession = {
   nativeId: string
-  // `unknown` for a value the Harness does not recognise, or when its records cannot tell.
-  status: ExternalSessionStatus
-  // The transcript the host stats each tick; null means no growth check, so status only.
+  // The status the listing gives; null when only an activity read can tell.
+  status: ExternalSessionStatus | null
+  // The transcript the host stats each tick; null while the Harness cannot name it yet.
   transcript: string | null
 }
 
 // Every live external Session, and how many records had a shape or value the Harness rejected.
 type LiveExternalSessionList = { sessions: LiveExternalSession[]; rejected: number }
 
-// What a Harness's own API says a Session is doing now.
+// What a Harness's own interface says a Session is doing now.
 export type ExternalActivityReading = {
-  // The newest activity; null keeps the line the row already shows.
-  activity: LiveActivity | null
-  // A status the API settles, such as a finished turn; null leaves the listed status.
+  // The newest Turn's Feed content; the host finds the activity line with the Feed's own rules.
+  turn: readonly FeedContent[]
+  // The status the interface settles; null leaves the stored one.
   status: ExternalSessionStatus | null
+  // The interface could not answer yet; the host reads again on the next tick.
+  retry: boolean
 }
 
 // How the roster's poll reads Sessions this Harness runs outside Argo. The host owns the loop,
 // the transcript stat, the diff and every write, and skips a Session with a live Argo channel.
 // Argo parses no transcript content: the host only stats the path (ADR-0047).
 export type ExternalSessions = {
-  // Called every poll tick. Reads only small records such as pid files and lock probes.
+  // Called every poll tick, one call at a time. Reads only a vendor listing or small records, such
+  // as a lock probe. Throws when its source cannot answer; the rows then keep what they show.
   listLive: () => Promise<LiveExternalSessionList>
-  // Called after a live Session's transcript changed, never at start. Answers from a vendor API,
-  // not the transcript; calls run one at a time across every Harness. Absent means status only.
-  readActivity?: (nativeId: string) => Promise<ExternalActivityReading>
+  // Called after a Session's transcript changed or after it left the list, never at start.
+  // Answers from a vendor interface, not the transcript; calls run one at a time across every
+  // Harness. `changedAt` is when the host last saw the transcript change. Absent means the
+  // listing's status alone, with no activity line.
+  readActivity?: (nativeId: string, changedAt: number) => Promise<ExternalActivityReading>
 }
 
 export type LiveSessionChannelEvent = z.infer<typeof liveSessionChannelEventSchema>

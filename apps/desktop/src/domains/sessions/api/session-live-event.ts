@@ -65,4 +65,8 @@ export const sessionLiveEventSchema = z.intersection(
 )
 
 export type SessionLiveEventBody = z.infer<typeof sessionLiveEventBodySchema>
+// What a history reader draws from appended lines, or that they branched off the chain read so far.
+export type HistoryChange =
+  | { type: 'appended'; events: SessionLiveEventBody[] }
+  | { type: 'rewritten' }
 export type SessionLiveEvent = z.infer<typeof sessionLiveEventSchema>

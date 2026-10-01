@@ -3,6 +3,7 @@ import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionArchive } from '@/database/session-archive/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
+import type { FeedActivityState } from '@/domains/sessions/api/feed-activity'
 import {
   sessionDetailsProcedure,
   sessionListChangedProcedure,
@@ -115,13 +116,18 @@ export function sessionListCaller({
 
 export const settled = () => new Promise((resolve) => setTimeout(resolve, 0))
 
-export function liveSession(state: string, status: string | null = null) {
+export function liveSession(
+  state: string,
+  status: string | null = null,
+  activity: FeedActivityState['activity'] = null,
+) {
   return {
     getSnapshot: () => ({
       value: state,
       matches: (candidate: string) => candidate === state,
       context: {
         status,
+        activity: { activity, callId: null },
         turnConfiguration: { model: 'claude-sonnet', effort: 'high', mode: 'default' },
       },
     }),

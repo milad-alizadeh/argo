@@ -1,4 +1,4 @@
-import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
+import type { HistoryChange, SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { SubAgentActivityKind } from '../app-server'
 import { codexSubagentContent } from './codex-subagent-content'
 import { codexTaskNotification } from './codex-task-notification'
@@ -106,9 +106,6 @@ function subagentEvents(payload: unknown, reject: () => void): SessionLiveEventB
     },
   ]
 }
-
-// What the lines a rollout appended draw, or that the Feed must read the thread whole.
-type HistoryChange = { type: 'appended'; events: SessionLiveEventBody[] } | { type: 'rewritten' }
 
 // A command or an edit differs between a rollout and `thread/read`, so the Feed reads it whole.
 const READ_WHOLE = new Set(['CommandExecution', 'FileChange'])

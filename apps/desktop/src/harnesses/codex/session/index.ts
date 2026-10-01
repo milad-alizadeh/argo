@@ -1,3 +1,4 @@
+export { createCodexExternalSessions } from './codex-external-sessions'
 export { openCodexSessionChannel } from './codex-session-channel'
 export {
   createCodexSessionSummaryList,
