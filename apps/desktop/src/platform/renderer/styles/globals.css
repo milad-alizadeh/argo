@@ -9,6 +9,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@keyframes session-list-status-pulse {
+  50% {
+    box-shadow: var(--shadow-state-glow);
+  }
+}
+
 /* Shared icons keep the same geometry and ink across their surrounding controls. */
 [data-slot="icon"] {
   width: var(--icon-size, var(--size-icon-control));
