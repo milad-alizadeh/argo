@@ -2,7 +2,7 @@ import { $convertFromMarkdownString, $convertToMarkdownString } from '@lexical/m
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { $createParagraphNode, $getRoot } from 'lexical'
-import { useEffect, useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { composerTransformers } from './session-composer-markdown'
 
 const RESTORE_TAG = 'composer.restore'
@@ -24,7 +24,8 @@ export function ComposerEditorAdapter({
   const pendingPrompts = useRef<string[]>([])
   currentPrompt.current = prompt
 
-  useEffect(() => {
+  // Runs before the focus on mount, which then puts the caret after the restored draft.
+  useLayoutEffect(() => {
     const echoedPrompt = pendingPrompts.current.indexOf(prompt)
     if (echoedPrompt !== -1) {
       pendingPrompts.current.splice(0, echoedPrompt + 1)
