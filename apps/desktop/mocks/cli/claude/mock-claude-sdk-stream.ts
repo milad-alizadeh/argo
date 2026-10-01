@@ -11,6 +11,8 @@ const INITIALIZATION_DELAY_MS = 50
 const STREAM_PROBE = 'FeedStreamProbe'
 const STREAM_DELTAS = 300
 const STREAM_DELTA_INTERVAL_MS = 10
+// A `PLAN` prompt writes a TodoWrite Plan with one of its two steps done, as the Codex mock does.
+const PLAN_PROBE = 'PLAN'
 const MODELS = [
   {
     value: 'fable',
@@ -122,6 +124,7 @@ export function startMockClaudeSdkStream(
     const text = promptText(input)
     if (text === null) return
     if (text.includes('FeedActivityProbe')) writeActivity(sessionId)
+    if (text.includes(PLAN_PROBE)) writePlan(sessionId)
     const ids = {
       user: typeof input.uuid === 'string' ? input.uuid : randomUUID(),
       reply: randomUUID(),
@@ -139,12 +142,29 @@ export function startMockClaudeSdkStream(
   })
 }
 
+function writeAssistantContent(sessionId: string, content: Record<string, unknown>) {
+  process.stdout.write(
+    `${JSON.stringify({ type: 'assistant', session_id: sessionId, uuid: randomUUID(), parent_tool_use_id: null, message: { id: randomUUID(), type: 'message', role: 'assistant', model: 'claude-opus-4-6', content: [content], stop_reason: null, stop_sequence: null, usage: { input_tokens: 0, output_tokens: 0 } } })}\n`,
+  )
+}
+
+function writePlan(sessionId: string) {
+  writeAssistantContent(sessionId, {
+    type: 'tool_use',
+    id: randomUUID(),
+    name: 'TodoWrite',
+    input: {
+      todos: [
+        { content: 'Read the Session protocol', status: 'completed', activeForm: 'Reading' },
+        { content: 'Project the live Plan', status: 'in_progress', activeForm: 'Projecting' },
+      ],
+    },
+  })
+}
+
 function writeActivity(sessionId: string) {
   const toolUseId = randomUUID()
-  const message = (content: Record<string, unknown>) =>
-    process.stdout.write(
-      `${JSON.stringify({ type: 'assistant', session_id: sessionId, uuid: randomUUID(), parent_tool_use_id: null, message: { id: randomUUID(), type: 'message', role: 'assistant', model: 'claude-opus-4-6', content: [content], stop_reason: null, stop_sequence: null, usage: { input_tokens: 0, output_tokens: 0 } } })}\n`,
-    )
+  const message = (content: Record<string, unknown>) => writeAssistantContent(sessionId, content)
   setTimeout(() => {
     process.stdout.write(
       `${JSON.stringify({ type: 'tool_progress', session_id: sessionId, uuid: randomUUID(), tool_use_id: toolUseId, tool_name: 'Bash', parent_tool_use_id: null, elapsed_time_seconds: 0 })}\n`,

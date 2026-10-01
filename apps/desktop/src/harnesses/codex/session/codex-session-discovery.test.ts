@@ -5,7 +5,12 @@ import externalThreads from '../../../../mocks/cli/codex/fixtures/external-threa
 import recordedResponses from '../../../../mocks/cli/codex/fixtures/session-sync-codex-0.157.0.json' with {
   type: 'json',
 }
-import type { CodexRequest, Thread, ThreadListResponse } from '../app-server'
+import {
+  type CodexRequest,
+  CodexUnavailableError,
+  type Thread,
+  type ThreadListResponse,
+} from '../app-server'
 import {
   createCodexSessionSummaryList,
   createCodexSessionSummaryReader,
@@ -142,6 +147,13 @@ test('fails a Codex scan when the page envelope is malformed', async () => {
   ).rejects.toThrow()
 })
 
+test('lists no Sessions, rather than failing the scan, on a machine without Codex', async () => {
+  const result = await createCodexSessionSummaryList((async () => {
+    throw new CodexUnavailableError()
+  }) as CodexRequest)({ knownNativeIds: ['previously-saved'] })
+  expect(result).toEqual({ records: [], skipped: 0 })
+})
+
 test('propagates a failed read for a known Session so Session sync can retry', async () => {
   await expect(
     createCodexSessionSummaryList((async (method: string, _params, _parse) => {
@@ -190,6 +202,25 @@ test('counts a thread whose preview or cwd breaks the generated Thread type', as
       nextCursor: null,
     })) as CodexRequest)({ knownNativeIds: [] })
   expect(result).toEqual({ records: [], skipped: 2 })
+})
+
+test('reads the Model and Effort a thread records, and leaves out what it records as none', async () => {
+  const result = await createCodexSessionSummaryList((async (_method, _params, parse) =>
+    parse({
+      data: [
+        { id: 'configured', updatedAt: 1, model: 'gpt-5.5', reasoningEffort: 'high' },
+        { id: 'unconfigured', updatedAt: 1, model: null, reasoningEffort: null },
+      ],
+      nextCursor: null,
+    })) as CodexRequest)({ knownNativeIds: [] })
+  expect(result.records).toEqual([
+    {
+      nativeId: 'configured',
+      activityAt: 1000,
+      turnConfiguration: { model: 'gpt-5.5', effort: 'high', mode: null },
+    },
+    { nativeId: 'unconfigured', activityAt: 1000 },
+  ])
 })
 
 // The error Codex 0.157.0 answers thread/read with for an id that is not a UUID.

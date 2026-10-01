@@ -26,6 +26,7 @@ export function sessionRow(
     ticket: null,
     archived: false,
     turnConfiguration: { model: null, effort: null, mode: null },
+    planProgress: null,
     ...overrides,
   }
 }

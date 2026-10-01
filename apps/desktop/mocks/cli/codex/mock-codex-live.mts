@@ -3,6 +3,7 @@ import { createInterface } from 'node:readline'
 import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
 import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
+import { sendPlanUpdate } from './fixtures/mock-codex-plan.ts'
 import { createMockCodexSkillsAndConfig } from './fixtures/mock-codex-skills-config.ts'
 
 type Item = {
@@ -171,6 +172,16 @@ function notifyFeedActivity(active: ActiveTurn) {
   )
 }
 
+function notifyPlan({ thread, turn, prompt }: ActiveTurn) {
+  sendPlanUpdate({
+    text: prompt,
+    threadId: thread.id,
+    turnId: turn.id,
+    send,
+    beforeTurnStart: false,
+  })
+}
+
 function notifyTurn(active: ActiveTurn) {
   const { thread, turn, prompt } = active
   send({
@@ -182,6 +193,7 @@ function notifyTurn(active: ActiveTurn) {
     params: { threadId: thread.id, turnId: turn.id, item: turn.items[0] },
   })
   if (prompt.includes('FeedActivityProbe')) notifyFeedActivity(active)
+  notifyPlan(active)
   if (prompt === 'Need approval') {
     const requestId = `approval-${turn.id}`
     pending.set(requestId, active)

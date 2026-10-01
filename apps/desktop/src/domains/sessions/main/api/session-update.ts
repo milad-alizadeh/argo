@@ -14,7 +14,10 @@ import { saveSessionSubagents } from '../database'
 import { sessionHistoryIdentity } from '../session-history-identity'
 import type { SessionListChanges } from './session-list-changes'
 
-type StoredUpdate = Pick<typeof sessionTable.$inferInsert, 'customTitle' | 'status' | 'activityAt'>
+type StoredUpdate = Pick<
+  typeof sessionTable.$inferInsert,
+  'customTitle' | 'status' | 'activityAt' | 'turnConfiguration' | 'planProgress'
+>
 export type SessionUpdate = {
   [Column in keyof StoredUpdate]?: NonNullable<StoredUpdate[Column]>
 } & {
@@ -25,6 +28,22 @@ export type SessionUpdate = {
 }
 
 export type SessionUpdateContext = { database: Database; changes: SessionListChanges }
+
+// Rebuilt in one key order, so the stored JSON compares equal to an unchanged report.
+function reportedColumns({ turnConfiguration, planProgress }: SessionUpdate) {
+  return {
+    ...(turnConfiguration && {
+      turnConfiguration: {
+        model: turnConfiguration.model,
+        effort: turnConfiguration.effort,
+        mode: turnConfiguration.mode,
+      },
+    }),
+    ...(planProgress && {
+      planProgress: { completed: planProgress.completed, total: planProgress.total },
+    }),
+  }
+}
 
 // The columns an update sets, and for each the condition that it would change the stored value.
 function sessionColumns(update: SessionUpdate) {
@@ -37,7 +56,13 @@ function sessionColumns(update: SessionUpdate) {
   if (update.status !== undefined) differs.push(sql`${sessionTable.status} is not ${update.status}`)
   if (update.activityAt !== undefined)
     differs.push(sql`coalesce(${sessionTable.activityAt}, 0) < ${update.activityAt}`)
+  const reported = reportedColumns(update)
+  for (const [column, value] of Object.entries(reported))
+    differs.push(
+      sql`${sessionTable[column as keyof typeof reported]} is not ${JSON.stringify(value)}`,
+    )
   const columns = {
+    ...reported,
     ...(update.customTitle === undefined
       ? {}
       : { customTitle: update.customTitle, updatedAt: nextUpdatedAt(sessionTable.updatedAt) }),
