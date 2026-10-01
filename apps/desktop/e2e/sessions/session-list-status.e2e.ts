@@ -86,7 +86,7 @@ async function startSession(
   await composer.click()
   await page.keyboard.type(prompt)
   await page.keyboard.press('Enter')
-  const row = page.locator(PERSISTED_ROW).first()
+  const row = page.locator(PERSISTED_ROW).filter({ hasText: prompt })
   await expect(row).toHaveCount(1)
   return row.locator('[data-slot="session-status"]')
 }
@@ -120,7 +120,7 @@ for (const harness of ['claude', 'codex'] as const)
     try {
       const prompt = `FeedActivityProbe ${harness}`
       await startSession(page, { harness, prompt })
-      const row = page.locator(PERSISTED_ROW).first()
+      const row = page.locator(PERSISTED_ROW).filter({ hasText: prompt })
       const feed = page.getByRole('region', { name: 'Session history' })
       const toolLabel = harness === 'claude' ? 'Check the Feed' : 'rtk bun run typecheck'
       await expect(feed).toContainText(toolLabel)
@@ -187,7 +187,11 @@ for (const harness of ['claude', 'codex'] as const)
       await expect(row).toContainText('Step 1/2')
       configuration = await first.page.locator(TURN_CONFIGURATION).getAttribute('aria-label')
       stored = (await sessionDetails(first.page, sessionId ?? ''))?.turnConfiguration
-      expect(Object.values(stored ?? {})).not.toContain(null)
+      expect(stored).toEqual({
+        model: expect.any(String),
+        effort: expect.any(String),
+        mode: expect.any(String),
+      })
     } finally {
       await first.application.close()
     }

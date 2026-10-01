@@ -9,7 +9,7 @@ import {
   PopoverTrigger,
 } from '@/platform/renderer/components/ui/popover'
 import { Progress } from '@/platform/renderer/components/ui/progress'
-import type { PlanEntryStatus, SessionPlan, SessionPlanProgress } from '../../types'
+import type { ComposerPlan, PlanEntryStatus, SessionPlan } from '../../types'
 
 const PLAN_ENTRY_CLASS: Record<PlanEntryStatus, string> = {
   completed: 'bg-foreground text-background',
@@ -34,23 +34,24 @@ type Entry = AvailablePlan['entries'][number]
 // What the popover draws: the steps when the Feed is open, or only their count from the row.
 type PlanSteps = { current: number; total: number; progressed: number; entries: Entry[] }
 
-function planSteps(plan: SessionPlan | null, progress: SessionPlanProgress | null) {
-  if (plan?.state === 'available') {
-    const active = plan.entries.findIndex((entry) => entry.status === 'in_progress')
-    const completed = plan.entries.filter((entry) => entry.status === 'completed').length
-    return {
-      current: active === -1 ? completed : active + 1,
-      total: plan.entries.length,
-      progressed: plan.entries.filter((entry) => entry.status !== 'pending').length,
-      entries: plan.entries,
+function planSteps(plan: ComposerPlan | null): PlanSteps | null {
+  switch (plan?.state) {
+    case 'available': {
+      const active = plan.entries.findIndex((entry) => entry.status === 'in_progress')
+      const completed = plan.entries.filter((entry) => entry.status === 'completed').length
+      return {
+        current: active === -1 ? completed : active + 1,
+        total: plan.entries.length,
+        progressed: plan.entries.filter((entry) => entry.status !== 'pending').length,
+        entries: plan.entries,
+      }
     }
-  }
-  if (progress === null || progress.total === 0) return null
-  return {
-    current: progress.completed,
-    total: progress.total,
-    progressed: progress.completed,
-    entries: [],
+    case 'counted':
+      if (plan.total === 0) return null
+      return { current: plan.completed, total: plan.total, progressed: plan.completed, entries: [] }
+    case 'malformed':
+    case undefined:
+      return null
   }
 }
 
@@ -114,15 +115,9 @@ function PlanContent({ steps }: { steps: PlanSteps }) {
   )
 }
 
-export function SessionPlanPopover({
-  plan,
-  progress,
-}: {
-  plan: SessionPlan | null
-  progress: SessionPlanProgress | null
-}) {
+export function SessionPlanPopover({ plan }: { plan: ComposerPlan | null }) {
   const { t } = useTranslation('sessions')
-  const steps = planSteps(plan, progress)
+  const steps = planSteps(plan)
   if (steps === null) return null
   const percentage = steps.total === 0 ? 0 : (steps.progressed / steps.total) * 100
   return (

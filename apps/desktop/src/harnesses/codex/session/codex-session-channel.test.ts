@@ -384,7 +384,7 @@ test('Codex live commentary and reasoning stay separate from the final answer', 
   channel.close()
 })
 
-test('a Codex Plan update draws one Plan for its Turn and ignores another Turn', async () => {
+test('a Codex Plan update draws one Plan for its Turn, ignores another Turn and rejects a bad shape', async () => {
   const { channel, events, notify } = mockCodexChannel(startedThreadRequest)
   await new Promise((resolve) => setImmediate(resolve))
   const planUpdated = (turnId: string, done: boolean) =>
@@ -400,9 +400,23 @@ test('a Codex Plan update draws one Plan for its Turn and ignores another Turn',
         ],
       },
     })
-  planUpdated('turn-1', false)
-  planUpdated('turn-1', true)
-  planUpdated('turn-other', true)
+  const warnings: string[] = []
+  const originalWarn = console.warn
+  try {
+    console.warn = (message) => warnings.push(String(message))
+    planUpdated('turn-1', false)
+    notify({
+      method: 'turn/plan/updated',
+      params: { threadId: 'thread-1', turnId: 'turn-1', plan: [{ step: 'Read the code' }] },
+    })
+    planUpdated('turn-1', true)
+    planUpdated('turn-other', true)
+  } finally {
+    console.warn = originalWarn
+  }
+  assert.deepEqual(warnings, [
+    'Rejected 1 unsupported Codex live notification(s): turn/plan/updated',
+  ])
   const plans = events.flatMap((event) =>
     event.type === 'feed' && event.body.type === 'content' && event.body.content.kind === 'plan'
       ? [event.body.content]

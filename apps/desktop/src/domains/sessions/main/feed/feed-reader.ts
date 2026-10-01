@@ -14,7 +14,7 @@ import {
   retainLiveEvent,
   subagentCompletionRows,
 } from '@/domains/sessions/api/feed'
-import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import type { FeedContent, PlanProgress } from '@/domains/sessions/api/feed-content'
 import type { SessionError } from '@/domains/sessions/api/session-error'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
@@ -23,7 +23,7 @@ import {
   type SessionLiveEvent,
 } from '@/domains/sessions/api/session-live-event'
 import type { Harness } from '@/harnesses/harness'
-import type { PlanProgress, SessionListChanges } from '../api'
+import type { SessionListChanges } from '../api'
 import { updateSession } from '../api'
 import type { SessionEventJournal } from '../live'
 import { sessionHistoryIdentity } from '../session-history-identity'

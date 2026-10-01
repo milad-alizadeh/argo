@@ -26,6 +26,7 @@ import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { ticketContent } from '@/database/ticket-content/schema'
 import { ticketContentSelectSchema } from '@/database/ticket-content/validation'
 import { type LiveActivity, liveActivitySchema } from '@/domains/sessions/api/feed'
+import { planProgressSchema } from '@/domains/sessions/api/feed-content'
 import { sessionListInputSchema } from '@/domains/sessions/api/session-list-input'
 import { identifierSchema } from '@/shared/validation'
 import { type StoredSubagent, storedSessionSubagents } from '../database'
@@ -76,12 +77,7 @@ export const sessionListRowSchema = z.strictObject({
     effort: z.string().nullable(),
     mode: z.string().nullable(),
   }),
-  planProgress: z
-    .strictObject({
-      completed: z.number().int().nonnegative(),
-      total: z.number().int().nonnegative(),
-    })
-    .nullable(),
+  planProgress: planProgressSchema.nullable(),
 })
 
 const sessionListSchema = z.strictObject({

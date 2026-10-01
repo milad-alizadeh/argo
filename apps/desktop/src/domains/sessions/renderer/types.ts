@@ -9,7 +9,6 @@ export type SessionPosture = NonNullable<Session['posture']>
 export type SessionActivity = NonNullable<Session['activity']>
 export type SessionTicket = NonNullable<Session['ticket']>
 export type SessionTurnConfiguration = Session['turnConfiguration']
-export type SessionPlanProgress = NonNullable<Session['planProgress']>
 export type PlanEntryStatus = 'pending' | 'in_progress' | 'completed'
 export type SessionPlan =
   | {
@@ -17,6 +16,10 @@ export type SessionPlan =
       entries: { content: string; position: number; status: PlanEntryStatus }[]
     }
   | { state: 'malformed' }
+// The composer's Plan: the steps from an open Feed, or only their count from the stored row.
+export type ComposerPlan =
+  | SessionPlan
+  | ({ state: 'counted' } & NonNullable<Session['planProgress']>)
 export type ShellState = 'running' | 'completed' | 'failed' | 'interrupted'
 export type SessionShellCommand = {
   id: string

@@ -211,7 +211,7 @@ test('a Feed with Plan rows keeps the newest step count for the Session List', a
   journal.append(sessionId, content(plan('p3', 2, 4)))
   expect(await sessionListPlan()).toEqual({ completed: 2, total: 4 })
 
-  // A history read with no Plan, as Codex history has none, keeps the stored count.
+  // A history read with no Plan keeps the stored count, since some vendor histories keep none.
   journal.append(sessionId, { type: 'status', ...identity, status: 'idle' })
   await history.answer([message('m1', 'user', 'Plan it')])
   expect(await sessionListPlan()).toEqual({ completed: 2, total: 4 })

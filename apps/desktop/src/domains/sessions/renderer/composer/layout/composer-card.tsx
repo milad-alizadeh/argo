@@ -3,7 +3,7 @@ import { type DragEvent, type RefObject, useEffect, useRef, useState } from 'rea
 import { useTranslation } from 'react-i18next'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
 import type { HarnessControl } from '../../harness'
-import type { SessionPlan, SessionPlanProgress } from '../../types'
+import type { ComposerPlan } from '../../types'
 import { SessionContextBar } from '../context-bar/session-context-bar'
 import { useComposerEditing } from '../editing/composer-editing-context'
 import { useAttachmentTransfer } from '../hooks/use-composer-attachments'
@@ -29,8 +29,7 @@ type ComposerCardProps = {
   onHandoff?: () => Promise<boolean>
   onInterrupt?: () => Promise<boolean>
   onSend: () => void
-  plan: SessionPlan | null
-  planProgress: SessionPlanProgress | null
+  plan: ComposerPlan | null
   sessionId: string
   commands: ComposerCommandListing
   projectId?: string | null
@@ -174,7 +173,6 @@ export function ComposerCard(props: ComposerCardProps) {
         />
         <ComposerToolbar
           plan={props.plan}
-          planProgress={props.planProgress}
           disabled={props.disabled}
           sendAvailable={props.catalogState?.sendAvailable}
           harness={props.harness}

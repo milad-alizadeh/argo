@@ -406,10 +406,14 @@ export const SessionListStructure: Story = {
   },
 }
 
-// A row whose Feed held a Plan names its step count, with or without a live channel.
+// A row whose Feed held a Plan names its step count, with or without a live channel; an empty
+// Plan names none.
 export const RowShowsItsPlanStep: Story = {
   beforeEach: () =>
-    showing([{ ...session, planProgress: { completed: 1, total: 2 } }, secondSession]),
+    showing([
+      { ...session, planProgress: { completed: 1, total: 2 } },
+      { ...secondSession, planProgress: { completed: 0, total: 0 } },
+    ]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const planned = await canvas.findByRole('button', { name: /Read the Session transcript/ })

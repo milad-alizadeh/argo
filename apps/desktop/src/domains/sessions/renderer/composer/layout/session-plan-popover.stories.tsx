@@ -110,7 +110,7 @@ export const Empty: Story = {
 
 // A Session read back from its row knows only its step count, not the steps.
 export const StepCountOnly: Story = {
-  args: { plan: null, progress: { completed: 1, total: 2 } },
+  args: { plan: { state: 'counted', completed: 1, total: 2 } },
   play: async ({ canvasElement }) => {
     const trigger = await opensPlan(canvasElement)
     await expect(trigger).toHaveTextContent('Step 1/2')
@@ -121,7 +121,7 @@ export const StepCountOnly: Story = {
 }
 
 export const NoPlan: Story = {
-  args: { plan: null, progress: null },
+  args: { plan: null },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).queryByRole('button', { name: 'Open task plan' })).toBeNull()
   },

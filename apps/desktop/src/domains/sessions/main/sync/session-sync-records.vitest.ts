@@ -205,3 +205,18 @@ test('saves a found Model and Effort, and keeps them when a later scan finds non
     client.close()
   }
 })
+
+test('keeps a live-saved Model and Effort when a later scan finds older ones', () => {
+  const { client, database } = createDatabase()
+  const stored = () => Object.assign({}, client.prepare('SELECT model, effort FROM session').get())
+  try {
+    saveSessionBatch(database, 'codex', [{ nativeId: ID, activityAt: 1 }])
+    client.prepare("UPDATE session SET model = 'gpt-5.6', effort = 'low'").run()
+    saveSessionBatch(database, 'codex', [
+      { nativeId: ID, activityAt: 2, model: 'gpt-5.5', effort: 'high' },
+    ])
+    assert.deepEqual(stored(), { model: 'gpt-5.6', effort: 'low' })
+  } finally {
+    client.close()
+  }
+})

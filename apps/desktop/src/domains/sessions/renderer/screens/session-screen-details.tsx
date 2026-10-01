@@ -22,7 +22,7 @@ import {
 } from '../composer'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import type { HarnessControl } from '../harness'
-import type { Session, SessionExtras } from '../types'
+import type { ComposerPlan, Session, SessionExtras } from '../types'
 import { draftTarget } from './session-draft-target'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
 import { useSessionDetails } from './use-session-details'
@@ -42,6 +42,13 @@ type SessionScreenDetailsProps = {
 }
 
 type SessionsTranslator = ReturnType<typeof useTranslation<'sessions'>>['t']
+
+// The open Feed's steps, else the stored row's step count.
+function composerPlan(session: (Session & SessionExtras) | null): ComposerPlan | null {
+  if (session?.plan != null) return session.plan
+  if (session?.planProgress == null) return null
+  return { state: 'counted', ...session.planProgress }
+}
 
 function catalogFailureMessage(
   t: SessionsTranslator,
@@ -366,8 +373,7 @@ function SessionComposer({
         onDecide={permission.decide}
       />
     ),
-    plan: session?.plan ?? null,
-    planProgress: session?.planProgress ?? null,
+    plan: composerPlan(session),
     projectId,
     commandCwd:
       identity.kind === 'session'

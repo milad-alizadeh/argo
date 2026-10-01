@@ -18,6 +18,15 @@ function definedMetadata(input: SessionUpsertInput): Partial<SessionUpsertMetada
   ) as Partial<SessionUpsertMetadata>
 }
 
+// A scan fills Model, Effort and Mode only while empty, so it never overwrites a newer live save.
+function reportedOnlyWhileEmpty(input: SessionUpsertInput) {
+  return {
+    model: sql`coalesce(${sessionTable.model}, ${input.model ?? null})`,
+    effort: sql`coalesce(${sessionTable.effort}, ${input.effort ?? null})`,
+    mode: sql`coalesce(${sessionTable.mode}, ${input.mode ?? null})`,
+  }
+}
+
 export function createSessionUpsert(database: Database): SessionUpsert {
   return (input) => {
     const validatedInput = sessionInsertSchema.parse(input)
@@ -46,6 +55,7 @@ export function createSessionUpsert(database: Database): SessionUpsert {
         target: [sessionTable.harness, sessionTable.nativeId],
         set: {
           ...metadata,
+          ...reportedOnlyWhileEmpty(validatedInput),
           harness: validatedInput.harness,
           updatedAt: sql`MAX(CAST(unixepoch('subsec') * 1000 AS INTEGER), ${sessionTable.updatedAt} + 1)`,
         },

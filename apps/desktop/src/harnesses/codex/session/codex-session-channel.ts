@@ -24,7 +24,7 @@ import {
   type CodexMessageFacts,
   codexFeedContent,
   codexMessageContent,
-  codexPlanContent,
+  readCodexPlan,
 } from './codex-feed'
 import {
   approvalResponse,
@@ -168,6 +168,13 @@ class CodexSessionChannel implements LiveSessionChannel {
       this.lastStatus = body.status
     }
     this.emit({ type: 'feed', body })
+  }
+
+  private planUpdated(params: Record<string, unknown>) {
+    const plan = readCodexPlan(params)
+    if (plan === null) return this.reject('turn/plan/updated')
+    if (plan.threadId === this.nativeId && this.active?.turnId === plan.turnId)
+      this.emitItemContent(plan.content, plan.content.id, plan.turnId)
   }
 
   private threadStatusChanged(params: Record<string, unknown>) {
@@ -357,10 +364,7 @@ class CodexSessionChannel implements LiveSessionChannel {
       messageDelta: (params) => this.messageDelta(params),
       reasoningSummaryDelta: (params) => this.reasoningSummaryDelta(params),
       commandOutputDelta: (params) => this.commandOutputDelta(params),
-      planUpdated: (plan) => {
-        if (plan.threadId === this.nativeId && this.active?.turnId === plan.turnId)
-          this.emitItemContent(codexPlanContent(plan), `${plan.turnId}:plan`, plan.turnId)
-      },
+      planUpdated: (params) => this.planUpdated(params),
       itemNotification: (params, phase) => this.itemNotification(params, phase),
       skillsChanged: () => this.skills?.changed(),
     })

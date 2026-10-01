@@ -57,6 +57,13 @@ const toolPresentationSchema = z.strictObject({
 })
 export type ToolPresentation = z.infer<typeof toolPresentationSchema>
 
+// A Plan's steps done and in total.
+export const planProgressSchema = z.strictObject({
+  completed: z.number().int().nonnegative(),
+  total: z.number().int().nonnegative(),
+})
+export type PlanProgress = z.infer<typeof planProgressSchema>
+
 export const feedContentSchema = z.discriminatedUnion('kind', [
   base.extend({
     kind: z.literal('message'),
@@ -120,12 +127,7 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
     kind: z.literal('plan'),
     text: z.string(),
     // Steps done and in total, where the Harness gives each step a status.
-    progress: z
-      .strictObject({
-        completed: z.number().int().nonnegative(),
-        total: z.number().int().nonnegative(),
-      })
-      .optional(),
+    progress: planProgressSchema.optional(),
   }),
   base.extend({
     kind: z.literal('delegation'),

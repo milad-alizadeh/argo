@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import {
   type FeedContent,
   type MediaSource,
@@ -230,14 +231,24 @@ export function codexCollabFacts(items: readonly ThreadItem[]): Map<string, Code
 }
 
 // A live Plan update states every step; history keeps none of them.
-export function codexPlanContent(
-  notification: TurnPlanUpdatedNotification,
-): Extract<FeedContent, { kind: 'plan' }> {
-  const steps = notification.plan.map(({ step, status }) => ({
-    text: step,
-    done: status === 'completed',
-  }))
-  return planContent(`${notification.turnId}:plan`, steps)
+const planNotificationSchema: z.ZodType<Omit<TurnPlanUpdatedNotification, 'explanation'>> =
+  z.object({
+    threadId: z.string().min(1),
+    turnId: z.string().min(1),
+    plan: z.array(
+      z.object({ step: z.string(), status: z.enum(['pending', 'inProgress', 'completed']) }),
+    ),
+  })
+
+// Null rejects the shape.
+export function readCodexPlan(
+  params: unknown,
+): { threadId: string; turnId: string; content: Extract<FeedContent, { kind: 'plan' }> } | null {
+  const parsed = planNotificationSchema.safeParse(params)
+  if (!parsed.success) return null
+  const { threadId, turnId, plan } = parsed.data
+  const steps = plan.map(({ step, status }) => ({ text: step, done: status === 'completed' }))
+  return { threadId, turnId, content: planContent(`${turnId}:plan`, steps) }
 }
 
 // A live agent message as its deltas and completion report it.

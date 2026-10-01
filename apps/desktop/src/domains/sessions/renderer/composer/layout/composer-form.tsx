@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback } from 'react'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
 import type { HarnessControl } from '../../harness'
-import type { SessionPlan, SessionPlanProgress } from '../../types'
+import type { ComposerPlan } from '../../types'
 import type { Send } from '../hooks/use-send'
 import { useSessionComposerState } from '../hooks/use-session-composer-state'
 import type { TicketChoice } from '../references/context-picker/context-picker-contents'
@@ -40,8 +40,7 @@ export type ComposerFormProps = {
   sessionId: string
   onSend?: Send
   permissionPrompt?: ReactNode
-  plan?: SessionPlan | null
-  planProgress?: SessionPlanProgress | null
+  plan?: ComposerPlan | null
   harness?: HarnessControl | null
   turnConfiguration?: TurnConfigurationControlProps | null
   turnConfigurationChoices?: TurnConfigurationChoices | null
@@ -124,7 +123,6 @@ function ComposerFormSurface({
   onSend,
   permissionPrompt,
   plan = null,
-  planProgress = null,
   harness = null,
   turnConfiguration: suppliedTurnConfiguration = null,
   turnConfigurationChoices,
@@ -184,7 +182,6 @@ function ComposerFormSurface({
         onSend={send}
         commands={listing}
         plan={plan}
-        planProgress={planProgress}
         projectId={projectId}
         sessionId={sessionId}
         tickets={tickets}

@@ -4,7 +4,7 @@ import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { decodeClaudeSessionMessages } from './claude/session/claude-session-history'
 import type { CodexRequest, ThreadItem } from './codex/app-server'
-import { codexPlanContent } from './codex/session/codex-feed'
+import { readCodexPlan } from './codex/session/codex-feed'
 import { readCodexSessionHistory } from './codex/session/codex-session-history'
 
 // What a reader sees: every row with its ids dropped, since each Harness names its own items.
@@ -136,7 +136,7 @@ test('Claude and Codex give the same Plan and step count for the same steps', ()
       ]),
     } as SessionMessage,
   ])
-  const codex = codexPlanContent({
+  const codex = readCodexPlan({
     threadId: 'thread-1',
     turnId: 'turn-1',
     explanation: null,
@@ -144,9 +144,9 @@ test('Claude and Codex give the same Plan and step count for the same steps', ()
       { step: 'Read the code', status: 'completed' },
       { step: 'Write the test', status: 'inProgress' },
     ],
-  })
+  })?.content
   const { id: _claudeId, ...claudePlan } = claude ?? { id: '' }
-  const { id: _codexId, ...codexPlan } = codex
+  const { id: _codexId, ...codexPlan } = codex ?? { id: '' }
   expect(claudePlan).toEqual(codexPlan)
   expect(codexPlan).toMatchObject({ kind: 'plan', progress: { completed: 1, total: 2 } })
 })

@@ -166,7 +166,7 @@ function SessionMetadata({ now, session }: { now: number; session: RowSession })
         <SessionAge minutes={minutes} updatedAt={session.updatedAt} />
       )}
       {plan === null ? null : <SessionPlanBar plan={plan} running={session.status === 'running'} />}
-      {session.planProgress === null ? null : (
+      {session.planProgress === null || session.planProgress.total === 0 ? null : (
         <span>
           {t('composer.plan', {
             current: session.planProgress.completed,
