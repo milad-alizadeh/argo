@@ -23,8 +23,6 @@ const EVENT_STATUS = {
 } as const satisfies Record<string, ExternalSessionStatus | null>
 export type StatusHookEvent = keyof typeof EVENT_STATUS
 export const STATUS_HOOK_EVENTS = Object.keys(EVENT_STATUS) as StatusHookEvent[]
-export const isStatusHookEvent = (name: string): name is StatusHookEvent =>
-  Object.hasOwn(EVENT_STATUS, name)
 
 // What one hook event says about a Session; a null activity keeps the stored line.
 export type ExternalHookReading = {
@@ -94,9 +92,7 @@ export function removeStatusHooks(
 
 const payloadSchema = z.looseObject({
   session_id: z.string().min(1),
-  hook_event_name: z.custom<StatusHookEvent>(
-    (name) => typeof name === 'string' && isStatusHookEvent(name),
-  ),
+  hook_event_name: z.enum(STATUS_HOOK_EVENTS),
   tool_name: z.string().min(1).optional(),
   tool_input: z.unknown().optional(),
 })

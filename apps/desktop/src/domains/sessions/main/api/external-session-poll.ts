@@ -101,7 +101,6 @@ const newTracked = (
 // that changed or left, and diffs the list against the last tick's. The first sight of a transcript
 // only records its stamp, so startup reads nothing. Updates merge into one write per Session a
 // window, and activity reads run one at a time, since one vendor read can take a large file whole.
-// A status hook event settles a status, which outranks the listed one.
 export class ExternalSessionPoll {
   readonly #context: ExternalSessionPollContext
   readonly #external: ReadonlyMap<Harness, ExternalSessions>

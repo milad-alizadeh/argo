@@ -89,7 +89,6 @@ export type ExternalSessions = {
   // Harness. `changedAt` is when the host last saw the transcript change. Absent means the
   // listing's status alone, with no activity line.
   readActivity?: (nativeId: string, changedAt: number) => Promise<ExternalActivityReading>
-  // Once its hooks fire, they replace this Harness's poll.
   hooks?: ExternalSessionHooks
 }
 

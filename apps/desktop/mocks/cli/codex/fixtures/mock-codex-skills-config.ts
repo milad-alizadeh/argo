@@ -67,10 +67,10 @@ export function createMockCodexSkillsAndConfig(
   // The auto-compact limit and the status hooks are the only keys the mock writes.
   function writeConfig(params: Request['params']) {
     const keyPath = String(params?.keyPath)
-    const hookKey = keyPath.startsWith('hooks.')
-    if (params?.mergeStrategy !== 'replace' || (keyPath !== AUTO_COMPACT_KEY && !hookKey))
+    const event = keyPath.startsWith('hooks.') ? keyPath.slice('hooks.'.length) : null
+    if (params?.mergeStrategy !== 'replace' || (keyPath !== AUTO_COMPACT_KEY && event === null))
       return { error: { code: INVALID_REQUEST, message: `Mock does not write ${keyPath}` } }
-    if (hookKey) writeHook(keyPath.slice(6), params.value)
+    if (event !== null) writeHook(event, params.value)
     else limit = params.value
     const result = { status: 'ok', version: version(), filePath: '/mock/.codex/config.toml' }
     return { result: { ...result, overriddenMetadata: null } }

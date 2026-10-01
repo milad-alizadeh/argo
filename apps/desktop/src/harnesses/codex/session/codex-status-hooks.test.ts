@@ -10,7 +10,7 @@ import {
 } from '@/mocks/cli/codex/fixtures/mock-codex-skills-config'
 import { recordedCall } from '@/mocks/cli/codex/recorded-codex-threads'
 import { testStatusHookInstall } from '@/mocks/cli/status-hook-install-suite'
-import { hookReadings } from '@/mocks/cli/status-hooks'
+import { hookReadings, recordedHookEvents } from '@/mocks/cli/status-hooks'
 import type { CodexRequest } from '../app-server'
 import { createCodexStatusHooks } from './codex-status-hooks'
 
@@ -41,7 +41,7 @@ testStatusHookInstall('codex', async (context, userHooks) => codex(context, user
 test('a Codex install writes each event it changes through config/value/write, chaining versions', async (context) => {
   const { hooks, writes } = codex(context, true)
   await installStatusHooks('codex', hooks, '/tmp/argo/hooks.sock')
-  assert.equal(writes.length, 7)
+  assert.equal(writes.length, recordedHookEvents('codex').length)
   writes.forEach(({ params }, index) => {
     const { keyPath, mergeStrategy, expectedVersion, filePath } = params as Record<string, unknown>
     assert.match(String(keyPath), /^hooks\.[A-Za-z]+$/)

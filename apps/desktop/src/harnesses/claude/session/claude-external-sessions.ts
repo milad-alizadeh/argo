@@ -82,7 +82,6 @@ function liveStatuses(entries: readonly unknown[]) {
 
 // The interactive Sessions Claude runs outside Argo, with their status, from `claude agents
 // --json`. It gives no activity line, and Argo reads no transcript or pid file for one (ADR-0047).
-// A status hook outranks it.
 export function createClaudeExternalSessions(
   executable: string | null,
   settingsFile: string,
