@@ -102,6 +102,7 @@ function DraftLandsStory({
       <Button
         onClick={() => {
           flushSync(() => setLoading(false))
+          // Lexical applies the DOM selection in a microtask, and a real press always comes after it.
           if (press) queueMicrotask(() => pressed.current?.focus())
         }}
         type="button"

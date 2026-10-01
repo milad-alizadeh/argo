@@ -24,7 +24,7 @@ export function ComposerEditorAdapter({
   const pendingPrompts = useRef<string[]>([])
   currentPrompt.current = prompt
 
-  // Runs before the focus on mount, which then puts the caret after the restored draft.
+  // Renders before FocusOnMountPlugin, so focus finds the restored draft and puts the caret at its end.
   useLayoutEffect(() => {
     const echoedPrompt = pendingPrompts.current.indexOf(prompt)
     if (echoedPrompt !== -1) {
