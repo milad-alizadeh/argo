@@ -1,5 +1,5 @@
 import { stat } from 'node:fs/promises'
-import { and, eq, ne, notInArray, type SQL } from 'drizzle-orm'
+import { and, eq, lte, ne, notInArray, type SQL, sql } from 'drizzle-orm'
 import { sessionTable } from '@/database/session/schema'
 import { projectFeedRowEntries } from '@/domains/sessions/api/feed'
 import { type Harness, type HarnessSession, harnessSessionKey } from '@/harnesses/harness'
@@ -83,16 +83,21 @@ function shownStatus(tracked: TrackedSession, at: number): ExternalSessionStatus
 export class ExternalSessionPoll {
   readonly #context: ExternalSessionPollContext
   readonly #external: ReadonlyMap<Harness, ExternalSessions>
+  // The newest row before this run; an upsert keeps a row's rowid, and a new row gets a higher one.
+  readonly #lastEarlierRow: number
   // Each Harness's live Sessions at its last tick; absent before its first.
   readonly #live = new Map<Harness, Map<string, TrackedSession>>()
   // Sessions that left the list and wait for their last read, by Harness and native ID.
   readonly #leaving = new Map<string, TrackedSession>()
   // Harnesses whose last listing failed, so a failure is reported once until one succeeds.
   readonly #failing = new Set<Harness>()
+  // Each Harness's last reported count of unrecognised live records, so a count is reported once.
+  readonly #rejected = new Map<Harness, number>()
   readonly #pending = new Map<string, { session: HarnessSession; update: SessionUpdate }>()
   readonly #reads = new Map<string, ReadState>()
   readonly #queue: HarnessSession[] = []
-  #reading = false
+  // The read queue's drain, while one runs.
+  #draining: Promise<void> | null = null
   #writeTimer: ReturnType<typeof setTimeout> | null = null
   #ticking: Promise<void> | null = null
   #interval: ReturnType<typeof setInterval> | null = null
@@ -101,6 +106,9 @@ export class ExternalSessionPoll {
   constructor(context: ExternalSessionPollContext) {
     this.#context = context
     this.#external = new Map(context.harnesses.map(({ harness, external }) => [harness, external]))
+    this.#lastEarlierRow =
+      context.database.select({ rowid: sql<number | null>`max(rowid)` }).from(sessionTable).get()
+        ?.rowid ?? 0
   }
 
   start(): void {
@@ -131,6 +139,11 @@ export class ExternalSessionPoll {
       }
   }
 
+  // Settles once every read asked for so far has landed, for a test that waits on them.
+  readsSettled(): Promise<void> {
+    return this.#draining ?? Promise.resolve()
+  }
+
   stop(): void {
     this.flush()
     this.#stopped = true
@@ -156,8 +169,7 @@ export class ExternalSessionPoll {
   async #tickHarness(harness: Harness, external: ExternalSessions): Promise<void> {
     const list = await external.listLive()
     if (this.#stopped) return
-    if (list.rejected > 0)
-      console.warn(`Rejected ${list.rejected} unrecognised ${harness} live Session record(s).`)
+    this.#reportRejected(harness, list.rejected)
     const previous = this.#live.get(harness)
     const current = new Map<string, TrackedSession>()
     this.#live.set(harness, current)
@@ -176,6 +188,12 @@ export class ExternalSessionPoll {
       if (!current.has(nativeId))
         this.#leave({ harness, nativeId }, tracked, external.readActivity !== undefined)
     if (previous === undefined) this.#closeAll(harness, current)
+  }
+
+  #reportRejected(harness: Harness, rejected: number): void {
+    if (rejected > 0 && rejected !== this.#rejected.get(harness))
+      console.warn(`Rejected ${rejected} unrecognised ${harness} live Session record(s).`)
+    this.#rejected.set(harness, rejected)
   }
 
   // The same object across ticks, so a read that lands mid-tick is kept.
@@ -257,7 +275,7 @@ export class ExternalSessionPoll {
   #read(session: HarnessSession): void {
     if (this.#stopped || !this.#asksForRead(harnessSessionKey(session))) return
     this.#queue.push(session)
-    void this.#drain()
+    this.#draining ??= this.#drain()
   }
 
   // Whether a new read starts, after recording the ask against the Session's read state.
@@ -278,14 +296,13 @@ export class ExternalSessionPoll {
     }
   }
 
+  // Clears itself in the same turn the queue empties, so a later ask starts a new drain.
   async #drain(): Promise<void> {
-    if (this.#reading) return
-    this.#reading = true
     try {
       for (let session = this.#queue.shift(); session !== undefined; session = this.#queue.shift())
         await this.#readOne(session)
     } finally {
-      this.#reading = false
+      this.#draining = null
     }
   }
 
@@ -334,11 +351,12 @@ export class ExternalSessionPoll {
     return this.#live.get(session.harness)?.get(session.nativeId)
   }
 
-  // The first tick closes every saved Session it does not find live, in one write. A live
-  // channel's own status outranks the stored one, so a Session Argo runs needs no exception.
+  // The first tick closes every Session an earlier run saved and it does not find live, in one
+  // write. A live channel's own status outranks the stored one, so a Session Argo runs needs none.
   #closeAll(harness: Harness, live: ReadonlyMap<string, TrackedSession>): void {
     const conditions: SQL[] = [eq(sessionTable.harness, harness), ne(sessionTable.status, 'idle')]
     if (live.size > 0) conditions.push(notInArray(sessionTable.nativeId, [...live.keys()]))
+    conditions.push(lte(sql`rowid`, this.#lastEarlierRow))
     const closed = this.#context.database
       .update(sessionTable)
       .set({ status: 'idle' })

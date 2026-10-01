@@ -16,7 +16,7 @@ import { writeMockClaude } from '../../mocks/cli/claude/mock-claude-cli'
 import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { holdCodexWriterLock } from '../../mocks/cli/codex/mock-codex-external-threads'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
-import { launchCommand } from '../application-under-test'
+import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 import { prepare } from './fixtures/feed.fixture'
 import { PERSISTED_ROW } from './gestures'
@@ -60,7 +60,7 @@ function claudeSource(): StatusSource {
       }))
       return {
         CLAUDE_CONFIG_DIR: path.join(root, 'claude-config'),
-        [SESSION_CLAUDE_SYNC_FIXTURE_ENV]: JSON.stringify({ records, delayMs: 0 }),
+        [SESSION_CLAUDE_SYNC_FIXTURE_ENV]: JSON.stringify({ records }),
         [MOCK_CLAUDE_AGENTS_ENV]: claudeAgents(root),
       }
     },
@@ -175,7 +175,7 @@ for (const createSource of [claudeSource, codexSource]) {
       await source.closeTurn(root, older)
       await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/, { timeout: 10_000 })
     } finally {
-      await application.close()
+      await closeApplication(application)
       await source.stop()
     }
   })

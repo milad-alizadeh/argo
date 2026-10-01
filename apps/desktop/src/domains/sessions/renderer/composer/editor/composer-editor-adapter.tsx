@@ -2,7 +2,8 @@ import { $convertFromMarkdownString, $convertToMarkdownString } from '@lexical/m
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { $createParagraphNode, $getRoot } from 'lexical'
-import { useEffect, useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
+import { flushSync } from 'react-dom'
 import { composerTransformers } from './session-composer-markdown'
 
 const RESTORE_TAG = 'composer.restore'
@@ -24,7 +25,8 @@ export function ComposerEditorAdapter({
   const pendingPrompts = useRef<string[]>([])
   currentPrompt.current = prompt
 
-  useEffect(() => {
+  // Renders before FocusOnMountPlugin, so focus finds the restored draft and puts the caret at its end.
+  useLayoutEffect(() => {
     const echoedPrompt = pendingPrompts.current.indexOf(prompt)
     if (echoedPrompt !== -1) {
       pendingPrompts.current.splice(0, echoedPrompt + 1)
@@ -50,7 +52,8 @@ export function ComposerEditorAdapter({
         documentPrompt.current = markdown
         if (markdown !== currentPrompt.current) {
           pendingPrompts.current.push(markdown)
-          onPromptChange(markdown)
+          // Render now, so an Enter in the next task sends this text and not the last render's (#3020).
+          flushSync(() => onPromptChange(markdown))
         }
       }}
     />

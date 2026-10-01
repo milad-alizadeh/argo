@@ -26,7 +26,7 @@ import {
   markUnresolvedSessionCommandsUnknown,
   reconcileUnknownSessionCommands,
 } from '@/domains/sessions/main/database'
-import { SessionFeedReaders } from '@/domains/sessions/main/feed'
+import { HistoryReadLimit, SessionFeedReaders } from '@/domains/sessions/main/feed'
 import {
   type LiveSessionSupervisorActor,
   liveSessionActorFor,
@@ -65,8 +65,8 @@ import { attachAppearanceWatch } from '@/platform/main/appearance'
 import type { AppActor } from '@/platform/main/application/app-machine'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {
+  accountDataDirectory,
   DEVELOPMENT_APPLICATION_NAME,
-  developmentStoreDirectories,
 } from '@/platform/main/development/account-store'
 import {
   developmentIdentityArgument,
@@ -178,15 +178,13 @@ async function chooseAttachmentFiles(window: BrowserWindow): Promise<string[]> {
 // Account access and the Connection store, created once: the Ticket scans and every window share them.
 function createTicketServices(database: Database) {
   const userData = app.getPath('userData')
-  const { accountData, connectionData } = developmentStoreDirectories({
-    userData,
-    appData: app.getPath('appData'),
-    instance: DEVELOPMENT_INSTANCE,
-  })
   const access = createAccountAccess({
     userData,
-    accountData,
-    connectionData,
+    accountData: accountDataDirectory({
+      userData,
+      appData: app.getPath('appData'),
+      instance: DEVELOPMENT_INSTANCE,
+    }),
     endpoints: providerEndpoints(PROOF_ENABLED),
     providers: PROVIDER_REGISTRY,
     cipher: safeStorageCipher,
@@ -400,7 +398,8 @@ function startSessionServices(actors: WindowActors, database: Database, registry
     ...context,
     journal: currentSessionEventJournal(),
     hasLiveChannel,
-    readHistory: (harness, target) => registry[harness].readHistory(target),
+    readHistory: (harness, target, signal) =>
+      historyReads.run(() => registry[harness].readHistory(target), signal),
   })
   // #2976 switches this poll off while hooks are on.
   const externalSessions = new ExternalSessionPoll({
@@ -504,18 +503,15 @@ function createWindow({
 
 let applicationDatabase: Database | undefined
 const sessionListChanges = new SessionListChanges()
+// Every vendor history read in the process, Feed or command recovery, waits on this one limit.
+const historyReads = new HistoryReadLimit()
 let sessionServices: SessionServices | undefined
 let sessionEventJournal: SessionEventJournal | undefined
 let sessionInteractionBroker: SessionInteractionBroker | undefined
 let ticketServices: TicketServices | undefined
 
 async function prepare() {
-  const { projectData } = developmentStoreDirectories({
-    userData: app.getPath('userData'),
-    appData: app.getPath('appData'),
-    instance: DEVELOPMENT_INSTANCE,
-  })
-  applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
+  applicationDatabase = openDatabase(app.getPath('userData'), { packaged: app.isPackaged })
   clearWorkingStatuses(applicationDatabase)
   markUnresolvedSessionCommandsUnknown(applicationDatabase)
   markInterruptedTicketScans(applicationDatabase)
@@ -568,9 +564,11 @@ async function ready(actor: AppActor): Promise<void> {
   const registry = harnessRegistry
   void reconcileUnknownSessionCommands(
     applicationDatabase,
-    (harness, target) => registry[harness].readHistory(target),
+    (harness, target) => historyReads.run(() => registry[harness].readHistory(target)),
     (harness, nativeId, turnId) =>
-      registry[harness].hasTurn?.(nativeId, turnId) ?? Promise.resolve(false),
+      historyReads.run(
+        () => registry[harness].hasTurn?.(nativeId, turnId) ?? Promise.resolve(false),
+      ),
   ).catch((error) => console.error('Session command recovery failed.', error))
   void reconcileTicketWriteIntentsAtStartup(applicationDatabase).catch((error) =>
     console.error('Ticket write intent recovery failed.', error),

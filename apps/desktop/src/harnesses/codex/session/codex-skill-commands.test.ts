@@ -5,8 +5,8 @@ import path from 'node:path'
 import { test } from 'node:test'
 import type { LiveSessionChannelEvent } from '@/harnesses/registration'
 import { MOCK_CODEX_SKILLS_FILE_ENV } from '@/mocks/cli/codex/fixtures/mock-codex-skills-config'
-import { clientBackedByMock, waitFor, writeMockCodex } from '@/mocks/cli/codex/mock-codex-driver'
-import { openLiveSession } from '@/mocks/cli/codex/mock-codex-live-session'
+import { clientBackedByMock, writeMockCodex } from '@/mocks/cli/codex/mock-codex-driver'
+import { openLiveSession, waitFor } from '@/mocks/cli/codex/mock-codex-live-session'
 import { createCodexRegistration } from '../registration'
 
 type Listed = Extract<LiveSessionChannelEvent, { type: 'commands' }>
@@ -93,16 +93,13 @@ test('a live Session lists its skills, then lists them again when Codex says the
   const listed = () =>
     session.events.flatMap((event): Listed[] => (event.type === 'commands' ? [event] : []))
   try {
-    await waitFor(() => listed().length === 1, 'the first skill list')
+    await waitFor(() => listed().length === 1)
     assert.deepEqual(
       listed()[0]?.commands.map(({ name }) => name),
       ['ask-matt'],
     )
     await writeFile(codex.skillsFile, JSON.stringify([skill, { ...skill, name: 'review' }]))
-    await waitFor(
-      () => listed().at(-1)?.commands.length === 2,
-      'the skill list after skills/changed',
-    )
+    await waitFor(() => listed().at(-1)?.commands.length === 2)
     assert.deepEqual(
       listed()
         .at(-1)

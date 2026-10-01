@@ -6,8 +6,8 @@ export const MOCK_START_REFUSED_FOLDER = 'mock-start-refused'
 export type MockHarness = {
   // Writes an executable mock beside the fixture root and returns its path.
   write: (root: string, transcripts: string) => Promise<string>
-  // Where that mock leaves its transcripts, under the root the fixture hands it.
-  folder: (transcripts: string) => string
-  // What the mock leaves in the Feed and the transcript once it has read a prompt.
+  // What the mock leaves in the Feed and its history once it has read a prompt.
   replyMark: (prompt: string) => string
+  // Whether that mark is in the mock's history, read the way the Harness's own reader reads it.
+  recorded: (root: string, transcripts: string, mark: string) => Promise<boolean>
 }

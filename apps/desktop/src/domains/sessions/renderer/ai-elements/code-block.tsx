@@ -14,7 +14,7 @@ type Token = { content: string; light?: string; dark?: string }
 // only the two themes imported here, where the full `shiki` entry would bundle every theme.
 let highlighter: Promise<HighlighterCore> | null = null
 
-async function highlight(code: string, language: BundledLanguage): Promise<Token[][]> {
+export async function loadCodeLanguage(language: BundledLanguage) {
   highlighter ??= createHighlighterCore({
     engine: createJavaScriptRegexEngine(),
     langs: [],
@@ -22,6 +22,11 @@ async function highlight(code: string, language: BundledLanguage): Promise<Token
   })
   const loaded = await highlighter
   await loaded.loadLanguage(bundledLanguages[language])
+  return loaded
+}
+
+async function highlight(code: string, language: BundledLanguage): Promise<Token[][]> {
+  const loaded = await loadCodeLanguage(language)
   return loaded.codeToTokensWithThemes(code, { lang: language, themes: THEMES }).map((line) =>
     line.map((token) => ({
       content: token.content,
