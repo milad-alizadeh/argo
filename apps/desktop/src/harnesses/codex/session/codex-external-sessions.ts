@@ -11,6 +11,7 @@ import type {
 } from '@/harnesses/registration'
 import { type CodexRequest, isThreadNotLoaded, type ThreadItem } from '../app-server'
 import { codexCollabFacts, codexFeedContent } from './codex-feed'
+import { createCodexStatusHooks } from './codex-status-hooks'
 
 // A turns read that fails this soon after the rollout changed is a Turn still starting.
 const CODEX_TURN_START_MS = 2_000
@@ -147,5 +148,5 @@ export function createCodexExternalSessions(
   const readActivity = (nativeId: string, changedAt: number) =>
     readNewestTurn(request, { nativeId, lockFile: lockFile(nativeId) }, changedAt)
 
-  return { listLive, readActivity }
+  return { listLive, readActivity, hooks: createCodexStatusHooks(request) }
 }

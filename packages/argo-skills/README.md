@@ -17,13 +17,13 @@ each harness. It is not an installer.
 ## Project-agnostic by design — set up per project
 
 This package is the **single source** for Argo's skills; it depends on no particular project,
-including the cockpit app that shares this monorepo. Every project is a plain **consumer**: it
+including Argo Desktop, which shares this monorepo. Every project is a plain **consumer**: it
 installs its own copy under `.claude/skills/` and `.agents/skills/`, recorded in that project's
 `skills-lock.json`. Nothing here reaches into a consuming app, and each skill is **self-contained**
 — supporting files such as `setup-quality-gates/templates/` live inside the skill folder and travel
 with it, so a skill behaves the same in any project without reading back into this package.
 
-The Argo cockpit's own `.claude/skills/` are therefore *installed output* of that per-project flow,
+Argo Desktop's own `.claude/skills/` are therefore *installed output* of that per-project flow,
 not source. The source is only ever here, and it distributes only via GitHub: even this monorepo
 installs its own skills with the same command, so an edit to one of Argo's skills needs a push to
 `main` before a reinstall sees it.

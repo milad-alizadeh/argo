@@ -5,6 +5,8 @@ import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
+import { pendingSessionId } from '@/domains/sessions/api/pending-session'
+import type { SessionSubmitRejection } from '@/domains/sessions/api/session-submit-rejection'
 import { resolveWorkspacePath } from '@/domains/workspaces/main'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
@@ -103,7 +105,10 @@ async function prepareProjectDraft(
   const created =
     target.workspaceId === null
       ? await context.ensureManagedWorkspace(target.projectId, draft.id).catch(() => {
-          throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'worktree-create-failed' })
+          throw new TRPCError({
+            code: 'PRECONDITION_FAILED',
+            message: 'worktree-create-failed' satisfies SessionSubmitRejection,
+          })
         })
       : null
   const workspaceId = created?.id ?? target.workspaceId
@@ -116,7 +121,10 @@ async function prepareProjectDraft(
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'workspace-not-in-project' })
   // A Harness given a missing folder fails in its own way, or not at all, so every one stops here.
   if (!(await isDirectory(cwd)))
-    throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'workspace-missing' })
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message: 'workspace-missing' satisfies SessionSubmitRejection,
+    })
   return {
     ...command,
     harness: target.harness,
@@ -155,7 +163,7 @@ function sendSessionDraft(input: SupervisorDraftRequest) {
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'missing-session-working-directory' })
   context.supervisor.send({
     type: 'Send',
-    intentId: `optimistic:${draft.id}:${draft.revision}`,
+    intentId: pendingSessionId(draft),
     input: { ...command, sessionId: draft.target.sessionId, resume: { ...stored, harness, cwd } },
     reply,
   })
@@ -178,7 +186,7 @@ async function sendToSupervisor(
     if (startInput !== null) {
       context.supervisor.send({
         type: 'Start',
-        pendingId: `optimistic:${draft.id}:${draft.revision}`,
+        pendingId: pendingSessionId(draft),
         input: startInput,
         reply,
       })

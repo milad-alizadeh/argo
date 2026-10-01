@@ -1,8 +1,15 @@
 import { readFileSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
 import { createInterface } from 'node:readline'
-import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
+import {
+  readMockReplyDelayMs,
+  SESSION_MOCK_ADVERSARIAL_SEED_ENV,
+  SESSION_MOCK_START_HOLD_FILE_ENV,
+  waitWhileHoldFileExists,
+} from '@/harnesses/proof-protocol'
+import { recordedCodexModels } from '../../recordings/codex-app-server.ts'
+import { MOCK_START_REFUSED_FOLDER } from '../mock-cli.ts'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
-import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
 import { sendPlanUpdate } from './fixtures/mock-codex-plan.ts'
 import { createMockCodexSkillsAndConfig } from './fixtures/mock-codex-skills-config.ts'
 
@@ -272,7 +279,7 @@ function handle(message: Request) {
   if (answerSkillsAndConfig(message)) return
   if (method === 'initialized') return
   if (method === 'initialize') return send({ id, result: {} })
-  if (method === 'model/list') return send({ id, result: MOCK_CODEX_MODEL_CATALOG })
+  if (method === 'model/list') return send({ id, result: recordedCodexModels })
   if (method === 'thread/list') {
     const names = storedNames()
     return send({
@@ -288,6 +295,8 @@ function handle(message: Request) {
       },
     })
   }
+  if (method === 'thread/start' && path.basename(String(params.cwd)) === MOCK_START_REFUSED_FOLDER)
+    return send({ id, error: { code: -32000, message: 'Mock Codex cannot start here.' } })
   if (method === 'thread/start') {
     const thread: Thread = {
       id: identifier(threads.length + 1),
@@ -297,7 +306,11 @@ function handle(message: Request) {
     }
     threads.push(thread)
     save()
-    return send({ id, result: { thread: { id: thread.id } } })
+    // Codex names the thread in this answer, so a held start holds it back.
+    void waitWhileHoldFileExists(process.env[SESSION_MOCK_START_HOLD_FILE_ENV]).then(() =>
+      send({ id, result: { thread: { id: thread.id } } }),
+    )
+    return
   }
   const thread = threads.find((candidate) => candidate.id === params.threadId)
   if (thread === undefined)

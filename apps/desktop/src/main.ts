@@ -20,6 +20,7 @@ import {
   ExternalSessionPoll,
   listComposerCommandsFor,
   SessionListChanges,
+  StatusHookReceiver,
   watchSessionList,
 } from '@/domains/sessions/main/api'
 import {
@@ -401,23 +402,34 @@ function startSessionServices(actors: WindowActors, database: Database, registry
     readHistory: (harness, target, signal) =>
       historyReads.run(() => registry[harness].readHistory(target), signal),
   })
-  // #2976 switches this poll off while hooks are on.
+  const harnesses = harnessSchema.options.flatMap((harness) => {
+    const external = registry[harness].externalSessions
+    return external === undefined ? [] : [{ harness, external }]
+  })
   const externalSessions = new ExternalSessionPoll({
     ...context,
-    harnesses: harnessSchema.options.flatMap((harness) => {
-      const external = registry[harness].externalSessions
-      return external === undefined ? [] : [{ harness, external }]
-    }),
+    harnesses,
     hasLiveChannel,
     discover: ({ harness, nativeId }) =>
       actors.sessionSync.send({ type: 'Discover', harness, nativeId }),
+    refreshFeed: (sessionId) => readers.refresh({ sessionId, subagentId: null }),
   })
   const stopSessionList = watchSessionList({ ...context, supervisor: actors.sessions })
   externalSessions.start()
+  // An acceptance run installs nothing, so it cannot write the person's own config (ADR-0041).
+  const statusHooks = ACCEPTANCE_ENABLED
+    ? null
+    : new StatusHookReceiver({
+        poll: externalSessions,
+        harnesses,
+        socketPath: path.join(app.getPath('userData'), 'hooks.sock'),
+      })
+  statusHooks?.start().catch((error) => console.warn('Could not start the status hooks:', error))
   return {
     readers,
     stop: () => {
       stopSessionList()
+      statusHooks?.stop()
       externalSessions.stop()
     },
   }

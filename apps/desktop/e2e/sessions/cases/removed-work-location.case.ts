@@ -1,4 +1,4 @@
-// A worktree removed after it was picked fails the Send visibly, the same way for every Harness (#3007).
+// A Send that never reaches the Harness shows its reason and keeps the draft, for every Harness.
 import { execFile } from 'node:child_process'
 import path from 'node:path'
 import { promisify } from 'node:util'
@@ -8,15 +8,16 @@ import type { Harness } from '@/harnesses/harness'
 import { chooseHarness, openNewSessionByClick, sessionListIds } from '../gestures'
 
 const run = promisify(execFile)
-const SEND_FAILED = 'The Turn could not be sent. Your draft is still saved.'
+const WORKSPACE_MISSING =
+  'The work location folder no longer exists, so the Turn was not sent. Choose another work location. Your draft is still saved.'
 
-function git(folder: string, args: string[]) {
+export function git(folder: string, args: string[]) {
   const identity = ['-c', 'user.name=Argo', '-c', 'user.email=argo@example.invalid']
   return run('git', ['-C', folder, ...identity, ...args])
 }
 
 // A reload is how a person gets the Workspace list read again before its refetch interval.
-async function reload(page: Page) {
+export async function reload(page: Page) {
   await page.reload()
   await page.waitForFunction(() => typeof window.argo?.trpc === 'function')
 }
@@ -25,10 +26,25 @@ function workLocationOption(page: Page, name: string) {
   return page.getByRole('listbox', { name: 'Suggestions' }).getByRole('option', { name })
 }
 
-async function chooseWorkLocation(page: Page, name: string) {
+export async function chooseWorkLocation(page: Page, name: string) {
   await page.getByRole('button', { name: /^Work location:/ }).click()
   await workLocationOption(page, name).click()
   await expect(page.getByRole('button', { name: `Work location: ${name}` })).toBeVisible()
+}
+
+// Sends a prompt that main refuses, and expects the reason, the draft kept and no new Session.
+export async function sendRefused(page: Page, prompt: string, reason: string | RegExp) {
+  const known = await sessionListIds(page)
+  const composer = page.getByRole('combobox', { name: 'Message' })
+  await composer.click()
+  await page.keyboard.press('ControlOrMeta+a')
+  await page.keyboard.press('Backspace')
+  await page.keyboard.type(prompt)
+  await page.keyboard.press('Enter')
+
+  await expect(page.getByText(reason)).toBeVisible()
+  await expect(composer).toContainText(prompt)
+  expect(await sessionListIds(page)).toEqual(known)
 }
 
 async function proveOne(page: Page, project: string, harness: Harness) {
@@ -41,18 +57,7 @@ async function proveOne(page: Page, project: string, harness: Harness) {
   await chooseWorkLocation(page, name)
   await git(project, ['worktree', 'remove', '--force', worktree])
 
-  const known = await sessionListIds(page)
-  const prompt = `Reply from the removed ${harness} worktree.`
-  const composer = page.getByRole('combobox', { name: 'Message' })
-  await composer.click()
-  await page.keyboard.press('ControlOrMeta+a')
-  await page.keyboard.press('Backspace')
-  await page.keyboard.type(prompt)
-  await page.keyboard.press('Enter')
-
-  await expect(page.getByText(SEND_FAILED)).toBeVisible()
-  await expect(composer).toContainText(prompt)
-  expect(await sessionListIds(page)).toEqual(known)
+  await sendRefused(page, `Reply from the removed ${harness} worktree.`, WORKSPACE_MISSING)
 
   await reload(page)
   await openNewSessionByClick(page)

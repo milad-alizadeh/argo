@@ -10,7 +10,7 @@ import {
 import { claudeHarnessInfoFixture, codexHarnessInfoFixture } from './harness-catalog.fixture'
 
 // A story host that answers the production Session screen's tRPC reads, so a story can select
-// and switch Sessions the way the cockpit does.
+// and switch Sessions the way the app does.
 
 type StorybookTrpcRequest = Parameters<typeof window.argo.trpc>[0]
 type StorybookTrpcResponse = Awaited<ReturnType<typeof window.argo.trpc>>

@@ -19,7 +19,9 @@ import { proveSessionDiagram } from './cases/diagram.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
 import { proveNewSessionSkipsUninstalledHarness } from './cases/new-session-harness.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
+import { provePromptBeforeNaming } from './cases/pending-prompt.case'
 import { provePromptLatency } from './cases/prompt-latency.case'
+import { proveRefusedStart } from './cases/refused-start.case'
 import { proveRemovedWorkLocation } from './cases/removed-work-location.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveContract } from './cases/session-list-contract.case'
@@ -59,6 +61,10 @@ test('session-shell', async ({ session }) => {
 
 test('session-removed-work-location', async ({ session }) => {
   await proveRemovedWorkLocation(session.page(), session.fixture.project)
+})
+
+test('session-refused-start', async ({ session }) => {
+  await proveRefusedStart(session.page(), session.fixture.project)
 })
 
 test.describe('session refresh progress', () => {
@@ -282,6 +288,15 @@ test.describe('with a slow Harness', () => {
   test('session-duplicate-send', async ({ session, backend }) => {
     await proveDuplicateSend(session.page(), backend)
   })
+})
+
+test.describe('with a Harness that holds its start', () => {
+  test.use({ heldStart: true })
+
+  for (const harness of ['claude', 'codex'] as const)
+    test(`session-${harness}-prompt-before-naming`, async ({ session, backend }) => {
+      await provePromptBeforeNaming(session.page(), backend, harness)
+    })
 })
 
 test('shipped fuses stay intact', async () => {

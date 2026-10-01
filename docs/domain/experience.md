@@ -7,7 +7,7 @@
   `label`/`group` are **not exclusively
   CONVENTION** — their tier follows their source (CONVENTION when the plugin reports them;
   DERIVED when the vendor interface carries them).
-- **Preview** — a **cockpit-level singleton** (at most one across the whole cockpit; starting
+- **Preview** — an **app-wide singleton** (at most one per Argo Desktop instance; starting
   one stops the running one — ADR-0011) that *points at* an Agent. The edge is per-Agent `0..1`
   *attachment*; the running instance is global-single.
 - **marked** — the palette's quiet lift: the one ground specified to hold its rise on whatever it

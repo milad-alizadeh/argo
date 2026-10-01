@@ -62,7 +62,7 @@ export async function replaceInFile(file: string, search: string, replacement: s
 }
 
 // The packaged proof's own Project folder, two levels above either Harness's transcript root
-// (`claude-config/projects`, `codex-home/sessions`). The cockpit shows no Session List without a
+// (`claude-config/projects`, `codex-home/sessions`). The app shows no Session List without a
 // selected Project (#2307), so a proof selects this one and places every cwd under it.
 export function proofProject(transcripts: string) {
   return path.join(transcripts, '..', '..', 'project')

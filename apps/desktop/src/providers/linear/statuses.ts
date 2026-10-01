@@ -1,5 +1,5 @@
 // A Linear team's workflow states, and moving one of its issues to another. Linear owns the states;
-// the cockpit reads them with every page and keeps none.
+// the app reads them with every page and keeps none.
 
 import type { StatusChange, TicketStatus } from '@/domains/tickets/api/ticket'
 import type { LinearEndpoints } from '@/providers/linear/endpoints'

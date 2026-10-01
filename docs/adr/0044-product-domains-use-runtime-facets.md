@@ -105,7 +105,7 @@ The desktop domains now have these owners:
 | Workspaces | `domains/workspaces/main`, `renderer` | `main/workspace-resolve-path.ts` owns path lookup; `renderer/use-workspaces.ts` owns workspace choices. |
 | Providers | `src/providers/` | `providers/registry.ts` selects adapters; `providers/github/issues.ts` and `providers/linear/issues.ts` read Tickets. |
 | Harnesses | `src/harnesses/` | `harnesses/claude/registration.ts` and `harnesses/codex/registration.ts` connect vendor protocols to Sessions. |
-| Renderer composition | `src/renderer/main.tsx`, `src/renderer/cockpit-router.tsx`, `src/renderer/catalogs.ts` | These files assemble routes, catalogs, and domains. They do not own domain behavior. |
+| Renderer composition | `src/renderer/main.tsx`, `src/renderer/app-router.tsx`, `src/renderer/catalogs.ts` | These files assemble routes, catalogs, and domains. They do not own domain behavior. |
 
 Ticket lists now read committed SQLite rows through `ticketActive`, `ticketClosed`, and `ticketSearch`.
 Provider reads run through the Ticket sync and search machines. The old `ticketList` procedure read

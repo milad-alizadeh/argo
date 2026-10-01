@@ -31,7 +31,11 @@ import {
 import {
   createLiveSessionSupervisorMachine,
   liveSessionActorFor,
+  SessionSubmitRejectedError,
 } from './live-session-supervisor-machine'
+
+const harnessStartFailed = (error: unknown) =>
+  error instanceof SessionSubmitRejectedError && error.message === 'harness-start-failed'
 
 test('models supervisor lifetime', () => {
   const paths = getShortestPaths(
@@ -331,8 +335,9 @@ test('allows an explicit retry after the Harness fails before returning a native
     return parse({ thread: { id: 'native-1' } })
   })
   try {
-    await assert.rejects(start(supervisor, first), /Harness failed before start/)
-    await start(supervisor, { ...first, commandId: 'retry-command' }, 'optimistic:one:2')
+    await assert.rejects(start(supervisor, first), harnessStartFailed)
+    // The same draft revision sends again, because the refused start never reached the Harness.
+    await start(supervisor, { ...first, commandId: 'retry-command' })
     assert.equal(starts, 2)
   } finally {
     root.send({ type: 'Shutdown' })
@@ -347,7 +352,11 @@ test('does not retry a vendor Session automatically when the real SQLite upsert 
     "CREATE TRIGGER reject_session_insert BEFORE INSERT ON session BEGIN SELECT RAISE(ABORT, 'session insert rejected'); END;",
   )
   try {
-    await assert.rejects(start(supervisor, first), /Failed query/)
+    // The Harness named its Session first, so whether the Turn ran is unknown.
+    await assert.rejects(start(supervisor, first), (error: Error) => {
+      assert.ok(!(error instanceof SessionSubmitRejectedError))
+      return /Failed query/.test(error.message)
+    })
     await assert.rejects(
       start(supervisor, { ...first, commandId: 'retry-command' }),
       /conflicting start already completed/,

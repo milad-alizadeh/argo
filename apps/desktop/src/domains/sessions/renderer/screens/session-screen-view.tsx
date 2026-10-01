@@ -77,9 +77,10 @@ function composerFor(model: ReturnType<typeof useSessionScreenModel>) {
       harness={model.harness}
       selectedSessionId={model.selectedSessionId}
       sessionLoaded={model.sessionLoaded}
-      cockpit={model.cockpit}
+      projectState={model.projectState}
       workspaceActions={model.workspaceActions}
-      workspaceCockpit={model.workspaceCockpit}
+      workspaceState={model.workspaceState}
+      onStartingSession={model.onStartingSession}
     />
   )
 }
@@ -87,7 +88,7 @@ function composerFor(model: ReturnType<typeof useSessionScreenModel>) {
 export function SessionScreenView() {
   const model = useSessionScreenModel()
   const { evidence, feed, feedError, question, session } = model
-  const { retryFeed, selectedSessionId, setEvidence, workReveal } = model
+  const { retryFeed, setEvidence, workReveal } = model
   const answerQuestion = (_sessionId: string, questionId: string, answers: QuestionAnswer[]) =>
     void question.decide(questionId, answers)
   return (
@@ -98,7 +99,7 @@ export function SessionScreenView() {
         onRetryFeed={retryFeed}
         running={model.feedRunning}
         posture={session?.posture ?? null}
-        selectedSessionId={selectedSessionId}
+        selectedSessionId={model.feedSessionId}
         activeEvidenceId={evidence?.id ?? null}
         onOpenEvidence={setEvidence}
         onAnswerQuestion={answerQuestion}

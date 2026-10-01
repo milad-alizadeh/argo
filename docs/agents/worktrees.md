@@ -26,7 +26,7 @@ carries the other's shape: the branch is `argo/#<N>-<slug>`, the directory a pla
 `ticket-<N>-<slug>`, and `DIR_RE` and `BRANCH_RE` in the guard are what say so. Pick the `<slug>`
 once from the ticket title; keep it identical across both. The `#<N>` in the branch is
 load-bearing twice over: `/ship`, which is the only thing that opens the PR, parses it to write
-`Closes #<N>`, and the Argo cockpit parses it to name the Session's row after the ticket (#745).
+`Closes #<N>`, and Argo Desktop parses it to name the Session's row after the ticket (#745).
 A branch without it breaks the PR→ticket link and leaves the row reading `/implement <N>`.
 
 The `ticket-` prefix is not optional, and a bare `<N>-<slug>` directory is refused. #1683 asked

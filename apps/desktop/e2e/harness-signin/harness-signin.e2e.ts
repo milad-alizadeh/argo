@@ -30,7 +30,7 @@ test.describe('signed-out', () => {
 test.describe('ready', () => {
   test.use({ harnessSignInScenario: 'ready' })
 
-  test('replaces the gate screen with the cockpit once a Harness reads ready', async ({
+  test('replaces the gate screen with the app once a Harness reads ready', async ({
     harnessSignIn,
   }) => {
     const { page } = harnessSignIn

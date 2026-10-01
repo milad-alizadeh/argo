@@ -28,17 +28,18 @@ draws it the same way. A status a read settles outranks the listed one. The tick
 with the last one. A Session that is new and has no row sends `Discover` once. A Session that left
 the list shows `idle`; where the Harness reads activity, it gets one last read, whose status, such
 as `unknown` for a Turn a crash left unfinished, replaces it. The first tick stores `idle` for every
-saved Session of that Harness it does not find open. A read-settled `running` status whose
-transcript has not changed for five minutes shows `unknown`, because a killed terminal writes
-nothing more; a listed status is fresh from every tick. A Session with a live Argo channel is
-skipped, so the channel alone owns its status and activity, and the Session List draws the
-channel's activity over the stored line. A reading that names no activity keeps the stored line, so
-an idle row keeps its last line. Each Session's status, line and `activityAt` merge into at most one
-SQLite write every 500 ms. A restart still resets every working status to `unknown` until the poll
-settles one. Hooks, when the user turns them on, will switch the poll off (#2976).
+saved Session of that Harness it does not find open. A `running` or `permission` status a read or a
+hook settled shows `unknown` once nothing has changed for five minutes, because a killed terminal
+writes nothing more and Esc at a prompt sends no hook; a listed status is fresh from every tick.
+A Session with a live Argo channel is skipped, so the channel alone owns its status and activity,
+and the Session List draws the channel's activity over the stored line. A reading that names no
+activity keeps the stored line, so an idle row keeps its last line. Each Session's status, line and
+`activityAt` merge into at most one SQLite write every 500 ms. A restart still resets every working
+status to `unknown` until the poll settles one. A status hook event settles a saved external
+Session's status the way a read does, so it outranks the listed one (#2976).
 
-An external Session's Feed reads its whole history when it opens and on Refresh. It has no change
-signal until the external Feed moves to the vendor readers.
+An external Session's open Feed reads again when a hook event or the poll moves its row, as
+ADR-0047 describes. The poll stores no Subagents for an external Session.
 
 The Session List is one `sessionList` query. Its input is a Project, a filter (`active`,
 `archived` or `all`), a search over the title each row shows, and an offset and limit. That title
@@ -77,7 +78,8 @@ signal itself.
 Live Feed replay is bounded. One memory journal keeps the newest 500 events and 2 MiB across all
 Sessions, and each launch starts a new generation. A cursor older than the journal, or from an
 earlier generation, reads vendor history and merges rows by stable item ID. A Session with no Argo
-live channel is only as fresh as the poll, as the amendment on external Sessions above describes.
+live channel is only as fresh as its hook events or the poll, as the amendment on external Sessions
+above describes.
 
 ## Amendment · Codex live Session ownership · 2026-09-28
 

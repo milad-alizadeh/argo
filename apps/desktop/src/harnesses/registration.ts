@@ -58,6 +58,25 @@ export type ExternalActivityReading = {
   retry: boolean
 }
 
+// Each status hook event list an install or a removal changes; null deletes the event.
+export type HookTableChanges = ReadonlyMap<string, unknown[] | null>
+
+// Hooks Argo installs once in the Harness's user-level config, so they fire for every Session, and
+// posts to Argo's Unix socket. The host owns the install and the reading (#2976).
+export type ExternalSessionHooks = {
+  // The config's `hooks` table, and the write of the event lists a change sets. Throws, writing
+  // nothing, when it cannot read the config.
+  open: () => Promise<{ table: unknown; write: (changes: HookTableChanges) => Promise<void> }>
+  // The status hook events the CLI sends.
+  events: readonly string[]
+  // Argo's matcher group running `command`, in the Harness's config shape.
+  group: (command: string) => unknown
+  // The tool a Session asks the person a question through.
+  questionTool: string
+  // The shell tool, whose description, else command, is the activity line.
+  activityTool: { name: string; input: z.ZodType<{ command?: string; description?: string }> }
+}
+
 // How the external Session poll reads Sessions this Harness runs outside Argo. The host owns the loop,
 // the transcript stat, the diff and every write, and skips a Session with a live Argo channel.
 // Argo parses no transcript content: the host only stats the path (ADR-0047).
@@ -70,6 +89,7 @@ export type ExternalSessions = {
   // Harness. `changedAt` is when the host last saw the transcript change. Absent means the
   // listing's status alone, with no activity line.
   readActivity?: (nativeId: string, changedAt: number) => Promise<ExternalActivityReading>
+  hooks?: ExternalSessionHooks
 }
 
 export type LiveSessionChannelEvent = z.infer<typeof liveSessionChannelEventSchema>

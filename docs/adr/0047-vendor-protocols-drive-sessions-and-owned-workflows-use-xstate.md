@@ -21,8 +21,10 @@ and only these:
 
 These reads change no Session and drive no resume. This amends the decision below that supersedes
 ADR-0040's file and process liveness checks, for the lock probe only. The rule that Argo does not
-parse transcript or rollout files stands. Hooks, when the user turns them on, replace both poll
-sources (#2976).
+parse transcript or rollout files stands. Argo installs status hooks in each Harness's user-level
+config at launch, with no switch. They post to a Unix socket in Argo's app data folder, and a status
+they set outranks the listed one; the poll stays on (#2976). This reverses ADR-0041's removal of a user-level hook, for status only; compaction still
+comes from vendor events, as below. As in ADR-0041, an acceptance run installs nothing.
 
 ## Amendment · main-owned root Feed reading (#2824) · 2026-09-28
 
@@ -51,8 +53,11 @@ The app machine owns the shared Codex client through the registration's shutdown
 app-server machine exists. The Harness catalog machine lives under
 `src/platform/main/harness-catalog/`.
 
-A Session without a live channel has no Feed change signal. Its Feed stays as last read until the
-reader reopens it or asks for Refresh. Its row's status and activity line come from the poll in
+A Session without a live channel reads its Feed through the vendor when the Feed opens, and again
+when a hook event or the poll moves its row's activity time or status (#2978). A Session the
+listing gives no transcript reads its open Feed on each poll tick until a hook fires for it. Each
+read goes through the Feed's one read in flight and one follow-up; a closed Feed reads nothing.
+Its row lists no Subagents, and its row's status and activity line come from the poll in
 ADR-0048.
 
 ## Amendment · Codex live Session channel · 2026-09-28

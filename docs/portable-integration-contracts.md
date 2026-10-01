@@ -189,12 +189,12 @@ After packaging arm64, run `bun run prove:project` from `apps/desktop`.
 The Playwright proof copies the package and enables only its Node inspector fuse for the test copy.
 It uses hidden windows, temporary application storage, and programmatic evaluation without keyboard or mouse control.
 It proves success, missing Project, denied access, invalid action, renderer authority, an untrusted document, and unchanged storage.
-It then drives the shipped cockpit through registration, a folder that is not a repository, a duplicate folder, a dismissed chooser, a restart, a moved folder, a refused relocation, and one relocation driven by the shipped menu item and another by the control on the refused deck.
+It then drives Argo Desktop through registration, a folder that is not a repository, a duplicate folder, a dismissed chooser, a restart, a moved folder, a refused relocation, and one relocation driven by the shipped menu item and another by the control on the refused deck.
 It also proves accessible names, a focus ring that every control in the first screen's tab ring draws only while focused, and every navigation chord in the table.
 It reads back the original package's production fuses after the run.
 
-`bun run capture:cockpit` writes one PNG per screen: no Project, and one Project. It records the appearance the app draws (#3069).
-`bun run measure:cockpit` records startup and idle evidence for #1863 from five launches.
+`bun run capture:desktop` writes one PNG per screen: no Project, and one Project. It records the appearance the app draws (#3069).
+`bun run measure:desktop` records startup and idle evidence for #1863 from five launches.
 Both tools launch the Vite build by default, where `app.isPackaged` is false.
 Set `ARGO_E2E_PACKAGED=1` after `bun run build` to collect this evidence from the packaged app.
 Only a run on the 120 Hz reference display is judged. Every other run reports `unjudged` and exits zero.

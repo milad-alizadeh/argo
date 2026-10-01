@@ -1,6 +1,6 @@
 import { beforeEach, expect, test, vi } from 'vitest'
+import { codexModelCatalogFixture } from '@/mocks/recordings/codex-model-catalog'
 import { claudeModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
-import { codexModelCatalogFixture } from '@/mocks/sessions/codex-model-catalog.fixture'
 import { ACP_HARNESSES, byAcpAgent } from './acp/acp-agents'
 import { createAcpRegistrations } from './acp/acp-registration-factory'
 import { claudeHarnessInfo } from './claude/catalog'

@@ -1,4 +1,4 @@
-// Linear's GraphQL as the mock answers it: the documents the cockpit sends, told apart by their
+// Linear's GraphQL as the mock answers it: the documents the app sends, told apart by their
 // operation name, and Linear's refusals as a 400 whose error carries a code.
 import type { MockLinearIssue, MockLinearTeam, MockLinearUser } from './mock-linear'
 import {
@@ -30,7 +30,7 @@ const CLOSED = new Set(['completed', 'canceled'])
 const visible = (state: MockLinearState, user: MockLinearUser) =>
   [...state.teams.values()].filter((team) => team.visibleTo.includes(user.id))
 
-// A cursor is the index of the next node, as Linear's opaque cursors are to the cockpit.
+// A cursor is the index of the next node, as Linear's opaque cursors are to the app.
 function paged<T>(items: T[], variables: Variables) {
   const start = Number(variables.after ?? 0)
   const end = start + (variables.first ?? 50)

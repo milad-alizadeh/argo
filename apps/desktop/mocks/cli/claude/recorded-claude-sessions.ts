@@ -6,7 +6,8 @@ import type {
   SDKSessionInfo,
   SessionMessage,
 } from '@anthropic-ai/claude-agent-sdk'
-import { claudeRecording as recorded } from './recordings/session-history-claude.ts'
+import { recordedClaudeHistory as recorded } from '../../recordings/claude-cli'
+import type { RecordingMetadata } from '../../recordings/recording'
 
 export type RecordedClaudeCall =
   | {
@@ -20,7 +21,7 @@ export type RecordedClaudeCall =
       result: SessionMessage[]
     }
 
-export type ClaudeRecording = { version: string; agentSdk: string; calls: RecordedClaudeCall[] }
+export type ClaudeRecording = RecordingMetadata & { agentSdk: string; calls: RecordedClaudeCall[] }
 
 export const claudeRecording: ClaudeRecording = recorded
 

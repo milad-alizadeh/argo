@@ -642,7 +642,7 @@ function DurableDraftComposer({
       initialEditing={draft.initialEditing}
       onEditingChange={draft.onEditingChange}
       onSend={async (prompt, turnConfiguration, attachments) => {
-        const { outcome } = await draft.submit(prompt, turnConfiguration, attachments)
+        const { outcome } = await draft.submit({ prompt, turnConfiguration, attachments })
         if (outcome !== 'accepted')
           report({
             scope: sessionId,
@@ -1068,7 +1068,7 @@ export const RestoresSavedCodexConfigurationBeforeSend: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const store = canvas.getByLabelText('Stored drafts')
-    await expect(store).toHaveTextContent('"model":"gpt-live"')
+    await expect(store).toHaveTextContent('"model":"gpt-6-astra"')
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent('Plan this change.')
     await waitFor(() =>
       expect(canvas.getByLabelText('Current target')).toHaveTextContent('"harness":"codex"'),
@@ -1077,7 +1077,7 @@ export const RestoresSavedCodexConfigurationBeforeSend: Story = {
     await within(canvasElement.ownerDocument.body).findByText(
       'The Turn could not be sent. Your draft is still saved.',
     )
-    await expect(store).toHaveTextContent('"model":"gpt-live"')
+    await expect(store).toHaveTextContent('"model":"gpt-6-astra"')
     await expect(store).toHaveTextContent('"revision":0')
   },
 }

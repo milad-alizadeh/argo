@@ -1,7 +1,7 @@
-import { readFileSync } from 'node:fs'
 import { expect, test, vi } from 'vitest'
 import { recordedThread } from '@/mocks/cli/codex/recorded-codex-threads'
 import { RECORDED_PROMPTS } from '@/mocks/cli/recorded-prompts'
+import { recordedCodexSubagents } from '@/mocks/recordings/codex-app-server'
 import type { CodexRequest } from '../app-server'
 import { hasCodexSessionTurn, readCodexSessionHistory } from './codex-session-history'
 
@@ -334,15 +334,7 @@ test('reports and drops a Codex image sent by fileId, keeping the rest of the pr
 })
 
 test('reads each recorded Subagent activity as its own delegation event', async () => {
-  const recorded = JSON.parse(
-    readFileSync(
-      new URL(
-        '../../../../mocks/cli/codex/fixtures/thread-read-subagents-codex-0.157.0.json',
-        import.meta.url,
-      ),
-      'utf8',
-    ),
-  ) as { thread: unknown }
+  const recorded = recordedCodexSubagents
   const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
     parse({ thread: recorded.thread })) as CodexRequest
   const delegation = (

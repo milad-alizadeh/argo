@@ -1,4 +1,5 @@
 export {
+  type ComposerDraftValue,
   composerDraftContentSchema,
   composerDraftTargetSchema,
   composerDraftValueSchema,

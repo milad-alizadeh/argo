@@ -6,7 +6,7 @@ type WorkspaceListOutput = RouterOutputs['workspaceList']
 type WorkspaceListed = Extract<WorkspaceListOutput, { type: 'workspace.listed' }>
 export type WorkspaceSummary = WorkspaceListed['workspaces'][number]
 
-export type WorkspaceCockpit = {
+export type WorkspaceState = {
   workspaces: readonly WorkspaceSummary[]
   workspace: WorkspaceSummary | null
   choice: string | null
@@ -17,9 +17,9 @@ export type WorkspaceActions = {
   selectWorkspace: (choice: string) => void
 }
 
-const IDLE: WorkspaceCockpit = { workspaces: [], workspace: null, choice: null, saveFailed: false }
+const IDLE: WorkspaceState = { workspaces: [], workspace: null, choice: null, saveFailed: false }
 
-export function useWorkspaces(projectId: string | null): [WorkspaceCockpit, WorkspaceActions] {
+export function useWorkspaces(projectId: string | null): [WorkspaceState, WorkspaceActions] {
   const queryClient = useQueryClient()
   const [localChoice, setLocalChoice] = useState<{ projectId: string; choice: string } | null>(null)
   const [saveFailureProjectId, setSaveFailureProjectId] = useState<string | null>(null)
@@ -31,7 +31,7 @@ export function useWorkspaces(projectId: string | null): [WorkspaceCockpit, Work
     staleTime: 30_000,
     refetchInterval: 30_000,
   })
-  const cockpit = useMemo(() => {
+  const workspaceState = useMemo(() => {
     if (query.data?.type !== 'workspace.listed') return IDLE
     const choice = localChoice?.projectId === projectId ? localChoice.choice : query.data.choice
     const workspace = query.data.workspaces.find((candidate) => candidate.id === choice) ?? null
@@ -68,5 +68,5 @@ export function useWorkspaces(projectId: string | null): [WorkspaceCockpit, Work
     },
     [choose, projectId, queryClient],
   )
-  return [cockpit, useMemo(() => ({ selectWorkspace }), [selectWorkspace])]
+  return [workspaceState, useMemo(() => ({ selectWorkspace }), [selectWorkspace])]
 }

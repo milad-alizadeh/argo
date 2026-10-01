@@ -1,5 +1,7 @@
 import { TRPCError } from '@trpc/server'
+import { eq } from 'drizzle-orm'
 import type { Database } from '@/database/database'
+import { sessionTable } from '@/database/session/schema'
 import type { SessionFeedRow } from '@/domains/sessions/api/feed'
 import {
   emptyLiveEventBuffer,
@@ -31,6 +33,7 @@ import type { SessionListChanges } from '../api'
 import { updateSession } from '../api'
 import type { SessionEventJournal } from '../live'
 import { sessionHistoryIdentity } from '../session-history-identity'
+import { pendingFeedReading } from './pending-feed-reading'
 
 export type SessionFeedReaderContext = {
   database: Database
@@ -159,16 +162,11 @@ class FeedReader {
   start(): void {
     if (this.#parent === null) this.#attachLive()
     else this.#stops.push(this.#parent.observe((reading) => this.#receiveParent(reading)))
-    const { database, changes } = this.#context
     const { sessionId } = this.#chain
-    // A sync can move where the Session's history lives; this reader's own activity write cannot.
+    // This reader's own activity write moves nothing in the key.
     this.#stops.push(
-      changes.subscribe((sessionIds) => {
-        if (
-          sessionIds.includes(sessionId) &&
-          historyKey(storedHistory(database, sessionId)) !== this.#readKey
-        )
-          this.refresh()
+      this.#context.changes.subscribe((sessionIds) => {
+        if (sessionIds.includes(sessionId) && this.#key() !== this.#readKey) this.refresh()
       }),
     )
     this.refresh()
@@ -186,9 +184,24 @@ class FeedReader {
 
   // One read at a time; a call during it asks for one more read once it ends.
   refresh(): void {
-    this.#readKey = historyKey(storedHistory(this.#context.database, this.#chain.sessionId))
+    this.#readKey = this.#key()
     if (this.#inFlight) this.#followUp = true
     else this.#startRead()
+  }
+
+  // Where the history lives; with no live channel, also the row's activity and status, which a hook
+  // event or the poll moves.
+  #key(): string | null {
+    const { database, hasLiveChannel } = this.#context
+    const { sessionId } = this.#chain
+    const stored = historyKey(storedHistory(database, sessionId))
+    if (stored === null || hasLiveChannel(sessionId)) return stored
+    const row = database
+      .select({ activityAt: sessionTable.activityAt, status: sessionTable.status })
+      .from(sessionTable)
+      .where(eq(sessionTable.argoId, sessionId))
+      .get()
+    return JSON.stringify([stored, row?.activityAt, row?.status])
   }
 
   #startRead(): void {
@@ -331,6 +344,12 @@ export class SessionFeedReaders {
   }
 
   observe(chain: FeedChain, observer: Observer): () => void {
+    const pending =
+      chain.subagentId === null ? pendingFeedReading(this.#context.database, chain.sessionId) : null
+    if (pending !== null) {
+      observer(pending)
+      return () => {}
+    }
     const key = feedChainKey(chain)
     let reader = this.#readers.get(key)
     if (reader === undefined) {

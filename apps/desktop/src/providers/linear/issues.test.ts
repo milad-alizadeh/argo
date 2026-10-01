@@ -107,7 +107,7 @@ test('a team is checked against the teams the Account can see', async (context) 
   })
 })
 
-test('Linear’s refusals and outages become the failure the cockpit names', async (context) => {
+test('Linear’s refusals and outages become the failure the app names', async (context) => {
   const { mock, endpoints, accessToken } = await signedIn(context, [TEAM])
   const read = () => readTicketPage(endpoints, accessToken, BACKLOG)
   mock.outage('rate-limited')
