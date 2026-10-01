@@ -24,7 +24,13 @@ beforeEach(() => {
   poll = new ExternalSessionPoll({
     database: caller.database,
     changes: caller.sessionListChanges,
-    harnesses: [{ harness: 'claude', external: createClaudeExternalSessions(agents.executable) }],
+    // The poll installs no hooks, so the settings path is one nothing can write.
+    harnesses: [
+      {
+        harness: 'claude',
+        external: createClaudeExternalSessions(agents.executable, '/dev/null/settings.json'),
+      },
+    ],
     hasLiveChannel: (sessionId) => Object.hasOwn(liveActors, sessionId),
     discover: ({ nativeId }) => discovered.push(nativeId),
   })

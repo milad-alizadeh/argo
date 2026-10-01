@@ -3,6 +3,7 @@ import { and, eq, lte, ne, notInArray, type SQL, sql } from 'drizzle-orm'
 import { sessionTable } from '@/database/session/schema'
 import { projectFeedRowEntries } from '@/domains/sessions/api/feed'
 import { type Harness, type HarnessSession, harnessSessionKey } from '@/harnesses/harness'
+import type { ExternalHookReading } from '@/harnesses/host/status-hooks'
 import type {
   ExternalActivityReading,
   ExternalSessionStatus,
@@ -17,8 +18,16 @@ import {
 } from './session-update'
 
 const EXTERNAL_POLL_MS = 2_000
-// A killed terminal writes nothing more, so a read-settled running status this quiet shows unknown.
+// A killed terminal writes nothing more, so a settled running or permission status this quiet
+// shows unknown; an approval dismissed with Esc sends no hook event either.
 export const RUNNING_QUIET_LIMIT_MS = 5 * 60_000
+const GOES_QUIET: Record<ExternalSessionStatus, boolean> = {
+  running: true,
+  permission: true,
+  asking: false,
+  idle: false,
+  unknown: false,
+}
 // Each Session's row reaches SQLite at most once a window, with its newest values.
 const WRITE_WINDOW_MS = 500
 
@@ -65,15 +74,27 @@ async function stampOf(transcript: string): Promise<TranscriptStamp | null> {
 const sameStamp = (left: TranscriptStamp, right: TranscriptStamp) =>
   left.inode === right.inode && left.size === right.size && left.modifiedMs === right.modifiedMs
 
-// A read's status outranks the listed one. A read-settled running status whose transcript has not
-// changed for the quiet limit shows unknown; a listed status is fresh from every tick.
+// A settled status outranks the listed one, and shows unknown once nothing has changed for the
+// quiet limit; a listed status is fresh from every tick.
 function shownStatus(tracked: TrackedSession, at: number): ExternalSessionStatus | null {
   const { status } = tracked
   if (status === null) return tracked.listed
-  return status === 'running' && at - tracked.changedAt >= RUNNING_QUIET_LIMIT_MS
-    ? 'unknown'
-    : status
+  return GOES_QUIET[status] && at - tracked.changedAt >= RUNNING_QUIET_LIMIT_MS ? 'unknown' : status
 }
+
+const newTracked = (
+  transcript: string | null,
+  listed: ExternalSessionStatus | null,
+): TrackedSession => ({
+  transcript,
+  stamp: null,
+  listed,
+  status: null,
+  changedAt: Date.now(),
+  shown: null,
+  retry: false,
+  discovered: false,
+})
 
 // The stored status and activity of Sessions that run outside Argo, from one poll. Each tick lists
 // every Harness's live external Sessions, stats each transcript, asks the Harness about each one
@@ -152,6 +173,36 @@ export class ExternalSessionPoll {
     this.#reads.clear()
   }
 
+  // One status hook event; Argo's own Sessions are left to their live channel.
+  hookEvent(harness: Harness, reading: ExternalHookReading): void {
+    if (this.#stopped) return
+    const { event } = reading
+    const session = { harness, nativeId: reading.nativeId }
+    const sessionId = harnessSessionId(this.#context.database, session)
+    if (sessionId === undefined) {
+      if (event === 'SessionStart') this.#context.discover(session)
+      return
+    }
+    if (this.#context.hasLiveChannel(sessionId)) return
+    // Before the first listing there is no live map, so that listing still closes stale rows.
+    const live = this.#live.get(harness)
+    const tracked = live?.get(session.nativeId) ?? newTracked(null, null)
+    live?.set(session.nativeId, tracked)
+    tracked.changedAt = Date.now()
+    // PreToolUse is async, so it can land after the PermissionRequest it precedes.
+    const held =
+      event === 'PreToolUse' &&
+      reading.status === 'running' &&
+      (tracked.status === 'permission' || tracked.status === 'asking')
+    if (reading.status !== null && !held) tracked.status = reading.status
+    this.#update(session, {
+      activityAt: tracked.changedAt,
+      ...(reading.activity === null ? {} : { activity: reading.activity }),
+    })
+    this.#show(session, tracked, tracked.changedAt)
+    if (event === 'SessionEnd') live?.delete(session.nativeId)
+  }
+
   async #tickAll(): Promise<void> {
     for (const { harness, external } of this.#context.harnesses) {
       try {
@@ -201,17 +252,7 @@ export class ExternalSessionPoll {
     { transcript, status: listed }: LiveExternalSession,
     before: TrackedSession | undefined,
   ): TrackedSession {
-    if (before === undefined)
-      return {
-        transcript,
-        stamp: null,
-        listed,
-        status: null,
-        changedAt: Date.now(),
-        shown: null,
-        retry: false,
-        discovered: false,
-      }
+    if (before === undefined) return newTracked(transcript, listed)
     before.listed = listed
     if (before.transcript !== transcript) {
       before.transcript = transcript

@@ -31,6 +31,7 @@ import type { SessionListChanges } from '../api'
 import { updateSession } from '../api'
 import type { SessionEventJournal } from '../live'
 import { sessionHistoryIdentity } from '../session-history-identity'
+import { pendingFeedReading } from './pending-feed-reading'
 
 export type SessionFeedReaderContext = {
   database: Database
@@ -331,6 +332,12 @@ export class SessionFeedReaders {
   }
 
   observe(chain: FeedChain, observer: Observer): () => void {
+    const pending =
+      chain.subagentId === null ? pendingFeedReading(this.#context.database, chain.sessionId) : null
+    if (pending !== null) {
+      observer(pending)
+      return () => {}
+    }
     const key = feedChainKey(chain)
     let reader = this.#readers.get(key)
     if (reader === undefined) {
