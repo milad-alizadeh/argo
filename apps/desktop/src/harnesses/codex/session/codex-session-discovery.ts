@@ -4,7 +4,12 @@ import type {
   SessionSummaryList,
   SessionSummaryReader,
 } from '@/domains/sessions/api/session-discovery'
-import type { CodexRequest, Thread, ThreadListResponse } from '../app-server'
+import {
+  type CodexRequest,
+  CodexUnavailableError,
+  type Thread,
+  type ThreadListResponse,
+} from '../app-server'
 
 // Only the Thread fields discovery reads; the generated types own the rest.
 const threadSchema: z.ZodType<
@@ -81,7 +86,15 @@ export function createCodexSessionSummaryList(request: CodexRequest): SessionSum
       if (record === null) skipped += 1
       else records.set(record.nativeId, { ...records.get(record.nativeId), ...record })
     }
-    for (const raw of await listCodexThreads(request)) remember(parseThread(raw))
+    let threads: unknown[]
+    try {
+      threads = await listCodexThreads(request)
+    } catch (error) {
+      // A machine without Codex has no Codex Sessions; its scan is empty, not failed.
+      if (error instanceof CodexUnavailableError) return { records: [], skipped: 0 }
+      throw error
+    }
+    for (const raw of threads) remember(parseThread(raw))
     for (const nativeId of knownNativeIds) {
       if (records.has(nativeId)) continue
       const thread = await readCodexThread(request, nativeId)

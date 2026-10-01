@@ -198,6 +198,13 @@ export class CodexRequestTimeoutError extends Error {
   }
 }
 
+// No `codex` on this machine, so no Codex Session exists to read.
+export class CodexUnavailableError extends Error {
+  constructor() {
+    super('Codex executable is unavailable.')
+  }
+}
+
 const REQUEST_TIMEOUT_MS = 8_000
 
 export type CodexProcess = {
@@ -403,7 +410,8 @@ function openProcess(executable: string): CodexChannel {
 async function resolveCodexExecutable(signal: AbortSignal): Promise<CodexExecutable | null> {
   const executable =
     process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('codex')
-  if (executable === null) return null
+  // An empty override pins a machine with no Codex, as the sign-in override does.
+  if (!executable) return null
   const version = await executableVersion(executable)
   if (signal.aborted) throw signal.reason
   return {
@@ -547,7 +555,7 @@ class CodexAppServerClientInstance implements CodexAppServerClient {
     this.assertActive(currentGeneration)
     if (resolved === null) {
       this.closeChannel()
-      throw new Error('Codex executable is unavailable.')
+      throw new CodexUnavailableError()
     }
     if (this.matchesCurrent(resolved)) return this.channel as CodexChannel
     this.closeChannel()
