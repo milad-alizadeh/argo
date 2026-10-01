@@ -6,8 +6,8 @@ import {
   readMockReplyDelayMs,
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_START_HOLD_FILE_ENV,
+  waitWhileHoldFileExists,
 } from '@/harnesses/proof-protocol'
-import { waitWhileHoldFileExists } from '../mock-start-hold.ts'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
 import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
 import { createMockCodexSkillsAndConfig } from './fixtures/mock-codex-skills-config.ts'

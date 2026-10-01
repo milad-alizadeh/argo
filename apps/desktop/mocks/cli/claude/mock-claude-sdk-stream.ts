@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync, watch } from 'node:fs'
-import { SESSION_MOCK_START_HOLD_FILE_ENV } from '@/harnesses/proof-protocol'
-import { waitWhileHoldFileExists } from '../mock-start-hold.ts'
+import {
+  SESSION_MOCK_START_HOLD_FILE_ENV,
+  waitWhileHoldFileExists,
+} from '@/harnesses/proof-protocol'
 
 // The command list the CLI reports, from the JSON file this names, shaped like
 // fixtures/supported-commands-claude-2.1.286.json. A rewrite of it pushes `commands_changed`.
