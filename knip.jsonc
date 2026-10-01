@@ -12,9 +12,9 @@
       ],
       "project": ["scripts/**/*.mts", "prototypes/codex-transport/**/*.ts"]
     },
+    // Templates are copied into a consumer repository and run there; nothing here imports them.
     "packages/argo-skills": {
-      "entry": ["bin/*.mts", "skills/**/hooks/*.mts"],
-      "project": ["bin/**/*.mts", "skills/**/*.mts"]
+      "entry": ["skills/**/templates/*.mjs"]
     },
     "apps/desktop": {
       "bun": true,

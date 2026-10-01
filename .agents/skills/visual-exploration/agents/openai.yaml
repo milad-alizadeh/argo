@@ -1,0 +1,5 @@
+interface:
+  display_name: "Visual Exploration"
+  short_description: "Find and approve a visual direction"
+policy:
+  allow_implicit_invocation: false

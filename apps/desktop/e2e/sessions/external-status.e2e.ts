@@ -41,6 +41,8 @@ type StatusSource = {
     project: string,
     sessions: ExternalSession[],
   ) => Promise<Record<string, string>>
+  // Keeps the Session in the live listing, as the process running it does, so no tick drops it.
+  holdLive: (root: string, session: ExternalSession) => Promise<void>
   // Safe to repeat: a poll that has not seen the Session yet sees it on a later call.
   openTurn: (root: string, session: ExternalSession) => Promise<void>
   closeTurn: (root: string, session: ExternalSession) => Promise<void>
@@ -71,6 +73,8 @@ function claudeSource(): StatusSource {
         [MOCK_CLAUDE_AGENTS_ENV]: claudeAgents(root),
       }
     },
+    // With no answer, `claude agents --json` fails, and a failed listing leaves every row as it is.
+    holdLive: async () => {},
     openTurn: (root, session) => answer(root, session, 'busy'),
     closeTurn: (root, session) => answer(root, session, 'idle'),
     stop: async () => {},
@@ -86,6 +90,9 @@ const codexRollout = (root: string, session: ExternalSession) =>
 // newest Turn from the stored thread.
 function codexSource(): StatusSource {
   let release: (() => Promise<void>) | null = null
+  async function holdLive(root: string, session: ExternalSession) {
+    release ??= await holdCodexWriterLock(codexHome(root), session.nativeId)
+  }
   async function writeTurn(root: string, session: ExternalSession, status: string) {
     const threads = JSON.parse(await readFile(codexState(root), 'utf8'))
     const thread = threads.find((candidate) => candidate.id === session.nativeId)
@@ -123,8 +130,9 @@ function codexSource(): StatusSource {
       await writeFile(codexState(root), JSON.stringify(threads))
       return { CODEX_HOME: codexHome(root) }
     },
+    holdLive,
     async openTurn(root, session) {
-      release ??= await holdCodexWriterLock(codexHome(root), session.nativeId)
+      await holdLive(root, session)
       await writeTurn(root, session, 'inProgress')
     },
     closeTurn: (root, session) => writeTurn(root, session, 'completed'),
@@ -215,6 +223,7 @@ for (const createSource of [claudeSource, codexSource]) {
     try {
       const dot = rowTitled(page, OLDER).locator('[data-slot="session-status"]')
       await expect(rowTitled(page, NEWER)).toHaveCount(1, { timeout: 30_000 })
+      await source.holdLive(root, older)
       await hooksInstalled(root, source, socketPath)
       const post = (event: string) =>
         postHook(

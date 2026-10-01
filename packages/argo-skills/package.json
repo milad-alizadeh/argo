@@ -1,11 +1,10 @@
 {
   "name": "argo-skills",
   "version": "0.1.0",
-  "description": "Argo's own agent skills, the seed assets they install, and the cross-CLI hook projector.",
+  "description": "Argo's own agent skills and the seed assets they install.",
   "type": "module",
   "files": [
     "assets",
-    "bin",
     "skills"
   ]
 }

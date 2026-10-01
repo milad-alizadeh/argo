@@ -1,0 +1,5 @@
+interface:
+  display_name: "Visual Foundation"
+  short_description: "Turn direction into a tested UI foundation"
+policy:
+  allow_implicit_invocation: false
