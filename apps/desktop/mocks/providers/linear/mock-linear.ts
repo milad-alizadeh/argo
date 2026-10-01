@@ -1,4 +1,4 @@
-// Linear, as far as the cockpit calls it, on a fixed loopback origin: the consent page, the token
+// Linear, as far as the app calls it, on a fixed loopback origin: the consent page, the token
 // endpoint and the GraphQL reads, answered by Mock Service Worker instead of a real socket. The
 // provider is the one thing a test here does not control and cannot afford live, so it is the one
 // thing mockd; only this in-process suite drives it — the packaged proof keeps its own real

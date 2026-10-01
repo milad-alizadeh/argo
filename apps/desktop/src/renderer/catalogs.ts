@@ -10,15 +10,15 @@ import { en as projects } from '@/domains/projects/renderer/locales'
 import { en as sessions } from '@/domains/sessions/renderer/locales'
 import { en as tickets } from '@/domains/tickets/renderer/locales'
 import { HARNESS_CATALOG as harnesses } from '@/harnesses/copy-registry'
-import cockpit from '@/platform/renderer/cockpit/locales/en.json'
 import shared from '@/platform/renderer/i18n/locales/en.json'
 import platform from '@/platform/renderer/i18n/locales/en.json'
+import app from '@/platform/renderer/shell/locales/app.json'
 import { PROVIDER_CATALOG as providers } from '@/providers/copy-registry'
 
 export const CATALOGS = {
   accounts,
   atlas,
-  cockpit,
+  app,
   harnessSignIn,
   harnesses,
   platform,

@@ -1,6 +1,6 @@
 ## L1 · Organisation entities
 
-- **Project** — the scope of one cockpit window: a **registered git repo, keyed to a stable
+- **Project** — the scope of one Argo Desktop window: a **registered git repo, keyed to a stable
   id** (path is a mutable attribute), carrying an **optional** Ticket **Connection** and an
   **optional** Code host Connection. One git common directory = one Project: linked worktrees
   share it, while independent clones of the same remote are separate Projects. A monorepo is one

@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   InspectorHeaderControls,
   InspectorSplit,
-} from '@/platform/renderer/cockpit/inspector-split/inspector-split'
-import { Icon } from '@/platform/renderer/components/icon/icon'
+} from '@/platform/renderer/shell/inspector-split/inspector-split'
 import { SessionTitle } from '../prompt'
 import type { Session } from '../types'
 import { SESSION_SPLIT } from './session-screen-layout'

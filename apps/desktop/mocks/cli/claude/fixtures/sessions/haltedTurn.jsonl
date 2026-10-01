@@ -1,3 +1,0 @@
-{"type": "last-prompt", "leafUuid": "h-root-1", "sessionId": "haltedTurn"}
-{"type": "user", "cwd": "/Users/x/tree", "timestamp": "2026-07-20T19:00:01.000Z", "uuid": "h-root-1", "parentUuid": null, "message": {"role": "user", "content": "Write the whole thing"}}
-{"type": "assistant", "cwd": "/Users/x/tree", "timestamp": "2026-07-20T19:00:40.000Z", "uuid": "h-a-1", "parentUuid": "h-root-1", "message": {"role": "assistant", "stop_reason": "max_tokens", "content": [{"type": "text", "text": "\u2026"}]}}

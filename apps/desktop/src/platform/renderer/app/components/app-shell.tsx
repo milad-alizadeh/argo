@@ -11,11 +11,11 @@ import {
 import { useTranslation } from 'react-i18next'
 import { usePanelRef } from 'react-resizable-panels'
 import { useInRouterContext } from 'react-router'
-import { CockpitNavigationRail } from '../../cockpit/components/cockpit-navigation-rail'
 import { Icon } from '../../components/icon/icon'
 import { Button } from '../../components/ui/button'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../components/ui/resizable'
 import { readCssSize } from '../../lib/read-css-size'
+import { AppNavigationRail } from '../../shell/components/app-navigation-rail'
 
 type AppShellProps = {
   rail?: ReactNode
@@ -34,7 +34,7 @@ function SidebarToggle({
   onToggle: () => void
   toggleRef?: RefObject<HTMLButtonElement | null>
 }) {
-  const { t } = useTranslation('cockpit')
+  const { t } = useTranslation('app')
   return (
     <Button
       aria-label={collapsed ? t('shell.openSidebar') : t('shell.collapseSidebar')}
@@ -54,7 +54,7 @@ function AppRail({ rail }: Pick<AppShellProps, 'rail'>) {
   return (
     <div className="flex min-h-0 w-(--size-navigation-rail) shrink-0 flex-col">
       <div className="drag-region h-(--size-chrome-bar) shrink-0" />
-      <div className="min-h-0 flex-1">{rail ?? (inRouter ? <CockpitNavigationRail /> : null)}</div>
+      <div className="min-h-0 flex-1">{rail ?? (inRouter ? <AppNavigationRail /> : null)}</div>
     </div>
   )
 }
@@ -112,17 +112,16 @@ export function AppPageSurface({ children }: { children?: ReactNode }) {
 
 function appContentInsets(): CSSProperties {
   return {
-    '--inset-app-content-body': 'var(--spacing-shell-inset)',
-    '--inset-cockpit-content-body': 'var(--spacing-shell-inset)',
+    '--inset-shell-content-body': 'var(--spacing-shell-inset)',
   } as CSSProperties
 }
 
 function panelSizes() {
   return {
-    sidebarDefault: readCssSize('--size-cockpit-sidebar-default'),
-    sidebarMinimum: readCssSize('--size-cockpit-sidebar-min'),
-    sidebarMaximum: readCssSize('--size-cockpit-sidebar-max'),
-    contentMinimum: readCssSize('--size-cockpit-content-min'),
+    sidebarDefault: readCssSize('--size-shell-sidebar-default'),
+    sidebarMinimum: readCssSize('--size-shell-sidebar-min'),
+    sidebarMaximum: readCssSize('--size-shell-sidebar-max'),
+    contentMinimum: readCssSize('--size-shell-content-min'),
   }
 }
 

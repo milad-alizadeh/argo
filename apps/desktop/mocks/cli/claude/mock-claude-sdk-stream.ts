@@ -7,7 +7,7 @@ import {
 import { MOCK_CLAUDE_VERSION } from './mock-claude-cli.ts'
 
 // The command list the CLI reports, from the JSON file this names, shaped like
-// fixtures/supported-commands-claude-2.1.286.json. A rewrite of it pushes `commands_changed`.
+// recordings/claude-cli/<version>/supported-commands.json. A rewrite of it pushes `commands_changed`.
 export const MOCK_CLAUDE_COMMANDS_FILE_ENV = 'ARGO_CLAUDE_COMMANDS_FILE'
 
 const INITIALIZATION_DELAY_MS = 50
@@ -225,7 +225,7 @@ function writeStream(sessionId: string, messageId: string): Promise<void> {
   })
 }
 
-// Frames the real CLI 2.1.286 sends around a Turn (fixtures/claude-lifecycle-frames-2.1.286.jsonl).
+// Frames the real CLI 2.1.286 sends around a Turn (recordings/claude-cli/<version>/lifecycle-frames.json).
 function writeFrame(frame: Record<string, unknown>) {
   process.stdout.write(`${JSON.stringify({ ...frame, uuid: randomUUID() })}\n`)
 }

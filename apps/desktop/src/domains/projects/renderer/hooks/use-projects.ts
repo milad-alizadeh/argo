@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router'
 import { type RouterOutputs, trpc } from '@/platform/renderer/trpc-client'
 
 export type ProjectSummary = RouterOutputs['projectList'][number]
-// The refusals a Project open can answer with; no other message makes the Cockpit refused.
+// A Project open can return only these refusals.
 const PROJECT_ERROR_CODES = [
   'missing-project',
   'missing-workspace',
@@ -30,10 +30,10 @@ const PROJECT_ERROR_CODES = [
 ] as const
 type ProjectErrorCode = (typeof PROJECT_ERROR_CODES)[number]
 
-type CockpitStatus = 'loading' | 'empty' | 'selected' | 'refused'
+type ProjectsStatus = 'loading' | 'empty' | 'selected' | 'refused'
 
-export type Cockpit = {
-  status: CockpitStatus
+export type ProjectsState = {
+  status: ProjectsStatus
   project: ProjectSummary | null
   projects: readonly ProjectSummary[]
   message: string | null
@@ -45,21 +45,19 @@ export type ProjectActions = {
   open: () => void
 }
 
-type ProjectCockpit = Cockpit
-
 const IDLE = { project: null, projects: [], message: null, code: null, busy: false } as const
-const LOADING: ProjectCockpit = { status: 'loading', ...IDLE }
-const EMPTY: ProjectCockpit = { status: 'empty', ...IDLE }
+const LOADING: ProjectsState = { status: 'loading', ...IDLE }
+const EMPTY: ProjectsState = { status: 'empty', ...IDLE }
 
 function useProjectListing() {
   const query = useQuery(trpc.projectList.queryOptions())
   return {
     ...query,
-    data: query.data ? ({ ...EMPTY, projects: query.data } satisfies ProjectCockpit) : undefined,
+    data: query.data ? ({ ...EMPTY, projects: query.data } satisfies ProjectsState) : undefined,
   }
 }
 
-export function useProjects(): [Cockpit, ProjectActions] {
+export function useProjects(): [ProjectsState, ProjectActions] {
   const navigate = useNavigate()
   const { projectId } = useParams()
   const queryClient = useQueryClient()
@@ -79,20 +77,20 @@ export function useProjects(): [Cockpit, ProjectActions] {
   const register = useMutation({ ...trpc.projectRegister.mutationOptions(), ...mutationOptions })
   const relocate = useMutation({ ...trpc.projectRelocate.mutationOptions(), ...mutationOptions })
 
-  const queryCockpit = projects.data ?? LOADING
+  const queryProjects = projects.data ?? LOADING
   const project =
-    queryCockpit.projects.find((candidate) => candidate.id === projectId) ??
-    (projectId === undefined ? (queryCockpit.projects[0] ?? null) : null)
+    queryProjects.projects.find((candidate) => candidate.id === projectId) ??
+    (projectId === undefined ? (queryProjects.projects[0] ?? null) : null)
   const openErrorCode = PROJECT_ERROR_CODES.includes(projectOpen.error?.message as ProjectErrorCode)
     ? (projectOpen.error?.message as ProjectErrorCode)
     : null
-  const projectCockpit = useMemo(() => {
-    const base = queryCockpit
+  const projectState = useMemo(() => {
+    const base = queryProjects
     if (project === null)
       return {
         ...base,
         project: null,
-        status: (base.status === 'loading' ? 'loading' : 'empty') as CockpitStatus,
+        status: (base.status === 'loading' ? 'loading' : 'empty') as ProjectsStatus,
         busy: register.isPending || relocate.isPending,
       }
     if (openErrorCode && project) {
@@ -104,11 +102,11 @@ export function useProjects(): [Cockpit, ProjectActions] {
       status: 'selected' as const,
       busy: register.isPending || relocate.isPending,
     }
-  }, [openErrorCode, project, queryCockpit, register.isPending, relocate.isPending])
+  }, [openErrorCode, project, queryProjects, register.isPending, relocate.isPending])
   const open = useCallback(() => {
     if (register.isPending || relocate.isPending) return
-    if (projectCockpit.status === 'refused' && projectCockpit.project) {
-      relocate.mutate(projectCockpit.project.id)
+    if (projectState.status === 'refused' && projectState.project) {
+      relocate.mutate(projectState.project.id)
       return
     }
     register.mutate(undefined, {
@@ -117,7 +115,7 @@ export function useProjects(): [Cockpit, ProjectActions] {
         if (registered) navigate(`/projects/${registered.id}/sessions`)
       },
     })
-  }, [navigate, projectCockpit, register, relocate])
+  }, [navigate, projectState, register, relocate])
 
-  return [projectCockpit, useMemo(() => ({ open }), [open])]
+  return [projectState, useMemo(() => ({ open }), [open])]
 }

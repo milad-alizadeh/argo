@@ -1,7 +1,7 @@
 // The packaged Ticket proof (#1848, #1849, #2013, #2870, #2871, #2873, #2874, #2876, #2877): connect an Account, connect a
 // source, list, detail, a status change, restart, revoked access, an expired renewal, disconnect, a
 // visible failure, the automatic refresh, linked Tickets opened by ID and search beyond the local index, all through the shipped
-// cockpit against a mock GitHub and a mock Linear. Each case declares the Accounts and source it
+// app against a mock GitHub and a mock Linear. Each case declares the Accounts and source it
 // starts with (`ticket-test.ts`).
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'

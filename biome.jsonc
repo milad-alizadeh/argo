@@ -207,7 +207,7 @@
     {
       // KIND — `bun run record:vendor-history` writes these vendor recordings; their length is
       // what the vendor answered, not code anyone holds in their head.
-      "includes": ["apps/desktop/mocks/cli/*/recordings/*.ts"],
+      "includes": ["apps/desktop/mocks/recordings/*/*/*.ts"],
       "linter": { "rules": { "style": { "noExcessiveLinesPerFile": "off" } } }
     },
     {

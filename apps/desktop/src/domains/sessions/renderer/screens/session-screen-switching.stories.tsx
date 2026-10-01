@@ -10,7 +10,7 @@ import {
   sessionSelectionHost,
 } from '@/mocks/sessions/session-selection-host.fixture'
 import { heldDetails } from '@/mocks/sessions/session-story-host'
-import { cockpitRoutes } from '@/renderer/cockpit-router'
+import { appRoutes } from '@/renderer/app-router'
 import type { Session } from '../types'
 
 const SESSION_ROWS = [
@@ -44,9 +44,9 @@ const SESSION_ROWS = [
 const CARD_LABEL = 'Message composer'
 const MESSAGE_LABEL = 'Message'
 
-function CockpitSessionScreen({ sessionId }: { sessionId: string }) {
+function AppRouteSessionScreen({ sessionId }: { sessionId: string }) {
   const [router] = useState(() =>
-    createMemoryRouter(cockpitRoutes, {
+    createMemoryRouter(appRoutes, {
       initialEntries: [`/projects/project-1/sessions/${sessionId}`],
     }),
   )
@@ -133,10 +133,10 @@ async function switchTo(
 
 const meta = {
   title: 'Sessions/Screen/Switching',
-  component: CockpitSessionScreen,
+  component: AppRouteSessionScreen,
   parameters: { layout: 'fullscreen' },
   args: { sessionId: 'claude-first' },
-} satisfies Meta<typeof CockpitSessionScreen>
+} satisfies Meta<typeof AppRouteSessionScreen>
 
 export default meta
 type Story = StoryObj<typeof meta>

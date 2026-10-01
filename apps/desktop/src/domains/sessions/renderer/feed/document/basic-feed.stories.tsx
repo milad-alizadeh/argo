@@ -2041,7 +2041,7 @@ const thinkingReply: FeedContent = {
   text: 'One parent issue, then.',
 }
 
-// The reading main publishes for this history, drawn through the same projection the cockpit runs.
+// The reading main publishes for this history, drawn through the same projection the app runs.
 function thinkingReading(history: FeedContent[], running: boolean): SessionFeed {
   const { entries } = projectFeedRowEntries({ history, live: [] })
   return {

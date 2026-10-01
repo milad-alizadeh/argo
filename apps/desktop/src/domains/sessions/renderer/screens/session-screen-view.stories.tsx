@@ -1039,7 +1039,7 @@ export const SharedCheckout: Story = {
 
 export const NarrowHeader: Story = {
   render: () => (
-    <div className="h-dvh w-[calc(var(--size-navigation-rail)+var(--size-cockpit-sidebar-min)+var(--size-cockpit-content-min))]">
+    <div className="h-dvh w-[calc(var(--size-navigation-rail)+var(--size-shell-sidebar-min)+var(--size-shell-content-min))]">
       <ReviewScreen
         workspaceId="workspace-feature"
         workspaces={[
@@ -1130,7 +1130,7 @@ export const RemovedWorkspace: Story = {
 
 export const LongWorkspaceAndBranchNames: Story = {
   render: () => (
-    <div className="h-dvh w-[calc(var(--size-navigation-rail)+var(--size-cockpit-sidebar-min)+var(--size-cockpit-content-min))]">
+    <div className="h-dvh w-[calc(var(--size-navigation-rail)+var(--size-shell-sidebar-min)+var(--size-shell-content-min))]">
       <ReviewScreen
         workspaceId="workspace-long"
         workspaces={[
