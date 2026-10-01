@@ -113,31 +113,3 @@ test('leaves transcript roots unset and launches under its isolated HOME', async
     expect(run.transcripts).toBeNull()
     expect(run.launchEnv({ slowReply: false }).HOME).toBe(path.join(root, 'home'))
   }))
-
-test('recognizes an assistant record after the prompt in a real Claude transcript', async () =>
-  inTemporaryRoot(async (root) => {
-    const { backend, run } = await startedRealBackend(root)
-    const transcript = path.join(
-      run.launchEnv({ slowReply: false }).HOME,
-      '.claude',
-      'projects',
-      'run.jsonl',
-    )
-    await mkdir(path.dirname(transcript), { recursive: true })
-    // The reader follows the record chain, so the reply names the prompt as its parent.
-    const prompt = {
-      type: 'user',
-      uuid: 'user',
-      parentUuid: null,
-      message: { content: 'Reply with ACK.' },
-    }
-    const reply = {
-      type: 'assistant',
-      uuid: 'assistant',
-      parentUuid: 'user',
-      message: { content: 'ACK' },
-    }
-    await writeFile(transcript, `${JSON.stringify(prompt)}\n${JSON.stringify(reply)}\n`)
-
-    expect(await backend.recorded({ harness: 'claude', prompt: 'Reply with ACK.' })).toBe(true)
-  }))

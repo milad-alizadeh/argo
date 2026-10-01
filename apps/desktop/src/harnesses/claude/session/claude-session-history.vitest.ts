@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs'
 import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
 import { expect, test, vi } from 'vitest'
+import { recordedSession } from '@/mocks/cli/claude/recorded-claude-sessions'
+import { RECORDED_PROMPTS } from '@/mocks/cli/recorded-prompts'
 import { decodeClaudeSessionMessages } from './claude-session-history'
 
 function recordedMessages(name: string): SessionMessage[] {
@@ -15,11 +17,32 @@ function recordedMessages(name: string): SessionMessage[] {
     .filter((entry) => entry.type === 'user' || entry.type === 'assistant')
 }
 
-test('decodes Claude user and assistant content without system messages', () => {
-  expect(decodeClaudeSessionMessages(recordedMessages('parityProse'))).toEqual([
-    { kind: 'message', id: 'pr-p', role: 'user', text: 'Say hello, then confirm.' },
-    { kind: 'message', id: 'pr-a', role: 'assistant', text: 'Hello there. Confirmed.' },
+// The decoded reply is text the recording's last assistant message holds, whatever a re-record says.
+function expectRecordedReply(messages: SessionMessage[], text: unknown) {
+  expect(text).toEqual(expect.stringMatching(/\S/))
+  const reply = messages.findLast((entry) => entry.type === 'assistant')
+  expect(JSON.stringify(reply?.message)).toContain(JSON.stringify(text).slice(1, -1))
+}
+
+test('decodes a real Claude Session the Agent SDK read back', () => {
+  const prose = recordedSession(RECORDED_PROMPTS.claudeProse)
+  const decoded = decodeClaudeSessionMessages(prose)
+  expect(decoded).toEqual([
+    { kind: 'message', id: expect.any(String), role: 'user', text: RECORDED_PROMPTS.claudeProse },
+    { kind: 'message', id: expect.any(String), role: 'assistant', text: expect.any(String) },
   ])
+  expectRecordedReply(prose, decoded[1]?.kind === 'message' && decoded[1].text)
+})
+
+// Claude CLI writes a thought with its signature and no text, which has nothing to show.
+test('drops a real Claude thought that carries no text', () => {
+  const thought = recordedSession(RECORDED_PROMPTS.claudeThought)
+  const decoded = decodeClaudeSessionMessages(thought)
+  expect(decoded).toEqual([
+    expect.objectContaining({ kind: 'message', role: 'user' }),
+    expect.objectContaining({ kind: 'message', role: 'assistant' }),
+  ])
+  expectRecordedReply(thought, decoded[1]?.kind === 'message' && decoded[1].text)
 })
 
 test('reads an Agent call as a start that its task notification answers', () => {

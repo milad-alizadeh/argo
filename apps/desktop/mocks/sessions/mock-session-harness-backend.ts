@@ -1,7 +1,7 @@
 // The backend every packaged Session proof runs against today: each adapter's mock Harness written
 // beside the fixture tree, and both transcript roots pointed at that tree (#2308).
 import { writeFileSync } from 'node:fs'
-import { readdir, readFile, rm } from 'node:fs/promises'
+import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import type { Page } from 'playwright-core'
 import type { Harness } from '@/domains/sessions/renderer/harness/harnesses'
@@ -41,14 +41,6 @@ function transcriptRoots(root: string, fixture: SessionFixture): Record<Harness,
   }
 }
 
-async function transcriptHolds(folder: string, mark: string) {
-  const names = await readdir(folder, { recursive: true }).catch(() => [])
-  const records = await Promise.all(
-    names.map((name) => readFile(path.join(folder, name), 'utf8').catch(() => '')),
-  )
-  return records.some((record) => record.includes(mark))
-}
-
 // Arms a hold file when a case asks for it and names it to the mocks.
 function holdEnvironment(held: boolean | undefined, name: string, file: string) {
   if (!held) return {}
@@ -57,8 +49,9 @@ function holdEnvironment(held: boolean | undefined, name: string, file: string) 
 }
 
 export function createMockSessionHarnessBackend(): SessionHarnessBackend {
-  // Where each mock writes its transcripts, filled in by `start` before any case runs.
-  const folders: Record<Harness, string> = { claude: '', codex: '', 'claude-acp': '' }
+  // The proof root and each mock's transcript root, filled in by `start` before any case runs.
+  let proofRoot = ''
+  let roots: Record<Harness, string> = { claude: '', codex: '', 'claude-acp': '' }
   // A slow Harness holds the claude reply while this file exists; `waitForReply` deletes it.
   let replyHold = ''
   // A held start waits while this file exists; `waitForReply` deletes it.
@@ -71,14 +64,14 @@ export function createMockSessionHarnessBackend(): SessionHarnessBackend {
     name: 'mock',
     budgetMs: BUDGET_MS,
     start: async ({ root, fixture }) => {
-      const roots = transcriptRoots(root, fixture)
+      proofRoot = root
+      roots = transcriptRoots(root, fixture)
       const executables: Record<Harness, string> = {
         claude: '',
         codex: '',
         'claude-acp': '',
       }
       for (const harness of Object.keys(MOCKS) as Harness[]) {
-        folders[harness] = MOCKS[harness].folder(roots[harness])
         executables[harness] = await MOCKS[harness].write(root, roots[harness])
       }
       const signedIn = await signedInHarnessEnvironment(root)
@@ -107,6 +100,7 @@ export function createMockSessionHarnessBackend(): SessionHarnessBackend {
       await feedMark(page, reply).first().waitFor({ timeout: BUDGET_MS })
     },
     replied: async (page, reply) => (await feedMark(page, reply).count()) > 0,
-    recorded: (reply) => transcriptHolds(folders[reply.harness], mark(reply)),
+    recorded: (reply) =>
+      MOCKS[reply.harness].recorded(proofRoot, roots[reply.harness], mark(reply)),
   }
 }

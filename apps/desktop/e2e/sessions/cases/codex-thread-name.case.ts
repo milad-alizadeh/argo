@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
-import { DatabaseSync } from 'node:sqlite'
+import { readFile, writeFile } from 'node:fs/promises'
 import { setTimeout } from 'node:timers/promises'
 import type { Page } from 'playwright-core'
-import { codexStatePath } from '../../../mocks/cli/codex/codex-state-store'
+import { mockCodexStateFile } from '../../../mocks/cli/codex/mock-codex-cli'
+import { RECORDED_PROMPTS } from '../../../mocks/cli/recorded-prompts'
 import { fixtureSessionId } from '../../../mocks/sessions/mock-transcript-files'
 import { CODEX_PARENT } from '../fixtures/feed.fixture'
 import { refreshSessions } from '../gestures'
@@ -11,51 +12,27 @@ import { sessionRows } from '../page-trpc'
 const THREAD = fixtureSessionId(CODEX_PARENT)
 const NAME = 'Named by Codex Desktop'
 
-type ColumnInfo = { name: string; type: string; notnull: number; dflt_value: unknown }
-
-// Codex Desktop's own store, written beside the fixture rollouts where the packaged app looks. The
-// real backend's app spawns the real `codex` CLI for its own readiness check before this runs, and
-// that CLI migrates its actual schema (many more NOT-NULL columns than this fixture cares about)
-// into the same file (#2650), so this creates the table only if the CLI has not already, and fills
-// whatever NOT-NULL columns that real schema demands with a harmless value instead of assuming a
-// fixed shape.
-function writeStateStore(codexTranscripts: string) {
-  const store = new DatabaseSync(codexStatePath(codexTranscripts))
-  store.exec('CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, title TEXT, name TEXT)')
-  const columns = store.prepare('PRAGMA table_info(threads)').all() as ColumnInfo[]
-  const required = Object.fromEntries(
-    columns
-      .filter((column) => column.notnull === 1 && column.dflt_value === null)
-      .map((column) => [column.name, column.type === 'INTEGER' ? 0 : ''] as const),
-  )
-  const row = { ...required, id: THREAD, name: NAME }
-  const columnNames = Object.keys(row)
-  store
-    .prepare(
-      `INSERT INTO threads (${columnNames.join(', ')})
-       VALUES (${columnNames.map(() => '?').join(', ')})
-       ON CONFLICT(id) DO UPDATE SET name = excluded.name`,
-    )
-    .run(...Object.values(row))
-  // SQLite names a WAL-mode database's sidecar `-wal`/`-shm` files after the literal path a
-  // connection opened, not the path's resolved target, so this write (through the fixture path)
-  // and the app's read (through the real backend's symlink into `home/.codex`, #2650) keep
-  // independent sidecars over the same underlying file. Truncating the checkpoint here folds
-  // this connection's write into the main file's bytes, which is the only part every path shares.
-  store.exec('PRAGMA wal_checkpoint(TRUNCATE)')
-  store.close()
+// Codex Desktop renames a thread in the store the mock app-server's `thread/list` answers from.
+async function renameInCodexDesktop(root: string) {
+  const file = mockCodexStateFile(root)
+  const threads = JSON.parse(await readFile(file, 'utf8')) as { id: string; name?: string }[]
+  const thread = threads.find((candidate) => candidate.id === THREAD)
+  assert.ok(thread !== undefined, `The mock Codex store holds no ${CODEX_PARENT} thread.`)
+  thread.name = NAME
+  await writeFile(file, JSON.stringify(threads))
 }
 
 async function sessionListName(page: Page) {
   const rows = await sessionRows(page)
-  const named = rows.find((session) => session.name === 'Run Codex check' || session.name === NAME)
+  const named = rows.find(
+    (session) => session.name === RECORDED_PROMPTS.codexCommand || session.name === NAME,
+  )
   return named?.name ?? null
 }
 
-// ADR-0042: the packaged main process opens the store through Electron's own `node:sqlite`.
-export async function proveCodexThreadName(page: Page, codexTranscripts: string) {
-  assert.equal(await sessionListName(page), 'Run Codex check')
-  writeStateStore(codexTranscripts)
+export async function proveCodexThreadName(page: Page, root: string) {
+  assert.equal(await sessionListName(page), RECORDED_PROMPTS.codexCommand)
+  await renameInCodexDesktop(root)
   // Argo reads the name from the Harness's thread list, which a sync asks for.
   await refreshSessions(page)
   const deadline = Date.now() + 10_000

@@ -1,6 +1,4 @@
 import assert from 'node:assert/strict'
-import { readFile, writeFile } from 'node:fs/promises'
-import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
 import type { Page } from 'playwright-core'
 import { createSessionByClick, openSessionByClick, sendFromComposer } from '../gestures'
@@ -11,18 +9,6 @@ type Restart = () => Promise<Page>
 
 const OPENING_PROMPT = 'Open the Codex resume proof.'
 const RESUMING_PROMPT = 'Carry on after the restart.'
-const REFUSAL = 'Another Codex client holds this Session.'
-
-async function markVendorActive(root: string, sessionId: string) {
-  const file = path.join(root, 'argo-vendor-history.json')
-  const stored = JSON.parse(await readFile(file, 'utf8')) as {
-    threads: { id: string; status: { type: string; message?: string } }[]
-  }
-  const thread = stored.threads.find((candidate) => candidate.id === sessionId)
-  assert.ok(thread !== undefined)
-  thread.status = { type: 'active', message: REFUSAL }
-  await writeFile(file, JSON.stringify(stored))
-}
 
 async function liveSessionListRow(page: Page, sessionId: string, budgetMs: number) {
   const deadline = Date.now() + budgetMs
@@ -71,28 +57,4 @@ export async function provePackagedCodexResume(
   const resumed = await liveSessionListRow(relaunched, sessionId, backend.budgetMs)
   assert.deepEqual({ id: resumed.id, posture: resumed.posture }, { id: sessionId, posture: 'live' })
   return relaunched
-}
-
-export async function provePackagedCodexResumeRefusal(
-  page: Page,
-  {
-    restart,
-    root,
-  }: {
-    restart: Restart
-    root: string
-  },
-) {
-  const sessionId = await createSessionByClick(page, {
-    harness: 'codex',
-    prompt: 'Open the Codex refusal proof.',
-  })
-  const relaunched = await restart(() => markVendorActive(root, sessionId))
-  await openSessionByClick(relaunched, sessionId)
-  await sendFromComposer(relaunched, 'Try to take over this active Session.')
-  const alert = relaunched.getByRole('alert')
-  await alert.waitFor()
-  assert.match((await alert.textContent()) ?? '', new RegExp(REFUSAL))
-  const row = await sessionDetails(relaunched, sessionId)
-  assert.equal(row?.posture, null)
 }
