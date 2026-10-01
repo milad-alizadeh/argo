@@ -160,7 +160,8 @@ test('starts an ACP Session when the agent reports no mode or effort choice', as
   } finally {
     delete process.env[override]
     delete process.env.MOCK_ACP_OMITTED_OPTIONS
-    await rm(folder, { recursive: true, force: true })
+    // Shutdown does not wait for the mock agent, which can still be writing its transcript.
+    await rm(folder, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
   }
 })
 

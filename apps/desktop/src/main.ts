@@ -65,8 +65,8 @@ import { attachAppearanceWatch } from '@/platform/main/appearance'
 import type { AppActor } from '@/platform/main/application/app-machine'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {
+  accountDataDirectory,
   DEVELOPMENT_APPLICATION_NAME,
-  developmentStoreDirectories,
 } from '@/platform/main/development/account-store'
 import {
   developmentIdentityArgument,
@@ -178,15 +178,13 @@ async function chooseAttachmentFiles(window: BrowserWindow): Promise<string[]> {
 // Account access and the Connection store, created once: the Ticket scans and every window share them.
 function createTicketServices(database: Database) {
   const userData = app.getPath('userData')
-  const { accountData, connectionData } = developmentStoreDirectories({
-    userData,
-    appData: app.getPath('appData'),
-    instance: DEVELOPMENT_INSTANCE,
-  })
   const access = createAccountAccess({
     userData,
-    accountData,
-    connectionData,
+    accountData: accountDataDirectory({
+      userData,
+      appData: app.getPath('appData'),
+      instance: DEVELOPMENT_INSTANCE,
+    }),
     endpoints: providerEndpoints(PROOF_ENABLED),
     providers: PROVIDER_REGISTRY,
     cipher: safeStorageCipher,
@@ -510,12 +508,7 @@ let sessionInteractionBroker: SessionInteractionBroker | undefined
 let ticketServices: TicketServices | undefined
 
 async function prepare() {
-  const { projectData } = developmentStoreDirectories({
-    userData: app.getPath('userData'),
-    appData: app.getPath('appData'),
-    instance: DEVELOPMENT_INSTANCE,
-  })
-  applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
+  applicationDatabase = openDatabase(app.getPath('userData'), { packaged: app.isPackaged })
   clearWorkingStatuses(applicationDatabase)
   markUnresolvedSessionCommandsUnknown(applicationDatabase)
   markInterruptedTicketScans(applicationDatabase)

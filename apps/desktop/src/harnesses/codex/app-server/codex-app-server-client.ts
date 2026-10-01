@@ -191,6 +191,10 @@ class CodexProtocolError extends Error {
   }
 }
 
+// Codex's answer for a thread it finds neither loaded nor stored, such as one with no rollout yet.
+export const isThreadNotLoaded = (error: unknown) =>
+  error instanceof Error && /thread not loaded/i.test(error.message)
+
 // Conflicting app-server processes can hold the same upstream SQLite locks indefinitely (#2653).
 export class CodexRequestTimeoutError extends Error {
   constructor(method: string) {

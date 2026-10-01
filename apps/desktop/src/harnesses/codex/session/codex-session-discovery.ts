@@ -7,6 +7,7 @@ import type {
 import {
   type CodexRequest,
   CodexUnavailableError,
+  isThreadNotLoaded,
   type Thread,
   type ThreadListResponse,
 } from '../app-server'
@@ -50,8 +51,11 @@ async function readCodexThread(
     )
     return { found: true, record: parseThread(thread) }
   } catch (error) {
-    if (error instanceof Error && /thread.*(?:not found|does not exist)/i.test(error.message))
-      return { found: false }
+    // An id Codex cannot parse names no thread it could ever return (0.157.0 answers -32600).
+    const missing =
+      error instanceof Error &&
+      /thread.*(?:not found|does not exist)|^invalid thread id:/i.test(error.message)
+    if (missing || isThreadNotLoaded(error)) return { found: false }
     throw error
   }
 }
