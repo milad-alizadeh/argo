@@ -2,8 +2,8 @@
 // suite, which is why this sits outside the turbo `test` pipeline and has its own script.
 //
 // This file carries the shell-command parsing every guard is built on, and the one regression
-// the suite exists for. The guards themselves are in pr-ownership.test.mts and
-// worktree-names.test.mts, split off on file length alone.
+// the suite exists for. The guard itself is in pr-ownership.test.mts, split off on file length
+// alone.
 //
 // A guard with no test is a guard whose prose is the only thing anyone has read, which is
 // exactly how `/ship` shipped unable to push (see the `ship/SKILL.md` case at the bottom).

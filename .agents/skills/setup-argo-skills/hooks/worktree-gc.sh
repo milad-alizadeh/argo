@@ -13,7 +13,7 @@
 #              an ancestor of origin/<default>.
 #   clean    — no uncommitted or untracked changes.
 #   pushed   — no commits ahead of its upstream (an unpushed worktree is the only
-#              copy of the work; see docs/agents/worktrees.md).
+#              copy of the work).
 #   quiet    — untouched for $QUIET_MINUTES, so a session still working in a
 #              just-merged worktree isn't pulled out from under it.
 #   not ours — never the worktree this script is running from.
@@ -239,7 +239,7 @@ while IFS= read -r line; do
     landed=1
   fi
   # A design branch never merges: nothing on it lands on the default branch, so both tests above
-  # can only ever answer "no" and the local tree would be kept at every session end, forever. Its
+  # can only ever answer "no" and the local tree would be kept at every run, forever. Its
   # expiry is the ticket in its name, the same key the remote sweep reads.
   design_ticket=$(design_ticket_of "$branch")
   if [ "$landed" = 0 ] && [ -n "$design_ticket" ] && [ "$has_gh" = 1 ]; then
@@ -327,8 +327,7 @@ if [ "$has_gh" = 1 ]; then
   # A failed `gh` query means keep: the branch may be the only copy of a page a screen is still
   # being built against, and an unreachable host is not evidence that a ticket closed.
   #
-  # One `ls-remote` for the whole namespace: this runs on a session-end hook, where a round
-  # trip per branch is a round trip too many.
+  # One `ls-remote` for the whole namespace: a round trip per branch is a round trip too many.
   design_heads=$(git -C "$repo_root" ls-remote --heads origin 'refs/heads/design/*' 2>/dev/null \
     | sed 's|.*refs/heads/||')
 

@@ -119,9 +119,8 @@ an untrusted filter file changes no behaviour.
 
 ### 6. Guardrail hooks, only when the user opts in
 
-The hooks impose a worktree discipline (one guard covering both where a change runs and what the
-worktree is named, plus the worktree reaper) on the project, and one that reserves pushing a work
-branch and opening a PR to `/ship`. Ask first and install nothing unless the answer is yes.
+The hooks reserve pushing a work branch and opening a PR to `/ship`, and nudge a session to keep
+a to-do list. Ask first and install nothing unless the answer is yes.
 
 Clone Argo shallowly, then copy these into the project's **git root**, keeping their paths.
 The git root, not the working directory: the projected commands resolve their scripts through
@@ -130,8 +129,7 @@ The git root, not the working directory: the projected commands resolve their sc
 | From the Argo clone | Why it is in the set |
 |---|---|
 | `hooks.json` | the neutral descriptor every projection is generated from |
-| `packages/argo-skills/skills/setup-argo-skills/hooks/` | every script the projected commands invoke, and nothing else: it holds only these hooks, so it is copied wholesale rather than picked over |
-| `docs/agents/worktrees.md` | the contract the deny message cites, and only when you set `worktreeGuard.docs` to point at it. A project that keeps its own convention document names that instead, and one that has no convention copies no doc |
+| `packages/argo-skills/skills/setup-argo-skills/hooks/` | every script the projected commands invoke, plus `worktree-gc.sh`, the manual worktree reaper; it is copied wholesale rather than picked over |
 
 The set is lockstep with `hooks.json`: a command added there whose script is missing here
 projects a hook pointing at nothing.
@@ -141,11 +139,8 @@ carry none of their own, and the defaults are deliberately quiet rather than Arg
 
 | key | what it does | leave unset when |
 |---|---|---|
-| `worktreeGuard.roots` | narrows the edit guard, whose default is the whole repository | the whole repository is right |
-| `worktreeGuard.dir` | where worktrees live; defaults to `.claude/worktrees` | that default suits |
-| `worktreeGuard.branchPrefix` | turns branch-name checking ON, e.g. `argo/` | **the project has no branch convention. Unset, the guard judges no branch name at all, which is the right default: a guard that invented a convention would refuse every name the project already uses** |
-| `worktreeGuard.docs` | the path a refusal cites for the full rules | there is no such document; the refusal then cites nothing rather than a file the project does not have |
-| `worktreeGc.artifactPaths` | glob patterns, relative to each worktree, that the `--artifacts` sweep deletes | the project has no build output to sweep. Unset, that sweep finds nothing and says so, rather than reporting a clean zero |
+| `prOwnershipGuard.publishBranches` | branch prefixes, e.g. `design/`, that any agent may push without `/ship` | every branch the project pushes carries work |
+| `worktreeGc.artifactPaths` | glob patterns, relative to each worktree, that the manual `worktree-gc.sh --artifacts` sweep deletes | the project has no build output to sweep. Unset, that sweep finds nothing and says so, rather than reporting a clean zero |
 
 Read the project's own layout before filling these in. Copying Argo's values into a project that
 does not share them is the failure this table exists to prevent.
@@ -192,7 +187,7 @@ grouped multi-select question with the recommendation marked:
 | Quality gates as errors, plus the one-page prose residue | `setup-quality-gates` | always | 1 |
 | Enable Codex native todo lists | this skill, below | Codex is installed | 2 |
 | Always-on task tracking | this skill, below | always | 3 |
-| Guardrail hooks | Phase 1, step 6 | user runs git worktrees | 4 |
+| Guardrail hooks | Phase 1, step 6 | the project ships through `/ship` | 4 |
 | Price and cut the agent docs | `audit-agent-docs` | always | last, since every step above adds to the bill |
 
 Done when the user has answered the one question.

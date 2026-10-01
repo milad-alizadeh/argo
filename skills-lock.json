@@ -125,7 +125,7 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/setup-argo-skills/SKILL.md",
-      "computedHash": "beb07c1c28899b8c85c14a19eafaed5a5f53fc5fbf77657e5dc84e94e0278ccf"
+      "computedHash": "c5b622c35036537085f55ece821a95d7c171bc561c94c0205fb634450c6e4efe"
     },
     "setup-matt-pocock-skills": {
       "source": "mattpocock/skills",

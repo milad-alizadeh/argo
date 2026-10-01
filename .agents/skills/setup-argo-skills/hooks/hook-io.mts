@@ -1,18 +1,6 @@
 // The stdin/stdout half of a hook, shared by the guards in this directory and by the task-list nudge.
 // Each hook keeps its own pure decide(); this is the plumbing around it.
 import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
-import path from 'node:path'
-
-/** The `worktreeGuard` block of `hooks.json`. Every field is optional: a consumer configures the
- * keys its own convention needs and the guards read the rest as unset. */
-export type WorktreeGuardConfiguration = {
-  roots?: string[]
-  dir?: string
-  branchPrefix?: string
-  publishBranches?: string[]
-  docs?: string
-}
 
 /** What a harness pipes in. Claude spells the keys one way and Codex the other, so both are
  * optional here and `toolCall` below is the one place that picks. */
@@ -38,20 +26,6 @@ export type ToolCall = {
 /** What a guard says about one tool call. */
 export type Verdict = { block: boolean; reason?: string }
 
-/** The project's own convention, read from the descriptor that travels with the hooks. Shared,
- * because two guards now answer to the same `worktreeGuard` block, and a second copy of this
- * reader is a second place for the key names to drift. Missing or malformed reads as `{}`, the
- * unconfigured default every consumer starts on. */
-export function readWorktreeGuard(root: string): WorktreeGuardConfiguration {
-  const descriptor = path.join(root, 'hooks.json')
-  if (!existsSync(descriptor)) return {}
-  try {
-    return JSON.parse(readFileSync(descriptor, 'utf8')).worktreeGuard ?? {}
-  } catch {
-    return {}
-  }
-}
-
 /** Where that descriptor lives. CLAUDE_PROJECT_DIR when the harness sets one, else the repo
  * toplevel, so the same script registers under Codex without a rewrite. */
 export function resolveProjectDir(cwd: string): string {
@@ -63,8 +37,7 @@ export function resolveProjectDir(cwd: string): string {
   }
 }
 
-/** The verdict a guard returns when it has nothing to say. Every guard here needs it, and
- * a literal in three call sites is one paste past the rule. */
+/** The verdict a guard returns when it has nothing to say. */
 export const ALLOW: Verdict = { block: false }
 
 /** True when a tool call is an agent's rather than the human's — guards never touch the human.
