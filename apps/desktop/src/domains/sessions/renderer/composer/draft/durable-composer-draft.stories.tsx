@@ -937,6 +937,30 @@ export const AcceptedSendRecreatesANewerEditSavedAfterAcceptance: Story = {
   },
 }
 
+// A render while the Send's own save is in flight arms an autosave of the sent text (#3072).
+export const AcceptedSendDropsAnAutosaveArmedDuringItsSave: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const editor = await canvas.findByLabelText('Message')
+    await userEvent.click(canvas.getByRole('button', { name: 'Hold Session A saves' }))
+    await userEvent.clear(editor)
+    await userEvent.type(editor, 'Sent while saving.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await serverRequestedSave(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Release Session A save' }))
+    await waitFor(() => expect(editor).not.toHaveTextContent('Sent while saving.'))
+    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    const otherEditor = await canvas.findByLabelText('Message')
+    await expect(otherEditor).toHaveTextContent('Restored Session B draft.')
+    await userEvent.type(otherEditor, ' Saved later.')
+    // Session B's autosave is armed after any Session A one, so it lands after it too.
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('Saved later.'),
+    )
+    await expect(canvas.getByLabelText('Stored drafts')).not.toHaveTextContent('Sent while saving.')
+  },
+}
+
 export const TargetSwitchKeepsAnInFlightSaveWithItsOwner: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

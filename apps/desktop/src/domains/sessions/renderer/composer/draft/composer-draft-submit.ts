@@ -127,6 +127,7 @@ async function submitDraft({
     saved,
     editing,
     latestEditing: input.latestEditing,
+    saveTimer: input.saveTimer,
     submit: input.submit,
     owner: input.owner,
     setSendFailure: input.setSendFailure,
@@ -163,6 +164,7 @@ async function sendPersistedDraft(input: {
   saved: PersistedDraft
   editing: ComposerEditing
   latestEditing: React.RefObject<ComposerEditing | null>
+  saveTimer: React.RefObject<Map<string, number>>
   submit: ComposerDraftSubmitInput['submit']
   owner: string
   setSendFailure: ComposerDraftSubmitInput['setSendFailure']
@@ -172,8 +174,11 @@ async function sendPersistedDraft(input: {
 }) {
   try {
     const result = await submitSavedDraft(input.saved, input.submit)
-    if (input.latestEditing.current === input.editing)
+    if (input.latestEditing.current === input.editing) {
+      // An autosave armed while the Send was in flight holds the sent text.
+      cancelSaveTimer(input.saveTimer, input.owner)
       input.suppressNextEmptyAutosave.current = input.owner
+    }
     if (
       input.persisted.current.get(input.owner)?.id === input.saved.id &&
       input.persisted.current.get(input.owner)?.revision === input.saved.revision
