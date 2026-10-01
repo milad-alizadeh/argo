@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { Button } from '@/platform/renderer/components/ui/button'
 import type { ComposerEditing } from '../editing/composer-editing'
@@ -81,6 +82,45 @@ function UnsettledSendStory({ onSend }: { onSend: ComposerFormProps['onSend'] })
       plan={null}
       sessionId="unsettled-session"
     />
+  )
+}
+
+const LANDED_DRAFT = 'Restored draft'
+
+// The saved draft lands; with press, a control takes focus before the next frame (#3036).
+function DraftLandsStory({
+  onSend,
+  press,
+}: {
+  onSend: ComposerFormProps['onSend']
+  press: boolean
+}) {
+  const [loading, setLoading] = useState(true)
+  const pressed = useRef<HTMLButtonElement>(null)
+  return (
+    <>
+      <Button
+        onClick={() => {
+          flushSync(() => setLoading(false))
+          // Lexical applies the DOM selection in a microtask, and a real press always comes after it.
+          if (press) queueMicrotask(() => pressed.current?.focus())
+        }}
+        type="button"
+        variant="outline"
+      >
+        Land the draft
+      </Button>
+      <Button ref={pressed} type="button" variant="outline">
+        Pressed control
+      </Button>
+      <ComposerForm
+        focusOnMount
+        initialEditing={loading ? undefined : { prompt: LANDED_DRAFT }}
+        loading={loading}
+        onSend={onSend}
+        sessionId="landing-session"
+      />
+    </>
   )
 }
 
@@ -455,5 +495,36 @@ export const SkillMentionPaste: Story = {
     await expect(composer.querySelector('svg')).not.toBeNull()
     await expect(composer).not.toHaveTextContent('[$implement]')
     await expect(composer).toHaveTextContent('go')
+  },
+}
+
+// Focus asked for on arrival lands with the draft, so it never takes focus back from a later press.
+export const PressAsTheDraftLandsKeepsFocus: Story = {
+  render: (args) => <DraftLandsStory onSend={args.onSend} press />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const pressed = canvas.getByRole('button', { name: 'Pressed control' })
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Land the draft' }))
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    await expect(canvas.getByRole('combobox', { name: 'Message' })).toHaveTextContent(LANDED_DRAFT)
+    await expect(pressed).toHaveFocus()
+  },
+}
+
+// A landed draft takes focus with the caret after its last character.
+export const LandedDraftPutsTheCaretAtTheEnd: Story = {
+  render: (args) => <DraftLandsStory onSend={args.onSend} press={false} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByRole('combobox', { name: 'Message' })
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Land the draft' }))
+    await waitFor(() => expect(composer).toHaveFocus())
+    await waitFor(() => expect(composer).toHaveTextContent(LANDED_DRAFT))
+    const selection = window.getSelection()
+    await expect(selection?.isCollapsed).toBe(true)
+    await expect(selection?.anchorNode?.textContent).toBe(LANDED_DRAFT)
+    await expect(selection?.anchorOffset).toBe(LANDED_DRAFT.length)
   },
 }

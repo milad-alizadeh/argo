@@ -1,115 +1,70 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
-import path from 'node:path'
-import { codexStatePath } from './codex-state-store.ts'
-import { historyFile, type StoredThread, transcriptsRoot } from './mock-codex-history-types.ts'
-import { scanRollouts } from './mock-codex-rollout-history.ts'
-
-// Codex Desktop's own app renames a thread by writing straight into its state store
-// (`state_5.sqlite`), outside Argo's own rename channel: the real `codex` app-server reads that
-// store when it answers `thread/list`/`thread/read`, so this stand-in reads it too, rather than
-// only the rollout scan and Argo's own overlay (#2650).
-// `node:sqlite` ships with Node and Electron but not with Bun, which runs the unit suite; a unit run
-// never sets ARGO_CODEX_TRANSCRIPTS, so the require stays lazy behind that same guard rather than
-// crashing every mock CLI process bun spawns.
-const requireFromHere = createRequire(import.meta.url)
-const THREAD_NAME_QUERY = `SELECT name FROM threads
-  WHERE id = ? AND trim(coalesce(name, '')) != ''`
-
-// Undefined when the store is missing, locked, or has no name for the thread, so a later sweep asks
-// again rather than blanking a name.
-function stateStoreNameFor(threadId: string): string | undefined {
-  const root = transcriptsRoot()
-  if (root === '') return undefined
-  const { DatabaseSync } = requireFromHere('node:sqlite') as typeof import('node:sqlite')
-  let store: InstanceType<typeof DatabaseSync> | null = null
-  try {
-    store = new DatabaseSync(codexStatePath(root), { readOnly: true, timeout: 0 })
-    const [row] = store.prepare(THREAD_NAME_QUERY).all(threadId)
-    const name = row === undefined ? null : (row as { name?: unknown }).name
-    return typeof name === 'string' && name.trim() !== '' ? name.trim() : undefined
-  } catch {
-    return undefined
-  } finally {
-    store?.close()
-  }
-}
+// The stored history the mock app-server answers with: the real CLI's recorded answers, plus the
+// threads this process started. No rollout file or state store is read.
+import type { ThreadReadResponse } from '@/harnesses/codex/app-server'
+import { recordedCall, recordedCalls } from './recorded-codex-threads.ts'
 
 type Request = { id?: unknown; method?: string; params?: Record<string, unknown> }
 type Send = (message: Record<string, unknown>) => void
+type StoredThread = ThreadReadResponse['thread']
 
-function isThread(value: unknown): value is StoredThread {
-  return (
-    typeof value === 'object' && value !== null && 'id' in value && typeof value.id === 'string'
-  )
+// A recorded thread, its first Turn and that Turn's prompt: the shapes a started thread copies.
+function recordedTemplates() {
+  const thread = recordedCall('thread/read').result.thread
+  const turn = thread.turns[0]
+  const prompt = turn?.items.find((item) => item.type === 'userMessage')
+  if (turn === undefined || prompt === undefined)
+    throw new Error('The recorded Codex thread has no prompted Turn to copy.')
+  return { thread, turn, prompt }
+}
+const templates = recordedTemplates()
+
+const started = new Map<string, StoredThread>()
+
+function recordedAnswer(method: 'thread/read' | 'thread/turns/list', threadId: unknown) {
+  return recordedCalls(method).find((call) => call.params.threadId === threadId)?.result
 }
 
-function readOverlay(): StoredThread[] {
-  const file = historyFile()
-  if (file === '' || !existsSync(file)) return []
-  try {
-    const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'))
-    if (typeof parsed !== 'object' || parsed === null || !('threads' in parsed)) return []
-    return Array.isArray(parsed.threads) ? parsed.threads.filter(isThread) : []
-  } catch {
-    return []
-  }
-}
+const now = () => Math.floor(Date.now() / 1000)
 
-function writeOverlay(threads: StoredThread[]) {
-  const file = historyFile()
-  if (file === '') return
-  mkdirSync(path.dirname(file), { recursive: true })
-  writeFileSync(file, JSON.stringify({ threads }))
-}
-
-export function rememberThread(thread: StoredThread) {
-  const threads = readOverlay().filter((candidate) => candidate.id !== thread.id)
-  threads.push(thread)
-  writeOverlay(threads)
-}
-
-export function storedThreads(): StoredThread[] {
-  const threads = new Map(scanRollouts().map((thread) => [thread.id, thread]))
-  for (const overlay of readOverlay()) {
-    const scanned = threads.get(overlay.id)
-    threads.set(overlay.id, {
-      ...scanned,
-      ...overlay,
-      turns: overlay.turns.length > 0 ? overlay.turns : (scanned?.turns ?? []),
-    })
-  }
-  for (const [id, thread] of threads) {
-    const stateStoreName = stateStoreNameFor(id)
-    if (stateStoreName !== undefined) threads.set(id, { ...thread, name: stateStoreName })
-  }
-  return [...threads.values()]
-}
-
-export function recordPrompt(threadId: string, text: string) {
-  const existing = storedThreads().find((thread) => thread.id === threadId)
-  const turnId = `stored-turn-${Date.now()}`
-  rememberThread({
+export function rememberThread(threadId: string, cwd: string) {
+  started.set(threadId, {
+    ...templates.thread,
     id: threadId,
-    cwd: existing?.cwd ?? null,
-    name: existing?.name ?? null,
-    updatedAt: Math.floor(Date.now() / 1000),
-    status: existing?.status ?? { type: 'idle' },
-    turns: [
-      ...(existing?.turns ?? []),
-      {
-        id: turnId,
-        status: 'completed',
-        startedAt: Math.floor(Date.now() / 1000),
-        items: [{ id: `stored-user-${turnId}`, type: 'userMessage', text }],
-      },
-    ],
+    sessionId: threadId,
+    cwd,
+    path: null,
+    name: null,
+    preview: '',
+    createdAt: now(),
+    updatedAt: now(),
+    recencyAt: now(),
+    status: { type: 'idle' },
+    turns: [],
   })
 }
 
-function previewOf(thread: StoredThread): string | undefined {
-  return thread.turns.flatMap((turn) => turn.items).find((item) => item.type === 'userMessage')
-    ?.text
+function recordPrompt(threadId: string, text: string) {
+  const thread = started.get(threadId)
+  if (thread === undefined) return
+  const turnId = `stored-turn-${thread.turns.length + 1}`
+  const prompt = {
+    ...templates.prompt,
+    id: `stored-user-${turnId}`,
+    content: [{ type: 'text' as const, text, text_elements: [] }],
+  }
+  const turn = {
+    ...templates.turn,
+    id: turnId,
+    startedAt: now(),
+    completedAt: now(),
+    items: [prompt],
+  }
+  started.set(threadId, {
+    ...thread,
+    preview: thread.preview === '' ? text : thread.preview,
+    updatedAt: now(),
+    turns: [...thread.turns, turn],
+  })
 }
 
 function promptText(input: unknown): string {
@@ -121,39 +76,49 @@ function promptText(input: unknown): string {
     .join('')
 }
 
+function listThreads() {
+  const listed = recordedCall('thread/list').result
+  const summaries = [...started.values()].map(({ turns: _turns, ...summary }) => summary)
+  const data = [...summaries, ...listed.data].sort(
+    (left, right) => right.updatedAt - left.updatedAt,
+  )
+  return { ...listed, data }
+}
+
+function readThread(threadId: unknown) {
+  const thread = typeof threadId === 'string' ? started.get(threadId) : undefined
+  if (thread !== undefined) return { thread }
+  return recordedAnswer('thread/read', threadId)
+}
+
+// A poll asks for `limit` newest Turns; a Feed read asks for all of them.
+function listTurns(threadId: unknown, limit: unknown) {
+  const thread = typeof threadId === 'string' ? started.get(threadId) : undefined
+  const newest = typeof limit === 'number' ? thread?.turns.slice(-limit) : thread?.turns
+  if (newest !== undefined) return { data: newest, nextCursor: null }
+  return recordedAnswer('thread/turns/list', threadId)
+}
+
+function answer(message: Request, send: Send, result: unknown) {
+  if (result !== undefined) send({ id: message.id, result })
+  else
+    send({
+      id: message.id,
+      error: { code: -32000, message: `thread ${String(message.params?.threadId)} not found` },
+    })
+}
+
 export function answerStoredHistory(message: Request, send: Send): boolean {
   switch (message.method) {
     case 'thread/list':
-      send({
-        id: message.id,
-        result: {
-          data: storedThreads().map((thread) => {
-            const preview = previewOf(thread)
-            return {
-              id: thread.id,
-              cwd: thread.cwd,
-              name: thread.name,
-              ...(thread.name === null && preview !== undefined ? { preview } : {}),
-              updatedAt: thread.updatedAt,
-              status: thread.status,
-            }
-          }),
-          nextCursor: null,
-        },
-      })
+      send({ id: message.id, result: listThreads() })
       return true
-    case 'thread/read': {
-      const thread = storedThreads().find((candidate) => candidate.id === message.params?.threadId)
-      if (thread === undefined) {
-        send({ id: message.id, error: { code: -32000, message: 'Codex has no stored Session.' } })
-      } else send({ id: message.id, result: { thread } })
+    case 'thread/read':
+      answer(message, send, readThread(message.params?.threadId))
       return true
-    }
-    case 'thread/turns/list': {
-      const thread = storedThreads().find((candidate) => candidate.id === message.params?.threadId)
-      send({ id: message.id, result: { data: thread?.turns.slice(-1) ?? [], nextCursor: null } })
+    case 'thread/turns/list':
+      answer(message, send, listTurns(message.params?.threadId, message.params?.limit))
       return true
-    }
     case 'thread/loaded/list':
       send({ id: message.id, result: { data: [] } })
       return true
@@ -166,8 +131,4 @@ export function answerStoredHistory(message: Request, send: Send): boolean {
     default:
       return false
   }
-}
-
-export function resumeErrorFor(threadId: unknown): string | undefined {
-  return storedThreads().find((thread) => thread.id === threadId)?.resumeError
 }

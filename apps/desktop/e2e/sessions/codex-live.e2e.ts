@@ -4,7 +4,7 @@ import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
-import { launchCommand } from '../application-under-test'
+import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 import { prepare } from './fixtures/feed.fixture'
 import { chooseHarness, PERSISTED_ROW } from './gestures'
@@ -61,7 +61,7 @@ test('packaged Codex live feed resumes from app-server history', async ({
       'Codex replied to: First Codex turn',
     )
   } finally {
-    await first.application.close()
+    await closeApplication(first.application)
   }
   const second = await launch()
   try {
@@ -74,7 +74,7 @@ test('packaged Codex live feed resumes from app-server history', async ({
     await expect(feed).toContainText('Codex replied to: Second Codex turn')
     await expect(feed.getByText('Codex replied to: First Codex turn')).toHaveCount(1)
   } finally {
-    await second.application.close()
+    await closeApplication(second.application)
   }
 })
 
@@ -106,6 +106,6 @@ test('packaged Codex controls queue, approve, answer, interrupt, and recover', a
     await send(page, 'After failure')
     await expect(history).toContainText('Codex replied to: After failure')
   } finally {
-    await application.close()
+    await closeApplication(application)
   }
 })

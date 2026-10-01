@@ -1,9 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { preloadForStories } from '@/mocks/platform/story-preload'
 import { xcodeCodePalette } from '@/platform/renderer/components/xcode-code-theme'
+import { loadCodeLanguage } from '../../ai-elements'
 import { drawnColor } from './appearance-probe'
 import { FeedCode } from './feed-code'
 import { SAMPLE_TYPESCRIPT } from './feed-samples'
+
+const loadTypeScript = preloadForStories(() => loadCodeLanguage('ts'))
 
 const meta = {
   title: 'Sessions/Feed/Code',
@@ -16,6 +20,7 @@ const meta = {
     ),
   ],
   args: { source: SAMPLE_TYPESCRIPT, language: 'ts' },
+  loaders: [loadTypeScript],
 } satisfies Meta<typeof FeedCode>
 
 export default meta

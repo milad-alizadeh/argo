@@ -13,6 +13,7 @@
     "**/.vite/**",
     "**/*.stories.tsx",
     "prototypes/**",
-    "**/skills/**/templates/**"
+    "**/skills/**/templates/**",
+    "apps/desktop/mocks/cli/*/recordings/**"
   ]
 }

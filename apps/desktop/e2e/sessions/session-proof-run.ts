@@ -26,7 +26,7 @@ export type SessionOptions = {
   slowReply: boolean
   // Replays the mock Harness's seeded jitter, split bytes and failures.
   adversarialSeed: string | undefined
-  sessionSyncFixture: { records: unknown[]; delayMs: number } | undefined
+  sessionSyncFixture: { records: unknown[] } | undefined
   // ACP agents the app reads as not installed.
   uninstalledAcpAgents: readonly AcpHarness[]
 }
@@ -51,15 +51,19 @@ async function attachFailure(session: PackagedSession, testInfo: TestInfo) {
   })
 }
 
-// Codex lists its threads after Claude, so a case waits for every listed fixture before it reads the Session List.
-const LISTED_FIXTURES = [
-  ...FIXTURES.filter((name) => name !== 'unparseableBody'),
-  ...CODEX_FIXTURES,
-]
+const LISTED_CLAUDE_FIXTURES = FIXTURES.filter((name) => name !== 'unparseableBody')
+
+// Codex lists its threads after Claude, so a case waits for every listed fixture before it reads
+// the Session List. Only the mock app-server serves the recorded Codex threads.
+function listedFixtures(backend: SessionHarnessBackend) {
+  return backend.name === 'mock'
+    ? [...LISTED_CLAUDE_FIXTURES, ...CODEX_FIXTURES]
+    : LISTED_CLAUDE_FIXTURES
+}
 
 // The reader archived these before the case begins, through the call the Session List's Archive makes.
-async function archiveFixtures(page: Page) {
-  await Promise.all(LISTED_FIXTURES.map(fixtureSession))
+async function archiveFixtures(page: Page, backend: SessionHarnessBackend) {
+  await Promise.all(listedFixtures(backend).map(fixtureSession))
   const sessionIds = await Promise.all(ARCHIVED_FIXTURES.map(fixtureSession))
   const archived = await sendSessionUpdate(page, { sessionIds, archived: true })
   const failed = sessionIds.filter((id) => !archived.sessionIds.includes(id))
@@ -120,7 +124,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
       const page = await session.launch()
       if (packagedRun && !(await session.isPackaged()))
         throw new Error('The case did not drive the packaged app.')
-      if (projectSelected && sessionSyncFixture === undefined) await archiveFixtures(page)
+      if (projectSelected && sessionSyncFixture === undefined) await archiveFixtures(page, backend)
       await use(session)
       await finishRecording(performanceProfile, traced, testInfo)
       if (testInfo.status !== testInfo.expectedStatus) await attachFailure(session, testInfo)

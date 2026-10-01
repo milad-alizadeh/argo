@@ -9,6 +9,7 @@ import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harne
 import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversarial-turns.ts'
 import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { MOCK_CLAUDE_AGENTS_ENV } from './mock-claude-agents.ts'
+import { MOCK_CLAUDE_VERSION } from './mock-claude-cli.ts'
 import { createMockClaudeHooks } from './mock-claude-hooks.ts'
 import { replyToSdkPrompt } from './mock-claude-sdk-reply.ts'
 import { startMockClaudeSdkStream } from './mock-claude-sdk-stream.ts'
@@ -46,7 +47,7 @@ if (arguments_.slice(1).join(' ') === 'agents --json') {
   }
 }
 if (arguments_.includes('--version')) {
-  process.stdout.write('2.1.0\n')
+  process.stdout.write(`${MOCK_CLAUDE_VERSION} (Claude Code)\n`)
   process.exit(0)
 }
 if (arguments_.includes('--help')) {

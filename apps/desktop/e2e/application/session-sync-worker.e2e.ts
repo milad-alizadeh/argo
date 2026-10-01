@@ -2,7 +2,7 @@ import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
-import { launchCommand } from '../application-under-test'
+import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 
 test('starts and stops the packaged Session sync worker', async ({
@@ -45,8 +45,7 @@ test('starts and stops the packaged Session sync worker', async ({
         { timeout: 10_000 },
       )
       .toMatch(/^(ready|failed)$/)
-    await page.close()
   } finally {
-    await application.close()
+    await closeApplication(application)
   }
 })

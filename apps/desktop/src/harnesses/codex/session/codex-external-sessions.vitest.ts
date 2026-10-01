@@ -66,20 +66,11 @@ async function row(id: string) {
   }
 }
 
-const settleReads = () => new Promise((resolve) => setTimeout(resolve, 50))
-
 // Waits for the reads a tick started, then writes what they queued.
 async function tickAndWrite() {
   await poll.tick()
-  await settleReads()
+  await poll.readsSettled()
   poll.flush()
-}
-
-// Polls on the real event loop, which fake timeouts leave alone.
-async function until(condition: () => boolean) {
-  for (let turn = 0; turn < 10_000 && !condition(); turn += 1)
-    await new Promise((resolve) => setImmediate(resolve))
-  for (let turn = 0; turn < 10; turn += 1) await new Promise((resolve) => setImmediate(resolve))
 }
 
 function quietWarnings() {
@@ -336,27 +327,37 @@ test('reads run one at a time across Sessions, and a Session that changes mid-re
   await threads.open(OTHER)
   await tickAndWrite()
   const settle: ((page: unknown) => void)[] = []
-  threads.respondWith(() => new Promise((resolve) => settle.push(resolve)))
+  let asked = () => {}
+  // Each read waits on a lock probe process, so wait for the read itself rather than a fixed time.
+  const nextAsk = () => new Promise<void>((resolve) => (asked = resolve))
+  threads.respondWith(
+    () =>
+      new Promise((resolve) => {
+        settle.push(resolve)
+        asked()
+      }),
+  )
   threads.append(RUNNING, 'x\n')
   threads.append(OTHER, 'x\n')
+  let reading = nextAsk()
   await poll.tick()
   threads.append(RUNNING, 'x\n')
   await poll.tick()
   threads.append(RUNNING, 'x\n')
   await poll.tick()
-  // Each read waits on a lock probe process, so wait for the read itself rather than a fixed time.
-  await until(() => settle.length === 1)
+  await reading
   expect(threads.turnsReads).toEqual([RUNNING])
   for (const expected of [
     [RUNNING, OTHER],
     [RUNNING, OTHER, RUNNING],
   ]) {
+    reading = nextAsk()
     settle.shift()?.(recordedTurnsPage('running'))
-    await until(() => settle.length === 1)
+    await reading
     expect(threads.turnsReads).toEqual(expected)
   }
   settle.shift()?.(recordedTurnsPage('running'))
-  await settleReads()
+  await poll.readsSettled()
   expect(threads.turnsReads).toEqual([RUNNING, OTHER, RUNNING])
   expect(settle).toEqual([])
 })
@@ -371,7 +372,8 @@ test('one Session’s updates within the write window reach SQLite as one write'
   threads.answer(RUNNING, 'running')
   threads.append(RUNNING, 'x\n')
   await poll.tick()
-  await until(() => threads.turnsReads.length === 1)
+  await poll.readsSettled()
+  expect(threads.turnsReads).toEqual([RUNNING])
   await vi.advanceTimersByTimeAsync(0)
   expect((await row(RUNNING)).status).toBe('unknown')
   await vi.advanceTimersByTimeAsync(500)
