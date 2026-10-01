@@ -55,13 +55,9 @@ const liveCodexInfo: AvailableHarness = {
 }
 const readyClaude: CatalogReadResult = { info: liveClaudeInfo, failure: null }
 const readyCodex: CatalogReadResult = { info: liveCodexInfo, failure: null }
-const unavailableClaude: CatalogReadResult = {
-  info: { harness: 'claude', availability: 'unavailable', reason: 'invalid-response' },
-  failure: null,
-}
-const unavailableCodex: CatalogReadResult = {
-  info: { harness: 'codex', availability: 'unavailable', reason: 'unavailable' },
-  failure: null,
+type UnavailableReason = Extract<CatalogFailure['reason'], 'invalid-response' | 'unavailable'>
+function unavailableResult(harness: Harness, reason: UnavailableReason): CatalogReadResult {
+  return { info: { harness, availability: 'unavailable', reason }, failure: null }
 }
 
 function availableInfo(result: CatalogReadResult | null): AvailableHarness | null {
@@ -96,18 +92,17 @@ function TurnConfigurationStory({ started = true }: { started?: boolean }) {
 
 function CatalogStory({
   harness,
-  failed = false,
+  failure,
   initialReady = false,
 }: {
   harness: Harness
-  failed?: boolean
+  failure?: UnavailableReason
   initialReady?: boolean
 }) {
   const ready = harness === 'codex' ? readyCodex : readyClaude
-  const unavailable = harness === 'codex' ? unavailableCodex : unavailableClaude
   let initialResult: CatalogReadResult | null = null
   if (initialReady) initialResult = ready
-  else if (failed) initialResult = unavailable
+  else if (failure) initialResult = unavailableResult(harness, failure)
   const [result, setResult] = useState<CatalogReadResult | null>(initialResult)
   const [turnConfiguration, setTurnConfiguration] = useState<TurnConfiguration | null>(
     initialReady ? (availableInfo(ready)?.opening ?? null) : null,
@@ -250,7 +245,7 @@ export const LoadsClaudeCatalog: Story = {
 }
 
 export const RetriesClaudeCatalog: Story = {
-  render: () => <CatalogStory harness="claude" failed />,
+  render: () => <CatalogStory harness="claude" failure="invalid-response" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: TRIGGER }))
@@ -269,19 +264,13 @@ export const RetriesClaudeCatalog: Story = {
 }
 
 export const RetriesUnavailableCatalog: Story = {
-  render: () => <CatalogStory harness="codex" failed />,
+  render: () => <CatalogStory harness="codex" failure="unavailable" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: TRIGGER })
+    // A failure with no named reason is read again when the menu opens.
     await userEvent.click(trigger)
-    await expect(page().getByRole('alert')).toHaveTextContent('Codex is unavailable. Try again.')
-    await expectRoleHidden('radiogroup', 'Model')
-    await userEvent.click(page().getByRole('button', { name: 'Refresh models' }))
-    await expect(canvas.getByRole('button', { name: TRIGGER })).toHaveAccessibleName(
-      'Choose Turn configuration: Codex, GPT-5.6-Terra, Balances speed and reasoning',
-    )
-    await userEvent.click(canvas.getByRole('button', { name: TRIGGER }))
-    await expect(page().getByRole('radiogroup', { name: 'Model' })).toBeVisible()
+    await waitFor(() => expect(page().getByRole('radiogroup', { name: 'Model' })).toBeVisible())
     await expect(page().getByRole('radio', { name: /GPT-5.6-Terra/ })).toBeChecked()
   },
 }
