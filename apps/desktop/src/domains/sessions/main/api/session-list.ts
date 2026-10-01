@@ -150,6 +150,7 @@ function sessionListRow(
     subagents,
     ticket: linkedTicket(row.ticket),
     archived: row.archived,
+    // #2962 saves Model, Effort and Mode on the row, so a Session that is not live keeps them.
     turnConfiguration: live?.turnConfiguration ?? { model: null, effort: null, mode: null },
   }
 }
