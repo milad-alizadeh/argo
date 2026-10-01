@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
 import { createInterface } from 'node:readline'
 import {
   readMockReplyDelayMs,
@@ -6,6 +7,7 @@ import {
   SESSION_MOCK_START_HOLD_FILE_ENV,
   waitWhileHoldFileExists,
 } from '@/harnesses/proof-protocol'
+import { MOCK_START_REFUSED_FOLDER } from '../mock-cli.ts'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
 import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
 import { sendPlanUpdate } from './fixtures/mock-codex-plan.ts'
@@ -293,6 +295,8 @@ function handle(message: Request) {
       },
     })
   }
+  if (method === 'thread/start' && path.basename(String(params.cwd)) === MOCK_START_REFUSED_FOLDER)
+    return send({ id, error: { code: -32000, message: 'Mock Codex cannot start here.' } })
   if (method === 'thread/start') {
     const thread: Thread = {
       id: identifier(threads.length + 1),
