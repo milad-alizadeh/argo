@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { controlRecipes } from '@/platform/renderer/components/design-system/control-recipes'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Input } from '@/platform/renderer/components/ui/input'
@@ -64,7 +63,7 @@ export function SetupPlanField({
       ) : (
         <Input
           aria-describedby={descriptionId}
-          className={mono ? controlRecipes.codeInput : undefined}
+          className={mono ? 'font-mono' : undefined}
           id={field.id}
           onChange={(event) => onChange(event.target.value)}
           required={field.required}

@@ -55,12 +55,7 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
           <ItemDescription className="type-meta">{t('settings.none.description')}</ItemDescription>
         </ItemContent>
         <ItemActions>
-          <Button
-            aria-label={t('settings.none.connectLabel')}
-            className="type-control"
-            onClick={onConnect}
-            size="sm"
-          >
+          <Button aria-label={t('settings.none.connectLabel')} onClick={onConnect} size="sm">
             {t('settings.none.connect')}
           </Button>
         </ItemActions>
@@ -87,7 +82,6 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
       <ItemActions>
         <Button
           aria-label={t('settings.disconnect', { scope: scope.one })}
-          className="type-control"
           disabled={disconnecting}
           onClick={onDisconnect}
           size="sm"

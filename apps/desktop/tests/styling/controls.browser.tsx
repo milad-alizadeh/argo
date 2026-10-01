@@ -8,60 +8,47 @@ let cleanup = () => {}
 afterEach(() => cleanup())
 
 for (const appearance of ['light', 'dark']) {
-  test.each([false, true])(
-    `${appearance} button measurements, icons and keyboard ring; adapted=%s`,
-    async (adapted) => {
-      document.documentElement.classList.toggle('dark', appearance === 'dark')
-      const mounted = mountSpecimen(<ButtonSpecimen adapted={adapted} />)
-      cleanup = mounted.cleanup
-      const save = page.getByRole('button', { name: 'Save', exact: true }).element()
-      expect(save.getBoundingClientRect().height).toBe(32)
-      expect(metrics(save)).toEqual({
-        size: '14px',
-        lineHeight: '20px',
-        weight: adapted ? '400' : '500',
-        tracking: 'normal',
-      })
-      for (const [name, height, iconWidth] of [
-        ['Small', 28, 14],
-        ['Extra small', 24, 12],
-        ['Large', 36, 16],
-      ] as const) {
-        const control = page.getByRole('button', { name, exact: true }).element()
-        expect(control.getBoundingClientRect().height).toBe(height)
-        expect(control.querySelector('svg')?.getBoundingClientRect().width).toBe(iconWidth)
-      }
-      const small = page.getByRole('button', { name: 'Small', exact: true }).element()
-      expect(metrics(small).size).toBe(adapted ? '14px' : '12.8px')
-      save.focus()
-      await userEvent.keyboard('{Tab}{Shift>}{Tab}{/Shift}')
-      expect(save.matches(':focus-visible')).toBe(true)
-      await expect.poll(() => getComputedStyle(save).boxShadow).toContain('3px')
-    },
-  )
+  test(`${appearance} registry button measurements, icons and keyboard ring`, async () => {
+    document.documentElement.classList.toggle('dark', appearance === 'dark')
+    const mounted = mountSpecimen(<ButtonSpecimen />)
+    cleanup = mounted.cleanup
+    const save = page.getByRole('button', { name: 'Save', exact: true }).element()
+    expect(save.getBoundingClientRect().height).toBe(32)
+    expect(metrics(save)).toEqual({
+      size: '14px',
+      lineHeight: '20px',
+      weight: '500',
+      tracking: 'normal',
+    })
+    for (const [name, height, iconWidth, size, lineHeight] of [
+      ['Small', 28, 14, '12.8px', '19.2px'],
+      ['Extra small', 24, 12, '12px', '16px'],
+      ['Large', 36, 16, '14px', '20px'],
+    ] as const) {
+      const control = page.getByRole('button', { name, exact: true }).element()
+      expect(control.getBoundingClientRect().height).toBe(height)
+      expect(control.querySelector('svg')?.getBoundingClientRect().width).toBe(iconWidth)
+      expect(metrics(control)).toEqual({ size, lineHeight, weight: '500', tracking: 'normal' })
+    }
+    save.focus()
+    await userEvent.keyboard('{Tab}{Shift>}{Tab}{/Shift}')
+    expect(save.matches(':focus-visible')).toBe(true)
+    await expect.poll(() => getComputedStyle(save).boxShadow).toContain('3px')
+  })
 
   test.each([480, 1024])(
-    `${appearance} input default and adaptation retain focus at viewport %s`,
+    `${appearance} registry input typography and focus at viewport %s`,
     async (width) => {
       await page.viewport(width, 720)
       document.documentElement.classList.toggle('dark', appearance === 'dark')
-      const mounted = mountSpecimen(
-        <>
-          <InputSpecimen />
-          <InputSpecimen adapted />
-        </>,
-      )
+      const mounted = mountSpecimen(<InputSpecimen />)
       cleanup = mounted.cleanup
       const inputs = page.getByRole('textbox', { name: 'Project name' }).elements()
-      const [direct, adapted] = inputs
-      if (!direct || !adapted) throw new Error('Both input specimens must be mounted')
-      expect(metrics(direct)).toMatchObject({
+      const direct = inputs[0]
+      if (!direct) throw new Error('The input specimen must be mounted')
+      expect(metrics(direct)).toEqual({
         size: width < 768 ? '16px' : '14px',
         lineHeight: width < 768 ? '24px' : '20px',
-      })
-      expect(metrics(adapted)).toEqual({
-        size: '13px',
-        lineHeight: '19px',
         weight: '400',
         tracking: 'normal',
       })

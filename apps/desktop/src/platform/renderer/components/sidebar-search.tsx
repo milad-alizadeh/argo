@@ -27,7 +27,6 @@ export function SidebarSearch({
       </InputGroupAddon>
       <InputGroupInput
         aria-label={label}
-        className="type-control"
         maxLength={maxLength}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

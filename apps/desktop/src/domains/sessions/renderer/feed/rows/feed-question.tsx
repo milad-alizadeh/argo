@@ -195,7 +195,7 @@ export function FeedQuestion({
       <div className="flex justify-end">
         <QuestionnaireSubmit
           disabled={!canSubmit || answering}
-          className="bg-foreground type-control text-background hover:bg-foreground/80"
+          className="bg-foreground text-background hover:bg-foreground/80"
         >
           {t('question.send')}
         </QuestionnaireSubmit>

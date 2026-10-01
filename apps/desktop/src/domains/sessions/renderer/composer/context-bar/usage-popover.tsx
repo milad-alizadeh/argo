@@ -23,7 +23,7 @@ export function UsagePopover({ harness }: { harness: Harness }) {
         render={
           <Button
             aria-label={`Usage ${primaryPercentage}%`}
-            className="shrink-0 gap-1.5 px-2 type-control"
+            className="shrink-0 gap-1.5 px-2"
             size="sm"
             variant="ghost"
           />

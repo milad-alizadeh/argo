@@ -31,7 +31,7 @@ export function ProjectSwitcher() {
       <DropdownMenu>
         <MenuDropdownTrigger
           aria-label={t('switcher.current', { name: projectName })}
-          className="max-w-48 gap-(--spacing-shell-tight) border-0 pl-2 pr-(--spacing-shell-icon) type-body"
+          className="max-w-48 gap-(--spacing-shell-tight) border-0 pl-2 pr-(--spacing-shell-icon)"
           disabled={projectState.busy}
           icon="folder"
           label={projectName}

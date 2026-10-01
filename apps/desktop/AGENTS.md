@@ -46,7 +46,8 @@ runs both. Everything else stays `*.test.ts`.
 
 - Production visual values use shared tokens or named component-local tokens beside their owner.
   Resolve exploratory values into tokens before review.
-- Typography and registry measurements follow `docs/design-stack.md`.
+- Registry controls keep their default typography. Custom content recipes follow
+  `docs/design-stack.md`; `type-control` is not a blanket control override.
 - A screen is a thin container: it resolves state and hands a pure render surface the result.
 - Read every color through a token. The app offers System (default), Light and Dark, and a value
   right in one appearance and wrong in the other is caught by no gate.

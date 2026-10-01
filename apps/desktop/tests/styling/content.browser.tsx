@@ -20,9 +20,7 @@ for (const appearance of ['light', 'dark']) {
       const mounted = mountSpecimen(
         <div className="grid gap-6">
           <ButtonSpecimen />
-          <ButtonSpecimen adapted />
           <InputSpecimen />
-          <InputSpecimen adapted />
         </div>,
       )
       cleanup = mounted.cleanup

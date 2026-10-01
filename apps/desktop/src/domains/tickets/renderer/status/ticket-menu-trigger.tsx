@@ -17,7 +17,7 @@ export function ticketMenuTrigger(named: boolean, metadata: boolean) {
     )
   return (
     <Button
-      className={`relative z-10 shrink-0 type-meta text-muted-foreground ${named ? NAMED_INSET : ''}`}
+      className={`relative z-10 shrink-0 text-muted-foreground ${named ? NAMED_INSET : ''}`}
       size={named ? 'xs' : 'icon-xs'}
       variant="ghost"
     />

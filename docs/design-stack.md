@@ -7,12 +7,16 @@ archive.
   `:root` supplies shared values and the light appearance. `.dark` overrides appearance values.
   `globals.css` imports the contract and defines global styles only.
 - **Typography** — Tailwind's default text and numeric spacing scales keep their original
-  measurements. Direct registry text uses the selected registry contract. Custom app text uses
+  measurements. Registry components and their app callers use the selected registry typography
+  by default. Button/Input callers preserve registry size, line height, weight, and tracking,
+  including responsive sizes. Path inputs can use `font-mono` without replacing those metrics.
+  Custom content uses
   the complete `type-*` recipes in `styles/typography.css`, or inherits intentionally from its owner.
   Each recipe owns size, line height, weight, and tracking through ordinary
   `--typography-*` metadata, outside Tailwind's `--text-*` namespace. Compose recipes through the
-  configured `cn` helper so an adaptation replaces the primitive's typography metrics.
-  Name repeated emphasis within its owning recipe.
+  configured `cn` helper when custom content needs a complete recipe.
+  Name repeated emphasis within its owning recipe. `type-control` is a custom content recipe,
+  not a universal override for registry controls.
 - **Components live with their owner**. The shadcn CLI writes
   `apps/desktop/src/platform/renderer/components/ui/`, which authors never edit by hand.
   Hand-written product modules live in their domain renderer facet. Proven cross-domain modules
@@ -33,7 +37,7 @@ archive.
 - **Browse the components** — `cd apps/desktop && bun run storybook` serves the stories from the
   working tree. Vercel owns pull request preview deployments outside this repository.
 - **Measurement proof** — `cd apps/desktop && bun run test:styling` runs dedicated browser
-  contracts for direct Button/Input defaults, complete app recipes, focus, and Icon ownership
+  contracts for Button/Input defaults and app callers, custom content recipes, focus, and Icon ownership
   in Light and Dark. Stories use the existing theme toolbar, not separate appearance stories.
   Story plays prove behavior and accessibility. Keep their metric assertions in this suite.
   These focused checks do not complete the pending theme, pane, or component work.

@@ -59,7 +59,7 @@ export function TurnConfigurationMenu({
         render={
           <InputGroupButton
             variant="ghost"
-            className="max-w-80 min-w-0 type-control text-foreground"
+            className="max-w-80 min-w-0 text-foreground"
             aria-label={`Choose Turn configuration: ${[label, ...facts].join(', ')}`}
           />
         }

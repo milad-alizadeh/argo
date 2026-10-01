@@ -18,7 +18,7 @@ export function ComposerMenuTrigger({
       render={
         <InputGroupButton
           variant="ghost"
-          className={className ?? 'shrink-0 type-control text-foreground'}
+          className={className ?? 'shrink-0 text-foreground'}
           aria-label={ariaLabel}
         />
       }

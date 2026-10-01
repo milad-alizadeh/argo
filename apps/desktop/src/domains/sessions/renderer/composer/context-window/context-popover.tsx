@@ -35,7 +35,7 @@ function CompactContextTrigger({ capacityTokens, percentage, usedTokens }: Conte
       render={
         <Button
           aria-label={accessibleName}
-          className="gap-1.5 px-2 type-label font-medium text-foreground"
+          className="gap-1.5 px-2 text-foreground"
           size="sm"
           variant="ghost"
         />
@@ -83,7 +83,7 @@ function LabelledContextTrigger({ percentage }: ContextTriggerProps) {
       render={
         <Button
           aria-label={accessibleName}
-          className={`shrink-0 gap-1.5 px-2 type-label font-medium ${percentage !== null && percentage >= 40 ? 'text-destructive' : 'text-foreground'}`}
+          className={`shrink-0 gap-1.5 px-2 ${percentage !== null && percentage >= 40 ? 'text-destructive' : 'text-foreground'}`}
           size="sm"
           variant="ghost"
         />
