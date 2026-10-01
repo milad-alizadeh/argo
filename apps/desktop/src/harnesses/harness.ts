@@ -1,6 +1,7 @@
 import { z } from 'zod'
+import { ACP_HARNESSES } from './acp/acp-agents'
 
-export const HARNESSES = ['claude', 'codex', 'claude-acp'] as const
+export const HARNESSES = ['claude', 'codex', ...ACP_HARNESSES] as const
 export const harnessSchema = z.enum(HARNESSES)
 export type Harness = z.infer<typeof harnessSchema>
 

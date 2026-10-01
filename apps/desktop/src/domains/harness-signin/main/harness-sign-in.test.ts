@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
+import { byAcpAgent } from '@/harnesses/acp/acp-agents'
 import {
   createHarnessSignIn,
   type HarnessSignInDriver,
@@ -32,11 +33,13 @@ function drivers(claude: HarnessSignInDriver) {
     login: async () => 'failed',
     checkReadiness: async () => ({ harness: 'codex', state: 'signed-out', detail: null }),
   }
-  const claudeAcp: HarnessSignInDriver = {
-    login: async () => 'failed',
-    checkReadiness: async () => ({ harness: 'claude-acp', state: 'missing', detail: null }),
-  }
-  return { claude, codex, 'claude-acp': claudeAcp }
+  const acp = byAcpAgent(
+    ({ id }): HarnessSignInDriver => ({
+      login: async () => 'failed',
+      checkReadiness: async () => ({ harness: id, state: 'missing', detail: null }),
+    }),
+  )
+  return { claude, codex, ...acp }
 }
 
 test('Harness sign-in: wait before any start reports no attempt', async () => {

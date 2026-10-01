@@ -18,4 +18,3 @@ export const claudePresentation: HarnessPresentation = {
   standingAllow: 'similar-calls',
   permissionPlugin: true,
 }
-export { default as claudeSparkUrl } from './claude-spark.svg?url'

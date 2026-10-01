@@ -6,6 +6,7 @@ import {
   methods,
   ndJsonStream,
   PROTOCOL_VERSION,
+  RequestError,
   type RequestPermissionRequest,
   type RequestPermissionResponse,
   type SessionUpdate,
@@ -42,7 +43,15 @@ const capabilitiesSchema = z.object({
 const initializeSchema = z.object({
   protocolVersion: z.number().int(),
   agentCapabilities: capabilitiesSchema.optional(),
+  // Each method is read alone (`authMethodsOf`), so one unreadable method skips only itself.
+  authMethods: z.array(z.unknown()).optional(),
   agentInfo: z.object({ name: z.string(), version: z.string() }).nullish(),
+})
+// `AuthMethod` in the SDK's types.gen.d.ts: no `type` means `agent`, which `authenticate` runs.
+const authMethodSchema = z.object({
+  id: z.string().min(1),
+  name: z.string(),
+  type: z.enum(['agent', 'terminal']).optional(),
 })
 // Each option is read where it is used (`acpConfigSelect`), so only the list is checked here.
 const configOptionsSchema = z.object({ configOptions: z.array(z.unknown()).nullish() })
@@ -59,6 +68,8 @@ type AcpCapabilities = {
   closeSession: boolean
 }
 
+type AcpAuthMethod = { id: string; name: string; runsInAgent: boolean }
+
 type AcpSession = {
   sessionId: string
   configOptions: readonly unknown[]
@@ -66,7 +77,9 @@ type AcpSession = {
 
 export type AcpClient = {
   capabilities: AcpCapabilities
+  authMethods: readonly AcpAuthMethod[]
   agentInfo: { name: string; version: string } | null
+  authenticate: (methodId: string) => Promise<void>
   newSession: (cwd: string) => Promise<AcpSession>
   loadSession: (sessionId: string, cwd: string) => Promise<AcpSession>
   resumeSession: (sessionId: string, cwd: string) => Promise<AcpSession>
@@ -84,7 +97,7 @@ export type AcpClient = {
   close: () => void
 }
 
-export class AcpCapabilityError extends Error {
+class AcpCapabilityError extends Error {
   constructor(method: string) {
     super(`The ACP agent does not advertise ${method}.`)
   }
@@ -100,6 +113,31 @@ function capabilitiesOf(
     resumeSession: session?.resume != null,
     closeSession: session?.close != null,
   }
+}
+
+const AUTH_REQUIRED = RequestError.authRequired().code
+
+export function errorDetail(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
+// The agent's `auth_required` answer to a request it will not serve before a sign-in.
+export function isAuthRequired(error: unknown): boolean {
+  return error instanceof RequestError && error.code === AUTH_REQUIRED
+}
+
+function authMethodsOf(advertised: readonly unknown[] | undefined): AcpAuthMethod[] {
+  const methods = (advertised ?? []).flatMap((method) => {
+    const parsed = authMethodSchema.safeParse(method)
+    return parsed.success ? [parsed.data] : []
+  })
+  const rejected = (advertised?.length ?? 0) - methods.length
+  if (rejected > 0) console.warn(`Skipped ${rejected} unreadable ACP sign-in method(s).`)
+  return methods.map(({ id, name, type }) => ({
+    id,
+    name,
+    runsInAgent: type !== 'terminal',
+  }))
 }
 
 function sessionOf(response: unknown): AcpSession {
@@ -199,7 +237,11 @@ export async function connectAcpAgent(
     const capabilities = capabilitiesOf(initialized.agentCapabilities)
     return {
       capabilities,
+      authMethods: authMethodsOf(initialized.authMethods),
       agentInfo: initialized.agentInfo ?? null,
+      authenticate: async (methodId) => {
+        await connection.agent.request(methods.agent.authenticate, { methodId })
+      },
       ...sessionMethods(connection.agent, capabilities),
       closed,
       close,

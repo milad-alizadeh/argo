@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import type { ActorLogic } from 'xstate'
 import { createActor, fromPromise, waitFor } from 'xstate'
 import { adjacencyMapToArray, getAdjacencyMap, getShortestPaths } from 'xstate/graph'
+import { ACP_HARNESSES } from '@/harnesses/acp/acp-agents'
 import { claudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
@@ -16,7 +17,7 @@ test('publishes a serializable catalog with Model-specific Efforts and defaults'
     harnesses: [
       claudeHarnessInfo(claudeModelCatalogFixture()),
       codexHarnessInfo(codexModelCatalogFixture()),
-      unavailable('claude-acp'),
+      ...ACP_HARNESSES.map((harness) => unavailable(harness)),
     ],
   })
   const parsed = JSON.parse(JSON.stringify(catalog))
@@ -39,7 +40,7 @@ test('keeps an available Harness visible when the other catalog is unavailable',
     harnesses: [
       claudeHarnessInfo(claudeModelCatalogFixture()),
       codexHarnessInfo(null),
-      unavailable('claude-acp'),
+      ...ACP_HARNESSES.map((harness) => unavailable(harness)),
     ],
   })
   expect(catalog.harnesses[0]?.availability).toBe('available')
@@ -58,7 +59,7 @@ test('counts invalid vendor responses in the catalog actor', async () => {
                 supportedPermissionModes: ['manual'],
               }),
               codexHarnessInfo(null),
-              unavailable('claude-acp'),
+              ...ACP_HARNESSES.map((harness) => unavailable(harness)),
             ],
           }),
         ),
@@ -86,7 +87,7 @@ test('loads on request and retries a failed catalog load', async () => {
           harnesses: [
             claudeHarnessInfo(claudeModelCatalogFixture()),
             codexHarnessInfo(null),
-            unavailable('claude-acp'),
+            ...ACP_HARNESSES.map((harness) => unavailable(harness)),
           ],
         })
       }),
@@ -104,7 +105,11 @@ test('loads on request and retries a failed catalog load', async () => {
 })
 
 const catalog = harnessCatalogSchema.parse({
-  harnesses: [claudeHarnessInfo(null), codexHarnessInfo(null), unavailable('claude-acp')],
+  harnesses: [
+    claudeHarnessInfo(null),
+    codexHarnessInfo(null),
+    ...ACP_HARNESSES.map((harness) => unavailable(harness)),
+  ],
 })
 const modeledEvents = [
   { type: 'Catalog requested' as const },
