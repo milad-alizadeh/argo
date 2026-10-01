@@ -156,7 +156,7 @@ export const ReadDocument: Story = {
       },
     },
   },
-  // Grammars load on first use, so the play times the highlighting rather than a cold module load.
+  // Grammars and Mermaid load on first use, so each play times its drawing, not a cold load.
   loaders: [() => loadCodeLanguage('ts')],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -184,7 +184,6 @@ export const Diagram: Story = {
       source: DIAGRAM_SOURCE,
     },
   },
-  // Mermaid loads on first use, so the play times the drawing rather than a cold module load.
   loaders: [() => drawDiagram('mermaid-preload', DIAGRAM_SOURCE, false)],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

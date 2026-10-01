@@ -53,7 +53,7 @@ export const Formatted: Story = {
 
 export const UnlabelledFence: Story = {
   args: { text: ['```', SAMPLE_TYPESCRIPT, '```'].join('\n') },
-  // Grammars load on first use, so the play times the highlighting rather than a cold module load.
+  // Grammars and Mermaid load on first use, so each play times its drawing, not a cold load.
   loaders: [() => loadCodeLanguage('ts')],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -148,7 +148,6 @@ export const LinksFromKeyboard: Story = {
 
 const DIAGRAM_SOURCE = 'flowchart LR\n  Backlog --> Ticket --> Session'
 const DIAGRAM_MARKDOWN = ['```mermaid', DIAGRAM_SOURCE, '```'].join('\n')
-// Mermaid loads on first use, so the play times the drawing rather than a cold module load.
 const loadMermaid = () => drawDiagram('mermaid-preload', DIAGRAM_SOURCE, false)
 
 export const Diagram: Story = {
