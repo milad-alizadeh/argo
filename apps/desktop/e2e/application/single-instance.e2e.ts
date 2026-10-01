@@ -4,7 +4,7 @@ import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
-import { launchCommand } from '../application-under-test'
+import { closeApplication, launchCommand } from '../application-under-test'
 import { test } from '../packaged-proof'
 
 async function launch(application: string, userData: string): Promise<ElectronApplication> {
@@ -84,7 +84,7 @@ test('focuses the existing window when Argo launches a second time', async ({
       { count: 1, focused: true, visible: true },
     )
   } finally {
-    await application.close()
+    await closeApplication(application)
   }
 
   const reopened = await launch(applicationUnderTest, userData)
@@ -95,6 +95,6 @@ test('focuses the existing window when Argo launches a second time', async ({
       1,
     )
   } finally {
-    await reopened.close()
+    await closeApplication(reopened)
   }
 })

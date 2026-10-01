@@ -8,7 +8,7 @@ import {
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
-import { launchCommand } from '../application-under-test'
+import { closeApplication, launchCommand } from '../application-under-test'
 import type {
   SessionFixture,
   SessionHarnessBackend,
@@ -136,7 +136,7 @@ export async function createPackagedSessionHarness(request: {
     launch: open,
     restart: async (beforeOpen?: () => Promise<void>) => {
       await closing()
-      await application?.close()
+      await closeApplication(application)
       await beforeOpen?.()
       return open()
     },
@@ -145,7 +145,7 @@ export async function createPackagedSessionHarness(request: {
       if (page === undefined) throw new Error('The packaged app did not launch.')
       return page
     },
-    close: () => application?.close(),
+    close: () => closeApplication(application),
     isPackaged: () => application?.evaluate(({ app }) => app.isPackaged),
     recentConsole: () => recentConsole,
   }
