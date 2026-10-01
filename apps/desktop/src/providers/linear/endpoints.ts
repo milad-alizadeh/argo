@@ -5,7 +5,7 @@ import { isLoopbackOrigin } from '@/shared/validation'
 // terms as GitHub's (ADR-0018).
 // Empty until the app is registered at Linear, a human act: until then no Linear sign-in is offered.
 const LINEAR_HARNESSENT_ID = ''
-// `write` moves a Ticket to another status from the cockpit.
+// `write` moves a Ticket to another status from the app.
 export const LINEAR_SCOPES = ['read', 'write']
 // A redirect URI is registered ahead of time, so the loopback port is fixed rather than free.
 export const LINEAR_REDIRECT_PORT = 51734

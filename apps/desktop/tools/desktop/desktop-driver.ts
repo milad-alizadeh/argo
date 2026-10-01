@@ -1,4 +1,4 @@
-// Driving the cockpit under test from outside: the screen capture and the startup measure share
+// Driving the app under test from outside: the screen capture and the startup measure share
 // it, so both agree on what a drawn screen is.
 //
 // Nothing here holds the real keyboard or mouse: every read goes into the renderer over the

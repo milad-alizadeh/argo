@@ -1,4 +1,4 @@
-# 0038 · The desktop cockpit is opaque
+# 0038 · Desktop surfaces are opaque
 
 Status: accepted (#1819) · 2026-09-09 · supersedes D2, D3, D14 and D21 of
 [the cockpit visual identity decisions](../designs/cockpit-visual-identity-decisions.md) **for
@@ -21,7 +21,7 @@ This file is where the repo keeps both.
 
 ## Context
 
-The Swift cockpit's depth is Liquid Glass: translucent, blurred, layered. A pixel-for-pixel
+The Swift app's depth is Liquid Glass: translucent, blurred, layered. A pixel-for-pixel
 reproduction is out of scope on #1730's map, and the shadcn decision
 ([#1731](https://github.com/milad-alizadeh/argo/issues/1731)) starts from the default theme with a
 custom one deferred. So the repo's only written chrome contract described a material the new app
@@ -145,7 +145,7 @@ one part of this ADR that does not.
 a future theme fills, and it is the whole of what crosses over. The graphite values themselves
 are not ported: they are tuned to sit under Liquid Glass — `base` was chosen as the plane a
 translucent bar washes over — and `glassTint` has no meaning once nothing is translucent.
-Re-tuning them for an opaque cockpit is theme work, held out of scope by #1730's map.
+Re-tuning them for opaque Argo Desktop surfaces is theme work, held out of scope by #1730's map.
 
 The mapping carries role names and nothing else, so it is not a per-surface migration path. Each
 desktop surface takes the rung the table gives it, not the one its Swift predecessor had: the chrome
@@ -176,7 +176,7 @@ fifth ground.
 This was an ADR and not a design because nothing rendered `apps/desktop` for visual review
 ([#1758](https://github.com/milad-alizadeh/argo/issues/1758)) and a design drawn then could be
 checked against nothing. #1828 opened that route: `apps/desktop/scripts/render-design-page.mts`
-draws a design page and `apps/desktop/scripts/capture-cockpit.mjs` captures the packaged app.
+draws a design page and `bun run capture:desktop` captures the packaged app.
 This table is what both are checked against.
 
 The four superseded design decisions are not amended in place, which is where this file departs from
@@ -190,5 +190,5 @@ D4 is not among them, and its dark-first posture stands. It scopes a *study* rat
 `apps/desktop` shipping two appearances leaves its decision alone. One clause of it the desktop does
 step around: D4 requires a future light interpretation to be "a deliberate translation of the
 settled system", and shadcn's default light tokens are not a translation of graphite — they are
-the other half of a theme #1820 adopted whole. #1820 is what authorises the light cockpit, and
+the other half of a theme #1820 adopted whole. #1820 is what authorises the light Argo Desktop app, and
 nothing here reinterprets D4 to reach it.

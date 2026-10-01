@@ -5,10 +5,10 @@ import process from 'node:process'
 
 const [entry, ...toolArguments] = process.argv.slice(2)
 if (!entry) {
-  process.stderr.write('usage: run-tool.mts <tool.ts> [arguments...]\n')
+  process.stderr.write('usage: run-tool.mts <tool.mts> [arguments...]\n')
   process.exit(2)
 }
-const outfile = path.join('out', 'tools', `${path.basename(entry, '.ts')}.mjs`)
+const outfile = path.join('out', 'tools', `${path.parse(entry).name}.mjs`)
 const steps: [string, string[]][] = [
   [
     'bun',

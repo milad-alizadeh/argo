@@ -1,6 +1,6 @@
 ## Not domain entities
 
-**Cockpit · Session list · Panels · rooms** — UI surfaces; they *render* the domain and are modeled at
+**App shell · Session list · Panels · rooms** — UI surfaces; they *render* the domain and are modeled at
 design time. The **Hub** (main-process in-memory projection assembling the join —
 ADR-0023/0017), Harness adapters, vendor watchers, and XState actors are runtime *mechanisms*.
 

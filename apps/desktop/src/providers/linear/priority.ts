@@ -1,5 +1,5 @@
 // A Linear team's issues keep a priority, independent of their workflow state. Linear owns the
-// levels; the cockpit reads them from Linear and keeps none.
+// levels; the app reads them from Linear and keeps none.
 
 import type { PriorityChange, TicketPriority } from '@/domains/tickets/api/ticket'
 import type { LinearEndpoints } from '@/providers/linear/endpoints'

@@ -35,7 +35,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof BasicFeed>
 
-// The same projection main's reader runs, so a catalog row is the row the cockpit draws.
+// The same projection main's reader runs, so a catalog row is the row the app draws.
 function catalogFeedContents(content: FeedContent[], running = false): SessionFeed {
   const revision = content.map((item) => item.id).join(':') || 'empty'
   const { entries } = projectFeedRowEntries({ history: content, live: [] })

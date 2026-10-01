@@ -7,13 +7,13 @@ import type { HarnessReadinessState } from '@/domains/harness-signin/contract/co
 import { SessionList } from '@/domains/sessions/renderer/session-list/session-list'
 import type { Harness } from '@/harnesses/harness'
 import { QUERY_KEYS } from '@/platform/renderer/lib/query-client'
-import { CockpitRouteLayout } from './cockpit-router'
+import { AppRouteLayout } from './app-router'
 
 function SectionScreen({ section }: { section: string }) {
   return <h1>{section}</h1>
 }
 
-function CockpitRouteLayoutStory({
+function AppRouteLayoutStory({
   projectScoped = false,
   noHarnessEntry = false,
   launchReadiness,
@@ -37,7 +37,7 @@ function CockpitRouteLayoutStory({
     createMemoryRouter(
       [
         {
-          element: <CockpitRouteLayout />,
+          element: <AppRouteLayout />,
           children: [
             { index: true, element: <Navigate replace to="/sessions" /> },
             {
@@ -71,13 +71,13 @@ function CockpitRouteLayoutStory({
 }
 
 const meta = {
-  title: 'Cockpit/Route Layout',
-  component: CockpitRouteLayoutStory,
+  title: 'App/Route Layout',
+  component: AppRouteLayoutStory,
   parameters: { layout: 'fullscreen' },
-} satisfies Meta<typeof CockpitRouteLayoutStory>
+} satisfies Meta<typeof AppRouteLayoutStory>
 
 export default meta
-type Story = StoryObj<typeof CockpitRouteLayoutStory>
+type Story = StoryObj<typeof AppRouteLayoutStory>
 
 function readinessListed(harnesses: Array<{ harness: Harness; state: HarnessReadinessState }>) {
   return {
