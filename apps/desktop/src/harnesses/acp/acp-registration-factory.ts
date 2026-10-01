@@ -6,7 +6,7 @@ import type { HarnessReadinessRegistration } from '@/domains/harness-signin/main
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
 import type { Harness } from '@/harnesses/harness'
-import type { HarnessInfo } from '@/harnesses/harness-catalog'
+import { type HarnessInfo, notInstalled } from '@/harnesses/harness-catalog'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { type AcpCatalogPresentation, acpHarnessInfo } from './acp-catalog'
 import { type AcpAgentCommand, AcpCapabilityError, connectAcpAgent } from './acp-client'
@@ -96,14 +96,9 @@ export function createAcpRegistration<Id extends Harness>(
     signIn: definition.signIn,
     readCatalog: async () => {
       const agent = command()
-      if (agent === null)
-        return {
-          harness,
-          availability: 'unavailable',
-          reason: 'not-installed',
-          detail: installStep,
-        }
-      return readAcpCatalog(harness, agent, catalog)
+      return agent === null
+        ? notInstalled(harness, installStep)
+        : readAcpCatalog(harness, agent, catalog)
     },
     readHistory: (target) => readAcpHistory(required(command(), harness), target),
     openLiveSession: (input, controls, emit) =>

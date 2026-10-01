@@ -292,16 +292,19 @@ export const NamesMissingAgentInstallStep: Story = {
       <TurnConfigurationMenu
         harness={{ harness: 'claude-acp' }}
         turnConfiguration={null}
-        catalogFailure={{ reason: 'not-installed', detail: 'Install it, then refresh models.' }}
+        catalogFailure={{
+          reason: 'not-installed',
+          installStep: 'Install it, then refresh models.',
+        }}
         refreshCatalog={() => {}}
       />
     </div>
   ),
   play: async ({ canvasElement }) => {
     await userEvent.click(within(canvasElement).getByRole('button', { name: TRIGGER }))
-    await expect(page().getByRole('alert')).toHaveTextContent(
-      'Claude ACP is not installed.Install it, then refresh models.',
-    )
+    const alert = page().getByRole('alert')
+    await expect(alert).toHaveTextContent('Claude ACP is not installed.')
+    await expect(alert).toHaveTextContent('Install it, then refresh models.')
     await expect(page().getByRole('button', { name: 'Refresh models' })).toBeEnabled()
   },
 }

@@ -29,10 +29,12 @@ type TurnConfigurationMenuProps = {
   refreshCatalog?: () => void
 }
 
-export type CatalogFailure = {
-  reason: 'not-installed' | 'not-signed-in' | 'invalid-response' | 'unavailable' | 'load-failed'
-  detail?: string
-}
+export type CatalogFailure =
+  | { reason: 'not-installed'; installStep: string }
+  | {
+      reason: 'not-installed' | 'not-signed-in' | 'invalid-response' | 'unavailable' | 'load-failed'
+      detail?: string
+    }
 
 export function TurnConfigurationMenu({
   harness,
@@ -114,9 +116,8 @@ function ConfigurationBody({
             harness: harnessLabel(harness.harness),
           })}
         </p>
-        {/* Only a not-installed detail is reader text: the Harness's install step. */}
-        {catalogFailure.reason === 'not-installed' && catalogFailure.detail ? (
-          <p className="type-meta text-muted-foreground">{catalogFailure.detail}</p>
+        {'installStep' in catalogFailure ? (
+          <p className="type-meta text-muted-foreground">{catalogFailure.installStep}</p>
         ) : null}
         <Button onClick={refreshCatalog} size="sm" type="button" variant="outline">
           {t('composer.turnConfiguration.refreshModels')}

@@ -59,8 +59,10 @@ function catalogFailureOf(
 ): CatalogFailure | null {
   if (queryFailed || result?.failure) return { reason: 'load-failed' }
   const info = result?.info
-  if (info?.availability === 'unavailable') return { reason: info.reason, detail: info.detail }
-  return null
+  if (info?.availability !== 'unavailable') return null
+  return 'installStep' in info
+    ? { reason: info.reason, installStep: info.installStep }
+    : { reason: info.reason, detail: info.detail }
 }
 
 function sessionComposerConfiguration(input: {

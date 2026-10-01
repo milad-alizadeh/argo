@@ -120,8 +120,10 @@ describe('the Claude ACP catalog without the agent installed', () => {
   })
 
   afterEach(() => {
-    process.env.SHELL = saved.SHELL
-    process.env.PATH = saved.PATH
+    for (const [key, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[key]
+      else process.env[key] = value
+    }
   })
 
   test('names the missing agent and the command that installs it', async () => {
@@ -129,7 +131,7 @@ describe('the Claude ACP catalog without the agent installed', () => {
       harness: 'claude-acp',
       availability: 'unavailable',
       reason: 'not-installed',
-      detail: expect.stringContaining('npm install -g @agentclientprotocol/claude-agent-acp'),
+      installStep: expect.stringContaining('npm install -g @agentclientprotocol/claude-agent-acp'),
     })
   })
 

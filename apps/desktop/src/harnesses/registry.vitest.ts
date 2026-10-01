@@ -154,8 +154,15 @@ test('one failed catalog read leaves the other Harness available', async () => {
     },
   } as unknown as HarnessRegistry
 
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
   const catalog = await readHarnessCatalog(registry)
 
   expect(catalog.harnesses[0]?.availability).toBe('available')
   expect(catalog.harnesses[1]).toEqual(codexHarnessInfo(null))
+  expect(warn).toHaveBeenCalledWith(
+    'The codex catalog read failed:',
+    expect.objectContaining({ message: 'Codex catalog is unavailable' }),
+  )
+  warn.mockRestore()
 })
