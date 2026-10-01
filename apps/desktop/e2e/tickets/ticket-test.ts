@@ -2,6 +2,7 @@
 import type { BrowserContext, ElectronApplication } from 'playwright-core'
 import { hubotUser, octocatUser } from '@/mocks/tickets/provider-inputs'
 import { ADA } from '../../mocks/providers/linear/mock-linear-cast'
+import { closeApplication } from '../application-under-test'
 import { finishRecording, test as packagedTest, startRecording } from '../packaged-proof'
 import { launch, prepare, type TicketFixture } from './fixtures/tickets.fixture'
 import {
@@ -114,7 +115,7 @@ export const test = packagedTest.extend<{
         restart: async () => {
           // The samples belong to the window that produced them, so the recording ends with it.
           await performanceProfile?.stop()
-          await run.application.close()
+          await closeApplication(run.application)
           run = await open()
           return run
         },
@@ -122,7 +123,7 @@ export const test = packagedTest.extend<{
       await finishRecording(performanceProfile, traced, testInfo)
     } finally {
       await performanceProfile?.stop()
-      await application?.close()
+      if (application) await closeApplication(application)
       await fixture.github.close()
       await fixture.linear.close()
     }

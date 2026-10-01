@@ -3,6 +3,7 @@
 
 import type { TestInfo } from '@playwright/test'
 import type { ElectronApplication, Page } from 'playwright-core'
+import { closeApplication } from './application-under-test'
 import type { PackagedProofFixtures, PackagedProofWorkerFixtures } from './packaged-proof'
 import { finishRecording, startRecording } from './packaged-proof'
 import type { FlowPerformanceProfile } from './performance-profile'
@@ -29,7 +30,7 @@ async function launchPackagedRun<Fixture>(params: {
     await finishRecording(performanceProfile, traced, testInfo)
   } finally {
     await performanceProfile?.stop()
-    await application.close()
+    await closeApplication(application)
   }
 }
 

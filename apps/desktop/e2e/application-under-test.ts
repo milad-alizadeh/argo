@@ -4,6 +4,7 @@ import { stat } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
+import type { ElectronApplication } from 'playwright-core'
 import { appExecutable, packagedTestCopy } from './packaged-app'
 
 // Paths resolve from the package script's working directory, because tools bundle this module.
@@ -17,6 +18,24 @@ export async function applicationUnderTest(root: string): Promise<string> {
     throw new Error(`${main} is missing. Run \`bun run build:vite\` in apps/desktop first.`)
   })
   return process.cwd()
+}
+
+// Quits Argo and waits for its `quit` event, then kills the process: Electron's native teardown
+// after that holds no lock and runs no Argo code, yet on a saturated machine it can starve for
+// minutes on background-priority threads (#3042), and `close()` would wait for all of it.
+export async function closeApplication(application: ElectronApplication): Promise<void> {
+  await application
+    .evaluate(
+      ({ app }) =>
+        new Promise<void>((resolve) => {
+          app.once('quit', () => resolve())
+          app.quit()
+        }),
+    )
+    // The reply can be lost when the process exits before it is sent; the process is gone then.
+    .catch(() => undefined)
+  application.process().kill('SIGKILL')
+  await application.close()
 }
 
 // What to run for one launch of `application`, with the app's own arguments after it.

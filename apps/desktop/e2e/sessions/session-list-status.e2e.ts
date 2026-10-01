@@ -13,7 +13,7 @@ import { writeMockClaude } from '../../mocks/cli/claude/mock-claude-cli'
 import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { signedInHarnessEnvironment } from '../../mocks/cli/signed-in-harness'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
-import { launchCommand } from '../application-under-test'
+import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 import { prepare } from './fixtures/feed.fixture'
 import { chooseHarness, PERSISTED_ROW, TURN_CONFIGURATION } from './gestures'
@@ -75,7 +75,7 @@ for (const harness of ['claude', 'codex'] as const)
       await expect(dot).toHaveAttribute('data-variant', 'active')
       await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/, { timeout: 15_000 })
     } finally {
-      await application.close()
+      await closeApplication(application)
     }
   })
 
@@ -97,7 +97,7 @@ for (const harness of ['claude', 'codex'] as const)
       await expect(row).toContainText('Inspecting the results')
       await expect(feed).toContainText('Inspecting the results')
     } finally {
-      await application.close()
+      await closeApplication(application)
     }
   })
 
@@ -123,6 +123,6 @@ for (const harness of ['claude', 'codex'] as const)
       await page.getByRole('button', { name: 'Allow', exact: true }).click()
       await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/, { timeout: 15_000 })
     } finally {
-      await application.close()
+      await closeApplication(application)
     }
   })
