@@ -3,6 +3,7 @@ import { type ReactNode, useCallback, useState } from 'react'
 import { MemoryRouter, Route, Routes, useParams } from 'react-router'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
+import { pendingSessionId } from '@/domains/sessions/api/pending-session'
 import { sessionRow, sessionShellCommand, sessionSubagent } from '@/mocks/sessions/session-rows'
 import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fixture'
 import { installSessionHost } from '@/mocks/sessions/session-story-host'
@@ -362,9 +363,10 @@ function sessionWithTitle(session: Session, titleText: string | undefined): Sess
 }
 
 function NewSessionScreen() {
-  // New Session's route id stands in for the optimistic id the Session screen draws while it starts.
+  // New Session's route id stands in for the draft whose pending id the Session screen draws while it starts.
   const routeSessionId = useParams().sessionId
-  const selectedSessionId = routeSessionId === undefined ? null : `optimistic:${routeSessionId}`
+  const selectedSessionId =
+    routeSessionId === undefined ? null : pendingSessionId({ id: routeSessionId, revision: 1 })
   return (
     <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionList />}>
       <SessionShell

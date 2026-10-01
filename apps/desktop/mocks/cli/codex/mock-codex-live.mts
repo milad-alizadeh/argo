@@ -1,6 +1,11 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { createInterface } from 'node:readline'
-import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
+import {
+  readMockReplyDelayMs,
+  SESSION_MOCK_ADVERSARIAL_SEED_ENV,
+  SESSION_MOCK_START_HOLD_FILE_ENV,
+  waitWhileHoldFileExists,
+} from '@/harnesses/proof-protocol'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
 import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
 import { sendPlanUpdate } from './fixtures/mock-codex-plan.ts'
@@ -297,7 +302,11 @@ function handle(message: Request) {
     }
     threads.push(thread)
     save()
-    return send({ id, result: { thread: { id: thread.id } } })
+    // Codex names the thread in this answer, so a held start holds it back.
+    void waitWhileHoldFileExists(process.env[SESSION_MOCK_START_HOLD_FILE_ENV]).then(() =>
+      send({ id, result: { thread: { id: thread.id } } }),
+    )
+    return
   }
   const thread = threads.find((candidate) => candidate.id === params.threadId)
   if (thread === undefined)

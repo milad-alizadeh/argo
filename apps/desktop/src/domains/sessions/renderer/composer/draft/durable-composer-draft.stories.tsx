@@ -642,7 +642,7 @@ function DurableDraftComposer({
       initialEditing={draft.initialEditing}
       onEditingChange={draft.onEditingChange}
       onSend={async (prompt, turnConfiguration, attachments) => {
-        const { outcome } = await draft.submit(prompt, turnConfiguration, attachments)
+        const { outcome } = await draft.submit({ prompt, turnConfiguration, attachments })
         if (outcome !== 'accepted')
           report({
             scope: sessionId,

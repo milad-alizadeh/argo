@@ -5,6 +5,7 @@ import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
+import { pendingSessionId } from '@/domains/sessions/api/pending-session'
 import { resolveWorkspacePath } from '@/domains/workspaces/main'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
@@ -155,7 +156,7 @@ function sendSessionDraft(input: SupervisorDraftRequest) {
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'missing-session-working-directory' })
   context.supervisor.send({
     type: 'Send',
-    intentId: `optimistic:${draft.id}:${draft.revision}`,
+    intentId: pendingSessionId(draft),
     input: { ...command, sessionId: draft.target.sessionId, resume: { ...stored, harness, cwd } },
     reply,
   })
@@ -178,7 +179,7 @@ async function sendToSupervisor(
     if (startInput !== null) {
       context.supervisor.send({
         type: 'Start',
-        pendingId: `optimistic:${draft.id}:${draft.revision}`,
+        pendingId: pendingSessionId(draft),
         input: startInput,
         reply,
       })
