@@ -92,6 +92,7 @@ export function sessionInteractionProcedures(context: SessionInteractionContext)
             id: pending.requestId,
             sessionId: input.sessionId,
             description: pending.description,
+            ...(pending.decisions === undefined ? {} : { decisions: pending.decisions }),
           }
     }),
     sessionPermissionDecide: t.procedure.input(permissionInput).mutation(async ({ input }) => {

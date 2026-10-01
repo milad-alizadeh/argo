@@ -1,12 +1,13 @@
 import { type ReactNode, type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { Permission as SessionPermission } from '@/domains/sessions/api/permissions'
 import type { Harness } from '@/harnesses/harness'
 import { Icon } from '../icon/icon'
 import { Button } from '../ui/button'
 import { focusAfterLeaving, useExitPresence } from './exit-presence'
 import { AllowButton, type PermissionAnswer } from './permission-allow-button'
 
-type Permission = { description: string; id: string }
+type Permission = Pick<SessionPermission, 'description' | 'id' | 'decisions'>
 
 type PermissionLabels = { allow: string; deny: string; title: string }
 
@@ -17,7 +18,7 @@ export type PermissionPromptProps = {
   // Project setup's Approval screen) passes 2 to keep the document outline unbroken.
   headingLevel?: 2 | 3
   labels?: PermissionLabels
-  permission: Pick<Permission, 'description' | 'id'> | null
+  permission: Permission | null
   onDecide: (decision: PermissionAnswer) => Promise<boolean>
 }
 
@@ -72,7 +73,7 @@ function PermissionCard({
 }: Omit<PermissionPromptProps, 'permission'> & {
   exiting: boolean
   labels: PermissionLabels
-  permission: Pick<Permission, 'description' | 'id'>
+  permission: Permission
 }) {
   const titleId = useId()
   const [deciding, setDeciding] = useState(false)
@@ -84,7 +85,20 @@ function PermissionCard({
   }
   const locked = deciding || exiting
   const actions = (
-    <AllowButton allowLabel={labels.allow} disabled={locked} harness={harness} onDecide={decide} />
+    <PermissionActions
+      denyLabel={labels.deny}
+      canDeny={permission.decisions?.includes('deny') ?? true}
+      locked={locked}
+      onDecide={decide}
+    >
+      <AllowButton
+        allowLabel={labels.allow}
+        disabled={locked}
+        harness={harness}
+        decisions={permission.decisions}
+        onDecide={decide}
+      />
+    </PermissionActions>
   )
   return (
     <section
@@ -114,24 +128,14 @@ function PermissionCard({
               {labels.title}
             </h3>
           )}
-          {presentation === 'composer' ? (
-            <PermissionActions denyLabel={labels.deny} locked={locked} onDecide={decide}>
-              {actions}
-            </PermissionActions>
-          ) : null}
+          {presentation === 'composer' ? actions : null}
         </div>
         <pre
           className={`max-h-[calc(var(--size-queue-row)*3)] overflow-auto rounded-md bg-muted px-(--spacing-shell-item) py-(--spacing-tight) whitespace-pre-wrap [overflow-wrap:anywhere] type-code${presentation === 'stage' ? ' col-start-2' : ''}`}
         >
           {permission.description}
         </pre>
-        {presentation === 'stage' ? (
-          <div className="col-start-2">
-            <PermissionActions denyLabel={labels.deny} locked={locked} onDecide={decide}>
-              {actions}
-            </PermissionActions>
-          </div>
-        ) : null}
+        {presentation === 'stage' ? <div className="col-start-2">{actions}</div> : null}
       </div>
     </section>
   )
@@ -140,19 +144,23 @@ function PermissionCard({
 function PermissionActions({
   children,
   denyLabel,
+  canDeny,
   locked,
   onDecide,
 }: {
   children: ReactNode
   denyLabel: string
+  canDeny: boolean
   locked: boolean
   onDecide: (decision: PermissionAnswer) => Promise<void>
 }) {
   return (
     <div className="ml-auto flex flex-wrap justify-end gap-2">
-      <Button disabled={locked} size="sm" variant="outline" onClick={() => void onDecide('deny')}>
-        {denyLabel}
-      </Button>
+      {canDeny ? (
+        <Button disabled={locked} size="sm" variant="outline" onClick={() => void onDecide('deny')}>
+          {denyLabel}
+        </Button>
+      ) : null}
       {children}
     </div>
   )

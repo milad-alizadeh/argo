@@ -7,6 +7,7 @@ import path from 'node:path'
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
 import { proveClaudeAcpHistory } from './cases/claude-acp-history.case'
+import { proveClaudeAcpControls, proveClaudeAcpDiscovery } from './cases/claude-acp-session.case'
 import { proveClaudeRename } from './cases/claude-rename.case'
 import { provePackagedCodexResume } from './cases/codex-resume.case'
 import { proveCodexThreadName } from './cases/codex-thread-name.case'
@@ -133,6 +134,17 @@ test.describe('with the Claude ACP agent', () => {
 
   test('session-claude-acp-history', async ({ session, backend }) => {
     await proveClaudeAcpHistory(session.page(), { backend, root: session.root })
+  })
+  test('session-claude-acp-discovery-resume', async ({ session, backend }) => {
+    await proveClaudeAcpDiscovery(session.page(), {
+      root: session.root,
+      project: session.fixture.project,
+      backend,
+      restart: session.restart,
+    })
+  })
+  test('session-claude-acp-controls', async ({ session, backend }) => {
+    await proveClaudeAcpControls(session.page(), backend)
   })
 })
 

@@ -12,6 +12,7 @@ import { type AcpCatalogPresentation, acpHarnessInfo } from './acp-catalog'
 import { type AcpAgentCommand, AcpCapabilityError, connectAcpAgent } from './acp-client'
 import { AcpFeedProjection } from './acp-feed-projection'
 import { AcpSessionChannel, acpPermissionOutcome } from './acp-session-channel'
+import { listAcpSessions } from './acp-session-discovery'
 
 // What a concrete ACP Harness supplies; the factory turns it into a registration.
 export type AcpHarnessDefinition<Id extends Harness> = HarnessReadinessRegistration & {
@@ -97,9 +98,13 @@ export function createAcpRegistration<Id extends Harness>(
     readHistory: (target) => readAcpHistory(required(command(), harness), target),
     openLiveSession: (input, controls, emit) =>
       new AcpSessionChannel(input, emit, { command: required(command(), harness), controls }),
-    // Discovery through `session/list` lands with #2803; until then nothing is listed.
-    listSessionSummaries: async () => ({ records: [], skipped: 0 }),
-    getSessionSummary: async () => null,
+    listSessionSummaries: ({ knownNativeIds }) => listAcpSessions(command(), knownNativeIds),
+    getSessionSummary: async (nativeId) => {
+      const listing = await listAcpSessions(command(), [nativeId])
+      if (listing.skipped > 0)
+        console.warn(`Rejected ${listing.skipped} unsupported ACP Session summary(s).`)
+      return listing.records.find((summary) => summary.nativeId === nativeId) ?? null
+    },
     changeableTurnSettings: ['model', 'effort', 'mode'],
     acceptsAttachments: false,
   }
