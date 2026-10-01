@@ -4,8 +4,8 @@ import type { Harness } from '@/harnesses/harness'
 import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '@/mocks/sessions/harness-catalog.fixture'
 import type { SessionPlan } from '../../types'
-import type { WorktreeSummary } from '../toolbar/use-worktree-choices'
 import { ComposerForm } from '../layout/composer-form'
+import type { WorktreeSummary } from '../toolbar/use-worktree-choices'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 
 const CLAUDE_TURN_CONFIGURATION = (() => {

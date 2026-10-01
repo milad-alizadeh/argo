@@ -7,7 +7,7 @@ import { provider } from '@/domains/accounts/contract/contract'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
 import { harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
-import { worktreeChoiceSchema } from '../worktree/worktree-choices'
+import { worktreeChoiceSchema } from '../worktree'
 
 const draftTicketContextSchema = z.strictObject({
   id: z.string().min(1),

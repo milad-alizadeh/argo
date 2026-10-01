@@ -26,7 +26,6 @@ export const worktreeChoiceSchema = z.union([
   z.literal('main'),
   absolutePathSchema,
 ])
-export type WorktreeChoice = z.infer<typeof worktreeChoiceSchema>
 
 const inputSchema = z.strictObject({ projectId: projectSelectSchema.shape.id })
 const worktreeSummarySchema = z.strictObject({
@@ -93,7 +92,11 @@ function readProject(database: Database, projectId: string) {
     .extend({ lastWorktreeChoice: worktreeChoiceSchema.catch('new') })
     .safeParse(
       database
-        .select({ id: project.id, path: project.path, lastWorktreeChoice: project.lastWorktreeChoice })
+        .select({
+          id: project.id,
+          path: project.path,
+          lastWorktreeChoice: project.lastWorktreeChoice,
+        })
         .from(project)
         .where(eq(project.id, projectId))
         .get(),
@@ -133,7 +136,9 @@ export function worktreeListProcedure(context: WorktreeChoiceContext) {
     .input(inputSchema)
     .output(outputSchema)
     .query(({ input }) =>
-      context.exclusive(() => listWorktrees({ requestId: randomUUID(), ...input }, context.database)),
+      context.exclusive(() =>
+        listWorktrees({ requestId: randomUUID(), ...input }, context.database),
+      ),
     )
 }
 

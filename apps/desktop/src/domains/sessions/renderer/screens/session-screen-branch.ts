@@ -1,4 +1,4 @@
-import type { WorktreeSummary } from '../composer/toolbar/use-worktree-choices'
+import type { WorktreeSummary } from '../composer'
 import type { Session } from '../types'
 
 // The branch the Session header names: the listed folder's current branch, else the branch stored

@@ -96,9 +96,9 @@ test('moves each Session folder onto the Session and keeps every row that names 
     expect(client.prepare('SELECT last_worktree_choice FROM project').all()).toEqual([
       { last_worktree_choice: '/feature' },
     ])
-    expect(
-      client.prepare("SELECT name FROM sqlite_master WHERE name = 'workspace'").all(),
-    ).toEqual([])
+    expect(client.prepare("SELECT name FROM sqlite_master WHERE name = 'workspace'").all()).toEqual(
+      [],
+    )
   } finally {
     client.close()
   }

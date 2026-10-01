@@ -3,11 +3,10 @@ import { execFile } from 'node:child_process'
 import { stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
-import { expect, onTestFinished, test } from 'vitest'
-import { project } from '@/database/project/schema'
+import { expect, test } from 'vitest'
 import { sessionTable } from '@/database/session/schema'
-import { migratedDatabase } from '@/mocks/database/migrated-database'
-import { addLinkedWorktree, worktreeRepoFixture } from '@/mocks/projects/worktree-repo.fixture'
+import { registeredRepoFixture } from '@/mocks/projects/registered-repo.fixture'
+import { addLinkedWorktree } from '@/mocks/projects/worktree-repo.fixture'
 import { createOwnedWorktree } from './worktree-create-owned'
 import { removeOwnedWorktrees, worktreesWithWork } from './worktree-removal'
 
@@ -16,20 +15,12 @@ const commitAs = ['-c', 'user.email=argo@example.test', '-c', 'user.name=Argo']
 
 // One Session that owns a fresh worktree of a real repository.
 async function ownedSession() {
-  const { project: repository } = await worktreeRepoFixture({
-    after: (cleanup) => onTestFinished(cleanup),
-  })
-  const database = migratedDatabase()
-  onTestFinished(() => database.$client.close())
-  database
-    .insert(project)
-    .values({ id: 'project-1', path: repository, commonDirectory: path.join(repository, '.git') })
-    .run()
+  const { repository, database, worktreeRoot } = await registeredRepoFixture()
   const worktree = await createOwnedWorktree({
     database,
     projectId: 'project-1',
     draftId: 'draft-1',
-    worktreeRoot: path.join(path.dirname(repository), 'worktrees'),
+    worktreeRoot,
   })
   database
     .insert(sessionTable)
@@ -49,7 +40,12 @@ async function ownedSession() {
       { database, isRunning: () => running },
       { sessionIds: ['session-1'], removal },
     )
-  return { repository, database, worktree, remove }
+  // The worktree and its branch are both gone.
+  const expectGone = async () => {
+    expect(await present(worktree.path)).toBe(false)
+    expect(await branchExists(repository, worktree.branch)).toBe(false)
+  }
+  return { repository, database, worktree, remove, expectGone }
 }
 
 const present = (folder: string) =>
@@ -59,22 +55,28 @@ const present = (folder: string) =>
   )
 
 async function branchExists(repository: string, branch: string): Promise<boolean> {
-  return run('git', ['-C', repository, 'show-ref', '--verify', '--quiet', `refs/heads/${branch}`]).then(
+  return run('git', [
+    '-C',
+    repository,
+    'show-ref',
+    '--verify',
+    '--quiet',
+    `refs/heads/${branch}`,
+  ]).then(
     () => true,
     () => false,
   )
 }
 
 test('a clean worktree goes on archive, with its branch', async () => {
-  const { repository, database, worktree, remove } = await ownedSession()
+  const { database, remove, expectGone } = await ownedSession()
   expect(await worktreesWithWork(database, ['session-1'])).toEqual([])
   expect(await remove('clean')).toEqual([{ sessionId: 'session-1', outcome: 'removed' }])
-  expect(await present(worktree.path)).toBe(false)
-  expect(await branchExists(repository, worktree.branch)).toBe(false)
+  await expectGone()
 })
 
 test('a worktree with changed files is kept unless the person chose Remove', async () => {
-  const { repository, database, worktree, remove } = await ownedSession()
+  const { database, worktree, remove, expectGone } = await ownedSession()
   await writeFile(path.join(worktree.path, 'notes.md'), 'unsaved thought\n')
   expect(await worktreesWithWork(database, ['session-1'])).toMatchObject([
     { sessionId: 'session-1', work: { changedFiles: 1, ownCommits: 0 } },
@@ -82,13 +84,21 @@ test('a worktree with changed files is kept unless the person chose Remove', asy
   expect(await remove('clean')).toEqual([{ sessionId: 'session-1', outcome: 'kept' }])
   expect(await present(worktree.path)).toBe(true)
   expect(await remove('all')).toEqual([{ sessionId: 'session-1', outcome: 'removed' }])
-  expect(await present(worktree.path)).toBe(false)
-  expect(await branchExists(repository, worktree.branch)).toBe(false)
+  await expectGone()
 })
 
 test('a worktree with commits on no other branch is kept unless the person chose Remove', async () => {
   const { database, worktree, remove } = await ownedSession()
-  await run('git', ['-C', worktree.path, ...commitAs, 'commit', '--quiet', '--allow-empty', '-m', 'work'])
+  await run('git', [
+    '-C',
+    worktree.path,
+    ...commitAs,
+    'commit',
+    '--quiet',
+    '--allow-empty',
+    '-m',
+    'work',
+  ])
   expect(await worktreesWithWork(database, ['session-1'])).toMatchObject([
     { work: { changedFiles: 0, ownCommits: 1 } },
   ])
@@ -140,7 +150,10 @@ test('an imported worktree and the main checkout are never removed', async () =>
   const sessionIds = ['session-imported', 'session-main']
   expect(await worktreesWithWork(database, sessionIds)).toEqual([])
   expect(
-    await removeOwnedWorktrees({ database, isRunning: () => false }, { sessionIds, removal: 'all' }),
+    await removeOwnedWorktrees(
+      { database, isRunning: () => false },
+      { sessionIds, removal: 'all' },
+    ),
   ).toEqual([])
   expect(await present(imported)).toBe(true)
   expect(await present(repository)).toBe(true)

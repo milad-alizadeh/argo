@@ -23,7 +23,11 @@ const commandSchema = z.strictObject({
 })
 // The linked worktree a new Session runs in; null runs it in the Project's main checkout.
 const sessionWorktreeSchema = z
-  .strictObject({ path: z.string().min(1), branch: z.string().min(1).nullable(), owned: z.boolean() })
+  .strictObject({
+    path: z.string().min(1),
+    branch: z.string().min(1).nullable(),
+    owned: z.boolean(),
+  })
   .nullable()
 const sessionStartInputSchema = commandSchema.extend({
   harness: harnessSchema,
@@ -126,7 +130,10 @@ async function chosenFolder(
 ): Promise<Pick<SessionStartInput, 'worktree' | 'cwd'>> {
   if (target.worktree === 'new') {
     const created = await context.createOwnedWorktree(target.projectId, draftId).catch(() => {
-      throw rejected('PRECONDITION_FAILED', 'worktree-create-failed' satisfies SessionSubmitRejection)
+      throw rejected(
+        'PRECONDITION_FAILED',
+        'worktree-create-failed' satisfies SessionSubmitRejection,
+      )
     })
     return { worktree: { ...created, owned: true }, cwd: created.path }
   }
@@ -163,7 +170,11 @@ async function leaveGoneWorktree(
   const registered =
     stored.projectId === null
       ? undefined
-      : database.select({ path: project.path }).from(project).where(eq(project.id, stored.projectId)).get()
+      : database
+          .select({ path: project.path })
+          .from(project)
+          .where(eq(project.id, stored.projectId))
+          .get()
   if (registered === undefined)
     throw rejected('PRECONDITION_FAILED', 'folder-missing' satisfies SessionSubmitRejection)
   const { main } = await projectFolders(registered.path)
@@ -202,7 +213,11 @@ async function prepareSessionDraft(input: DraftRequest): Promise<PreparedSend | 
   const cwd =
     worktreeGone === null
       ? (stored.cwd ?? stored.worktreePath)
-      : await leaveGoneWorktree(context.database, { ...stored, sessionId, worktreePath: worktreeGone })
+      : await leaveGoneWorktree(context.database, {
+          ...stored,
+          sessionId,
+          worktreePath: worktreeGone,
+        })
   if (cwd === null)
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'missing-session-working-directory' })
   await rejectMissingFolder(cwd)

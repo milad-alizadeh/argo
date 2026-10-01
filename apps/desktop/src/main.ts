@@ -14,7 +14,10 @@ import {
   harnessSignInExpiresAfterMs,
 } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
-import { isWorkingStatus, sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
+import {
+  isWorkingStatus,
+  sessionLiveEventBodySchema,
+} from '@/domains/sessions/api/session-live-event'
 import {
   clearWorkingStatuses,
   ExternalSessionPoll,
@@ -35,10 +38,7 @@ import {
   SessionInteractionBroker,
 } from '@/domains/sessions/main/live'
 import type { SessionSyncSupervisorActor } from '@/domains/sessions/main/sync'
-import {
-  createOwnedWorktree,
-  removeOwnedWorktrees,
-} from '@/domains/sessions/main/worktree'
+import { createOwnedWorktree, removeOwnedWorktrees } from '@/domains/sessions/main/worktree'
 import {
   failInterruptedTicketSearches,
   markInterruptedTicketScans,

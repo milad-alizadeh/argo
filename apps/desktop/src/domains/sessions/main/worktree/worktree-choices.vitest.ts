@@ -3,25 +3,16 @@ import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { initTRPC } from '@trpc/server'
-import { expect, onTestFinished, test } from 'vitest'
-import { project } from '@/database/project/schema'
+import { expect, test } from 'vitest'
 import { sessionTable } from '@/database/session/schema'
-import { migratedDatabase } from '@/mocks/database/migrated-database'
-import { addLinkedWorktree, worktreeRepoFixture } from '@/mocks/projects/worktree-repo.fixture'
+import { registeredRepoFixture } from '@/mocks/projects/registered-repo.fixture'
+import { addLinkedWorktree } from '@/mocks/projects/worktree-repo.fixture'
 import { worktreeChooseProcedure, worktreeListProcedure } from './worktree-choices'
 
 const run = promisify(execFile)
 
 async function choices() {
-  const { project: repository } = await worktreeRepoFixture({
-    after: (cleanup) => onTestFinished(cleanup),
-  })
-  const database = migratedDatabase()
-  onTestFinished(() => database.$client.close())
-  database
-    .insert(project)
-    .values({ id: 'project-1', path: repository, commonDirectory: path.join(repository, '.git') })
-    .run()
+  const { repository, database } = await registeredRepoFixture()
   const context = { database, exclusive: async <T>(work: () => Promise<T>) => work() }
   const caller = initTRPC
     .create()

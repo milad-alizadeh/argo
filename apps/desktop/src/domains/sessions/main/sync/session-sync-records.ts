@@ -55,7 +55,9 @@ async function sessionRoots(database: Database): Promise<SessionRoot[]> {
     .where(and(isNotNull(sessionTable.projectId), isNotNull(sessionTable.worktreePath)))
     .all()
     .flatMap((row) =>
-      row.projectId !== null && row.path !== null ? [{ projectId: row.projectId, path: row.path }] : [],
+      row.projectId !== null && row.path !== null
+        ? [{ projectId: row.projectId, path: row.path }]
+        : [],
     )
   return [...perProject.flat(), ...worktrees]
 }

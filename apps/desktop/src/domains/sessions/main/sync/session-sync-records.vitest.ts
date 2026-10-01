@@ -80,7 +80,9 @@ test('a Session keeps its Project after its own worktree folder is gone', async 
         "INSERT INTO session (argo_id, harness, native_id, project_id, worktree_path, worktree_branch, worktree_owned) VALUES ('session-1', 'codex', ?, 'project-1', '/elsewhere/gone', 'argo/gone', 1)",
       )
       .run(ID)
-    const [record] = await matchSessionsToProjects(database, [{ nativeId: ID, cwd: '/elsewhere/gone' }])
+    const [record] = await matchSessionsToProjects(database, [
+      { nativeId: ID, cwd: '/elsewhere/gone' },
+    ])
     assert.equal(record?.projectId, 'project-1')
   } finally {
     client.close()

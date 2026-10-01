@@ -10,7 +10,7 @@ import { harnessLabel } from '@/harnesses/presentation-registry'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { trpc } from '@/platform/renderer/trpc-client'
-import type { CatalogFailure } from '../composer'
+import type { CatalogFailure, WorktreeChoiceActions, WorktreeChoiceState } from '../composer'
 import {
   ComposerForm,
   type ComposerFormProps,
@@ -24,10 +24,6 @@ import {
   initialTurnConfiguration as turnConfigurationFor,
   useDurableComposerDraft,
 } from '../composer'
-import type {
-  WorktreeChoiceActions,
-  WorktreeChoiceState,
-} from '../composer/toolbar/use-worktree-choices'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { type HarnessControl, useAvailableHarnesses } from '../harness'
 import type { ComposerPlan, Session, SessionExtras } from '../types'
@@ -189,8 +185,7 @@ function useSessionComposerDraft(input: {
       return
     }
     const listed = { choice: worktreeState.choice, worktrees: worktreeState.worktrees }
-    if (!restoreListedChoice(loadedTarget.worktree, listed, worktreeActions.selectWorktree))
-      return
+    if (!restoreListedChoice(loadedTarget.worktree, listed, worktreeActions.selectWorktree)) return
     setRestoredProjectId(projectId)
   }, [
     availableHarnesses,
@@ -465,8 +460,7 @@ function SessionComposer({
     ),
     plan: composerPlan(session),
     projectId,
-    commandCwd:
-      identity.kind === 'session' ? (session?.cwd ?? null) : chosenFolder(worktreeState),
+    commandCwd: identity.kind === 'session' ? (session?.cwd ?? null) : chosenFolder(worktreeState),
     liveSessionId: identity.kind === 'session' ? identity.sessionId : null,
     onSend,
     isRunning,

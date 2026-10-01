@@ -1,30 +1,14 @@
 import { execFile } from 'node:child_process'
-import path from 'node:path'
 import { promisify } from 'node:util'
-import { expect, onTestFinished, test } from 'vitest'
-import { project } from '@/database/project/schema'
-import { migratedDatabase } from '@/mocks/database/migrated-database'
-import { worktreeRepoFixture } from '@/mocks/projects/worktree-repo.fixture'
+import { expect, test } from 'vitest'
+import { registeredRepoFixture } from '@/mocks/projects/registered-repo.fixture'
 import { createOwnedWorktree } from './worktree-create-owned'
 
 const run = promisify(execFile)
 
 async function draftInput() {
-  const { project: repository } = await worktreeRepoFixture({
-    after: (cleanup) => onTestFinished(cleanup),
-  })
-  const database = migratedDatabase()
-  onTestFinished(() => database.$client.close())
-  database
-    .insert(project)
-    .values({ id: 'project-1', path: repository, commonDirectory: path.join(repository, '.git') })
-    .run()
-  return {
-    database,
-    projectId: 'project-1',
-    draftId: 'draft-one',
-    worktreeRoot: path.join(path.dirname(repository), 'worktrees'),
-  }
+  const { database, worktreeRoot } = await registeredRepoFixture()
+  return { database, projectId: 'project-1', draftId: 'draft-one', worktreeRoot }
 }
 
 test('creates one worktree on its own branch and reuses it when the draft is sent again', async () => {

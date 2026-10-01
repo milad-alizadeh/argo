@@ -4,12 +4,16 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import { useProjects } from '@/domains/projects/renderer'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
-import { trpcClient } from '@/platform/renderer/trpc-client'
+import { type RouterInputs, trpcClient } from '@/platform/renderer/trpc-client'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { useObservedFeedReading } from '../feed'
 import type { Session, SessionId } from '../types'
 import { useSessionListFocus, useSessionListSelection } from './hooks/use-session-list-selection'
-import { type ArchiveQuestion, type HeldWorktree, SessionArchiveDialog } from './session-archive-dialog'
+import {
+  type ArchiveQuestion,
+  type HeldWorktree,
+  SessionArchiveDialog,
+} from './session-archive-dialog'
 import { SessionListHeader } from './session-list-header'
 import { SessionListOutcome, type SessionListState } from './session-list-outcome'
 import { useSessionListFilter, useSessionListQuery, useSettledSearch } from './session-list-query'
@@ -57,14 +61,8 @@ function sessionListState(
 type WorktreeRemoval = 'clean' | 'all'
 
 // The ids main updated (#2194), or null when the update failed and its reason was shown.
-async function updateArchived(
-  toasts: Toasts,
-  sessionIds: SessionId[],
-  archived: boolean,
-  worktrees?: WorktreeRemoval,
-) {
+async function updateArchived(toasts: Toasts, update: RouterInputs['sessionUpdate']) {
   try {
-    const update = worktrees === 'all' ? { sessionIds, archived, worktrees } : { sessionIds, archived }
     return (await trpcClient.sessionUpdate.mutate(update)).sessionIds
   } catch (error) {
     toasts.add({
@@ -78,7 +76,7 @@ async function updateArchived(
 }
 
 async function restoreSessions(toasts: Toasts, sessionIds: SessionId[]) {
-  const restored = await updateArchived(toasts, sessionIds, false)
+  const restored = await updateArchived(toasts, { sessionIds, archived: false })
   if (restored === null || restored.length === 0) return
   toasts.add({
     title: toasts.t('bulkSelect.restored', { count: restored.length }),
@@ -87,8 +85,17 @@ async function restoreSessions(toasts: Toasts, sessionIds: SessionId[]) {
   })
 }
 
-async function archiveSessions(toasts: Toasts, sessionIds: SessionId[], worktrees: WorktreeRemoval) {
-  const applied = await updateArchived(toasts, sessionIds, true, worktrees)
+async function archiveSessions(
+  toasts: Toasts,
+  sessionIds: SessionId[],
+  worktrees: WorktreeRemoval,
+) {
+  const applied = await updateArchived(
+    toasts,
+    worktrees === 'all'
+      ? { sessionIds, archived: true, worktrees }
+      : { sessionIds, archived: true },
+  )
   if (applied === null) return
   const { add, t } = toasts
   if (applied.length > 0)

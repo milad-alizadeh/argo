@@ -185,7 +185,9 @@ const sessionDiscoverActor = fromCallback<
       const summary = await getSessionSummary(nativeId)
       if (stopped) return
       if (summary !== null) {
-        await saveSummaries(input, [summary])
+        await saveSummaries(input, [
+          summary,
+        ])
         stored = true
       }
     } catch (error) {

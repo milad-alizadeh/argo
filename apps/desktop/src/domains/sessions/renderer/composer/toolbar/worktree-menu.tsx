@@ -106,13 +106,21 @@ function WorktreeChoices({
 }
 
 // The chosen existing folder's label, or null for a new worktree or a choice no longer offered.
-function existingLabel(worktrees: readonly WorktreeSummary[], choice: string | null): string | null {
+function existingLabel(
+  worktrees: readonly WorktreeSummary[],
+  choice: string | null,
+): string | null {
   const main = worktrees.find((candidate) => candidate.main)
   if (choice === 'main' && main) return mainLabel(main)
   return worktrees.find((candidate) => !candidate.main && candidate.path === choice)?.name ?? null
 }
 
-export function WorktreeMenu({ worktrees, choice, saveFailed, onSelect }: WorktreeMenuControlProps) {
+export function WorktreeMenu({
+  worktrees,
+  choice,
+  saveFailed,
+  onSelect,
+}: WorktreeMenuControlProps) {
   const { t } = useTranslation('sessions')
   const [open, setOpen] = useState(false)
   const label =

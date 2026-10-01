@@ -48,7 +48,10 @@ async function ensureWorktreeOnDisk(input: {
   )
   if (present) {
     const common = await realpath(await gitCommonDirectory(worktreePath))
-    if (common !== projectRoot.commonDirectory || (await readWorktreeBranch(worktreePath)) !== branch)
+    if (
+      common !== projectRoot.commonDirectory ||
+      (await readWorktreeBranch(worktreePath)) !== branch
+    )
       throw new Error('worktree-path-conflict')
     return
   }

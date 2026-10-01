@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import type { WorktreeChoiceState } from '../composer/toolbar/use-worktree-choices'
+import type { WorktreeChoiceState } from '../composer'
 import { draftTarget } from './session-draft-target'
 
 const worktrees: WorktreeChoiceState = {

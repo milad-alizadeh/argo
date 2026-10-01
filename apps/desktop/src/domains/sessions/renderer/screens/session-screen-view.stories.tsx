@@ -24,8 +24,8 @@ import type {
 import { SessionWorkButtons } from '../work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import type { SessionShellOutput } from '../work/types'
-import { SessionScreenView } from './session-screen-view'
 import { sessionBranch } from './session-screen-branch'
+import { SessionScreenView } from './session-screen-view'
 import { SessionShell } from './session-shell'
 
 const COMPOSER_REVIEW_FOLDER = '/workspace/argo/.claude/worktrees/ticket-1846-composer'
@@ -704,7 +704,11 @@ function expectNoSessionIdInHeader(canvasElement: HTMLElement) {
 export const Open: Story = {
   render: () => (
     <ReviewScreen
-      worktree={{ path: '/worktrees/ticket-1846-composer', branch: 'feature/composer-review', owned: true }}
+      worktree={{
+        path: '/worktrees/ticket-1846-composer',
+        branch: 'feature/composer-review',
+        owned: true,
+      }}
     />
   ),
   play: async ({ canvasElement }) => {

@@ -1,5 +1,6 @@
 import type { SessionFeedReaders } from '../feed'
 import { type SessionSyncStatusSource, sessionSyncStatusProcedure } from '../session-sync-status'
+import type { WorktreeChoiceContext } from '../worktree'
 import { composerDraftCreateProcedure } from './composer-draft-create'
 import { composerDraftReadProcedure } from './composer-draft-read'
 import { composerDraftSaveProcedure } from './composer-draft-save'
@@ -26,7 +27,6 @@ import { type SessionProcedureContext, sessionSubmitProcedure } from './session-
 import { type SessionUpdateProcedureContext, sessionUpdateProcedure } from './session-update'
 import { sessionWorkReadProcedures } from './session-work-reads'
 import { sessionWorktreeProcedures } from './session-worktree'
-import type { WorktreeChoiceContext } from '../worktree'
 
 export type SessionApiContext = SessionProcedureContext &
   SessionAttachmentContext &

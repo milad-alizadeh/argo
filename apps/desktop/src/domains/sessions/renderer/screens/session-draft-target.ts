@@ -1,6 +1,5 @@
 import type { RouterInputs } from '@/platform/renderer/trpc-client'
-import type { ComposerIdentity } from '../composer'
-import type { WorktreeChoiceState } from '../composer/toolbar/use-worktree-choices'
+import type { ComposerIdentity, WorktreeChoiceState } from '../composer'
 import type { HarnessControl } from '../harness'
 
 export function draftTarget({

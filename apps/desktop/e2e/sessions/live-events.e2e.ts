@@ -88,14 +88,7 @@ async function seedSession(root: string): Promise<string> {
     .prepare(
       'INSERT INTO session (argo_id, harness, native_id, project_id, cwd, first_prompt) VALUES (?, ?, ?, ?, ?, ?)',
     )
-    .run(
-      sessionId,
-      'claude',
-      'native-live-feed-proof',
-      projectId,
-      projectPath,
-      'Inspect this',
-    )
+    .run(sessionId, 'claude', 'native-live-feed-proof', projectId, projectPath, 'Inspect this')
   database.$client.close()
   return userData
 }

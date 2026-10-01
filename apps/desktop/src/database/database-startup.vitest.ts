@@ -117,7 +117,9 @@ test('rebuilds disposable full-text search without deleting durable rows', async
     rebuildDatabaseIndexes(opened, migrationsFolder)
 
     expect(database.prepare('SELECT id FROM project').all()).toEqual([{ id: 'project-1' }])
-    expect(database.prepare('SELECT argo_id FROM session').all()).toEqual([{ argo_id: 'session-1' }])
+    expect(database.prepare('SELECT argo_id FROM session').all()).toEqual([
+      { argo_id: 'session-1' },
+    ])
     expect(database.prepare('SELECT content FROM session_search').all()).toEqual([])
     database.close()
   } finally {
