@@ -3,8 +3,8 @@ import { randomUUID } from 'node:crypto'
 import { test } from 'node:test'
 import { SESSION_MOCK_REPLY_DELAY_MS_ENV } from '@/harnesses/proof-protocol'
 import { mockStartInput } from './mock-codex-channel.ts'
-import { clientBackedByMock, mockCodexExecutable, waitFor } from './mock-codex-driver.ts'
-import { openLiveSession } from './mock-codex-live-session.ts'
+import { clientBackedByMock, mockCodexExecutable } from './mock-codex-driver.ts'
+import { openLiveSession, waitFor } from './mock-codex-live-session.ts'
 
 test('queues a follow-up Send until the active Turn settles', async () => {
   const client = clientBackedByMock(
@@ -12,12 +12,11 @@ test('queues a follow-up Send until the active Turn settles', async () => {
   )
   const session = openLiveSession(client)
   try {
-    await waitFor(() => session.has('turn.started'), 'the first Turn to start')
+    await waitFor(() => session.has('turn.started'))
     const followUp = { ...mockStartInput, commandId: randomUUID(), prompt: 'Send while running.' }
     await session.channel.submit(followUp)
     await waitFor(
       () => session.events.filter((event) => event.type === 'turn.completed').length === 2,
-      'both Turns to complete',
     )
     const boundaries = session.events.flatMap((event) =>
       event.type === 'turn.started' || event.type === 'turn.completed'
@@ -62,7 +61,7 @@ test('projects an app-server tool call into the Feed', async () => {
             ? [{ turnId: body.turnId, content: body.content }]
             : [],
         )
-    await waitFor(() => toolCalls().length > 0, 'the tool call to reach the Feed')
+    await waitFor(() => toolCalls().length > 0)
     assert.equal(toolCalls().length, 1)
     assert.equal(toolCalls()[0]?.content.command, 'rtk bun run typecheck')
     assert.equal(toolCalls()[0]?.content.status, 'running')
