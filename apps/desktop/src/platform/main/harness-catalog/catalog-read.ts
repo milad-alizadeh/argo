@@ -2,7 +2,7 @@ import { initTRPC } from '@trpc/server'
 import type { ActorRefFrom } from 'xstate'
 import { z } from 'zod'
 import { harnessSchema } from '@/harnesses/harness'
-import { catalogReadResultSchema } from '@/harnesses/harness-catalog'
+import { catalogReadResultSchema, type HarnessInfo } from '@/harnesses/harness-catalog'
 import type { harnessCatalogMachine } from './harness-catalog-machine'
 
 const t = initTRPC.create()
@@ -19,10 +19,17 @@ function selectedCatalog(actor: CatalogActor, harness: Harness) {
   return { info, failure: snapshot.context.failure }
 }
 
+function unexplained(info: HarnessInfo) {
+  return info.availability === 'unavailable' && info.reason === 'unavailable'
+}
+
 function readCatalog(actor: CatalogActor, harness: Harness, refresh = false) {
   const before = actor.getSnapshot()
   if (refresh) actor.send({ type: before.matches('Failed') ? 'Retry' : 'Refresh' })
   else if (before.matches('Idle')) actor.send({ type: 'Catalog requested' })
+  // A read that failed for no named reason may be passing, such as a CLI slow to start; read again.
+  else if (before.matches('Ready') && unexplained(selectedCatalog(actor, harness).info))
+    actor.send({ type: 'Refresh' })
   const current = actor.getSnapshot()
   if (current.matches('Ready') || current.matches('Failed'))
     return Promise.resolve(selectedCatalog(actor, harness))

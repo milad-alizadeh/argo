@@ -54,7 +54,11 @@ export function TurnConfigurationMenu({
     />
   )
   return (
-    <Popover>
+    <Popover
+      onOpenChange={(open) => {
+        if (open && catalogFailure?.reason === 'unavailable') refreshCatalog?.()
+      }}
+    >
       <PopoverTrigger
         render={
           <InputGroupButton

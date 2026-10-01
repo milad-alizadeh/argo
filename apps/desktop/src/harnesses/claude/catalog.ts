@@ -7,7 +7,7 @@ import { claudeHarnessInfo } from './catalog-projection'
 export type { ClaudeModelCatalog } from './catalog-projection'
 export { claudeHarnessInfo, claudeModelCatalogSchema } from './catalog-projection'
 
-// One budget for both probes: they start together, while the app itself is still starting.
+// Both probes run together, so they share one budget.
 const DISCOVERY_TIMEOUT_MS = 10_000
 
 export async function readClaudeHarnessInfo(executablePath: string | null): Promise<HarnessInfo> {
@@ -27,8 +27,7 @@ export async function readClaudeHarnessInfo(executablePath: string | null): Prom
         reason: 'invalid-response',
         detail: error.message,
       }
-    console.warn('The Claude catalog read failed:', error)
-    return unavailable('claude')
+    throw error
   }
 }
 

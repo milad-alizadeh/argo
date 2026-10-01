@@ -4,7 +4,7 @@ import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/li
 import { ACP_HARNESSES } from '@/harnesses/acp/acp-agents'
 import { claudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
-import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
+import { type HarnessInfo, harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
 import { codexModelCatalogFixture } from '@/mocks/recordings/codex-model-catalog'
 import { claudeModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { sessionRouterDependencies } from '@/mocks/sessions/session-router-dependencies.fixture'
@@ -111,16 +111,17 @@ test('registers Ticket procedures directly on the global router', () => {
   expect(paths.some((path) => path === 'tickets' || path.startsWith('tickets.'))).toBe(false)
 })
 
-test('repeated reads reuse the settled catalog until an explicit refresh', async () => {
-  let loads = 0
+// A catalog actor that counts its loads; Claude's entry on each load comes from `claude`.
+function countedCatalog(claude: (load: number) => HarnessInfo) {
+  const counter = { loads: 0 }
   const actor = createActor(
     harnessCatalogMachine.provide({
       actors: {
         loadCatalog: fromPromise(async () => {
-          loads += 1
+          counter.loads += 1
           return harnessCatalogSchema.parse({
             harnesses: [
-              claudeHarnessInfo(claudeModelCatalogFixture()),
+              claude(counter.loads),
               codexHarnessInfo(codexModelCatalogFixture()),
               ...ACP_HARNESSES.map((harness) => unavailable(harness)),
             ],
@@ -129,15 +130,38 @@ test('repeated reads reuse the settled catalog until an explicit refresh', async
       },
     }),
   ).start()
+  return { actor, counter }
+}
+
+test('repeated reads reuse the settled catalog until an explicit refresh', async () => {
+  const { actor, counter } = countedCatalog(() => claudeHarnessInfo(claudeModelCatalogFixture()))
   try {
     const caller = testRouter(actor).createCaller({})
     await caller.harnessCatalogRead({ harness: 'claude' })
     await caller.harnessCatalogRead({ harness: 'codex' })
-    expect(loads).toBe(1)
+    expect(counter.loads).toBe(1)
     await caller.harnessCatalogRefresh({ harness: 'claude' })
-    expect(loads).toBe(2)
+    expect(counter.loads).toBe(2)
     await caller.harnessCatalogRead({ harness: 'claude' })
-    expect(loads).toBe(2)
+    expect(counter.loads).toBe(2)
+  } finally {
+    actor.stop()
+  }
+})
+
+test('reads a Harness again when its last read failed for no named reason', async () => {
+  const { actor, counter } = countedCatalog((load) =>
+    load === 1 ? unavailable('claude') : claudeHarnessInfo(claudeModelCatalogFixture()),
+  )
+  try {
+    const caller = testRouter(actor).createCaller({})
+    const first = await caller.harnessCatalogRead({ harness: 'claude' })
+    expect(first.info.availability).toBe('unavailable')
+    await caller.harnessCatalogRead({ harness: 'codex' })
+    expect(counter.loads).toBe(1)
+    const second = await caller.harnessCatalogRead({ harness: 'claude' })
+    expect(second.info.availability).toBe('available')
+    expect(counter.loads).toBe(2)
   } finally {
     actor.stop()
   }
