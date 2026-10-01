@@ -937,8 +937,8 @@ export const AcceptedSendRecreatesANewerEditSavedAfterAcceptance: Story = {
   },
 }
 
-// A render while the Send's own save is in flight arms an autosave of the sent text (#3072).
-export const AcceptedSendDropsAnAutosaveArmedDuringItsSave: Story = {
+// A render during the Send's save must not re-save the sent text; release within 250 ms (#3072).
+export const AcceptedSendStaysClearedAfterARenderDuringItsSave: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const editor = await canvas.findByLabelText('Message')
