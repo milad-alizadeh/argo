@@ -29,12 +29,6 @@ test('projects a recorded Codex thread read into Feed content', async () => {
       text: 'Continue the check',
     },
     {
-      kind: 'reasoning',
-      id: 'rs_037b94ca171276d5016abdc3d888d487d282beafdedfd5156c',
-      redacted: false,
-      text: null,
-    },
-    {
       kind: 'message',
       id: 'msg_037b94ca171276d5016abdc3d92b3087d29b6307627c7a1279',
       role: 'assistant',

@@ -33,14 +33,13 @@ test('decodes a real Claude Session the Agent SDK read back', () => {
   ])
 })
 
-// Claude CLI 2.1.286 writes a thought with its signature and no text.
-test('decodes a real Claude thought as reasoning before the reply', () => {
+// Claude CLI 2.1.286 writes a thought with its signature and no text, which has nothing to show.
+test('drops a real Claude thought that carries no text', () => {
   const thought = recordedSession(
     'Ultrathink: is 221 prime? Reason before answering, then answer in one sentence.',
   )
   expect(decodeClaudeSessionMessages(thought)).toEqual([
     expect.objectContaining({ kind: 'message', role: 'user' }),
-    { kind: 'reasoning', id: 'msg_011CfaqV3LX1rAfBRRTgAgWZ', text: '', redacted: false },
     {
       kind: 'message',
       id: 'msg_011CfaqV3LX1rAfBRRTgAgWZ',
