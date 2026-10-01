@@ -106,6 +106,8 @@ export type AcpClient = {
   closeSession: (sessionId: string) => Promise<void>
   // Resolves when the agent process or its stream ends, for any reason.
   closed: Promise<void>
+  // Resolves when the agent process ends; after it, the agent writes nothing more.
+  exited: Promise<void>
   close: () => void
 }
 
@@ -267,6 +269,7 @@ export async function connectAcpAgent(
       ...sessionMethods(connection.agent, capabilities),
       listSessions: sessionListing(connection.agent, capabilities),
       closed,
+      exited,
       close,
     }
   } catch (error) {

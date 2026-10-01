@@ -6,6 +6,7 @@ import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import { saveReadTicket } from '@/domains/tickets/main/database/ticket-upsert'
+import { closeApplication } from '../application-under-test'
 import { expect, finishRecording, startRecording, test } from '../packaged-proof'
 import { launch, prepare } from '../projects/fixtures/project.fixture'
 
@@ -184,7 +185,6 @@ test('shows saved numbered pages and keeps Argo-ID selection', async ({
     await finishRecording(performanceProfile, traced, testInfo)
   } finally {
     await performanceProfile?.stop()
-    // This proof covers a window read, not macOS shutdown, so stop its isolated app copy directly.
-    application.process().kill('SIGKILL')
+    await closeApplication(application)
   }
 })

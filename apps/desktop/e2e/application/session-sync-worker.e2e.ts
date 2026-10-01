@@ -4,7 +4,7 @@ import { _electron as electron } from 'playwright-core'
 import type { SessionSyncStatus } from '@/domains/sessions/main/session-sync-status'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
-import { launchCommand } from '../application-under-test'
+import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 
 test('starts and stops the packaged Session sync worker', async ({
@@ -56,8 +56,7 @@ test('starts and stops the packaged Session sync worker', async ({
         { timeout: 10_000 },
       )
       .toMatchObject({ phase: 'ready', failure: null })
-    await page.close()
   } finally {
-    await application.close()
+    await closeApplication(application)
   }
 })

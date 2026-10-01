@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs'
+import { setTimeout as sleep } from 'node:timers/promises'
 import { getSessionInfo, listSessions, type SDKSessionInfo } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
 import type {
@@ -37,11 +39,12 @@ function proofClaudeSessionReader(): ClaudeSessionReader | undefined {
   const parsed = z
     .strictObject({
       records: z.array(sessionObject),
-      delayMs: z.number().int().nonnegative(),
+      // While this file exists, every read waits, so a proof can hold a sync mid-scan.
+      holdFile: z.string().optional(),
     })
     .parse(JSON.parse(fixture))
   const pause = async () => {
-    if (parsed.delayMs > 0) await new Promise((resolve) => setTimeout(resolve, parsed.delayMs))
+    while (parsed.holdFile !== undefined && existsSync(parsed.holdFile)) await sleep(20)
   }
   return {
     list: async () => {
