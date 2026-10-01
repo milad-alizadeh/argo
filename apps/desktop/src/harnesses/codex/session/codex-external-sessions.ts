@@ -118,8 +118,7 @@ export function createCodexExternalSessions(
       rollouts.set(nativeId, thread.path)
       return thread.path
     } catch (error) {
-      // Asked again next tick: a thread that just started may not be stored yet, which Codex
-      // answers with `thread not loaded`.
+      // Asked again next tick: Codex answers `thread not loaded` until a new thread is stored.
       if (isThreadNotLoaded(error)) return null
       console.warn('Could not read a Codex thread path:', error)
       return null
