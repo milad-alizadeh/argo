@@ -6,26 +6,13 @@ import type {
   SessionSummaryReader,
 } from '@/domains/sessions/api/session-discovery'
 import {
+  CODEX_SESSION_SOURCE_KINDS,
   type CodexRequest,
   CodexUnavailableError,
   isThreadNotLoaded,
   type Thread,
-  type ThreadListParams,
   type ThreadListResponse,
 } from '../app-server'
-
-type ThreadSourceKind = NonNullable<ThreadListParams['sourceKinds']>[number]
-
-const interactiveAndSubagentSourceKinds = [
-  'cli',
-  'vscode',
-  'appServer',
-  'subAgent',
-  'subAgentReview',
-  'subAgentCompact',
-  'subAgentThreadSpawn',
-  'subAgentOther',
-] satisfies ThreadSourceKind[]
 
 // Only the Thread fields discovery reads; the generated types own the rest.
 const threadSchema: z.ZodType<
@@ -151,7 +138,7 @@ async function listCodexThreads(request: CodexRequest): Promise<unknown[]> {
         ...(cursor === undefined ? {} : { cursor }),
         limit: 100,
         sortKey: 'updated_at',
-        sourceKinds: interactiveAndSubagentSourceKinds,
+        sourceKinds: [...CODEX_SESSION_SOURCE_KINDS],
         archived: false,
         useStateDbOnly: true,
       },

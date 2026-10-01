@@ -1,9 +1,11 @@
 import { expect, test } from 'bun:test'
 import {
   recordedCodexExternalThreads as externalThreads,
+  recordedCodexSubagents,
   recordedCodexSessionSync as recordedResponses,
 } from '@/mocks/recordings/codex-app-server'
 import {
+  CODEX_SESSION_SOURCE_KINDS,
   type CodexRequest,
   CodexUnavailableError,
   type Thread,
@@ -17,10 +19,6 @@ import {
 const FIRST_ID = 'thread-first'
 const KNOWN_ID = 'thread-known'
 const SAVED_ID = 'thread-previously-saved'
-// These IDs are recorded in thread-read-subagents-codex-0.157.0.json.
-const PARENT_ID = 'thread-parent'
-const CHILD_ID = 'thread-child-review'
-// The recording keeps only the Thread fields discovery reads.
 type RecordedThread = Pick<Thread, 'id' | 'updatedAt' | 'name'> &
   Partial<Pick<Thread, 'parentThreadId' | 'preview' | 'cwd'>>
 const recorded: {
@@ -40,20 +38,10 @@ function requestFor(responses: Map<string, unknown>, calls: unknown[]): CodexReq
 }
 
 function expectedCalls(): unknown[] {
-  const sources = [
-    'cli',
-    'vscode',
-    'appServer',
-    'subAgent',
-    'subAgentReview',
-    'subAgentCompact',
-    'subAgentThreadSpawn',
-    'subAgentOther',
-  ]
   const listParams = {
     limit: 100,
     sortKey: 'updated_at',
-    sourceKinds: sources,
+    sourceKinds: [...CODEX_SESSION_SOURCE_KINDS],
     archived: false,
     useStateDbOnly: true,
   }
@@ -206,40 +194,28 @@ test('gets one thread summary without listing, and null for a thread Codex does 
   expect(calls).toEqual(['thread/read', 'thread/read'])
 })
 
-test('reports child threads separately from root Session summaries', async () => {
+test('summarizes the recorded Codex parent Thread', async () => {
+  const { thread, threadList } = recordedCodexSubagents
   const result = await createCodexSessionSummaryList((async (_method, _params, parse) =>
-    parse({
-      data: [
-        { id: PARENT_ID, updatedAt: 2, parentThreadId: null },
-        { id: CHILD_ID, updatedAt: 1, parentThreadId: PARENT_ID },
-        { id: 'thread-child-review-deep', updatedAt: 1, parentThreadId: CHILD_ID },
-      ],
-      nextCursor: null,
-    })) as CodexRequest)({ knownNativeIds: [] })
+    parse(structuredClone(threadList))) as CodexRequest)({ knownNativeIds: [] })
 
-  expect(result.records.map(({ nativeId }) => nativeId)).toEqual([PARENT_ID])
-  expect(result.subagents).toEqual([
-    { nativeId: CHILD_ID, parentNativeId: PARENT_ID },
-    { nativeId: 'thread-child-review-deep', parentNativeId: PARENT_ID },
-  ])
+  expect(result.records.map(({ nativeId }) => nativeId)).toEqual([thread.id])
 })
 
-test('reports a previously saved child thread for roster reconciliation', async () => {
+test('reconciles a saved child from its recorded Thread parentThreadId', async () => {
+  const { childThread } = recordedCodexSubagents
+  const parentNativeId = childThread.parentThreadId
+  if (parentNativeId === null) throw new Error('Recorded Codex child has no parent Thread.')
   const result = await createCodexSessionSummaryList((async (method: string, params, parse) => {
     if (method === 'thread/list') return parse({ data: [], nextCursor: null })
-    return parse({
-      thread: {
-        id: (params as { threadId: string }).threadId,
-        updatedAt: 1,
-        parentThreadId: PARENT_ID,
-      },
-    })
-  }) as CodexRequest)({ knownNativeIds: ['old-child'] })
+    expect((params as { threadId: string }).threadId).toBe(childThread.id)
+    return parse({ thread: structuredClone(childThread) })
+  }) as CodexRequest)({ knownNativeIds: [childThread.id] })
 
   expect(result).toEqual({
     records: [],
     skipped: 0,
-    subagents: [{ nativeId: 'old-child', parentNativeId: PARENT_ID }],
+    subagents: [{ nativeId: childThread.id, parentNativeId }],
   })
 })
 

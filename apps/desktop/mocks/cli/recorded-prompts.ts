@@ -9,6 +9,8 @@ export const RECORDED_PROMPTS = {
   claudeBranch: 'Branch off: reply with one short sentence.',
   codexCommand: 'Run Codex check',
   codexReply: 'Continue the check',
+  codexSubagent:
+    'Spawn exactly one native subagent to list the files in this empty project. Do not do the task yourself. Wait for the subagent to finish, then reply with its list.',
   codexNotice:
     '<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>',
 } as const

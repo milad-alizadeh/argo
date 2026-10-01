@@ -9,9 +9,17 @@ import type { VendorHistoryReader } from './vendor-reply'
 type CodexThread = ThreadReadResponse['thread']
 
 // The real `codex app-server`, run under the throwaway HOME through Argo's own client.
-export async function codexClientUnderHome(home: string, executable: string) {
+export async function codexClientUnderHome(
+  home: string,
+  executable: string,
+  workingDirectory = process.cwd(),
+) {
   const wrapper = path.join(path.dirname(home), 'codex-vendor-reader')
-  await writeFile(wrapper, `#!/bin/sh\nexport HOME='${home}'\nexec '${executable}' "$@"\n`)
+  const shellQuote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`
+  await writeFile(
+    wrapper,
+    `#!/bin/sh\nexport HOME=${shellQuote(home)}\ncd ${shellQuote(workingDirectory)}\nexec ${shellQuote(executable)} "$@"\n`,
+  )
   await chmod(wrapper, 0o755)
   return createCodexAppServerClient({
     resolveExecutable: async () => ({ executable: wrapper, version: '' }),

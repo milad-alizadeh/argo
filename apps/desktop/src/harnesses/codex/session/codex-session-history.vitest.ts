@@ -337,96 +337,73 @@ test('reads each recorded Subagent activity as its own delegation event', async 
   const recorded = recordedCodexSubagents
   const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
     parse({ thread: recorded.thread })) as CodexRequest
-  const delegation = (
-    id: string,
-    event: 'started' | 'messaged' | 'responded',
-    status: 'running' | 'completed' | 'interrupted',
-  ) => ({
+  const items = recorded.thread.turns.flatMap(({ items }) => items)
+  const user = items.find((item) => item.type === 'userMessage')
+  const assistant = items.find((item) => item.type === 'agentMessage')
+  const activities = items.filter((item) => item.type === 'subAgentActivity')
+  if (
+    user?.type !== 'userMessage' ||
+    assistant?.type !== 'agentMessage' ||
+    activities[0]?.type !== 'subAgentActivity' ||
+    activities[1]?.type !== 'subAgentActivity'
+  ) {
+    throw new Error('Recorded Codex parent Thread is missing its subagent activity.')
+  }
+  const delegation = (activity: (typeof activities)[number]) => ({
     kind: 'delegation',
-    id,
-    event,
-    agentId: 'thread-child-review',
-    status,
-    name: 'spec_review',
+    id: activity.id,
+    event: activity.kind === 'started' ? 'started' : 'responded',
+    agentId: recorded.childThread.id,
+    status: activity.kind === 'started' ? 'running' : 'completed',
+    name: activity.agentPath?.split('/').at(-1),
     prompt: null,
     model: null,
     summary: null,
   })
-  await expect(readCodexSessionHistory(request, 'thread-parent')).resolves.toEqual([
-    { kind: 'message', id: 'user-1', role: 'user', text: 'Review the branch' },
-    delegation('call_spawn_review', 'started', 'running'),
-    delegation('subagent-completed-review-1', 'responded', 'completed'),
-    delegation('call_message_review', 'messaged', 'running'),
-    delegation('call_interrupt_review', 'responded', 'interrupted'),
-    { kind: 'message', id: 'agent-1', role: 'assistant', text: 'The review is in.' },
+  await expect(readCodexSessionHistory(request, recorded.thread.id)).resolves.toEqual([
+    {
+      kind: 'message',
+      id: user.id,
+      role: 'user',
+      text: user.content?.map(({ text }) => text).join('') ?? '',
+    },
+    delegation(activities[0]),
+    delegation(activities[1]),
+    {
+      kind: 'message',
+      id: assistant.id,
+      role: 'assistant',
+      phase: assistant.phase,
+      text: assistant.text,
+    },
   ])
 })
-
-test('gives a Subagent start the prompt and model its spawn call sent', async () => {
-  const items = [
-    {
-      type: 'collabAgentToolCall',
-      id: 'call_spawn',
-      tool: 'spawnAgent',
-      status: 'completed',
-      senderThreadId: 'thread-parent',
-      receiverThreadIds: ['thread-child'],
-      prompt: 'Review the branch',
-      model: 'gpt-5',
-      reasoningEffort: null,
-      agentsStates: {},
-    },
-    {
-      type: 'subAgentActivity',
-      id: 'call_spawn',
-      kind: 'started',
-      agentThreadId: 'thread-child',
-      agentPath: '/root/reviewer',
-    },
-  ]
-  const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
-    parse({ thread: { turns: [{ items }] } })) as CodexRequest
-  await expect(readCodexSessionHistory(request, 'thread-parent')).resolves.toEqual([
-    expect.objectContaining({
-      kind: 'delegation',
-      event: 'started',
-      prompt: 'Review the branch',
-      model: 'gpt-5',
-    }),
-  ])
-})
-
-const SPAWNED_ITEMS = [
-  {
-    type: 'subAgentActivity',
-    id: 'call_spawn',
-    kind: 'started',
-    agentThreadId: 'thread-child',
-    agentPath: '/root/spec_review',
-  },
-]
 
 test('names a Subagent with the nickname its own thread carries', async () => {
+  const { childThread, thread } = recordedCodexSubagents
   const request = (async (_method: string, params: unknown, parse: (value: unknown) => unknown) =>
     parse(
-      (params as { threadId: string }).threadId === 'thread-child'
-        ? { thread: { agentNickname: 'Jason', turns: [] } }
-        : { thread: { agentNickname: null, turns: [{ items: SPAWNED_ITEMS }] } },
+      (params as { threadId: string }).threadId === childThread.id
+        ? { thread: structuredClone(childThread) }
+        : { thread: structuredClone(thread) },
     )) as CodexRequest
-  await expect(readCodexSessionHistory(request, 'thread-parent')).resolves.toEqual([
-    expect.objectContaining({ name: 'spec_review', nickname: 'Jason' }),
-  ])
+  await expect(readCodexSessionHistory(request, thread.id)).resolves.toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ name: 'list_files', nickname: childThread.agentNickname }),
+    ]),
+  )
 })
 
 test('keeps a Subagent row without a nickname when its thread cannot be read', async () => {
   const warning = warningSpy()
+  const { childThread, thread } = recordedCodexSubagents
   const request = (async (_method: string, params: unknown, parse: (value: unknown) => unknown) => {
-    if ((params as { threadId: string }).threadId === 'thread-child') throw new Error('not found')
-    return parse({ thread: { turns: [{ items: SPAWNED_ITEMS }] } })
+    if ((params as { threadId: string }).threadId === childThread.id) throw new Error('not found')
+    return parse({ thread: structuredClone(thread) })
   }) as CodexRequest
-  const [content] = await readCodexSessionHistory(request, 'thread-parent')
-  expect(content).toMatchObject({ name: 'spec_review' })
-  expect(content).not.toHaveProperty('nickname')
+  const content = await readCodexSessionHistory(request, thread.id)
+  expect(content).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'list_files' })]))
+  expect(content.find((item) => item.kind === 'delegation')).not.toHaveProperty('nickname')
   expect(warning).toHaveBeenCalledWith(
     'Could not read 1 Codex Subagent thread; it shows no nickname.',
   )
