@@ -41,6 +41,23 @@ test('the Claude mock exposes models and modes through the SDK catalog reader', 
   }
 })
 
+test('a Claude CLI slow to print its help still lists its models', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-slow-help-'))
+  try {
+    const mock = await writeMockClaude(root, path.join(root, 'transcripts'))
+    const executablePath = path.join(root, 'slow-help-claude')
+    await writeFile(
+      executablePath,
+      `#!/bin/sh\ncase " $* " in *" --help "*) sleep 4 ;; esac\nexec "${mock}" "$@"\n`,
+    )
+    await chmod(executablePath, 0o755)
+    const info = await readClaudeHarnessInfo(executablePath)
+    assert.equal(info.availability, 'available')
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
 const SESSION_ID = '00000000-0000-4000-8000-00000000ad01'
 
 async function started(seed: string, prepare?: (root: string) => Promise<Prepared>) {
