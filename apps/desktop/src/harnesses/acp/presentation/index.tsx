@@ -1,7 +1,7 @@
 import { claudeSparkUrl } from '@/harnesses/claude/presentation'
 import type { HarnessPresentation } from '@/harnesses/harness-presentation'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import type { AcpAgentEntry, AcpIcon } from './acp-agents'
+import type { AcpAgentEntry, AcpIcon } from '../acp-agents'
 
 const ICON_URLS: Record<AcpIcon, string> = { claude: claudeSparkUrl }
 
