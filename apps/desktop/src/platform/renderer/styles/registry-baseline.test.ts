@@ -17,7 +17,10 @@ test('reviewed registry primitives retain their generated identity', async () =>
       const comparator = await Bun.file(
         new URL(`../../../../${item.comparatorTarget}`, import.meta.url),
       ).text()
-      expect(sourceHash(comparator)).toBe(item.sourceSha256)
+      expect(sourceHash(comparator)).toBe(item.comparatorSha256)
+      expect(sourceHash(`${comparator}\n// Deliberate unreviewed comparator mutation\n`)).not.toBe(
+        item.comparatorSha256,
+      )
     }
     expect(sourceHash(`${source}\n// Deliberate unreviewed source mutation\n`)).not.toBe(
       item.sourceSha256,
