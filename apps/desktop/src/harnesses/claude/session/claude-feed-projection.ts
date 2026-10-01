@@ -1,4 +1,5 @@
-import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import { z } from 'zod'
+import { type FeedContent, planContent } from '@/domains/sessions/api/feed-content'
 import { TERMINAL_DELEGATION_STATUSES } from './claude-feed-envelopes'
 
 type Delegation = Extract<FeedContent, { kind: 'delegation' }>
@@ -10,6 +11,12 @@ const AGENT_TOOLS = new Set(['Agent', 'Task'])
 // The launch or reply text of an Agent call names the id its transcript is stored under.
 const AGENT_ID = /^agentId: ([\w-]+)/m
 const ASYNC_LAUNCH = 'Async agent launched'
+// A TodoWrite call states the whole Plan each time; one it cannot read stays a tool row.
+const todoInputSchema = z.object({
+  todos: z.array(
+    z.object({ content: z.string(), status: z.enum(['pending', 'in_progress', 'completed']) }),
+  ),
+})
 
 function inputField(input: Tool['input'], key: string): string | null {
   if (input === null || typeof input !== 'object' || Array.isArray(input)) return null
@@ -63,12 +70,13 @@ function replyText(text: string): string | null {
   return reply === '' ? null : reply
 }
 
-// Pairs each Agent call with its Subagent across one stream. A skill row names the skill only.
+// Pairs each Agent call with its Subagent across one stream. A skill row names the skill only,
+// and a TodoWrite call is a Plan; neither draws its result.
 export class ClaudeFeedProjection {
   private calls = new Map<string, KnownCall>()
   // The last input each started agent was sent.
   private startedAgents = new Map<string, string | null>()
-  private skillCalls = new Set<string>()
+  private quietCalls = new Set<string>()
   private fileChanges = new Map<string, FileChange>()
 
   project(content: FeedContent): FeedContent[] {
@@ -95,7 +103,7 @@ export class ClaudeFeedProjection {
 
   private tool(content: Tool): FeedContent[] {
     if (content.input !== null) return this.call(content)
-    if (this.skillCalls.has(content.callId)) return []
+    if (this.quietCalls.has(content.callId)) return []
     const edit = this.fileChanges.get(content.callId)
     if (edit !== undefined) return [{ ...edit, status: content.status }]
     const known = this.calls.get(content.callId)
@@ -121,7 +129,7 @@ export class ClaudeFeedProjection {
     }
     const skill = content.name === 'Skill' ? inputField(content.input, 'skill') : null
     if (skill !== null && skill !== '') {
-      this.skillCalls.add(content.callId)
+      this.quietCalls.add(content.callId)
       return [
         {
           id: content.id,
@@ -132,6 +140,15 @@ export class ClaudeFeedProjection {
           text: inputField(content.input, 'args'),
         },
       ]
+    }
+    const todos = content.name === 'TodoWrite' ? todoInputSchema.safeParse(content.input) : null
+    if (todos?.success) {
+      this.quietCalls.add(content.callId)
+      const steps = todos.data.todos.map((todo) => ({
+        text: todo.content,
+        done: todo.status === 'completed',
+      }))
+      return [planContent(content.id, steps)]
     }
     if (
       !AGENT_TOOLS.has(content.name) ||

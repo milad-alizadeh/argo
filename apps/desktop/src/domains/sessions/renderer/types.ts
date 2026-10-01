@@ -16,6 +16,10 @@ export type SessionPlan =
       entries: { content: string; position: number; status: PlanEntryStatus }[]
     }
   | { state: 'malformed' }
+// The composer's Plan: the steps from an open Feed, or only their count from the stored row.
+export type ComposerPlan =
+  | SessionPlan
+  | ({ state: 'counted' } & NonNullable<Session['planProgress']>)
 export type ShellState = 'running' | 'completed' | 'failed' | 'interrupted'
 export type SessionShellCommand = {
   id: string
@@ -30,7 +34,6 @@ export type SessionShellCommand = {
 }
 // What the UI draws when a Session carries it; no read reports these yet, so each is optional.
 export type SessionExtras = {
-  // #2962 saves Plan progress on the row.
   plan?: SessionPlan | null
   // #2970 lists the shell commands.
   shell?: SessionShellCommand[]
