@@ -1,5 +1,5 @@
 {
-  "$comment": "codex-cli 0.157.0 app-server answers for threads another process ran, recorded 2026-10-01 by the #2940 status spike: thread/read {includeTurns:false}, then thread/turns/list {limit:1} in the summary and full views.",
+  "$comment": "codex-cli 0.157.0 app-server answers for threads another process ran, recorded 2026-10-01 by the #2940 status spike: thread/read {includeTurns:false}, then thread/turns/list {limit:1} in the summary and full views. readNotLoaded: thread/read {includeTurns:false} for a thread whose writer lock is held but which has no rollout file yet, recorded 2026-10-01 for #3004.",
   "completed": {
     "read": {
       "thread": {
@@ -379,5 +379,9 @@
   "notLoaded": {
     "code": -32600,
     "message": "thread not loaded: 01a0f5ff-0000-7000-8000-000000000000"
+  },
+  "readNotLoaded": {
+    "code": -32600,
+    "message": "thread not loaded: 01a0f5af-03d4-7891-87e5-bbbfd9058beb"
   }
 }
