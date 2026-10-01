@@ -11,9 +11,6 @@ third-party ones plus Argo's own, kept in this package's `skills/`), and the
 a scaffolder of its own; it is gone, and everything it did beyond the install is now written down
 as steps in [`setup-argo-skills`](skills/setup-argo-skills/SKILL.md) for an agent to follow.
 
-The one file left in `bin/` is `hooks-sync.mts`, which projects the repo-root `hooks.json` into
-each harness. It is not an installer.
-
 ## Project-agnostic by design — set up per project
 
 This package is the **single source** for Argo's skills; it depends on no particular project,
@@ -68,15 +65,9 @@ than a pinned revision, because Argo's lock entries carry no `ref`.
 Installing skills is all `skills add` does. The rest of a consumer's setup is prose in
 [`setup-argo-skills`](skills/setup-argo-skills/SKILL.md), followed by an agent by hand: rescuing
 the consumer's own skills from a name collision before they are overwritten, seeding
-`.rtk/filters.toml`, copying `hooks.json` and the hooks it names and projecting them, adding the
-`.gitignore` lines, and reporting what the always-on frontmatter now costs every turn.
+`.rtk/filters.toml`, adding the `.gitignore` lines, and reporting what the always-on frontmatter now costs every turn.
 
-The guardrail hooks are hand-work today. They live in
-`packages/argo-skills/skills/setup-argo-skills/hooks/`. A project copies them only after the user
-opts in. `skills add` installs the source files, but it does not install the hooks into a project.
-Installing them stays a separate yes: they reserve pushes and PRs to `/ship`, and that is a
-decision a consuming project makes, not a side effect of wanting the skills. See the repo root's
-`hooks.json`.
+Argo ships no hooks.
 
 ## The manifest — `skills-lock.json`
 

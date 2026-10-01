@@ -57,7 +57,7 @@ What changes is that the human is handed a branch that can actually merge.
 
 After the push, `gh pr view --json mergeable -q .mergeable` should answer `MERGEABLE`. A
 `CONFLICTING` here means the base moved between the merge and the push: fetch again, merge again on
-step 4's terms, re-run the gates, and push again with `ARGO_SHIP=1 git push`.
+step 4's terms, re-run the gates, and push again with `git push`.
 
 ### The one conflict that stops the run
 
@@ -113,14 +113,8 @@ Each of these belongs in the PR body, and the ship continues past it.
 
 ## Then ship
 
-**Every push and every `gh pr create` below carries the `ARGO_SHIP=1` prefix, exactly as
-written.** A `PreToolUse` hook denies both commands to an agent, because pushing a work branch
-and opening a pull request are this skill's step and nothing in a hook's payload names the skill
-that is running (#1669). The prefix is how this skill says it is the one running. Drop it and the
-command is refused, with the reason quoting this rule back at you. Put it on nothing else.
-
 1. Commit what the steps above changed, with a message that states what changed and why.
-2. Push with `ARGO_SHIP=1 git push -u origin HEAD`. A rejection means the remote branch moved
+2. Push with `git push -u origin HEAD`. A rejection means the remote branch moved
    since the fetch — fetch again, merge again, re-run the gates, and push.
 3. **Run the PR title and body through the `simple-english` skill.** This holds for every PR,
    and it holds when the text already reads well. Draft the title and the body. Put both through
@@ -155,7 +149,7 @@ command is refused, with the reason quoting this rule back at you. Put it on not
    redirection into a file and is fine. Then one command, and nothing computed inside it:
 
    ```
-   ARGO_SHIP=1 gh pr create --base <base> --title "<title>" --body-file <path>
+   gh pr create --base <base> --title "<title>" --body-file <path>
    ```
 
    Ready for review, with `Closes #<N>` in the body and everything the section above told you to
@@ -196,7 +190,7 @@ command is refused, with the reason quoting this rule back at you. Put it on not
    `gh pr checks <url> --watch --interval 10`. Do not report the PR as shipped while a required
    check is pending. A failed repository check is work still on the branch: inspect its failed
    run with `gh run view <run-id> --log-failed`, fix the cause in the current worktree, commit,
-   run the project gate again, push with `ARGO_SHIP=1 git push`, and watch the new run. Repeat
+   run the project gate again, push with `git push`, and watch the new run. Repeat
    until the required checks pass.
 
    A GitHub outage, runner network failure, missing secret, or unavailable external service is

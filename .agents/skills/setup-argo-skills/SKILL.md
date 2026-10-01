@@ -15,9 +15,8 @@ say in the Phase 4 report which pass you could not run.
 
 ## Phase 1: install the skill bundle
 
-In this order, using the stock `skills` CLI and ordinary shell. Steps 5 and 6 read files out of
-the Argo repo itself, so fetch what they need with `curl` or a shallow clone when you reach
-them.
+In this order, using the stock `skills` CLI and ordinary shell. Step 5 reads files out of
+the Argo repo itself, so fetch what it needs with `curl` when you reach it.
 
 ### 1. Rescue the skills this repo already owns
 
@@ -117,44 +116,7 @@ Tell the user the filters do nothing until they run `rtk trust --yes`, once per 
 again after every edit. This is seeded on every install, not gated on the opt-in below, because
 an untrusted filter file changes no behaviour.
 
-### 6. Guardrail hooks, only when the user opts in
-
-The hooks reserve pushing a work branch and opening a PR to `/ship`, and nudge a session to keep
-a to-do list. Ask first and install nothing unless the answer is yes.
-
-Clone Argo shallowly, then copy these into the project's **git root**, keeping their paths.
-The git root, not the working directory: the projected commands resolve their scripts through
-`git rev-parse --show-toplevel`.
-
-| From the Argo clone | Why it is in the set |
-|---|---|
-| `hooks.json` | the neutral descriptor every projection is generated from |
-| `packages/argo-skills/skills/setup-argo-skills/hooks/` | every script the projected commands invoke, plus `worktree-gc.sh`, the manual worktree reaper; it is copied wholesale rather than picked over |
-
-The set is lockstep with `hooks.json`: a command added there whose script is missing here
-projects a hook pointing at nothing.
-
-**Then set the project's convention in `hooks.json` before projecting anything.** The hooks
-carry none of their own, and the defaults are deliberately quiet rather than Argo's:
-
-| key | what it does | leave unset when |
-|---|---|---|
-| `prOwnershipGuard.publishBranches` | branch prefixes, e.g. `design/`, that any agent may push without `/ship` | every branch the project pushes carries work |
-| `worktreeGc.artifactPaths` | glob patterns, relative to each worktree, that the manual `worktree-gc.sh --artifacts` sweep deletes | the project has no build output to sweep. Unset, that sweep finds nothing and says so, rather than reporting a clean zero |
-
-Read the project's own layout before filling these in. Copying Argo's values into a project that
-does not share them is the failure this table exists to prevent.
-
-Then project the descriptor per agent, from the project root:
-
-```sh
-node <argo-clone>/packages/argo-skills/bin/hooks-sync.mts
-```
-
-It regenerates `.claude/settings.json` and `.codex/hooks.json`. Those blocks are generated, so
-every later change goes into `hooks.json` and through this command again.
-
-### 7. Ignore the payload, unless the repo commits its skills
+### 6. Ignore the payload, unless the repo commits its skills
 
 The install writes about a megabyte of vendored payload plus a symlink farm per harness, none of
 it the consumer's work and none of it theirs to review. Left out of `.gitignore` it lands as a
@@ -187,7 +149,6 @@ grouped multi-select question with the recommendation marked:
 | Quality gates as errors, plus the one-page prose residue | `setup-quality-gates` | always | 1 |
 | Enable Codex native todo lists | this skill, below | Codex is installed | 2 |
 | Always-on task tracking | this skill, below | always | 3 |
-| Guardrail hooks | Phase 1, step 6 | the project ships through `/ship` | 4 |
 | Price and cut the agent docs | `audit-agent-docs` | always | last, since every step above adds to the bill |
 
 Done when the user has answered the one question.

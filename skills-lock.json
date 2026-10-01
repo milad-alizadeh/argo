@@ -125,7 +125,7 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/setup-argo-skills/SKILL.md",
-      "computedHash": "c5b622c35036537085f55ece821a95d7c171bc561c94c0205fb634450c6e4efe"
+      "computedHash": "01594067108f52f51b95acc4ce08279f38afde3d2743c22504520c6ea8629960"
     },
     "setup-matt-pocock-skills": {
       "source": "mattpocock/skills",
@@ -143,7 +143,7 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/ship/SKILL.md",
-      "computedHash": "c63a76ff23a3902c4631ed9135643bdcc2be58028879a4d3395a75a679c02a0b"
+      "computedHash": "5f38bc7bcff762c4424845b600998000042ce85d41bce4539b09dc54b4bbb212"
     },
     "simple-english": {
       "source": "AminBlg/SimpleEnglish",

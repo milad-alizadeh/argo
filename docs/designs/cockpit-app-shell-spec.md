@@ -111,8 +111,7 @@ ahead/behind on the primary tree is a useful ambient fact from anywhere.
   `git worktree list`, so it renders for **every** worktree-held branch and the checkout is
   always refused — git refuses it anyway, and predicting that is the only honest thing the menu
   can do. The `↗` is the part that is conditional: it appears only while a **live session** maps
-  to that worktree. A worktree that outlives its session — `worktree-gc` reaps only after the PR
-  merges — renders the **worktree path** in place of the link. This is the domain's existing
+  to that worktree. A worktree that outlives its session renders the **worktree path** in place of the link. This is the domain's existing
   DIRECT/DERIVED split showing through, not a new state word. Argo offers no `Remove worktree`:
   a worktree may hold uncommitted work, and Argo does not destroy git state it did not create.
 - **Manage menu** — **safe sync only** (`Fetch`, `Pull` when fast-forward, `Push` when ahead) +

@@ -502,22 +502,6 @@
         }
       }
     },
-    // RATCHET: over the function-length or complexity cap when the gates landed. Each needs
-    // extraction, none is a quick fix. Split the file, then delete its line here.
-    {
-      "includes": [
-        // Cross-CLI hook projection: one branchy function over the harness matrix.
-        "packages/argo-skills/bin/hooks-sync.mts"
-      ],
-      "linter": {
-        "rules": {
-          "complexity": {
-            "noExcessiveLinesPerFunction": "off",
-            "noExcessiveCognitiveComplexity": "off"
-          }
-        }
-      }
-    },
     // RATCHET: BasicFeed, FeedDocument and AnchoredFeed crossed the 50-line function cap, and
     // useScrollPositionSnapshot crossed the 3-param cap, when #e2e-real-cheap-models's scroll
     // and measurement-cache fixes landed on top of #2637's restructure. Each needs extraction
@@ -709,7 +693,7 @@
     },
     // KIND: repo tooling reads the ambient environment by design (CI vars, git env, TTY).
     {
-      "includes": ["scripts/**", "packages/argo-skills/skills/setup-argo-skills/hooks/**"],
+      "includes": ["scripts/**"],
       "linter": {
         "rules": {
           "suspicious": {

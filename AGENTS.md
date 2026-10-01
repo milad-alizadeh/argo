@@ -10,7 +10,6 @@ Argo contains the skills bundle and the Argo Desktop app in `apps/desktop`.
   `docs/agents/triage-labels.md`. Label an issue in its `gh issue create` call.
 - For domain terms, read `docs/agents/domain.md` and `CONTEXT.md`. Use the model's words.
 - For decisions, read the relevant `docs/adr/` files. Name any ADR your change contradicts.
-- Before editing hooks, read the `$comment` fields in `hooks.json`.
 - Before adding, removing, or renaming a skill, read `packages/argo-skills/README.md`.
 - Before writing agent instructions, load `/writing-for-agents`.
 - For issues, PR text, and other published prose for people, load `/simple-english`.
