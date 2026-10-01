@@ -1,6 +1,7 @@
 // Each Session case declares its state with `test.use` and launches against its own root (#2326).
 import type { TestInfo } from '@playwright/test'
 import type { BrowserContext, Page } from 'playwright-core'
+import type { AcpHarness } from '@/harnesses/acp/acp-agents'
 import { createMockSessionHarnessBackend } from '../../mocks/sessions/mock-session-harness-backend'
 import { packagedRun } from '../application-under-test'
 import { finishRecording, test as packagedTest, startRecording } from '../packaged-proof'
@@ -25,7 +26,9 @@ export type SessionOptions = {
   slowReply: boolean
   // Replays the mock Harness's seeded jitter, split bytes and failures.
   adversarialSeed: string | undefined
-  sessionSyncFixture: { records: unknown[]; delayMs: number } | undefined
+  sessionSyncFixture: { records: unknown[] } | undefined
+  // ACP agents the app reads as not installed.
+  uninstalledAcpAgents: readonly AcpHarness[]
 }
 
 export type SessionFixtures = SessionOptions & {
@@ -74,6 +77,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
   slowReply: [false, { option: true }],
   adversarialSeed: [undefined, { option: true }],
   sessionSyncFixture: [undefined, { option: true }],
+  uninstalledAcpAgents: [[], { option: true }],
   // Built per test, because a backend remembers the folders of the one root it started on.
   backend: async ({ sessionBackend }, use) => {
     await use(BACKENDS[sessionBackend]())
@@ -96,6 +100,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
       slowReply,
       adversarialSeed,
       sessionSyncFixture,
+      uninstalledAcpAgents,
       performanceProfile,
     },
     use,
@@ -106,7 +111,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
       root,
       fixture: sessionFixture,
       backend,
-      launch: { slowReply, adversarialSeed, sessionSyncFixture },
+      launch: { slowReply, adversarialSeed, sessionSyncFixture, uninstalledAcpAgents },
       launched: async (application, page) => {
         traced = await startRecording(performanceProfile, application, async () => page)
       },

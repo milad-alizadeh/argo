@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 import { spawn } from 'node:child_process'
 import { once } from 'node:events'
+import { existsSync } from 'node:fs'
 import { mkdir, mkdtemp, rm, stat } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -8,6 +9,7 @@ import { createInterface } from 'node:readline'
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
+  SESSION_MOCK_REPLY_HOLD_FILE_ENV,
 } from '@/harnesses/proof-protocol'
 import type {
   SessionFixture,
@@ -72,8 +74,8 @@ test('holds the reply back only when a case asks for a slow Harness', () =>
       ...(await signedInHarnessEnvironment(root)),
       [SESSION_MOCK_REPLY_DELAY_MS_ENV]: '0',
     })
-    const slow = run.launchEnv({ slowReply: true })[SESSION_MOCK_REPLY_DELAY_MS_ENV]
-    expect(Number(slow)).toBeGreaterThan(0)
+    const hold = run.launchEnv({ slowReply: true })[SESSION_MOCK_REPLY_HOLD_FILE_ENV]
+    expect(hold !== undefined && existsSync(hold)).toBe(true)
   }))
 
 test('passes an adversarial seed to both mock CLIs', () =>

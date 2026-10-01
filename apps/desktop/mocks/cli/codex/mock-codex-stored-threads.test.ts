@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { mockStartInput } from './mock-codex-channel.ts'
-import { clientBackedByMock, mockCodexExecutable, waitFor } from './mock-codex-driver.ts'
-import { openLiveSession } from './mock-codex-live-session.ts'
+import { clientBackedByMock, mockCodexExecutable } from './mock-codex-driver.ts'
+import { openLiveSession, waitFor } from './mock-codex-live-session.ts'
 import { recordedCall } from './recorded-codex-threads.ts'
 
 const identity = (value: unknown) => value
@@ -28,7 +28,7 @@ test('lists and reads a thread it started beside the recorded ones', async () =>
   const client = clientBackedByMock(await mockCodexExecutable())
   const session = openLiveSession(client, { ...mockStartInput, prompt: 'Remember this prompt.' })
   try {
-    await waitFor(() => session.has('turn.completed'), 'the Turn to complete')
+    await waitFor(() => session.has('turn.completed'))
     const threadId = session.nativeId()
     assert.ok(threadId)
     const listed = (await client.request('thread/list', {}, identity)) as {
