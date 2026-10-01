@@ -1,5 +1,5 @@
 import { stat } from 'node:fs/promises'
-import { and, eq, ne, notInArray, type SQL } from 'drizzle-orm'
+import { and, eq, lte, ne, notInArray, type SQL, sql } from 'drizzle-orm'
 import { sessionTable } from '@/database/session/schema'
 import { projectFeedRowEntries } from '@/domains/sessions/api/feed'
 import { type Harness, type HarnessSession, harnessSessionKey } from '@/harnesses/harness'
@@ -83,6 +83,8 @@ function shownStatus(tracked: TrackedSession, at: number): ExternalSessionStatus
 export class ExternalSessionPoll {
   readonly #context: ExternalSessionPollContext
   readonly #external: ReadonlyMap<Harness, ExternalSessions>
+  // The newest row before this run; an upsert keeps a row's rowid, and a new row gets a higher one.
+  readonly #lastEarlierRow: number
   // Each Harness's live Sessions at its last tick; absent before its first.
   readonly #live = new Map<Harness, Map<string, TrackedSession>>()
   // Sessions that left the list and wait for their last read, by Harness and native ID.
@@ -101,6 +103,11 @@ export class ExternalSessionPoll {
   constructor(context: ExternalSessionPollContext) {
     this.#context = context
     this.#external = new Map(context.harnesses.map(({ harness, external }) => [harness, external]))
+    this.#lastEarlierRow =
+      context.database
+        .select({ rowid: sql<number | null>`max(rowid)` })
+        .from(sessionTable)
+        .get()?.rowid ?? 0
   }
 
   start(): void {
@@ -334,11 +341,12 @@ export class ExternalSessionPoll {
     return this.#live.get(session.harness)?.get(session.nativeId)
   }
 
-  // The first tick closes every saved Session it does not find live, in one write. A live
-  // channel's own status outranks the stored one, so a Session Argo runs needs no exception.
+  // The first tick closes every Session an earlier run saved and it does not find live, in one
+  // write. A live channel's own status outranks the stored one, so a Session Argo runs needs none.
   #closeAll(harness: Harness, live: ReadonlyMap<string, TrackedSession>): void {
     const conditions: SQL[] = [eq(sessionTable.harness, harness), ne(sessionTable.status, 'idle')]
     if (live.size > 0) conditions.push(notInArray(sessionTable.nativeId, [...live.keys()]))
+    conditions.push(lte(sql`rowid`, this.#lastEarlierRow))
     const closed = this.#context.database
       .update(sessionTable)
       .set({ status: 'idle' })
