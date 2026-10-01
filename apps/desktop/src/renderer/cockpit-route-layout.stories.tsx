@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
-import { createMemoryRouter, RouterProvider } from 'react-router'
+import { createMemoryRouter, Navigate, RouterProvider } from 'react-router'
 import { expect, userEvent, within } from 'storybook/test'
 import type { HarnessReadinessState } from '@/domains/harness-signin/contract/contract'
 import { SessionList } from '@/domains/sessions/renderer/session-list/session-list'
 import type { Harness } from '@/harnesses/harness'
+import { QUERY_KEYS } from '@/platform/renderer/lib/query-client'
 import { CockpitRouteLayout } from './cockpit-router'
 
 function SectionScreen({ section }: { section: string }) {
@@ -15,12 +16,20 @@ function SectionScreen({ section }: { section: string }) {
 function CockpitRouteLayoutStory({
   projectScoped = false,
   noHarnessEntry = false,
+  launchReadiness,
 }: {
   projectScoped?: boolean
   noHarnessEntry?: boolean
+  // Opens at `/` with this readiness already read, as a launch whose readiness wins the race.
+  launchReadiness?: ReturnType<typeof readinessListed>
 }) {
-  const [queryClient] = useState(() => new QueryClient())
+  const [queryClient] = useState(() => {
+    const client = new QueryClient()
+    if (launchReadiness) client.setQueryData(QUERY_KEYS.harnessReadiness, launchReadiness.harnesses)
+    return client
+  })
   const initialEntry = (() => {
+    if (launchReadiness) return '/'
     if (noHarnessEntry) return projectScoped ? '/projects/storybook-project/tickets' : '/tickets'
     return projectScoped ? '/projects/storybook-project/sessions' : '/sessions'
   })()
@@ -30,6 +39,7 @@ function CockpitRouteLayoutStory({
         {
           element: <CockpitRouteLayout />,
           children: [
+            { index: true, element: <Navigate replace to="/sessions" /> },
             {
               path: projectScoped ? '/projects/:projectId/sessions' : '/sessions',
               handle: { sidebar: <SessionList /> },
@@ -200,6 +210,23 @@ export const NoHarnessReadySignInFailed: Story = {
     await canvas.findByText('Sign in to a Harness')
     await userEvent.click(canvas.getByRole('button', { name: 'Sign in' }))
     await expect(await canvas.findByText('The sign-in failed. Try again.')).toBeVisible()
+  },
+}
+
+const noHarnessInstalled = readinessListed([
+  { harness: 'claude', state: 'missing' },
+  { harness: 'codex', state: 'missing' },
+])
+
+// A launch whose readiness is read before its redirect lands still reaches Sessions: a gate on
+// `/` would stop the redirect there (#2996).
+export const LaunchWithNoHarnessReadyRedirects: Story = {
+  args: { launchReadiness: noHarnessInstalled },
+  beforeEach: () => mockHarnessTrpc({ harnessReadinessList: () => noHarnessInstalled }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByRole('heading', { name: 'Sessions screen' })).toBeVisible()
+    await expect(canvas.queryByText('Sign in to a Harness')).toBeNull()
   },
 }
 

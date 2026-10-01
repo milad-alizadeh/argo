@@ -3,6 +3,7 @@
 // proof swaps a mock `claude` and `codex` for the real ones.
 import type { Page } from 'playwright-core'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+import type { AcpHarness } from '@/harnesses/acp/acp-agents'
 
 // The disk state the harness prepares for every backend.
 export type SessionFixture = {
@@ -22,6 +23,8 @@ export type SessionHarnessLaunch = {
   adversarialSeed?: string
   // Recorded Claude SDK rows for the packaged Session-sync proof.
   sessionSyncFixture?: { records: unknown[]; delayMs: number }
+  // ACP agents this launch reads as not installed, whatever the backend provides.
+  uninstalledAcpAgents?: readonly AcpHarness[]
 }
 
 // The Turn a case is waiting on, named the way the case sent it.

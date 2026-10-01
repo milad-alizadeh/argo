@@ -371,10 +371,42 @@ test('one Session’s updates within the write window reach SQLite as one write'
   expect(announced).toEqual([[RUNNING]])
 })
 
-test('lock files that name no thread are counted and reported', async () => {
+test('lock files that name no thread are counted and reported once per count', async () => {
   const warn = quietWarnings()
   threads.stray('notes.txt')
   threads.stray('not-a-thread.lock')
   await tickAndWrite()
-  expect(warn).toHaveBeenCalledWith('Rejected 2 unrecognised codex live Session record(s).')
+  await tickAndWrite()
+  threads.stray('other.lock')
+  await tickAndWrite()
+  expect(warn.mock.calls).toEqual([
+    ['Rejected 2 unrecognised codex live Session record(s).'],
+    ['Rejected 3 unrecognised codex live Session record(s).'],
+  ])
+})
+
+test('Codex’s own coordination lock is not counted as a record', async () => {
+  const warn = quietWarnings()
+  threads.stray('.coordination.lock')
+  await threads.open(RUNNING)
+  await tickAndWrite()
+  expect(warn).not.toHaveBeenCalled()
+  expect(discovered).toEqual([RUNNING])
+})
+
+test('a locked thread with no rollout yet logs nothing and is read once it stores one', async () => {
+  const warn = quietWarnings()
+  saved(RUNNING, { status: 'idle' })
+  await threads.open(RUNNING, null)
+  await tickAndWrite()
+  await tickAndWrite()
+  expect(warn).not.toHaveBeenCalled()
+  expect((await row(RUNNING)).status).toBe('idle')
+  threads.append(RUNNING, 'session_meta\n')
+  await tickAndWrite()
+  threads.answer(RUNNING, 'running')
+  threads.append(RUNNING, 'x\n')
+  await tickAndWrite()
+  expect(threads.turnsReads).toEqual([RUNNING])
+  expect((await row(RUNNING)).status).toBe('running')
 })

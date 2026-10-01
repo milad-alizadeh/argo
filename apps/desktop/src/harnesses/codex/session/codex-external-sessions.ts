@@ -9,7 +9,7 @@ import type {
   ExternalSessions,
   LiveExternalSession,
 } from '@/harnesses/registration'
-import type { CodexRequest, ThreadItem } from '../app-server'
+import { type CodexRequest, isThreadNotLoaded, type ThreadItem } from '../app-server'
 import { codexCollabFacts, codexFeedContent } from './codex-feed'
 
 // A turns read that fails this soon after the rollout changed is a Turn still starting.
@@ -17,6 +17,8 @@ const CODEX_TURN_START_MS = 2_000
 
 // A Codex writer holds `<thread id>.lock` here while its thread is open.
 const LOCK_NAME = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.lock$/
+// Codex's own lock over the whole folder (`rollout/src/writer_lock.rs`), which names no thread.
+const COORDINATION_LOCK = '.coordination.lock'
 
 const threadPathSchema = z.looseObject({
   thread: z.looseObject({ id: z.string().min(1), path: z.string().min(1).nullable() }),
@@ -29,9 +31,6 @@ const turnSchema = z.looseObject({
 })
 const turnsPageSchema = z.looseObject({ data: z.array(turnSchema) })
 type Turn = z.infer<typeof turnSchema>
-
-const isNotLoaded = (error: unknown) =>
-  error instanceof Error && /thread not loaded/i.test(error.message)
 
 // A finished Turn is idle. An unfinished one is running while its writer holds the lock, and
 // unknown once the writer is gone, since a crash leaves it unfinished too.
@@ -68,7 +67,7 @@ async function readNewestTurn(
       (value) => value,
     )
   } catch (error) {
-    if (isNotLoaded(error))
+    if (isThreadNotLoaded(error))
       return { turn: [], status: lock === 'held' ? 'idle' : null, retry: false }
     if (Date.now() - changedAt < CODEX_TURN_START_MS)
       return { turn: [], status: 'running', retry: true }
@@ -81,6 +80,19 @@ async function readNewestTurn(
   }
   const turn = parsed.data.data.at(-1)
   return { turn: turnContent(turn), status: turnStatus(turn, lock), retry: false }
+}
+
+// The thread each lock file names, and a count of the names that are no lock Codex writes.
+function lockedThreadIds(names: readonly string[]) {
+  const nativeIds: string[] = []
+  let rejected = 0
+  for (const name of names) {
+    if (name === COORDINATION_LOCK) continue
+    const nativeId = LOCK_NAME.exec(name)?.[1]
+    if (nativeId === undefined) rejected += 1
+    else nativeIds.push(nativeId)
+  }
+  return { nativeIds, rejected }
 }
 
 // Sessions Codex runs outside Argo: each open thread's writer lock names it, and app-server
@@ -106,7 +118,8 @@ export function createCodexExternalSessions(
       rollouts.set(nativeId, thread.path)
       return thread.path
     } catch (error) {
-      // Asked again next tick: a thread that just started may not be stored yet.
+      // Asked again next tick: Codex answers `thread not loaded` until a new thread is stored.
+      if (isThreadNotLoaded(error)) return null
       console.warn('Could not read a Codex thread path:', error)
       return null
     }
@@ -122,13 +135,7 @@ export function createCodexExternalSessions(
       if (missing) return { sessions: [], rejected: 0 }
       throw error
     }
-    const nativeIds: string[] = []
-    let rejected = 0
-    for (const name of names) {
-      const nativeId = LOCK_NAME.exec(name)?.[1]
-      if (nativeId === undefined) rejected += 1
-      else nativeIds.push(nativeId)
-    }
+    const { nativeIds, rejected } = lockedThreadIds(names)
     const locks = await probeLocks(nativeIds.map(lockFile))
     const sessions: LiveExternalSession[] = []
     for (const nativeId of nativeIds)
