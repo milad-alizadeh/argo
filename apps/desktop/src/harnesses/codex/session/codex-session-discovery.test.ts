@@ -1,4 +1,7 @@
 import { expect, test } from 'bun:test'
+import externalThreads from '../../../../mocks/cli/codex/fixtures/external-threads-codex-0.157.0.json' with {
+  type: 'json',
+}
 import recordedResponses from '../../../../mocks/cli/codex/fixtures/session-sync-codex-0.157.0.json' with {
   type: 'json',
 }
@@ -201,4 +204,11 @@ test('skips a previously saved Session whose id Codex cannot parse, and syncs th
     return parse({ thread: { id: SAVED_ID, updatedAt: 2 } })
   }) as CodexRequest)({ knownNativeIds: ['proof-codex', SAVED_ID] })
   expect(result).toEqual({ records: [{ nativeId: SAVED_ID, activityAt: 2000 }], skipped: 0 })
+})
+
+test('gets null for a locked thread Codex has not stored yet, so discovery asks again', async () => {
+  const getSummary = createCodexSessionSummaryReader((async () => {
+    throw new Error(externalThreads.readNotLoaded.message)
+  }) as CodexRequest)
+  expect(await getSummary('01a0f5af-03d4-7891-87e5-bbbfd9058beb')).toBeNull()
 })

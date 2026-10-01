@@ -34,6 +34,7 @@ function useWorkInspector({
   feedSubagents: readonly FeedSubagent[]
 }) {
   const subagents = sessionScreenSubagents(feedSubagents, session?.subagents ?? [])
+  // #2970 fills the shell commands.
   const shell = session?.shell?.find((command) => command.id === work.shellId) ?? null
   const delegation = pickedSubagent(subagents, work)
   const delegationFeed = useDelegationFeed(
