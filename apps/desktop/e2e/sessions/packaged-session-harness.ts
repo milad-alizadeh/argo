@@ -8,7 +8,7 @@ import {
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
-import { launchCommand } from '../application-under-test'
+import { closeApplication, launchCommand } from '../application-under-test'
 import type {
   SessionFixture,
   SessionHarnessBackend,
@@ -42,12 +42,23 @@ function transcriptEnv(transcripts: SessionHarnessRun['transcripts']): Record<st
   }
 }
 
-function launchEnvironment(run: SessionHarnessRun, launch: SessionHarnessLaunch, project: string) {
+// While this file exists, the Claude sync fixture holds every read, so a case can see a sync running.
+export function sessionSyncHoldFile(root: string) {
+  return path.join(root, 'session-sync-hold')
+}
+
+function launchEnvironment(
+  run: SessionHarnessRun,
+  launch: SessionHarnessLaunch,
+  fixture: { root: string; project: string },
+) {
+  const { root, project } = fixture
   const syncFixture =
     launch.sessionSyncFixture === undefined
       ? undefined
       : {
           ...launch.sessionSyncFixture,
+          holdFile: sessionSyncHoldFile(root),
           records: launch.sessionSyncFixture.records.map((record) => {
             if (
               typeof record !== 'object' ||
@@ -106,7 +117,7 @@ export async function createPackagedSessionHarness(request: {
     application = await electron.launch({
       ...launchCommand(fixture.application),
       env: {
-        ...launchEnvironment(run, launch, fixture.project),
+        ...launchEnvironment(run, launch, { root, project: fixture.project }),
         [PROJECT_PROOF_STORE_ENV]: fixture.userData,
         [ACCEPTANCE_ENV]: '0',
       },
@@ -136,7 +147,7 @@ export async function createPackagedSessionHarness(request: {
     launch: open,
     restart: async (beforeOpen?: () => Promise<void>) => {
       await closing()
-      await application?.close()
+      await closeApplication(application)
       await beforeOpen?.()
       return open()
     },
@@ -145,7 +156,7 @@ export async function createPackagedSessionHarness(request: {
       if (page === undefined) throw new Error('The packaged app did not launch.')
       return page
     },
-    close: () => application?.close(),
+    close: () => closeApplication(application),
     isPackaged: () => application?.evaluate(({ app }) => app.isPackaged),
     recentConsole: () => recentConsole,
   }

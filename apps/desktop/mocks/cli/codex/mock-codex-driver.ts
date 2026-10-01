@@ -36,11 +36,3 @@ export function clientBackedByMock(executable: string) {
     resolveExecutable: async () => ({ executable, version: 'codex 0.147.0' }),
   })
 }
-
-export async function waitFor(check: () => boolean, label = 'the mock app-server') {
-  const deadline = Date.now() + 2_000
-  while (!check()) {
-    if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${label}`)
-    await new Promise((resolve) => setTimeout(resolve, 5))
-  }
-}

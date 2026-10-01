@@ -5,7 +5,7 @@ import { openDatabase } from '@/database/database'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { signedInHarnessEnvironment } from '../../mocks/cli/signed-in-harness'
-import { launchCommand } from '../application-under-test'
+import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 import { openRoute } from '../packaged-window'
 
@@ -140,6 +140,6 @@ test('packaged Feed replays ordered Claude live activity for a stored Session', 
       expect.stringContaining('README.md'),
     ])
   } finally {
-    await application.close()
+    await closeApplication(application)
   }
 })
