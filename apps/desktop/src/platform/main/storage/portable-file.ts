@@ -1,5 +1,5 @@
 // One JSON document under `<userData>/portable-v1`, read and replaced whole. Every store the
-// cockpit owns goes through here, so each gets the same atomic write and the same three failures.
+// app owns goes through here, so each gets the same atomic write and the same three failures.
 import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -8,7 +8,7 @@ import { isRecord } from '@/shared/validation'
 export type DocumentRead =
   | { ok: true; document: unknown }
   // `missing` is a fresh installation and `unreadable` is a real storage failure. A caller that
-  // has to tell an empty cockpit from a broken one needs both, so they are not one reason.
+  // has to tell an empty app from a broken one needs both, so they are not one reason.
   | { ok: false; reason: 'missing' | 'unreadable' | 'invalid' }
 
 export function portablePath(userData: string, name: string): string {

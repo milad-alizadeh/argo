@@ -1,6 +1,6 @@
-// Repeatable visual captures of the cockpit under test, one PNG per screen.
+// Repeatable visual captures of the app under test, one PNG per screen.
 //
-//   bun run capture:cockpit -- [output-dir]
+//   bun run capture:desktop -- [output-dir]
 //
 // It runs the app against isolated application data, so a capture never reads or writes
 // the real Project registry. The window is shown because Chromium throttles a hidden one and the
@@ -12,12 +12,12 @@ import process from 'node:process'
 import type { ElectronApplication, Page } from 'playwright-core'
 import { closeApplication } from '../../e2e/application-under-test'
 import { launch, prepare } from '../../e2e/projects/fixtures/project.fixture'
-import { type Screen, show, waitForScreen } from './cockpit-driver'
+import { type Screen, show, waitForScreen } from './desktop-driver'
 
 const VIEWPORT = { width: 1200, height: 800 }
 
 const outputDirectory = path.resolve(
-  process.argv[2] ?? path.join(process.cwd(), 'out', 'cockpit-captures'),
+  process.argv[2] ?? path.join(process.cwd(), 'out', 'desktop-captures'),
 )
 
 type Run = { application: ElectronApplication; page: Page }
@@ -71,7 +71,7 @@ async function session(fixture: { application: string; userData: string }, scree
 
 // Realpath: on macOS the temporary tree is reached through a symlink, and git resolves it, so
 // an unresolved fixture path would never equal the path the registry stores.
-const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'argo-cockpit-capture-')))
+const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'argo-app-capture-')))
 try {
   await mkdir(outputDirectory, { recursive: true })
   const fixture = await prepare(root)

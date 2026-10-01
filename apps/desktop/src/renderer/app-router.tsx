@@ -23,10 +23,10 @@ import { TicketsScreenView } from '@/domains/tickets/renderer/screens'
 import { TicketsSidebar } from '@/domains/tickets/renderer/sidebar'
 import { DESTINATION_PATHS, DESTINATIONS, navigateCommand } from '@/platform/contract/commands'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
+import { useCommands } from '@/platform/renderer/shell/hooks/use-commands'
 import { queryClient, trpc } from '@/platform/renderer/trpc-client'
 
-type CockpitRouteHandle = {
+type AppRouteHandle = {
   sidebar: ReactNode
 }
 
@@ -40,30 +40,30 @@ const sidebarByPage = {
 // or races that redirect, and the redirect then replaces any route set meanwhile (#2996).
 const LAUNCH_REDIRECTS = new Set(['/', '/projects'])
 
-function isCockpitRouteHandle(handle: unknown): handle is CockpitRouteHandle {
+function isAppRouteHandle(handle: unknown): handle is AppRouteHandle {
   return typeof handle === 'object' && handle !== null && 'sidebar' in handle
 }
 
-export function CockpitRouteLayout() {
-  const [cockpit] = useProjects()
+export function AppRouteLayout() {
+  const [projectState] = useProjects()
   const readiness = useHarnessReadiness()
   const location = useLocation()
   const matches = useMatches()
   useCommands((command) => {
     const destination = DESTINATIONS.find((item) => navigateCommand(item) === command)
     if (destination) {
-      const projectId = cockpit.project?.id
+      const projectId = projectState.project?.id
       window.location.hash = `/projects/${projectId ?? ''}${DESTINATION_PATHS[destination]}`
     }
   })
   const sidebar = matches.reduce<ReactNode | null>(
     (currentSidebar, match) =>
-      isCockpitRouteHandle(match.handle) ? match.handle.sidebar : currentSidebar,
+      isAppRouteHandle(match.handle) ? match.handle.sidebar : currentSidebar,
     null,
   )
-  const section = matches.find((match) => isCockpitRouteHandle(match.handle))
+  const section = matches.find((match) => isAppRouteHandle(match.handle))
 
-  if (cockpit.status === 'empty') return <EmptyProjectScreen />
+  if (projectState.status === 'empty') return <EmptyProjectScreen />
   // Saved Sessions remain readable without a Harness. Other surfaces keep the sign-in gate.
   const opensSavedSessions = location.pathname.includes('/sessions')
   if (
@@ -86,15 +86,15 @@ export function CockpitRouteLayout() {
   )
 }
 
-export const cockpitRoutes: RouteObject[] = [
+export const appRoutes: RouteObject[] = [
   {
-    element: <CockpitRouteLayout />,
+    element: <AppRouteLayout />,
     children: [
       { index: true, loader: () => replace('/projects'), HydrateFallback: EmptyOutlet },
       { path: '/projects', loader: firstProjectSessions, HydrateFallback: EmptyOutlet },
       {
         path: '/projects/:projectId/sessions',
-        handle: { sidebar: sidebarByPage.sessions } satisfies CockpitRouteHandle,
+        handle: { sidebar: sidebarByPage.sessions } satisfies AppRouteHandle,
         element: <SessionsPage />,
         children: [
           { index: true, element: <SessionScreenView /> },
@@ -103,7 +103,7 @@ export const cockpitRoutes: RouteObject[] = [
       },
       {
         path: '/projects/:projectId/tickets',
-        handle: { sidebar: sidebarByPage.tickets } satisfies CockpitRouteHandle,
+        handle: { sidebar: sidebarByPage.tickets } satisfies AppRouteHandle,
         element: <TicketsPage />,
         children: [
           { index: true, element: <TicketsScreenView /> },
@@ -112,14 +112,14 @@ export const cockpitRoutes: RouteObject[] = [
       },
       {
         path: '/projects/:projectId/atlas',
-        handle: { sidebar: sidebarByPage.atlas } satisfies CockpitRouteHandle,
+        handle: { sidebar: sidebarByPage.atlas } satisfies AppRouteHandle,
         element: <AtlasPage />,
       },
     ],
   },
 ]
 
-export const cockpitRouter = createHashRouter(cockpitRoutes)
+export const appRouter = createHashRouter(appRoutes)
 
 // A loader redirect yields to a newer navigation, such as a hash write during the launch.
 async function firstProjectSessions() {

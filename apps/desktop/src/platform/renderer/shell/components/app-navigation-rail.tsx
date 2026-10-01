@@ -31,8 +31,8 @@ function destinationFromPathname(pathname: string, projectPath: string): Destina
   )
 }
 
-export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
-  const { t } = useTranslation('cockpit')
+export const AppNavigationRail = memo(function AppNavigationRail() {
+  const { t } = useTranslation('app')
   const location = useLocation()
   const navigate = useNavigate()
   const projectPath = location.pathname.match(/^\/projects\/[^/]+(?=\/|$)/)?.[0] ?? ''

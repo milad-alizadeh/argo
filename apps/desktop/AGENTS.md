@@ -1,7 +1,13 @@
 # Desktop Rules
 
 What no linter checks about `apps/desktop`. The surfaces are
-[ADR-0038](../../docs/adr/0038-the-desktop-cockpit-is-opaque.md); the caps are `biome.jsonc`.
+[ADR-0038](../../docs/adr/0038-desktop-surfaces-are-opaque.md); the caps are `biome.jsonc`.
+
+## Naming
+
+Call the Electron application Argo Desktop. Name internal parts for their role, such as `AppShell`,
+`ProjectsState`, and `WorkspaceState`. Use `Cockpit` for historical references to the deprecated
+Swift app or earlier decisions.
 
 ## Session adapters
 

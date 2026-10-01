@@ -1,4 +1,4 @@
-// The Ticket proof's Linear cases: the same packaged cockpit reading a Linear team through a mock
+// The Ticket proof's Linear cases: the same packaged app reading a Linear team through a mock
 // Linear, beside a GitHub Account that no Linear failure may touch.
 import assert from 'node:assert/strict'
 import { expect, test } from '@playwright/test'

@@ -1,4 +1,4 @@
-// GitHub, as far as the cockpit calls it, on a fixed loopback origin, answered by Mock Service
+// GitHub, as far as the app calls it, on a fixed loopback origin, answered by Mock Service
 // Worker instead of a real socket. The provider is the one thing a test here does not control and
 // cannot afford live, so it is the one thing mockd; only this in-process suite drives it — the
 // packaged proof keeps its own real loopback server, since Mock Service Worker cannot reach a
@@ -62,7 +62,7 @@ export type MockGitHub = {
 // to it before any socket opens, so nothing needs to bind a free port.
 const MOCK_GITHUB_ORIGIN = 'http://127.0.0.1:41200'
 
-// The concrete request shapes the cockpit sends GitHub. Anything else on this origin is a call the
+// The concrete request shapes the app sends GitHub. Anything else on this origin is a call the
 // test never meant to stub, and Mock Service Worker aborts it by name rather than answer a quiet 404.
 const ROUTES = [
   'POST /login/device/code',

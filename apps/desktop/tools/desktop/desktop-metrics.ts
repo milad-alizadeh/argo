@@ -35,7 +35,7 @@ export function firstPaint(page: Page) {
   })
 }
 
-// One idle window of `requestAnimationFrame` deltas. An idle cockpit schedules no work of its own,
+// One idle window of `requestAnimationFrame` deltas. An idle app schedules no work of its own,
 // so what this reads is the cost of the compositor keeping the shell on screen.
 export function frameDeltas(page: Page) {
   return page.evaluate((duration) => {
