@@ -138,7 +138,10 @@ export function AccountsDialog({ connect }: { connect?: ReactNode }) {
   }, [connect, setOpen])
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="sm:max-w-md" finalFocus={returnFocus}>
+      <DialogContent
+        className="max-h-(--size-dialog-max-height) overflow-y-auto sm:max-w-md"
+        finalFocus={returnFocus}
+      >
         <DialogHeader>
           <DialogTitle>{t('dialog.title')}</DialogTitle>
           <DialogDescription>{t('dialog.description')}</DialogDescription>

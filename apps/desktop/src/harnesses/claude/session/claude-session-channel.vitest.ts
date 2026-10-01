@@ -377,3 +377,29 @@ test('streams system task updates, notices, and markers, and counts an unknown s
     'Rejected 1 unsupported Claude live shape(s).',
   ])
 })
+
+test('draws no Feed content and counts nothing for recorded hook and lifecycle frames', async () => {
+  vendor.prompts = []
+  vendor.releaseSecond = null
+  vendor.recordedEvents = readFileSync(
+    new URL(
+      '../../../../mocks/cli/claude/fixtures/claude-lifecycle-frames-2.1.286.jsonl',
+      import.meta.url,
+    ),
+    'utf8',
+  )
+    .trim()
+    .split('\n')
+    .map((line) => JSON.parse(line))
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  try {
+    const { channel, content } = await completedTurn()
+    expect(content.filter((entry) => entry.kind !== 'message')).toEqual([])
+    channel.close()
+    // The channel reports its rejected count after the vendor stream ends.
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(warn).not.toHaveBeenCalled()
+  } finally {
+    warn.mockRestore()
+  }
+})

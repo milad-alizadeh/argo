@@ -1,4 +1,4 @@
-// Development apps share the Project, Account, and Ticket connection state across worktrees.
+// Development apps share one Account store; Projects and Connections stay per worktree (#3006).
 import path from 'node:path'
 import { absolute, type DevelopmentInstance } from './instance'
 
@@ -11,16 +11,7 @@ export type DevelopmentStorePlacement = {
   instance: DevelopmentInstance | null
 }
 
-function sharedStoreDirectory(placement: DevelopmentStorePlacement): string {
+export function accountDataDirectory(placement: DevelopmentStorePlacement): string {
   const { userData, appData, instance } = placement
   return instance ? path.join(absolute(appData, 'appData'), DEVELOPMENT_SHARED_STORE) : userData
-}
-
-export function developmentStoreDirectories(placement: DevelopmentStorePlacement) {
-  const sharedData = sharedStoreDirectory(placement)
-  return {
-    accountData: sharedData,
-    connectionData: sharedData,
-    projectData: sharedData,
-  }
 }

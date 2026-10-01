@@ -118,6 +118,8 @@ export class ExternalSessionPoll {
   // Harnesses whose status hooks have fired, and those whose saved rows the first listing closed.
   readonly #firing = new Set<Harness>()
   readonly #closed = new Set<Harness>()
+  // Each Harness's last reported count of unrecognised live records, so a count is reported once.
+  readonly #rejected = new Map<Harness, number>()
   readonly #pending = new Map<string, { session: HarnessSession; update: SessionUpdate }>()
   readonly #reads = new Map<string, ReadState>()
   readonly #queue: HarnessSession[] = []
@@ -220,8 +222,7 @@ export class ExternalSessionPoll {
   async #tickHarness(harness: Harness, external: ExternalSessions): Promise<void> {
     const list = await external.listLive()
     if (this.#stopped) return
-    if (list.rejected > 0)
-      console.warn(`Rejected ${list.rejected} unrecognised ${harness} live Session record(s).`)
+    this.#reportRejected(harness, list.rejected)
     const previous = this.#live.get(harness)
     const current = new Map<string, TrackedSession>()
     this.#live.set(harness, current)
@@ -265,6 +266,12 @@ export class ExternalSessionPoll {
       tracked.listed = null
       this.#show({ harness, nativeId }, tracked, Date.now())
     }
+  }
+
+  #reportRejected(harness: Harness, rejected: number): void {
+    if (rejected > 0 && rejected !== this.#rejected.get(harness))
+      console.warn(`Rejected ${rejected} unrecognised ${harness} live Session record(s).`)
+    this.#rejected.set(harness, rejected)
   }
 
   // The same object across ticks, so a read that lands mid-tick is kept.
