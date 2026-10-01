@@ -31,6 +31,7 @@
     "measure:feed-history": "node tools/run-tool.mts tools/sessions/measure-feed-history.ts",
     "measure:session-list": "node tools/run-tool.mts tools/sessions/measure-session-list.ts",
     "measure:session-open": "node tools/run-tool.mts tools/sessions/open-session-cost.ts",
+    "recordings:sync": "node tools/recordings/generate-recording-imports.mts",
     "record:vendor-history": "node tools/run-tool.mts tools/sessions/record-vendor-history.ts",
     "desktop:manifest": "node scripts/desktop-manifest.mts",
     "desktop:verdict": "node scripts/write-release-verdict.mts",

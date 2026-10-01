@@ -18,8 +18,8 @@ import type { HarnessRegistration } from '@/harnesses/registration'
 import { createHarnessRegistry } from '@/harnesses/registry'
 import { answeringSkillsList } from '@/mocks/cli/codex/mock-codex-channel'
 import { insertWorkspace, migratedDatabase } from '@/mocks/database/migrated-database'
+import { codexModelCatalogFixture } from '@/mocks/recordings/codex-model-catalog'
 import { harnessCatalogMachine } from '@/platform/main/harness-catalog/harness-catalog-machine'
-import { codexModelCatalogFixture } from './codex-model-catalog.fixture'
 
 export const available = codexHarnessInfo(codexModelCatalogFixture())
 if (available.availability !== 'available') throw new Error('Codex fixture must be available.')

@@ -7,12 +7,14 @@ import {
   claudeSessionMessages,
   claudeSessions,
 } from '../../../e2e/sessions/real-harness/claude-vendor-reader.ts'
+import { CLAUDE_RECORDING_VERSION } from '../../recordings/claude-cli'
 import type { MockHarness } from '../mock-cli.ts'
 import { claudeConfigDirectory, MOCK_CLAUDE_TRANSCRIPTS_ENV } from './mock-claude-transcripts.ts'
-import { claudeRecording } from './recorded-claude-sessions.ts'
 
-// The CLI version the Claude recordings under fixtures/ came from.
-export const MOCK_CLAUDE_VERSION = claudeRecording.version
+// The version comes from the directory that owns the Claude recordings.
+export const MOCK_CLAUDE_VERSION = CLAUDE_RECORDING_VERSION
+export const MOCK_CLAUDE_HELP =
+  '  --permission-mode <mode> Permission mode to use for the session (choices: "acceptEdits", "auto", "bypassPermissions", "manual", "dontAsk", "plan")'
 
 // A run always starts in `apps/desktop`; `import.meta` is unavailable once Playwright loads this as CommonJS.
 const MOCK_CLAUDE = path.join(process.cwd(), 'mocks', 'cli', 'claude', 'mock-claude.ts')
@@ -24,7 +26,16 @@ export async function writeMockClaude(root: string, transcripts: string) {
   const executable = path.join(root, 'claude')
   await writeFile(
     executable,
-    `#!/bin/sh\nexport ${MOCK_CLAUDE_TRANSCRIPTS_ENV}="${transcripts}"\nexec "${process.execPath}" --no-warnings --import "${ALIAS_HOOKS}" "${MOCK_CLAUDE}" "${transcripts}" "$@"\n`,
+    [
+      '#!/bin/sh',
+      'case "$1" in',
+      `  --version) printf '%s\\n' '${MOCK_CLAUDE_VERSION} (Claude Code)'; exit 0 ;;`,
+      `  --help) printf '%s\\n' '${MOCK_CLAUDE_HELP}'; exit 0 ;;`,
+      'esac',
+      `export ${MOCK_CLAUDE_TRANSCRIPTS_ENV}="${transcripts}"`,
+      `exec "${process.execPath}" --no-warnings --import "${ALIAS_HOOKS}" "${MOCK_CLAUDE}" "${transcripts}" "$@"`,
+      '',
+    ].join('\n'),
   )
   await chmod(executable, 0o755)
   return executable

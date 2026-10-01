@@ -7,8 +7,8 @@ import { ACP_HARNESSES } from '@/harnesses/acp/acp-agents'
 import { claudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
+import { codexModelCatalogFixture } from '@/mocks/recordings/codex-model-catalog'
 import { claudeModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
-import { codexModelCatalogFixture } from '@/mocks/sessions/codex-model-catalog.fixture'
 import { assertModeledTransitions } from '../test-doubles/xstate-model-transitions'
 import { harnessCatalogMachine } from './harness-catalog-machine'
 
@@ -30,9 +30,22 @@ test('publishes a serializable catalog with Model-specific Efforts and defaults'
   expect(parsed.harnesses[1]).toMatchObject({
     harness: 'codex',
     availability: 'available',
-    defaultModelId: 'gpt-live',
-    models: [{ value: 'gpt-live', defaultEffort: 'focused', efforts: ['focused'] }],
+    defaultModelId: 'gpt-6-astra',
   })
+  expect(parsed.harnesses[1].models[0]).toMatchObject({
+    value: 'gpt-6-astra',
+    defaultEffort: 'medium',
+    efforts: ['low', 'medium', 'high', 'xhigh', 'max', 'ultra'],
+  })
+  expect(parsed.harnesses[1].models.map(({ value }: { value: string }) => value)).toEqual([
+    'gpt-6-astra',
+    'gpt-6-sol',
+    'gpt-6-luna',
+    'gpt-5.6-sol',
+    'gpt-5.6-terra',
+    'gpt-5.6-luna',
+    'gpt-5.5',
+  ])
 })
 
 test('keeps an available Harness visible when the other catalog is unavailable', () => {

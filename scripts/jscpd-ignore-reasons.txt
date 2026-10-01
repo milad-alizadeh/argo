@@ -27,6 +27,6 @@
   **/skills/**/templates/**
     KIND: a skill payload template and the copy it installs are the same file
     by design. Deduplicating them would break the payload.
-  apps/desktop/mocks/cli/*/recordings/**
+  apps/desktop/mocks/recordings/*/*/**
     KIND: vendor answers written by `bun run record:vendor-history`. Repeated
     shapes are what the vendor sent; nobody edits them by hand.
