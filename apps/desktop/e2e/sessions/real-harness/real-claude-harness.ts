@@ -1,6 +1,20 @@
 import path from 'node:path'
-import { assistantAfterPrompt } from './real-session-transcript'
-import { TRANSCRIPT_CONTENT } from './transcript-history'
+import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
+import { decodeClaudeSessionMessages } from '@/harnesses/claude/session/claude-session-history'
+import { claudeSessionMessages, claudeSessions } from './claude-vendor-reader'
+import type { VendorHistoryReader } from './vendor-reply'
+
+function openClaudeVendorReader(home: string): VendorHistoryReader<SessionMessage[]> {
+  const configDirectory = path.join(home, '.claude')
+  const records = (sessionId: string) => claudeSessionMessages(configDirectory, sessionId)
+  return {
+    sessionIds: async () =>
+      (await claudeSessions(configDirectory)).map((session) => session.sessionId),
+    records,
+    content: async (sessionId) => decodeClaudeSessionMessages(await records(sessionId)),
+    close: () => {},
+  }
+}
 
 export const realClaudeCli = {
   authentication: ['auth', 'status'],
@@ -9,6 +23,5 @@ export const realClaudeCli = {
   linked: [['Library', 'Keychains']],
   label: 'Claude',
   transcripts: (home: string) => path.join(home, '.claude', 'projects'),
-  replyAfterPrompt: (folder: string, prompt: string) =>
-    assistantAfterPrompt(folder, prompt, TRANSCRIPT_CONTENT.claude),
+  openReader: async (home: string, _executable: string) => openClaudeVendorReader(home),
 }

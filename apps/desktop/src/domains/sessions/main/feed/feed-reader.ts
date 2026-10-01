@@ -14,7 +14,11 @@ import {
   retainLiveEvent,
   subagentCompletionRows,
 } from '@/domains/sessions/api/feed'
-import type { FeedContent, PlanProgress } from '@/domains/sessions/api/feed-content'
+import {
+  type FeedContent,
+  feedContentSchema,
+  type PlanProgress,
+} from '@/domains/sessions/api/feed-content'
 import type { SessionError } from '@/domains/sessions/api/session-error'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
@@ -32,7 +36,12 @@ export type SessionFeedReaderContext = {
   database: Database
   journal: SessionEventJournal
   hasLiveChannel: (sessionId: string) => boolean
-  readHistory: (harness: Harness, target: SessionHistoryTarget) => Promise<FeedContent[]>
+  // The signal takes a read still waiting for a slot back when its Feed closes.
+  readHistory: (
+    harness: Harness,
+    target: SessionHistoryTarget,
+    signal: AbortSignal,
+  ) => Promise<FeedContent[]>
   // Carries each reading's activity to the Session List, and any write that moved the history.
   changes: SessionListChanges
 }
@@ -54,15 +63,22 @@ function isStreamedText(event: SessionLiveEvent): boolean {
   return content.kind === 'reasoning' || (content.kind === 'message' && content.role !== 'user')
 }
 
-// The newest Plan's step count; a live event is newer than any history.
-function planProgress(
+// A Plan's step count, when the Feed accepts the Plan.
+function acceptedPlanProgress(content: FeedContent): PlanProgress | undefined {
+  if (content.kind !== 'plan') return undefined
+  const parsed = feedContentSchema.safeParse(content)
+  return parsed.success && parsed.data.kind === 'plan' ? parsed.data.progress : undefined
+}
+
+// The newest accepted Plan's step count; a live event is newer than any history.
+function newestPlanProgress(
   history: readonly FeedContent[],
   events: readonly SessionLiveEvent[],
 ): PlanProgress | null {
-  const live = events.flatMap((event) => (event.type === 'content' ? [event.content] : []))
-  for (const content of [...history, ...live].reverse())
-    if (content.kind === 'plan' && content.progress !== undefined) return content.progress
-  return null
+  const counted = (content: FeedContent) => acceptedPlanProgress(content) !== undefined
+  const live = events.findLast((event) => event.type === 'content' && counted(event.content))
+  const newest = live?.type === 'content' ? live.content : history.findLast(counted)
+  return (newest && acceptedPlanProgress(newest)) ?? null
 }
 
 // Without a live channel, only what vendor history can also settle reaches the Feed.
@@ -126,7 +142,9 @@ class FeedReader {
   #completion: SessionFeedRow[] = []
   #state: ReadState = 'loading'
   #error: SessionError | null = null
-  #read = 0
+  #inFlight = false
+  #followUp = false
+  readonly #abort = new AbortController()
   #stopped = false
   #reading: FeedReading | null = null
   #textTimer: ReturnType<typeof setTimeout> | null = null
@@ -166,26 +184,38 @@ class FeedReader {
     return this.#observers.size > 0
   }
 
-  // Every call starts a real read; a later read's answer replaces an earlier one's.
+  // One read at a time; a call during it asks for one more read once it ends.
   refresh(): void {
-    const read = ++this.#read
     this.#readKey = historyKey(storedHistory(this.#context.database, this.#chain.sessionId))
+    if (this.#inFlight) this.#followUp = true
+    else this.#startRead()
+  }
+
+  #startRead(): void {
+    this.#inFlight = true
+    this.#followUp = false
     if (this.#state !== 'ready') this.#settle('loading', this.#error)
     void this.#readHistory().then(
-      (content) => {
-        if (this.#stopped || read !== this.#read) return
-        this.#history = content
-        this.#settle('ready', null)
-      },
-      (error: unknown) => {
-        if (this.#stopped || read !== this.#read) return
-        this.#settle('failed', readFailure(error))
-      },
+      (content) =>
+        this.#endRead(() => {
+          this.#history = content
+          this.#settle('ready', null)
+        }),
+      (error: unknown) => this.#endRead(() => this.#settle('failed', readFailure(error))),
     )
+  }
+
+  // A result that lands after the Feed closed is dropped.
+  #endRead(settle: () => void): void {
+    this.#inFlight = false
+    if (this.#stopped) return
+    settle()
+    if (this.#followUp) this.#startRead()
   }
 
   stop(): void {
     this.#stopped = true
+    this.#abort.abort()
     for (const stop of this.#stops.splice(0)) stop()
     this.#cancelText()
     this.#observers.clear()
@@ -212,7 +242,7 @@ class FeedReader {
 
   async #readHistory(): Promise<FeedContent[]> {
     const stored = sessionHistoryIdentity(this.#context.database, this.#chain.sessionId)
-    return this.#context.readHistory(stored.harness, this.#target(stored))
+    return this.#context.readHistory(stored.harness, this.#target(stored), this.#abort.signal)
   }
 
   #retain(event: SessionLiveEvent, live: boolean): void {
@@ -280,9 +310,12 @@ class FeedReader {
     this.#reading = reading
     // Keeps the activity and Plan progress for the Session List after this reader closes. A
     // reading with no Plan keeps the stored count, since a vendor history may hold none.
-    const plan = planProgress(this.#history, events)
+    const planProgress = newestPlanProgress(this.#history, events)
     if (subagentId === null)
-      updateSession(this.#context, sessionId, { activity, ...(plan === null ? {} : { plan }) })
+      updateSession(this.#context, sessionId, {
+        activity,
+        ...(planProgress === null ? {} : { planProgress }),
+      })
     for (const observer of this.#observers) observer(reading)
   }
 }

@@ -6,7 +6,7 @@ import { sessionTable } from '@/database/session/schema'
 import { sessionArchive } from '@/database/session-archive/schema'
 import { nextUpdatedAt } from '@/database/timestamp-columns'
 import type { LiveActivity } from '@/domains/sessions/api/feed'
-import type { FeedContent, PlanProgress } from '@/domains/sessions/api/feed-content'
+import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { WORKING_SESSION_STATUSES } from '@/domains/sessions/api/session-live-event'
 import type { Harness, HarnessSession } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
@@ -16,19 +16,34 @@ import type { SessionListChanges } from './session-list-changes'
 
 type StoredUpdate = Pick<
   typeof sessionTable.$inferInsert,
-  'customTitle' | 'status' | 'activityAt' | 'model' | 'effort' | 'mode'
+  'customTitle' | 'status' | 'activityAt' | 'turnConfiguration' | 'planProgress'
 >
 export type SessionUpdate = {
   [Column in keyof StoredUpdate]?: NonNullable<StoredUpdate[Column]>
 } & {
   archived?: boolean
   activity?: LiveActivity | null
-  plan?: PlanProgress
   // Delegation content naming the Session's Subagents.
   subagents?: readonly FeedContent[]
 }
 
 export type SessionUpdateContext = { database: Database; changes: SessionListChanges }
+
+// Rebuilt in one key order, so the stored JSON compares equal to an unchanged report.
+function reportedColumns({ turnConfiguration, planProgress }: SessionUpdate) {
+  return {
+    ...(turnConfiguration && {
+      turnConfiguration: {
+        model: turnConfiguration.model,
+        effort: turnConfiguration.effort,
+        mode: turnConfiguration.mode,
+      },
+    }),
+    ...(planProgress && {
+      planProgress: { completed: planProgress.completed, total: planProgress.total },
+    }),
+  }
+}
 
 // The columns an update sets, and for each the condition that it would change the stored value.
 function sessionColumns(update: SessionUpdate) {
@@ -41,20 +56,13 @@ function sessionColumns(update: SessionUpdate) {
   if (update.status !== undefined) differs.push(sql`${sessionTable.status} is not ${update.status}`)
   if (update.activityAt !== undefined)
     differs.push(sql`coalesce(${sessionTable.activityAt}, 0) < ${update.activityAt}`)
-  const reported = {
-    model: update.model,
-    effort: update.effort,
-    mode: update.mode,
-    planCompleted: update.plan?.completed,
-    planTotal: update.plan?.total,
-  }
-  const reportedColumns = Object.fromEntries(
-    Object.entries(reported).filter(([, value]) => value !== undefined),
-  )
-  for (const [column, value] of Object.entries(reportedColumns))
-    differs.push(sql`${sessionTable[column as keyof typeof reported]} is not ${value}`)
+  const reported = reportedColumns(update)
+  for (const [column, value] of Object.entries(reported))
+    differs.push(
+      sql`${sessionTable[column as keyof typeof reported]} is not ${JSON.stringify(value)}`,
+    )
   const columns = {
-    ...reportedColumns,
+    ...reported,
     ...(update.customTitle === undefined
       ? {}
       : { customTitle: update.customTitle, updatedAt: nextUpdatedAt(sessionTable.updatedAt) }),

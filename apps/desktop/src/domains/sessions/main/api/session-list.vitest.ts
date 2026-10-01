@@ -353,8 +353,16 @@ test('a live channel’s Model, Effort and Mode outrank the stored ones, and sta
   const { database, details, statusChanged, stopWatching } = sessionListCaller({ sessions })
   const live = { model: 'claude-sonnet', effort: 'high', mode: 'default' }
   try {
-    insertSession(database, { id: IDS[0], nativeId: 'native-1', effort: 'low' })
-    insertSession(database, { id: IDS[1], nativeId: 'native-2', model: 'opus', effort: 'low' })
+    insertSession(database, {
+      id: IDS[0],
+      nativeId: 'native-1',
+      turnConfiguration: { model: null, effort: 'low', mode: null },
+    })
+    insertSession(database, {
+      id: IDS[1],
+      nativeId: 'native-2',
+      turnConfiguration: { model: 'opus', effort: 'low', mode: null },
+    })
 
     assert.deepEqual((await details({ sessionId: IDS[0] }))?.turnConfiguration, live)
     assert.deepEqual((await details({ sessionId: IDS[1] }))?.turnConfiguration, {
@@ -436,3 +444,29 @@ test('reads an archived Session by ID and says it is archived, and nothing for a
     database.$client.close()
   }
 })
+
+for (const harness of ['claude', 'codex'] as const)
+  test(`the list and the detail read return a linked ${harness} Session's Ticket, and none unlinked`, async () => {
+    const { database, list, details } = sessionListCaller()
+    try {
+      insertSession(database, { id: IDS[0], harness, nativeId: 'linked', createdAt: 20 })
+      insertSession(database, { id: IDS[1], harness, nativeId: 'unlinked', createdAt: 10 })
+      insertTicketLink(database, { sessionId: IDS[0], key: '#2973', title: 'Join the Ticket' })
+
+      const { rows } = await list({ projectId: 'project-1' })
+      const linked = await details({ sessionId: IDS[0] })
+      const unlinked = await details({ sessionId: IDS[1] })
+
+      assert.deepEqual(
+        rows.map(({ id, ticket }) => [id, ticket?.key ?? null, ticket?.title ?? null]),
+        [
+          [IDS[0], '#2973', 'Join the Ticket'],
+          [IDS[1], null, null],
+        ],
+      )
+      assert.deepEqual([linked?.ticket?.key, linked?.ticket?.title], ['#2973', 'Join the Ticket'])
+      assert.equal(unlinked?.ticket, null)
+    } finally {
+      database.$client.close()
+    }
+  })

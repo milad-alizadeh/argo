@@ -29,30 +29,20 @@ export type AccountAccess = {
 export function createAccountAccess(options: {
   userData: string
   accountData: string
-  connectionData?: string
   endpoints: ProviderEndpoints
   providers: AccountProviders
   cipher: Cipher
   openExternal: (url: string) => Promise<void>
   database?: Database
 }): AccountAccess {
-  const {
-    userData,
-    accountData,
-    connectionData,
-    endpoints,
-    providers,
-    cipher,
-    openExternal,
-    database,
-  } = options
+  const { userData, accountData, endpoints, providers, cipher, openExternal, database } = options
   return {
     endpoints,
     providers,
     grants: createGrantStore(portablePath(accountData, 'grants.json'), cipher),
     paths: {
       accounts: portablePath(accountData, 'accounts.json'),
-      connections: portablePath(connectionData ?? userData, 'connections.json'),
+      connections: portablePath(userData, 'connections.json'),
     },
     database: database ?? null,
     exclusive: createWriteQueue(),

@@ -88,7 +88,10 @@ test('stores Model, Effort, Mode and Plan progress, reads them back, and announc
   const written = { model: 'opus', effort: 'high', mode: 'plan' }
   try {
     assert.equal(
-      updateSession(context, IDS[0], { ...written, plan: { completed: 1, total: 3 } }),
+      updateSession(context, IDS[0], {
+        turnConfiguration: written,
+        planProgress: { completed: 1, total: 3 },
+      }),
       true,
     )
     await settled()
@@ -97,11 +100,14 @@ test('stores Model, Effort, Mode and Plan progress, reads them back, and announc
     assert.deepEqual(row?.turnConfiguration, written)
     assert.deepEqual(row?.planProgress, { completed: 1, total: 3 })
 
-    updateSession(context, IDS[0], { ...written, plan: { completed: 1, total: 3 } })
+    updateSession(context, IDS[0], {
+      turnConfiguration: written,
+      planProgress: { completed: 1, total: 3 },
+    })
     await settled()
     assert.deepEqual(announced, [[IDS[0]]])
 
-    updateSession(context, IDS[0], { plan: { completed: 2, total: 3 } })
+    updateSession(context, IDS[0], { planProgress: { completed: 2, total: 3 } })
     await settled()
     assert.deepEqual(announced, [[IDS[0]], [IDS[0]]])
     assert.deepEqual((await details({ sessionId: IDS[0] }))?.planProgress, {

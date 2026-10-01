@@ -1,8 +1,16 @@
 import { expect, test } from 'bun:test'
+import externalThreads from '../../../../mocks/cli/codex/fixtures/external-threads-codex-0.157.0.json' with {
+  type: 'json',
+}
 import recordedResponses from '../../../../mocks/cli/codex/fixtures/session-sync-codex-0.157.0.json' with {
   type: 'json',
 }
-import type { CodexRequest, Thread, ThreadListResponse } from '../app-server'
+import {
+  type CodexRequest,
+  CodexUnavailableError,
+  type Thread,
+  type ThreadListResponse,
+} from '../app-server'
 import {
   createCodexSessionSummaryList,
   createCodexSessionSummaryReader,
@@ -139,6 +147,13 @@ test('fails a Codex scan when the page envelope is malformed', async () => {
   ).rejects.toThrow()
 })
 
+test('lists no Sessions, rather than failing the scan, on a machine without Codex', async () => {
+  const result = await createCodexSessionSummaryList((async () => {
+    throw new CodexUnavailableError()
+  }) as CodexRequest)({ knownNativeIds: ['previously-saved'] })
+  expect(result).toEqual({ records: [], skipped: 0 })
+})
+
 test('propagates a failed read for a known Session so Session sync can retry', async () => {
   await expect(
     createCodexSessionSummaryList((async (method: string, _params, _parse) => {
@@ -199,7 +214,32 @@ test('reads the Model and Effort a thread records, and leaves out what it record
       nextCursor: null,
     })) as CodexRequest)({ knownNativeIds: [] })
   expect(result.records).toEqual([
-    { nativeId: 'configured', activityAt: 1000, model: 'gpt-5.5', effort: 'high' },
+    {
+      nativeId: 'configured',
+      activityAt: 1000,
+      turnConfiguration: { model: 'gpt-5.5', effort: 'high', mode: null },
+    },
     { nativeId: 'unconfigured', activityAt: 1000 },
   ])
+})
+
+// The error Codex 0.157.0 answers thread/read with for an id that is not a UUID.
+const INVALID_THREAD_ID_MESSAGE =
+  'invalid thread id: invalid character: expected an optional prefix of `urn:uuid:` followed by [0-9a-fA-F-], found `p` at 1'
+
+test('skips a previously saved Session whose id Codex cannot parse, and syncs the rest', async () => {
+  const result = await createCodexSessionSummaryList((async (method: string, params, parse) => {
+    if (method === 'thread/list') return parse({ data: [], nextCursor: null })
+    if ((params as { threadId: string }).threadId === 'proof-codex')
+      throw new Error(INVALID_THREAD_ID_MESSAGE)
+    return parse({ thread: { id: SAVED_ID, updatedAt: 2 } })
+  }) as CodexRequest)({ knownNativeIds: ['proof-codex', SAVED_ID] })
+  expect(result).toEqual({ records: [{ nativeId: SAVED_ID, activityAt: 2000 }], skipped: 0 })
+})
+
+test('gets null for a locked thread Codex has not stored yet, so discovery asks again', async () => {
+  const getSummary = createCodexSessionSummaryReader((async () => {
+    throw new Error(externalThreads.readNotLoaded.message)
+  }) as CodexRequest)
+  expect(await getSummary('01a0f5af-03d4-7891-87e5-bbbfd9058beb')).toBeNull()
 })

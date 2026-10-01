@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync, watch } from 'node:fs'
+import { MOCK_CLAUDE_VERSION } from './mock-claude-cli.ts'
 
 // The command list the CLI reports, from the JSON file this names, shaped like
 // fixtures/supported-commands-claude-2.1.286.json. A rewrite of it pushes `commands_changed`.
@@ -129,6 +130,7 @@ export function startMockClaudeSdkStream(
       user: typeof input.uuid === 'string' ? input.uuid : randomUUID(),
       reply: randomUUID(),
     }
+    writeCommandLifecycle(sessionId, ids.user)
     const streamed = text.includes(STREAM_PROBE) ? writeStream(sessionId, ids.reply) : null
     void Promise.all([reply(text, waitForPermission, ids), streamed]).then(([response]) =>
       setTimeout(() => writeReply(sessionId, response, ids.reply), INITIALIZATION_DELAY_MS),
@@ -214,13 +216,44 @@ function writeStream(sessionId: string, messageId: string): Promise<void> {
   })
 }
 
+// Frames the real CLI 2.1.286 sends around a Turn (fixtures/claude-lifecycle-frames-2.1.286.jsonl).
+function writeFrame(frame: Record<string, unknown>) {
+  process.stdout.write(`${JSON.stringify({ ...frame, uuid: randomUUID() })}\n`)
+}
+
+function writeSessionStartHook(sessionId: string) {
+  const hook = {
+    type: 'system',
+    hook_id: randomUUID(),
+    hook_name: 'SessionStart:startup',
+    hook_event: 'SessionStart',
+    session_id: sessionId,
+  }
+  writeFrame({ ...hook, subtype: 'hook_started' })
+  writeFrame({
+    ...hook,
+    subtype: 'hook_response',
+    output: '',
+    stdout: '',
+    stderr: '',
+    exit_code: 0,
+    outcome: 'success',
+  })
+}
+
+function writeCommandLifecycle(sessionId: string, commandId: string) {
+  for (const state of ['queued', 'started'])
+    writeFrame({ type: 'command_lifecycle', command_uuid: commandId, state, session_id: sessionId })
+}
+
 function writeInitialization(sessionId: string) {
+  writeSessionStartHook(sessionId)
   process.stdout.write(
     `${JSON.stringify({
       type: 'system',
       subtype: 'init',
       apiKeySource: 'none',
-      claude_code_version: '2.1.0',
+      claude_code_version: MOCK_CLAUDE_VERSION,
       cwd: process.cwd(),
       tools: [],
       mcp_servers: [],
@@ -264,6 +297,15 @@ function writeReply(sessionId: string, response: string, messageId: string) {
   process.stdout.write(
     `${JSON.stringify({ type: 'assistant', session_id: sessionId, uuid: randomUUID(), parent_tool_use_id: null, message: { id: messageId, type: 'message', role: 'assistant', model: 'claude-opus-4-6', content: [{ type: 'text', text: response }], stop_reason: 'end_turn', stop_sequence: null, usage: { input_tokens: 0, output_tokens: 0 } } })}\n`,
   )
+  writeFrame({
+    type: 'system',
+    subtype: 'post_turn_summary',
+    summarizes_uuid: messageId,
+    status_category: 'completed',
+    status_detail: response,
+    needs_action: '',
+    session_id: sessionId,
+  })
   process.stdout.write(
     `${JSON.stringify({ type: 'result', subtype: 'success', duration_ms: 0, duration_api_ms: 0, is_error: false, num_turns: 1, result: response, stop_reason: 'end_turn', total_cost_usd: 0, usage: { input_tokens: 0, output_tokens: 0 }, modelUsage: {}, permission_denials: [], session_id: sessionId, uuid: randomUUID() })}\n`,
   )

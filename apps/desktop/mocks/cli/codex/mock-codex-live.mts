@@ -1,6 +1,4 @@
-import { Database } from 'bun:sqlite'
 import { readFileSync, writeFileSync } from 'node:fs'
-import path from 'node:path'
 import { createInterface } from 'node:readline'
 import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
@@ -50,21 +48,13 @@ const REPLY_DELAY_MS = readMockReplyDelayMs()
 const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
 let turnIndex = 0
 
-// Codex Desktop names a thread in the state store beside `sessions/`, which `thread/list` reads.
+// Another Codex client renames a thread in the shared store, so a list re-reads names from it.
 function storedNames(): Map<string, string> {
-  const home = process.env.CODEX_HOME
-  if (home === undefined) return new Map()
-  let store: Database | null = null
   try {
-    store = new Database(path.join(home, 'state_5.sqlite'), { readonly: true })
-    const rows = store
-      .query("SELECT id, name FROM threads WHERE trim(coalesce(name, '')) != ''")
-      .all() as { id: string; name: string }[]
-    return new Map(rows.map((row) => [row.id, row.name.trim()]))
+    const stored = JSON.parse(readFileSync(statePath, 'utf8')) as Thread[]
+    return new Map(stored.flatMap((thread) => (thread.name ? [[thread.id, thread.name]] : [])))
   } catch {
     return new Map()
-  } finally {
-    store?.close()
   }
 }
 

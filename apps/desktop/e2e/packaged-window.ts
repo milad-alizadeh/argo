@@ -24,14 +24,8 @@ export async function openHiddenWindow(
   return page
 }
 
-// The launch redirects `/` to a Project's Sessions, and a hash set before that lands is replaced.
-// A launch with no ready Harness can stop at the sign-in gate instead, which never redirects.
+// A route set at any point of the launch is kept: the launch's own redirect yields to it.
 export async function openRoute(page: Page, route: string) {
-  await page.waitForFunction(
-    () =>
-      /^#\/projects\/[^/]+\//.test(window.location.hash) ||
-      document.querySelector('[data-component="NoHarnessReadyScreen"]') !== null,
-  )
   await page.evaluate((hash) => {
     window.location.hash = hash
   }, route)

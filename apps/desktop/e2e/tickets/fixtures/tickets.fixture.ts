@@ -4,6 +4,8 @@ import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
 import { TICKET_POLL_PROOF_ENV } from '@/domains/tickets/main/sync/proof-protocol'
+import { acpExecutableOverride } from '@/harnesses/acp/acp-proof-protocol'
+import { HARNESS_SIGNIN_CLAUDE_EXECUTABLE_ENV } from '@/harnesses/claude/proof-protocol'
 import type { MockGitHub } from '@/mocks/providers/github/mock-github'
 import {
   engineRepository,
@@ -12,6 +14,7 @@ import {
 } from '@/mocks/tickets/provider-inputs'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { GITHUB_PROOF_ORIGIN_ENV, LINEAR_PROOF_ORIGIN_ENV } from '@/providers/proof-protocol'
+import { writeMockClaudeReadinessCli } from '../../../mocks/cli/claude/mock-claude-readiness-cli'
 import { signedInHarnessEnvironment } from '../../../mocks/cli/signed-in-harness'
 import { startMockGitHubLoopback } from '../../../mocks/providers/github/mock-github-loopback'
 import type { MockLinear } from '../../../mocks/providers/linear/mock-linear'
@@ -81,6 +84,12 @@ export async function launch(fixture: TicketFixture): Promise<ElectronApplicatio
     env: {
       ...process.env,
       ...(await signedInHarnessEnvironment(path.dirname(fixture.userData))),
+      // The Accounts dialog lists every Harness, so none is read from the machine's own CLIs.
+      [HARNESS_SIGNIN_CLAUDE_EXECUTABLE_ENV]: await writeMockClaudeReadinessCli(
+        path.dirname(fixture.userData),
+      ),
+      MOCK_CLAUDE_READINESS_STATE: 'signed-out',
+      [acpExecutableOverride('claude-acp')]: '',
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
       [GITHUB_PROOF_ORIGIN_ENV]: fixture.github.origin,
       [LINEAR_PROOF_ORIGIN_ENV]: fixture.linear.origin,

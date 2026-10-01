@@ -35,9 +35,12 @@ export type SessionShellCommand = {
 // What the UI draws when a Session carries it; no read reports these yet, so each is optional.
 export type SessionExtras = {
   plan?: SessionPlan | null
+  // #2970 lists the shell commands.
   shell?: SessionShellCommand[]
+  // #2968 reports context usage.
   contextTokens?: number | null
   contextWindowTokens?: number | null
+  // #2969 reports the handoff links.
   handoffTo?: string | null
   handoffFrom?: string | null
 }
