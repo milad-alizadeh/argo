@@ -1,28 +1,29 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import type { CodexRequest, ThreadReadResponse } from '../app-server'
+import type { CodexRequest, ThreadItem } from '../app-server'
 import { codexCollabFacts, codexFeedContent } from './codex-feed'
 import { readCodexNickname } from './codex-subagent-nicknames'
-
-function readThread(request: CodexRequest, threadId: string) {
-  return request(
-    'thread/read',
-    { threadId, includeTurns: true },
-    (value) => value as ThreadReadResponse,
-  )
-}
+import { codexTurnPages } from './codex-turn-pages'
 
 export async function readCodexSessionHistory(
   request: CodexRequest,
   nativeId: string,
 ): Promise<FeedContent[]> {
-  const { thread } = await readThread(request, nativeId)
-  let rejected = 0
-  const content = thread.turns.flatMap((turn) => {
-    const collab = codexCollabFacts(turn.items)
-    return turn.items.flatMap((item) =>
-      codexFeedContent(item, () => (rejected += 1), collab.get(item.id)),
-    )
+  const pages = codexTurnPages(request, {
+    threadId: nativeId,
+    itemsView: 'full',
+    sortDirection: 'asc',
   })
+  let rejected = 0
+  const content: FeedContent[] = []
+  for await (const turns of pages) {
+    for (const turn of turns) {
+      // The generated `ThreadItem` union is the item shape; the mapping counts an unknown item.
+      const items = turn.items as ThreadItem[]
+      const collab = codexCollabFacts(items)
+      for (const item of items)
+        content.push(...codexFeedContent(item, () => (rejected += 1), collab.get(item.id)))
+    }
+  }
   if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Codex history shape(s).`)
   // Each spawned thread is read for the nickname Codex gave it; no history item carries it.
   return Promise.all(
@@ -34,11 +35,17 @@ export async function readCodexSessionHistory(
   )
 }
 
+// Newest first, so a Turn just started is found on the first page.
 export async function hasCodexSessionTurn(
   request: CodexRequest,
   nativeId: string,
   turnId: string,
 ): Promise<boolean> {
-  const { thread } = await readThread(request, nativeId)
-  return thread.turns.some((turn) => turn.id === turnId)
+  const pages = codexTurnPages(request, {
+    threadId: nativeId,
+    itemsView: 'notLoaded',
+    sortDirection: 'desc',
+  })
+  for await (const turns of pages) if (turns.some((turn) => turn.id === turnId)) return true
+  return false
 }

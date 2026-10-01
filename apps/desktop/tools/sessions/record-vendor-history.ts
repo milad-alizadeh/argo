@@ -9,6 +9,7 @@ import type {
   CodexAppServerClient,
   ThreadListResponse,
   ThreadReadResponse,
+  ThreadTurnsListParams,
   ThreadTurnsListResponse,
   WireMessage,
 } from '@/harnesses/codex/app-server'
@@ -180,17 +181,12 @@ function turnCompleted(client: CodexAppServerClient, threadId: string): Promise<
   })
 }
 
-async function codexThread(client: CodexAppServerClient, cwd: string, prompt: string) {
-  const { thread } = await client.request(
-    'thread/start',
-    { cwd, model: CODEX_MODEL, approvalPolicy: 'never', sandbox: 'read-only' },
-    (value) => value as { thread: { id: string } },
-  )
-  const completed = turnCompleted(client, thread.id)
+async function codexTurn(client: CodexAppServerClient, threadId: string, prompt: string) {
+  const completed = turnCompleted(client, threadId)
   await client.request(
     'turn/start',
     {
-      threadId: thread.id,
+      threadId,
       input: [{ type: 'text', text: prompt, text_elements: [] }],
       model: CODEX_MODEL,
       effort: CODEX_EFFORT,
@@ -200,15 +196,47 @@ async function codexThread(client: CodexAppServerClient, cwd: string, prompt: st
   await completed
 }
 
+async function codexThread(client: CodexAppServerClient, cwd: string, prompts: string[]) {
+  const { thread } = await client.request(
+    'thread/start',
+    { cwd, model: CODEX_MODEL, approvalPolicy: 'never', sandbox: 'read-only' },
+    (value) => value as { thread: { id: string } },
+  )
+  for (const prompt of prompts) await codexTurn(client, thread.id, prompt)
+}
+
+// A thread's Turns one to a page, so a thread of two Turns records the cursor between them.
+async function recordCodexTurnPages(client: CodexAppServerClient, threadId: string) {
+  const calls: RecordedCodexCall[] = []
+  let cursor: string | null = null
+  do {
+    const params: ThreadTurnsListParams = {
+      threadId,
+      limit: 1,
+      itemsView: 'full',
+      sortDirection: 'asc',
+      cursor,
+    }
+    const result: ThreadTurnsListResponse = await client.request(
+      'thread/turns/list',
+      params,
+      (value) => value as ThreadTurnsListResponse,
+    )
+    calls.push({ method: 'thread/turns/list', params, result })
+    cursor = result.nextCursor
+  } while (cursor !== null)
+  return calls
+}
+
 async function recordCodex(
   recorder: Recorder,
 ): Promise<{ history: CodexRecording; models: unknown }> {
   const client = await codexClientUnderHome(recorder.home, recorder.executables.codex)
   try {
     const cwd = await project(recorder, 'project-codex')
-    await codexThread(client, cwd, RECORDED_PROMPTS.codexCommand)
-    await codexThread(client, cwd, RECORDED_PROMPTS.codexReply)
-    await codexThread(client, cwd, RECORDED_PROMPTS.codexNotice)
+    await codexThread(client, cwd, [RECORDED_PROMPTS.codexCommand, RECORDED_PROMPTS.codexFollowUp])
+    await codexThread(client, cwd, [RECORDED_PROMPTS.codexReply])
+    await codexThread(client, cwd, [RECORDED_PROMPTS.codexNotice])
     const listParams = { limit: 50 }
     const listed = await client.request(
       'thread/list',
@@ -219,20 +247,14 @@ async function recordCodex(
       { method: 'thread/list', params: listParams, result: listed },
     ]
     for (const { id: threadId } of listed.data) {
-      const readParams = { threadId, includeTurns: true }
+      const readParams = { threadId, includeTurns: false as const }
       const read = await client.request(
         'thread/read',
         readParams,
         (value) => value as ThreadReadResponse,
       )
       calls.push({ method: 'thread/read', params: readParams, result: read })
-      const turnsParams = { threadId, limit: 50, itemsView: 'full' as const }
-      const turns = await client.request(
-        'thread/turns/list',
-        turnsParams,
-        (value) => value as ThreadTurnsListResponse,
-      )
-      calls.push({ method: 'thread/turns/list', params: turnsParams, result: turns })
+      calls.push(...(await recordCodexTurnPages(client, threadId)))
     }
     calls.push(await recordCodexConfig(recorder))
     return {

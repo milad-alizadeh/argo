@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, test } from 'vitest'
 import type { Database } from '@/database/database'
 import { sessionCommandTable } from '@/database/session/command-schema'
 import { hasCodexSessionTurn } from '@/harnesses/codex/session'
-import { recordedThread, threadReadRequest } from '@/mocks/cli/codex/recorded-codex-threads'
+import { recordedThread, recordedThreadRequest } from '@/mocks/cli/codex/recorded-codex-threads'
 import { RECORDED_PROMPTS } from '@/mocks/cli/recorded-prompts'
 import { migratedDatabase } from '@/mocks/database/migrated-database'
 import {
@@ -80,7 +80,7 @@ test('restart checks a recorded Codex turn before resolving an uncertain send', 
     },
     async (harness, nativeId, lookupTurnId) => {
       expect(harness).toBe('codex')
-      return hasCodexSessionTurn(threadReadRequest(thread), nativeId, lookupTurnId)
+      return hasCodexSessionTurn(recordedThreadRequest(thread), nativeId, lookupTurnId)
     },
   )
   expect(reads).toEqual([])

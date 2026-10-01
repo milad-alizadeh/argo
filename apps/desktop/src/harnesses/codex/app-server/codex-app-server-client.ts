@@ -7,6 +7,7 @@ import { SESSION_CODEX_EXECUTABLE_ENV } from '../proof-protocol'
 import type { ConfigReadParams } from './protocol-generated/v2/config-read-params'
 import type { ConfigValueWriteParams } from './protocol-generated/v2/config-value-write-params'
 import type { SkillsListParams } from './protocol-generated/v2/skills-list-params'
+import type { ThreadTurnsListParams } from './protocol-generated/v2/thread-turns-list-params'
 
 // The base protocol uses the 0.147.0 schema; the thread/resume sandbox override was verified against 0.157.0.
 export type RequestID = string | number
@@ -59,15 +60,12 @@ type RequestParams = {
     archived?: boolean
     useStateDbOnly?: boolean
   }
+  // History comes from `thread/turns/list`; the full read is deprecated for paginated threads.
   'thread/read': {
     threadId: string
-    includeTurns: boolean
+    includeTurns: false
   }
-  'thread/turns/list': {
-    threadId: string
-    limit: number
-    itemsView: 'full'
-  }
+  'thread/turns/list': ThreadTurnsListParams
   'skills/list': SkillsListParams
   'config/read': ConfigReadParams
   'config/value/write': ConfigValueWriteParams

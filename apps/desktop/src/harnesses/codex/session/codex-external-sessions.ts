@@ -12,6 +12,7 @@ import type {
 import { type CodexRequest, isThreadNotLoaded, type ThreadItem } from '../app-server'
 import { codexCollabFacts, codexFeedContent } from './codex-feed'
 import { createCodexStatusHooks } from './codex-status-hooks'
+import { type CodexTurn, turnsPageSchema } from './codex-turn-pages'
 
 // A turns read that fails this soon after the rollout changed is a Turn still starting.
 const CODEX_TURN_START_MS = 2_000
@@ -25,22 +26,14 @@ const threadPathSchema = z.looseObject({
   thread: z.looseObject({ id: z.string().min(1), path: z.string().min(1).nullable() }),
 })
 
-const turnSchema = z.looseObject({
-  id: z.string().min(1),
-  items: z.array(z.looseObject({ type: z.string().min(1) })),
-  completedAt: z.number().nullable(),
-})
-const turnsPageSchema = z.looseObject({ data: z.array(turnSchema) })
-type Turn = z.infer<typeof turnSchema>
-
 // A finished Turn is idle. An unfinished one is running while its writer holds the lock, and
 // unknown once the writer is gone, since a crash leaves it unfinished too.
-function turnStatus(turn: Turn | undefined, lock: LockState): ExternalSessionStatus {
+function turnStatus(turn: CodexTurn | undefined, lock: LockState): ExternalSessionStatus {
   if (turn === undefined || turn.completedAt !== null) return 'idle'
   return lock === 'held' ? 'running' : 'unknown'
 }
 
-function turnContent(turn: Turn | undefined): FeedContent[] {
+function turnContent(turn: CodexTurn | undefined): FeedContent[] {
   if (turn === undefined) return []
   // The generated `ThreadItem` union is the item shape; the mapping counts an unknown item.
   const items = turn.items as ThreadItem[]
