@@ -1,4 +1,4 @@
-// Reproducible Session List workload from #2934, repeated for #2943. Run from apps/desktop through run-tool.mts.
+// Reproducible Session List workload (#2934, #2943). Run from apps/desktop through run-tool.mts.
 
 import { execFileSync } from 'node:child_process'
 import { appendFile, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
@@ -27,6 +27,7 @@ import { proofCwd } from '../../mocks/sessions/mock-transcript-files'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { buildHistory, historyPath, writeHistory } from './feed-history-fixture'
 import { sqlMeasurements } from './session-list-sql'
+import type { Timings } from './session-list-startup-probe.mts'
 
 const PROJECT_ID = 'session-proof-project'
 const SESSION_COUNT = 600
@@ -133,8 +134,6 @@ type MainSnapshot = {
   spawns: Timings
   sql: Timings
 }
-
-type Timings = Record<string, { count: number; totalMs: number; maxMs: number }>
 
 async function mainSnapshot(application: ElectronApplication): Promise<MainSnapshot> {
   return application.evaluate(({ app }) => {
@@ -273,6 +272,10 @@ async function rendererSnapshot(page: Page) {
       rendererHeapMb: Math.round(usedSize / 1_048_576),
     }
   }, heap.usedSize)
+}
+
+function withoutFiles({ files: _files, ...snapshot }: MainSnapshot) {
+  return snapshot
 }
 
 // What changed between two snapshots of a timing table, slowest total first.
@@ -567,9 +570,10 @@ async function reportRun(request: {
     cache:
       'fresh temporary userData and Electron process; prebuilt Vite assets and OS file cache not flushed',
     startupMs,
-    startup,
+    // The full-path file map stays out of the report; each read is listed by file name instead.
+    startup: { ...withoutFiles(startup), filesRead: filesDelta({}, startup.files) },
     steps,
-    final: await mainSnapshot(application),
+    final: withoutFiles(await mainSnapshot(application)),
     sql: sqlMeasurements(fixture.userData, PROJECT_ID, sessionId(0)),
   }
   const json = value('json')

@@ -48,540 +48,6 @@
     },
     "ipc": {},
     "openSubscriptions": {},
-    "files": {
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/11111111-2222-4333-8444-666666666666.jsonl": {
-        "opens": 1,
-        "bytes": 131072
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-argo/985bb917-c820-4a75-8617-6f7c86ad96d5.jsonl": {
-        "opens": 1,
-        "bytes": 4146
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000003.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000001.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000002.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000004.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000005.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000007.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000009.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000010.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000006.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000012.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000011.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000014.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000008.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000015.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000013.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000018.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000017.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000016.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000019.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000021.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000020.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000022.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000024.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000025.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000026.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000027.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000023.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000028.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000029.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000030.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000031.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000032.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000033.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000034.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000035.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000038.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000036.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000037.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000039.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000040.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000041.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000044.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000043.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000042.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000045.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000048.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000047.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000046.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000049.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000051.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000053.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000054.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000052.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000050.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000055.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000056.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000058.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000060.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000059.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000057.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000061.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000062.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000063.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000065.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000067.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000066.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000064.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000068.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000070.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000069.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000072.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000071.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000074.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000075.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000073.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000076.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000077.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000078.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000080.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000081.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000083.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000082.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000084.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000079.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000088.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000086.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000085.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000089.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000087.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000091.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000092.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000090.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000093.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000094.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000095.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000096.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000098.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000099.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000100.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000101.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000097.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000104.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000103.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000106.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000102.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000107.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000105.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000108.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000109.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000111.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000112.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000110.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000113.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000114.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000115.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000116.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000117.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000118.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000120.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000119.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-proj/11111111-2222-4333-8444-555555555555.jsonl": {
-        "opens": 1,
-        "bytes": 1176
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-proj/cd238891-ad15-41b6-8486-db80f580997b.jsonl": {
-        "opens": 1,
-        "bytes": 825
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-prose/8e8cc5a7-ecc7-4f5a-831c-4deba5f11e97.jsonl": {
-        "opens": 1,
-        "bytes": 2924
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-proj/6b36416e-2f6c-4002-8abb-6893a04bb3dc.jsonl": {
-        "opens": 1,
-        "bytes": 679
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-proj/9fb71ba2-823e-435e-8e0c-def8fa6afbde.jsonl": {
-        "opens": 1,
-        "bytes": 3839
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-shell/762104dd-413d-41f9-858d-52996a42011c.jsonl": {
-        "opens": 1,
-        "bytes": 4601
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-stranded/9b915982-c80c-4ea3-834f-18353c643ce9.jsonl": {
-        "opens": 1,
-        "bytes": 761
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-proj/c2d8fbfc-0eda-4bbd-88f3-ec0f8ca8a6e3.jsonl": {
-        "opens": 1,
-        "bytes": 904
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-tree/9e5e6ea4-ec14-4740-8cbf-c149016bcfbe.jsonl": {
-        "opens": 1,
-        "bytes": 354
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-tree/cc1b0d31-5acf-46ae-85a0-e269b90e7653.jsonl": {
-        "opens": 1,
-        "bytes": 1000
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-tree/7279de22-9d3e-4df7-8408-367bb5565209.jsonl": {
-        "opens": 1,
-        "bytes": 2748
-      }
-    },
     "spawns": {
       "codex --version": {
         "count": 1,
@@ -755,7 +221,674 @@
         "totalMs": 0.38616700000000037,
         "maxMs": 0.38616700000000037
       }
-    }
+    },
+    "filesRead": [
+      {
+        "file": "11111111-2222-4333-8444-666666666666.jsonl",
+        "opens": 1,
+        "bytes": 131072
+      },
+      {
+        "file": "985bb917-c820-4a75-8617-6f7c86ad96d5.jsonl",
+        "opens": 1,
+        "bytes": 4146
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000003.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000001.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000002.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000004.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000005.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000007.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000009.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000010.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000006.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000012.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000011.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000014.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000008.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000015.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000013.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000018.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000017.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000016.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000019.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000021.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000020.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000022.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000024.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000025.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000026.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000027.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000023.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000028.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000029.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000030.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000031.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000032.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000033.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000034.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000035.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000038.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000036.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000037.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000039.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000040.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000041.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000044.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000043.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000042.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000045.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000048.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000047.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000046.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000049.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000051.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000053.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000054.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000052.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000050.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000055.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000056.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000058.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000060.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000059.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000057.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000061.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000062.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000063.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000065.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000067.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000066.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000064.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000068.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000070.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000069.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000072.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000071.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000074.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000075.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000073.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000076.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000077.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000078.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000080.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000081.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000083.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000082.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000084.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000079.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000088.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000086.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000085.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000089.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000087.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000091.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000092.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000090.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000093.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000094.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000095.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000096.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000098.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000099.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000100.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000101.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000097.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000104.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000103.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000106.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000102.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000107.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000105.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000108.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000109.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000111.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000112.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000110.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000113.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000114.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000115.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000116.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000117.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000118.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000120.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "20000000-0000-4000-8000-000000000119.jsonl",
+        "opens": 1,
+        "bytes": 5548
+      },
+      {
+        "file": "11111111-2222-4333-8444-555555555555.jsonl",
+        "opens": 1,
+        "bytes": 1176
+      },
+      {
+        "file": "cd238891-ad15-41b6-8486-db80f580997b.jsonl",
+        "opens": 1,
+        "bytes": 825
+      },
+      {
+        "file": "8e8cc5a7-ecc7-4f5a-831c-4deba5f11e97.jsonl",
+        "opens": 1,
+        "bytes": 2924
+      },
+      {
+        "file": "6b36416e-2f6c-4002-8abb-6893a04bb3dc.jsonl",
+        "opens": 1,
+        "bytes": 679
+      },
+      {
+        "file": "9fb71ba2-823e-435e-8e0c-def8fa6afbde.jsonl",
+        "opens": 1,
+        "bytes": 3839
+      },
+      {
+        "file": "762104dd-413d-41f9-858d-52996a42011c.jsonl",
+        "opens": 1,
+        "bytes": 4601
+      },
+      {
+        "file": "9b915982-c80c-4ea3-834f-18353c643ce9.jsonl",
+        "opens": 1,
+        "bytes": 761
+      },
+      {
+        "file": "c2d8fbfc-0eda-4bbd-88f3-ec0f8ca8a6e3.jsonl",
+        "opens": 1,
+        "bytes": 904
+      },
+      {
+        "file": "9e5e6ea4-ec14-4740-8cbf-c149016bcfbe.jsonl",
+        "opens": 1,
+        "bytes": 354
+      },
+      {
+        "file": "cc1b0d31-5acf-46ae-85a0-e269b90e7653.jsonl",
+        "opens": 1,
+        "bytes": 1000
+      },
+      {
+        "file": "7279de22-9d3e-4df7-8408-367bb5565209.jsonl",
+        "opens": 1,
+        "bytes": 2748
+      }
+    ]
   },
   "steps": [
     {
@@ -1900,540 +2033,6 @@
     "openSubscriptions": {
       "sessionFeed": 1,
       "sessionComposerCommands": 1
-    },
-    "files": {
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/11111111-2222-4333-8444-666666666666.jsonl": {
-        "opens": 2,
-        "bytes": 12132889
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-argo/985bb917-c820-4a75-8617-6f7c86ad96d5.jsonl": {
-        "opens": 1,
-        "bytes": 4146
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000003.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000001.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000002.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000004.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000005.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000007.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000009.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000010.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000006.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000012.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000011.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000014.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000008.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000015.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000013.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000018.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000017.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000016.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000019.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000021.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000020.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000022.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000024.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000025.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000026.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000027.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000023.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000028.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000029.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000030.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000031.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000032.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000033.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000034.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000035.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000038.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000036.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000037.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000039.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000040.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000041.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000044.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000043.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000042.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000045.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000048.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000047.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000046.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000049.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000051.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000053.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000054.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000052.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000050.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000055.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000056.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000058.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000060.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000059.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000057.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000061.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000062.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000063.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000065.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000067.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000066.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000064.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000068.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000070.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000069.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000072.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000071.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000074.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000075.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000073.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000076.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000077.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000078.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000080.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000081.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000083.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000082.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000084.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000079.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000088.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000086.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000085.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000089.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000087.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000091.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000092.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000090.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000093.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000094.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000095.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000096.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000098.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000099.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000100.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000101.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000097.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000104.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000103.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000106.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000102.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000107.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000105.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000108.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000109.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000111.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000112.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000110.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000113.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000114.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000115.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000116.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000117.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000118.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000120.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-list-workload/20000000-0000-4000-8000-000000000119.jsonl": {
-        "opens": 1,
-        "bytes": 5548
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-proj/11111111-2222-4333-8444-555555555555.jsonl": {
-        "opens": 1,
-        "bytes": 1176
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-proj/cd238891-ad15-41b6-8486-db80f580997b.jsonl": {
-        "opens": 1,
-        "bytes": 825
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-prose/8e8cc5a7-ecc7-4f5a-831c-4deba5f11e97.jsonl": {
-        "opens": 1,
-        "bytes": 2924
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-proj/6b36416e-2f6c-4002-8abb-6893a04bb3dc.jsonl": {
-        "opens": 1,
-        "bytes": 679
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-proj/9fb71ba2-823e-435e-8e0c-def8fa6afbde.jsonl": {
-        "opens": 1,
-        "bytes": 3839
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-shell/762104dd-413d-41f9-858d-52996a42011c.jsonl": {
-        "opens": 1,
-        "bytes": 4601
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-stranded/9b915982-c80c-4ea3-834f-18353c643ce9.jsonl": {
-        "opens": 1,
-        "bytes": 761
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-proj/c2d8fbfc-0eda-4bbd-88f3-ec0f8ca8a6e3.jsonl": {
-        "opens": 1,
-        "bytes": 904
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-tree/9e5e6ea4-ec14-4740-8cbf-c149016bcfbe.jsonl": {
-        "opens": 1,
-        "bytes": 354
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-tree/cc1b0d31-5acf-46ae-85a0-e269b90e7653.jsonl": {
-        "opens": 1,
-        "bytes": 1000
-      },
-      "/private/var/folders/_z/yrg3s40d5k5cqgfnmffgq3l80000gn/T/argo-session-list-TZbAod/claude-config/projects/-private-var-folders--z-yrg3s40d5k5cqgfnmffgq3l80000gn-T-argo-session-list-TZbAod-project-tree/7279de22-9d3e-4df7-8408-367bb5565209.jsonl": {
-        "opens": 1,
-        "bytes": 2748
-      }
     },
     "spawns": {
       "codex --version": {

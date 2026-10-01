@@ -8,7 +8,7 @@ import { DatabaseSync, StatementSync } from 'node:sqlite'
 import { promisify } from 'node:util'
 
 // A count of calls and their summed and longest time, keyed by what was called.
-type Timings = Record<string, { count: number; totalMs: number; maxMs: number }>
+export type Timings = Record<string, { count: number; totalMs: number; maxMs: number }>
 
 type Probe = {
   syncReads: number

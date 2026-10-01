@@ -7,9 +7,9 @@ and did not clear the operating system file cache. Raw output of run 2 is in
 [2943-session-browsing.json](2943-session-browsing.json).
 
 The corpus is synthetic and the same size as #2934: 600 saved Sessions, 120 archived, 120 added
-Claude files, 40 added Codex threads, and one 12,001,817 byte Claude transcript. The Codex mock now
-answers from its app-server state file, so the 40 Codex additions are threads there, not rollout
-files. The Codex append step adds one thread. `claude agents --json` prints the recorded vendor
+Claude files, 40 added Codex threads, and one 12,001,817 byte Claude transcript. The Codex mock
+answers from its app-server state file, so the 40 added Codex threads live there. The append step
+adds one thread. `claude agents --json` prints the recorded vendor
 output. Every config folder is a throwaway one.
 
 ```sh
@@ -17,16 +17,22 @@ rtk bun run --cwd apps/desktop build:vite
 rtk bun run --cwd apps/desktop measure:session-list --json=/tmp/session-list.json
 ```
 
-## What the driver adds for #2943
+## What the probe records
 
-The probe in Electron main now also records:
+The probe runs in Electron main. The driver reads it before and after each step. It records:
 
+- sync and async reads of corpus files, with their bytes;
 - each corpus file opened, with the bytes read, through `fs`, `fs.promises`, and file handles;
+- file watchers started and still active;
+- main event-loop delay;
 - each `execFile` child process, with its time;
 - each SQLite statement and `COMMIT`, with its time, inside the running app;
-- the open tRPC subscriptions, so the Feed reader count is a runtime count;
-- the memory of every Electron process;
-- a final 10 s idle step, where the poll is the only work.
+- tRPC messages and bytes by path, and the open subscriptions, so the Feed reader count is a
+  runtime count;
+- main RSS, and the working set of each Electron process, main included;
+- renderer frames, long tasks, and heap.
+
+The last step waits 10 s with no input, so the poll is the only work.
 
 ## Results, three runs
 
@@ -34,7 +40,9 @@ The probe in Electron main now also records:
 | --- | --- | --- |
 | Ready list | 1,273.89 ms | 1,022 / 798 / 884 ms |
 | Startup main delay, p95 / max | 212.34 / 246.28 ms | 191 / 284, 180 / 183, 191 / 226 ms |
-| Startup transcript reads | 58 sync reads, 162,748 bytes | 133 files opened, 820,789 bytes, all async |
+| Startup sync transcript reads | 58 reads, 162,748 bytes | 0 |
+| Startup async transcript bytes | 826,652 | 820,789 |
+| Startup transcript files opened | not measured | 133 |
 | Large transcript read at startup | not split | 131,072 bytes, not the whole file |
 | Active file watchers | 195 to 375 | 0 (0 started) |
 | Down scroll, main delay max | 263.59 ms | 23.4 / 22.3 / 40.6 ms |
@@ -82,8 +90,13 @@ read nothing.
 ## Poll
 
 Every 2 s the poll runs `claude agents --json`. In the app the mock took 156 to 172 ms on average
-per call. The real `claude` 2.1.287 takes 120 to 140 ms and peaks at 139 MB per call, with a
-throwaway `CLAUDE_CONFIG_DIR`. The Codex poll reads the lock folder and only runs `perl` when lock
+per call. The real `claude` 2.1.287 takes 120 to 140 ms and peaks at 139 MB per call. That is a separate
+hand measurement, outside the driver, from nine runs of:
+
+```sh
+/usr/bin/time -l env CLAUDE_CONFIG_DIR="$(mktemp -d)" claude agents --json
+```
+ The Codex poll reads the lock folder and only runs `perl` when lock
 files exist; this workload has none.
 
 No utilityProcess reads the Claude Feed. The only utility process is the network service, at 48
