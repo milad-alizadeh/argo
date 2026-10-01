@@ -1,39 +1,56 @@
-// The appearance contract, shared by the bundled main process and renderer. System, Light and
-// Dark, with System the default and System following the operating system (#1820).
 import { z } from 'zod'
 
+export const THEMES = ['neutral', 'graphite'] as const
+export const APPEARANCES = ['system', 'light', 'dark'] as const
+export const DEFAULT_THEME = 'neutral'
+export const DEFAULT_APPEARANCE = 'system'
+export const APPEARANCE_READ_CHANNEL = 'argo:appearance:read'
+export const APPEARANCE_SET_CHANNEL = 'argo:appearance:set'
+export const APPEARANCE_READY_CHANNEL = 'argo:appearance:ready'
 export const APPEARANCE_CHANGED_CHANNEL = 'argo:appearance:changed'
 
-const APPEARANCES = ['system', 'light', 'dark'] as const
+const themeSchema = z.enum(THEMES)
 const appearanceSchema = z.enum(APPEARANCES)
+export type Theme = z.infer<typeof themeSchema>
 export type Appearance = z.infer<typeof appearanceSchema>
 
-// The stored file. Another portable client may hold fields this build does not own, and a write
-// must not delete them (docs/portable-integration-contracts.md).
-export const appearanceDocumentSchema = z.object({ appearance: appearanceSchema }).passthrough()
-
-// `dark` is the resolved answer: what the window actually draws once System has asked the
-// operating system. The renderer needs both, because the control shows the choice and the page
-// shows the resolution. This is also the push channel's shape, which carries no request id.
-const appearanceStateSchema = z.strictObject({
+export const appearancePreferenceSchema = z.strictObject({
+  theme: themeSchema,
   appearance: appearanceSchema,
+})
+export type AppearancePreference = z.infer<typeof appearancePreferenceSchema>
+
+// Existing portable appearance documents can omit the new theme field.
+export const appearanceDocumentSchema = z
+  .object({
+    theme: themeSchema.default(DEFAULT_THEME),
+    appearance: appearanceSchema,
+  })
+  .passthrough()
+
+export const appearanceStateSchema = appearancePreferenceSchema.extend({
   dark: z.boolean(),
+  revision: z.number().int().nonnegative(),
 })
 export type AppearanceState = z.infer<typeof appearanceStateSchema>
 
-export const DEFAULT_APPEARANCE: Appearance = 'system'
+export const appearanceReadyRevisionSchema = z.number().int().nonnegative()
+export const appearanceReadyResultSchema = z.strictObject({
+  ready: z.boolean(),
+  state: appearanceStateSchema,
+})
+export type AppearanceReadyResult = z.infer<typeof appearanceReadyResultSchema>
 
-// The one place a design token is restated outside CSS. A `BrowserWindow` paints its ground before
-// the renderer exists and cannot read a stylesheet, so these mirror `--background` in
-// `src/platform/renderer/styles/globals.css`: `oklch(1 0 0)` light,
-// `oklch(0.145 0 0)` dark. Change one and
-// change the other, or the window flashes the wrong ground on every launch.
-const WINDOW_BACKGROUND = { light: '#ffffff', dark: '#0a0a0a' } as const
+export const appearanceMutationSchema = z.discriminatedUnion('ok', [
+  z.strictObject({ ok: z.literal(true), state: appearanceStateSchema }),
+  z.strictObject({
+    ok: z.literal(false),
+    reason: z.enum(['invalid', 'storage']),
+    state: appearanceStateSchema,
+  }),
+])
+export type AppearanceMutation = z.infer<typeof appearanceMutationSchema>
 
-export function windowBackground(dark: boolean): string {
-  return dark ? WINDOW_BACKGROUND.dark : WINDOW_BACKGROUND.light
-}
-
-export function isAppearanceState(value: unknown): value is AppearanceState {
-  return appearanceStateSchema.safeParse(value).success
+export function themeKey(state: Pick<AppearanceState, 'theme' | 'dark'>): string {
+  return `${state.theme}:${state.dark ? 'dark' : 'light'}`
 }

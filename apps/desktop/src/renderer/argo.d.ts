@@ -1,10 +1,18 @@
-import type { AppearanceState } from '@/platform/contract/appearance'
+import type {
+  AppearanceMutation,
+  AppearancePreference,
+  AppearanceReadyResult,
+  AppearanceState,
+} from '@/platform/contract/appearance'
 import type { DevelopmentIdentity } from '@/platform/contract/development-identity'
 import type { TrpcRequest, TrpcSubscriptionMessage } from '@/platform/contract/trpc-wire'
 
 declare global {
   interface Window {
     argo: {
+      getAppearance: () => Promise<AppearanceState>
+      setAppearance: (preference: AppearancePreference) => Promise<AppearanceMutation>
+      appearanceReady: (revision: number) => Promise<AppearanceReadyResult>
       onAppearanceChanged: (listener: (state: AppearanceState) => void) => () => void
       onCommand: (listener: (command: string) => void) => () => void
       zoomFactor: () => number

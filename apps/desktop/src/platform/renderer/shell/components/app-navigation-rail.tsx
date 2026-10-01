@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router'
 import { DESTINATION_PATHS, DESTINATIONS, type Destination } from '@/platform/contract/commands'
@@ -9,6 +9,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../../components/ui/tooltip'
+import { applyAppearance, useTheme } from '../../use-appearance'
+import { AppearanceDialog } from './appearance-dialog'
 
 const navigationIcons: Record<Destination, IconName> = {
   Sessions: 'messages-square',
@@ -38,6 +40,8 @@ export const AppNavigationRail = memo(function AppNavigationRail() {
   const projectPath = location.pathname.match(/^\/projects\/[^/]+(?=\/|$)/)?.[0] ?? ''
   const destination = destinationFromPathname(location.pathname, projectPath)
   const settingsLabel = t('rail.settings')
+  const [appearanceOpen, setAppearanceOpen] = useState(false)
+  const appearanceState = useTheme()
 
   return (
     <TooltipProvider>
@@ -79,6 +83,7 @@ export const AppNavigationRail = memo(function AppNavigationRail() {
             <TooltipTrigger
               type="button"
               aria-label={settingsLabel}
+              onClick={() => setAppearanceOpen(true)}
               className="no-drag-region grid size-(--size-navigation-control) place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-selected hover:text-foreground"
             >
               <Icon className="size-(--size-navigation-icon)" name="settings" />
@@ -89,6 +94,16 @@ export const AppNavigationRail = memo(function AppNavigationRail() {
           </Tooltip>
         </div>
       </nav>
+      <AppearanceDialog
+        state={appearanceState}
+        open={appearanceOpen}
+        onOpenChange={setAppearanceOpen}
+        onChoose={async (preference) => {
+          const result = await window.argo.setAppearance(preference)
+          applyAppearance(result.state)
+          return result.ok
+        }}
+      />
     </TooltipProvider>
   )
 })

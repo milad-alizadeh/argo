@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { BrowserWindow, nativeTheme } from 'electron'
-import { windowBackground } from '@/platform/contract/appearance'
+import { BrowserWindow } from 'electron'
 import { WINDOW_MINIMUM_WIDTH } from '@/platform/contract/minimum-width'
+import { appearanceBackground } from '../appearance'
 
 export function createDesktopWindow(request: {
   buildDirectory: string
@@ -11,7 +11,7 @@ export function createDesktopWindow(request: {
   title?: string
   show: boolean
   additionalArguments?: string[]
-  attach: (window: BrowserWindow, rendererURL: string) => void
+  attach: (window: BrowserWindow, rendererURL: string, show: boolean) => void
   loaded: (window: BrowserWindow) => void
 }): BrowserWindow {
   const window = new BrowserWindow({
@@ -19,10 +19,10 @@ export function createDesktopWindow(request: {
     height: 900,
     minWidth: WINDOW_MINIMUM_WIDTH,
     ...(request.title ? { title: request.title } : {}),
-    show: request.show,
+    show: false,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 18, y: 18 },
-    backgroundColor: windowBackground(nativeTheme.shouldUseDarkColors),
+    backgroundColor: appearanceBackground(),
     webPreferences: {
       ...(request.additionalArguments ? { additionalArguments: request.additionalArguments } : {}),
       preload: path.join(request.buildDirectory, 'preload.js'),
@@ -40,7 +40,7 @@ export function createDesktopWindow(request: {
     `../renderer/${request.rendererName}/index.html`,
   )
   const rendererURL = request.developmentServerURL ?? pathToFileURL(rendererPath).href
-  request.attach(window, rendererURL)
+  request.attach(window, rendererURL, request.show)
 
   if (request.developmentServerURL) void window.loadURL(request.developmentServerURL)
   else void window.loadFile(rendererPath)

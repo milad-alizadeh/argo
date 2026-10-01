@@ -62,7 +62,7 @@ import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-crea
 import { harnessSchema } from '@/harnesses/harness'
 import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
 import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
-import { attachAppearanceWatch } from '@/platform/main/appearance'
+import { attachAppearanceWatch, focusAppearanceWindow } from '@/platform/main/appearance'
 import type { AppActor } from '@/platform/main/application/app-machine'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {
@@ -153,9 +153,7 @@ function focusWindow(): void {
     focusRequestedBeforeWindowReady = true
     return
   }
-  if (desktopWindow.isMinimized()) desktopWindow.restore()
-  if (!desktopWindow.isVisible()) desktopWindow.show()
-  desktopWindow.focus()
+  focusAppearanceWindow(desktopWindow)
 }
 
 async function chooseProjectFolder(window: BrowserWindow): Promise<string | null> {
@@ -487,7 +485,7 @@ function createWindow({
           }),
         ]
       : undefined,
-    attach: (window, rendererURL) => {
+    attach: (window, rendererURL, show) => {
       attachWindowNavigation(window)
       const detachTrpc = attachWindowTrpc({
         window,
@@ -498,7 +496,7 @@ function createWindow({
         registry,
         sessionServices,
       })
-      attachAppearanceWatch(window)
+      attachAppearanceWatch(window, rendererURL, show)
       reportWindowVisibility(window, actors.ticketSync.send)
       window.once('closed', () => closeDesktopWindow({ actor, database, domains, detachTrpc }))
       installMenu(window)

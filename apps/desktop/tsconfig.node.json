@@ -37,6 +37,7 @@
     "src/domains/*/renderer",
     "tools/desktop/capture.mts",
     "tools/desktop/measure.mts",
+    "tools/styling/*.mts",
     "src/harnesses/harness-presentation.ts",
     "src/harnesses/presentation-registry.ts",
     "src/harnesses/*/presentation",

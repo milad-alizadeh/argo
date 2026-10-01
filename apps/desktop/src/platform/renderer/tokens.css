@@ -1,49 +1,5 @@
-/* The desktop app's own inks and scale. The inks below are the approved Session design's, and the
-   design is graphite: it has no light appearance. The app offers one (#1820), so the block after
-   `@theme` gives each ink a light value. Those values are not the design's; they are chosen here
-   to keep the same order of contrast on the shadcn light grounds. Read `apps/desktop/AGENTS.md` · Tokens
-   before extending either. */
+/* Shared geometry and specialized adapter values; theme color roles live in styles/themes/. */
 @theme {
-  /* Three quiet grey grounds: the app canvas, its panels, then floating surfaces above them. */
-  --color-surface-base: var(--color-neutral-100);
-  --color-surface-panel: var(--color-neutral-50);
-  --color-surface-raised: var(--color-white);
-  /* Transcribed from the approved roster row design (#1310, `app-roster-row.html`) and the
-     Session layout prototype beside it. Only the inks are the design's: every ground the Sessions
-     surface stands on (the panes, a selected row, a row under the pointer, the hairline between
-     two panes) is a shadcn token from `globals.css`, so the surfaces follow the appearance. */
-  --color-ink: #f2f4f6;
-  /* Two steps down from --color-ink. `quiet` is a fact the reader may want; `faint` is one that
-     is true but not what they came for: a working directory, a branch, a status word beside a
-     Session name. Neither is named `muted`, because `globals.css` gives `--color-muted` the
-     shadcn surface meaning and the later declaration would win. */
-  --color-quiet: #a8aeb5;
-  /* Lightened from the design's #929aa1: that value cleared --card but not --selected (#383838),
-     failing 4.5:1 for a selected row's subtitle text. */
-  --color-faint: #9ca3a9;
-  /* The design's `text.disabled`: the outline of a state Argo cannot place. */
-  --color-off: #4e545a;
-  /* The four state inks a state dot is drawn in. `active` is running and `warn` is attention; the
-     idle ink has its own name because `faint` is text and this is a mark. */
-  --color-active: #46d3a8;
-  --color-idle: #868e96;
-  --color-warn: #e8b24a;
-  --color-danger: #f2555c;
-  /* The Plan's inks (`app-roster-row.html` · PlanBar). The accent and not the running ink,
-     because the Plan is the Session's progress rather than its state. `plan-doing` is the one
-     item in progress; `plan-still` is the fill of a Plan that stopped moving, banked rather than
-     grey so a finished Plan never reads as one nobody started. */
-  --color-plan: #3e9bff;
-  --color-plan-doing: #6fb6ff;
-  --color-plan-still: #2f5c89;
-  --color-plan-track: rgb(255 255 255 / 0.13);
-  /* The pull request's own state, in GitHub's hues (roster-row-signals.html `--pr-*`). */
-  --color-pr-open: #3fb950;
-  --color-pr-merged: #a371f7;
-  --color-pr-closed: #f85149;
-  --color-pr-draft: #8b949e;
-  /* A Ticket's completed status, in Linear's hue for it. */
-  --color-ticket-done: #5e6ad2;
   --font-sans: "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "Geist Mono Variable", "SF Mono", "Cascadia Mono", Menlo, monospace;
   /* Named on Tailwind's own spacing namespace, so one declaration serves both readers: the Feed
@@ -165,7 +121,6 @@
   --size-icon-inline: var(--size-icon-control);
   --size-icon-text: var(--size-icon-control);
   --size-navigation-icon: calc(var(--size-icon-control) * 1.25);
-  --color-icon: var(--muted-foreground);
   --size-navigation-control: 40px;
   /* The child-completion ring sits around a Ticket state mark without becoming a control itself. */
   --size-icon-progress: 20px;
@@ -187,40 +142,6 @@
   --duration-layout: 300ms;
   --duration-attention: 400ms;
   --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-success: var(--success);
-  --color-diff-added: var(--diff-added);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-selected: var(--selected);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-foreground: var(--foreground);
-  --color-background: var(--background);
   --radius-xs: calc(var(--radius) * 0.3);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -292,49 +213,7 @@
   --code-xcode-selection: #bbdfff;
   --code-xcode-link: #0e0eff;
   --code-xcode-caret: var(--code-xcode-foreground);
-  --background: var(--color-surface-base);
-  --foreground: oklch(0.145 0 0);
-  --card: var(--color-surface-panel);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: var(--color-surface-raised);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  /* Darkened from shadcn's default 0.556: that clears --background but not --selected (#e4e4e4),
-     failing 4.5:1 for muted text on a selected row. */
-  --muted-foreground: oklch(0.508 0 0);
-  /* Selected rows and menu hover share this ground. */
-  --selected: oklch(0.92 0 0);
-  --accent: var(--selected);
-  --accent-foreground: oklch(0.205 0 0);
-  /* Darkened from shadcn's default 0.577: that clears solid grounds but not the /10-/20 tinted
-     fills badges and buttons use behind destructive text, nor an alert description's own
-     destructive/90. */
-  --destructive: oklch(0.489 0.245 27.325);
-  --success: oklch(0.448 0.119 151.328);
-  /* 6.1:1 on --background */
-  --diff-added: oklch(0.508 0.118 165.612);
-  /* 5.5:1 on --background */
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: var(--color-surface-panel);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
   /* A provider label's tint: how far its border and its fill lean toward the label's own colour.
      Fixed in both appearances, unlike --ticket-label-lean below, which leans the text. */
   --ticket-label-border-mix: 45%;
@@ -349,21 +228,12 @@
   --size-ticket-workspace-min: 400px;
   --size-scrollbar: 8px;
   --spacing-scrollbar-inset: 2px;
-  --color-scrollbar-thumb: rgb(0 0 0 / 0.18);
-  --color-scrollbar-thumb-hover: rgb(0 0 0 / 0.3);
-  --color-session-surface: var(--popover);
   --shadow-panel-body:
     0 0 4px color-mix(in oklab, var(--color-black) 2%, transparent),
     0 0 24px -6px color-mix(in oklab, var(--color-black) 8%, transparent);
 }
 
 .dark {
-  --color-surface-base: #292c30;
-  --color-surface-panel: #202226;
-  --color-surface-raised: #2a2d32;
-  --color-session-surface: #191b1e;
-  --color-scrollbar-thumb: rgb(255 255 255 / 0.16);
-  --color-scrollbar-thumb-hover: rgb(255 255 255 / 0.28);
   --color-session-composer: color-mix(in oklab, var(--color-surface-raised) 86%, transparent);
   --shadow-panel-body:
     0 0 24px rgb(255 255 255 / 0.035), 0 0 48px -4px rgb(255 255 255 / 0.025),
@@ -384,42 +254,6 @@
   --code-xcode-selection: #727377;
   --code-xcode-link: var(--code-xcode-string);
   --code-xcode-caret: #fff;
-  --background: var(--color-surface-base);
-  --foreground: #e7e9ed;
-  --card: var(--color-surface-panel);
-  --card-foreground: #e7e9ed;
-  --popover: var(--color-surface-raised);
-  --popover-foreground: #e7e9ed;
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: #2b2e33;
-  --secondary-foreground: #e7e9ed;
-  --muted: #2b2e33;
-  --muted-foreground: #a5a9b0;
-  --selected: #34373c;
-  --accent: var(--selected);
-  --accent-foreground: #e7e9ed;
-  /* Lightened from shadcn's default 0.704: that clears --card but not a destructive/80 label at
-     80% opacity over --popover, failing 4.5:1. */
-  --destructive: oklch(0.85 0.14 22.216);
-  --success: oklch(0.765 0.177 151.328);
-  --diff-added: oklch(0.765 0.177 163.223);
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: #2b2e33;
-  --sidebar: var(--color-surface-panel);
-  --sidebar-foreground: #e7e9ed;
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: #e7e9ed;
-  --sidebar-accent: #2b2e33;
-  --sidebar-accent-foreground: #e7e9ed;
-  --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.556 0 0);
   --color-language-go: var(--color-cyan-400);
   --color-language-ruby: var(--color-red-400);
   --color-terminal-red: var(--color-red-400);
@@ -434,18 +268,6 @@
 }
 
 :root:not(.dark) {
-  --color-ink: var(--foreground);
-  --color-quiet: oklch(0.44 0 0);
-  --color-faint: var(--muted-foreground);
-  --color-off: oklch(0.72 0 0);
-  /* State marks need 3:1 contrast on the Roster's white ground, where the design's dark-first
-     inks are too light to remain distinguishable (#2526). */
-  --color-active: #159b70;
-  /* Darkened from #a16207: that cleared --background but not the warn badge's own tinted fill,
-     failing 4.5:1 for its label text. */
-  --color-warn: #975c07;
-  --color-plan: #2563eb;
-  --color-plan-track: rgb(0 0 0 / 0.1);
   /* How far label text leans to its colour: GitHub's pale a2eeef measured 6.8:1 on its tint here. */
   --ticket-label-lean: 40%;
 }

@@ -9,10 +9,16 @@ function sourceHash(source: string) {
   return new Bun.CryptoHasher('sha256').update(source).digest('hex')
 }
 
-test('reviewed Button and Input retain their generated identity', async () => {
+test('reviewed registry primitives retain their generated identity', async () => {
   for (const item of baseline.items) {
     const source = await Bun.file(new URL(`../../../../${item.target}`, import.meta.url)).text()
     expect(sourceHash(source)).toBe(item.sourceSha256)
+    if (item.comparatorTarget) {
+      const comparator = await Bun.file(
+        new URL(`../../../../${item.comparatorTarget}`, import.meta.url),
+      ).text()
+      expect(sourceHash(comparator)).toBe(item.sourceSha256)
+    }
     expect(sourceHash(`${source}\n// Deliberate unreviewed source mutation\n`)).not.toBe(
       item.sourceSha256,
     )

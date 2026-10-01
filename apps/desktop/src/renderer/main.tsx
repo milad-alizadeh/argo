@@ -7,12 +7,17 @@ import { createRoot } from 'react-dom/client'
 import { SessionChanges } from '@/domains/sessions/renderer'
 import { AppQueryProvider } from '@/platform/renderer/app-query-provider'
 import { AutoHideScrollbars } from '@/platform/renderer/auto-hide-scrollbars'
+import {
+  acknowledgeRendererAppearance,
+  initializeRendererAppearance,
+} from '@/platform/renderer/use-appearance'
 import { App } from './app'
 import '@/platform/renderer/styles/globals.css'
 
 const host = document.getElementById('root')
 if (!host) throw new Error('index.html is missing #root')
 
+await initializeRendererAppearance()
 createRoot(host).render(
   <StrictMode>
     <IconContext.Provider value={{ weight: 'regular' }}>
@@ -25,3 +30,4 @@ createRoot(host).render(
     </IconContext.Provider>
   </StrictMode>,
 )
+void acknowledgeRendererAppearance()

@@ -6,7 +6,7 @@ import type { SessionEventJournal, SessionInteractionBroker } from '@/domains/se
 import type { TicketOperationSupervisorInput } from '@/domains/tickets/main/operations'
 import type { TicketSyncSupervisorInput } from '@/domains/tickets/main/sync'
 import type { HarnessRegistry } from '@/harnesses/registry'
-import { applyStoredAppearance, readAppearance } from '../appearance'
+import { initializeAppearance } from '../appearance'
 import { setPlatformLanguage } from '../i18n'
 import { type AppActor, createAppMachine } from './app-machine'
 
@@ -40,7 +40,7 @@ export function startDesktopApplication(request: {
   async function initialize(): Promise<void> {
     await app.whenReady()
     setPlatformLanguage(app.getLocale())
-    applyStoredAppearance(await readAppearance(app.getPath('userData')))
+    await initializeAppearance(app.getPath('userData'))
     const input = await request.prepare()
     const { registry, ...applicationInput } = input
     actor = createActor(createAppMachine(registry, applicationInput), {

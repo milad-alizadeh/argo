@@ -1,10 +1,9 @@
 import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 import './platform/preload/zod-jitless'
 import { z } from 'zod'
-import type { AppearanceState } from '@/platform/contract/appearance'
-import { APPEARANCE_CHANGED_CHANNEL, isAppearanceState } from '@/platform/contract/appearance'
 import { COMMAND_CHANNEL } from '@/platform/contract/commands'
 import { TRPC_CHANNEL, type TrpcSubscriptionMessage } from '@/platform/contract/trpc-wire'
+import { appearanceBridge } from '@/platform/preload/appearance'
 import { developmentIdentityFromArguments } from '@/platform/preload/development-identity'
 
 type Subscription = {
@@ -75,11 +74,7 @@ function subscribe<Value>(channel: string, listener: (value: Value) => void): ()
 }
 
 contextBridge.exposeInMainWorld('argo', {
-  onAppearanceChanged(listener: (state: AppearanceState) => void) {
-    return subscribe<unknown>(APPEARANCE_CHANGED_CHANNEL, (value) => {
-      if (isAppearanceState(value)) listener(value)
-    })
-  },
+  ...appearanceBridge,
   onCommand(listener: (command: string) => void) {
     return subscribe<unknown>(COMMAND_CHANNEL, (value) => {
       if (typeof value === 'string') listener(value)

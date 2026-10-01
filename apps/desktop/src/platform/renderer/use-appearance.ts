@@ -1,53 +1,66 @@
-// The renderer holds no appearance state of its own: it shows what the main process resolved, and
-// asks the main process to change it (src/appearance/bridge.ts).
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
+import { useSyncExternalStore } from 'react'
 import {
-  type Appearance,
   type AppearanceState,
-  DEFAULT_APPEARANCE,
+  appearanceStateSchema,
+  themeKey,
 } from '@/platform/contract/appearance'
 
-const INITIAL: AppearanceState = { appearance: DEFAULT_APPEARANCE, dark: true }
-
-function subscribeToAppearance(onChange: () => void) {
-  const observer = new MutationObserver(onChange)
-  observer.observe(document.documentElement, { attributeFilter: ['class'] })
-  return () => observer.disconnect()
+let accepted: AppearanceState
+let readinessRequested = false
+let acknowledgement: Promise<void> | undefined
+const listeners = new Set<() => void>()
+const subscribe = (listener: () => void) => {
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+  }
 }
 
-function isDarkAppearance() {
-  return document.documentElement.classList.contains('dark')
+export function applyAppearance(state: AppearanceState): void {
+  const next = appearanceStateSchema.parse(state)
+  if (accepted && next.revision < accepted.revision) return
+  accepted = next
+  const root = document.documentElement
+  root.dataset.theme = next.theme
+  root.classList.toggle('dark', next.dark)
+  root.style.colorScheme = next.dark ? 'dark' : 'light'
+  for (const listener of listeners) listener()
+}
+
+export async function initializeRendererAppearance(): Promise<void> {
+  window.argo.onAppearanceChanged((state) => {
+    applyAppearance(state)
+    if (readinessRequested) {
+      void (acknowledgement ?? Promise.resolve()).then(acknowledgeRendererAppearance)
+    }
+  })
+  applyAppearance(await window.argo.getAppearance())
+}
+
+async function acknowledgeCurrentAppearance(): Promise<void> {
+  for (;;) {
+    const result = await window.argo.appearanceReady(accepted.revision)
+    applyAppearance(result.state)
+    if (result.ready && result.state.revision === accepted.revision) return
+  }
+}
+
+export function acknowledgeRendererAppearance(): Promise<void> {
+  readinessRequested = true
+  acknowledgement ??= acknowledgeCurrentAppearance().finally(() => {
+    acknowledgement = undefined
+  })
+  return acknowledgement
+}
+
+export function useTheme() {
+  return useSyncExternalStore(subscribe, () => accepted)
+}
+
+export function useThemeKey() {
+  return themeKey(useTheme())
 }
 
 export function useDarkAppearance() {
-  return useSyncExternalStore(subscribeToAppearance, isDarkAppearance)
-}
-
-export function useAppearance(): [Appearance, (chosen: Appearance) => void] {
-  const [state, setState] = useState<AppearanceState>(INITIAL)
-
-  useEffect(() => {
-    const bridge = window.argo as typeof window.argo & {
-      getAppearance?: () => Promise<AppearanceState>
-    }
-    if (bridge.getAppearance === undefined) return
-    void bridge.getAppearance().then(setState)
-    return bridge.onAppearanceChanged(setState)
-  }, [])
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', state.dark)
-    // Scrollbars and native form controls read this, not the class.
-    document.documentElement.style.colorScheme = state.dark ? 'dark' : 'light'
-  }, [state.dark])
-
-  const choose = useCallback((chosen: Appearance) => {
-    const bridge = window.argo as typeof window.argo & {
-      setAppearance?: (appearance: Appearance) => Promise<AppearanceState>
-    }
-    if (bridge.setAppearance === undefined) return
-    void bridge.setAppearance(chosen).then(setState)
-  }, [])
-
-  return [state.appearance, choose]
+  return useSyncExternalStore(subscribe, () => accepted.dark)
 }

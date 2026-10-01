@@ -19,6 +19,25 @@
   ],
   "items": [
     {
+      "name": "dialog",
+      "url": "https://ui.shadcn.com/r/styles/base-nova/dialog.json",
+      "registryTarget": "registry/base-nova/ui/dialog.tsx",
+      "target": "src/platform/renderer/components/ui/dialog.tsx",
+      "comparatorTarget": "tests/styling/fixtures/pristine-dialog.tsx",
+      "dependencies": ["cn"],
+      "registryDependencies": ["button"],
+      "payloadSha256": "40fc321d25eb9590d07db54b00d9bc1a74274a549aa06d5915a34ba302ed8b94",
+      "cliSourceSha256": "505127afc9638e04f164601274cdc8d227ba5631560cf553563f8419ecc5cfa5",
+      "sourceSha256": "2c99f880c6d8ad29c048a56db631b216e05b9405cbe83e8ff6595a06d60f7d32",
+      "generationTransforms": [
+        "Resolve the Button registry dependency through the configured ui alias.",
+        "Remove use-client directives for rsc=false.",
+        "Transform Lucide close icon to Phosphor XIcon with default props.",
+        "Keep the CLI cn import; configured Vite and Storybook aliases select the app merger.",
+        "Apply repository formatting and type-only imports without changing declarations or classes."
+      ]
+    },
+    {
       "name": "button",
       "url": "https://ui.shadcn.com/r/styles/base-nova/button.json",
       "registryTarget": "registry/base-nova/ui/button.tsx",

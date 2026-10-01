@@ -7,7 +7,11 @@ import { AppQueryProvider } from '../src/platform/renderer/app-query-provider'
 import { AutoHideScrollbars } from '../src/platform/renderer/auto-hide-scrollbars'
 import '../src/renderer/i18n'
 import '../src/platform/renderer/styles/globals.css'
+import { type AppearanceState, THEMES } from '../src/platform/contract/appearance'
+import { applyAppearance } from '../src/platform/renderer/use-appearance'
 import { host } from './storybook-host'
+
+let appearanceRevision = 0
 
 const preview: Preview = {
   // Once per stories file under Vitest, so a cold module load is not charged to its first story.
@@ -17,12 +21,28 @@ const preview: Preview = {
   decorators: [
     (Story, context) => {
       const dark = context.globals.theme === 'dark'
+      const theme =
+        THEMES.find((candidate) => candidate === context.globals.themeIdentity) ?? 'neutral'
+      let state: AppearanceState = {
+        theme,
+        appearance: 'system',
+        dark,
+        revision: ++appearanceRevision,
+      }
+      applyAppearance(state)
       host.argo = {
         ...host.argo,
-        getAppearance: () => Promise.resolve({ appearance: dark ? 'dark' : 'light', dark }),
+        getAppearance: () => Promise.resolve(state),
+        setAppearance: async (preference) => {
+          state = {
+            ...preference,
+            dark: preference.appearance === 'system' ? dark : preference.appearance === 'dark',
+            revision: ++appearanceRevision,
+          }
+          applyAppearance(state)
+          return { ok: true, state }
+        },
       } as typeof host.argo
-      document.documentElement.classList.toggle('dark', dark)
-      document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
       return createElement(
         IconContext.Provider,
         { value: { weight: 'regular' } },
@@ -35,9 +55,20 @@ const preview: Preview = {
     },
   ],
   globalTypes: {
+    themeIdentity: {
+      defaultValue: 'neutral',
+      description: 'Color theme',
+      toolbar: {
+        icon: 'circlehollow',
+        items: [
+          { value: 'neutral', title: 'Neutral' },
+          { value: 'graphite', title: 'Graphite' },
+        ],
+      },
+    },
     theme: {
       defaultValue: 'dark',
-      description: 'Cockpit appearance',
+      description: 'Resolved appearance',
       toolbar: {
         icon: 'paintbrush',
         items: [

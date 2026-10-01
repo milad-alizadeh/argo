@@ -1,0 +1,10 @@
+{
+  "neutral": {
+    "light": "#ffffff",
+    "dark": "#0a0a0a"
+  },
+  "graphite": {
+    "light": "#ffffff",
+    "dark": "#09090b"
+  }
+}

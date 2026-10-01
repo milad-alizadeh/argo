@@ -29,3 +29,19 @@ export function metrics(element: Element) {
     tracking: style.letterSpacing,
   }
 }
+
+export function resetAppearanceDocument() {
+  document.documentElement.removeAttribute('data-theme')
+  document.documentElement.classList.remove('dark')
+  document.documentElement.style.colorScheme = ''
+}
+
+export function drawnColor(value: string) {
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = 1
+  const context = canvas.getContext('2d', { willReadFrequently: true })
+  if (!context) throw new Error('Missing canvas')
+  context.fillStyle = value
+  context.fillRect(0, 0, 1, 1)
+  return Array.from(context.getImageData(0, 0, 1, 1).data)
+}

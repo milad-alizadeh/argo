@@ -3,9 +3,22 @@
 `apps/desktop` only. `apps/macOS` is deprecated and has no stack: `docs/designs/` is its closed
 archive.
 
-- **Shared token contract** — `apps/desktop/src/platform/renderer/tokens.css`. Shared design tokens live there.
-  `:root` supplies shared values and the light appearance. `.dark` overrides appearance values.
-  `globals.css` imports the contract and defines global styles only.
+- **Shared token contract** — `apps/desktop/src/platform/renderer/tokens.css` owns shared geometry,
+  typography metadata, and values for specialized adapters. Color themes live in
+  `apps/desktop/src/platform/renderer/styles/themes/`. Each theme supplies light and dark color
+  roles. Themes do not change geometry or typography. `styles/theme-bindings.css` binds those
+  roles to Tailwind colors. `globals.css` imports these owners and defines global styles only.
+  Register theme identities in `apps/desktop/src/platform/contract/appearance.ts`.
+  The main process owns the saved theme, appearance preference, and resolved appearance.
+  The renderer applies its accepted snapshot before main shows the window.
+  Native window backgrounds come from the actual theme CSS, not a separate palette.
+  From `apps/desktop`, run `rtk node tools/styling/generate-native-theme-backgrounds.mts`
+  after a theme background change. The command writes
+  `src/platform/contract/native-theme-backgrounds.json` through Chromium color resolution.
+  Run `rtk node tools/styling/generate-native-theme-backgrounds.mts --check` to make sure that
+  the generated backgrounds match the CSS. Run
+  `rtk bun test src/platform/renderer/styles/theme-completeness.test.ts` to make sure that
+  every appearance supplies every role used by the bindings.
 - **Typography** — Tailwind's default text and numeric spacing scales keep their original
   measurements. Registry components and their app callers use the selected registry typography
   by default. Button/Input callers preserve registry size, line height, weight, and tracking,
@@ -24,7 +37,7 @@ archive.
   `npx shadcn@latest add <name>`. Compose the registry shapes when the registry has no matching
   shape. Review mutable candidates in scratch before an update and preserve generated source
   between reviewed updates. Argo imposes this maintenance boundary; shadcn permits source edits.
-  The Button/Input baseline is recorded in `apps/desktop/tests/styling/registry-baseline.json`.
+  The Button/Input/Dialog baseline is recorded in `apps/desktop/tests/styling/registry-baseline.json`.
   Other installed primitives retain the pending dispositions in the research catalog.
   A Biome restricted-import rule refuses a second component library. `components.json`
   fixes the primitive path under `ui/` (#1767).
