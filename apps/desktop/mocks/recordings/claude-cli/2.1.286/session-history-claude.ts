@@ -1,9 +1,12 @@
 // Written by `bun run record:vendor-history`; do not edit by hand.
-import type { Recorded } from '../../recorded.ts'
-import type { ClaudeRecording } from '../recorded-claude-sessions.ts'
+
+import type { ClaudeRecording } from '../../../cli/claude/recorded-claude-sessions'
+import type { Recorded } from '../../recorded'
 
 export const claudeRecording: Recorded<ClaudeRecording> = {
+  producer: 'claude-cli',
   version: '2.1.286',
+  recordedAt: '2026-10-01',
   agentSdk: '0.3.278',
   calls: [
     {

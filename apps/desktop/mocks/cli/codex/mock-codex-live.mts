@@ -6,8 +6,8 @@ import {
   SESSION_MOCK_START_HOLD_FILE_ENV,
   waitWhileHoldFileExists,
 } from '@/harnesses/proof-protocol'
+import { recordedCodexModels } from '../../recordings/codex-app-server.ts'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
-import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
 import { sendPlanUpdate } from './fixtures/mock-codex-plan.ts'
 import { createMockCodexSkillsAndConfig } from './fixtures/mock-codex-skills-config.ts'
 
@@ -277,7 +277,7 @@ function handle(message: Request) {
   if (answerSkillsAndConfig(message)) return
   if (method === 'initialized') return
   if (method === 'initialize') return send({ id, result: {} })
-  if (method === 'model/list') return send({ id, result: MOCK_CODEX_MODEL_CATALOG })
+  if (method === 'model/list') return send({ id, result: recordedCodexModels })
   if (method === 'thread/list') {
     const names = storedNames()
     return send({

@@ -1,9 +1,12 @@
 // Written by `bun run record:vendor-history`; do not edit by hand.
-import type { Recorded } from '../../recorded.ts'
-import type { CodexRecording } from '../recorded-codex-threads.ts'
+
+import type { CodexRecording } from '../../../cli/codex/recorded-codex-threads'
+import type { Recorded } from '../../recorded'
 
 export const codexRecording: Recorded<CodexRecording> = {
+  producer: 'codex-app-server',
   version: '0.157.0',
+  recordedAt: '2026-10-01',
   calls: [
     {
       method: 'thread/list',

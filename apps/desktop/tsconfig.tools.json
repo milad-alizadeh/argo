@@ -7,6 +7,7 @@
   "include": [
     "src/renderer/argo.d.ts",
     "tools/**/*.ts",
+    "tools/recordings/generate-recording-imports.mts",
     // The driver reads the global this probe declares in Electron main.
     "tools/sessions/session-list-startup-probe.mts"
   ],
