@@ -156,6 +156,7 @@ export async function supervisorFor(
   return {
     root,
     supervisor,
+    registry,
     database,
     client,
     notify(message: WireMessage) {

@@ -9,7 +9,9 @@ import { ACP_HARNESSES } from '@/harnesses/acp/acp-agents'
 import { acpExecutableOverride } from '@/harnesses/acp/acp-proof-protocol'
 import { createAcpRegistrations } from '@/harnesses/acp/acp-registration-factory'
 import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
+import type { LiveSessionChannelEvent } from '@/harnesses/registration'
 import { createHarnessRegistry } from '@/harnesses/registry'
+import { waitForMockAcpEvent } from '@/mocks/cli/claude-acp/mock-acp-session'
 import { writeMockClaudeAcp } from '@/mocks/cli/claude-acp/mock-claude-acp-cli'
 import {
   available,
@@ -142,9 +144,18 @@ test('starts an ACP Session when the agent reports no mode or effort choice', as
         ...ACP_HARNESSES.map((each) => (each === harness ? info : unavailable(each))),
       ],
     })
-    const { root, supervisor, client } = await supervisorFor(async () => {
+    const { root, supervisor, registry, client } = await supervisorFor(async () => {
       throw new Error('Codex must not be called.')
     }, acpCatalog)
+    // The agent writes into the folder until its channel closes, so removal waits for that.
+    const events: LiveSessionChannelEvent[] = []
+    const open = registry[harness].openLiveSession
+    assert.ok(open)
+    registry[harness].openLiveSession = (input, controls, emit) =>
+      open(input, controls, (event) => {
+        events.push(event)
+        emit(event)
+      })
     try {
       const { sessionId } = await start(supervisor, {
         ...first,
@@ -156,6 +167,7 @@ test('starts an ACP Session when the agent reports no mode or effort choice', as
     } finally {
       root.send({ type: 'Shutdown' })
       client.close()
+      await waitForMockAcpEvent(events, 'closed')
     }
   } finally {
     delete process.env[override]
