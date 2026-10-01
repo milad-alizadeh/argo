@@ -65,10 +65,10 @@ async function waitForDrawnDiagrams(page) {
 }
 
 export async function proveSessionDiagram(page, fixture: DiagramFixture) {
-  await openSessionByRoute(page, await fixtureSession('prose'))
-  await page.waitForSelector(`${ACTIVE_VIEWPORT} [data-feed-row]`)
+  // An external Session's Feed reads its history on open, so the turns are written first.
   await fixture.append(fixture.transcripts, DIAGRAM_ROW, DIAGRAM_TEXT)
   await fixture.append(fixture.transcripts, 'p-diagram-after', FOLLOWING_TEXT)
+  await openSessionByRoute(page, await fixtureSession('prose'))
   await waitForDrawnDiagrams(page)
 
   // The honest state for the fence Mermaid could not draw: its source stays readable and the

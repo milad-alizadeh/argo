@@ -7,6 +7,16 @@ import recorded from './fixtures/agents-claude-2.1.286.json' with { type: 'json'
 
 type RecordedEntry = Record<string, unknown> & { sessionId: string }
 
+// The file whose text the e2e mock `claude` prints for `claude agents --json`; with none, it fails.
+export const MOCK_CLAUDE_AGENTS_ENV = 'ARGO_MOCK_CLAUDE_AGENTS'
+
+// The recorded idle or busy interactive entry, naming another Session.
+export function recordedClaudeAgent(sessionId: string, status: 'idle' | 'busy'): RecordedEntry {
+  const entry = recorded.output.find((candidate) => candidate.status === status)
+  if (entry === undefined) throw new Error(`No recorded ${status} entry.`)
+  return { ...structuredClone(entry), sessionId }
+}
+
 export function mockClaudeAgentsCli() {
   const root = mkdtempSync(path.join(os.tmpdir(), 'argo-claude-agents-'))
   const executable = path.join(root, 'claude')

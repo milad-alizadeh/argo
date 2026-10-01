@@ -39,6 +39,20 @@ async function holdLock(file: string): Promise<ChildProcess> {
   throw new Error('The lock holder exited before it took the lock.')
 }
 
+// A writer holding one thread's lock under `codexHome`, as an open Codex does, until it exits cleanly.
+export async function holdCodexWriterLock(codexHome: string, threadId: string) {
+  const file = path.join(codexHome, 'thread-writer-locks', `${threadId}.lock`)
+  mkdirSync(path.dirname(file), { recursive: true })
+  writeFileSync(file, '')
+  const holder = await holdLock(file)
+  return async () => {
+    const exited = new Promise((resolve) => holder.once('exit', resolve))
+    holder.kill()
+    await exited
+    rmSync(file, { force: true })
+  }
+}
+
 // The app-server's answers a poll asks for: a thread's stored rollout path, and its newest Turn.
 function mockAppServerRequest(answers: {
   rollout: (threadId: string) => string
