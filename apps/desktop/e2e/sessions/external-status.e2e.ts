@@ -67,6 +67,7 @@ function claudeSource(): StatusSource {
         cwd: project,
       }))
       return {
+        CLAUDE_CONFIG_DIR: claudeConfig(root),
         [SESSION_CLAUDE_SYNC_FIXTURE_ENV]: JSON.stringify({ records, delayMs: 0 }),
         [MOCK_CLAUDE_AGENTS_ENV]: claudeAgents(root),
       }
@@ -120,7 +121,7 @@ function codexSource(): StatusSource {
         turns: [],
       }))
       await writeFile(codexState(root), JSON.stringify(threads))
-      return {}
+      return { CODEX_HOME: codexHome(root) }
     },
     async openTurn(root, session) {
       release ??= await holdCodexWriterLock(codexHome(root), session.nativeId)
@@ -148,9 +149,10 @@ async function launch(root: string, applicationUnderTest: string, source: Status
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
       [ACCEPTANCE_ENV]: '0',
       ARGO_CODEX_E2E_STATE: codexState(root),
-      // The run-wide folders name another app's hook port, and a busy one stops every install.
-      CLAUDE_CONFIG_DIR: claudeConfig(root),
-      CODEX_HOME: codexHome(root),
+      // Empty folders for the Harness the case does not seed. The run-wide ones name another app's
+      // hook port, and a busy port stops every install.
+      CLAUDE_CONFIG_DIR: path.join(root, 'unseeded-claude-config'),
+      CODEX_HOME: path.join(root, 'unseeded-codex-home'),
       ...(await source.seed(root, fixture.project, sessions)),
     },
   })
