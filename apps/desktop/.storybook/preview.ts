@@ -1,6 +1,7 @@
 import { IconContext } from '@phosphor-icons/react'
 import type { Preview } from '@storybook/react-vite'
 import { createElement } from 'react'
+import { storyPreloads } from '../mocks/platform/story-preload'
 import { SessionChanges } from '../src/domains/sessions/renderer'
 import { AppQueryProvider } from '../src/platform/renderer/app-query-provider'
 import { AutoHideScrollbars } from '../src/platform/renderer/auto-hide-scrollbars'
@@ -9,6 +10,10 @@ import '../src/platform/renderer/styles/globals.css'
 import { host } from './storybook-host'
 
 const preview: Preview = {
+  // Once per stories file under Vitest, so a cold module load is not charged to its first story.
+  beforeAll: async () => {
+    await storyPreloads()
+  },
   decorators: [
     (Story, context) => {
       const dark = context.globals.theme === 'dark'
