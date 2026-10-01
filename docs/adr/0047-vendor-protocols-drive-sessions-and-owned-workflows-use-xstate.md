@@ -24,8 +24,7 @@ ADR-0040's file and process liveness checks, for the lock probe only. The rule t
 parse transcript or rollout files stands. Argo installs status hooks in each Harness's user-level
 config at launch, with no switch; once a Harness's hooks fire, they replace both poll sources for it
 (#2976). This reverses ADR-0041's removal of a user-level hook, for status only; compaction still
-comes from vendor events, as below. As in ADR-0041, an acceptance run installs nothing; a proof run
-installs only in Harness folders it names, and a link to a file that is gone is not written.
+comes from vendor events, as below. As in ADR-0041, an acceptance run installs nothing.
 
 ## Amendment · main-owned root Feed reading (#2824) · 2026-09-28
 

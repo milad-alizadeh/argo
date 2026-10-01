@@ -1,5 +1,5 @@
 {
-  "capture": "Not recorded: built from the payload examples in the Claude Code hooks reference (https://code.claude.com/docs/en/hooks), which every event shares with claude 2.1.286 per the #2976 spike. One Turn runs Bash after a permission prompt; one asks a question with AskUserQuestion.",
+  "capture": "Not recorded: built from the payload examples in the Claude Code hooks reference (https://code.claude.com/docs/en/hooks), which every event shares with claude 2.1.286 per the #2976 spike, and checked against the Agent SDK hook input types. One Turn runs Bash after a permission prompt; one asks a question with AskUserQuestion.",
   "bashTurn": [
     {
       "event": "SessionStart",
@@ -73,7 +73,7 @@
           "run_in_background": false
         },
         "tool_use_id": "toolu_01ABC123",
-        "tool_output": "42 tests passed"
+        "tool_response": { "stdout": "42 tests passed", "stderr": "", "interrupted": false }
       }
     },
     {
@@ -210,7 +210,7 @@
           ]
         },
         "tool_use_id": "toolu_01DEF456",
-        "tool_output": "Red"
+        "tool_response": { "answers": { "Which colour?": "Red" } }
       }
     },
     {

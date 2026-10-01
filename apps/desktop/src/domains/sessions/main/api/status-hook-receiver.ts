@@ -1,7 +1,13 @@
 import { createServer, type IncomingMessage, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
-import { type ExternalSessions, statusHookEventSchema } from '@/harnesses/registration'
+import {
+  installedStatusHookPort,
+  installStatusHooks,
+  isStatusHookEvent,
+  readStatusHook,
+} from '@/harnesses/host/status-hooks'
+import type { ExternalSessions } from '@/harnesses/registration'
 import type { ExternalSessionPoll } from './external-session-poll'
 
 // A hook payload is one JSON object; anything larger is not one Argo installed.
@@ -22,25 +28,6 @@ async function readBody(request: IncomingMessage): Promise<string | null> {
     chunks.push(chunk)
   }
   return Buffer.concat(chunks).toString('utf8')
-}
-
-function parseJson(text: string | null): unknown {
-  if (text === null) return undefined
-  try {
-    return JSON.parse(text)
-  } catch {
-    return undefined
-  }
-}
-
-// An acceptance run installs nothing, and a proof run only in Harness folders it names, so neither
-// can write the person's own config (ADR-0041).
-export function installsStatusHooks(
-  run: { acceptance: boolean; proof: boolean },
-  env: NodeJS.ProcessEnv,
-): boolean {
-  if (run.acceptance) return false
-  return !run.proof || (env.CLAUDE_CONFIG_DIR !== undefined && env.CODEX_HOME !== undefined)
 }
 
 // Installs every Harness's status hooks once, globally, naming one loopback port, and passes
@@ -85,7 +72,8 @@ export class StatusHookReceiver {
     }
     for (const { harness, external } of this.#context.harnesses)
       try {
-        await external.hooks?.install(this.port)
+        if (external.hooks !== undefined)
+          await installStatusHooks(harness, external.hooks, this.port)
       } catch (error) {
         this.#installFailures += 1
         console.warn(
@@ -102,9 +90,10 @@ export class StatusHookReceiver {
   }
 
   async #installedPort(): Promise<number | null> {
-    for (const { external } of this.#context.harnesses) {
-      const port = await external.hooks?.installedPort().catch(() => null)
-      if (port != null) return port
+    for (const { harness, external } of this.#context.harnesses) {
+      if (external.hooks === undefined) continue
+      const port = await installedStatusHookPort(harness, external.hooks).catch(() => null)
+      if (port !== null) return port
     }
     return null
   }
@@ -125,16 +114,20 @@ export class StatusHookReceiver {
   }
 
   async #receive(request: IncomingMessage): Promise<boolean> {
-    const [, harnessName, eventName] = HOOK_PATH.exec(request.url ?? '') ?? []
+    const [, harnessName, event = ''] = HOOK_PATH.exec(request.url ?? '') ?? []
     const harness = harnessSchema.safeParse(harnessName).data
-    const event = statusHookEventSchema.safeParse(eventName).data
     const hooks = this.#context.harnesses.find((each) => each.harness === harness)?.external.hooks
-    const payload = parseJson(await readBody(request))
+    const payload: unknown = await readBody(request)
+      .then((text) => JSON.parse(text ?? ''))
+      .catch(() => undefined)
     const reading =
-      request.method === 'POST' && event !== undefined && this.#fromHook(request)
-        ? hooks?.read(event, payload)
-        : undefined
-    if (harness === undefined || event === undefined || reading == null) {
+      request.method === 'POST' &&
+      hooks !== undefined &&
+      isStatusHookEvent(event) &&
+      this.#fromHook(request)
+        ? readStatusHook(hooks, event, payload)
+        : null
+    if (harness === undefined || !isStatusHookEvent(event) || reading === null) {
       this.#rejected += 1
       console.warn(`Rejected ${this.#rejected} unrecognised status hook event(s).`)
       return false

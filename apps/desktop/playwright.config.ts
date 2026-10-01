@@ -1,19 +1,10 @@
-import { mkdtempSync, rmSync } from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
 import { defineConfig } from '@playwright/test'
 import type { SessionBackendOptions } from './e2e/sessions/session-backend-option'
+import { isolateHarnessFoldersForRun } from './mocks/cli/real-user-config'
 
 // The app installs its status hooks in the Harness config folders at launch, so a case that names
-// none gets throwaway folders, never the person's own, even one the shell names. Workers inherit
-// the runner's, and the runner deletes them on exit.
-for (const name of ['CLAUDE_CONFIG_DIR', 'CODEX_HOME']) {
-  const prefix = path.join(os.tmpdir(), `argo-e2e-${name.toLowerCase()}-`)
-  if (process.env[name]?.startsWith(prefix)) continue
-  const folder = mkdtempSync(prefix)
-  process.env[name] = folder
-  process.once('exit', () => rmSync(folder, { recursive: true, force: true }))
-}
+// none gets throwaway folders, never the person's own. The runner deletes them on exit.
+process.once('exit', isolateHarnessFoldersForRun('e2e'))
 
 // One project per flow under `e2e/` (#2325). Every case launches the app against its own root
 // (`e2e/packaged-proof.ts`, #2326), so cases run in parallel, one app per worker. The app is the

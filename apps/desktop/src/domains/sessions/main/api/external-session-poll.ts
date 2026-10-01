@@ -3,13 +3,12 @@ import { and, eq, ne, notInArray, type SQL } from 'drizzle-orm'
 import { sessionTable } from '@/database/session/schema'
 import { projectFeedRowEntries } from '@/domains/sessions/api/feed'
 import { type Harness, type HarnessSession, harnessSessionKey } from '@/harnesses/harness'
+import type { ExternalHookReading, StatusHookEvent } from '@/harnesses/host/status-hooks'
 import type {
   ExternalActivityReading,
-  ExternalHookReading,
   ExternalSessionStatus,
   ExternalSessions,
   LiveExternalSession,
-  StatusHookEvent,
 } from '@/harnesses/registration'
 import {
   harnessSessionId,
@@ -58,8 +57,6 @@ type TrackedSession = {
   // The last read could not answer yet, so the next tick reads again.
   retry: boolean
   discovered: boolean
-  // A hook event set its status, so no listing overwrites it.
-  hooked: boolean
 }
 
 // A Session waiting its turn, being read, or being read with one more read asked for after it.
@@ -97,7 +94,6 @@ const newTracked = (
   shown: null,
   retry: false,
   discovered: false,
-  hooked: false,
 })
 
 // The stored status and activity of Sessions that run outside Argo, from one poll. Each tick lists
@@ -186,7 +182,6 @@ export class ExternalSessionPoll {
     const tracked = live.get(session.nativeId) ?? newTracked(null, null)
     live.set(session.nativeId, tracked)
     tracked.changedAt = Date.now()
-    tracked.hooked = true
     // PreToolUse is async, so it can land after the PermissionRequest it precedes.
     const held =
       event === 'PreToolUse' &&
@@ -231,7 +226,7 @@ export class ExternalSessionPoll {
       const sessionId = harnessSessionId(this.#context.database, session)
       if (sessionId !== undefined && this.#context.hasLiveChannel(sessionId)) continue
       this.#leaving.delete(harnessSessionKey(session))
-      const tracked = this.#track(listed, previous?.get(listed.nativeId))
+      const tracked = this.#track(harness, listed, previous?.get(listed.nativeId))
       current.set(listed.nativeId, tracked)
       if (sessionId === undefined) this.#discover(session, tracked)
       if (external.readActivity !== undefined) await this.#readChange(session, tracked)
@@ -241,7 +236,7 @@ export class ExternalSessionPoll {
     if (!this.#closed.has(harness)) this.#closeAll(harness, current)
   }
 
-  // A Session the listing missed leaves, unless a hook event set its status, which outranks it.
+  // A Session the listing missed leaves, unless the Harness's hooks fire, which outrank it.
   #unlisted(
     harness: Harness,
     previous: ReadonlyMap<string, TrackedSession> | undefined,
@@ -250,7 +245,7 @@ export class ExternalSessionPoll {
     const readsActivity = this.#external.get(harness)?.readActivity !== undefined
     for (const [nativeId, tracked] of previous ?? []) {
       if (current.has(nativeId)) continue
-      if (tracked.hooked) current.set(nativeId, tracked)
+      if (this.#firing.has(harness)) current.set(nativeId, tracked)
       else this.#leave({ harness, nativeId }, tracked, readsActivity)
     }
   }
@@ -276,6 +271,7 @@ export class ExternalSessionPoll {
 
   // The same object across ticks, so a read that lands mid-tick is kept.
   #track(
+    harness: Harness,
     { transcript, status: listed }: LiveExternalSession,
     before: TrackedSession | undefined,
   ): TrackedSession {
@@ -284,7 +280,7 @@ export class ExternalSessionPoll {
     if (before.transcript !== transcript) {
       before.transcript = transcript
       before.stamp = null
-      if (!before.hooked) before.status = null
+      if (!this.#firing.has(harness)) before.status = null
     }
     return before
   }

@@ -28,19 +28,15 @@ draws it the same way. A status a read settles outranks the listed one. The tick
 with the last one. A Session that is new and has no row sends `Discover` once. A Session that left
 the list shows `idle`; where the Harness reads activity, it gets one last read, whose status, such
 as `unknown` for a Turn a crash left unfinished, replaces it. The first tick stores `idle` for every
-saved Session of that Harness it does not find open. A `running` or `permission` status settled
-by a read or a hook shows `unknown` once nothing has changed for five minutes, because a
-killed terminal writes nothing more and an approval dismissed with Esc sends no hook event. A listed
-status is fresh from every tick. A Session with a live Argo channel is skipped, so the channel alone
-owns its status and activity, and the Session List draws the channel's activity over the stored
-line. A reading that names no activity keeps the stored line, so an idle row keeps its last line.
-Each Session's status, line and `activityAt` merge into at most one SQLite write every 500 ms. A
-restart still resets every working status to `unknown` until the poll settles one. Argo installs
-status hooks in each Harness's user-level config at launch, with no switch, and listens on one
-loopback port. If the port the hooks name is busy, another Argo owns them, so this one rewrites
-nothing and stays on the poll. Once a Harness's hooks fire, its listing stops, each listed status
-becomes a settled one under the quiet limit, and hook events set its rows; events for a Session
-with no saved row are ignored, except that a start asks Session sync to discover it (#2976).
+saved Session of that Harness it does not find open. A `running` or `permission` status a read or a
+hook settled shows `unknown` once nothing has changed for five minutes, because a killed terminal
+writes nothing more and Esc at a prompt sends no hook; a listed status is fresh from every tick.
+A Session with a live Argo channel is skipped, so the channel alone owns its status and activity,
+and the Session List draws the channel's activity over the stored line. A reading that names no
+activity keeps the stored line, so an idle row keeps its last line. Each Session's status, line and
+`activityAt` merge into at most one SQLite write every 500 ms. A restart still resets every working
+status to `unknown` until the poll settles one. Once a Harness's status hooks fire, their events set
+its rows and its listing stops (#2976).
 
 An external Session's Feed reads its whole history when it opens and on Refresh. It has no change
 signal until the external Feed moves to the vendor readers.

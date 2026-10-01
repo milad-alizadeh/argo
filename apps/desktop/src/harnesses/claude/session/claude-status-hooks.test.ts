@@ -1,106 +1,68 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { lstat, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises'
+import { lstat, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { after, type TestContext, test } from 'node:test'
-import type { ExternalSessionHooks } from '@/harnesses/registration'
-import { guardRealUserConfig, isolateHarnessFolders } from '@/mocks/cli/real-user-config'
-import { EXPECTED_HOOK_EVENTS, expectedHookGroup } from '@/mocks/cli/status-hooks'
-import { createClaudeExternalSessions } from './claude-external-sessions'
+import { test } from 'node:test'
+import type { PostToolUseHookInput } from '@anthropic-ai/claude-agent-sdk'
+import { installStatusHooks, removeStatusHooks } from '@/harnesses/host/status-hooks'
+import { testStatusHookInstall } from '@/mocks/cli/status-hook-install-suite'
+import { type HOOK_FIXTURES, hookReadings } from '@/mocks/cli/status-hooks'
+import { createClaudeStatusHooks } from './claude-status-hooks'
 
-const realConfigUnchanged = guardRealUserConfig()
-after(realConfigUnchanged)
+// The docs fixture's PostToolUse carries what the Agent SDK says Claude sends with one.
+type FixturePostToolUse = Extract<
+  (typeof HOOK_FIXTURES.claude.bashTurn)[number]['payload'],
+  { tool_response: unknown }
+>
+true satisfies [FixturePostToolUse] extends [never]
+  ? false
+  : FixturePostToolUse extends Omit<PostToolUseHookInput, 'hook_event_name'>
+    ? true
+    : false
 
-const EVENTS = EXPECTED_HOOK_EVENTS
-const argoGroup = (port: number, event: string) => expectedHookGroup('claude', port, event)
-const USER_STOP = { hooks: [{ type: 'command', command: 'say done' }] }
-const USER_BASH = { matcher: 'Bash', hooks: [{ type: 'command', command: './check.sh' }] }
+const settings = path.join(process.env.CLAUDE_CONFIG_DIR as string, 'settings.json')
 const USER_SETTINGS = {
   model: 'opus',
-  hooks: { Stop: [USER_STOP], PreToolUse: [USER_BASH], Notification: [USER_STOP] },
+  hooks: {
+    Stop: [{ hooks: [{ type: 'command', command: 'say done' }] }],
+    PreToolUse: [{ matcher: 'Bash', hooks: [{ type: 'command', command: './check.sh' }] }],
+    Notification: [{ hooks: [{ type: 'command', command: 'say hi' }] }],
+  },
   permissions: { allow: ['Bash(ls)'] },
-}
-
-async function claudeFolder(context: TestContext) {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-hooks-'))
-  const restore = isolateHarnessFolders(root)
-  context.after(async () => {
-    restore()
-    await rm(root, { recursive: true, force: true })
-  })
-  const folder = process.env.CLAUDE_CONFIG_DIR as string
-  await mkdir(folder, { recursive: true })
-  return { root, settings: path.join(folder, 'settings.json') }
-}
-
-function hooksOf(): ExternalSessionHooks {
-  const hooks = createClaudeExternalSessions(null).hooks
-  assert.ok(hooks)
-  return hooks
 }
 
 const readJson = async (file: string) => JSON.parse(await readFile(file, 'utf8'))
 
-test('an install into an empty Claude folder adds one entry per event, naming the port', async (context) => {
-  const { settings } = await claudeFolder(context)
-  await hooksOf().install(4321)
-  const written = await readJson(settings)
-  assert.deepEqual(Object.keys(written.hooks), EVENTS)
-  for (const event of EVENTS) assert.deepEqual(written.hooks[event], [argoGroup(4321, event)])
-  assert.equal(await hooksOf().installedPort(), 4321)
+async function seed(text: string | null) {
+  await mkdir(path.dirname(settings), { recursive: true })
+  await rm(settings, { force: true })
+  if (text !== null) await writeFile(settings, text)
+}
+
+testStatusHookInstall('claude', async (_context, userHooks) => {
+  const { Notification: _other, ...hooks } = USER_SETTINGS.hooks
+  await seed(userHooks ? JSON.stringify({ hooks }) : null)
+  return {
+    hooks: createClaudeStatusHooks(),
+    read: async () => (await readJson(settings)).hooks ?? {},
+  }
 })
 
-test('an install keeps every other setting and hook in place, and a second install writes nothing', async (context) => {
-  const { settings } = await claudeFolder(context)
-  await writeFile(settings, JSON.stringify(USER_SETTINGS, null, 2))
-  await hooksOf().install(4321)
+test('a Claude install keeps every other setting and hook, and its removal leaves them as they were', async () => {
+  await seed(JSON.stringify(USER_SETTINGS))
+  await installStatusHooks('claude', createClaudeStatusHooks(), 4321)
   const written = await readJson(settings)
   assert.deepEqual(Object.keys(written), ['model', 'hooks', 'permissions'])
-  assert.equal(written.model, 'opus')
-  assert.deepEqual(written.permissions, USER_SETTINGS.permissions)
-  assert.deepEqual(written.hooks.Stop, [USER_STOP, argoGroup(4321, 'Stop')])
-  assert.deepEqual(written.hooks.PreToolUse, [USER_BASH, argoGroup(4321, 'PreToolUse')])
-  assert.deepEqual(written.hooks.Notification, [USER_STOP])
-  assert.deepEqual(Object.keys(written.hooks).slice(0, 3), ['Stop', 'PreToolUse', 'Notification'])
-
-  const before = {
-    text: await readFile(settings, 'utf8'),
-    modified: (await stat(settings)).mtimeMs,
-  }
-  await new Promise((resolve) => setTimeout(resolve, 20))
-  await hooksOf().install(4321)
-  assert.equal(await readFile(settings, 'utf8'), before.text)
-  assert.equal((await stat(settings)).mtimeMs, before.modified)
-})
-
-test('a new port rewrites only Argo entries, where they stand', async (context) => {
-  const { settings } = await claudeFolder(context)
-  await writeFile(settings, JSON.stringify(USER_SETTINGS))
-  await hooksOf().install(4321)
-  const installed = await readJson(settings)
-  installed.hooks.Stop.push(USER_BASH)
-  await writeFile(settings, JSON.stringify(installed))
-  await hooksOf().install(5555)
-  const written = await readJson(settings)
-  assert.deepEqual(written.hooks.Stop, [USER_STOP, argoGroup(5555, 'Stop'), USER_BASH])
-  assert.equal(await hooksOf().installedPort(), 5555)
-})
-
-test('the removal deletes exactly the entries Argo wrote', async (context) => {
-  const { settings } = await claudeFolder(context)
-  await writeFile(settings, JSON.stringify(USER_SETTINGS))
-  await hooksOf().install(4321)
-  await hooksOf().remove()
+  assert.deepEqual(written.hooks.Notification, USER_SETTINGS.hooks.Notification)
+  await removeStatusHooks('claude', createClaudeStatusHooks())
   assert.deepEqual(await readJson(settings), USER_SETTINGS)
-  assert.equal(await hooksOf().installedPort(), null)
 })
 
-test('a removal after an install into no settings leaves no hooks table', async (context) => {
-  const { settings } = await claudeFolder(context)
-  await writeFile(settings, JSON.stringify({ model: 'opus' }))
-  await hooksOf().install(4321)
-  await hooksOf().remove()
+test('a Claude removal after an install into settings with no hooks leaves no hooks table', async () => {
+  await seed(JSON.stringify({ model: 'opus' }))
+  await installStatusHooks('claude', createClaudeStatusHooks(), 4321)
+  await removeStatusHooks('claude', createClaudeStatusHooks())
   assert.deepEqual(await readJson(settings), { model: 'opus' })
 })
 
@@ -110,48 +72,62 @@ for (const [label, text] of [
   ['has a hooks value that is not an object', '{ "hooks": [] }'],
   ['has an event value that is not a list', '{ "hooks": { "Stop": {} } }'],
 ] as const)
-  test(`a settings file that ${label} is not written`, async (context) => {
-    const { settings } = await claudeFolder(context)
-    await writeFile(settings, text)
-    await assert.rejects(hooksOf().install(4321))
-    await assert.rejects(hooksOf().remove())
+  test(`Claude settings that ${label} are not written`, async () => {
+    await seed(text)
+    await assert.rejects(installStatusHooks('claude', createClaudeStatusHooks(), 4321))
+    await assert.rejects(removeStatusHooks('claude', createClaudeStatusHooks()))
     assert.equal(await readFile(settings, 'utf8'), text)
   })
 
-test('a settings link to a file that is gone is not written, and its target is not made', async (context) => {
-  const { root, settings } = await claudeFolder(context)
-  const target = path.join(root, 'gone.json')
-  await symlink(target, settings)
-  await assert.rejects(hooksOf().install(4321))
-  assert.ok((await lstat(settings)).isSymbolicLink())
-  await assert.rejects(stat(target))
-})
-
-test('a settings link to a file is written through, keeping the link', async (context) => {
-  const { root, settings } = await claudeFolder(context)
-  const target = path.join(root, 'dotfiles-settings.json')
+test('a Claude settings link to a file is written through, keeping the link', async () => {
+  const target = path.join(path.dirname(settings), 'dotfiles-settings.json')
+  await seed(null)
   await writeFile(target, JSON.stringify({ model: 'opus' }))
   await symlink(target, settings)
-  await hooksOf().install(4321)
+  await installStatusHooks('claude', createClaudeStatusHooks(), 4321)
   assert.ok((await lstat(settings)).isSymbolicLink())
-  assert.deepEqual((await readJson(target)).hooks.Stop, [argoGroup(4321, 'Stop')])
+  assert.equal((await readJson(target)).model, 'opus')
+  assert.ok((await readJson(target)).hooks.Stop)
 })
 
 // A child process, because Bun reads HOME once at start and a change to it here moves nothing.
 test('without CLAUDE_CONFIG_DIR the install writes the settings in the home Claude folder', async (context) => {
-  const { root } = await claudeFolder(context)
-  const home = path.join(root, 'home')
+  const home = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-home-'))
+  context.after(() => rm(home, { recursive: true, force: true }))
   const { CLAUDE_CONFIG_DIR: _unset, ...environment } = process.env
   const install = `
-    const { createClaudeExternalSessions } = await import(${JSON.stringify(import.meta.resolve('./claude-external-sessions'))})
+    const { createClaudeStatusHooks } = await import(${JSON.stringify(import.meta.resolve('./claude-status-hooks'))})
+    const { installStatusHooks } = await import(${JSON.stringify(import.meta.resolve('@/harnesses/host/status-hooks'))})
     if ((await import('node:os')).homedir() !== ${JSON.stringify(home)}) process.exit(3)
-    await createClaudeExternalSessions(null).hooks.install(4321)`
+    await installStatusHooks('claude', createClaudeStatusHooks(), 4321)`
   const result = spawnSync(process.execPath, ['-e', install], {
     env: { ...environment, HOME: home },
     encoding: 'utf8',
   })
   assert.equal(result.status, 0, result.stderr)
-  const written = await readJson(path.join(home, '.claude', 'settings.json'))
-  assert.deepEqual(written.hooks.Stop, [argoGroup(4321, 'Stop')])
-  await assert.rejects(stat(path.join(root, 'claude-config', 'settings.json')))
+  assert.ok((await readJson(path.join(home, '.claude', 'settings.json'))).hooks.Stop)
+})
+
+test('each Claude event of a Bash Turn sets its status, and PreToolUse its activity line', () => {
+  assert.deepEqual(hookReadings('claude', createClaudeStatusHooks(), 'bashTurn'), [
+    ['SessionStart', null, null],
+    ['UserPromptSubmit', 'running', null],
+    ['PreToolUse', 'running', 'Run test suite'],
+    ['PermissionRequest', 'permission', null],
+    ['PostToolUse', 'running', null],
+    ['Stop', 'idle', null],
+    ['SessionEnd', 'idle', null],
+  ])
+})
+
+test('a Claude AskUserQuestion shows asking until it is answered', () => {
+  assert.deepEqual(hookReadings('claude', createClaudeStatusHooks(), 'questionTurn'), [
+    ['SessionStart', null, null],
+    ['UserPromptSubmit', 'running', null],
+    ['PreToolUse', 'asking', null],
+    ['PermissionRequest', 'asking', null],
+    ['PostToolUse', 'running', null],
+    ['Stop', 'idle', null],
+    ['SessionEnd', 'idle', null],
+  ])
 })
