@@ -3,6 +3,7 @@ import { expect, test, vi } from 'vitest'
 import type { SessionStartInput } from '@/domains/sessions/main/api'
 import type { LiveSessionControls } from '@/harnesses/registration'
 import { liveSessionChannelEventSchema } from '@/harnesses/registration'
+import { recordedClaudeLifecycleFrames } from '@/mocks/recordings/claude-cli'
 import { claudeSessionChannelOpener } from './claude-session-channel'
 
 const vendor = vi.hoisted(() => ({
@@ -453,16 +454,7 @@ test('streams system task updates, notices, and markers, and counts an unknown s
 test('draws no Feed content and counts nothing for recorded hook and lifecycle frames', async () => {
   vendor.prompts = []
   vendor.releaseSecond = null
-  vendor.recordedEvents = readFileSync(
-    new URL(
-      '../../../../mocks/cli/claude/fixtures/claude-lifecycle-frames-2.1.286.jsonl',
-      import.meta.url,
-    ),
-    'utf8',
-  )
-    .trim()
-    .split('\n')
-    .map((line) => JSON.parse(line))
+  vendor.recordedEvents = structuredClone(recordedClaudeLifecycleFrames)
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
   try {
     const { channel, content } = await completedTurn()

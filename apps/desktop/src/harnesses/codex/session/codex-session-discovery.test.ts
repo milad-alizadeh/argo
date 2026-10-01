@@ -1,10 +1,8 @@
 import { expect, test } from 'bun:test'
-import externalThreads from '../../../../mocks/cli/codex/fixtures/external-threads-codex-0.157.0.json' with {
-  type: 'json',
-}
-import recordedResponses from '../../../../mocks/cli/codex/fixtures/session-sync-codex-0.157.0.json' with {
-  type: 'json',
-}
+import {
+  recordedCodexExternalThreads as externalThreads,
+  recordedCodexSessionSync as recordedResponses,
+} from '@/mocks/recordings/codex-app-server'
 import {
   type CodexRequest,
   CodexUnavailableError,

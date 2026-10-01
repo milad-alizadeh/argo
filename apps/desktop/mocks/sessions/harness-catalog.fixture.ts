@@ -1,8 +1,8 @@
 import { type ClaudeModelCatalog, claudeHarnessInfo } from '@/harnesses/claude/catalog-projection'
 import { type CodexModelCatalog, codexHarnessInfo } from '@/harnesses/codex/catalog'
 import type { AvailableHarness, HarnessInfo } from '@/harnesses/harness-catalog'
+import { codexModelCatalogFixture } from '@/mocks/recordings/codex-model-catalog'
 import { claudeComposerModelCatalogFixture } from './claude-model-catalog.fixture'
-import { codexModelCatalogFixture } from './codex-model-catalog.fixture'
 
 function availableInfo(info: HarnessInfo, harness: 'claude' | 'codex'): AvailableHarness {
   if (info === undefined || info.availability !== 'available')

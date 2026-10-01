@@ -937,6 +937,30 @@ export const AcceptedSendRecreatesANewerEditSavedAfterAcceptance: Story = {
   },
 }
 
+// A render during the Send's save must not re-save the sent text; release within 250 ms (#3072).
+export const AcceptedSendStaysClearedAfterARenderDuringItsSave: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const editor = await canvas.findByLabelText('Message')
+    await userEvent.click(canvas.getByRole('button', { name: 'Hold Session A saves' }))
+    await userEvent.clear(editor)
+    await userEvent.type(editor, 'Sent while saving.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await serverRequestedSave(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Release Session A save' }))
+    await waitFor(() => expect(editor).not.toHaveTextContent('Sent while saving.'))
+    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    const otherEditor = await canvas.findByLabelText('Message')
+    await expect(otherEditor).toHaveTextContent('Restored Session B draft.')
+    await userEvent.type(otherEditor, ' Saved later.')
+    // Session B's autosave is armed after any Session A one, so it lands after it too.
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('Saved later.'),
+    )
+    await expect(canvas.getByLabelText('Stored drafts')).not.toHaveTextContent('Sent while saving.')
+  },
+}
+
 export const TargetSwitchKeepsAnInFlightSaveWithItsOwner: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -1068,7 +1092,7 @@ export const RestoresSavedCodexConfigurationBeforeSend: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const store = canvas.getByLabelText('Stored drafts')
-    await expect(store).toHaveTextContent('"model":"gpt-live"')
+    await expect(store).toHaveTextContent('"model":"gpt-6-astra"')
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent('Plan this change.')
     await waitFor(() =>
       expect(canvas.getByLabelText('Current target')).toHaveTextContent('"harness":"codex"'),
@@ -1077,7 +1101,7 @@ export const RestoresSavedCodexConfigurationBeforeSend: Story = {
     await within(canvasElement.ownerDocument.body).findByText(
       'The Turn could not be sent. Your draft is still saved.',
     )
-    await expect(store).toHaveTextContent('"model":"gpt-live"')
+    await expect(store).toHaveTextContent('"model":"gpt-6-astra"')
     await expect(store).toHaveTextContent('"revision":0')
   },
 }
