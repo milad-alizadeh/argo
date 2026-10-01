@@ -34,9 +34,8 @@ a `.md` carries the numbers, and nothing has distilled them out of the HTML yet 
 the spec, not a companion to one. The first `design-to-code` ticket against this screen writes
 the measurements table here; until then, read the branch.
 
-That makes the branch load-bearing in a way no other design branch is, and the sweep does not
-know it: `worktrees:gc` deletes `design/atlas` the moment #643 closes, distilled or not.
-**#643 must not close before the measurements are in this file.**
+That makes the branch load-bearing in a way no other design branch is.
+**Do not delete `design/atlas` before the measurements are in this file.**
 
 ## What the page settles
 
@@ -110,5 +109,5 @@ the page's exactly; the lit end is the face's own light rather than 7% above it.
 ## When Atlas ships
 
 The last ticket against this screen sets the front matter to `built`, records the commit, and
-`bun run worktrees:gc` deletes `design/atlas` once #643 closes. This file and the renders beside
+deletes `design/atlas` once #643 closes. This file and the renders beside
 it are what stays.

@@ -1,0 +1,186 @@
+---
+name: setup-quality-gates
+description: Turn the house rules' mechanical intents into error-level gates in the repo's own linter, wired to a script, pre-commit and CI, plus the one-page prose residue no linter can check.
+disable-model-invocation: true
+---
+
+# Setup Quality Gates
+
+Install the caps a reviewer would otherwise count by hand as build failures, then write the
+one page of prose that is left. Two rules bind every step:
+
+- **Every gate is `error`.** A `warn` is a violation with standing permission. A cap the repo
+  can't meet yet is ratcheted (§5), never downgraded.
+- **Resolve rule names against the installed tool, never from memory.** Linters rename,
+  promote and retire rules between minor versions.
+
+## 1. Detect the toolchain
+
+Write down, with a value or "none": the linter that already runs here and its config file
+(`biome.jsonc`, `eslint.config.*`, `.oxlintrc.json`, `ruff.toml` or `pyproject.toml`,
+`.golangci.yml`, `.swiftlint.yml`, `clippy.toml`, `detekt.yml`, `.rubocop.yml`, `.editorconfig`
+analyzer rules; whatever is here wins, one gate set per language in a polyglot repo); its
+installed version; the package manager and lint/test scripts; the pre-commit setup; the CI
+workflows; whether `rules/` exists. No linter at all: install the ecosystem's current default,
+configured minimally, then continue. A previous unfinished run of this skill (staged configs,
+a half-written baseline) is yours to verify and finish, never to layer a second install beside.
+
+## 2. The intents to gate
+
+Each row is an intent with a target, not a rule name.
+
+| # | Intent | Target |
+|---|---|---|
+| 1 | Function body length | 50 lines |
+| 2 | Cognitive/cyclomatic complexity | 15 |
+| 3 | Positional parameters | 3 max |
+| 4 | Nested ternaries | forbidden |
+| 5 | `any` (or the language's opt-out type) | forbidden |
+| 6 | Escape hatches: casts, force-unwraps, and the linter's own suppression comment | forbidden |
+| 7 | `else` after a returning branch | forbidden |
+| 8 | Non-exhaustive switch over a union | error |
+| 9 | Unused variables and imports | error |
+| 10 | Duplicated blocks across files | threshold |
+| 11 | File length | ~150 lines |
+| 12 | Unused **exports**, a module's dead public surface | error |
+| 13 | Imports that bypass a module's public entry or cross a layer | error |
+| 14 | Circular dependencies between modules | error |
+| 15 | Focused or skipped tests, committed | error |
+
+Intents 1–9 are ordinary lint rules; 10–15 get their own tools (§4). Where a file may live is
+prose in `house.md` (group by domain, never by kind), since no tool reads that judgement.
+**9 and 12 are two intents**: an unused-variable rule reads one file and sees an unimported
+export as used, so "dead code is gated" is false until 12 has a tool. **A missing intent is
+not a gap to fill**: a language with no gradual-typing escape has no intent 5, one whose
+compiler rejects unused variables has 9 for free. Mark those **n/a**, distinct from
+**prose-only** (applies here, this toolchain can't check it).
+
+## 3. Resolve each intent to a real rule, and prove it fires
+
+| Linter | Resolve and verify |
+|---|---|
+| Biome | `<pm> x @biomejs/biome explain <ruleName>`; an unknown name errors |
+| ESLint | the installed plugin's rule list; an unknown rule fails the run |
+| oxlint | `oxlint --rules` |
+| Ruff | `ruff rule <code>`, `ruff linter` |
+| golangci-lint | `golangci-lint help linters` lists linters, not the rules inside them |
+| SwiftLint | `swiftlint rules`; `swiftlint rules <id>` prints one with its parameters |
+| clippy | `cargo clippy -- -W help` lists every lint with its default level |
+| detekt | `detekt --generate-config` writes the full rule set with defaults |
+| RuboCop | `rubocop --show-cops` |
+| .NET analyzers | the rule id in `.editorconfig`; `dotnet build -warnaserror` is the only proof |
+
+- One intent may need several rules (6 is usually three) or none. Set the number and the
+  `error` severity explicitly even where they match the default.
+- A rule you cannot verify is not written; log the intent as prose-only.
+- A nursery or experimental rule is worth taking if it is the only implementation; name it
+  as such in the report.
+- **A rule inside an aggregate runner's plugin cannot be verified by name.** An unknown
+  sub-rule name is dropped silently, so the only proof is behavioural: plant a violation of
+  that rule in a probe that violates nothing else (runners dedupe by line) and require its own
+  name in the output. No firing, no row.
+
+Then write the config and prove the chain is live: a deliberate violation in **the least
+likely directory the rules claim to govern** (`scripts/`, `tools/`, not beside the app code)
+comes back as an error, and is deleted after.
+
+Done when every intent has a verified rule name, or an n/a or prose-only verdict in the report.
+
+## 4. The intents that need their own tool
+
+Which tool, per ecosystem, is a lookup: `references/tools-by-language.md`, which also carries the
+trap each tool hides. What the tool must be made to do is here, and it is the same in every
+language.
+
+- **Duplication (10).** A minimum clone size, a threshold that exits non-zero, and ignores for
+  generated output, lockfiles, snapshots and vendored code.
+- **File length (11).** Prefer the linter's own per-file rule, and note what it counts: a
+  comment-skipping cap is looser than a raw count. Otherwise copy
+  `templates/file-length-check.mjs` verbatim (Node 22+ or Bun, present wherever the skills
+  installer ran) and run it with the source globs and cap. Record exemptions with
+  `--exempt-from <file>`, one glob per line with a reason, kind exemptions kept separate from
+  ratchet debt.
+- **Dead public surface (12).** A whole-graph pass, never a per-file one. Ratchet the first run.
+- **The import graph (13, 14).** Layering first (a `core` never imports a feature, a `client`
+  never imports `server`), privacy second. A new module gets its own rule, never a loosened
+  pattern. Land 13 as a ratchet on any existing repo.
+- **Test hygiene (15).** Focused and skipped tests, committed, fail the build.
+
+Done when every intent from 10 to 15 has a tool wired or an n/a verdict naming what already
+enforces it.
+
+## 5. Land it on an existing codebase: ratchet, never loosen
+
+Run every gate and count the violations. Per gate: **fix now** when the count is small and
+mechanical; otherwise **ratchet**, keeping the cap at the house number and recording today's
+violations as scoped exemptions, one entry per path glob per rule, each with a one-line reason
+and labelled **KIND** (the rule genuinely doesn't apply; permanent) or **RATCHET** (debt; the
+list may only shrink). A handful of violations that each need a real judgement call is
+ratcheted and listed in the report as the first debt to pay. A cap that is wrong for this repo
+changes in the config, with the reason, never inline and never as a global raise.
+
+Read `references/exemptions.md` before writing the first entry: an exemption is proved with a
+new and different violation, and the reasons have a home even where the config format forbids
+comments. Violations a base config you installed brings on day one are yours to resolve on the
+same terms; finishing with `quality` red teaches everyone the gate is advisory.
+
+Done when each gate has a starting count and a fixed or ratcheted verdict, and every ratchet
+entry carries KIND or RATCHET plus a reason.
+
+## 6. Wire it so it can't be skipped
+
+1. **One script** in the manifest, `quality` unless the repo has a convention, running every
+   gate and failing on any; in a monorepo the aggregate at the root and the real script per
+   workspace.
+2. **Pre-commit.** Append to the existing hook, staged-files-only unless the inherited hook is
+   already whole-repo; a hook red for a reason unrelated to your gates is fixed in its own
+   commit when mechanical, otherwise reported as a blocker. No hooks here: wire CI and say
+   pre-commit is unwired, without installing a hook framework as a side effect.
+3. **CI.** Copy `templates/quality-gates.yml` and resolve `{{SETUP_ACTION}}`,
+   `{{INSTALL_COMMAND}}`, `{{WORKSPACE_DIR}}` and `{{GATE_COMMAND}}` against the toolchain step 1
+   detected; or add the steps to an existing lint workflow. The template names no package manager
+   of its own, so an unresolved placeholder fails the workflow rather than running someone else's
+   tool.
+4. **Prove it in all three contexts** and reconcile every difference: `references/three-contexts.md`.
+
+Done when the wired command's exit code is recorded from a clean shell, the hook and CI (or
+its emulation), and the three agree.
+
+## 7. Write the prose residue and tell the agents
+
+Copy `templates/house.md` to `rules/house.md`, resolving its placeholders: `{{LINT_CONFIG}}`
+(the config file(s) you landed), `{{EXHAUSTIVE_CONSTRUCT}}` (this language's, and how a missed
+case fails), `{{BOUNDARY_PARSER}}` (the ecosystem's parse-don't-declare tool),
+`{{PUBLIC_ENTRY}}` (a barrel, `__init__.py`, `mod.rs`, exported identifiers), and
+`{{DOC_SURFACES}}`: one sentence stating **whether** anything renders comments to a reader who
+never opens the file (a docs build, or publishing that renders by default such as `pkg.go.dev`
+or `docs.rs`), never empty, since a `public` marker and an IDE hover are not that reader. Where
+a docblock is code (Python `__doc__`) or a linter requires it (`revive` `exported`,
+`missing_docs`), say so there too. Every sentence in the template has to pass one test before
+it stays: does it change what a strong model does by default? Cut any that doesn't, and add
+nothing a linter could check.
+
+Then add a **Rules and gates** section to the project doc that exists (`AGENTS.md`; `CLAUDE.md`
+too only if it does not merely import `AGENTS.md`; never create a stub for the other), replacing
+any Rules section already there in place. It carries five things:
+
+- **The gate as a runnable command**, backticked and complete with its package manager, on a line
+  of its own. Other skills read this section to learn how to gate this repo, and a bare script
+  name leaves them guessing at the runner.
+- **What it gates.** Claim only what fired: "dead code" only if intent 12 has a tool, "every rule
+  an error" only after the warn count is zero.
+- **Every file holding exemptions**, a duplication config's ignore list included.
+- **That a new violation is fixed or ratcheted**, never suppressed inline.
+- **A pointer at `rules/house.md`.**
+
+Grep the installed prose for `{{` and ship zero hits.
+
+## 8. Report
+
+Per gate: intent, resolved rule name(s) and source, number landed, starting count, fixed or
+ratcheted. Then: the n/a and prose-only intents with why; the script name; pre-commit and CI
+wired or not; the exemption files and their sizes; the directory the planted violation fired
+in and the enumeration diff (files read against files `rules/` claims); the three exit codes;
+how many configured rules resolve to `warn`; which gates are pinned to a path list; whether
+the tool's version is verified; whether `quality` is green now and what is red if not; and the
+one file to edit when a cap needs to change.

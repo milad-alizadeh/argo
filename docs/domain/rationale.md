@@ -51,7 +51,7 @@ only point where the two can still be told apart.
 
 **Ticket, and not Work Item or Issue (#881).** The term was `Work Item` until 2026-08-28, defined
 in this very model as "a ticket owned by a provider" — the word it should have been called. Every
-surface downstream then said *ticket* anyway: `AGENTS.md`, `docs/agents/worktrees.md`'s
+surface downstream then said *ticket* anyway: `AGENTS.md`, the
 `argo/#<N>-<slug>` branch, `/implement <N>` spoken aloud, and Argo's own UI layer, which drew a
 `WorkItem` as `TicketHead` and `TicketBody`. One noun with two names either side of the port
 boundary is the thing this model exists to forbid, and `Work Item` was the half nobody spoke.
