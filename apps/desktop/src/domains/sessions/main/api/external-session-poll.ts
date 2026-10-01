@@ -104,10 +104,8 @@ export class ExternalSessionPoll {
     this.#context = context
     this.#external = new Map(context.harnesses.map(({ harness, external }) => [harness, external]))
     this.#lastEarlierRow =
-      context.database
-        .select({ rowid: sql<number | null>`max(rowid)` })
-        .from(sessionTable)
-        .get()?.rowid ?? 0
+      context.database.select({ rowid: sql<number | null>`max(rowid)` }).from(sessionTable).get()
+        ?.rowid ?? 0
   }
 
   start(): void {
