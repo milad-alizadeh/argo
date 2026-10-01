@@ -108,7 +108,7 @@ async function childLinks(
     return { links, skipped }
   } catch (error) {
     console.warn(`Could not list Claude Subagents for ${session.nativeId}:`, error)
-    return { links: [], skipped: 1 }
+    return { links: [], skipped: 0 }
   }
 }
 

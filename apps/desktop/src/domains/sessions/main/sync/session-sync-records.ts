@@ -1,13 +1,12 @@
 import path from 'node:path'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, isNull, ne, or } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
-import { sessionSubagent } from '@/database/session-subagent/schema'
 import { workspace } from '@/database/workspace/schema'
 import type { SessionSubagentLink, SessionSummary } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
-import { createSessionUpsert } from '../database'
+import { createSessionUpsert, saveDiscoveredSessionSubagents } from '../database'
 
 type SessionRoot = {
   projectId: string
@@ -92,35 +91,43 @@ export function saveSessionBatch(
   try {
     const sessionIds = records.map((record) => upsert({ ...record, harness }))
     if (subagents.length > 0) {
+      const childrenByParent = new Map<string, string[]>()
+      for (const { nativeId, parentNativeId } of subagents) {
+        const children = childrenByParent.get(parentNativeId) ?? []
+        children.push(nativeId)
+        childrenByParent.set(parentNativeId, children)
+        const changedChild = database
+          .update(sessionTable)
+          .set({ parentNativeId })
+          .where(
+            and(
+              eq(sessionTable.harness, harness),
+              eq(sessionTable.nativeId, nativeId),
+              or(
+                isNull(sessionTable.parentNativeId),
+                ne(sessionTable.parentNativeId, parentNativeId),
+              ),
+            ),
+          )
+          .returning({ argoId: sessionTable.argoId })
+          .get()
+        if (changedChild !== undefined) sessionIds.push(changedChild.argoId)
+      }
       const parentRows = database
         .select({ argoId: sessionTable.argoId, nativeId: sessionTable.nativeId })
         .from(sessionTable)
         .where(
           and(
             eq(sessionTable.harness, harness),
-            inArray(sessionTable.nativeId, [
-              ...new Set(subagents.map(({ parentNativeId }) => parentNativeId)),
-            ]),
+            inArray(sessionTable.nativeId, [...childrenByParent.keys()]),
           ),
         )
         .all()
-      const parentIds = new Map(parentRows.map(({ nativeId, argoId }) => [nativeId, argoId]))
-      const links = subagents.flatMap(({ nativeId, parentNativeId }) => {
-        const sessionId = parentIds.get(parentNativeId)
-        return sessionId === undefined
-          ? []
-          : [{ sessionId, subagentId: nativeId, label: null, state: 'unknown' as const }]
-      })
-      if (links.length > 0) {
-        const changedParents = database
-          .insert(sessionSubagent)
-          .values(links)
-          .onConflictDoNothing()
-          .returning({ sessionId: sessionSubagent.sessionId })
-          .all()
-          .map(({ sessionId }) => sessionId)
-        sessionIds.push(...changedParents)
-      }
+      for (const { nativeId, argoId } of parentRows)
+        if (
+          saveDiscoveredSessionSubagents(database, argoId, childrenByParent.get(nativeId) ?? []) > 0
+        )
+          sessionIds.push(argoId)
     }
     database.$client.exec('COMMIT')
     return sessionIds

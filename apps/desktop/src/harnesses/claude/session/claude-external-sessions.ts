@@ -100,7 +100,7 @@ export function createClaudeExternalSessions(
   }
   return {
     listLive,
-    listSubagents: (nativeId) => listSubagents(nativeId),
+    listSubagents: (nativeId, cwd) => listSubagents(nativeId, cwd === null ? {} : { dir: cwd }),
     hooks: createClaudeStatusHooks(settingsFile),
   }
 }

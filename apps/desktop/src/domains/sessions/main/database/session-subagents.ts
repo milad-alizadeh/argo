@@ -1,5 +1,6 @@
-import { inArray, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm'
 import type { Database } from '@/database/database'
+import { sessionTable } from '@/database/session/schema'
 import { type SESSION_SUBAGENT_STATES, sessionSubagent } from '@/database/session-subagent/schema'
 import { sessionSubagentSelectSchema } from '@/database/session-subagent/validation'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
@@ -45,7 +46,7 @@ function subagentRows(sessionId: string, subagents: readonly StoredSubagent[]) {
 
 // Saves the Subagents delegation content names. Returns how many rows changed.
 export function saveSessionSubagents(
-  database: Pick<Database, 'insert'>,
+  database: Database,
   sessionId: string,
   content: readonly FeedContent[],
 ): number {
@@ -53,7 +54,7 @@ export function saveSessionSubagents(
 }
 
 export function saveSessionSubagentFacts(
-  database: Pick<Database, 'insert'>,
+  database: Database,
   sessionId: string,
   subagents: readonly StoredSubagent[],
 ): number {
@@ -71,11 +72,18 @@ export function saveSessionSubagentFacts(
       setWhere: sql`${sessionSubagent.state} is not excluded.state or coalesce(excluded.label, ${sessionSubagent.label}) is not ${sessionSubagent.label}`,
     })
     .run()
-  return Number(changes)
+  return (
+    Number(changes) +
+    classifySavedChildren(
+      database,
+      sessionId,
+      subagents.map(({ id }) => id),
+    )
+  )
 }
 
 export function saveDiscoveredSessionSubagents(
-  database: Pick<Database, 'insert'>,
+  database: Database,
   sessionId: string,
   childIds: readonly string[],
 ): number {
@@ -91,6 +99,31 @@ export function saveDiscoveredSessionSubagents(
       })),
     )
     .onConflictDoNothing()
+    .run()
+  return Number(changes) + classifySavedChildren(database, sessionId, childIds)
+}
+
+function classifySavedChildren(
+  database: Database,
+  sessionId: string,
+  childIds: readonly string[],
+): number {
+  const parent = database
+    .select({ harness: sessionTable.harness, nativeId: sessionTable.nativeId })
+    .from(sessionTable)
+    .where(eq(sessionTable.argoId, sessionId))
+    .get()
+  if (parent === undefined) return 0
+  const { changes } = database
+    .update(sessionTable)
+    .set({ parentNativeId: parent.nativeId })
+    .where(
+      and(
+        eq(sessionTable.harness, parent.harness),
+        inArray(sessionTable.nativeId, [...new Set(childIds)]),
+        or(isNull(sessionTable.parentNativeId), ne(sessionTable.parentNativeId, parent.nativeId)),
+      ),
+    )
     .run()
   return Number(changes)
 }

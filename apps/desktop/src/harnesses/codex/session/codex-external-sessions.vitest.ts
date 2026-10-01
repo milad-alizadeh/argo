@@ -7,6 +7,7 @@ import {
   notLoadedError,
   recordedTurnsPage,
 } from '@/mocks/cli/codex/mock-codex-external-threads'
+import { recordedCodexSubagents } from '@/mocks/recordings/codex-app-server'
 import { insertSession, sessionListCaller } from '@/mocks/sessions/session-list-caller'
 import { createCodexExternalSessions } from './codex-external-sessions'
 
@@ -78,12 +79,12 @@ function quietWarnings() {
   return vi.spyOn(console, 'warn').mockImplementation(() => {})
 }
 
-test('startup reads no history: the first tick keeps the stored status and line', async () => {
+test('startup reads the newest Turn once and keeps a stored line when it finds none', async () => {
   saved(RUNNING, { status: 'idle', activity: JSON.stringify(STORED_LINE) })
   const before = await row(RUNNING)
   await threads.open(RUNNING)
   await tickAndWrite()
-  expect(threads.turnsReads).toEqual([])
+  expect(threads.turnsReads).toEqual([RUNNING])
   expect(await row(RUNNING)).toEqual({ ...before, status: 'idle', activity: STORED_LINE })
 })
 
@@ -95,7 +96,7 @@ test('a running Session with no Feed open stores its status and newest command',
   threads.answer(RUNNING, 'running')
   threads.append(RUNNING, 'any bytes\n')
   await tickAndWrite()
-  expect(threads.turnsReads).toEqual([RUNNING])
+  expect(threads.turnsReads).toEqual([RUNNING, RUNNING])
   expect((await row(RUNNING)).status).toBe('running')
   expect((await row(RUNNING)).activity).toMatchObject({
     kind: 'command',
@@ -104,26 +105,23 @@ test('a running Session with no Feed open stores its status and newest command',
   expect((await row(RUNNING)).updatedAt).not.toBe(before.updatedAt)
 })
 
-test('a Subagent the newest Turn started is not stored for the external Session', async () => {
+test('indexes a child from a recorded Codex Turn on the first active poll', async () => {
   saved(RUNNING)
+  threads.answer(RUNNING, {
+    page: { data: recordedCodexSubagents.thread.turns, nextCursor: null },
+  })
   await threads.open(RUNNING)
-  await tickAndWrite()
-  const page = recordedTurnsPage('running') as { data: { items: unknown[] }[] }
-  for (const turn of page.data)
-    turn.items.push({
-      type: 'subAgentActivity',
-      id: 'spawn-1',
-      kind: 'started',
-      agentThreadId: 'agent-thread-1',
-      agentPath: 'explorer',
-    })
-  threads.answer(RUNNING, { page })
-  threads.append(RUNNING, 'any bytes\n')
   await tickAndWrite()
   const found = (await caller.list({ projectId: 'project-1' })).rows.find(
     (each) => each.id === RUNNING,
   )
-  expect(found?.subagents).toEqual([])
+  expect(found?.subagents).toEqual([
+    {
+      id: '01a0f92c-1bbb-76d1-b698-ec5e2b91ed06',
+      label: expect.any(String),
+      state: 'completed',
+    },
+  ])
 })
 
 test('an unchanged rollout asks for nothing', async () => {
@@ -131,7 +129,7 @@ test('an unchanged rollout asks for nothing', async () => {
   await threads.open(RUNNING)
   await tickAndWrite()
   await tickAndWrite()
-  expect(threads.turnsReads).toEqual([])
+  expect(threads.turnsReads).toEqual([RUNNING])
 })
 
 test('a rewritten, truncated or touched rollout counts as a change', async () => {
@@ -142,7 +140,7 @@ test('a rewritten, truncated or touched rollout counts as a change', async () =>
   await tickAndWrite()
   utimesSync(threads.rollout(RUNNING), new Date(1_000_000), new Date(1_000_000))
   await tickAndWrite()
-  expect(threads.turnsReads).toEqual([RUNNING, RUNNING])
+  expect(threads.turnsReads).toEqual([RUNNING, RUNNING, RUNNING])
 })
 
 test('a large append is one read', async () => {
@@ -152,7 +150,7 @@ test('a large append is one read', async () => {
   threads.answer(RUNNING, 'running')
   threads.append(RUNNING, `${'x'.repeat(4 * 1024 * 1024)}\n`)
   await tickAndWrite()
-  expect(threads.turnsReads).toEqual([RUNNING])
+  expect(threads.turnsReads).toEqual([RUNNING, RUNNING])
   expect((await row(RUNNING)).status).toBe('running')
 })
 
@@ -204,7 +202,7 @@ test('a read that fails just after a submit shows running and reads again on the
   expect((await row(RUNNING)).status).toBe('running')
   threads.answer(RUNNING, 'completed')
   await tickAndWrite()
-  expect(threads.turnsReads).toEqual([RUNNING, RUNNING])
+  expect(threads.turnsReads).toEqual([RUNNING, RUNNING, RUNNING])
   expect((await row(RUNNING)).status).toBe('idle')
 })
 
@@ -264,7 +262,7 @@ test('the first tick closes every Session an earlier run saved that it does not 
   startPoll()
   await threads.open(RUNNING)
   await tickAndWrite()
-  expect((await row(RUNNING)).status).toBe('unknown')
+  expect((await row(RUNNING)).status).toBe('idle')
   expect((await row(OTHER)).status).toBe('idle')
 })
 
@@ -345,10 +343,10 @@ test('reads run one at a time across Sessions, and a Session that changes mid-re
   threads.append(RUNNING, 'x\n')
   await poll.tick()
   await reading
-  expect(threads.turnsReads).toEqual([RUNNING])
+  expect(threads.turnsReads).toEqual([RUNNING, OTHER, RUNNING])
   for (const expected of [
-    [RUNNING, OTHER],
-    [RUNNING, OTHER, RUNNING],
+    [RUNNING, OTHER, RUNNING, OTHER],
+    [RUNNING, OTHER, RUNNING, OTHER, RUNNING],
   ]) {
     reading = nextAsk()
     settle.shift()?.(recordedTurnsPage('running'))
@@ -357,7 +355,7 @@ test('reads run one at a time across Sessions, and a Session that changes mid-re
   }
   settle.shift()?.(recordedTurnsPage('running'))
   await poll.readsSettled()
-  expect(threads.turnsReads).toEqual([RUNNING, OTHER, RUNNING])
+  expect(threads.turnsReads).toEqual([RUNNING, OTHER, RUNNING, OTHER, RUNNING])
   expect(settle).toEqual([])
 })
 
@@ -372,7 +370,7 @@ test('one Session’s updates within the write window reach SQLite as one write'
   threads.append(RUNNING, 'x\n')
   await poll.tick()
   await poll.readsSettled()
-  expect(threads.turnsReads).toEqual([RUNNING])
+  expect(threads.turnsReads).toEqual([RUNNING, RUNNING])
   await vi.advanceTimersByTimeAsync(0)
   expect((await row(RUNNING)).status).toBe('unknown')
   await vi.advanceTimersByTimeAsync(500)
@@ -417,6 +415,6 @@ test('a locked thread with no rollout yet logs nothing and is read once it store
   threads.answer(RUNNING, 'running')
   threads.append(RUNNING, 'x\n')
   await tickAndWrite()
-  expect(threads.turnsReads).toEqual([RUNNING])
+  expect(threads.turnsReads).toEqual([RUNNING, RUNNING])
   expect((await row(RUNNING)).status).toBe('running')
 })

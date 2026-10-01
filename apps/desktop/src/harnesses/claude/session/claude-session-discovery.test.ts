@@ -125,7 +125,7 @@ test('a failed child-ID scan does not hide another Claude Session', async () => 
     })
     expect(result.records).toHaveLength(2)
     expect(result.subagents).toEqual([{ nativeId: 'agent-two', parentNativeId: ID_TWO }])
-    expect(result.skipped).toBe(1)
+    expect(result.skipped).toBe(0)
     expect(warn).toHaveBeenCalledTimes(1)
   } finally {
     console.warn = before

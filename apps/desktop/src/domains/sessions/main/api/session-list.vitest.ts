@@ -127,6 +127,7 @@ test('keeps a saved Codex child out of every roster filter and its detail lookup
       id: IDS[0],
       harness: 'codex',
       nativeId: 'child-thread',
+      parentNativeId: 'root-thread',
       customTitle: 'Keep this metadata',
       createdAt: 10,
     })
@@ -158,6 +159,25 @@ test('keeps a saved Codex child out of every roster filter and its detail lookup
         ?.custom_title,
       'Keep this metadata',
     )
+  } finally {
+    database.$client.close()
+  }
+})
+
+test('keeps a saved child out of the roster before its parent has a row', async () => {
+  const { database, list, details } = sessionListCaller()
+  try {
+    insertSession(database, {
+      id: IDS[0],
+      harness: 'codex',
+      nativeId: 'child-thread',
+      parentNativeId: 'root-thread',
+    })
+    assert.deepEqual(await list({ projectId: 'project-1', filter: 'all' }), {
+      total: 0,
+      rows: [],
+    })
+    assert.equal(await details({ sessionId: IDS[0] }), null)
   } finally {
     database.$client.close()
   }

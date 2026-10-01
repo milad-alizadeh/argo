@@ -9,7 +9,6 @@ import {
   getTableColumns,
   isNotNull,
   isNull,
-  notExists,
   type SQL,
   sql,
 } from 'drizzle-orm'
@@ -208,24 +207,6 @@ const sessionListOrder = [
 ]
 
 const keyedContent = alias(ticketContent, 'keyed_ticket_content')
-const subagentParentSession = alias(sessionTable, 'subagent_parent_session')
-
-function isRosterSession(database: Database) {
-  return notExists(
-    // Codex child threads are roster subagents, never separate roster Sessions.
-    database
-      .select({ subagentId: sessionSubagent.subagentId })
-      .from(sessionSubagent)
-      .innerJoin(subagentParentSession, eq(subagentParentSession.argoId, sessionSubagent.sessionId))
-      .where(
-        and(
-          eq(sessionSubagent.subagentId, sessionTable.nativeId),
-          eq(subagentParentSession.harness, sessionTable.harness),
-        ),
-      ),
-  )
-}
-
 // The saved Ticket a link's key names in the Project's Ticket scope; the first if keys repeat.
 function linkedTicketId(database: Database, source: LinkedTicketSource | null): SQL {
   if (source === null) return sql`null`
@@ -283,7 +264,7 @@ async function readSessionRow(
     .where(eq(sessionTicketLink.sessionId, sessionId))
     .get()
   const source = link === undefined ? null : await linkedTicketSource(context, link.projectId)
-  const where = and(eq(sessionTable.argoId, sessionId), isRosterSession(context.database))
+  const where = and(eq(sessionTable.argoId, sessionId), isNull(sessionTable.parentNativeId))
   return (
     sessionListRows(context, storedSessionQuery(context.database, where, source).all())[0] ?? null
   )
@@ -301,7 +282,7 @@ async function readSessionList(
   } as const satisfies Record<typeof input.filter, SQL | undefined>
   const where = and(
     eq(sessionTable.projectId, input.projectId),
-    isRosterSession(context.database),
+    isNull(sessionTable.parentNativeId),
     filters[input.filter],
     input.ticketKey === undefined
       ? undefined

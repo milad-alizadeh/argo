@@ -77,3 +77,22 @@ test('a later ID scan adds children without downgrading known states', () => {
     { id: 'agent-b', label: null, state: 'unknown' },
   ])
 })
+
+test('a delegation classifies an already saved child Session before the next sync', () => {
+  saveSessionBatch(database, {
+    harness: 'codex',
+    records: [
+      { nativeId: 'parent', projectId: 'project-1', cwd: '/repo', activityAt: 10 },
+      { nativeId: 'child', projectId: 'project-1', cwd: '/repo', activityAt: 10 },
+    ],
+  })
+
+  expect(
+    saveSessionSubagents(database, argoId('parent'), [delegation('child', 'running', null)]),
+  ).toBe(2)
+  expect(
+    database.$client
+      .prepare('SELECT parent_native_id FROM session WHERE native_id = ?')
+      .get('child')?.parent_native_id,
+  ).toBe('parent')
+})

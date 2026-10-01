@@ -85,8 +85,11 @@ export type ExternalSessions = {
   // as a lock probe. Throws when its source cannot answer; the rows then keep what they show.
   listLive: () => Promise<LiveExternalSessionList>
   // Child IDs from the vendor's metadata API. The host reads no child transcript for this count.
-  listSubagents?: (nativeId: string) => Promise<string[]>
-  // Called after a Session's transcript changed or after it left the list, never at start.
+  listSubagents?: (nativeId: string, cwd: string | null) => Promise<string[]>
+  // A live Session whose newest Turn may already name children at startup needs one first read.
+  readInitialActivity?: boolean
+  // Called after a Session's transcript changed or after it left the list. A Harness with
+  // readInitialActivity also calls it once when a live Session first appears.
   // Answers from a vendor interface, not the transcript; calls run one at a time across every
   // Harness. `changedAt` is when the host last saw the transcript change. Absent means the
   // listing's status alone, with no activity line.

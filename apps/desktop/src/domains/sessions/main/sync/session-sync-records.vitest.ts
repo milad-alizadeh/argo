@@ -177,7 +177,8 @@ test('links known Codex child rows to their parent without replacing saved metad
       records: [],
       subagents: [{ nativeId: 'child-thread', parentNativeId: 'root-thread' }],
     })
-    assert.deepEqual(changedIds, [parent.argo_id])
+    assert.equal(changedIds.length, 2)
+    assert.ok(changedIds.includes(parent.argo_id))
     assert.deepEqual(
       Object.assign(
         {},
@@ -202,6 +203,25 @@ test('links known Codex child rows to their parent without replacing saved metad
         .get(parent.argo_id)?.subagent_id,
       'child-thread',
     )
+  } finally {
+    client.close()
+  }
+})
+
+test('classifies a saved child when its parent row is absent', () => {
+  const { client, database } = createDatabase()
+  try {
+    saveSessionBatch(database, 'codex', [{ nativeId: 'child-thread', customTitle: 'Saved child' }])
+    writeSessionBatch(database, {
+      harness: 'codex',
+      records: [],
+      subagents: [{ nativeId: 'child-thread', parentNativeId: 'root-thread' }],
+    })
+    assert.deepEqual(
+      Object.assign({}, client.prepare('SELECT custom_title, parent_native_id FROM session').get()),
+      { custom_title: 'Saved child', parent_native_id: 'root-thread' },
+    )
+    assert.equal(client.prepare('SELECT count(*) AS count FROM session_subagent').get()?.count, 0)
   } finally {
     client.close()
   }
