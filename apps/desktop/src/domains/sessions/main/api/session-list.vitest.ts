@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import type { Database } from '@/database/database'
+import { sessionSubagent } from '@/database/session-subagent/schema'
 import {
   IDS,
   insertSession,
@@ -10,7 +11,6 @@ import {
   sessionListCaller,
 } from '@/mocks/sessions/session-list-caller'
 import { saveSessionSubagents } from '../database'
-import { saveSessionBatch } from '../sync/session-sync-records'
 import { updateSession } from './session-update'
 
 // Links a Session to a Ticket whose content the provider has saved.
@@ -132,11 +132,15 @@ test('keeps a saved Codex child out of every roster filter and its detail lookup
     })
     insertSession(database, { id: IDS[1], harness: 'codex', nativeId: 'root-thread' })
     insertSession(database, { id: IDS[2], harness: 'claude', nativeId: 'child-thread' })
-    saveSessionBatch(database, {
-      harness: 'codex',
-      records: [],
-      subagents: [{ nativeId: 'child-thread', parentNativeId: 'root-thread' }],
-    })
+    database
+      .insert(sessionSubagent)
+      .values({
+        sessionId: IDS[1],
+        subagentId: 'child-thread',
+        label: null,
+        state: 'unknown',
+      })
+      .run()
 
     const active = await list({ projectId: 'project-1', filter: 'active' })
     const archived = await list({ projectId: 'project-1', filter: 'archived' })
