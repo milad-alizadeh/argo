@@ -26,11 +26,14 @@ import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { ticketContent } from '@/database/ticket-content/schema'
 import { ticketContentSelectSchema } from '@/database/ticket-content/validation'
 import { type LiveActivity, liveActivitySchema } from '@/domains/sessions/api/feed'
+import { planProgressSchema } from '@/domains/sessions/api/feed-content'
+import { reportedTurnConfigurationSchema } from '@/domains/sessions/api/reported-turn-configuration'
 import { sessionListInputSchema } from '@/domains/sessions/api/session-list-input'
 import { identifierSchema } from '@/shared/validation'
 import { type StoredSubagent, storedSessionSubagents } from '../database'
 import { type LiveSessionSupervisorActor, liveSessionActorFor } from '../live'
 import type { SessionListChanges } from './session-list-changes'
+import { updateSession } from './session-update'
 
 const t = initTRPC.create()
 
@@ -70,11 +73,8 @@ export const sessionListRowSchema = z.strictObject({
   subagents: z.array(sessionSubagentSchema),
   ticket: sessionTicketSchema.nullable(),
   archived: z.boolean(),
-  turnConfiguration: z.strictObject({
-    model: z.string().nullable(),
-    effort: z.string().nullable(),
-    mode: z.string().nullable(),
-  }),
+  turnConfiguration: reportedTurnConfigurationSchema,
+  planProgress: planProgressSchema.nullable(),
 })
 
 const sessionListSchema = z.strictObject({
@@ -100,12 +100,21 @@ async function linkedTicketSource(
   return source === null ? null : { ...source, projectId }
 }
 
-function storedActivity(stored: string | null): LiveActivity | null {
+// A stored value of an unknown shape reads as null, so one bad row leaves the list readable.
+function storedValue<Schema extends z.ZodType>(
+  schema: Schema,
+  stored: unknown,
+  name: string,
+): z.infer<Schema> | null {
   if (stored === null) return null
-  const parsed = liveActivitySchema.safeParse(JSON.parse(stored))
+  const parsed = schema.safeParse(stored)
   if (parsed.success) return parsed.data
-  console.warn('Rejected 1 unsupported stored Session activity.')
+  console.warn(`Rejected 1 unsupported stored Session ${name}.`)
   return null
+}
+
+function storedActivity(stored: string | null): LiveActivity | null {
+  return stored === null ? null : storedValue(liveActivitySchema, JSON.parse(stored), 'activity')
 }
 
 function liveProjection(context: Pick<SessionListContext, 'supervisor'>, sessionId: string) {
@@ -150,8 +159,14 @@ function sessionListRow(
     subagents,
     ticket: linkedTicket(row.ticket),
     archived: row.archived,
-    // #2962 saves Model, Effort and Mode on the row, so a Session that is not live keeps them.
-    turnConfiguration: live?.turnConfiguration ?? { model: null, effort: null, mode: null },
+    // A live channel's own configuration outranks the stored one, as its status does.
+    turnConfiguration: live?.turnConfiguration ??
+      storedValue(reportedTurnConfigurationSchema, row.turnConfiguration, 'turn configuration') ?? {
+        model: null,
+        effort: null,
+        mode: null,
+      },
+    planProgress: storedValue(planProgressSchema, row.planProgress, 'Plan progress'),
   }
 }
 
@@ -173,6 +188,8 @@ const storedSessionColumns = {
   activity: sessionTable.activity,
   status: sessionTable.status,
   updatedAt: sessionTable.updatedAt,
+  turnConfiguration: sessionTable.turnConfiguration,
+  planProgress: sessionTable.planProgress,
   ticket: {
     projectId: sessionTicketLink.projectId,
     key: sessionTicketLink.ticketKey,
@@ -323,12 +340,16 @@ export function sessionListChangedProcedure(context: SessionListContext) {
   )
 }
 
-// Announces each live status change, so every Session List reads the changed row again.
+// Announces each live status change, so every Session List reads the changed row again, and saves
+// the live channel's Model, Effort and Mode, so the row keeps them once the channel is gone.
 export function watchSessionList(
-  context: Pick<SessionListContext, 'supervisor' | 'changes'>,
+  context: Pick<SessionListContext, 'database' | 'supervisor' | 'changes'>,
 ): () => void {
-  const statusChanges = context.supervisor.on('Session status changed', ({ sessionId }) =>
-    context.changes.changed([sessionId]),
-  )
+  const statusChanges = context.supervisor.on('Session status changed', ({ sessionId }) => {
+    const live = liveProjection(context, sessionId)
+    if (live !== null)
+      updateSession(context, sessionId, { turnConfiguration: live.turnConfiguration })
+    context.changes.changed([sessionId])
+  })
   return () => statusChanges.unsubscribe()
 }

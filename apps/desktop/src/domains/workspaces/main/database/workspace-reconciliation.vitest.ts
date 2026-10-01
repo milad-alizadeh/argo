@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
+import { rm } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import { onTestFinished, test } from 'vitest'
 import { insertProject, migratedDatabase } from '@/mocks/database/migrated-database'
@@ -61,4 +62,21 @@ test('a branch checkout inside an imported Workspace never creates a new identit
   assert.equal(after.length, before.length)
   assert.equal(afterImported?.id, beforeImported?.id)
   assert.equal(afterImported?.path, linked)
+})
+
+test('a linked worktree deleted from disk leaves the list, pruned or not', async () => {
+  const { project } = await repositoryFixture()
+  const store = database()
+  const kinds = async () =>
+    (await reconcileWorkspaces(store, { id: 'project-1', path: project })).map(
+      (candidate) => candidate.kind,
+    )
+  const pruned = await addLinkedWorktree(project)
+  assert.deepEqual(await kinds(), ['main', 'imported'])
+  await run('git', ['-C', project, 'worktree', 'remove', '--force', pruned])
+  assert.deepEqual(await kinds(), ['main'])
+  const unpruned = await addLinkedWorktree(project, 'second')
+  assert.deepEqual(await kinds(), ['main', 'imported'])
+  await rm(unpruned, { recursive: true, force: true })
+  assert.deepEqual(await kinds(), ['main'])
 })

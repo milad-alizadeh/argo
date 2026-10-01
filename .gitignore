@@ -1,4 +1,6 @@
 node_modules/
+# bun.lock is the root lockfile; apps/desktop/package-lock.json is the packaging one.
+/package-lock.json
 .turbo/
 dist/
 apps/desktop/storybook-static/

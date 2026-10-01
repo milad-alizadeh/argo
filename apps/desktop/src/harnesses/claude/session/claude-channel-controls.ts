@@ -4,6 +4,7 @@ import type { Question, QuestionAnswer } from '@/domains/sessions/api/questions'
 import { questionSchema } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { LiveSessionControls } from '@/harnesses/registration'
+import { ASK_USER_QUESTION_TOOL } from './claude-status-hooks'
 
 const askInputSchema = z.object({
   questions: z
@@ -137,16 +138,16 @@ async function askPermission(
 
 export function createClaudeToolControl(input: {
   controls: LiveSessionControls
-  nativeId: () => string | null
+  nativeId: () => Promise<string | null>
   commandId: () => string
   emit: (body: SessionLiveEventBody) => void
   reject: () => void
 }): CanUseTool {
   return async (toolName, toolInput, options) => {
-    const nativeId = input.nativeId()
+    const commandId = input.commandId()
+    const nativeId = await input.nativeId()
     if (nativeId === null)
       return { behavior: 'deny', message: 'Session interaction is unavailable.' }
-    const commandId = input.commandId()
     const identity = {
       commandId,
       turnId: commandId,
@@ -169,7 +170,7 @@ export function createClaudeToolControl(input: {
       emitStatus,
       reject: input.reject,
     }
-    return toolName === 'AskUserQuestion'
+    return toolName === ASK_USER_QUESTION_TOOL
       ? askQuestion(context, toolInput, options)
       : askPermission(context, toolName, options)
   }

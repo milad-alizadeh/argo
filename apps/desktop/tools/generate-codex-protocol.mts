@@ -12,13 +12,20 @@ const roots = [
   'v2/ThreadItem.ts',
   'v2/ThreadReadResponse.ts',
   'v2/ThreadListResponse.ts',
+  'v2/ThreadListParams.ts',
+  'v2/ThreadReadParams.ts',
+  'v2/ThreadTurnsListParams.ts',
+  'v2/ThreadTurnsListResponse.ts',
   'v2/AgentMessageDeltaNotification.ts',
   'v2/ReasoningSummaryTextDeltaNotification.ts',
+  'v2/TurnPlanUpdatedNotification.ts',
   'v2/SkillsListParams.ts',
   'v2/SkillMetadata.ts',
   'v2/ConfigReadParams.ts',
   'v2/ConfigValueWriteParams.ts',
   'v2/ConfigWriteResponse.ts',
+  'v2/ConfigLayer.ts',
+  'v2/ManagedHooksRequirements.ts',
 ]
 const destinationPath = (relativePath: string) =>
   relativePath.replace(/[^/]+\.ts$/, (name) =>

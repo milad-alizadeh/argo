@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer'
+import { pendingSessionId } from '@/domains/sessions/api/pending-session'
 import type { WorkspaceActions, WorkspaceCockpit } from '@/domains/workspaces/renderer'
 import type { Harness } from '@/harnesses/harness'
 import type { CatalogReadResult } from '@/harnesses/harness-catalog'
@@ -23,7 +24,7 @@ import {
 } from '../composer'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { type HarnessControl, useAvailableHarnesses } from '../harness'
-import type { Session, SessionExtras } from '../types'
+import type { ComposerPlan, Session, SessionExtras } from '../types'
 import { draftTarget } from './session-draft-target'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
 import { useSessionDetails } from './use-session-details'
@@ -40,9 +41,18 @@ type SessionScreenDetailsProps = {
   cockpit: Cockpit
   workspaceCockpit: WorkspaceCockpit
   workspaceActions: WorkspaceActions
+  // A new Session's pending id from its saved prompt, and the Session route that draws it.
+  onStartingSession: (pendingId: string | null, sessionId?: string) => void
 }
 
 type SessionsTranslator = ReturnType<typeof useTranslation<'sessions'>>['t']
+
+// The open Feed's steps, else the stored row's step count.
+function composerPlan(session: (Session & SessionExtras) | null): ComposerPlan | null {
+  if (session?.plan?.state === 'available') return session.plan
+  if (session?.planProgress == null) return session?.plan ?? null
+  return { state: 'counted', ...session.planProgress }
+}
 
 function catalogFailureMessage(
   t: SessionsTranslator,
@@ -100,6 +110,20 @@ function workspaceControl(
   }
 }
 
+// False while choices load; a removed worktree is no longer listed, so the listed choice stands.
+function restoreListedChoice(
+  savedWorkspaceId: string | null,
+  cockpit: Pick<WorkspaceCockpit, 'choice' | 'workspaces'>,
+  select: (choice: string) => void,
+): boolean {
+  const current = cockpit.choice
+  if (current === null) return false
+  const saved = savedWorkspaceId ?? 'new'
+  const listed = saved === 'new' || cockpit.workspaces.some((candidate) => candidate.id === saved)
+  if (listed && saved !== current) select(saved)
+  return true
+}
+
 // The saved Harness to switch to, or null to keep the current one. One that cannot start a Session
 // stays unpicked (#3005); 'unknown' means availability is still being read.
 function rememberedHarness(
@@ -149,8 +173,9 @@ function useSessionComposerDraft(input: {
       harness.onChange?.(remembered)
       return
     }
-    const savedChoice = loadedTarget.workspaceId ?? 'new'
-    if (workspaceCockpit.choice !== savedChoice) workspaceActions.selectWorkspace(savedChoice)
+    const listed = { choice: workspaceCockpit.choice, workspaces: workspaceCockpit.workspaces }
+    if (!restoreListedChoice(loadedTarget.workspaceId, listed, workspaceActions.selectWorkspace))
+      return
     setRestoredProjectId(projectId)
   }, [
     availableHarnesses,
@@ -161,6 +186,7 @@ function useSessionComposerDraft(input: {
     restoredProjectId,
     workspaceActions,
     workspaceCockpit.choice,
+    workspaceCockpit.workspaces,
   ])
   return { draft, targetRestored }
 }
@@ -170,6 +196,7 @@ function useSessionComposerSend(input: {
   identity: ComposerIdentity
   projectId: string | null
   onFailure: (outcome: 'rejected' | 'uncertain') => void
+  onStartingSession: SessionScreenDetailsProps['onStartingSession']
 }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -178,8 +205,19 @@ function useSessionComposerSend(input: {
     turnConfiguration: TurnConfiguration | null,
     attachments: DraftContent['attachments'],
   ) => {
-    const result = await input.draft?.submit(prompt, turnConfiguration, attachments)
+    let pendingId = null as string | null
+    const onSaved = (saved: { id: string; revision: number }) => {
+      pendingId = pendingSessionId(saved)
+      input.onStartingSession(pendingId)
+    }
+    const result = await input.draft?.submit({
+      prompt,
+      turnConfiguration,
+      attachments,
+      ...(input.identity.kind === 'draft' ? { onSaved } : {}),
+    })
     if (result?.outcome !== 'accepted') {
+      input.onStartingSession(null)
       const outcome = result?.outcome ?? 'rejected'
       input.onFailure(outcome)
       return outcome
@@ -188,6 +226,8 @@ function useSessionComposerSend(input: {
       void queryClient.invalidateQueries({
         queryKey: trpc.workspaceList.queryKey({ projectId: input.projectId }),
       })
+      // The named Session draws the prompt until its own Feed shows it, whatever the Harness.
+      input.onStartingSession(pendingId, result.sessionId)
       navigate(`/projects/${input.projectId}/sessions/${result.sessionId}`, { replace: true })
     }
     return 'accepted'
@@ -246,6 +286,7 @@ export function SessionComposerArea({
   cockpit,
   workspaceCockpit,
   workspaceActions,
+  onStartingSession,
 }: SessionScreenDetailsProps) {
   const { catalogQuery, refreshCatalog } = useCatalogRead(harness)
   const location = useLocation()
@@ -288,6 +329,7 @@ export function SessionComposerArea({
       onRefreshCatalog={refreshCatalog}
       onRetryCatalog={retryCatalog}
       onRetryDraft={retryDraft}
+      onStartingSession={onStartingSession}
     />
   )
 }
@@ -323,9 +365,16 @@ function SessionComposer({
   onRetryDraft,
   isRunning,
   onInterrupt,
+  onStartingSession,
 }: Pick<
   SessionScreenDetailsProps,
-  'permission' | 'questionPending' | 'session' | 'harness' | 'workspaceCockpit' | 'workspaceActions'
+  | 'permission'
+  | 'questionPending'
+  | 'session'
+  | 'harness'
+  | 'workspaceCockpit'
+  | 'workspaceActions'
+  | 'onStartingSession'
 > & {
   catalogFailure: CatalogFailure | null
   choices: Parameters<typeof useDurableComposerDraft>[0]['choices']
@@ -356,6 +405,7 @@ function SessionComposer({
     identity,
     projectId: identity.kind === 'draft' ? identity.projectId : null,
     onFailure: reportSendFailure,
+    onStartingSession,
   })
   const waiting = draft?.hasDraft !== true
   // A failed catalog leaves no draft to wait for: the card disables, and its catalog menu can retry.
@@ -384,8 +434,7 @@ function SessionComposer({
         onDecide={permission.decide}
       />
     ),
-    // #2962 fills Plan progress.
-    plan: session?.plan ?? null,
+    plan: composerPlan(session),
     projectId,
     commandCwd:
       identity.kind === 'session'

@@ -24,6 +24,8 @@ export type SessionOptions = {
   projectSelected: boolean
   // A Harness that holds its reply, so a case can read the app waiting on a Turn (#2119).
   slowReply: boolean
+  // A Harness that names no Session until the case waits for its reply (#3052).
+  heldStart: boolean
   // Replays the mock Harness's seeded jitter, split bytes and failures.
   adversarialSeed: string | undefined
   sessionSyncFixture: { records: unknown[] } | undefined
@@ -51,15 +53,19 @@ async function attachFailure(session: PackagedSession, testInfo: TestInfo) {
   })
 }
 
-// Codex lists its threads after Claude, so a case waits for every listed fixture before it reads the Session List.
-const LISTED_FIXTURES = [
-  ...FIXTURES.filter((name) => name !== 'unparseableBody'),
-  ...CODEX_FIXTURES,
-]
+const LISTED_CLAUDE_FIXTURES = FIXTURES.filter((name) => name !== 'unparseableBody')
+
+// Codex lists its threads after Claude, so a case waits for every listed fixture before it reads
+// the Session List. Only the mock app-server serves the recorded Codex threads.
+function listedFixtures(backend: SessionHarnessBackend) {
+  return backend.name === 'mock'
+    ? [...LISTED_CLAUDE_FIXTURES, ...CODEX_FIXTURES]
+    : LISTED_CLAUDE_FIXTURES
+}
 
 // The reader archived these before the case begins, through the call the Session List's Archive makes.
-async function archiveFixtures(page: Page) {
-  await Promise.all(LISTED_FIXTURES.map(fixtureSession))
+async function archiveFixtures(page: Page, backend: SessionHarnessBackend) {
+  await Promise.all(listedFixtures(backend).map(fixtureSession))
   const sessionIds = await Promise.all(ARCHIVED_FIXTURES.map(fixtureSession))
   const archived = await sendSessionUpdate(page, { sessionIds, archived: true })
   const failed = sessionIds.filter((id) => !archived.sessionIds.includes(id))
@@ -71,6 +77,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
   sessionBackend: ['mock', { option: true, scope: 'worker' }],
   projectSelected: [true, { option: true }],
   slowReply: [false, { option: true }],
+  heldStart: [false, { option: true }],
   adversarialSeed: [undefined, { option: true }],
   sessionSyncFixture: [undefined, { option: true }],
   uninstalledAcpAgents: [[], { option: true }],
@@ -94,6 +101,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
       projectSelected,
       backend,
       slowReply,
+      heldStart,
       adversarialSeed,
       sessionSyncFixture,
       uninstalledAcpAgents,
@@ -107,7 +115,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
       root,
       fixture: sessionFixture,
       backend,
-      launch: { slowReply, adversarialSeed, sessionSyncFixture, uninstalledAcpAgents },
+      launch: { slowReply, heldStart, adversarialSeed, sessionSyncFixture, uninstalledAcpAgents },
       launched: async (application, page) => {
         traced = await startRecording(performanceProfile, application, async () => page)
       },
@@ -120,7 +128,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
       const page = await session.launch()
       if (packagedRun && !(await session.isPackaged()))
         throw new Error('The case did not drive the packaged app.')
-      if (projectSelected && sessionSyncFixture === undefined) await archiveFixtures(page)
+      if (projectSelected && sessionSyncFixture === undefined) await archiveFixtures(page, backend)
       await use(session)
       await finishRecording(performanceProfile, traced, testInfo)
       if (testInfo.status !== testInfo.expectedStatus) await attachFailure(session, testInfo)

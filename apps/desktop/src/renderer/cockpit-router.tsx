@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 import {
   createHashRouter,
-  Navigate,
   Outlet,
   type RouteObject,
+  replace,
   useLocation,
   useMatches,
 } from 'react-router'
@@ -24,6 +24,7 @@ import { TicketsSidebar } from '@/domains/tickets/renderer/sidebar'
 import { DESTINATION_PATHS, DESTINATIONS, navigateCommand } from '@/platform/contract/commands'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
+import { queryClient, trpc } from '@/platform/renderer/trpc-client'
 
 type CockpitRouteHandle = {
   sidebar: ReactNode
@@ -89,8 +90,8 @@ export const cockpitRoutes: RouteObject[] = [
   {
     element: <CockpitRouteLayout />,
     children: [
-      { index: true, element: <Navigate replace to="/projects" /> },
-      { path: '/projects', element: <ProjectIndexRedirect /> },
+      { index: true, loader: () => replace('/projects'), HydrateFallback: EmptyOutlet },
+      { path: '/projects', loader: firstProjectSessions, HydrateFallback: EmptyOutlet },
       {
         path: '/projects/:projectId/sessions',
         handle: { sidebar: sidebarByPage.sessions } satisfies CockpitRouteHandle,
@@ -120,9 +121,13 @@ export const cockpitRoutes: RouteObject[] = [
 
 export const cockpitRouter = createHashRouter(cockpitRoutes)
 
-function ProjectIndexRedirect() {
-  const [cockpit] = useProjects()
-  return cockpit.project ? (
-    <Navigate replace to={`/projects/${cockpit.project.id}/sessions`} />
-  ) : null
+// A loader redirect yields to a newer navigation, such as a hash write during the launch.
+async function firstProjectSessions() {
+  const projects = await queryClient.fetchQuery(trpc.projectList.queryOptions()).catch(() => [])
+  return projects[0] ? replace(`/projects/${projects[0].id}/sessions`) : null
+}
+
+// The shell draws while the Project list loads, with nothing in its outlet yet.
+function EmptyOutlet() {
+  return null
 }

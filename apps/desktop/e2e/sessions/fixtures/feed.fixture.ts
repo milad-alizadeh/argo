@@ -1,8 +1,11 @@
 // The disk state every packaged Session case launches the app against, and the mutations that
 // prove a re-read reaches the file system rather than a cache.
-import { appendFile, mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, realpath, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { pointShellOutputAtRoot } from '../../../mocks/sessions/mock-shell-output'
+import { claudeConfigDirectory } from '../../../mocks/cli/claude/mock-claude-transcripts'
+import { mockCodexStateFile } from '../../../mocks/cli/codex/mock-codex-cli'
+import { recordedThread } from '../../../mocks/cli/codex/recorded-codex-threads'
+import { RECORDED_PROMPTS } from '../../../mocks/cli/recorded-prompts'
 import {
   fixturePath,
   fixtureSessionId,
@@ -12,6 +15,7 @@ import {
 } from '../../../mocks/sessions/mock-transcript-files'
 import { makeProjectLocallyReady } from '../../projects/fixtures/locally-ready-project'
 import { repository, seedSingleProject } from '../../projects/fixtures/project.fixture'
+import { claudeSessionMessages } from '../real-harness/claude-vendor-reader'
 
 export const FIXTURES = [
   'resumeParent',
@@ -20,7 +24,6 @@ export const FIXTURES = [
   'unparseableBody',
   'askPending',
   'prose',
-  'toolCalls',
   // Resumes a leaf that is in no file here, which is what a chain looks like when the Session List's
   // file cap stops short of its origin. Its row has to say so.
   'strandedResume',
@@ -41,66 +44,44 @@ export const FIXTURES = [
 // The Sessions the reader archived before the case begins.
 export const ARCHIVED_FIXTURES = ['plannedWork']
 
-type CodexItem =
-  | { id: string; type: 'userMessage'; content: { type: 'text'; text: string }[] }
-  | { id: string; type: 'agentMessage'; text: string }
-
-// One Codex thread the mock app-server lists and reads, in `thread/read`'s shape.
-function codexThread(request: {
-  name: string
-  cwd: string
-  updatedAt: string
-  title: string
-  turns: { id: string; prompt: string; reply: string }[]
-}) {
+// One recorded Codex thread, renamed and placed for this run, in `thread/read`'s shape. The time
+// keeps it in the same place in the Session List as the Claude fixtures.
+function codexThread(request: { name: string; cwd: string; updatedAt: string; title: string }) {
   return {
+    ...recordedThread(request.title),
     id: fixtureSessionId(request.name),
     cwd: request.cwd,
     updatedAt: Math.floor(Date.parse(request.updatedAt) / 1000),
     name: request.title,
-    turns: request.turns.map((turn) => ({
-      id: turn.id,
-      status: 'completed',
-      items: [
-        {
-          id: `${turn.id}-user`,
-          type: 'userMessage',
-          content: [{ type: 'text', text: turn.prompt }],
-        },
-        { id: `${turn.id}-assistant`, type: 'agentMessage', text: turn.reply },
-      ] satisfies CodexItem[],
-    })),
   }
 }
 
 export const CODEX_PARENT = 'codexParent'
-export const CODEX_FIXTURES = [CODEX_PARENT, 'codexChild']
+export const CODEX_FIXTURES = [CODEX_PARENT, 'codexChild'] as const
 
-// The Codex threads the mock app-server starts with, in the state file its executable reads.
-async function writeCodexThreads(root, codexTranscripts) {
+// The Codex threads the mock app-server starts with.
+async function writeCodexThreads(root: string, codexTranscripts: string) {
   const cwd = proofCwd(codexTranscripts, 'codex')
   const threads = [
     codexThread({
       name: CODEX_PARENT,
       cwd,
       updatedAt: '2026-01-10T08:00:05.000Z',
-      title: 'Run Codex check',
-      turns: [{ id: 'turn-1', prompt: 'Run Codex check', reply: 'Checking...' }],
+      title: RECORDED_PROMPTS.codexCommand,
     }),
     codexThread({
       name: CODEX_FIXTURES[1],
       cwd,
       updatedAt: '2026-01-10T08:30:05.000Z',
-      title: 'Continue the check',
-      turns: [{ id: 'turn-2', prompt: 'Continue the check', reply: 'Continuing' }],
+      title: RECORDED_PROMPTS.codexReply,
     }),
   ]
-  await writeFile(path.join(root, 'codex-state.json'), JSON.stringify(threads))
+  await writeFile(mockCodexStateFile(root), JSON.stringify(threads))
 }
 
 // One more turn on a Session already measured, written the way the Harness writes one: appended to
 // the file it belongs to.
-const grownTurn = (transcripts) =>
+const grownTurn = (transcripts: string) =>
   `${JSON.stringify({
     type: 'assistant',
     cwd: proofCwd(transcripts, 'stranded'),
@@ -115,18 +96,21 @@ const grownTurn = (transcripts) =>
     },
   })}\n`
 
-export async function growStranded(transcripts) {
+export async function growStranded(transcripts: string) {
   await appendFile(fixturePath(transcripts, 'strandedResume'), grownTurn(transcripts))
 }
 
-// The Harness reads a transcript as the parent chain from its newest record, so each append extends it.
-async function newestRecord(transcript) {
-  const lines = (await readFile(transcript, 'utf8')).split('\n').filter((line) => line !== '')
-  const uuids = lines.map((line) => JSON.parse(line).uuid).filter((uuid) => uuid !== undefined)
-  return uuids.at(-1) ?? null
+// The Harness reads a transcript as the parent chain from its newest record, so each append extends
+// it. The Agent SDK's reader names that record.
+async function newestRecord(transcripts: string, name: string) {
+  const messages = await claudeSessionMessages(
+    claudeConfigDirectory(transcripts),
+    fixtureSessionId(name),
+  )
+  return messages.at(-1)?.uuid ?? null
 }
 
-export async function appendProse(transcripts, uuid, text) {
+export async function appendProse(transcripts: string, uuid: string, text: string) {
   const transcript = fixturePath(transcripts, 'prose')
   await appendFile(
     transcript,
@@ -135,7 +119,7 @@ export async function appendProse(transcripts, uuid, text) {
       cwd: proofCwd(transcripts, 'prose'),
       timestamp: '2026-07-21T09:31:00.000Z',
       uuid,
-      parentUuid: await newestRecord(transcript),
+      parentUuid: await newestRecord(transcripts, 'prose'),
       message: {
         role: 'assistant',
         stop_reason: 'end_turn',
@@ -147,8 +131,8 @@ export async function appendProse(transcripts, uuid, text) {
 
 // The Session List shows only for a selected Project (#2307), so only the empty-window case leaves it unset.
 export async function prepare(
-  root,
-  application,
+  root: string,
+  application: string,
   { projectSelected }: { projectSelected: boolean },
 ) {
   // The Harnesses record a working directory with its links resolved, so every path here is too.
@@ -156,7 +140,6 @@ export async function prepare(
   const claudeTranscripts = path.join(base, 'claude-config', 'projects')
   const codexTranscripts = path.join(base, 'codex-home', 'sessions')
   await writeFixtureTree(claudeTranscripts, FIXTURES)
-  await pointShellOutputAtRoot(claudeTranscripts, root)
   await mkdir(codexTranscripts, { recursive: true })
   await writeCodexThreads(root, codexTranscripts)
   const userData = path.join(root, 'userData')
@@ -176,6 +159,6 @@ export async function prepare(
 
 const PROOF_PROJECT_ID = 'session-proof-project'
 
-function seedProject(userData, project) {
+function seedProject(userData: string, project: string) {
   seedSingleProject(userData, { id: PROOF_PROJECT_ID, path: project })
 }

@@ -18,7 +18,7 @@ import { claudeProjectFolder } from '../cli/claude/mock-claude-transcripts'
 const FIXTURES = path.join(process.cwd(), 'mocks', 'cli', 'claude', 'fixtures', 'sessions')
 const SUBAGENTS = path.join(FIXTURES, '..', 'subagents')
 
-export async function fixtureLines(name, fixtures = FIXTURES) {
+export async function fixtureLines(name: string, fixtures = FIXTURES) {
   const text = await readFile(path.join(fixtures, `${name}.jsonl`), 'utf8')
   return text.split('\n').filter((line) => line.length > 0)
 }
@@ -34,7 +34,7 @@ export function fixtureSessionId(name: string) {
 
 // Where one Session's transcript already sits in a tree this module wrote, whichever working
 // directory's folder holds it.
-export function fixturePath(transcripts, name) {
+export function fixturePath(transcripts: string, name: string) {
   const file = `${fixtureSessionId(name)}.jsonl`
   const folder = readdirSync(transcripts).find((entry) =>
     existsSync(path.join(transcripts, entry, file)),
@@ -44,13 +44,13 @@ export function fixturePath(transcripts, name) {
 }
 
 // Where a new Session run in `cwd` lands, with its folder made.
-export async function newFixturePath(transcripts, name, cwd) {
+export async function newFixturePath(transcripts: string, name: string, cwd: string) {
   const folder = claudeProjectFolder(transcripts, cwd)
   await mkdir(folder, { recursive: true })
   return path.join(folder, `${fixtureSessionId(name)}.jsonl`)
 }
 
-export async function replaceInFile(file, search, replacement) {
+export async function replaceInFile(file: string, search: string, replacement: string) {
   const before = await readFile(file, 'utf8')
   await writeFile(file, before.split(search).join(replacement))
   // The transcript summariser caches a file by path and mtime; a coarse filesystem clock can
@@ -64,34 +64,42 @@ export async function replaceInFile(file, search, replacement) {
 // The packaged proof's own Project folder, two levels above either Harness's transcript root
 // (`claude-config/projects`, `codex-home/sessions`). The cockpit shows no Session List without a
 // selected Project (#2307), so a proof selects this one and places every cwd under it.
-export function proofProject(transcripts) {
+export function proofProject(transcripts: string) {
   return path.join(transcripts, '..', '..', 'project')
 }
 
-export function proofCwd(transcripts, place) {
+export function proofCwd(transcripts: string, place: string) {
   return path.join(proofProject(transcripts), place)
 }
 
-// The fixtures record their cwd under the mock home `/Users/x`, which a selected Project scopes out.
-function placeInProofProject(text, transcripts) {
-  return text.replace(/("cwd":\s*")\/Users\/x(?=[/"])/g, `$1${proofProject(transcripts)}`)
+// The receipts in `shellRunning` name an absolute output file, the way the Harness's own do (#1582);
+// each run gets its own folder beside the Project, so two runs never share one file.
+function shellOutputRoot(transcripts: string) {
+  return path.join(transcripts, '..', '..', 'shell-output')
 }
 
-function withSessionId(text, name) {
+// The fixtures record their cwd under the mock home `/Users/x`, which a selected Project scopes out.
+function placeInProofProject(text: string, transcripts: string) {
+  return text
+    .replace(/("cwd":\s*")\/Users\/x(?=[/"])/g, `$1${proofProject(transcripts)}`)
+    .replaceAll('/tmp/argo-shell', shellOutputRoot(transcripts))
+}
+
+function withSessionId(text: string, name: string) {
   return text.replace(
     new RegExp(`("sessionId":\\s*")${name}"`, 'g'),
     `$1${fixtureSessionId(name)}"`,
   )
 }
 
-function recordedCwd(text, name) {
+function recordedCwd(text: string, name: string) {
   const cwd = /"cwd":\s*"([^"]+)"/.exec(text)?.[1]
   if (cwd === undefined) throw new Error(`The ${name} fixture records no cwd.`)
   return cwd
 }
 
 // The Subagent transcripts the Harness keeps in a folder beside the Session's own file.
-async function writeSubagents(transcripts, name, folder) {
+async function writeSubagents(transcripts: string, name: string, folder: string) {
   const source = path.join(SUBAGENTS, name)
   const entries = await readdir(source).catch(() => [])
   if (entries.length === 0) return
@@ -106,7 +114,8 @@ async function writeSubagents(transcripts, name, folder) {
 // A Claude transcript root shaped the way the Harness writes one: a folder per working directory
 // holding one `<sessionId>.jsonl` per Session. Written in the given order, so the mtime ordering
 // is the argument order reversed.
-export async function writeFixtureTree(transcripts, names) {
+export async function writeFixtureTree(transcripts: string, names: readonly string[]) {
+  await mkdir(shellOutputRoot(transcripts), { recursive: true })
   for (const name of names) {
     const lines = await fixtureLines(name)
     const text = withSessionId(placeInProofProject(`${lines.join('\n')}\n`, transcripts), name)

@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback } from 'react'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
 import type { HarnessControl } from '../../harness'
-import type { SessionPlan } from '../../types'
+import type { ComposerPlan } from '../../types'
 import type { Send } from '../hooks/use-send'
 import { useSessionComposerState } from '../hooks/use-session-composer-state'
 import type { TicketChoice } from '../references/context-picker/context-picker-contents'
@@ -42,7 +42,7 @@ export type ComposerFormProps = {
   sessionId: string
   onSend?: Send
   permissionPrompt?: ReactNode
-  plan?: SessionPlan | null
+  plan?: ComposerPlan | null
   harness?: HarnessControl | null
   turnConfiguration?: TurnConfigurationControlProps | null
   turnConfigurationChoices?: TurnConfigurationChoices | null
