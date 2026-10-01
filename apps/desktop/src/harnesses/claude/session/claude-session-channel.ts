@@ -20,7 +20,7 @@ import {
 } from '@/harnesses/registration'
 import { claudeCliEnvironment } from '../cli-environment'
 import { createClaudeToolControl } from './claude-channel-controls'
-import { decodeClaudeLiveContent } from './claude-feed-decoder'
+import { claudeFeedContent } from './claude-feed'
 import { ClaudeFeedProjection } from './claude-feed-projection'
 import { ClaudeLiveText } from './claude-live-text'
 
@@ -53,7 +53,7 @@ function decodedFeedEvents(
     'user_message_uuid' in message && typeof message.user_message_uuid === 'string'
       ? message.user_message_uuid
       : fallbackCommandId
-  return decodeClaudeLiveContent(message, reject)
+  return claudeFeedContent(message, reject)
     .flatMap((content) => projection.project(content))
     .map((content) => ({
       type: 'content',

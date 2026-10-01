@@ -121,16 +121,14 @@ function running(id: string, text: string): FeedContent {
     kind: 'command',
     id,
     command: text,
-    cwd: null,
     status: 'running',
     output: null,
     stderr: null,
-    exitCode: null,
   }
 }
 
-function reasoning(id: string, text: string | null): FeedContent {
-  return { kind: 'reasoning', id, text, redacted: text === null }
+function reasoning(id: string, text: string): FeedContent {
+  return { kind: 'reasoning', id, text }
 }
 
 const activityOf = (reading: FeedReading | undefined) =>
@@ -160,7 +158,7 @@ test('a multi-activity Turn publishes its latest activity to the Feed and keeps 
   expect(await sessionListActivity()).toMatchObject(first)
 
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
-  journal.append(sessionId, content(reasoning('r1', null)))
+  journal.append(sessionId, content(reasoning('r1', '')))
   journal.append(sessionId, content(reasoning('r2', 'Reading **the** failure')))
   await vi.advanceTimersByTimeAsync(FEED_TEXT_COALESCE_MS)
   const thought = { kind: 'thought', label: 'Reading **the** failure', open: true }

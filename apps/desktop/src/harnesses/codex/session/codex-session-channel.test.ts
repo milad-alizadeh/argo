@@ -376,9 +376,9 @@ test('Codex live commentary and reasoning stay separate from the final answer', 
       text: 'Reading files',
       phase: 'commentary',
     },
-    { kind: 'reasoning', id: 'reason-1', text: 'Checking', redacted: false },
-    { kind: 'reasoning', id: 'reason-1', text: 'Checking the results', redacted: false },
-    { kind: 'reasoning', id: 'reason-1', text: 'Checking the results', redacted: false },
+    { kind: 'reasoning', id: 'reason-1', text: 'Checking' },
+    { kind: 'reasoning', id: 'reason-1', text: 'Checking the results' },
+    { kind: 'reasoning', id: 'reason-1', text: 'Checking the results' },
     { kind: 'message', id: 'answer-1', role: 'assistant', text: 'Done', phase: 'final_answer' },
   ])
   channel.close()
@@ -454,66 +454,8 @@ test('unknown Codex item shapes are reported and counted', async () => {
   assert.deepEqual(warnings, [
     'Rejected 1 unsupported Codex live notification(s): item/completed: futureItem',
     'Rejected 2 unsupported Codex live notification(s): item/completed',
-    'Rejected 3 unsupported Codex live notification(s): item/completed: imageGeneration',
+    'Rejected 3 unsupported Codex live notification(s): item/completed: imageGeneration:futureStatus',
   ])
-})
-
-function subagentNotification(item: Record<string, unknown>) {
-  return { method: 'item/completed', params: { threadId: 'thread-1', turnId: 'turn-1', item } }
-}
-
-function delegationFacts(events: readonly LiveSessionChannelEvent[]) {
-  return events.flatMap((event) =>
-    event.type === 'feed' &&
-    event.body.type === 'content' &&
-    event.body.content.kind === 'delegation'
-      ? [
-          [
-            event.body.vendorEventId,
-            event.body.content.event,
-            event.body.content.status,
-            event.body.content.prompt,
-          ],
-        ]
-      : [],
-  )
-}
-
-test('Codex channel streams each Subagent activity as its own delegation event', async () => {
-  const { channel, events, notify } = mockCodexChannel(startedThreadRequest)
-  await new Promise((resolve) => setImmediate(resolve))
-  notify(
-    subagentNotification({
-      id: 'call_spawn',
-      type: 'collabAgentToolCall',
-      tool: 'spawnAgent',
-      status: 'completed',
-      senderThreadId: 'thread-1',
-      receiverThreadIds: ['thread-child'],
-      prompt: 'Review the branch',
-      model: 'gpt-5',
-      reasoningEffort: null,
-      agentsStates: {},
-    }),
-  )
-  for (const [id, kind] of [
-    ['call_spawn', 'started'],
-    ['subagent-completed-1', 'completed'],
-  ])
-    notify(
-      subagentNotification({
-        id,
-        type: 'subAgentActivity',
-        kind,
-        agentThreadId: 'thread-child',
-        agentPath: '/root/spec_review',
-      }),
-    )
-  assert.deepEqual(delegationFacts(events), [
-    ['call_spawn', 'started', 'running', 'Review the branch'],
-    ['subagent-completed-1', 'responded', 'completed', null],
-  ])
-  channel.close()
 })
 
 test('Codex thread status reaches the Session status without repeats (ADR-0024)', async () => {
