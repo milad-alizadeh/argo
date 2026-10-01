@@ -15,6 +15,7 @@ import {
   subagentCompletionRows,
 } from '@/domains/sessions/api/feed'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import { pendingSessionDraft } from '@/domains/sessions/api/pending-session'
 import type { SessionError } from '@/domains/sessions/api/session-error'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
@@ -27,6 +28,7 @@ import type { SessionListChanges } from '../api'
 import { updateSession } from '../api'
 import type { SessionEventJournal } from '../live'
 import { sessionHistoryIdentity } from '../session-history-identity'
+import { pendingFeedReading } from './pending-feed-reading'
 
 export type SessionFeedReaderContext = {
   database: Database
@@ -284,6 +286,11 @@ export class SessionFeedReaders {
   }
 
   observe(chain: FeedChain, observer: Observer): () => void {
+    const pending = chain.subagentId === null ? pendingSessionDraft(chain.sessionId) : null
+    if (pending !== null) {
+      observer(pendingFeedReading(this.#context.database, chain.sessionId, pending))
+      return () => {}
+    }
     const key = feedChainKey(chain)
     let reader = this.#readers.get(key)
     if (reader === undefined) {

@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync, watch } from 'node:fs'
+import {
+  SESSION_MOCK_START_HOLD_FILE_ENV,
+  waitWhileHoldFileExists,
+} from '@/harnesses/proof-protocol'
 
 // The command list the CLI reports, from the JSON file this names, shaped like
 // fixtures/supported-commands-claude-2.1.286.json. A rewrite of it pushes `commands_changed`.
@@ -92,7 +96,10 @@ export function startMockClaudeSdkStream(
     ids: MockTurnIds,
   ) => Promise<string>,
 ) {
-  writeInitialization(sessionId)
+  // The real CLI names the Session in its `init`; every prompt waits behind it.
+  const initialized = waitWhileHoldFileExists(process.env[SESSION_MOCK_START_HOLD_FILE_ENV]).then(
+    () => writeInitialization(sessionId),
+  )
   pushCommandChanges(sessionId)
   let pending = ''
   const pendingPermissions = new Map<string, () => void>()
@@ -119,7 +126,9 @@ export function startMockClaudeSdkStream(
       return
     }
     const text = promptText(input)
-    if (text === null) return
+    if (text !== null) void initialized.then(() => answerPrompt(input, text))
+  }
+  const answerPrompt = (input: { uuid?: unknown }, text: string) => {
     if (text.includes('FeedActivityProbe')) writeActivity(sessionId)
     const ids = {
       user: typeof input.uuid === 'string' ? input.uuid : randomUUID(),

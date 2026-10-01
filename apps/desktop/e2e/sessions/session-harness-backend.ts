@@ -17,6 +17,8 @@ export type SessionFixture = {
 // that answers instantly never shows the app waiting.
 export type SessionHarnessLaunch = {
   slowReply: boolean
+  // A Harness that holds its start, so a case reads the app before the Session is named (#3052).
+  heldStart?: boolean
   adversarialSeed?: string
   // Recorded Claude SDK rows for the packaged Session-sync proof.
   sessionSyncFixture?: { records: unknown[]; delayMs: number }
@@ -41,7 +43,8 @@ export type SessionHarnessBackend = {
   // 3. The wall time one case may take, in milliseconds.
   readonly budgetMs: number
   start: (request: { root: string; fixture: SessionFixture }) => Promise<SessionHarnessRun>
-  // 4. How a case waits for a reply, and what it reads to know one has not arrived yet.
+  // 4. How a case waits for a reply, releasing a held start, and what it reads to know one has not
+  // arrived yet.
   waitForReply: (page: Page, reply: SessionReply) => Promise<void>
   // Whether the Feed already shows the reply.
   replied: (page: Page, reply: SessionReply) => Promise<boolean>

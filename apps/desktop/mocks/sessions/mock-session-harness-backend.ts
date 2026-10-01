@@ -1,12 +1,14 @@
 // The backend every packaged Session proof runs against today: each adapter's mock Harness written
 // beside the fixture tree, and both transcript roots pointed at that tree (#2308).
-import { readdir, readFile } from 'node:fs/promises'
+import { writeFileSync } from 'node:fs'
+import { readdir, readFile, rm } from 'node:fs/promises'
 import path from 'node:path'
 import type { Page } from 'playwright-core'
 import type { Harness } from '@/domains/sessions/renderer/harness/harnesses'
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
+  SESSION_MOCK_START_HOLD_FILE_ENV,
 } from '@/harnesses/proof-protocol'
 import type {
   SessionFixture,
@@ -51,6 +53,8 @@ async function transcriptHolds(folder: string, mark: string) {
 export function createMockSessionHarnessBackend(): SessionHarnessBackend {
   // Where each mock writes its transcripts, filled in by `start` before any case runs.
   const folders: Record<Harness, string> = { claude: '', codex: '', 'claude-acp': '' }
+  // A held start waits while this file exists; `waitForReply` deletes it.
+  let startHold = ''
   const mark = ({ harness, prompt }: SessionReply) => MOCKS[harness].replyMark(prompt)
   const feedMark = (page: Page, reply: SessionReply) =>
     page.getByRole('region', HISTORY).getByText(mark(reply))
@@ -70,14 +74,17 @@ export function createMockSessionHarnessBackend(): SessionHarnessBackend {
         executables[harness] = await MOCKS[harness].write(root, roots[harness])
       }
       const signedIn = await signedInHarnessEnvironment(root)
+      startHold = path.join(root, 'mock-start-hold')
       return {
         executables,
         transcripts: { claude: roots.claude, codex: roots.codex },
-        launchEnv: ({ slowReply, adversarialSeed }) => {
+        launchEnv: ({ slowReply, heldStart, adversarialSeed }) => {
           if (adversarialSeed !== undefined) console.info(`Session mock seed: ${adversarialSeed}`)
+          if (heldStart) writeFileSync(startHold, '')
           return {
             ...signedIn,
             [SESSION_MOCK_REPLY_DELAY_MS_ENV]: String(slowReply ? SLOW_REPLY_MS : 0),
+            ...(heldStart ? { [SESSION_MOCK_START_HOLD_FILE_ENV]: startHold } : {}),
             ...(adversarialSeed === undefined
               ? {}
               : { [SESSION_MOCK_ADVERSARIAL_SEED_ENV]: adversarialSeed }),
@@ -85,7 +92,10 @@ export function createMockSessionHarnessBackend(): SessionHarnessBackend {
         },
       }
     },
-    waitForReply: (page, reply) => feedMark(page, reply).first().waitFor({ timeout: BUDGET_MS }),
+    waitForReply: async (page, reply) => {
+      await rm(startHold, { force: true })
+      await feedMark(page, reply).first().waitFor({ timeout: BUDGET_MS })
+    },
     replied: async (page, reply) => (await feedMark(page, reply).count()) > 0,
     recorded: (reply) => transcriptHolds(folders[reply.harness], mark(reply)),
   }

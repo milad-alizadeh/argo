@@ -93,11 +93,14 @@ export function useSessionScreenModel() {
   const [cockpit, projectActions] = useProjects()
   const [workspaceCockpit, workspaceActions] = useWorkspaces(cockpit.project?.id ?? null)
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
+  // New Session draws its pending Session's Feed from Enter until the Harness names it.
+  const [startingSessionId, setStartingSessionId] = useState<string | null>(null)
+  const feedSessionId = sessionId === 'new' ? startingSessionId : selectedSessionId
   const { evidence, setEvidence } = useSessionEvidence(selectedSessionId)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
   const { session, loaded: sessionLoaded } = useSessionDetails(selectedSessionId)
   const feedRunning = sessionTurnRunning(session)
-  const sessionFeed = useFeedReading(selectedSessionId, null, feedRunning)
+  const sessionFeed = useFeedReading(feedSessionId, null, feedRunning)
   const [lastHarness, chooseHarness] = useState<Harness>(DEFAULT_HARNESS)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const permission = useSessionPermission(selectedSessionId)
@@ -114,6 +117,8 @@ export function useSessionScreenModel() {
     onJumpToLatestChange,
     isNewSession: sessionId === 'new',
     selectedSessionId,
+    feedSessionId,
+    onStartingSession: setStartingSessionId,
     ...sessionFeed,
     feedRunning,
     navigate,

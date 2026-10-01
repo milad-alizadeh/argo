@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer'
+import { pendingSessionId } from '@/domains/sessions/api/pending-session'
 import type { WorkspaceActions, WorkspaceCockpit } from '@/domains/workspaces/renderer'
 import type { CatalogReadResult } from '@/harnesses/harness-catalog'
 import { harnessLabel } from '@/harnesses/presentation-registry'
@@ -39,6 +40,8 @@ type SessionScreenDetailsProps = {
   cockpit: Cockpit
   workspaceCockpit: WorkspaceCockpit
   workspaceActions: WorkspaceActions
+  // A new Session's pending id from its saved prompt until its start settles, then null.
+  onStartingSession: (sessionId: string | null) => void
 }
 
 type SessionsTranslator = ReturnType<typeof useTranslation<'sessions'>>['t']
@@ -153,6 +156,7 @@ function useSessionComposerSend(input: {
   identity: ComposerIdentity
   projectId: string | null
   onFailure: (outcome: 'rejected' | 'uncertain') => void
+  onStartingSession: (sessionId: string | null) => void
 }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -161,7 +165,16 @@ function useSessionComposerSend(input: {
     turnConfiguration: TurnConfiguration | null,
     attachments: DraftContent['attachments'],
   ) => {
-    const result = await input.draft?.submit(prompt, turnConfiguration, attachments)
+    const starts = input.identity.kind === 'draft'
+    const result = await input.draft?.submit({
+      prompt,
+      turnConfiguration,
+      attachments,
+      onSaved: (saved) => {
+        if (starts) input.onStartingSession(pendingSessionId(saved))
+      },
+    })
+    if (starts) input.onStartingSession(null)
     if (result?.outcome !== 'accepted') {
       const outcome = result?.outcome ?? 'rejected'
       input.onFailure(outcome)
@@ -229,6 +242,7 @@ export function SessionComposerArea({
   cockpit,
   workspaceCockpit,
   workspaceActions,
+  onStartingSession,
 }: SessionScreenDetailsProps) {
   const { catalogQuery, refreshCatalog } = useCatalogRead(harness)
   const location = useLocation()
@@ -271,6 +285,7 @@ export function SessionComposerArea({
       onRefreshCatalog={refreshCatalog}
       onRetryCatalog={retryCatalog}
       onRetryDraft={retryDraft}
+      onStartingSession={onStartingSession}
     />
   )
 }
@@ -306,9 +321,16 @@ function SessionComposer({
   onRetryDraft,
   isRunning,
   onInterrupt,
+  onStartingSession,
 }: Pick<
   SessionScreenDetailsProps,
-  'permission' | 'questionPending' | 'session' | 'harness' | 'workspaceCockpit' | 'workspaceActions'
+  | 'permission'
+  | 'questionPending'
+  | 'session'
+  | 'harness'
+  | 'workspaceCockpit'
+  | 'workspaceActions'
+  | 'onStartingSession'
 > & {
   catalogFailure: CatalogFailure | null
   choices: Parameters<typeof useDurableComposerDraft>[0]['choices']
@@ -339,6 +361,7 @@ function SessionComposer({
     identity,
     projectId: identity.kind === 'draft' ? identity.projectId : null,
     onFailure: reportSendFailure,
+    onStartingSession,
   })
   const waiting = draft?.hasDraft !== true
   // A failed catalog leaves no draft to wait for: the card disables, and its catalog menu can retry.

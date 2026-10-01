@@ -23,6 +23,8 @@ export type SessionOptions = {
   projectSelected: boolean
   // A Harness that holds its reply, so a case can read the app waiting on a Turn (#2119).
   slowReply: boolean
+  // A Harness that names no Session until the case waits for its reply (#3052).
+  heldStart: boolean
   // Replays the mock Harness's seeded jitter, split bytes and failures.
   adversarialSeed: string | undefined
   sessionSyncFixture: { records: unknown[]; delayMs: number } | undefined
@@ -68,6 +70,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
   sessionBackend: ['mock', { option: true, scope: 'worker' }],
   projectSelected: [true, { option: true }],
   slowReply: [false, { option: true }],
+  heldStart: [false, { option: true }],
   adversarialSeed: [undefined, { option: true }],
   sessionSyncFixture: [undefined, { option: true }],
   // Built per test, because a backend remembers the folders of the one root it started on.
@@ -90,6 +93,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
       projectSelected,
       backend,
       slowReply,
+      heldStart,
       adversarialSeed,
       sessionSyncFixture,
       performanceProfile,
@@ -102,7 +106,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
       root,
       fixture: sessionFixture,
       backend,
-      launch: { slowReply, adversarialSeed, sessionSyncFixture },
+      launch: { slowReply, heldStart, adversarialSeed, sessionSyncFixture },
       launched: async (application, page) => {
         traced = await startRecording(performanceProfile, application, async () => page)
       },
