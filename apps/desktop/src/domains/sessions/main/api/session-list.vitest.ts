@@ -9,7 +9,6 @@ import {
   saveTicket,
   sessionListCaller,
 } from '@/mocks/sessions/session-list-caller'
-import { recordLiveSubagents } from '../database'
 import { updateSession } from './session-update'
 
 // Links a Session to a Ticket whose content the provider has saved.
@@ -374,30 +373,22 @@ test('draws the activity the Session’s Feed published under its title', async 
   }
 })
 
-test('lists the Subagents a watched Session named', async () => {
-  const { database, list } = sessionListCaller()
+test('lists the Subagents a Session named', async () => {
+  const { database, list, sessionListChanges } = sessionListCaller()
   try {
     insertSession(database, { id: IDS[0], harness: 'codex', nativeId: 'native-2', createdAt: 10 })
-    recordLiveSubagents(database, {
-      harness: 'codex',
-      nativeId: 'native-2',
-      events: [
+    updateSession({ database, changes: sessionListChanges }, IDS[0], {
+      subagents: [
         {
-          type: 'content',
-          commandId: null,
-          turnId: null,
-          vendorEventId: null,
-          content: {
-            kind: 'delegation',
-            id: 'call-1',
-            event: 'started',
-            agentId: 'agent-1',
-            status: 'running',
-            name: 'Survey',
-            prompt: null,
-            model: null,
-            summary: null,
-          },
+          kind: 'delegation',
+          id: 'call-1',
+          event: 'started',
+          agentId: 'agent-1',
+          status: 'running',
+          name: 'Survey',
+          prompt: null,
+          model: null,
+          summary: null,
         },
       ],
     })

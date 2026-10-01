@@ -1,11 +1,8 @@
-import { and, eq, inArray, sql } from 'drizzle-orm'
+import { inArray, sql } from 'drizzle-orm'
 import type { Database } from '@/database/database'
-import { sessionTable } from '@/database/session/schema'
 import { type SESSION_SUBAGENT_STATES, sessionSubagent } from '@/database/session-subagent/schema'
 import { sessionSubagentSelectSchema } from '@/database/session-subagent/validation'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import type { Harness } from '@/harnesses/harness'
 
 type Delegation = Extract<FeedContent, { kind: 'delegation' }>
 export type StoredSubagent = {
@@ -46,24 +43,17 @@ function subagentRows(sessionId: string, subagents: readonly StoredSubagent[]) {
   }))
 }
 
-// A Subagent a watched Session named while it was running.
-export function recordLiveSubagents(
-  database: Database,
-  input: { harness: Harness; nativeId: string; events: readonly SessionLiveEventBody[] },
-): void {
-  const subagents = subagentsOf(
-    input.events.flatMap((event) => (event.type === 'content' ? [event.content] : [])),
-  )
-  if (subagents.length === 0) return
-  const session = database
-    .select({ argoId: sessionTable.argoId })
-    .from(sessionTable)
-    .where(and(eq(sessionTable.harness, input.harness), eq(sessionTable.nativeId, input.nativeId)))
-    .get()
-  if (session === undefined) return
-  database
+// Saves the Subagents delegation content names. Returns how many rows changed.
+export function saveSessionSubagents(
+  database: Pick<Database, 'insert'>,
+  sessionId: string,
+  content: readonly FeedContent[],
+): number {
+  const subagents = subagentsOf(content)
+  if (subagents.length === 0) return 0
+  const { changes } = database
     .insert(sessionSubagent)
-    .values(subagentRows(session.argoId, subagents))
+    .values(subagentRows(sessionId, subagents))
     .onConflictDoUpdate({
       target: [sessionSubagent.sessionId, sessionSubagent.subagentId],
       // A Subagent that ends names no description, so the label it started with stands.
@@ -71,8 +61,10 @@ export function recordLiveSubagents(
         label: sql`coalesce(excluded.label, ${sessionSubagent.label})`,
         state: sql`excluded.state`,
       },
+      setWhere: sql`${sessionSubagent.state} is not excluded.state or coalesce(excluded.label, ${sessionSubagent.label}) is not ${sessionSubagent.label}`,
     })
     .run()
+  return Number(changes)
 }
 
 export function storedSessionSubagents(

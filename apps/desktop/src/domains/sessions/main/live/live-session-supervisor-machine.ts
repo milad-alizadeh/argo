@@ -21,6 +21,7 @@ import {
   createSessionCommandStore,
   createSessionUpsert,
   type SessionCommandStore,
+  saveSessionSubagents,
   setSessionCommandOutcome,
 } from '../database'
 import { liveSessionChannelActor } from './live-session-channel-actor'
@@ -116,6 +117,10 @@ export function recordLiveSessionEvents(
   let inFlightCommandId: string | null = session.getSnapshot().context.first.commandId
   const eventSubscription = session.on('feed', ({ body }) => {
     if (database !== undefined) recordCommandFeed(database, body)
+    if (database !== undefined && sessionId !== null && body.type === 'content')
+      saveSessionSubagents(database, sessionId, [
+        body.content,
+      ])
     if (sessionId === null) journal?.stage(session, body)
     else journal?.append(sessionId, body)
   })
@@ -566,7 +571,8 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
             activity?.kind !== previousActivity?.kind ||
             activity?.open !== previousActivity?.open
           previousActivity = activity
-          if ((body.type === 'status' || activityChanged) && sessionId !== null)
+          const delegated = body.type === 'content' && body.content.kind === 'delegation'
+          if ((body.type === 'status' || activityChanged || delegated) && sessionId !== null)
             sendBack({
               type: 'Session status changed',
               sessionId,

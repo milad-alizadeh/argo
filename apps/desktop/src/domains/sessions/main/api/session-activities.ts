@@ -45,7 +45,8 @@ export class SessionActivities {
     if (this.#stopped) return
     const key = sessionKey(session)
     const pending = this.#pending.get(key)?.update
-    this.#pending.set(key, { session, update: { ...pending, ...update } })
+    const subagents = [...(pending?.subagents ?? []), ...(update.subagents ?? [])]
+    this.#pending.set(key, { session, update: { ...pending, ...update, subagents } })
     this.#timer ??= setTimeout(() => this.flush(), WRITE_WINDOW_MS)
   }
 
@@ -122,7 +123,9 @@ export class SessionActivities {
     if (this.#stopped) return
     const activity =
       reading === null ? null : projectFeedRowEntries({ history: reading.turn, live: [] }).activity
-    if (activity !== null) this.update(session, { activity })
+    const subagents = reading?.turn.filter((content) => content.kind === 'delegation') ?? []
+    if (activity !== null || subagents.length > 0)
+      this.update(session, { ...(activity === null ? {} : { activity }), subagents })
     this.#options.read(session, reading)
   }
 }

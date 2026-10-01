@@ -114,6 +114,30 @@ test('a running Session with no Feed open stores its status and newest command',
   expect((await row(RUNNING)).updatedAt).not.toBe(before.updatedAt)
 })
 
+test('a Subagent the newest Turn started counts on the row', async () => {
+  saved(RUNNING)
+  await threads.open(RUNNING)
+  await tickAndWrite()
+  const page = recordedTurnsPage('running') as { data: { items: unknown[] }[] }
+  for (const turn of page.data)
+    turn.items.push({
+      type: 'subAgentActivity',
+      id: 'spawn-1',
+      kind: 'started',
+      agentThreadId: 'agent-thread-1',
+      agentPath: 'explorer',
+    })
+  threads.answer(RUNNING, { page })
+  threads.append(RUNNING, 'any bytes\n')
+  await tickAndWrite()
+  const found = (await caller.list({ projectId: 'project-1' })).rows.find(
+    (each) => each.id === RUNNING,
+  )
+  expect(found?.subagents).toEqual([
+    { id: 'agent-thread-1', label: expect.anything(), state: 'running' },
+  ])
+})
+
 test('an unchanged rollout asks for nothing', async () => {
   saved(RUNNING)
   await threads.open(RUNNING)
