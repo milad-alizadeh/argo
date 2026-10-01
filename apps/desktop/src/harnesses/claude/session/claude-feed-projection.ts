@@ -28,7 +28,8 @@ const taskUpdateSchema = z.object({
   subject: z.string().optional(),
   status: z.enum(['pending', 'in_progress', 'completed', 'deleted']).optional(),
 }) satisfies z.ZodType<Pick<TaskUpdateInput, 'taskId' | 'subject' | 'status'>>
-// A new task's id is only in its result text: "Task #1 created successfully: <subject>".
+// getSessionMessages drops tool_use_result, so history and the live stream both read the new
+// task's id from its result text: "Task #1 created successfully: <subject>".
 const TASK_CREATED = /^Task #(\S+) created/
 
 function inputField(input: Tool['input'], key: string): string | null {
@@ -84,7 +85,7 @@ function replyText(text: string): string | null {
 }
 
 // Pairs each Agent call with its Subagent across one stream. A skill row names the skill only,
-// and a TodoWrite call is a Plan; neither draws its result.
+// and a TodoWrite, TaskCreate or TaskUpdate call is a Plan; neither draws its result.
 export class ClaudeFeedProjection {
   private calls = new Map<string, KnownCall>()
   // The last input each started agent was sent.
@@ -205,9 +206,11 @@ export class ClaudeFeedProjection {
 
   // A create the CLI refused, or whose id it cannot read, stays the tool call it is.
   private taskCreated(create: { call: Tool; subject: string }, result: Tool): FeedContent[] {
+    if (result.status === 'running') return []
     this.taskCreates.delete(create.call.callId)
     const taskId = resultText(result).match(TASK_CREATED)?.[1]
     if (result.status === 'failed' || taskId === undefined) return [create.call, result]
+    this.quietCalls.add(create.call.callId)
     this.tasks.set(taskId, { text: create.subject, done: false })
     return [planContent(result.id, [...this.tasks.values()])]
   }

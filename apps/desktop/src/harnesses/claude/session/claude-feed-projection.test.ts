@@ -208,10 +208,28 @@ test('leaves a TaskCreate whose result names no task as the tool call it is', ()
     ...call,
     id: 'call-todo:result',
     name: '',
+    status: 'completed' as const,
     input: null,
     output: [{ kind: 'text' as const, text: 'No task' }],
   }
 
   expect(projection.project(call)).toEqual([])
   expect(projection.project(result)).toEqual([call, result])
+})
+
+test('waits past a TaskCreate progress frame and hides its later summary', () => {
+  const projection = new ClaudeFeedProjection()
+  const call = { ...todoCall([]), name: 'TaskCreate', input: { subject: 'Ship it' } }
+  const frame = { ...call, id: 'call-todo:frame', input: null }
+  const result = {
+    ...frame,
+    id: 'call-todo:result',
+    status: 'completed' as const,
+    output: [{ kind: 'text' as const, text: 'Task #1 created successfully: Ship it' }],
+  }
+
+  expect(projection.project(call)).toEqual([])
+  expect(projection.project(frame)).toEqual([])
+  expect(projection.project(result)).toMatchObject([{ kind: 'plan', text: '- Ship it' }])
+  expect(projection.project({ ...frame, status: 'completed', summary: 'Made a task' })).toEqual([])
 })
