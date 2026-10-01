@@ -112,6 +112,8 @@
   --size-session-menu-max-width: calc(100vw - var(--spacing-shell-item) * 2);
   --size-session-menu-max-height: calc(100dvh - 2rem);
   --size-context-picker-max-width: calc(100vw - var(--spacing-shell-item) * 2);
+  /* A dialog whose list can outgrow the window scrolls inside this, keeping its Close in view. */
+  --size-dialog-max-height: calc(100dvh - 2rem);
   /* A wider popover carrying prose and a meter: context and usage. */
   --size-session-popover: 26rem;
   /* The composer's file/skill autocomplete popover. */

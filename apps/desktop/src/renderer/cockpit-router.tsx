@@ -36,6 +36,10 @@ const sidebarByPage = {
   tickets: <TicketsSidebar />,
 } as const
 
+// The launch passes through these on its way to a Project's Sessions. A gate drawn on one stops
+// or races that redirect, and the redirect then replaces any route set meanwhile (#2996).
+const LAUNCH_REDIRECTS = new Set(['/', '/projects'])
+
 function isCockpitRouteHandle(handle: unknown): handle is CockpitRouteHandle {
   return typeof handle === 'object' && handle !== null && 'sidebar' in handle
 }
@@ -61,12 +65,10 @@ export function CockpitRouteLayout() {
 
   if (cockpit.status === 'empty') return <EmptyProjectScreen />
   // Saved Sessions remain readable without a Harness. Other surfaces keep the sign-in gate.
-  const opensSavedSessions =
-    location.pathname === '/' ||
-    location.pathname === '/projects' ||
-    location.pathname.includes('/sessions')
+  const opensSavedSessions = location.pathname.includes('/sessions')
   if (
     !opensSavedSessions &&
+    !LAUNCH_REDIRECTS.has(location.pathname) &&
     readiness.data &&
     !readiness.data.some((harness) => harness.state === 'ready')
   ) {

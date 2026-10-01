@@ -89,6 +89,8 @@ export class ExternalSessionPoll {
   readonly #leaving = new Map<string, TrackedSession>()
   // Harnesses whose last listing failed, so a failure is reported once until one succeeds.
   readonly #failing = new Set<Harness>()
+  // Each Harness's last reported count of unrecognised live records, so a count is reported once.
+  readonly #rejected = new Map<Harness, number>()
   readonly #pending = new Map<string, { session: HarnessSession; update: SessionUpdate }>()
   readonly #reads = new Map<string, ReadState>()
   readonly #queue: HarnessSession[] = []
@@ -156,8 +158,7 @@ export class ExternalSessionPoll {
   async #tickHarness(harness: Harness, external: ExternalSessions): Promise<void> {
     const list = await external.listLive()
     if (this.#stopped) return
-    if (list.rejected > 0)
-      console.warn(`Rejected ${list.rejected} unrecognised ${harness} live Session record(s).`)
+    this.#reportRejected(harness, list.rejected)
     const previous = this.#live.get(harness)
     const current = new Map<string, TrackedSession>()
     this.#live.set(harness, current)
@@ -176,6 +177,12 @@ export class ExternalSessionPoll {
       if (!current.has(nativeId))
         this.#leave({ harness, nativeId }, tracked, external.readActivity !== undefined)
     if (previous === undefined) this.#closeAll(harness, current)
+  }
+
+  #reportRejected(harness: Harness, rejected: number): void {
+    if (rejected > 0 && rejected !== this.#rejected.get(harness))
+      console.warn(`Rejected ${rejected} unrecognised ${harness} live Session record(s).`)
+    this.#rejected.set(harness, rejected)
   }
 
   // The same object across ticks, so a read that lands mid-tick is kept.
