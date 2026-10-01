@@ -1,8 +1,8 @@
-// A new Session shows its typed prompt and its row before the Harness replies (#2430, #3039).
-// The slow Harness holds the reply until the case releases it, so the check is an order, not a time.
+// A new Session shows its prompt and its row while the slow Harness still holds the reply (#3039).
+// The case releases the hold itself, so the check is an order, not a time.
 import assert from 'node:assert/strict'
 import type { Page } from 'playwright-core'
-import { chooseHarness, openNewSessionByClick, PERSISTED_ROW } from '../gestures'
+import { chooseHarness, openNewSessionByClick, PERSISTED_ROW, sendFromComposer } from '../gestures'
 import type { SessionHarnessBackend } from '../session-harness-backend'
 
 const NEW_PROMPT = 'Say hello to a brand new Session.'
@@ -31,11 +31,8 @@ function watchFeed({ feed, text }: { feed: string; text: string }) {
 }
 
 async function sendWatched(page: Page, prompt: string) {
-  const composer = page.getByRole('combobox', { name: 'Message' })
-  await composer.click()
-  await page.keyboard.type(prompt)
   await page.evaluate(watchFeed, { feed: FEED, text: prompt })
-  await page.keyboard.press('Enter')
+  await sendFromComposer(page, prompt)
   await page.locator(FEED).getByText(prompt).first().waitFor()
 }
 
@@ -55,12 +52,13 @@ export async function provePromptLatency(page: Page, backend: SessionHarnessBack
   await sendWatched(page, NEW_PROMPT)
   const row = page.locator(PERSISTED_ROW).filter({ hasText: NEW_PROMPT })
   await row.first().waitFor()
-  assert.equal(await row.count(), 1)
   // Both drew while the Harness still held its reply, so neither waited for it.
   assert.equal(await backend.recorded(created), false)
   await backend.waitForReply(page, created)
+  assert.equal(await row.count(), 1)
   const createdBlankFrames = await stopWatch(page)
 
+  // The first reply released the hold, so the existing Send checks blank frames only.
   await sendWatched(page, EXISTING_PROMPT)
   await backend.waitForReply(page, { harness: 'claude', prompt: EXISTING_PROMPT })
   const existingBlankFrames = await stopWatch(page)
