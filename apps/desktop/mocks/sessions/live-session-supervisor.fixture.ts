@@ -15,6 +15,7 @@ import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { createHarnessRegistry } from '@/harnesses/registry'
+import { answeringSkillsList } from '@/mocks/cli/codex/mock-codex-channel'
 import { insertWorkspace, migratedDatabase } from '@/mocks/database/migrated-database'
 import { harnessCatalogMachine } from '@/platform/main/harness-catalog/harness-catalog-machine'
 import { codexModelCatalogFixture } from './codex-model-catalog.fixture'
@@ -84,7 +85,7 @@ export const codexClientFor = (
   request: CodexRequest,
   notifications: Set<(message: WireMessage) => boolean | undefined>,
 ): CodexAppServerClient => ({
-  request: (method, params, parse) => request(method, params, parse),
+  request: answeringSkillsList(request),
   respond: () => {},
   onNotification: (listener) => {
     notifications.add(listener)

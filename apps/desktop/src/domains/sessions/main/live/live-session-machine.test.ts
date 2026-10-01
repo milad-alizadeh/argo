@@ -7,6 +7,7 @@ import type {
   WireMessage,
 } from '@/harnesses/codex/app-server/codex-app-server-client'
 import { openCodexSessionChannel } from '@/harnesses/codex/session/codex-session-channel'
+import { answeringSkillsList } from '@/mocks/cli/codex/mock-codex-channel'
 import type { SessionStartInput } from '../api/session-submit'
 import { liveSessionChannelActor } from './live-session-channel-actor'
 import { liveSessionMachine } from './live-session-machine'
@@ -281,7 +282,7 @@ function codexHarnessFor(request: CodexRequest) {
       openCodexSessionChannel(
         input,
         {
-          request,
+          request: answeringSkillsList(request),
           onNotification: (listener) => {
             notify = listener
             return () => {

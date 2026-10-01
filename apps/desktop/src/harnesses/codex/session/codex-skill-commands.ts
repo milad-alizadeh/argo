@@ -1,88 +1,79 @@
-// Codex has no command list on the app-server. Skills are the directories under the user
-// skill folder and each project's `.agents/skills`. The description is frontmatter only.
-import { type FSWatcher, watch } from 'node:fs'
+// Codex lists skills over the app-server and sends `skills/changed` when they change.
 import os from 'node:os'
-import path from 'node:path'
+import { z } from 'zod'
 import {
   type ComposerCommand,
   readComposerCommands,
 } from '@/domains/sessions/api/composer-commands'
-import { readSkillDirectoryRows, skillRoots } from '@/harnesses/skill-directories'
+import type { CodexRequest, SkillMetadata } from '../app-server'
 
-function codexSkillHome(codexHome?: string) {
-  return codexHome ?? process.env.CODEX_HOME ?? path.join(os.homedir(), '.codex')
+// Only the fields a command shows are read; the rest of a skill may change shape freely.
+const skillSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  enabled: z.boolean(),
+}) satisfies z.ZodType<Pick<SkillMetadata, 'name' | 'description' | 'enabled'>>
+
+const skillsListSchema = z.object({ data: z.array(z.object({ skills: z.array(z.unknown()) })) })
+
+function skillRows(listing: unknown, reject: (shape: string) => void): unknown[] {
+  const parsed = skillsListSchema.safeParse(listing)
+  if (!parsed.success) {
+    reject('codex-skills-list')
+    return []
+  }
+  return parsed.data.data.flatMap((entry) =>
+    entry.skills.flatMap((raw) => {
+      const skill = skillSchema.safeParse(raw)
+      if (!skill.success) {
+        reject('codex-skill')
+        return []
+      }
+      if (!skill.data.enabled) return []
+      return [{ name: skill.data.name, description: skill.data.description, argumentHint: '' }]
+    }),
+  )
 }
 
-function codexSkillRoots(cwd: string | null, codexHome: string): string[] {
-  return skillRoots(cwd, path.join(codexHome, 'skills'), path.join('.agents', 'skills'))
+// Without a folder, the home folder stands in, so only personal skills are listed.
+export async function readCodexSkillCommands(
+  request: CodexRequest,
+  input: { cwd: string | null; reject: (shape: string) => void; forceReload?: boolean },
+): Promise<ComposerCommand[]> {
+  const listing = await request(
+    'skills/list',
+    { cwds: [input.cwd ?? os.homedir()], forceReload: input.forceReload ?? false },
+    (value) => value,
+  )
+  return readComposerCommands(skillRows(listing, input.reject), input.reject)
 }
 
-export async function readCodexSkillCommands(input: {
-  cwd: string | null
-  codexHome?: string
-  reject?: (shape: string) => void
-}): Promise<ComposerCommand[]> {
-  const reject = input.reject ?? (() => {})
-  const rows = await readSkillDirectoryRows({
-    roots: codexSkillRoots(input.cwd, codexSkillHome(input.codexHome)),
-    reject,
-    entryShape: 'codex-skill',
-    rootShape: 'codex-skill-root',
-  })
-  return readComposerCommands(rows, reject)
-}
-
+// Lists once, then again past Codex's cache on each `changed`; a late answer never replaces a newer one.
 export function followCodexSkillCommands(input: {
+  request: CodexRequest
   cwd: string
   closed: () => boolean
   onCommands: (commands: ComposerCommand[]) => void
-  reject?: (shape: string) => void
-}): () => void {
+  reject: (shape: string) => void
+}): { changed: () => void; stop: () => void } {
   let stopped = false
-  let stopWatch: (() => void) | null = null
-  void readCodexSkillCommands(input).then((commands) => {
-    if (stopped || input.closed()) return
-    input.onCommands(commands)
-    stopWatch = watchCodexSkillCommands({
-      cwd: input.cwd,
-      reject: input.reject,
-      onChange: (next) => {
-        if (!stopped && !input.closed()) input.onCommands(next)
+  let latest = 0
+  const list = (forceReload: boolean) => {
+    latest += 1
+    const asked = latest
+    readCodexSkillCommands(input.request, { ...input, forceReload }).then(
+      (commands) => {
+        if (!stopped && !input.closed() && asked === latest) input.onCommands(commands)
       },
-    })
-  })
-  return () => {
-    stopped = true
-    stopWatch?.()
+      (error: unknown) => console.warn('Could not list Codex skills.', error),
+    )
   }
-}
-
-function watchCodexSkillCommands(input: {
-  cwd: string | null
-  codexHome?: string
-  reject?: (shape: string) => void
-  onChange: (commands: ComposerCommand[]) => void
-}): () => void {
-  const codexHome = codexSkillHome(input.codexHome)
-  const watchers: FSWatcher[] = []
-  let timer: ReturnType<typeof setTimeout> | undefined
-  const refresh = () => {
-    if (timer !== undefined) clearTimeout(timer)
-    timer = setTimeout(() => {
-      void readCodexSkillCommands(input).then(input.onChange)
-    }, 50)
-  }
-  for (const root of codexSkillRoots(input.cwd, codexHome)) {
-    try {
-      const watcher = watch(root, refresh)
-      watcher.on('error', () => {})
-      watchers.push(watcher)
-    } catch {
-      // A missing skill folder is an empty list, not a watch.
-    }
-  }
-  return () => {
-    if (timer !== undefined) clearTimeout(timer)
-    for (const watcher of watchers) watcher.close()
+  const changed = () => list(true)
+  list(false)
+  return {
+    changed,
+    stop: () => {
+      stopped = true
+    },
   }
 }

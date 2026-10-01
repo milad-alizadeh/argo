@@ -38,9 +38,8 @@ export function createCodexRegistration(
       openCodexSessionChannel(input, client, { emit, controls }),
     listCommands: ({ cwd }) => {
       let rejected = 0
-      return readCodexSkillCommands({
+      return readCodexSkillCommands(request, {
         cwd,
-        codexHome,
         reject: () => {
           rejected += 1
         },
@@ -58,8 +57,8 @@ export function createCodexRegistration(
     changeableTurnSettings: ['model', 'effort'],
     acceptsAttachments: true,
     autoCompactLimit: {
-      read: () => readAutoCompactLimit(codexHome),
-      write: (limit) => writeAutoCompactLimit(codexHome, limit),
+      read: () => readAutoCompactLimit(request),
+      write: (limit) => writeAutoCompactLimit(request, limit),
     },
     shutdown: () => client.shutdown(),
   }
