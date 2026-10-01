@@ -17,7 +17,7 @@ import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import {
   clearWorkingStatuses,
-  ExternalSessionRoster,
+  ExternalSessionPoll,
   listComposerCommandsFor,
   SessionListChanges,
   watchSessionList,
@@ -403,7 +403,7 @@ function startSessionServices(actors: WindowActors, database: Database, registry
     readHistory: (harness, target) => registry[harness].readHistory(target),
   })
   // #2976 switches this poll off while hooks are on.
-  const externalSessions = new ExternalSessionRoster({
+  const externalSessions = new ExternalSessionPoll({
     ...context,
     harnesses: harnessSchema.options.flatMap((harness) => {
       const external = registry[harness].externalSessions

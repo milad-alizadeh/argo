@@ -22,7 +22,7 @@ export const RUNNING_QUIET_LIMIT_MS = 5 * 60_000
 // Each Session's row reaches SQLite at most once a window, with its newest values.
 const WRITE_WINDOW_MS = 500
 
-export type ExternalSessionRosterContext = SessionUpdateContext & {
+export type ExternalSessionPollContext = SessionUpdateContext & {
   harnesses: readonly { harness: Harness; external: ExternalSessions }[]
   // Whether Argo runs a saved Session now; its live channel then owns its status and activity.
   hasLiveChannel: (sessionId: string) => boolean
@@ -80,8 +80,8 @@ function shownStatus(tracked: TrackedSession, at: number): ExternalSessionStatus
 // that changed or left, and diffs the list against the last tick's. The first sight of a transcript
 // only records its stamp, so startup reads nothing. Updates merge into one write per Session a
 // window, and activity reads run one at a time, since one vendor read can take a large file whole.
-export class ExternalSessionRoster {
-  readonly #context: ExternalSessionRosterContext
+export class ExternalSessionPoll {
+  readonly #context: ExternalSessionPollContext
   readonly #external: ReadonlyMap<Harness, ExternalSessions>
   // Each Harness's live Sessions at its last tick; absent before its first.
   readonly #live = new Map<Harness, Map<string, TrackedSession>>()
@@ -98,7 +98,7 @@ export class ExternalSessionRoster {
   #interval: ReturnType<typeof setInterval> | null = null
   #stopped = false
 
-  constructor(context: ExternalSessionRosterContext) {
+  constructor(context: ExternalSessionPollContext) {
     this.#context = context
     this.#external = new Map(context.harnesses.map(({ harness, external }) => [harness, external]))
   }

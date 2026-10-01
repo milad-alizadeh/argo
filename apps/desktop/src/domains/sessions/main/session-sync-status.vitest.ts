@@ -7,22 +7,15 @@ import type { Harness } from '@/harnesses/harness'
 import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { SessionListChanges } from './api'
 import {
+  IDLE_SESSION_SYNC_STATUS,
   observeSessionSync,
   type SessionSyncEvent,
   type SessionSyncStatus,
-  savedSyncStatus,
   sessionSyncStatusProcedure,
 } from './session-sync-status'
 import { sessionSyncSupervisorMachine } from './sync'
 
-const idle: SessionSyncStatus = {
-  phase: 'idle',
-  processed: 0,
-  total: null,
-  skipped: 0,
-  lastSuccessfulSyncAt: null,
-  failure: null,
-}
+const idle = IDLE_SESSION_SYNC_STATUS
 
 function supervisor(database: Database) {
   const actor = createActor(sessionSyncSupervisorMachine, {
@@ -42,55 +35,6 @@ function supervisor(database: Database) {
   return { actor, report }
 }
 
-test('saves completed scans while live phases stay in memory, and restarts a cut-short scan idle', () => {
-  const database = migratedDatabase()
-  const client = database.$client
-  const { actor, report } = supervisor(database)
-  try {
-    const completed: SessionSyncStatus = {
-      phase: 'ready',
-      processed: 4,
-      total: 4,
-      skipped: 1,
-      lastSuccessfulSyncAt: '2026-09-26T11:00:00.000Z',
-      failure: null,
-    }
-    report('claude', completed)
-    report('claude', { ...completed, phase: 'fetching', processed: 0, total: null })
-
-    assert.equal(actor.getSnapshot().context.status.claude?.phase, 'fetching')
-    assert.deepEqual(savedSyncStatus(database, 'claude'), completed)
-
-    report('claude', {
-      ...completed,
-      phase: 'failed',
-      processed: 2,
-      failure: 'Claude unavailable',
-      lastSuccessfulSyncAt: null,
-    })
-    assert.deepEqual(savedSyncStatus(database, 'claude'), {
-      ...completed,
-      phase: 'failed',
-      processed: 2,
-      failure: 'Claude unavailable',
-    })
-
-    client.exec("UPDATE session_sync_status SET phase = 'fetching'")
-    const restarted = supervisor(database).actor
-    assert.deepEqual(restarted.getSnapshot().context.status.claude, {
-      ...completed,
-      phase: 'idle',
-      processed: 0,
-      total: null,
-      skipped: 0,
-    })
-    restarted.stop()
-  } finally {
-    actor.stop()
-    client.close()
-  }
-})
-
 test('one observer reports every Harness scan as one status, once per change', () => {
   const database = migratedDatabase()
   const { actor, report } = supervisor(database)
@@ -101,7 +45,6 @@ test('one observer reports every Harness scan as one status, once per change', (
     phase: 'ready',
     processed: 3,
     total: 3,
-    lastSuccessfulSyncAt: '2026-09-28T10:00:00.000Z',
   } as const
   report('claude', ready)
   actor.send({ type: 'Discover', harness: 'claude', nativeId: 'native-1' })

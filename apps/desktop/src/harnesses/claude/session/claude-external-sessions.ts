@@ -32,7 +32,7 @@ const WAITING_STATUS: Readonly<Record<string, ExternalSessionStatus>> = {
   'dialog open': 'asking',
 }
 
-// The roster status of one entry, or null for a value Claude does not document.
+// The Session status of one entry, or null for a value Claude does not document.
 function entryStatus({ status, waitingFor }: InteractiveEntry): ExternalSessionStatus | null {
   const known = agentStatusSchema.safeParse(status)
   if (!known.success) return null

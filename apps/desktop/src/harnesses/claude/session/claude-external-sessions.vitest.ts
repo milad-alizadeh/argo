@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import { ExternalSessionRoster } from '@/domains/sessions/main/api'
+import { ExternalSessionPoll } from '@/domains/sessions/main/api'
 import { mockClaudeAgentsCli } from '@/mocks/cli/claude/mock-claude-agents'
 import { insertSession, liveSession, sessionListCaller } from '@/mocks/sessions/session-list-caller'
 import { createClaudeExternalSessions } from './claude-external-sessions'
@@ -11,7 +11,7 @@ const STORED_LINE = { label: 'Stored line', kind: 'command', open: true } as con
 
 let agents: ReturnType<typeof mockClaudeAgentsCli>
 let caller: ReturnType<typeof sessionListCaller>
-let roster: ExternalSessionRoster
+let poll: ExternalSessionPoll
 let discovered: string[]
 // The Sessions Argo runs, by Session ID.
 let liveActors: Record<string, unknown>
@@ -21,7 +21,7 @@ beforeEach(() => {
   liveActors = {}
   caller = sessionListCaller({ sessions: liveActors })
   discovered = []
-  roster = new ExternalSessionRoster({
+  poll = new ExternalSessionPoll({
     database: caller.database,
     changes: caller.sessionListChanges,
     harnesses: [{ harness: 'claude', external: createClaudeExternalSessions(agents.executable) }],
@@ -31,7 +31,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  roster.stop()
+  poll.stop()
   caller.stopWatching()
   caller.database.$client.close()
   agents.dispose()
@@ -43,8 +43,8 @@ function saved(id: string, values: { status?: 'idle' | 'running'; activity?: str
 }
 
 async function tickAndWrite() {
-  await roster.tick()
-  roster.flush()
+  await poll.tick()
+  poll.flush()
 }
 
 // What the Session List shows for one row.

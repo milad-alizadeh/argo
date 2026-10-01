@@ -1,8 +1,8 @@
 import { utimesSync, writeFileSync } from 'node:fs'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import type { sessionTable } from '@/database/session/schema'
-import { ExternalSessionRoster } from '@/domains/sessions/main/api'
-import { RUNNING_QUIET_LIMIT_MS } from '@/domains/sessions/main/api/external-session-roster'
+import { ExternalSessionPoll } from '@/domains/sessions/main/api'
+import { RUNNING_QUIET_LIMIT_MS } from '@/domains/sessions/main/api/external-session-poll'
 import {
   mockCodexExternalThreads,
   notLoadedError,
@@ -19,10 +19,10 @@ let caller: ReturnType<typeof sessionListCaller>
 let discovered: string[]
 let live: Set<string>
 let threads: ReturnType<typeof mockCodexExternalThreads>
-let roster: ExternalSessionRoster
+let poll: ExternalSessionPoll
 
-function startRoster() {
-  roster = new ExternalSessionRoster({
+function startPoll() {
+  poll = new ExternalSessionPoll({
     database: caller.database,
     changes: caller.sessionListChanges,
     harnesses: [
@@ -41,11 +41,11 @@ beforeEach(() => {
   discovered = []
   live = new Set()
   threads = mockCodexExternalThreads()
-  startRoster()
+  startPoll()
 })
 
 afterEach(() => {
-  roster.stop()
+  poll.stop()
   vi.useRealTimers()
   vi.restoreAllMocks()
   threads.dispose()
@@ -71,9 +71,9 @@ const settleReads = () => new Promise((resolve) => setTimeout(resolve, 50))
 
 // Waits for the reads a tick started, then writes what they queued.
 async function tickAndWrite() {
-  await roster.tick()
+  await poll.tick()
   await settleReads()
-  roster.flush()
+  poll.flush()
 }
 
 // Polls on the real event loop, which fake timeouts leave alone.
@@ -331,11 +331,11 @@ test('reads run one at a time across Sessions, and a Session that changes mid-re
   threads.respondWith(() => new Promise((resolve) => settle.push(resolve)))
   threads.append(RUNNING, 'x\n')
   threads.append(OTHER, 'x\n')
-  await roster.tick()
+  await poll.tick()
   threads.append(RUNNING, 'x\n')
-  await roster.tick()
+  await poll.tick()
   threads.append(RUNNING, 'x\n')
-  await roster.tick()
+  await poll.tick()
   // Each read waits on a lock probe process, so wait for the read itself rather than a fixed time.
   await until(() => settle.length === 1)
   expect(threads.turnsReads).toEqual([RUNNING])
@@ -358,11 +358,11 @@ test('one Session’s updates within the write window reach SQLite as one write'
   caller.sessionListChanges.subscribe((sessionIds) => announced.push([...sessionIds]))
   saved(RUNNING)
   await threads.open(RUNNING)
-  await roster.tick()
+  await poll.tick()
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   threads.answer(RUNNING, 'running')
   threads.append(RUNNING, 'x\n')
-  await roster.tick()
+  await poll.tick()
   await until(() => threads.turnsReads.length === 1)
   await vi.advanceTimersByTimeAsync(0)
   expect((await row(RUNNING)).status).toBe('unknown')

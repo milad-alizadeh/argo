@@ -1,6 +1,7 @@
 import {
   type ActorRefFrom,
   assertEvent,
+  assign,
   createActor,
   enqueueActions,
   fromCallback,
@@ -19,8 +20,7 @@ import { type Harness, harnessSessionKey } from '@/harnesses/harness'
 import type { SessionListChanges } from '../api'
 import {
   type SessionSyncStatus,
-  saveCompletedSyncStatus,
-  savedSyncStatus,
+  IDLE_SESSION_SYNC_STATUS,
   sessionSyncStatusSchema,
 } from '../session-sync-status'
 import { sessionSyncMachine } from './session-sync-machine'
@@ -105,7 +105,6 @@ function statusFor(snapshot: SnapshotFrom<typeof sessionSyncMachine>): SessionSy
         ? null
         : snapshot.context.records.length,
     skipped: snapshot.context.skipped,
-    lastSuccessfulSyncAt: snapshot.context.lastSuccessfulSyncAt,
     failure: snapshot.context.failure,
   })
 }
@@ -250,7 +249,7 @@ export const sessionSyncSupervisorMachine = setup({
       // New-Session lookups in flight, by `<harness>:<nativeId>`.
       discovering: Record<string, true>
       harnesses: RegisteredHarnesses
-      // Each Harness's scan progress; a completed scan is also saved to survive a restart.
+      // Each Harness's scan progress, held in memory only.
       status: Partial<Record<Harness, SessionSyncStatus>>
     },
     events: {} as SupervisorEvent,
@@ -348,23 +347,11 @@ export const sessionSyncSupervisorMachine = setup({
           harness: event.harness,
         })
     }),
-    recordStatus: enqueueActions(({ context, event, enqueue }) => {
-      assertEvent(event, 'SyncStatus')
-      const status = sessionSyncStatusSchema.parse({
-        ...event.status,
-        lastSuccessfulSyncAt:
-          event.status.lastSuccessfulSyncAt ??
-          context.status[event.harness]?.lastSuccessfulSyncAt ??
-          null,
-      })
-      if (status.phase === 'ready' || status.phase === 'failed')
-        enqueue(() => saveCompletedSyncStatus(context.database, event.harness, status))
-      enqueue.assign({
-        status: ({ context: current }) => ({
-          ...current.status,
-          [event.harness]: status,
-        }),
-      })
+    recordStatus: assign({
+      status: ({ context, event }) => {
+        assertEvent(event, 'SyncStatus')
+        return { ...context.status, [event.harness]: event.status }
+      },
     }),
   },
 }).createMachine({
@@ -378,10 +365,7 @@ export const sessionSyncSupervisorMachine = setup({
     discovering: {},
     harnesses: input.harnesses,
     status: Object.fromEntries(
-      Object.keys(input.harnesses).map((harness) => [
-        harness,
-        savedSyncStatus(input.database, harness),
-      ]),
+      Object.keys(input.harnesses).map((harness) => [harness, IDLE_SESSION_SYNC_STATUS]),
     ),
   }),
   states: {

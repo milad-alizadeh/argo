@@ -33,7 +33,7 @@ export const liveSessionChannelEventSchema = z.discriminatedUnion('type', [
   }),
 ])
 
-// The roster status a Harness's own interface gives an external Session (ADR-0048).
+// The Session status a Harness's own interface gives an external Session (ADR-0048).
 export type ExternalSessionStatus = 'running' | 'permission' | 'asking' | 'idle' | 'unknown'
 
 // One Session open outside Argo now, as its Harness's own listing names it.
@@ -58,7 +58,7 @@ export type ExternalActivityReading = {
   retry: boolean
 }
 
-// How the roster's poll reads Sessions this Harness runs outside Argo. The host owns the loop,
+// How the external Session poll reads Sessions this Harness runs outside Argo. The host owns the loop,
 // the transcript stat, the diff and every write, and skips a Session with a live Argo channel.
 // Argo parses no transcript content: the host only stats the path (ADR-0047).
 export type ExternalSessions = {

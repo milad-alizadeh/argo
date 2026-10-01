@@ -59,10 +59,10 @@ only while its lock is held, so per-file watchers are needed only for held locks
 
 ## Status mapping
 
-Both Harnesses write the same roster vocabulary: `starting`, `running`, `permission`, `asking`,
+Both Harnesses write the same Session status vocabulary: `starting`, `running`, `permission`, `asking`,
 `idle`, `stopped`, `ended` and `unknown`.
 
-| Source value | Roster status |
+| Source value | Session status |
 |---|---|
 | Claude `busy` / SDK `running` | `running` |
 | Claude `waiting` with `waitingFor` "permission prompt", "sandbox request" or "worker request", SDK `requires_action` on a permission | `permission` |
@@ -85,7 +85,7 @@ Hooks add both (#2976).
 ## Rules found by the reviews
 
 1. Discovery stays. A listed Session with no row gets `Discover`. A Codex rollout change moves
-   `activityAt` for the roster order.
+   `activityAt` for the Session List order.
 2. Closed Sessions get a status. A Session that leaves the listing shows `idle`; a Codex thread gets
    one last read first. The first poll sets every saved Session it does not find live to `idle`.
 3. Argo's own Sessions are skipped. A Session with a live channel gets no write from the poll.
@@ -97,7 +97,7 @@ Hooks add both (#2976).
 7. An idle Session keeps its line, as #2940 requires.
 8. Startup reads no history. The first sight of a rollout only records its stat.
 9. Vendor names stay in the adapters. The registration has one Harness-neutral capability,
-   `externalSessions`: `listLive()` and an optional `readActivity(nativeId, changedAt)`. The roster
+   `externalSessions`: `listLive()` and an optional `readActivity(nativeId, changedAt)`. The poll
    code knows no vendor names. The ACP Harness implements neither.
 
 ## Spikes
@@ -125,7 +125,7 @@ Hooks add both (#2976).
 | `domains/sessions/main/live/session-history-followers.ts` + test | 67 + 97 | Remove |
 | `domains/sessions/main/api/watched-session-status.ts` + test | 53 + 86 | Remove (the poll replaces it) |
 | `feed/feed-reader.ts` `followHistory` path | about 50 | Shrink |
-| `session-list.ts` roster Feed readers | about 45 | Remove (the branch already removes it) |
+| `session-list.ts` Session List Feed readers | about 45 | Remove (the branch already removes it) |
 | `database/session-subagents.ts` `recordLiveSubagents` | about 35 | Move to the SDK or app-server input |
 | `HistoryFiles`, `HistoryChange`, `HistoryTurnMarker` in `registration.ts` | about 25 | Replace with the new capability |
 | `e2e/sessions/real-harness/transcript-feed-corpus.ts` and helpers | 334 + 76 | Rewrite on the vendor readers |
@@ -137,8 +137,8 @@ owner helpers, `SessionHistoryFollowers`, `WatchedSessionStatus` and `HistoryFil
 
 ## Split and size
 
-1. Presence and roster (#2940). The capability, the Claude listing, the Codex locks, the status
-   mapping, the Codex activity line, the merged write, and the removal of roster Feed readers and
+1. Presence and status (#2940). The capability, the Claude listing, the Codex locks, the status
+   mapping, the Codex activity line, the merged write, and the removal of Session List Feed readers and
    per-file watchers.
 2. Live status from the vendors. The SDK state event and `thread/status/changed`. About +80 / -100.
 3. External Feed and Subagents through the APIs. Removes the decoders, the followers and the tail.
@@ -160,7 +160,7 @@ Each change ships on its own and leaves the app working. Spikes come first.
 8. Several clients and pid reuse. Plausible: one `sessionId` can have two pid files, and a recycled pid looks alive. Fix: group by `sessionId`, let any `busy` win, and check `procStart`.
 9. Cost and the worker thread. Plausible: the parse runs on the main event loop unless the worker works, and the SQLite path through the worker is not stated. The plan keeps `latestTurn` for Codex. The ACP Harness is not mentioned.
 10. Machine sleep. Plausible: timers resume stale. Fix: scan again on the power-resume event.
-11. A rule check. Confirmed: the roster needs a Harness-neutral "external presence" capability on the registration.
+11. A rule check. Confirmed: the poll needs a Harness-neutral "external presence" capability on the registration.
 
 ### Reviewer B, performance, reliability and operability
 
@@ -181,7 +181,7 @@ The removal table above comes from this search. Its other findings:
 
 - Removals break three things the first draft did not mention:
   - `Discover`: `updateHarnessSession` returning false.
-  - `activityAt`, which sets the roster order.
+  - `activityAt`, which sets the Session List order.
   - `recordLiveSubagents`.
 - `session-command-outcomes.ts:78` `readHistory` is a different function and stays.
 - `claude-skill-records.ts` needs `historyRecord`, `jsonObject` and `ClaudeSkillDirectoryScan`.
@@ -344,9 +344,9 @@ Apps: minchenlee/c9watch (process scan every 2 s mapped through `~/.claude/sessi
 - Against: `claude agents --json` omits interactive sessions. Two readers per vendor pays both costs (700 MB SDK peak, 110 to 244 ms `thread/turns/list` per change vs 0.3 ms tail). Codex status rests on undocumented behaviour and a perl helper. No hooks.
 - For: matches the field (c9watch is nearly identical), good measurements, removes about 6,300 watchers, honest `unknown`, no vendor API exists.
 - Codex source (`thread_processor.rs`) rewrites InProgress to Interrupted for unloaded threads, and a crashed writer looks the same, so the lock probe is what tells them apart.
-- Changes: (1) drop `claude agents --json`; (2) roster status and activity from a bounded tail for both vendors, Codex via turn markers, keep the flock probe; (3) app-server and SDK only while a Feed is open, debounced; (4) optional hooks for both vendors as the exact source for running, permission and asking, heuristics as fallback.
+- Changes: (1) drop `claude agents --json`; (2) Session status and activity from a bounded tail for both vendors, Codex via turn markers, keep the flock probe; (3) app-server and SDK only while a Feed is open, debounced; (4) optional hooks for both vendors as the exact source for running, permission and asking, heuristics as fallback.
 - ADR-0047 must change under any version.
 
 ### Where both agree
 
-Both say adopt with changes, drop `claude agents --json` in favour of the pid file, add opt-in hooks as the exact status source with the tail as fallback, take Codex roster status from turn markers plus the lock rather than the interrupted rule, and amend ADR-0047. They differ on the Feed: A wants live updates from the tail, B keeps the APIs but only while the Feed is open.
+Both say adopt with changes, drop `claude agents --json` in favour of the pid file, add opt-in hooks as the exact status source with the tail as fallback, take Codex Session status from turn markers plus the lock rather than the interrupted rule, and amend ADR-0047. They differ on the Feed: A wants live updates from the tail, B keeps the APIs but only while the Feed is open.
