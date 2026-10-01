@@ -4,6 +4,7 @@ export {
   CodeBlockFilename,
   CodeBlockHeader,
   CodeBlockTitle,
+  loadCodeLanguage,
 } from './code-block'
 export { CodeBlockCopyButton } from './code-block-copy-button'
 export { TaskItem } from './task'

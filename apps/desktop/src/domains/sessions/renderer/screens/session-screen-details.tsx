@@ -100,6 +100,20 @@ function workspaceControl(
   }
 }
 
+// False while choices load; a removed worktree is no longer listed, so the listed choice stands.
+function restoreListedChoice(
+  savedWorkspaceId: string | null,
+  cockpit: Pick<WorkspaceCockpit, 'choice' | 'workspaces'>,
+  select: (choice: string) => void,
+): boolean {
+  const current = cockpit.choice
+  if (current === null) return false
+  const saved = savedWorkspaceId ?? 'new'
+  const listed = saved === 'new' || cockpit.workspaces.some((candidate) => candidate.id === saved)
+  if (listed && saved !== current) select(saved)
+  return true
+}
+
 // The saved Harness to switch to, or null to keep the current one. One that cannot start a Session
 // stays unpicked (#3005); 'unknown' means availability is still being read.
 function rememberedHarness(
@@ -149,8 +163,9 @@ function useSessionComposerDraft(input: {
       harness.onChange?.(remembered)
       return
     }
-    const savedChoice = loadedTarget.workspaceId ?? 'new'
-    if (workspaceCockpit.choice !== savedChoice) workspaceActions.selectWorkspace(savedChoice)
+    const listed = { choice: workspaceCockpit.choice, workspaces: workspaceCockpit.workspaces }
+    if (!restoreListedChoice(loadedTarget.workspaceId, listed, workspaceActions.selectWorkspace))
+      return
     setRestoredProjectId(projectId)
   }, [
     availableHarnesses,
@@ -161,6 +176,7 @@ function useSessionComposerDraft(input: {
     restoredProjectId,
     workspaceActions,
     workspaceCockpit.choice,
+    workspaceCockpit.workspaces,
   ])
   return { draft, targetRestored }
 }
