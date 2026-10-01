@@ -1,12 +1,14 @@
 import { beforeEach, expect, test, vi } from 'vitest'
 import { claudeModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { codexModelCatalogFixture } from '@/mocks/sessions/codex-model-catalog.fixture'
+import { ACP_HARNESSES, byAcpAgent } from './acp/acp-agents'
+import { createAcpRegistrations } from './acp/acp-registration-factory'
 import { claudeHarnessInfo } from './claude/catalog'
 import { createClaudeRegistration } from './claude/registration'
-import { createClaudeAcpRegistration } from './claude-acp/registration'
 import type { CodexAppServerClient, CodexRequest } from './codex/app-server/codex-app-server-client'
 import { codexHarnessInfo } from './codex/catalog'
 import { createCodexRegistration } from './codex/registration'
+import { HARNESSES, type Harness } from './harness'
 import { unavailable } from './harness-catalog'
 import { type HarnessRegistry, readHarnessCatalog } from './registry'
 
@@ -44,7 +46,7 @@ test('registered Claude reads root and subagent history and renames through the 
         throw new Error('Codex was not selected.')
       }),
     ),
-    'claude-acp': createClaudeAcpRegistration(),
+    ...createAcpRegistrations(),
   } satisfies HarnessRegistry
   const claude = registrations.claude
 
@@ -81,7 +83,7 @@ test('registered Codex reads the selected thread through its shared request and 
   const registrations = {
     claude: createClaudeRegistration(),
     codex: createCodexRegistration(clientFor(request)),
-    'claude-acp': createClaudeAcpRegistration(),
+    ...createAcpRegistrations(),
   } satisfies HarnessRegistry
   const codex = registrations.codex
 
@@ -101,38 +103,41 @@ test('registered Codex reads the selected thread through its shared request and 
 })
 
 test('the registry reads every Harness catalog', async () => {
-  const reads = { claude: 0, codex: 0, 'claude-acp': 0 }
+  const reads: Partial<Record<Harness, number>> = {}
+  const read = (harness: Harness) => {
+    reads[harness] = (reads[harness] ?? 0) + 1
+  }
   const registry = {
     claude: {
       harness: 'claude',
       readCatalog: async () => {
-        reads.claude += 1
+        read('claude')
         return claudeHarnessInfo(claudeModelCatalogFixture())
       },
     },
     codex: {
       harness: 'codex',
       readCatalog: async () => {
-        reads.codex += 1
+        read('codex')
         return codexHarnessInfo(codexModelCatalogFixture())
       },
     },
-    'claude-acp': {
-      harness: 'claude-acp',
+    ...byAcpAgent(({ id }) => ({
+      harness: id,
       readCatalog: async () => {
-        reads['claude-acp'] += 1
-        return unavailable('claude-acp')
+        read(id)
+        return unavailable(id)
       },
-    },
+    })),
   } as unknown as HarnessRegistry
 
   const catalog = await readHarnessCatalog(registry)
 
-  expect(reads).toEqual({ claude: 1, codex: 1, 'claude-acp': 1 })
+  expect(reads).toEqual(Object.fromEntries(HARNESSES.map((harness) => [harness, 1])))
   expect(catalog.harnesses.map(({ availability }) => availability)).toEqual([
     'available',
     'available',
-    'unavailable',
+    ...ACP_HARNESSES.map(() => 'unavailable'),
   ])
 })
 
@@ -148,14 +153,18 @@ test('one failed catalog read leaves the other Harness available', async () => {
         throw new Error('Codex catalog is unavailable')
       },
     },
-    'claude-acp': {
-      harness: 'claude-acp',
-      readCatalog: async () => unavailable('claude-acp'),
-    },
+    ...byAcpAgent(({ id }) => ({ harness: id, readCatalog: async () => unavailable(id) })),
   } as unknown as HarnessRegistry
+
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
   const catalog = await readHarnessCatalog(registry)
 
   expect(catalog.harnesses[0]?.availability).toBe('available')
   expect(catalog.harnesses[1]).toEqual(codexHarnessInfo(null))
+  expect(warn).toHaveBeenCalledWith(
+    'The codex catalog read failed:',
+    expect.objectContaining({ message: 'Codex catalog is unavailable' }),
+  )
+  warn.mockRestore()
 })

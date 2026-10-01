@@ -3,6 +3,7 @@ import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harne
 import { MOCK_CODEX_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
 import { compactionItem, completeTurn } from './fixtures/mock-codex-responses.ts'
+import { createMockCodexSkillsAndConfig } from './fixtures/mock-codex-skills-config.ts'
 import { rememberThreadCwd } from './fixtures/mock-codex-transcript.ts'
 import { handleAskReply } from './mock-ask-question.ts'
 import { readMockCodexRequest } from './mock-codex-request.ts'
@@ -29,16 +30,15 @@ const handleTurnStart = createMockTurnStartHandler({
   replyDelayMs: REPLY_DELAY_MS === 0 ? COMPLETION_DELAY_MS : REPLY_DELAY_MS,
   send,
 })
+const answerSkillsAndConfig = createMockCodexSkillsAndConfig(send)
 function handleRequest(message: Request) {
-  if (answerStoredHistory(message, send)) return
+  if (answerStoredHistory(message, send) || answerSkillsAndConfig(message)) return
   switch (message.method) {
     case 'initialize':
       send({ id: message.id, result: {} })
       return
     case 'initialized':
       return
-    case 'skills/list':
-      return send({ id: message.id, result: { data: [] } })
     case 'model/list':
       return send({ id: message.id, result: MOCK_CODEX_MODEL_CATALOG })
     case 'thread/start':

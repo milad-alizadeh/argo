@@ -55,7 +55,7 @@ function toolContentRow(content: Extract<FeedContent, { kind: 'tool' }>): Sessio
     status: workStatus(content.status),
     ...(content.presentation?.agentDescription ? { agentDescription: true } : {}),
     evidence: outputEvidence(title, source),
-    text: null,
+    text: content.presentation?.text ?? null,
   }
 }
 
@@ -330,26 +330,18 @@ function taskContentRow(
   }
 }
 
-function notificationContentRow(
-  content: Extract<FeedContent, { kind: 'notification' }>,
-): SessionFeedRow | null {
-  return content.category === 'status' ? null : eventContentRow(content, 'status', content.text)
-}
-
 // Decoders preserve content semantics; this maps that content to the existing Feed display rows.
 function contentRow(
   content: Exclude<FeedContent, { kind: 'tool' | 'fileChange' }>,
 ): SessionFeedRow | null {
   switch (content.kind) {
-    // A system context update is instruction to the model, never something the reader follows.
     case 'message':
-      if (content.role === 'system') return null
       if (content.phase === 'commentary')
         return { shape: 'thought', id: content.id, text: content.text }
       return promptRow(content)
     // Reasoning the Harness withholds has nothing to read, so it draws no row.
     case 'reasoning':
-      return content.text === null || content.text.trim() === ''
+      return content.text.trim() === ''
         ? null
         : { shape: 'thought', id: content.id, text: content.text }
     case 'media': {
@@ -364,14 +356,12 @@ function contentRow(
       return commandContentRow(content)
     case 'delegation':
       return delegationContentRow(content)
-    case 'search':
-      return eventContentRow(content, content.kind, content.query)
     case 'plan':
       return eventContentRow(content, content.kind, content.text)
     case 'task':
       return taskContentRow(content)
     case 'notification':
-      return notificationContentRow(content)
+      return eventContentRow(content, 'status', content.text)
     case 'context':
       return null
     case 'marker':

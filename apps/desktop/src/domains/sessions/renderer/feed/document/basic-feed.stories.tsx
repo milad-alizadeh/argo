@@ -582,12 +582,9 @@ const eventFeed = {
       text: null,
       raw: null,
     },
-    // Main's projection of a system context update and a system message: no row at all.
+    // Main's projection of a system context update: no row at all.
     ...projectLiveFeedRows(
-      [
-        { kind: 'context', id: 'event-context', source: 'system', text: 'Hand off to review' },
-        { kind: 'message', id: 'event-system', role: 'system', text: 'Internal instructions' },
-      ],
+      [{ kind: 'context', id: 'event-context', source: 'system', text: 'Hand off to review' }],
       [],
     ),
     {
@@ -2024,13 +2021,11 @@ const thinkingHistory: FeedContent[] = [
     kind: 'reasoning',
     id: 'thought-one',
     text: 'Planning parent and child ticket labeling',
-    redacted: false,
   },
   {
     kind: 'reasoning',
     id: 'thought-two',
     text: 'Designing issue creation order and labeling',
-    redacted: false,
   },
 ]
 

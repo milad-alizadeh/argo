@@ -6,8 +6,6 @@ import path from 'node:path'
 import { getSessionMessages } from '@anthropic-ai/claude-agent-sdk'
 import { openClaudeHistoryReader } from './claude-history-lines'
 import { decodeClaudeSessionMessages } from './claude-session-history'
-import { claudeSkillFiles } from './claude-skill-files'
-import { readClaudeSkillDirectories } from './claude-skill-records'
 
 const FIXTURES = new URL('../../../../mocks/cli/claude/fixtures/sessions/', import.meta.url)
 
@@ -26,10 +24,6 @@ test.each(['toolCalls', 'harnessNoise', 'askPending', 'recordedEdit'])(
       const cwd = path.join(home, 'work')
       const project = path.join(home, 'projects', cwd.replace(/[^a-zA-Z0-9]/g, '-'))
       await mkdir(project, { recursive: true })
-      for (const skill of ['diagnosing-bugs', 'implement']) {
-        await mkdir(path.join(cwd, '.claude', 'skills', skill), { recursive: true })
-        await writeFile(path.join(cwd, '.claude', 'skills', skill, 'SKILL.md'), '')
-      }
       const lines = recorded(name).map((line) => {
         const record = JSON.parse(line)
         return JSON.stringify({ ...record, sessionId: '00000000-0000-4000-8000-000000000009', cwd })
@@ -41,8 +35,6 @@ test.each(['toolCalls', 'harnessNoise', 'askPending', 'recordedEdit'])(
       process.env.CLAUDE_CONFIG_DIR = home
       const full = decodeClaudeSessionMessages(
         await getSessionMessages('00000000-0000-4000-8000-000000000009', { dir: cwd }),
-        claudeSkillFiles(cwd),
-        () => readClaudeSkillDirectories('00000000-0000-4000-8000-000000000009'),
       )
 
       const streamed = openClaudeHistoryReader()(lines)
@@ -144,52 +136,13 @@ test('an edit result read after its call settles the edit rather than drawing a 
   )
 })
 
-// The transcript records the folder the skill was read from; the row prefers it to a disk lookup.
-const RECORDED_SKILL_FOLDER = '/Users/x/argo/.claude/skills/implement'
-
-// The harnessNoise transcript streamed under a temporary cwd that holds the skill on disk, with
-// the folder the records name rewritten or left as recorded.
-async function streamedSkillRow(recordedFolder: (folder: string) => string) {
-  const cwd = await realpath(await mkdtemp(path.join(os.tmpdir(), 'argo-claude-skill-')))
-  try {
-    const folder = path.join(cwd, '.claude', 'skills', 'implement')
-    await mkdir(folder, { recursive: true })
-    await writeFile(path.join(folder, 'SKILL.md'), '')
-    const lines = recorded('harnessNoise').map((line) =>
-      JSON.stringify({
-        ...JSON.parse(line.replaceAll(RECORDED_SKILL_FOLDER, recordedFolder(folder))),
-        cwd,
-      }),
-    )
-    const streamed = openClaudeHistoryReader()(lines)
-    if (streamed.type !== 'appended') throw new Error('The transcript did not stream.')
-    return streamed.events.map((event) => (event.type === 'content' ? event.content : null))
-  } finally {
-    await rm(cwd, { recursive: true, force: true })
-  }
-}
-
-test('resolves a streamed skill against the folder its records name', async () => {
-  let recordedFolder = ''
-  const contents = await streamedSkillRow((folder) => {
-    recordedFolder = folder
-    return folder
-  })
+test('streams a skill slash command as the command it ran', () => {
+  const streamed = openClaudeHistoryReader()(recorded('harnessNoise'))
+  if (streamed.type !== 'appended') throw new Error('The transcript did not stream.')
+  const contents = streamed.events.map((event) => (event.type === 'content' ? event.content : null))
 
   expect(contents).toContainEqual(
-    expect.objectContaining({
-      kind: 'reference',
-      label: 'implement',
-      target: path.join(recordedFolder, 'SKILL.md'),
-    }),
+    expect.objectContaining({ id: 'u-implement', kind: 'command', command: expect.any(String) }),
   )
-})
-
-// A skill deleted since the Session ran keeps its row and offers no expansion (#2861 C).
-test('keeps a streamed skill row when the folder its records name is gone', async () => {
-  const contents = await streamedSkillRow(() => RECORDED_SKILL_FOLDER)
-
-  expect(contents).toContainEqual(
-    expect.objectContaining({ kind: 'reference', label: 'implement', target: null }),
-  )
+  expect(contents).not.toContainEqual(expect.objectContaining({ kind: 'reference' }))
 })

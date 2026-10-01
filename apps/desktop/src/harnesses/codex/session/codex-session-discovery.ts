@@ -4,35 +4,22 @@ import type {
   SessionSummaryList,
   SessionSummaryReader,
 } from '@/domains/sessions/api/session-discovery'
-import type { CodexRequest } from '../app-server'
+import type { CodexRequest, Thread, ThreadListResponse } from '../app-server'
 
-const threadSchema = z
-  .object({
-    id: z.string().min(1),
-    name: z.string().nullable().optional(),
-    preview: z.string().nullable().optional(),
-    cwd: z.string().nullable().optional(),
-    updatedAt: z.number().int().nonnegative(),
-  })
-  .passthrough()
-
-const pageSchema = z.strictObject({
-  data: z.array(z.unknown()),
-  nextCursor: z.string().nullable(),
-  backwardsCursor: z.string().nullable().optional(),
+// Only the Thread fields discovery reads; the generated types own the rest.
+const threadSchema: z.ZodType<
+  Pick<Thread, 'id' | 'updatedAt'> & Partial<Pick<Thread, 'name' | 'preview' | 'cwd'>>
+> = z.object({
+  id: z.string().min(1),
+  updatedAt: z.number().int().nonnegative(),
+  name: z.string().nullable().optional(),
+  preview: z.string().optional(),
+  cwd: z.string().optional(),
 })
-const readSchema = z.strictObject({ thread: z.unknown() })
-type CodexSessionRecord = SessionSummary
+const pageSchema: z.ZodType<Pick<ThreadListResponse, 'nextCursor'> & { data: unknown[] }> =
+  z.object({ data: z.array(z.unknown()), nextCursor: z.string().nullable() })
 
-function rememberRecord(records: Map<string, CodexSessionRecord>, record: CodexSessionRecord) {
-  records.set(record.nativeId, { ...records.get(record.nativeId), ...record })
-}
-
-function isMissingCodexThread(error: unknown): boolean {
-  return error instanceof Error && /thread.*(?:not found|does not exist)/i.test(error.message)
-}
-
-function parseThread(raw: unknown): CodexSessionRecord | null {
+function parseThread(raw: unknown): SessionSummary | null {
   const parsed = threadSchema.safeParse(raw)
   if (!parsed.success) return null
   const thread = parsed.data
@@ -45,14 +32,30 @@ function parseThread(raw: unknown): CodexSessionRecord | null {
   }
 }
 
-async function readListedCodexSessions(
+// A found thread carries a null record when its shape is unrecognised.
+async function readCodexThread(
   request: CodexRequest,
-  reportMalformed: () => void,
-): Promise<Map<string, CodexSessionRecord>> {
-  const records = new Map<string, CodexSessionRecord>()
+  nativeId: string,
+): Promise<{ found: false } | { found: true; record: SessionSummary | null }> {
+  try {
+    const thread = await request(
+      'thread/read',
+      { threadId: nativeId, includeTurns: false },
+      (value) => z.object({ thread: z.unknown() }).parse(value).thread,
+    )
+    return { found: true, record: parseThread(thread) }
+  } catch (error) {
+    if (error instanceof Error && /thread.*(?:not found|does not exist)/i.test(error.message))
+      return { found: false }
+    throw error
+  }
+}
+
+async function listCodexThreads(request: CodexRequest): Promise<unknown[]> {
+  const threads: unknown[] = []
   let cursor: string | undefined
   do {
-    const result = await request(
+    const page = await request(
       'thread/list',
       {
         ...(cursor === undefined ? {} : { cursor }),
@@ -64,68 +67,27 @@ async function readListedCodexSessions(
       },
       (value) => pageSchema.parse(value),
     )
-    for (const raw of result.data) {
-      const record = parseThread(raw)
-      if (record === null) reportMalformed()
-      else rememberRecord(records, record)
-    }
-    cursor = result.nextCursor ?? undefined
+    threads.push(...page.data)
+    cursor = page.nextCursor ?? undefined
   } while (cursor !== undefined)
-  return records
-}
-
-async function readCodexThread(
-  request: CodexRequest,
-  nativeId: string,
-): Promise<{ found: false } | { found: true; record: CodexSessionRecord | null }> {
-  let result: z.infer<typeof readSchema>
-  try {
-    result = await request('thread/read', { threadId: nativeId, includeTurns: false }, (value) =>
-      readSchema.parse(value),
-    )
-  } catch (error) {
-    if (isMissingCodexThread(error)) return { found: false }
-    throw error
-  }
-  return { found: true, record: parseThread(result.thread) }
-}
-
-async function readKnownCodexSessions(input: {
-  request: CodexRequest
-  knownNativeIds: readonly string[]
-  records: Map<string, CodexSessionRecord>
-  reportMalformed: () => void
-}): Promise<void> {
-  for (const nativeId of input.knownNativeIds) {
-    if (input.records.has(nativeId)) continue
-    const thread = await readCodexThread(input.request, nativeId)
-    if (!thread.found) continue
-    if (thread.record === null) input.reportMalformed()
-    else rememberRecord(input.records, thread.record)
-  }
-}
-
-export async function readCodexSessions(input: {
-  request: CodexRequest
-  knownNativeIds: readonly string[]
-  reportMalformed: () => void
-}): Promise<CodexSessionRecord[]> {
-  const records = await readListedCodexSessions(input.request, input.reportMalformed)
-  await readKnownCodexSessions({ ...input, records })
-  return [...records.values()]
+  return threads
 }
 
 export function createCodexSessionSummaryList(request: CodexRequest): SessionSummaryList {
   return async ({ knownNativeIds }) => {
+    const records = new Map<string, SessionSummary>()
     let skipped = 0
-    const records = await readCodexSessions({
-      request,
-      knownNativeIds,
-      reportMalformed: () => {
-        skipped += 1
-      },
-    })
-    return { records, skipped }
+    const remember = (record: SessionSummary | null) => {
+      if (record === null) skipped += 1
+      else records.set(record.nativeId, { ...records.get(record.nativeId), ...record })
+    }
+    for (const raw of await listCodexThreads(request)) remember(parseThread(raw))
+    for (const nativeId of knownNativeIds) {
+      if (records.has(nativeId)) continue
+      const thread = await readCodexThread(request, nativeId)
+      if (thread.found) remember(thread.record)
+    }
+    return { records: [...records.values()], skipped }
   }
 }
 

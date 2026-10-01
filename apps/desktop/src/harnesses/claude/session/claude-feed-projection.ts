@@ -1,7 +1,5 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { TERMINAL_DELEGATION_STATUSES } from './claude-feed-envelopes'
-import { type ClaudeSkillFile, claudeSkillFileIn } from './claude-skill-files'
-import type { ClaudeSkillDirectories } from './claude-skill-records'
 
 type Delegation = Extract<FeedContent, { kind: 'delegation' }>
 type Tool = Extract<FeedContent, { kind: 'tool' }>
@@ -12,7 +10,6 @@ const AGENT_TOOLS = new Set(['Agent', 'Task'])
 // The launch or reply text of an Agent call names the id its transcript is stored under.
 const AGENT_ID = /^agentId: ([\w-]+)/m
 const ASYNC_LAUNCH = 'Async agent launched'
-const SLASH_COMMAND = /^\/(\S+)(?:\s+([\s\S]*))?$/
 
 function inputField(input: Tool['input'], key: string): string | null {
   if (input === null || typeof input !== 'object' || Array.isArray(input)) return null
@@ -66,33 +63,13 @@ function replyText(text: string): string | null {
   return reply === '' ? null : reply
 }
 
-// Pairs each Agent call with its Subagent and each skill use with its SKILL.md, across one stream.
+// Pairs each Agent call with its Subagent across one stream. A skill row names the skill only.
 export class ClaudeFeedProjection {
   private calls = new Map<string, KnownCall>()
   // The last input each started agent was sent.
   private startedAgents = new Map<string, string | null>()
   private skillCalls = new Set<string>()
   private fileChanges = new Map<string, FileChange>()
-  private skillFile: ClaudeSkillFile
-  private skillDirectories: () => ClaudeSkillDirectories
-
-  // The recorded folders are read only once a skill row asks for them, so a Session that used none
-  // never opens its transcript twice.
-  constructor(
-    skillFile: ClaudeSkillFile,
-    skillDirectories: () => ClaudeSkillDirectories = () => new Map(),
-  ) {
-    this.skillFile = skillFile
-    this.skillDirectories = skillDirectories
-  }
-
-  // The folder the Session recorded for this invocation outranks whatever sits on disk now.
-  private skillTarget(key: string, name: string): { target: string | null; recorded: boolean } {
-    const folder = this.skillDirectories().get(key)
-    if (folder !== undefined) return { target: claudeSkillFileIn(folder), recorded: true }
-    const target = this.skillFile(name)
-    return { target, recorded: target !== null }
-  }
 
   project(content: FeedContent): FeedContent[] {
     switch (content.kind) {
@@ -100,8 +77,6 @@ export class ClaudeFeedProjection {
         return this.tool(content)
       case 'task':
         return this.task(content)
-      case 'command':
-        return [this.command(content)]
       case 'delegation':
         return this.delegation(content)
       default:
@@ -116,23 +91,6 @@ export class ClaudeFeedProjection {
     if (repeated && this.startedAgents.get(content.agentId) === content.prompt) return []
     if (content.event !== 'responded') this.startedAgents.set(content.agentId, content.prompt)
     return [repeated ? { ...content, event: 'messaged' } : content]
-  }
-
-  // History cannot tell a skill's slash command from a built-in one, so only a SKILL.md can.
-  private command(content: Extract<FeedContent, { kind: 'command' }>): FeedContent {
-    const invocation = content.command?.match(SLASH_COMMAND)
-    const name = invocation?.[1]
-    if (name === undefined) return content
-    const { target, recorded } = this.skillTarget(content.id.split(':')[0] ?? content.id, name)
-    if (!recorded) return content
-    return {
-      id: content.id,
-      kind: 'reference',
-      referenceType: 'skill',
-      label: name,
-      target,
-      text: invocation?.[2] ?? null,
-    }
   }
 
   private tool(content: Tool): FeedContent[] {
@@ -170,7 +128,7 @@ export class ClaudeFeedProjection {
           kind: 'reference',
           referenceType: 'skill',
           label: skill,
-          target: this.skillTarget(content.callId, skill).target,
+          target: null,
           text: inputField(content.input, 'args'),
         },
       ]

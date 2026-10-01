@@ -1,9 +1,16 @@
 import assert from 'node:assert/strict'
+import { mkdtemp, rm } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 import { test } from 'vitest'
 import { waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
+import { ACP_HARNESSES } from '@/harnesses/acp/acp-agents'
+import { acpExecutableOverride } from '@/harnesses/acp/acp-proof-protocol'
+import { createAcpRegistrations } from '@/harnesses/acp/acp-registration-factory'
 import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
 import { createHarnessRegistry } from '@/harnesses/registry'
+import { writeMockClaudeAcp } from '@/mocks/cli/claude-acp/mock-claude-acp-cli'
 import {
   available,
   claudeCatalog,
@@ -97,7 +104,7 @@ test('rejects a model mode that the catalog does not support before calling Code
         ...available,
         models: [{ ...model, supportedModes: ['workspace-write'] }],
       },
-      unavailable('claude-acp'),
+      ...ACP_HARNESSES.map((harness) => unavailable(harness)),
     ],
   })
   const { root, supervisor, client } = await supervisorFor(async () => {
@@ -116,6 +123,44 @@ test('rejects a model mode that the catalog does not support before calling Code
   } finally {
     root.send({ type: 'Shutdown' })
     client.close()
+  }
+})
+
+test('starts an ACP Session when the agent reports no mode or effort choice', async () => {
+  const [harness] = ACP_HARNESSES
+  const folder = await mkdtemp(path.join(os.tmpdir(), 'argo-acp-supervisor-'))
+  const override = acpExecutableOverride(harness)
+  try {
+    process.env[override] = await writeMockClaudeAcp(folder, path.join(folder, 'transcripts'))
+    process.env.MOCK_ACP_OMITTED_OPTIONS = 'mode,thought_level'
+    const info = await createAcpRegistrations()[harness].readCatalog()
+    if (info.availability !== 'available') throw new Error('The ACP catalog is unavailable.')
+    const acpCatalog = harnessCatalogSchema.parse({
+      harnesses: [
+        unavailable('claude'),
+        available,
+        ...ACP_HARNESSES.map((each) => (each === harness ? info : unavailable(each))),
+      ],
+    })
+    const { root, supervisor, client } = await supervisorFor(async () => {
+      throw new Error('Codex must not be called.')
+    }, acpCatalog)
+    try {
+      const { sessionId } = await start(supervisor, {
+        ...first,
+        harness,
+        cwd: folder,
+        turnConfiguration: info.opening,
+      })
+      assert.ok(sessionId)
+    } finally {
+      root.send({ type: 'Shutdown' })
+      client.close()
+    }
+  } finally {
+    delete process.env[override]
+    delete process.env.MOCK_ACP_OMITTED_OPTIONS
+    await rm(folder, { recursive: true, force: true })
   }
 })
 

@@ -19,6 +19,14 @@ export const mockStartInput: SessionStartInput = {
   turnConfiguration: { model: 'model', effort: 'medium', mode: 'workspace-write' },
 }
 
+// Every live Session lists its skills; a stub app-server that knows no other skill lists none.
+export function answeringSkillsList(request: CodexRequest): CodexRequest {
+  return ((method, params, parse) =>
+    method === 'skills/list'
+      ? Promise.resolve(parse({ data: [] }))
+      : request(method, params, parse)) as CodexRequest
+}
+
 export function mockCodexChannel(
   request: CodexRequest,
   responses: Array<{ id: string | number; result: unknown }> = [],
@@ -28,7 +36,7 @@ export function mockCodexChannel(
   const channel = openCodexSessionChannel(
     mockStartInput,
     {
-      request,
+      request: answeringSkillsList(request),
       onNotification(notify) {
         listener = notify
         return () => {

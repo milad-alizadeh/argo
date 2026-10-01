@@ -132,11 +132,9 @@ function commandInvocation(id: string, value: string, reject: RejectClaudeShape)
     id,
     kind: 'command',
     command: `${name} ${field(value, 'command-args') ?? ''}`.trim(),
-    cwd: null,
     status: 'completed',
     output: null,
     stderr: null,
-    exitCode: null,
   }
 }
 
@@ -146,11 +144,9 @@ function shellOutput(id: string, value: string): FeedContent | null {
     id,
     kind: 'command',
     command: null,
-    cwd: null,
     status: 'completed',
     output: field(value, 'bash-stdout'),
     stderr: field(value, 'bash-stderr'),
-    exitCode: null,
   }
 }
 
@@ -185,11 +181,9 @@ function singleEnvelope(id: string, value: string): FeedContent | null {
       id,
       kind: 'command',
       command,
-      cwd: null,
       status: 'running',
       output: null,
       stderr: null,
-      exitCode: null,
     }
   for (const tag of [
     'bash-stdout',
@@ -204,11 +198,9 @@ function singleEnvelope(id: string, value: string): FeedContent | null {
       id,
       kind: 'command',
       command: null,
-      cwd: null,
       status: 'completed',
       output: isError ? null : body,
       stderr: isError ? body : null,
-      exitCode: null,
     }
   }
   for (const tag of ['system-reminder', 'local-command-caveat']) {

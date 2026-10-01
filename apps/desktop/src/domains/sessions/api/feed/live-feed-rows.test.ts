@@ -170,22 +170,6 @@ test('keeps raw vendor failures out of the reader-facing Feed row', () => {
   expect(rows).toMatchObject([{ event: 'liveFailure', text: null }])
 })
 
-test('uses product status events instead of raw vendor status strings', () => {
-  const rows = projectLiveFeedRows(
-    [
-      {
-        id: 'native-status',
-        kind: 'notification',
-        category: 'status',
-        text: 'SessionStart:resume',
-        priority: null,
-      },
-    ],
-    [status(1, 'running')],
-  )
-  expect(rows).toMatchObject([{ event: 'liveStatus', text: 'running' }])
-})
-
 test('settled vendor history replaces matching live messages and tool progress', () => {
   const history: FeedContent[] = [
     { kind: 'message', id: 'prompt-1', role: 'user', text: 'Inspect this' },
@@ -303,7 +287,7 @@ test('shows a Claude Question once when vendor history includes its tool call', 
 
 const catalogHistory: FeedContent[] = [
   { kind: 'message', id: 'message', role: 'assistant', text: 'Answer' },
-  { kind: 'reasoning', id: 'reasoning', text: 'Thinking', redacted: false },
+  { kind: 'reasoning', id: 'reasoning', text: 'Thinking' },
   {
     kind: 'media',
     id: 'media',
@@ -333,11 +317,9 @@ const catalogHistory: FeedContent[] = [
     kind: 'command',
     id: 'command',
     command: 'ls',
-    cwd: '/repo',
     status: 'completed',
     output: 'feed.ts',
     stderr: null,
-    exitCode: 0,
   },
   {
     kind: 'fileChange',
@@ -345,7 +327,6 @@ const catalogHistory: FeedContent[] = [
     status: 'completed',
     changes: [{ path: '/repo/feed.ts', change: 'update', diff: '+line' }],
   },
-  { kind: 'search', id: 'search', query: 'Feed', action: null, results: [] },
   { kind: 'plan', id: 'plan', text: 'Check the Feed' },
   {
     kind: 'delegation',
@@ -370,12 +351,10 @@ const catalogHistory: FeedContent[] = [
   {
     kind: 'notification',
     id: 'notification',
-    category: 'info',
     text: 'Connected',
-    priority: null,
   },
   { kind: 'marker', id: 'marker', marker: 'compaction', summary: 'Earlier work' },
-  { kind: 'refusal', id: 'refusal', reason: 'permission', text: 'Permission denied' },
+  { kind: 'refusal', id: 'refusal', text: 'Permission denied' },
   {
     kind: 'imageGeneration',
     id: 'imageGeneration',
@@ -391,7 +370,6 @@ const catalogHistory: FeedContent[] = [
 test('draws no row for a system context update, live or recorded', () => {
   const context: FeedContent[] = [
     { kind: 'context', id: 'reminder', source: 'system', text: 'Hand off to the reviewer' },
-    { kind: 'message', id: 'system-1', role: 'system', text: 'Internal instructions' },
   ]
   const prompt: FeedContent = { kind: 'message', id: 'prompt', role: 'user', text: 'Go' }
   expect(
@@ -527,7 +505,7 @@ test('draws a skill reference as a skill invocation and other references as cont
       {
         id: 'pasted-1',
         kind: 'reference',
-        referenceType: 'pasted',
+        referenceType: 'memory',
         label: 'Pasted content',
         target: null,
         text: 'the pasted words',

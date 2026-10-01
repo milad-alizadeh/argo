@@ -10,7 +10,7 @@ import type {
   LiveExternalSession,
 } from '@/harnesses/registration'
 import type { CodexRequest, ThreadItem } from '../app-server'
-import { codexContentFromItems } from './codex-session-history'
+import { codexCollabFacts, codexFeedContent } from './codex-feed'
 
 // A turns read that fails this soon after the rollout changed is a Turn still starting.
 const CODEX_TURN_START_MS = 2_000
@@ -42,13 +42,15 @@ function turnStatus(turn: Turn | undefined, lock: LockState): ExternalSessionSta
 
 function turnContent(turn: Turn | undefined): FeedContent[] {
   if (turn === undefined) return []
-  try {
-    // The generated `ThreadItem` union is the item shape; an unknown item type throws here.
-    return codexContentFromItems(turn.items as ThreadItem[])
-  } catch (error) {
-    console.warn('Rejected 1 unsupported Codex history shape.')
-    throw error
-  }
+  // The generated `ThreadItem` union is the item shape; the mapping counts an unknown item.
+  const items = turn.items as ThreadItem[]
+  const collab = codexCollabFacts(items)
+  let rejected = 0
+  const content = items.flatMap((item) =>
+    codexFeedContent(item, () => (rejected += 1), collab.get(item.id)),
+  )
+  if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Codex history shape(s).`)
+  return content
 }
 
 // What the newest Turn of a thread is doing, with its writer lock's state.

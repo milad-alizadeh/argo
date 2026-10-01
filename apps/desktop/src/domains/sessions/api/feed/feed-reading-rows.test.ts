@@ -8,11 +8,9 @@ function command(id: string, text: string, status: 'running' | 'completed'): Fee
     kind: 'command',
     id,
     command: text,
-    cwd: null,
     status,
     output: null,
     stderr: null,
-    exitCode: null,
   }
 }
 

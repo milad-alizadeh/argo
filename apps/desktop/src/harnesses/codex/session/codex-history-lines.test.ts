@@ -125,7 +125,7 @@ test('counts a task notification whose status is not one Codex publishes', async
     console.warn = warn
   }
   expect(warnings).toEqual([
-    'Rejected 1 unsupported Codex task notification.',
+    'Rejected 1 unsupported Codex history shape(s).',
     'Rejected 1 unsupported Codex rollout line(s).',
   ])
 })
