@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import { recordedSession } from '@/mocks/cli/claude/recorded-claude-sessions'
 import { decodeClaudeSessionMessages } from './claude-session-history'
 
@@ -135,5 +135,284 @@ test('reads a recorded Edit and Write as settled file changes carrying their dif
       ],
     },
     { kind: 'fileChange', id: 'toolu_015ibQYLNWgCPTmJHFnse358', status: 'completed' },
+  ])
+})
+
+const envelopeCorpus = readFileSync(
+  new URL(
+    '../../../../mocks/cli/claude/fixtures/session-history-envelope-corpus.jsonl',
+    import.meta.url,
+  ),
+  'utf8',
+)
+  .trim()
+  .split('\n')
+  .map((line) => JSON.parse(line) as SessionMessage)
+
+// Decodes records and returns the warning that counts what was rejected, if any.
+function decodeWithWarnings(records: readonly object[]) {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  try {
+    const content = decodeClaudeSessionMessages(records as SessionMessage[])
+    return { content, warnings: warn.mock.calls.map(([message]) => message) }
+  } finally {
+    warn.mockRestore()
+  }
+}
+
+const userRecord = (uuid: string, content: unknown, extra: object = {}) => ({
+  type: 'user',
+  uuid,
+  message: { role: 'user', content },
+  ...extra,
+})
+
+test('names an assistant reply by its API message id', () => {
+  const message = {
+    role: 'assistant',
+    id: 'msg-api-1',
+    content: [{ type: 'text', text: 'Argo live feed verified.' }],
+  }
+  expect(decodeWithWarnings([{ type: 'assistant', uuid: 'envelope-1', message }])).toEqual({
+    content: [
+      { id: 'msg-api-1', kind: 'message', role: 'assistant', text: 'Argo live feed verified.' },
+    ],
+    warnings: [],
+  })
+})
+
+test('reads a compaction summary as a marker', () => {
+  const summary = userRecord('compact-summary-1', 'The summary begins here.', {
+    isCompactSummary: true,
+  })
+  expect(decodeWithWarnings([summary])).toEqual({
+    content: [{ id: 'compact-summary-1', kind: 'marker', marker: 'compaction', summary: null }],
+    warnings: [],
+  })
+})
+
+test('reads a tool result and skips its tool_reference metadata without a rejection', () => {
+  const result = userRecord('result-1', [
+    {
+      type: 'tool_result',
+      tool_use_id: 'call-1',
+      content: [
+        { type: 'text', text: 'Done.' },
+        { type: 'tool_reference', tool_name: 'Bash' },
+      ],
+    },
+  ])
+  const { content, warnings } = decodeWithWarnings([result])
+  expect(content).toMatchObject([
+    { kind: 'tool', callId: 'call-1', output: [{ kind: 'text', text: 'Done.' }] },
+  ])
+  expect(warnings).toEqual([])
+})
+
+test('reads recorded command, task, and delegation shapes', () => {
+  const { content, warnings } = decodeWithWarnings(recordedMessages('harnessNoise'))
+  expect(content).toContainEqual(
+    expect.objectContaining({ id: 'u-effort', kind: 'command', command: '/effort' }),
+  )
+  expect(content).toContainEqual(
+    expect.objectContaining({ id: 'u-delegation', kind: 'delegation', agentId: 'feed-review' }),
+  )
+  expect(content).toContainEqual(
+    expect.objectContaining({ id: 'u-shell-start', kind: 'task', taskId: 'build' }),
+  )
+  expect(content).toContainEqual({
+    id: 'u-quoted',
+    kind: 'message',
+    role: 'user',
+    text: 'Quote <local-command-caveat>this markup</local-command-caveat> exactly.',
+  })
+  expect(warnings).toEqual([])
+})
+
+test('reads recorded command and task envelopes before they reach the Feed', () => {
+  expect(decodeWithWarnings(envelopeCorpus)).toEqual({
+    content: [
+      {
+        id: 'recorded-skill-invocation',
+        kind: 'command',
+        command: '/to-spec https://example.invalid/issues/1',
+        status: 'completed',
+        output: null,
+        stderr: null,
+      },
+      {
+        id: 'recorded-task-notification',
+        kind: 'task',
+        taskId: 'agent-recorded',
+        callId: 'toolu_recorded',
+        status: 'completed',
+        description: null,
+        summary: 'Agent "Review the Feed card" finished',
+      },
+    ],
+    warnings: [],
+  })
+})
+
+test('keeps a human prompt that looks like markup verbatim', () => {
+  const human = userRecord('human-1', '<system-reminder>Hello</system-reminder>', {
+    origin: { kind: 'human' },
+  })
+  const plain = userRecord('human-2', '<note>Hello</note>')
+  expect(decodeWithWarnings([human, plain]).content).toEqual([
+    {
+      id: 'human-1',
+      kind: 'message',
+      role: 'user',
+      text: '<system-reminder>Hello</system-reminder>',
+    },
+    { id: 'human-2', kind: 'message', role: 'user', text: '<note>Hello</note>' },
+  ])
+})
+
+test('keeps block identity, the tool call, and its result apart', () => {
+  const assistant = {
+    type: 'assistant',
+    uuid: 'assistant-1',
+    message: {
+      role: 'assistant',
+      content: [
+        { type: 'thinking', thinking: 'First check the file.' },
+        { type: 'text', text: 'I will inspect it.' },
+        { type: 'tool_use', id: 'call-1', name: 'Read', input: { file_path: '/tmp/a' } },
+      ],
+    },
+  }
+  const result = userRecord('result-1', [
+    { type: 'tool_result', tool_use_id: 'call-1', content: [{ type: 'text', text: 'file body' }] },
+  ])
+  expect(decodeWithWarnings([assistant, result]).content).toMatchObject([
+    { id: 'assistant-1:0', kind: 'reasoning', text: 'First check the file.' },
+    { id: 'assistant-1:1', kind: 'message', role: 'assistant', text: 'I will inspect it.' },
+    {
+      id: 'assistant-1:2',
+      kind: 'tool',
+      callId: 'call-1',
+      name: 'Read',
+      status: 'running',
+      presentation: { kind: 'read', label: 'Read /tmp/a' },
+    },
+    { id: 'result-1', kind: 'tool', callId: 'call-1', status: 'completed' },
+  ])
+})
+
+test('labels a command by its Claude Code description and keeps the command text', () => {
+  const assistant = {
+    type: 'assistant',
+    uuid: 'assistant-command',
+    message: {
+      role: 'assistant',
+      content: [
+        {
+          type: 'tool_use',
+          id: 'call-command',
+          name: 'Bash',
+          input: { command: 'bun test', description: 'Run the Feed tests' },
+        },
+      ],
+    },
+  }
+  expect(decodeWithWarnings([assistant]).content).toMatchObject([
+    {
+      kind: 'tool',
+      callId: 'call-command',
+      presentation: {
+        kind: 'command',
+        label: 'Run the Feed tests',
+        agentDescription: true,
+        text: 'bun test',
+      },
+    },
+  ])
+})
+
+test('counts unsupported shapes and keeps unknown envelope markup out of the Feed', () => {
+  const envelope = userRecord('unknown-1', '<todo-list><item>one</item></todo-list>', {
+    origin: { kind: 'task-notification' },
+  })
+  const future = {
+    type: 'assistant',
+    uuid: 'future-1',
+    message: { role: 'assistant', content: [{ type: 'future_block', value: 1 }] },
+  }
+  expect(decodeWithWarnings([envelope, future])).toEqual({
+    content: [
+      {
+        id: 'unknown-1',
+        kind: 'diagnostic',
+        vendorType: 'unknown-envelope',
+        detail: 'Claude transcript envelope is not supported.',
+      },
+      {
+        id: 'future-1',
+        kind: 'diagnostic',
+        vendorType: 'message-block:future_block',
+        detail: 'Unsupported Claude output.',
+      },
+    ],
+    warnings: ['Rejected 2 unsupported Claude history shape(s).'],
+  })
+})
+
+test('reads local shell output without its tags', () => {
+  const output = userRecord(
+    'shell-output',
+    '<bash-stdout>hello</bash-stdout><bash-stderr>warning</bash-stderr>',
+  )
+  expect(decodeWithWarnings([output]).content).toEqual([
+    {
+      id: 'shell-output',
+      kind: 'command',
+      command: null,
+      status: 'completed',
+      output: 'hello',
+      stderr: 'warning',
+    },
+  ])
+})
+
+test('folds an image into the prompt row and leaves a linked document standalone', () => {
+  const message = userRecord('media-1', [
+    { type: 'image', source: { type: 'base64', media_type: 'image/png', data: 'aGVsbG8=' } },
+    { type: 'document', source: { type: 'url', url: 'https://example.invalid/file.pdf' } },
+  ])
+  expect(decodeWithWarnings([message]).content).toEqual([
+    {
+      id: 'media-1',
+      kind: 'message',
+      role: 'user',
+      text: '',
+      images: [{ kind: 'data', mimeType: 'image/png', base64: 'aGVsbG8=' }],
+    },
+    {
+      id: 'media-1:1',
+      kind: 'media',
+      mediaType: 'document',
+      role: 'user',
+      source: { kind: 'url', url: 'https://example.invalid/file.pdf' },
+    },
+  ])
+})
+
+test('folds an image and pasted text into the prompt row beside its text', () => {
+  const message = userRecord('media-2', [
+    { type: 'text', text: 'See attached.' },
+    { type: 'image', source: { type: 'base64', media_type: 'image/png', data: 'aGVsbG8=' } },
+    { type: 'document', source: { type: 'text', data: 'Pasted body' } },
+  ])
+  expect(decodeWithWarnings([message]).content).toEqual([
+    {
+      id: 'media-2:0',
+      kind: 'message',
+      role: 'user',
+      text: 'See attached.',
+      images: [{ kind: 'data', mimeType: 'image/png', base64: 'aGVsbG8=' }],
+      pastedContent: [{ id: 'media-2:2', text: 'Pasted body' }],
+    },
   ])
 })

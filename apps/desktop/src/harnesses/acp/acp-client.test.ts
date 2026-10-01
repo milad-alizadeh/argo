@@ -35,11 +35,40 @@ afterEach(async () => {
 })
 
 describe('connectAcpAgent', () => {
+  test('resumes an advertised Session without replaying its stored updates', async () => {
+    const first = await connect()
+    const session = await first.newSession(root)
+    await first.prompt(session.sessionId, 'saved')
+    first.close()
+    const updates: SessionUpdate[] = []
+    const second = await connect(updates)
+    expect((await second.resumeSession(session.sessionId, root)).sessionId).toBe(session.sessionId)
+    expect(updates).toEqual([])
+    expect(await second.prompt(session.sessionId, 'continued')).toBe('end_turn')
+  })
+})
+
+describe('connectAcpAgent', () => {
+  test('rejects every optional method when the agent does not advertise it', async () => {
+    await writeMockClaudeAcp(root, path.join(root, 'transcripts'), { capabilities: {} })
+    const connected = await connect()
+    await expect(connected.listSessions()).rejects.toThrow('does not advertise session/list')
+    await expect(connected.loadSession('saved', root)).rejects.toThrow(
+      'does not advertise session/load',
+    )
+    await expect(connected.resumeSession('saved', root)).rejects.toThrow(
+      'does not advertise session/resume',
+    )
+    await expect(connected.closeSession('saved')).rejects.toThrow(
+      'does not advertise session/close',
+    )
+  })
+
   test('reads the capabilities the agent advertises', async () => {
     const connected = await connect()
     expect(connected.capabilities).toEqual({
       loadSession: true,
-      listSessions: false,
+      listSessions: true,
       resumeSession: true,
       closeSession: true,
     })

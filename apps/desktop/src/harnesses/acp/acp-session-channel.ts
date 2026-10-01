@@ -4,7 +4,7 @@ import type {
   RequestPermissionResponse,
   SessionUpdate,
 } from '@agentclientprotocol/sdk'
-import type { PermissionDecision } from '@/domains/sessions/api/permissions'
+import { type PermissionDecision, READER_DECISIONS } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { SessionLiveInput } from '@/domains/sessions/main/api'
@@ -16,7 +16,7 @@ import {
   liveSessionChannelEventSchema,
 } from '@/harnesses/registration'
 import { ACP_TURN_SETTING_CATEGORIES, acpConfigSelect } from './acp-catalog'
-import { type AcpAgentCommand, type AcpClient, connectAcpAgent } from './acp-client'
+import { type AcpAgentCommand, type AcpClient, connectAcpAgent, errorDetail } from './acp-client'
 import { AcpFeedProjection } from './acp-feed-projection'
 
 type TurnSetting = keyof typeof ACP_TURN_SETTING_CATEGORIES
@@ -55,6 +55,9 @@ export class AcpSessionChannel implements LiveSessionChannel {
   private open = true
   private closedEmitted = false
   private invalidSettings = 0
+  private readonly cancellation = new AbortController()
+  private turnCancellation = new AbortController()
+  private closing = false
 
   private readonly input: SessionLiveInput
   private readonly onEvent: (event: LiveSessionChannelEvent) => void
@@ -113,6 +116,10 @@ export class AcpSessionChannel implements LiveSessionChannel {
     const { controls } = this.host
     if (controls === undefined || this.nativeId === null)
       return acpPermissionOutcome(request, 'cancel')
+    const decisions = READER_DECISIONS.filter((decision) =>
+      request.options.some((option) => option.kind === decisionOptions[decision]),
+    )
+    if (decisions.length === 0) return acpPermissionOutcome(request, 'cancel')
     const requestId = `${request.toolCall.toolCallId}:${crypto.randomUUID()}`
     const description = request.toolCall.title ?? request.toolCall.toolCallId
     const permission = {
@@ -123,12 +130,16 @@ export class AcpSessionChannel implements LiveSessionChannel {
     } as const
     this.emitFeed({ ...permission, decision: null })
     this.emitStatus('permission')
-    const decision = await controls.requestPermission({
-      nativeId: this.nativeId,
-      requestId,
-      description,
-      signal,
-    })
+    const decision = await controls
+      .requestPermission({
+        nativeId: this.nativeId,
+        requestId,
+        description,
+        decisions,
+        signal: AbortSignal.any([signal, this.cancellation.signal, this.turnCancellation.signal]),
+      })
+      .catch(() => 'cancel' as const)
+    if (!this.open) return acpPermissionOutcome(request, 'cancel')
     this.emitFeed({ ...permission, decision })
     this.emitStatus('running')
     return acpPermissionOutcome(request, decision)
@@ -186,6 +197,7 @@ export class AcpSessionChannel implements LiveSessionChannel {
 
   private async runPrompt(client: AcpClient, sessionId: string, command: LiveSessionCommand) {
     this.activeCommandId = command.commandId
+    this.turnCancellation = new AbortController()
     this.started = false
     this.projection.settle()
     const prompt = this.projection.openPrompt(command.prompt)
@@ -207,11 +219,13 @@ export class AcpSessionChannel implements LiveSessionChannel {
         requestPermission: (request, signal) => this.requestPermission(request, signal),
       })
       this.client = client
+      if (!this.open) return this.finishClose(client, null)
       void client.closed.then(() => {
         if (this.open) this.fail(new Error('The ACP agent ended the Session.'))
       })
       const session = await this.openSession(client)
       this.nativeId = session.sessionId
+      if (!this.open) return this.finishClose(client, session.sessionId)
       this.rememberSettings(session.configOptions)
       this.emit({ type: 'identity', nativeId: session.sessionId })
       for (
@@ -233,7 +247,7 @@ export class AcpSessionChannel implements LiveSessionChannel {
 
   private fail(error: unknown) {
     if (!this.open) return
-    const detail = error instanceof Error ? error.message : String(error)
+    const detail = errorDetail(error)
     this.emitFeed({ type: 'failure', ...this.identity(null), detail })
     this.emit({ type: 'failure', detail })
     this.close()
@@ -252,6 +266,7 @@ export class AcpSessionChannel implements LiveSessionChannel {
   async interrupt(): Promise<void> {
     if (!this.open || this.client === null || this.nativeId === null)
       throw new Error('The ACP Session is not available to interrupt.')
+    this.turnCancellation.abort()
     await this.client.cancel(this.nativeId)
   }
 
@@ -267,10 +282,28 @@ export class AcpSessionChannel implements LiveSessionChannel {
   }
 
   close(): void {
+    if (!this.open) return
     this.open = false
+    this.cancellation.abort()
     this.wake?.()
     this.wake = null
-    this.client?.close()
-    this.emitClosed()
+    if (this.client !== null && this.nativeId !== null)
+      void this.finishClose(this.client, this.nativeId)
+    else this.emitClosed()
+  }
+
+  private async finishClose(client: AcpClient, nativeId: string | null) {
+    if (this.closing) return
+    this.closing = true
+    const timeout = setTimeout(() => client.close(), 5_000)
+    try {
+      if (nativeId !== null && client.capabilities.closeSession) await client.closeSession(nativeId)
+    } catch (error) {
+      console.warn('The ACP agent could not close its Session.', error)
+    } finally {
+      clearTimeout(timeout)
+      client.close()
+      this.emitClosed()
+    }
   }
 }

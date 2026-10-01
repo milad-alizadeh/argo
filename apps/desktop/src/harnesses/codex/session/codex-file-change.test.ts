@@ -7,8 +7,7 @@ import fileChangeTurn from '../../../../mocks/cli/codex/fixtures/live-file-chang
 }
 import { mockCodexChannel } from '../../../../mocks/cli/codex/mock-codex-channel'
 import type { CodexRequest, WireMessage } from '../app-server/codex-app-server-client'
-import type { ThreadItem } from '../app-server/protocol-generated/v2/thread-item'
-import { codexContentFromItems } from './codex-session-history'
+import { readCodexSessionHistory } from './codex-session-history'
 
 async function replayFileChangeTurn() {
   const started = fileChangeTurn.messages.find((message) => message.method === 'turn/started')
@@ -60,9 +59,9 @@ test('a recorded Codex patch shows its files while it runs', async () => {
 
 test('a history refresh after a recorded Codex patch keeps each file once', async () => {
   const live = await replayFileChangeTurn()
-  const history = codexContentFromItems(
-    fileChangeTurn.threadRead.thread.turns.flatMap((turn) => turn.items as ThreadItem[]),
-  )
+  const read = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse(fileChangeTurn.threadRead)) as CodexRequest
+  const history = await readCodexSessionHistory(read, 'thread-1')
   const rows = projectLiveFeedRows(history, live)
   assert.deepEqual(
     rows.flatMap((row) => {

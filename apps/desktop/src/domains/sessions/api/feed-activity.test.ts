@@ -24,7 +24,6 @@ test('Claude tool work yields to newer reasoning and ignores its later result', 
     kind: 'reasoning',
     id: 'reason-1',
     text: 'Checking the results',
-    redacted: false,
   })
   expect(thinking.activity).toMatchObject({ label: 'Checking the results', kind: 'thought' })
   const completed = advanceFeedActivity(thinking, {
@@ -42,11 +41,9 @@ test('Codex commentary becomes the latest activity and settles with the Turn', (
     kind: 'command',
     id: 'command-1',
     command: 'rg FeedContent',
-    cwd: '/repo',
     status: 'running',
     output: null,
     stderr: null,
-    exitCode: null,
   }
   const running = advanceFeedActivity(EMPTY_FEED_ACTIVITY, command)
   expect(running.activity).toMatchObject({ kind: 'command', open: true })

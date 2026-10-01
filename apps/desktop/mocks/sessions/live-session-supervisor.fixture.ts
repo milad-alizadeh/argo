@@ -6,6 +6,7 @@ import {
   createLiveSessionSupervisorMachine,
   type LiveSessionSupervisorActor,
 } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import { ACP_HARNESSES } from '@/harnesses/acp/acp-agents'
 import type {
   CodexAppServerClient,
   CodexRequest,
@@ -25,10 +26,18 @@ if (available.availability !== 'available') throw new Error('Codex fixture must 
 export const model = available.models[0]
 if (model === undefined) throw new Error('Codex fixture needs a model.')
 export const catalog = harnessCatalogSchema.parse({
-  harnesses: [unavailable('claude'), available, unavailable('claude-acp')],
+  harnesses: [
+    unavailable('claude'),
+    available,
+    ...ACP_HARNESSES.map((harness) => unavailable(harness)),
+  ],
 })
 export const claudeCatalog = harnessCatalogSchema.parse({
-  harnesses: [{ ...available, harness: 'claude' }, available, unavailable('claude-acp')],
+  harnesses: [
+    { ...available, harness: 'claude' },
+    available,
+    ...ACP_HARNESSES.map((harness) => unavailable(harness)),
+  ],
 })
 export const first: SessionStartInput = {
   commandId: 'first-command',

@@ -41,6 +41,27 @@ export const Pending: Story = {
   },
 }
 
+export const AcpChoices: Story = {
+  args: { harness: 'claude-acp', permission: { ...permission, decisions: ['allow', 'deny'] } },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryByRole('button', { name: 'More ways to allow' })).toBeNull()
+    await userEvent.click(canvas.getByRole('button', { name: 'Allow' }))
+    await expect(args.onDecide).toHaveBeenCalledWith('allow')
+  },
+}
+
+export const DenyOnly: Story = {
+  args: { harness: 'claude-acp', permission: { ...permission, decisions: ['deny'] } },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryByRole('button', { name: 'Allow' })).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'More ways to allow' })).toBeNull()
+    await userEvent.click(canvas.getByRole('button', { name: 'Deny' }))
+    await expect(args.onDecide).toHaveBeenCalledWith('deny')
+  },
+}
+
 // Claude's gate remembers similar calls; the same answer reads as a Session-wide allow for Codex.
 export const AllowSimilar: Story = {
   render: (args) => {

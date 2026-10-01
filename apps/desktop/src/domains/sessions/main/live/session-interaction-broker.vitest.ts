@@ -1,6 +1,25 @@
 import { expect, test } from 'vitest'
 import { SessionInteractionBroker } from './session-interaction-broker'
 
+test('shows only vendor-supported Permission answers and refuses other decisions', async () => {
+  const broker = new SessionInteractionBroker()
+  const pending = broker.requestPermission({
+    nativeId: 'acp-1',
+    requestId: 'request-1',
+    description: 'Read a file',
+    decisions: ['allow', 'deny'],
+    signal: new AbortController().signal,
+  })
+  expect(broker.permission('acp-1')).toEqual({
+    requestId: 'request-1',
+    description: 'Read a file',
+    decisions: ['allow', 'deny'],
+  })
+  expect(broker.decidePermission('acp-1', 'request-1', 'allowForSession')).toBe(false)
+  expect(broker.decidePermission('acp-1', 'request-1', 'allow')).toBe(true)
+  await expect(pending).resolves.toBe('allow')
+})
+
 test('holds a Claude permission until the matching Session decision arrives', async () => {
   const broker = new SessionInteractionBroker()
   const pending = broker.requestPermission({

@@ -5,7 +5,7 @@ import {
   composerCommandSchema,
 } from '@/domains/sessions/api/composer-commands'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import type { PermissionDecision } from '@/domains/sessions/api/permissions'
+import type { Permission, PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { Question, QuestionAnswer } from '@/domains/sessions/api/questions'
 import type {
   SessionSummaryList,
@@ -72,6 +72,7 @@ export type LiveSessionControls = {
     nativeId: string
     requestId: string
     description: string
+    decisions?: Permission['decisions']
     signal: AbortSignal
   }) => Promise<PermissionDecision>
   requestQuestion: (request: {

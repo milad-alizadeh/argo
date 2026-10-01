@@ -104,6 +104,30 @@ function interactiveControls(): LiveSessionControls {
   }
 }
 
+// Runs the first Turn over `vendor.recordedEvents` and returns its Feed content and parsed events.
+async function completedTurn() {
+  const events: unknown[] = []
+  const channel = claudeSessionChannelOpener(null)(first, undefined, (event) => events.push(event))
+  await until(() => events.some((event) => (event as { type: string }).type === 'turn.completed'))
+  const parsed = events.map((event) => liveSessionChannelEventSchema.parse(event))
+  const content = parsed.flatMap((event) =>
+    event.type === 'feed' && event.body.type === 'content' ? [event.body.content] : [],
+  )
+  return { channel, parsed, content }
+}
+
+// Closes the channel and returns the warnings it reported.
+async function closingWarnings(channel: { close(): void }) {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  try {
+    channel.close()
+    await until(() => warn.mock.calls.length > 0)
+    return warn.mock.calls
+  } finally {
+    warn.mockRestore()
+  }
+}
+
 test('validates delayed identity and completes each submitted Turn once', async () => {
   vendor.prompts = []
   vendor.recordedEvents = readFileSync(
@@ -261,13 +285,7 @@ test('streams an Agent call as a start and a response its notification completes
       summary: 'Agent "Survey adapters" finished',
     },
   ]
-  const events: unknown[] = []
-  const channel = claudeSessionChannelOpener(null)(first, undefined, (event) => events.push(event))
-  await until(() => events.some((event) => (event as { type: string }).type === 'turn.completed'))
-  const content = events.flatMap((event) => {
-    const parsed = liveSessionChannelEventSchema.parse(event)
-    return parsed.type === 'feed' && parsed.body.type === 'content' ? [parsed.body.content] : []
-  })
+  const { channel, content } = await completedTurn()
   expect(content.filter((entry) => entry.kind === 'tool' || entry.kind === 'task')).toEqual([])
   expect(
     content.flatMap((entry) =>
@@ -295,30 +313,67 @@ test('replaces the command list when Claude reports commands_changed', async () 
       ],
     },
   ]
-  const warnings: unknown[][] = []
-  const warn = console.warn
-  console.warn = (...args: unknown[]) => {
-    warnings.push(args)
-  }
-  const events: unknown[] = []
   try {
-    const channel = claudeSessionChannelOpener(null)(first, undefined, (event) =>
-      events.push(event),
-    )
-    await until(() => events.some((event) => (event as { type: string }).type === 'turn.completed'))
-    const listed = events.flatMap((event) => {
-      const parsed = liveSessionChannelEventSchema.parse(event)
-      return parsed.type === 'commands' ? [parsed] : []
-    })
+    const { channel, parsed } = await completedTurn()
+    const listed = parsed.flatMap((event) => (event.type === 'commands' ? [event] : []))
     expect(listed[0]?.commands.map((command) => command.name)).toEqual(['implement'])
     expect(listed.at(-1)?.commands).toEqual([
       { name: 'review', description: 'Read the diff', argumentHint: '', aliases: [] },
     ])
-    channel.close()
-    await until(() => warnings.length > 0)
-    expect(warnings).toContainEqual(['Rejected 1 unsupported Claude live shape(s).'])
+    expect(await closingWarnings(channel)).toContainEqual([
+      'Rejected 1 unsupported Claude live shape(s).',
+    ])
   } finally {
-    console.warn = warn
     vendor.commands = []
   }
+})
+
+test('streams system task updates, notices, and markers, and counts an unknown subtype', async () => {
+  vendor.prompts = []
+  vendor.releaseSecond = null
+  const envelope = { type: 'system', session_id: 'native-1' }
+  vendor.recordedEvents = [
+    {
+      ...envelope,
+      subtype: 'task_started',
+      uuid: 'task-1',
+      task_id: 'shell-1',
+      tool_use_id: 'call-1',
+      description: 'Build',
+    },
+    {
+      ...envelope,
+      subtype: 'task_progress',
+      uuid: 'task-2',
+      task_id: 'shell-1',
+      tool_use_id: 'call-1',
+      description: 'Build',
+      summary: 'Compiling',
+    },
+    { ...envelope, subtype: 'notification', uuid: 'notice-1', key: 'b', text: 'Build finished' },
+    {
+      ...envelope,
+      subtype: 'compact_boundary',
+      uuid: 'compact-1',
+      compact_metadata: { trigger: 'auto', pre_tokens: 100 },
+    },
+    { ...envelope, subtype: 'future_subtype', uuid: 'future-1' },
+  ]
+  const { channel, content } = await completedTurn()
+  const task = { id: 'shell-1', kind: 'task', taskId: 'shell-1', callId: 'call-1' }
+  expect(content.filter((entry) => entry.kind !== 'message')).toEqual([
+    { ...task, status: 'running', description: 'Build', summary: null },
+    { ...task, status: 'running', description: 'Build', summary: 'Compiling' },
+    { id: 'notice-1', kind: 'notification', text: 'Build finished' },
+    { id: 'compact-1', kind: 'marker', marker: 'compaction', summary: null },
+    {
+      id: 'future-1',
+      kind: 'diagnostic',
+      vendorType: 'system:future_subtype',
+      detail: 'Unsupported Claude output.',
+    },
+  ])
+  expect(await closingWarnings(channel)).toContainEqual([
+    'Rejected 1 unsupported Claude live shape(s).',
+  ])
 })

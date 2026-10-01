@@ -69,7 +69,17 @@ test('shows known markers and rejects unrecognized item types', async () => {
     parse({
       thread: { turns: [{ items: [{ id: 'future', type: 'futureItem' }] }] },
     })) as CodexRequest
-  await expect(readCodexSessionHistory(unknownRequest, 'thread')).rejects.toThrow()
+  const warning = warningSpy()
+  await expect(readCodexSessionHistory(unknownRequest, 'thread')).resolves.toEqual([
+    {
+      kind: 'diagnostic',
+      id: 'future',
+      vendorType: 'futureItem',
+      detail: 'Unsupported Codex thread item.',
+    },
+  ])
+  expect(warning).toHaveBeenCalledWith('Rejected 1 unsupported Codex history shape(s).')
+  warning.mockRestore()
 })
 
 test('reads Codex reasoning, commentary, file edits, and MCP results from thread items', async () => {
@@ -191,8 +201,15 @@ test('rejects and reports an unknown Codex image-generation status', async () =>
     type: 'imageGeneration',
     status: 'futureStatus',
   })
-  await expect(readCodexSessionHistory(request, 'thread')).rejects.toThrow()
-  expect(warning).toHaveBeenCalledWith('Rejected 1 unsupported Codex history shape.')
+  await expect(readCodexSessionHistory(request, 'thread')).resolves.toEqual([
+    {
+      kind: 'diagnostic',
+      id: 'image-1',
+      vendorType: 'imageGeneration:futureStatus',
+      detail: 'Unsupported Codex thread item.',
+    },
+  ])
+  expect(warning).toHaveBeenCalledWith('Rejected 1 unsupported Codex history shape(s).')
   warning.mockRestore()
 })
 
@@ -317,9 +334,7 @@ test('reports and drops a Codex image sent by fileId, keeping the rest of the pr
   await expect(readCodexSessionHistory(request, 'thread')).resolves.toEqual([
     { kind: 'message', id: 'user-fileid-image', role: 'user', text: 'Check this upload' },
   ])
-  expect(warning).toHaveBeenCalledWith(
-    'Rejected 1 unsupported Codex prompt shape: image by fileId.',
-  )
+  expect(warning).toHaveBeenCalledWith('Rejected 1 unsupported Codex history shape(s).')
   warning.mockRestore()
 })
 

@@ -1,4 +1,4 @@
-import type { PermissionDecision } from '@/domains/sessions/api/permissions'
+import type { Permission, PermissionDecision } from '@/domains/sessions/api/permissions'
 import {
   type Question,
   type QuestionAnswer,
@@ -10,6 +10,7 @@ type PendingPermission = {
   nativeId: string
   requestId: string
   description: string
+  decisions?: Permission['decisions']
   resolve: (decision: PermissionDecision) => void
 }
 
@@ -54,6 +55,7 @@ export class SessionInteractionBroker {
     nativeId: string
     requestId: string
     description: string
+    decisions?: Permission['decisions']
     signal: AbortSignal
   }): Promise<PermissionDecision> {
     const { nativeId, requestId, description, signal } = request
@@ -62,6 +64,7 @@ export class SessionInteractionBroker {
       nativeId,
       requestId,
       description,
+      ...(request.decisions === undefined ? {} : { decisions: request.decisions }),
       resolve,
     }))
   }
@@ -82,18 +85,30 @@ export class SessionInteractionBroker {
     }))
   }
 
-  permission(nativeId: string): Pick<PendingPermission, 'requestId' | 'description'> | null {
+  permission(
+    nativeId: string,
+  ): Pick<PendingPermission, 'requestId' | 'description' | 'decisions'> | null {
     const request = [...this.pending.values()].find(
       (pending) => pending.nativeId === nativeId && pending.kind === 'permission',
     )
     return request?.kind === 'permission'
-      ? { requestId: request.requestId, description: request.description }
+      ? {
+          requestId: request.requestId,
+          description: request.description,
+          ...(request.decisions === undefined ? {} : { decisions: request.decisions }),
+        }
       : null
   }
 
   decidePermission(nativeId: string, requestId: string, decision: PermissionDecision): boolean {
     const request = this.pending.get(`${nativeId}:${requestId}`)
     if (request?.kind !== 'permission') return false
+    if (
+      decision !== 'cancel' &&
+      request.decisions !== undefined &&
+      !request.decisions.includes(decision)
+    )
+      return false
     request.resolve(decision)
     return true
   }
