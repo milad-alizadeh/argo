@@ -188,3 +188,18 @@ test('counts a thread whose preview or cwd breaks the generated Thread type', as
     })) as CodexRequest)({ knownNativeIds: [] })
   expect(result).toEqual({ records: [], skipped: 2 })
 })
+
+test('reads the Model and Effort a thread records, and leaves out what it records as none', async () => {
+  const result = await createCodexSessionSummaryList((async (_method, _params, parse) =>
+    parse({
+      data: [
+        { id: 'configured', updatedAt: 1, model: 'gpt-5.5', reasoningEffort: 'high' },
+        { id: 'unconfigured', updatedAt: 1, model: null, reasoningEffort: null },
+      ],
+      nextCursor: null,
+    })) as CodexRequest)({ knownNativeIds: [] })
+  expect(result.records).toEqual([
+    { nativeId: 'configured', activityAt: 1000, model: 'gpt-5.5', effort: 'high' },
+    { nativeId: 'unconfigured', activityAt: 1000 },
+  ])
+})

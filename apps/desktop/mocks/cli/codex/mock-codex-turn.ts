@@ -127,7 +127,7 @@ export function createMockTurnStartHandler(options: {
     if (options.echoFile && !text.includes('ASK'))
       appendFileSync(options.echoFile, `${JSON.stringify(text)}\n`)
     const turnId = `mock-turn-${options.nextThreadCounter()}-${Date.now()}`
-    sendPlanUpdate({ text, turnId, send: options.send, beforeTurnStart: true })
+    sendPlanUpdate({ text, threadId, turnId, send: options.send, beforeTurnStart: true })
     options.send({ id: message.id, result: { turn: { id: turnId, status: 'inProgress' } } })
     if (scheduleThreadLifecycle(text, threadId, options.send)) return
     options.send({
@@ -139,7 +139,7 @@ export function createMockTurnStartHandler(options: {
       method: 'turn/started',
       params: { threadId, turn: { id: turnId, status: 'inProgress' } },
     })
-    sendPlanUpdate({ text, turnId, send: options.send, beforeTurnStart: false })
+    sendPlanUpdate({ text, threadId, turnId, send: options.send, beforeTurnStart: false })
     if (text.includes('PROJECT_TOOL_USAGE'))
       setTimeout(() => sendToolUsage(options.send, threadId, turnId), 1)
     if (asksQuestion(text, plan)) {

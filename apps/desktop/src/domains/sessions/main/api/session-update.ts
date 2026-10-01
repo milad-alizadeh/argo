@@ -14,12 +14,18 @@ import { saveSessionSubagents } from '../database'
 import { sessionHistoryIdentity } from '../session-history-identity'
 import type { SessionListChanges } from './session-list-changes'
 
-type StoredUpdate = Pick<typeof sessionTable.$inferInsert, 'customTitle' | 'status' | 'activityAt'>
+type StoredUpdate = Pick<
+  typeof sessionTable.$inferInsert,
+  'customTitle' | 'status' | 'activityAt' | 'model' | 'effort' | 'mode'
+>
+// A Plan's steps done and in total.
+export type PlanProgress = { completed: number; total: number }
 export type SessionUpdate = {
   [Column in keyof StoredUpdate]?: NonNullable<StoredUpdate[Column]>
 } & {
   archived?: boolean
   activity?: LiveActivity | null
+  plan?: PlanProgress
   // Delegation content naming the Session's Subagents.
   subagents?: readonly FeedContent[]
 }
@@ -37,7 +43,20 @@ function sessionColumns(update: SessionUpdate) {
   if (update.status !== undefined) differs.push(sql`${sessionTable.status} is not ${update.status}`)
   if (update.activityAt !== undefined)
     differs.push(sql`coalesce(${sessionTable.activityAt}, 0) < ${update.activityAt}`)
+  const reported = {
+    model: update.model,
+    effort: update.effort,
+    mode: update.mode,
+    planCompleted: update.plan?.completed,
+    planTotal: update.plan?.total,
+  }
+  const reportedColumns = Object.fromEntries(
+    Object.entries(reported).filter(([, value]) => value !== undefined),
+  )
+  for (const [column, value] of Object.entries(reportedColumns))
+    differs.push(sql`${sessionTable[column as keyof typeof reported]} is not ${value}`)
   const columns = {
+    ...reportedColumns,
     ...(update.customTitle === undefined
       ? {}
       : { customTitle: update.customTitle, updatedAt: nextUpdatedAt(sessionTable.updatedAt) }),

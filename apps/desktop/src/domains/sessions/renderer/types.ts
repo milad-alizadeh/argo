@@ -9,6 +9,7 @@ export type SessionPosture = NonNullable<Session['posture']>
 export type SessionActivity = NonNullable<Session['activity']>
 export type SessionTicket = NonNullable<Session['ticket']>
 export type SessionTurnConfiguration = Session['turnConfiguration']
+export type SessionPlanProgress = NonNullable<Session['planProgress']>
 export type PlanEntryStatus = 'pending' | 'in_progress' | 'completed'
 export type SessionPlan =
   | {

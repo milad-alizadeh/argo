@@ -4,8 +4,8 @@ import { mockStartInput } from './mock-codex-channel.ts'
 import { clientBackedByMock, mockCodexExecutable, waitFor } from './mock-codex-driver.ts'
 import { openLiveSession } from './mock-codex-live-session.ts'
 
-// The live channel does not project `turn/plan/updated` into a Plan; this covers only that the
-// notification, sent before the Turn starts, leaves the Turn intact.
+// A `turn/plan/updated` sent before the Turn starts names no active Turn, so the channel drops it
+// and the Turn stays intact.
 test('a Turn that reports a Plan early still completes', async () => {
   const client = clientBackedByMock(await mockCodexExecutable())
   const session = openLiveSession(client, {

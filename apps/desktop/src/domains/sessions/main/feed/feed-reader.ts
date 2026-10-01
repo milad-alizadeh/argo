@@ -23,7 +23,7 @@ import {
   type SessionLiveEvent,
 } from '@/domains/sessions/api/session-live-event'
 import type { Harness } from '@/harnesses/harness'
-import type { SessionListChanges } from '../api'
+import type { PlanProgress, SessionListChanges } from '../api'
 import { updateSession } from '../api'
 import type { SessionEventJournal } from '../live'
 import { sessionHistoryIdentity } from '../session-history-identity'
@@ -52,6 +52,17 @@ function isStreamedText(event: SessionLiveEvent): boolean {
   if (event.type !== 'content') return false
   const { content } = event
   return content.kind === 'reasoning' || (content.kind === 'message' && content.role !== 'user')
+}
+
+// The newest Plan's step count; a live event is newer than any history.
+function planProgress(
+  history: readonly FeedContent[],
+  events: readonly SessionLiveEvent[],
+): PlanProgress | null {
+  const live = events.flatMap((event) => (event.type === 'content' ? [event.content] : []))
+  for (const content of [...history, ...live].reverse())
+    if (content.kind === 'plan' && content.progress !== undefined) return content.progress
+  return null
 }
 
 // Without a live channel, only what vendor history can also settle reaches the Feed.
@@ -267,8 +278,11 @@ class FeedReader {
     })
     if (reading.revision === this.#reading?.revision) return
     this.#reading = reading
-    // Keeps the activity for the Session List after this reader closes.
-    if (subagentId === null) updateSession(this.#context, sessionId, { activity })
+    // Keeps the activity and Plan progress for the Session List after this reader closes. A
+    // reading with no Plan keeps the stored count, since a vendor history may hold none.
+    const plan = planProgress(this.#history, events)
+    if (subagentId === null)
+      updateSession(this.#context, sessionId, { activity, ...(plan === null ? {} : { plan }) })
     for (const observer of this.#observers) observer(reading)
   }
 }

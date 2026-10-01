@@ -9,7 +9,7 @@ import {
   PopoverTrigger,
 } from '@/platform/renderer/components/ui/popover'
 import { Progress } from '@/platform/renderer/components/ui/progress'
-import type { PlanEntryStatus, SessionPlan } from '../../types'
+import type { PlanEntryStatus, SessionPlan, SessionPlanProgress } from '../../types'
 
 const PLAN_ENTRY_CLASS: Record<PlanEntryStatus, string> = {
   completed: 'bg-foreground text-background',
@@ -29,75 +29,64 @@ const PLAN_ENTRY_LABEL: Record<PlanEntryStatus, string> = {
   pending: 'Pending',
 }
 
-function currentStep(plan: Extract<SessionPlan, { state: 'available' }>) {
-  const active = plan.entries.findIndex((entry) => entry.status === 'in_progress')
-  if (active !== -1) return active + 1
-  return plan.entries.filter((entry) => entry.status === 'completed').length
+type AvailablePlan = Extract<SessionPlan, { state: 'available' }>
+type Entry = AvailablePlan['entries'][number]
+// What the popover draws: the steps when the Feed is open, or only their count from the row.
+type PlanSteps = { current: number; total: number; progressed: number; entries: Entry[] }
+
+function planSteps(plan: SessionPlan | null, progress: SessionPlanProgress | null) {
+  if (plan?.state === 'available') {
+    const active = plan.entries.findIndex((entry) => entry.status === 'in_progress')
+    const completed = plan.entries.filter((entry) => entry.status === 'completed').length
+    return {
+      current: active === -1 ? completed : active + 1,
+      total: plan.entries.length,
+      progressed: plan.entries.filter((entry) => entry.status !== 'pending').length,
+      entries: plan.entries,
+    }
+  }
+  if (progress === null || progress.total === 0) return null
+  return {
+    current: progress.completed,
+    total: progress.total,
+    progressed: progress.completed,
+    entries: [],
+  }
 }
 
-function planProgress(plan: Extract<SessionPlan, { state: 'available' }>) {
-  if (plan.entries.length === 0) return 0
-  return (
-    (plan.entries.filter((entry) => entry.status !== 'pending').length / plan.entries.length) * 100
-  )
-}
-
-function PlanTriggerLabel({ plan }: { plan: Extract<SessionPlan, { state: 'available' }> }) {
+function PlanEntries({ entries }: { entries: Entry[] }) {
   const { t } = useTranslation('sessions')
-  if (plan.entries.length === 0) return <>{t('composer.taskPlan.triggerEmpty')}</>
-  return <>{t('composer.plan', { current: currentStep(plan), total: plan.entries.length })}</>
-}
-
-function AvailablePlan({ plan }: { plan: Extract<SessionPlan, { state: 'available' }> }) {
-  const { t } = useTranslation('sessions')
-  const progressed = plan.entries.filter((entry) => entry.status !== 'pending').length
-  const percentage = (progressed / plan.entries.length) * 100
   return (
-    <>
-      <PopoverHeader>
-        <PopoverTitle>
-          {t('composer.plan', { current: currentStep(plan), total: plan.entries.length })}
-        </PopoverTitle>
-      </PopoverHeader>
-      <Progress
-        aria-label={t('sessionList.planProgress', {
-          completed: progressed,
-          total: plan.entries.length,
-        })}
-        value={percentage}
-        className="h-1.5"
-      />
-      <ol aria-label={t('composer.taskPlan.label')} className="grid gap-1">
-        {plan.entries.map((entry, index) => (
-          <li
-            key={entry.position}
-            aria-label={`${entry.content}: ${PLAN_ENTRY_LABEL[entry.status]}`}
-            data-plan-status={entry.status}
-            className={`flex items-center gap-2 overflow-visible rounded-md px-2 py-1.5 type-meta ${entry.status === 'in_progress' ? 'bg-muted font-medium' : ''}`}
+    <ol aria-label={t('composer.taskPlan.label')} className="grid gap-1">
+      {entries.map((entry, index) => (
+        <li
+          key={entry.position}
+          aria-label={`${entry.content}: ${PLAN_ENTRY_LABEL[entry.status]}`}
+          data-plan-status={entry.status}
+          className={`flex items-center gap-2 overflow-visible rounded-md px-2 py-1.5 type-meta ${entry.status === 'in_progress' ? 'bg-muted font-medium' : ''}`}
+        >
+          <span
+            className={`relative flex size-5 shrink-0 items-center justify-center overflow-visible rounded-full type-meta ${PLAN_ENTRY_CLASS[entry.status]}`}
           >
-            <span
-              className={`relative flex size-5 shrink-0 items-center justify-center overflow-visible rounded-full type-meta ${PLAN_ENTRY_CLASS[entry.status]}`}
-            >
-              {entry.status === 'in_progress' ? (
-                <span className="absolute inset-0 animate-ping rounded-full border border-foreground/40 motion-reduce:animate-none" />
-              ) : null}
-              {entry.status === 'completed' ? (
-                <Icon name="confirmed" className="size-3" />
-              ) : (
-                index + 1
-              )}
-            </span>
-            <span className={PLAN_ENTRY_TEXT_CLASS[entry.status]}>{entry.content}</span>
-          </li>
-        ))}
-      </ol>
-    </>
+            {entry.status === 'in_progress' ? (
+              <span className="absolute inset-0 animate-ping rounded-full border border-foreground/40 motion-reduce:animate-none" />
+            ) : null}
+            {entry.status === 'completed' ? (
+              <Icon name="confirmed" className="size-3" />
+            ) : (
+              index + 1
+            )}
+          </span>
+          <span className={PLAN_ENTRY_TEXT_CLASS[entry.status]}>{entry.content}</span>
+        </li>
+      ))}
+    </ol>
   )
 }
 
-function PlanContent({ plan }: { plan: Extract<SessionPlan, { state: 'available' }> }) {
+function PlanContent({ steps }: { steps: PlanSteps }) {
   const { t } = useTranslation('sessions')
-  if (plan.entries.length === 0) {
+  if (steps.total === 0) {
     return (
       <PopoverHeader>
         <PopoverTitle>{t('composer.taskPlan.emptyTitle')}</PopoverTitle>
@@ -105,13 +94,37 @@ function PlanContent({ plan }: { plan: Extract<SessionPlan, { state: 'available'
       </PopoverHeader>
     )
   }
-  return <AvailablePlan plan={plan} />
+  return (
+    <>
+      <PopoverHeader>
+        <PopoverTitle>
+          {t('composer.plan', { current: steps.current, total: steps.total })}
+        </PopoverTitle>
+      </PopoverHeader>
+      <Progress
+        aria-label={t('sessionList.planProgress', {
+          completed: steps.progressed,
+          total: steps.total,
+        })}
+        value={(steps.progressed / steps.total) * 100}
+        className="h-1.5"
+      />
+      {steps.entries.length === 0 ? null : <PlanEntries entries={steps.entries} />}
+    </>
+  )
 }
 
-export function SessionPlanPopover({ plan }: { plan: SessionPlan | null }) {
+export function SessionPlanPopover({
+  plan,
+  progress,
+}: {
+  plan: SessionPlan | null
+  progress: SessionPlanProgress | null
+}) {
   const { t } = useTranslation('sessions')
-  if (plan?.state !== 'available') return null
-  const progress = planProgress(plan)
+  const steps = planSteps(plan, progress)
+  if (steps === null) return null
+  const percentage = steps.total === 0 ? 0 : (steps.progressed / steps.total) * 100
   return (
     <Popover>
       <PopoverTrigger
@@ -145,18 +158,20 @@ export function SessionPlanPopover({ plan }: { plan: SessionPlan | null }) {
             strokeWidth="2.5"
             strokeLinecap="round"
             pathLength="100"
-            strokeDasharray={`${progress} 100`}
+            strokeDasharray={`${percentage} 100`}
           />
         </svg>
-        <PlanTriggerLabel plan={plan} />
+        {steps.total === 0
+          ? t('composer.taskPlan.triggerEmpty')
+          : t('composer.plan', { current: steps.current, total: steps.total })}
       </PopoverTrigger>
       <PopoverContent
         align="end"
         side="top"
         className="w-80 gap-3 p-3"
-        data-plan-state={plan.state}
+        data-plan-state={plan?.state}
       >
-        <PlanContent plan={plan} />
+        <PlanContent steps={steps} />
       </PopoverContent>
     </Popover>
   )

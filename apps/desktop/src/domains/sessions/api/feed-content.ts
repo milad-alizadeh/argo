@@ -116,7 +116,17 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
       }),
     ),
   }),
-  base.extend({ kind: z.literal('plan'), text: z.string() }),
+  base.extend({
+    kind: z.literal('plan'),
+    text: z.string(),
+    // Steps done and in total, where the Harness gives each step a status.
+    progress: z
+      .strictObject({
+        completed: z.number().int().nonnegative(),
+        total: z.number().int().nonnegative(),
+      })
+      .optional(),
+  }),
   base.extend({
     kind: z.literal('delegation'),
     // Which step of the Subagent's life this record is; each step keeps its own `id`.
@@ -174,3 +184,16 @@ export const feedContentKindSchema = z.enum(
     ...FeedContent['kind'][],
   ],
 )
+
+// A Plan as each Harness reports it: steps in order, each done or not.
+export function planContent(
+  id: string,
+  steps: readonly { text: string; done: boolean }[],
+): Extract<FeedContent, { kind: 'plan' }> {
+  return {
+    id,
+    kind: 'plan',
+    text: steps.map((step) => `- ${step.text}`).join('\n'),
+    progress: { completed: steps.filter((step) => step.done).length, total: steps.length },
+  }
+}

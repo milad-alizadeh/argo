@@ -36,6 +36,9 @@ export function createSessionUpsert(database: Database): SessionUpsert {
         firstPrompt: validatedInput.firstPrompt ?? null,
         cwd: validatedInput.cwd ?? null,
         activityAt: validatedInput.activityAt ?? null,
+        model: validatedInput.model ?? null,
+        effort: validatedInput.effort ?? null,
+        mode: validatedInput.mode ?? null,
         // A Session found in history is ordered by when it was last active, not when Argo saw it.
         createdAt: validatedInput.activityAt ?? Date.now(),
       })

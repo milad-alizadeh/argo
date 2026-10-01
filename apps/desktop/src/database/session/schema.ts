@@ -23,6 +23,13 @@ export const sessionTable = sqliteTable(
     activity: text('activity'),
     // The last status the external Session poll stored; a live channel's own status outranks it.
     status: text('status', { enum: SESSION_STATUSES }).notNull().default('unknown'),
+    // The Model, Effort and Mode as the Harness last reported them; null where it reported none.
+    model: text('model'),
+    effort: text('effort'),
+    mode: text('mode'),
+    // The newest Plan's steps done and in total; null until the Feed holds a Plan.
+    planCompleted: integer('plan_completed'),
+    planTotal: integer('plan_total'),
     ...timestampColumns(),
   },
   (table) => [

@@ -384,6 +384,38 @@ test('Codex live commentary and reasoning stay separate from the final answer', 
   channel.close()
 })
 
+test('a Codex Plan update draws one Plan for its Turn and ignores another Turn', async () => {
+  const { channel, events, notify } = mockCodexChannel(startedThreadRequest)
+  await new Promise((resolve) => setImmediate(resolve))
+  const planUpdated = (turnId: string, done: boolean) =>
+    notify({
+      method: 'turn/plan/updated',
+      params: {
+        threadId: 'thread-1',
+        turnId,
+        explanation: null,
+        plan: [
+          { step: 'Read the code', status: done ? 'completed' : 'inProgress' },
+          { step: 'Write the test', status: 'pending' },
+        ],
+      },
+    })
+  planUpdated('turn-1', false)
+  planUpdated('turn-1', true)
+  planUpdated('turn-other', true)
+  const plans = events.flatMap((event) =>
+    event.type === 'feed' && event.body.type === 'content' && event.body.content.kind === 'plan'
+      ? [event.body.content]
+      : [],
+  )
+  const text = '- Read the code\n- Write the test'
+  assert.deepEqual(plans, [
+    { id: 'turn-1:plan', kind: 'plan', text, progress: { completed: 0, total: 2 } },
+    { id: 'turn-1:plan', kind: 'plan', text, progress: { completed: 1, total: 2 } },
+  ])
+  channel.close()
+})
+
 test('a Turn notification establishes vendor delivery before the request response', async () => {
   let rejectTurn: ((error: Error) => void) | undefined
   const request = (async (method: string, _params: unknown, parse: (value: unknown) => unknown) => {

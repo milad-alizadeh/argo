@@ -4,7 +4,7 @@ import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import type { HarnessControl } from '../../harness'
-import type { SessionPlan } from '../../types'
+import type { SessionPlan, SessionPlanProgress } from '../../types'
 import { useComposerEditing } from '../editing/composer-editing-context'
 import { SessionPlanPopover } from '../layout/session-plan-popover'
 import { ModeMenu } from './mode-menu'
@@ -42,8 +42,10 @@ export function ComposerToolbar({
   onInterrupt,
   interruptRef,
   plan,
+  planProgress,
 }: {
   plan: SessionPlan | null
+  planProgress: SessionPlanProgress | null
   disabled?: boolean
   sendAvailable?: boolean
   onOpenContextPicker: () => void
@@ -72,7 +74,7 @@ export function ComposerToolbar({
       ) : null}
       <div className="ml-auto flex items-center gap-1">
         {turnConfiguration ? <ModeMenu {...turnConfiguration} /> : null}
-        <SessionPlanPopover plan={plan} />
+        <SessionPlanPopover plan={plan} progress={planProgress} />
         {isRunning ? (
           <Button
             aria-label={t('composer.interrupt')}

@@ -8,6 +8,8 @@ const serverOwnedSessionFields = {
   sortOrder: true,
   status: true,
   activity: true,
+  planCompleted: true,
+  planTotal: true,
 } as const
 export const sessionInsertSchema = createInsertSchema(sessionTable).omit(serverOwnedSessionFields)
 

@@ -1,4 +1,4 @@
-import type { WireMessage } from '../app-server'
+import type { TurnPlanUpdatedNotification, WireMessage } from '../app-server'
 
 type Params = Record<string, unknown>
 
@@ -12,6 +12,7 @@ export function dispatchCodexNotification(
     messageDelta: (params: Params) => void
     reasoningSummaryDelta: (params: Params) => void
     commandOutputDelta: (params: Params) => void
+    planUpdated: (plan: TurnPlanUpdatedNotification) => void
     itemNotification: (params: Params, phase: 'started' | 'completed') => void
     skillsChanged: () => void
   },
@@ -35,6 +36,9 @@ export function dispatchCodexNotification(
       return undefined
     case 'item/commandExecution/outputDelta':
       handlers.commandOutputDelta(params)
+      return undefined
+    case 'turn/plan/updated':
+      handlers.planUpdated(params as TurnPlanUpdatedNotification)
       return undefined
     case 'item/completed':
       handlers.itemNotification(params, 'completed')

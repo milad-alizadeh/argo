@@ -31,6 +31,7 @@ import { identifierSchema } from '@/shared/validation'
 import { type StoredSubagent, storedSessionSubagents } from '../database'
 import { type LiveSessionSupervisorActor, liveSessionActorFor } from '../live'
 import type { SessionListChanges } from './session-list-changes'
+import { updateSession } from './session-update'
 
 const t = initTRPC.create()
 
@@ -75,6 +76,12 @@ export const sessionListRowSchema = z.strictObject({
     effort: z.string().nullable(),
     mode: z.string().nullable(),
   }),
+  planProgress: z
+    .strictObject({
+      completed: z.number().int().nonnegative(),
+      total: z.number().int().nonnegative(),
+    })
+    .nullable(),
 })
 
 const sessionListSchema = z.strictObject({
@@ -150,7 +157,12 @@ function sessionListRow(
     subagents,
     ticket: linkedTicket(row.ticket),
     archived: row.archived,
-    turnConfiguration: live?.turnConfiguration ?? { model: null, effort: null, mode: null },
+    // A live channel's own configuration outranks the stored one, as its status does.
+    turnConfiguration: live?.turnConfiguration ?? row.turnConfiguration,
+    planProgress:
+      row.planCompleted === null || row.planTotal === null
+        ? null
+        : { completed: row.planCompleted, total: row.planTotal },
   }
 }
 
@@ -172,6 +184,13 @@ const storedSessionColumns = {
   activity: sessionTable.activity,
   status: sessionTable.status,
   updatedAt: sessionTable.updatedAt,
+  turnConfiguration: {
+    model: sessionTable.model,
+    effort: sessionTable.effort,
+    mode: sessionTable.mode,
+  },
+  planCompleted: sessionTable.planCompleted,
+  planTotal: sessionTable.planTotal,
   ticket: {
     projectId: sessionTicketLink.projectId,
     key: sessionTicketLink.ticketKey,
@@ -322,12 +341,15 @@ export function sessionListChangedProcedure(context: SessionListContext) {
   )
 }
 
-// Announces each live status change, so every Session List reads the changed row again.
+// Announces each live status change, so every Session List reads the changed row again, and saves
+// the live channel's Model, Effort and Mode, so the row keeps them once the channel is gone.
 export function watchSessionList(
-  context: Pick<SessionListContext, 'supervisor' | 'changes'>,
+  context: Pick<SessionListContext, 'database' | 'supervisor' | 'changes'>,
 ): () => void {
-  const statusChanges = context.supervisor.on('Session status changed', ({ sessionId }) =>
-    context.changes.changed([sessionId]),
-  )
+  const statusChanges = context.supervisor.on('Session status changed', ({ sessionId }) => {
+    const live = liveProjection(context, sessionId)
+    if (live !== null) updateSession(context, sessionId, live.turnConfiguration)
+    context.changes.changed([sessionId])
+  })
   return () => statusChanges.unsubscribe()
 }

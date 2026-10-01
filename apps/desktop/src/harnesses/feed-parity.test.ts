@@ -4,6 +4,7 @@ import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { decodeClaudeSessionMessages } from './claude/session/claude-session-history'
 import type { CodexRequest, ThreadItem } from './codex/app-server'
+import { codexPlanContent } from './codex/session/codex-feed'
 import { readCodexSessionHistory } from './codex/session/codex-session-history'
 
 // What a reader sees: every row with its ids dropped, since each Harness names its own items.
@@ -114,4 +115,38 @@ test('Claude and Codex draw the same rows for a prompt, a thought, commands, and
   expect(claude).toContainEqual(
     expect.objectContaining({ shape: 'tool', label: 'Ran bun test', text: 'bun test' }),
   )
+})
+
+test('Claude and Codex give the same Plan and step count for the same steps', () => {
+  const [claude] = decodeClaudeSessionMessages([
+    {
+      uuid: 'claude-0',
+      ...assistant([
+        {
+          type: 'tool_use',
+          id: 't1',
+          name: 'TodoWrite',
+          input: {
+            todos: [
+              { content: 'Read the code', status: 'completed', activeForm: 'Reading' },
+              { content: 'Write the test', status: 'in_progress', activeForm: 'Writing' },
+            ],
+          },
+        },
+      ]),
+    } as SessionMessage,
+  ])
+  const codex = codexPlanContent({
+    threadId: 'thread-1',
+    turnId: 'turn-1',
+    explanation: null,
+    plan: [
+      { step: 'Read the code', status: 'completed' },
+      { step: 'Write the test', status: 'inProgress' },
+    ],
+  })
+  const { id: _claudeId, ...claudePlan } = claude ?? { id: '' }
+  const { id: _codexId, ...codexPlan } = codex
+  expect(claudePlan).toEqual(codexPlan)
+  expect(codexPlan).toMatchObject({ kind: 'plan', progress: { completed: 1, total: 2 } })
 })

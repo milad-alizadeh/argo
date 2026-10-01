@@ -367,6 +367,7 @@ function SessionComposer({
       />
     ),
     plan: session?.plan ?? null,
+    planProgress: session?.planProgress ?? null,
     projectId,
     commandCwd:
       identity.kind === 'session'

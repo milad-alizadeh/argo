@@ -189,3 +189,19 @@ test('keeps the first committed batch when the second batch fails', async () => 
     client.close()
   }
 })
+
+test('saves a found Model and Effort, and keeps them when a later scan finds none', () => {
+  const { client, database } = createDatabase()
+  const stored = () =>
+    Object.assign({}, client.prepare('SELECT model, effort, mode FROM session').get())
+  try {
+    saveSessionBatch(database, 'codex', [
+      { nativeId: ID, activityAt: 1, model: 'gpt-5.5', effort: 'high' },
+    ])
+    assert.deepEqual(stored(), { model: 'gpt-5.5', effort: 'high', mode: null })
+    saveSessionBatch(database, 'codex', [{ nativeId: ID, activityAt: 2 }])
+    assert.deepEqual(stored(), { model: 'gpt-5.5', effort: 'high', mode: null })
+  } finally {
+    client.close()
+  }
+})
