@@ -7,7 +7,7 @@ import type { HarnessSignInDriver } from '@/domains/harness-signin/main'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
 import type { Harness } from '@/harnesses/harness'
-import { type HarnessInfo, unavailable } from '@/harnesses/harness-catalog'
+import { type HarnessInfo, notInstalled } from '@/harnesses/harness-catalog'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { type AcpAgentEntry, type AcpHarness, byAcpAgent } from './acp-agents'
@@ -21,12 +21,14 @@ const refusePermission = async (request: Parameters<typeof acpPermissionOutcome>
   acpPermissionOutcome(request, 'cancel')
 const handlers = { update: () => {}, requestPermission: refusePermission }
 
-// Where to start the agent, or null when it is not installed.
-function agentCommand(agent: AcpAgentEntry): AcpAgentCommand | null {
-  const executable =
+function findAgentExecutable(agent: AcpAgentEntry): string | null {
+  return (
     process.env[acpExecutableOverride(agent.id)] ??
     (path.isAbsolute(agent.command) ? agent.command : findExecutableOnLoginShellPath(agent.command))
-  if (!executable) return null
+  )
+}
+
+function agentCommand(agent: AcpAgentEntry, executable: string): AcpAgentCommand {
   const environment: NodeJS.ProcessEnv = { ...process.env, ...agent.env }
   for (const name of agent.unsetEnv ?? []) delete environment[name]
   // An agent may be a node script; a GUI launch's bare PATH must still find the node beside it.
@@ -96,7 +98,7 @@ async function readAcpCatalog(
   agent: AcpAgentEntry<Harness>,
   command: AcpAgentCommand | null,
 ): Promise<HarnessInfo> {
-  if (command === null) return unavailable(agent.id)
+  if (command === null) return notInstalled(agent.id, agent.installStep)
   const probe = await probeAcpAgent(command)
   if (probe.kind === 'signed-out')
     return { harness: agent.id, availability: 'unavailable', reason: 'not-signed-in' }
@@ -122,12 +124,13 @@ async function readAcpReadiness(
 
 // Runs the first sign-in method the agent handles itself; Argo offers no terminal sign-in.
 function acpSignInDriver(
-  command: AcpAgentCommand | null,
+  findCommand: () => AcpAgentCommand | null,
   checkReadiness: () => Promise<HarnessReadiness>,
 ): HarnessSignInDriver {
   return {
     checkReadiness,
     async login(signal) {
+      const command = findCommand()
       if (command === null) return 'failed'
       const client = await connectAcpAgent(command, handlers).catch((error: unknown) => {
         console.warn(`The ACP agent did not start for sign-in: ${errorDetail(error)}`)
@@ -165,16 +168,21 @@ export function createAcpRegistration<Id extends Harness>(
   agent: AcpAgentEntry<Id>,
 ): HarnessRegistration<Id> {
   const harness = agent.id
-  const command = agentCommand(agent)
-  const checkReadiness = () => readAcpReadiness(harness, command)
+  let found: string | null = null
+  // Cached once found and looked up again until then, so an install shows on the next read.
+  const command = () => {
+    found ??= findAgentExecutable(agent) || null
+    return found === null ? null : agentCommand(agent, found)
+  }
+  const checkReadiness = () => readAcpReadiness(harness, command())
   return {
     harness,
     checkReadiness,
     signIn: acpSignInDriver(command, checkReadiness),
-    readCatalog: () => readAcpCatalog(agent, command),
-    readHistory: (target) => readAcpHistory(required(command, harness), target),
+    readCatalog: () => readAcpCatalog(agent, command()),
+    readHistory: (target) => readAcpHistory(required(command(), harness), target),
     openLiveSession: (input, controls, emit) =>
-      new AcpSessionChannel(input, emit, { command: required(command, harness), controls }),
+      new AcpSessionChannel(input, emit, { command: required(command(), harness), controls }),
     // ACP agents get no external Sessions: Argo lists only the Sessions it starts.
     listSessionSummaries: async () => ({ records: [], skipped: 0 }),
     getSessionSummary: async () => null,

@@ -5,6 +5,8 @@ export type AcpAgentEntry<Id extends string = string> = {
   // A name found on the login shell's PATH, or an absolute path used as it is.
   command: string
   args: readonly string[]
+  // Reader text naming how to install the agent, shown while it is not found.
+  installStep: string
   env?: Readonly<Record<string, string>>
   // Inherited variables the agent must not see.
   unsetEnv?: readonly string[]
@@ -16,6 +18,8 @@ export const ACP_AGENTS = [
     label: 'Claude ACP',
     command: 'claude-agent-acp',
     args: [],
+    installStep:
+      'Install it with npm install -g @agentclientprotocol/claude-agent-acp, then refresh models.',
     // An inherited API key would switch the subscription sign-in to API billing.
     unsetEnv: ['ANTHROPIC_API_KEY'],
   },

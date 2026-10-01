@@ -30,7 +30,8 @@ export async function readHarnessCatalog(registry: HarnessRegistry): Promise<Har
     Object.values(registry).map(async (registration) => {
       try {
         return await registration.readCatalog()
-      } catch {
+      } catch (error) {
+        console.warn(`The ${registration.harness} catalog read failed:`, error)
         return unavailable(registration.harness)
       }
     }),

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
@@ -24,7 +24,14 @@ afterEach(async () => {
 
 // A test agent is one entry, the same shape as a shipped one.
 function mockAgent(env: Record<string, string> = {}): AcpAgentEntry<'claude-acp'> {
-  return { id: 'claude-acp', label: 'Mock ACP', command: executable, args: [], env }
+  return {
+    id: 'claude-acp',
+    label: 'Mock ACP',
+    command: executable,
+    args: [],
+    installStep: 'Install the mock.',
+    env,
+  }
 }
 
 function start(
@@ -89,6 +96,42 @@ describe('a shipped ACP agent entry', () => {
       state: 'missing',
       detail: null,
     })
+  })
+})
+
+describe('a shipped ACP agent entry without the agent installed', () => {
+  const saved = { SHELL: process.env.SHELL, PATH: process.env.PATH }
+  let bin: string
+
+  beforeEach(async () => {
+    bin = path.join(root, 'bin')
+    await mkdir(bin)
+    // With no login shell, the lookup reads PATH, which holds only this empty folder.
+    process.env.SHELL = ''
+    process.env.PATH = bin
+  })
+
+  afterEach(() => {
+    for (const [key, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[key]
+      else process.env[key] = value
+    }
+  })
+
+  test('names the missing agent and the command that installs it', async () => {
+    expect(await createAcpRegistrations()['claude-acp'].readCatalog()).toEqual({
+      harness: 'claude-acp',
+      availability: 'unavailable',
+      reason: 'not-installed',
+      installStep: expect.stringContaining('npm install -g @agentclientprotocol/claude-agent-acp'),
+    })
+  })
+
+  test('finds the agent on the next read once it is installed', async () => {
+    const registration = createAcpRegistrations()['claude-acp']
+    expect(await registration.readCatalog()).toMatchObject({ reason: 'not-installed' })
+    await writeMockClaudeAcp(bin, path.join(root, 'transcripts'))
+    expect(await registration.readCatalog()).toMatchObject({ availability: 'available' })
   })
 })
 
