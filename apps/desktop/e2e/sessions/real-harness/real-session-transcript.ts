@@ -1,33 +1,29 @@
 import { readdir, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
-import type { HistoryChange } from '@/domains/sessions/api/session-live-event'
+import type { FeedContent } from '@/domains/sessions/api/feed-content'
 
 type TranscriptMatch = { size: number }
 
-// A Harness's own history reader, opened fresh per transcript: it follows the record chain and
-// decodes each line into the same Feed events a real read publishes (ADR-0047).
-export type OpenHistoryReader = () => (lines: readonly string[]) => HistoryChange
+// Decodes a transcript's lines into the Feed content a real read publishes.
+export type TranscriptContent = (lines: readonly string[]) => FeedContent[]
 
 async function transcriptFiles(folder: string): Promise<string[]> {
   const names = await readdir(folder, { recursive: true }).catch(() => [])
   return names.filter((name) => name.endsWith('.jsonl')).map((name) => path.join(folder, name))
 }
 
-function messagesOf(change: HistoryChange) {
-  if (change.type !== 'appended') return []
-  return change.events.flatMap((event) =>
-    event.type === 'content' && event.content.kind === 'message' ? [event.content] : [],
-  )
+function messagesOf(content: readonly FeedContent[]) {
+  return content.flatMap((entry) => (entry.kind === 'message' ? [entry] : []))
 }
 
 async function assistantInTranscript(
   transcript: string,
   prompt: string,
-  openReader: OpenHistoryReader,
+  decode: TranscriptContent,
 ): Promise<TranscriptMatch | null> {
   // A Harness can be part-way through a line; the next poll reads the file whole again.
   const lines = (await readFile(transcript, 'utf8').catch(() => '')).split('\n')
-  const messages = messagesOf(openReader()(lines))
+  const messages = messagesOf(decode(lines))
   const promptAt = messages.findIndex(
     (message) => message.role === 'user' && message.text.includes(prompt),
   )
@@ -39,10 +35,10 @@ async function assistantInTranscript(
 export async function assistantAfterPrompt(
   folder: string,
   prompt: string,
-  openReader: OpenHistoryReader,
+  decode: TranscriptContent,
 ): Promise<TranscriptMatch | null> {
   for (const transcript of await transcriptFiles(folder)) {
-    const matched = await assistantInTranscript(transcript, prompt, openReader)
+    const matched = await assistantInTranscript(transcript, prompt, decode)
     if (matched !== null) return matched
   }
   return null
