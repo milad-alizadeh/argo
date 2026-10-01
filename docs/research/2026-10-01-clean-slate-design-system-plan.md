@@ -4,6 +4,8 @@
 
 Build on the selected shadcn style as the default visual language. Give app-specific decisions explicit owners. Keep theme colors, text recipes, and component behavior separate.
 
+The later [complete component audit](2026-10-01-component-system-audit.md), [file catalog](2026-10-01-component-catalog.md), and [proposed styling contract](2026-10-01-component-styling-contract.md) make the component decisions explicit. Their owner rules refine the illustrative source layout below; they are not active instructions or a published spec.
+
 This plan combines [the source audit](2026-10-01-token-theme-audit.md), [token research](2026-10-01-token-architecture-practices.md), [theme research](2026-10-01-theme-management-practices.md), and [official shadcn workflow research](2026-10-01-shadcn-official-workflows.md). The recommendations are Argo decisions, not requirements imposed by shadcn.
 
 ## 1. Choose one component foundation
