@@ -19,6 +19,7 @@ import { proveSessionDiagram } from './cases/diagram.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
 import { proveNewSessionSkipsUninstalledHarness } from './cases/new-session-harness.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
+import { provePromptLatency } from './cases/prompt-latency.case'
 import { proveRemovedWorkLocation } from './cases/removed-work-location.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveContract } from './cases/session-list-contract.case'
@@ -46,6 +47,10 @@ test.describe('with no Project selected', () => {
 
 test('session-list-contract', async ({ session }) => {
   await proveContract(session.page())
+})
+
+test('session-created-by-click', async ({ session, backend }) => {
+  await proveSessionCreatedByClick(session.page(), backend)
 })
 
 test('session-shell', async ({ session }) => {
@@ -268,6 +273,10 @@ test.describe('with a slow Harness', () => {
 
   test('session-reply-wait', async ({ session, backend }) => {
     await proveReplyWait(session.page(), backend)
+  })
+
+  test('session-prompt-latency', async ({ session, backend }) => {
+    await provePromptLatency(session.page(), backend)
   })
 
   test('session-duplicate-send', async ({ session, backend }) => {
