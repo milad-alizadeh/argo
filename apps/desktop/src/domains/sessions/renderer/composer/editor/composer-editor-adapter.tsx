@@ -3,6 +3,7 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { $createParagraphNode, $getRoot } from 'lexical'
 import { useEffect, useRef } from 'react'
+import { flushSync } from 'react-dom'
 import { composerTransformers } from './session-composer-markdown'
 
 const RESTORE_TAG = 'composer.restore'
@@ -50,7 +51,8 @@ export function ComposerEditorAdapter({
         documentPrompt.current = markdown
         if (markdown !== currentPrompt.current) {
           pendingPrompts.current.push(markdown)
-          onPromptChange(markdown)
+          // Render now: an Enter in the next task sends the draft React holds, not the editor's (#3020).
+          flushSync(() => onPromptChange(markdown))
         }
       }}
     />
