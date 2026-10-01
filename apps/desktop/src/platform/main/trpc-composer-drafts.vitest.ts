@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { eq } from 'drizzle-orm'
-import { afterEach, beforeEach, expect, test } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { composerDraft } from '@/database/composer-draft/schema'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
@@ -105,7 +105,7 @@ function addSession(sessionId: string, overrides: Partial<typeof sessionTable.$i
       nativeId: `native-${sessionId}`,
       projectId,
       workspaceId,
-      cwd: '/original/repo',
+      cwd: userData,
       ...overrides,
     })
     .run()
@@ -384,27 +384,24 @@ test('submits and removes an existing-Session Turn draft', async () => {
         nativeId: 'native-session-1',
         projectId,
         workspaceId,
-        cwd: '/original/repo',
+        cwd: userData,
       },
     },
   })
   await expect(submittingApi.composerDraftRead(created.target)).resolves.toBeNull()
 })
 
-test('retains an existing-Session Turn draft when the supervisor rejects it', async () => {
+test('retains an existing-Session Turn draft when the supervisor rejects it or its folder is gone', async () => {
   const created = await createSessionDraft('session-1')
   const api = caller((event) => {
     if (event.type !== 'Send') throw new Error(`Unexpected event: ${event.type}`)
     event.reply.reject(new Error('Turn failed.'))
   })
 
-  await expect(
-    api.sessionSubmit({
-      draftId: created.id,
-      expectedRevision: created.revision,
-      commandId: 'command-1',
-    }),
-  ).rejects.toThrow('Turn failed.')
+  await expect(submitCreated(api, created)).rejects.toThrow('Turn failed.')
+  await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
+  await rm(userData, { recursive: true, force: true })
+  await expect(submitCreated(api, created)).rejects.toThrow('workspace-missing')
   await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
 })
 
@@ -581,7 +578,7 @@ test('keeps a Session draft present until main accepts the command', async () =>
   addSession('session-1')
   const api = caller()
   const created = await api.composerDraftCreate({ target: sessionTarget('session-1'), content })
-  let accept!: (value: { sessionId: string }) => void
+  let accept: ((value: { sessionId: string }) => void) | undefined
   const submittingApi = caller((event) => {
     if (event.type !== 'Send') throw new Error(`Unexpected event: ${event.type}`)
     accept = event.reply.resolve
@@ -592,9 +589,9 @@ test('keeps a Session draft present until main accepts the command', async () =>
     expectedRevision: created.revision,
     commandId: 'pending-command',
   })
-  await Promise.resolve()
+  await vi.waitFor(() => expect(accept).toBeDefined())
   await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
-  accept({ sessionId: 'session-1' })
+  accept?.({ sessionId: 'session-1' })
   await expect(submission).resolves.toEqual({ sessionId: 'session-1' })
   await expect(api.composerDraftRead(created.target)).resolves.toBeNull()
 })

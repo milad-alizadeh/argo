@@ -75,6 +75,7 @@ export function sessionListCaller({
   const mock = mockSupervisor(sessions)
   const changes = new SessionListChanges()
   const renames: RenameRequest[] = []
+  let reapRequests = 0
   const context = {
     database,
     supervisor: supervisor ?? (mock.supervisor as never),
@@ -83,6 +84,9 @@ export function sessionListCaller({
     rename: async (request: RenameRequest) => {
       renames.push(request)
       await rename(request)
+    },
+    reapManagedWorkspaces: () => {
+      reapRequests += 1
     },
   }
   const stopWatching = watchSessionList(context)
@@ -111,6 +115,7 @@ export function sessionListCaller({
     stopWatching,
     statusChanged: mock.statusChanged,
     renames,
+    reapRequests: () => reapRequests,
   }
 }
 

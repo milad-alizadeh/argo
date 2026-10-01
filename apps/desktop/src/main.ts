@@ -58,6 +58,7 @@ import {
   ticketSyncTiming,
 } from '@/domains/tickets/main/sync'
 import { projectTicketScope } from '@/domains/tickets/main/ticket-connection'
+import { reapManagedWorkspaces } from '@/domains/workspaces/main'
 import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { harnessSchema } from '@/harnesses/harness'
 import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
@@ -244,6 +245,7 @@ function routerForWindow(options: {
             worktreeRoot: path.join(app.getPath('userData'), 'worktrees'),
           }),
         ),
+      reapManagedWorkspaces: () => reapManagedWorktrees(database, actors),
       rename: ({ harness, nativeId, title }) => {
         const rename = registry[harness].rename
         if (rename === undefined) throw new Error(`${harness} Session renaming is unavailable.`)
@@ -388,6 +390,15 @@ function liveChannelCheck(actors: WindowActors) {
       !session.getSnapshot().matches('Closed')
     )
   }
+}
+
+const managedWorktreeReaps = createWriteQueue()
+
+// One sweep at a time, so two never race to remove the same worktree.
+function reapManagedWorktrees(database: Database, actors: WindowActors): void {
+  void managedWorktreeReaps(() =>
+    reapManagedWorkspaces({ database, hasLiveChannel: liveChannelCheck(actors) }),
+  ).catch((error) => console.error('Managed worktree removal failed.', error))
 }
 
 // The Session services the app runs once, not per window: one set of Feed readers, the Session
@@ -586,6 +597,7 @@ async function ready(actor: AppActor): Promise<void> {
     console.error('Ticket write intent recovery failed.', error),
   )
   sessionServices = startSessionServices(requireWindowActors(actor), applicationDatabase, registry)
+  reapManagedWorktrees(applicationDatabase, requireWindowActors(actor))
   createWindow({ actor, database: applicationDatabase, registry, sessionServices })
 
   if (ACCEPTANCE_ENABLED) {

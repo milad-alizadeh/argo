@@ -6,6 +6,7 @@ import { expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
 import type { Harness } from '@/harnesses/harness'
 import { chooseHarness, openNewSessionByClick, sessionListIds } from '../gestures'
+import type { SessionHarnessBackend } from '../session-harness-backend'
 
 const run = promisify(execFile)
 const WORKSPACE_MISSING =
@@ -32,29 +33,45 @@ export async function chooseWorkLocation(page: Page, name: string) {
   await expect(page.getByRole('button', { name: `Work location: ${name}` })).toBeVisible()
 }
 
-// Sends a prompt that main refuses, and expects the reason, the draft kept and no new Session.
-export async function sendRefused(page: Page, prompt: string, reason: string | RegExp) {
-  const known = await sessionListIds(page)
+// Replaces whatever draft the composer kept with the prompt, and sends it.
+async function sendReplacingDraft(page: Page, prompt: string) {
   const composer = page.getByRole('combobox', { name: 'Message' })
   await composer.click()
   await page.keyboard.press('ControlOrMeta+a')
   await page.keyboard.press('Backspace')
   await page.keyboard.type(prompt)
   await page.keyboard.press('Enter')
+  return composer
+}
+
+// Sends a prompt that main refuses, and expects the reason, the draft kept and no new Session.
+export async function sendRefused(page: Page, prompt: string, reason: string | RegExp) {
+  const known = await sessionListIds(page)
+  const composer = await sendReplacingDraft(page, prompt)
 
   await expect(page.getByText(reason)).toBeVisible()
   await expect(composer).toContainText(prompt)
   expect(await sessionListIds(page)).toEqual(known)
 }
 
-async function proveOne(page: Page, project: string, harness: Harness) {
-  const name = `removed-${harness}`
+// Adds a linked worktree and opens a new-Session composer on it for the Harness.
+async function composeInNewWorktree(
+  page: Page,
+  { project, name }: { project: string; name: string },
+  harness: Harness,
+) {
   const worktree = path.join(path.dirname(project), name)
   await git(project, ['worktree', 'add', '--quiet', '-b', name, worktree])
   await reload(page)
   await openNewSessionByClick(page)
   await chooseHarness(page, harness)
   await chooseWorkLocation(page, name)
+  return worktree
+}
+
+async function proveOne(page: Page, project: string, harness: Harness) {
+  const name = `removed-${harness}`
+  const worktree = await composeInNewWorktree(page, { project, name }, harness)
   await git(project, ['worktree', 'remove', '--force', worktree])
 
   await sendRefused(page, `Reply from the removed ${harness} worktree.`, WORKSPACE_MISSING)
@@ -68,7 +85,37 @@ async function proveOne(page: Page, project: string, harness: Harness) {
   await page.keyboard.press('Escape')
 }
 
-export async function proveRemovedWorkLocation(page: Page, project: string) {
+// A saved Session whose folder was removed refuses the resume the same way.
+async function proveResume(
+  page: Page,
+  { project, backend }: { project: string; backend: SessionHarnessBackend },
+  harness: Harness,
+) {
+  const worktree = await composeInNewWorktree(
+    page,
+    { project, name: `resumed-${harness}` },
+    harness,
+  )
+  const known = await sessionListIds(page)
+  const prompt = `Reply from the ${harness} worktree before it is removed.`
+  await sendReplacingDraft(page, prompt)
+  await backend.waitForReply(page, { harness, prompt })
+  await expect
+    .poll(async () => (await sessionListIds(page)).filter((id) => !known.includes(id)))
+    .toHaveLength(1)
+  await git(project, ['worktree', 'remove', '--force', worktree])
+
+  await sendRefused(page, `Reply again from the removed ${harness} worktree.`, WORKSPACE_MISSING)
+}
+
+export async function proveRemovedWorkLocation(
+  page: Page,
+  project: string,
+  backend: SessionHarnessBackend,
+) {
   await git(project, ['commit', '--allow-empty', '--quiet', '-m', 'base'])
-  for (const harness of ['claude', 'codex'] as const) await proveOne(page, project, harness)
+  for (const harness of ['claude', 'codex'] as const) {
+    await proveOne(page, project, harness)
+    await proveResume(page, { project, backend }, harness)
+  }
 }

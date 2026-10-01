@@ -165,6 +165,8 @@ const sessionUpdateInputSchema = z
 
 export type SessionUpdateProcedureContext = SessionUpdateContext & {
   rename: (request: { harness: Harness; nativeId: string; title: string }) => Promise<void>
+  // Runs after an archive, which can be what lets a managed worktree go.
+  reapManagedWorkspaces: () => void
 }
 
 // Renames one saved Session or archives several, and returns the updated IDs. A title goes to the
@@ -182,6 +184,7 @@ export function sessionUpdateProcedure(context: SessionUpdateProcedureContext) {
       const sessionIds = input.sessionIds.filter((sessionId) =>
         updateSession(context, sessionId, { customTitle: input.title, archived: input.archived }),
       )
+      if (input.archived === true && sessionIds.length > 0) context.reapManagedWorkspaces()
       return { sessionIds }
     })
 }

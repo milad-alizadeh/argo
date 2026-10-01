@@ -57,11 +57,10 @@ export type SessionProcedureContext = {
   ) => Promise<{ id: string; path: string }>
   acceptsAttachments: (harness: Harness) => boolean
 }
-type SupervisorDraftRequest = {
+type DraftRequest = {
   context: SessionProcedureContext
   draft: NonNullable<ReturnType<typeof readComposerDraft>>
   command: ReturnType<typeof commandForDraft>
-  reply: { resolve: (value: { sessionId: string }) => void; reject: (error: Error) => void }
 }
 
 function commandForDraft(
@@ -88,16 +87,20 @@ function rejectUnsupportedAttachments(
   })
 }
 
-function isDirectory(folder: string): Promise<boolean> {
-  return stat(folder).then(
+// A Harness given a missing folder fails in its own way, or not at all, so every one stops here.
+async function rejectMissingFolder(folder: string): Promise<void> {
+  const present = await stat(folder).then(
     (found) => found.isDirectory(),
     () => false,
   )
+  if (!present)
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message: 'workspace-missing' satisfies SessionSubmitRejection,
+    })
 }
 
-async function prepareProjectDraft(
-  input: Omit<SupervisorDraftRequest, 'reply'>,
-): Promise<SessionStartInput | null> {
+async function prepareProjectDraft(input: DraftRequest): Promise<SessionStartInput | null> {
   const { context, draft, command } = input
   if (draft.target.type !== 'project') return null
   const target = draft.target
@@ -119,12 +122,7 @@ async function prepareProjectDraft(
       : resolveWorkspacePath(context.database, { projectId: target.projectId, workspaceId }))
   if (workspaceId === null || cwd === null)
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'workspace-not-in-project' })
-  // A Harness given a missing folder fails in its own way, or not at all, so every one stops here.
-  if (!(await isDirectory(cwd)))
-    throw new TRPCError({
-      code: 'PRECONDITION_FAILED',
-      message: 'workspace-missing' satisfies SessionSubmitRejection,
-    })
+  await rejectMissingFolder(cwd)
   return {
     ...command,
     harness: target.harness,
@@ -134,9 +132,9 @@ async function prepareProjectDraft(
   }
 }
 
-function sendSessionDraft(input: SupervisorDraftRequest) {
-  const { context, draft, command, reply } = input
-  if (draft.target.type !== 'session') return
+async function prepareSessionDraft(input: DraftRequest): Promise<SessionSendInput | null> {
+  const { context, draft, command } = input
+  if (draft.target.type !== 'session') return null
   const stored = context.database
     .select({
       harness: sessionTable.harness,
@@ -161,12 +159,8 @@ function sendSessionDraft(input: SupervisorDraftRequest) {
       : null)
   if (cwd === null)
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'missing-session-working-directory' })
-  context.supervisor.send({
-    type: 'Send',
-    intentId: pendingSessionId(draft),
-    input: { ...command, sessionId: draft.target.sessionId, resume: { ...stored, harness, cwd } },
-    reply,
-  })
+  await rejectMissingFolder(cwd)
+  return { ...command, sessionId: draft.target.sessionId, resume: { ...stored, harness, cwd } }
 }
 
 async function sendToSupervisor(
@@ -180,17 +174,24 @@ async function sendToSupervisor(
   }
   const command = commandForDraft(draft, input)
   const request = { context, draft, command }
-  const startInput = draft.target.type === 'project' ? await prepareProjectDraft(request) : null
+  const startInput = await prepareProjectDraft(request)
+  const sendInput = startInput === null ? await prepareSessionDraft(request) : null
   return new Promise((resolve, reject) => {
     const reply = { resolve, reject }
-    if (startInput !== null) {
+    if (startInput !== null)
       context.supervisor.send({
         type: 'Start',
         pendingId: pendingSessionId(draft),
         input: startInput,
         reply,
       })
-    } else sendSessionDraft({ ...request, reply })
+    else if (sendInput !== null)
+      context.supervisor.send({
+        type: 'Send',
+        intentId: pendingSessionId(draft),
+        input: sendInput,
+        reply,
+      })
   })
 }
 

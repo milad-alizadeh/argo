@@ -59,8 +59,8 @@ test('session-shell', async ({ session }) => {
   await proveSessionShell(session.page())
 })
 
-test('session-removed-work-location', async ({ session }) => {
-  await proveRemovedWorkLocation(session.page(), session.fixture.project)
+test('session-removed-work-location', async ({ session, backend }) => {
+  await proveRemovedWorkLocation(session.page(), session.fixture.project, backend)
 })
 
 test('session-refused-start', async ({ session }) => {

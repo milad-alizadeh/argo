@@ -14,7 +14,10 @@
   **id is stable, path is a mutable attribute**, the same id-vs-path split as Project's own.
   Reconciliation against git happens when Workspaces are listed. A new-Session draft names a
   Workspace or requests a new worktree. The Project remembers the last location choice for a new
-  Session, defaulting to a new worktree. See L3 · Workspace for the live git facts an Agent reads
+  Session, defaulting to a new worktree. Argo removes only a **managed** worktree and its branch,
+  at launch and after an archive, once it is clean, holds no commit that no other branch or remote
+  holds, has no live channel, and either its Sessions are all archived or its pushed branch is in
+  the remote default branch. The record stays for the Sessions that name it. See L3 · Workspace for the live git facts an Agent reads
   from the checkout a record points to.
 
 - **Account** — one authenticated identity with a provider: **one OAuth grant, one token in the

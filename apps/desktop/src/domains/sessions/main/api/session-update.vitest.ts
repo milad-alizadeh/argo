@@ -190,7 +190,7 @@ async function idsIn(
 }
 
 test('archiving moves known Sessions to the archived filter and back, skipping an unknown ID', async () => {
-  const { database, list, update, details } = callerWithOneSession()
+  const { database, list, update, details, reapRequests } = callerWithOneSession()
   try {
     assert.deepEqual(await idsIn(list, 'active'), [IDS[0]])
 
@@ -201,9 +201,11 @@ test('archiving moves known Sessions to the archived filter and back, skipping a
     assert.deepEqual(await idsIn(list, 'active'), [])
     assert.deepEqual(await idsIn(list, 'archived'), [IDS[0]])
     assert.deepEqual(await idsIn(list, 'all'), [IDS[0]])
+    assert.equal(reapRequests(), 1)
 
     await update({ sessionIds: [IDS[0]], archived: false })
     assert.equal((await details({ sessionId: IDS[0] }))?.archived, false)
+    assert.equal(reapRequests(), 1)
     assert.deepEqual(await idsIn(list, 'active'), [IDS[0]])
     assert.deepEqual(await idsIn(list, 'archived'), [])
   } finally {
