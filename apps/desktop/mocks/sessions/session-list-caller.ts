@@ -11,12 +11,14 @@ import {
   watchSessionList,
 } from '@/domains/sessions/main/api/session-list'
 import { SessionListChanges } from '@/domains/sessions/main/api/session-list-changes'
+import { watchLinkedTickets } from '@/domains/sessions/main/api/session-list-ticket-changes'
 import {
   type SessionUpdateProcedureContext,
   sessionUpdateProcedure,
 } from '@/domains/sessions/main/api/session-update'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live'
 import { saveReadTicket } from '@/domains/tickets/main/database/ticket-upsert'
+import { TicketChanges } from '@/domains/tickets/main/sync'
 import {
   insertProject,
   insertWorkspace,
@@ -34,7 +36,7 @@ type SessionListChange = inferRouterOutputs<AppRouter>['sessionListChanged']
 type RenameRequest = Parameters<SessionUpdateProcedureContext['rename']>[0]
 
 // The provider scope every test Project's Tickets are saved under.
-const TICKET_SCOPE = { provider: 'github', scope: 'octocat/hello-world' } as const
+export const TICKET_SCOPE = { provider: 'github', scope: 'octocat/hello-world' } as const
 
 function mockSupervisor(sessions: Record<string, unknown>) {
   const statusListeners = new Set<(event: { sessionId: string }) => void>()
@@ -85,7 +87,13 @@ export function sessionListCaller({
       await rename(request)
     },
   }
-  const stopWatching = watchSessionList(context)
+  const stopSessions = watchSessionList(context)
+  const ticketChanges = new TicketChanges()
+  const tickets = watchLinkedTickets(context, ticketChanges)
+  const stopWatching = () => {
+    stopSessions()
+    tickets.stop()
+  }
   const caller = initTRPC
     .create()
     .router({
@@ -108,6 +116,9 @@ export function sessionListCaller({
     details: caller.details,
     changes: subscribeChanges,
     sessionListChanges: changes,
+    ticketChanges,
+    // Settles once the watcher has read every linked Ticket it starts from.
+    ticketsWatched: () => tickets.ready,
     stopWatching,
     statusChanged: mock.statusChanged,
     renames,

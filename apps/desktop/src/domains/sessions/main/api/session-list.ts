@@ -90,10 +90,10 @@ export type SessionListContext = {
   ticketSource: (projectId: string) => Promise<TicketScopeTarget | null>
 }
 
-type LinkedTicketSource = TicketScopeTarget & { projectId: string }
+export type LinkedTicketSource = TicketScopeTarget & { projectId: string }
 
-async function linkedTicketSource(
-  context: SessionListContext,
+export async function linkedTicketSource(
+  context: Pick<SessionListContext, 'ticketSource'>,
   projectId: string,
 ): Promise<LinkedTicketSource | null> {
   const source = await context.ticketSource(projectId)
@@ -210,7 +210,7 @@ function linkedTicketId(database: Database, source: LinkedTicketSource | null): 
 }
 
 // The stored Sessions `where` selects, with their linked Ticket, archive mark and match count.
-function storedSessionQuery(
+export function storedSessionQuery(
   database: Database,
   where: SQL | undefined,
   source: LinkedTicketSource | null,

@@ -2,6 +2,7 @@ export { ExternalSessionPoll, RUNNING_QUIET_LIMIT_MS } from './external-session-
 export { listComposerCommandsFor } from './session-composer-commands'
 export { watchSessionList } from './session-list'
 export { SessionListChanges } from './session-list-changes'
+export { watchLinkedTickets } from './session-list-ticket-changes'
 export { type SessionApiContext, sessionProcedures } from './session-procedures'
 export type { SessionLiveInput, SessionSendInput, SessionStartInput } from './session-submit'
 export { clearWorkingStatuses, updateSession } from './session-update'
