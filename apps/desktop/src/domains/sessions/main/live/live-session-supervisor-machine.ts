@@ -171,9 +171,13 @@ type StartReply = {
 export class SessionSubmitRejectedError extends Error {}
 
 // A Harness that failed before naming its Session never took the Turn; after that, Argo cannot tell.
+function startReachedHarness(nativeId: string | null): boolean {
+  return nativeId !== null
+}
+
 function startFailure(context: { nativeId: string | null; failure: string | null }): Error {
-  if (context.nativeId !== null) return new Error(context.failure ?? 'Session start failed.')
-  console.warn(`Harness failed before it accepted the Session start: ${context.failure}`)
+  if (startReachedHarness(context.nativeId))
+    return new Error(context.failure ?? 'Session start failed.')
   return new SessionSubmitRejectedError('harness-start-failed' satisfies SessionSubmitRejection)
 }
 type CompletedStart =
@@ -792,7 +796,7 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
                 sessionId: event.sessionId,
               },
             }
-          if (event.type === 'Session failed' && event.nativeId !== null)
+          if (event.type === 'Session failed' && startReachedHarness(event.nativeId))
             return {
               ...context.completed,
               [event.pendingId]: {
@@ -913,8 +917,9 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
       }),
       settleFailedCommand: ({ event }) => {
         if (event.type !== 'Session failed') return
-        if (event.nativeId === null) commands.release(event.commandId)
-        else commands.record(event.commandId, 'uncertain')
+        if (startReachedHarness(event.nativeId)) return commands.record(event.commandId, 'uncertain')
+        console.warn(`Harness failed before it accepted the Session start: ${event.failure}`)
+        commands.release(event.commandId)
       },
     },
   }).createMachine({

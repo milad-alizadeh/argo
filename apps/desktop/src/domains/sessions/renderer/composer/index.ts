@@ -1,4 +1,4 @@
-export type { DraftSubmitFailure } from './draft/composer-draft-submit'
+export { type DraftSubmitFailure, PLAIN_REJECTION } from './draft/composer-draft-submit'
 export { type DraftContent, useDurableComposerDraft } from './draft/use-durable-composer-draft'
 export { useSessionPermission } from './hooks/use-session-permission'
 export { useSessionQuestion } from './hooks/use-session-question'

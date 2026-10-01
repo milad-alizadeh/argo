@@ -103,11 +103,7 @@ export function createSessionCommandStore(database: Database) {
       database
         .delete(sessionCommandTable)
         .where(
-          and(
-            eq(sessionCommandTable.commandId, commandId),
-            isNull(sessionCommandTable.sessionId),
-            isNull(sessionCommandTable.nativeId),
-          ),
+          and(eq(sessionCommandTable.commandId, commandId), isNull(sessionCommandTable.nativeId)),
         )
         .run()
     },

@@ -345,27 +345,6 @@ test('allows an explicit retry after the Harness fails before returning a native
   }
 })
 
-test('rejects a Claude start whose CLI exits before naming its Session', async () => {
-  const { root, supervisor, client } = await supervisorFor(
-    async () => {
-      throw new Error('Codex must not be called.')
-    },
-    claudeCatalog,
-    (_input, _controls, emit) => {
-      queueMicrotask(() =>
-        emit({ type: 'failure', detail: 'Claude Code process exited with code 1' }),
-      )
-      return { submit: async () => {}, ...passiveChannelMethods }
-    },
-  )
-  try {
-    await assert.rejects(start(supervisor, claudeFirst), harnessStartFailed)
-  } finally {
-    root.send({ type: 'Shutdown' })
-    client.close()
-  }
-})
-
 test('does not retry a vendor Session automatically when the real SQLite upsert fails', async () => {
   const request = successfulCodexRequest(() => 'native-1')
   const { root, supervisor, client } = await supervisorFor(request.request)

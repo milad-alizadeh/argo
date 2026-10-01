@@ -21,6 +21,7 @@ type PersistedDraft = {
 export type DraftSubmitFailure =
   | { outcome: 'rejected'; reason: SessionSubmitRejection | null }
   | { outcome: 'uncertain' }
+export const PLAIN_REJECTION = { outcome: 'rejected', reason: null } satisfies DraftSubmitFailure
 type DraftSubmitResult = { outcome: 'accepted'; sessionId: string } | DraftSubmitFailure
 export type ComposerDraftActionInput = {
   persist: (content: DraftContent) => Promise<PersistedDraft>
@@ -112,7 +113,7 @@ async function submitDraft({
 }) {
   const editing = input.latestEditing.current
   if (editing === null || turnConfiguration === null || input.owner === null)
-    return { outcome: 'rejected', reason: null } satisfies DraftSubmitResult
+    return PLAIN_REJECTION
   cancelSaveTimer(input.saveTimer, input.owner)
   input.setSendFailure((failure) => (failure?.owner === input.owner ? null : failure))
   const saved = await persistDraft({
@@ -125,7 +126,7 @@ async function submitDraft({
     setSaveFailureOwner: input.setSaveFailureOwner,
   })
   return saved === null
-    ? ({ outcome: 'rejected', reason: null } satisfies DraftSubmitResult)
+    ? PLAIN_REJECTION
     : sendPersistedDraft({
         saved,
         editing,

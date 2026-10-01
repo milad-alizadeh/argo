@@ -87,10 +87,6 @@ function rejectUnsupportedAttachments(
   })
 }
 
-function rejection(reason: SessionSubmitRejection) {
-  return new TRPCError({ code: 'PRECONDITION_FAILED', message: reason })
-}
-
 function isDirectory(folder: string): Promise<boolean> {
   return stat(folder).then(
     (found) => found.isDirectory(),
@@ -108,7 +104,10 @@ async function prepareProjectDraft(
   const created =
     target.workspaceId === null
       ? await context.ensureManagedWorkspace(target.projectId, draft.id).catch(() => {
-          throw rejection('worktree-create-failed')
+          throw new TRPCError({
+            code: 'PRECONDITION_FAILED',
+            message: 'worktree-create-failed' satisfies SessionSubmitRejection,
+          })
         })
       : null
   const workspaceId = created?.id ?? target.workspaceId
@@ -120,7 +119,11 @@ async function prepareProjectDraft(
   if (workspaceId === null || cwd === null)
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'workspace-not-in-project' })
   // A Harness given a missing folder fails in its own way, or not at all, so every one stops here.
-  if (!(await isDirectory(cwd))) throw rejection('workspace-missing')
+  if (!(await isDirectory(cwd)))
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message: 'workspace-missing' satisfies SessionSubmitRejection,
+    })
   return {
     ...command,
     harness: target.harness,

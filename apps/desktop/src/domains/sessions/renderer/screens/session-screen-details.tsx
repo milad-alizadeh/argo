@@ -18,6 +18,7 @@ import {
   composerIdentityOf,
   type DraftContent,
   type DraftSubmitFailure,
+  PLAIN_REJECTION,
   type TurnConfiguration,
   initialTurnConfiguration as turnConfigurationFor,
   useDurableComposerDraft,
@@ -204,7 +205,7 @@ function useSessionComposerSend(input: {
   ) => {
     const result = await input.draft?.submit(prompt, turnConfiguration, attachments)
     if (result?.outcome !== 'accepted') {
-      const failure = result ?? { outcome: 'rejected', reason: null }
+      const failure = result ?? PLAIN_REJECTION
       input.onFailure(failure)
       return failure.outcome
     }
