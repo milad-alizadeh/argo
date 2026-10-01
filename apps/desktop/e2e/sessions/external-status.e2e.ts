@@ -1,4 +1,4 @@
-// A Session running outside Argo shows the status its Harness reports on the Session List, with no Refresh.
+// A Session run outside Argo shows its status on the Session List and its Turns in its Feed.
 import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { _electron as electron, type Page } from 'playwright-core'
@@ -14,6 +14,7 @@ import {
   recordedClaudeAgent,
 } from '../../mocks/cli/claude/mock-claude-agents'
 import { writeMockClaude } from '../../mocks/cli/claude/mock-claude-cli'
+import { claudeProjectFolder } from '../../mocks/cli/claude/mock-claude-transcripts'
 import { MOCK_CODEX_USER_HOOKS_FILE } from '../../mocks/cli/codex/fixtures/mock-codex-skills-config'
 import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { holdCodexWriterLock } from '../../mocks/cli/codex/mock-codex-external-threads'
@@ -21,11 +22,13 @@ import { hookEvent, postHook } from '../../mocks/cli/status-hooks'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
+import { ACTIVE_FEED } from './feed-selectors'
 import { prepare } from './fixtures/feed.fixture'
-import { PERSISTED_ROW } from './gestures'
+import { openSessionByClick, PERSISTED_ROW } from './gestures'
 
 const OLDER = 'Older terminal Session'
 const NEWER = 'Newer terminal Session'
+const TURN_PROMPT = 'Keep going'
 const EARLIER = Date.parse('2026-09-01T09:00:00.000Z')
 const LATER = Date.parse('2026-09-02T09:00:00.000Z')
 
@@ -52,14 +55,30 @@ type StatusSource = {
 const claudeAgents = (root: string) => path.join(root, 'claude-agents.json')
 const claudeConfig = (root: string) => path.join(root, 'claude-config')
 
-// `claude agents --json` lists the Session busy, then idle.
+// `claude agents --json` lists the Session busy, then idle; the transcript holds the Turn's prompt.
 function claudeSource(): StatusSource {
+  let cwd = ''
   const answer = (root: string, session: ExternalSession, status: 'busy' | 'idle') =>
     writeFile(claudeAgents(root), JSON.stringify([recordedClaudeAgent(session.nativeId, status)]))
+  async function writeTurn(root: string, session: ExternalSession) {
+    const folder = claudeProjectFolder(path.join(claudeConfig(root), 'projects'), cwd)
+    await mkdir(folder, { recursive: true })
+    const prompt = {
+      type: 'user',
+      cwd,
+      sessionId: session.nativeId,
+      timestamp: new Date(session.activityAt).toISOString(),
+      uuid: 'terminal-prompt',
+      parentUuid: null,
+      message: { role: 'user', content: [{ type: 'text', text: TURN_PROMPT }] },
+    }
+    await writeFile(path.join(folder, `${session.nativeId}.jsonl`), `${JSON.stringify(prompt)}\n`)
+  }
   return {
     harness: 'claude',
     hooksFile: (root) => claudeSettingsFile({ CLAUDE_CONFIG_DIR: claudeConfig(root) }, root),
     async seed(root, project, sessions) {
+      cwd = project
       const records = sessions.map((session) => ({
         sessionId: session.nativeId,
         summary: session.title,
@@ -75,7 +94,10 @@ function claudeSource(): StatusSource {
     },
     // With no answer, `claude agents --json` fails, and a failed listing leaves every row as it is.
     holdLive: async () => {},
-    openTurn: (root, session) => answer(root, session, 'busy'),
+    async openTurn(root, session) {
+      await writeTurn(root, session)
+      await answer(root, session, 'busy')
+    },
     closeTurn: (root, session) => answer(root, session, 'idle'),
     stop: async () => {},
   }
@@ -104,7 +126,7 @@ function codexSource(): StatusSource {
           {
             id: 'terminal-prompt',
             type: 'userMessage',
-            content: [{ type: 'text', text: 'Keep going' }],
+            content: [{ type: 'text', text: TURN_PROMPT }],
           },
         ],
       },
@@ -236,6 +258,33 @@ for (const createSource of [claudeSource, codexSource]) {
       await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/)
     } finally {
       await application.close()
+      await source.stop()
+    }
+  })
+}
+
+for (const createSource of [claudeSource, codexSource]) {
+  test(`a ${createSource().harness} Session running elsewhere shows its finished Turn in its Feed`, async ({
+    root,
+    applicationUnderTest,
+  }) => {
+    const source = createSource()
+    const { application, page, older } = await launch(root, applicationUnderTest, source)
+    try {
+      const row = rowTitled(page, OLDER)
+      const dot = row.locator('[data-slot="session-status"]')
+      await expect(rowTitled(page, NEWER)).toHaveCount(1, { timeout: 30_000 })
+      await expect(async () => {
+        await source.openTurn(root, older)
+        await expect(dot).toHaveAttribute('data-variant', 'active', { timeout: 3_000 })
+      }).toPass({ timeout: 20_000 })
+      await source.closeTurn(root, older)
+      await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/, { timeout: 10_000 })
+
+      await openSessionByClick(page, String(await row.getAttribute('data-session-id')))
+      await expect(page.locator(ACTIVE_FEED)).toContainText(TURN_PROMPT)
+    } finally {
+      await closeApplication(application)
       await source.stop()
     }
   })
