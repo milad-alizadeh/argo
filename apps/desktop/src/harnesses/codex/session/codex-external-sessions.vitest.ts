@@ -266,13 +266,22 @@ test('a Session whose writer crashed mid-Turn shows unknown', async () => {
   expect((await row(RUNNING)).status).toBe('unknown')
 })
 
-test('the first tick closes every saved Session it does not find live', async () => {
+test('the first tick closes every Session an earlier run saved that it does not find live', async () => {
   saved(RUNNING, { status: 'unknown' })
   saved(OTHER, { status: 'running' })
+  // A poll made now finds these rows as an earlier run left them.
+  poll.stop()
+  startPoll()
   await threads.open(RUNNING)
   await tickAndWrite()
   expect((await row(RUNNING)).status).toBe('unknown')
   expect((await row(OTHER)).status).toBe('idle')
+})
+
+test('a Session saved after startup keeps unknown through the first tick', async () => {
+  saved(OTHER)
+  await tickAndWrite()
+  expect((await row(OTHER)).status).toBe('unknown')
 })
 
 test('a new Session with no row is discovered once, and its status lands once the row exists', async () => {
