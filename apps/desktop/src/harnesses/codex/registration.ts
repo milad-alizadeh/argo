@@ -7,12 +7,10 @@ import { readAutoCompactLimit, writeAutoCompactLimit } from './compaction'
 import { HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV } from './proof-protocol'
 import { createCodexSignInDriver, createSystemCodexReadiness } from './readiness'
 import {
-  codexHistoryOwner,
-  codexHistoryTurn,
+  createCodexExternalSessions,
   createCodexSessionSummaryList,
   createCodexSessionSummaryReader,
   hasCodexSessionTurn,
-  openCodexHistoryReader,
   openCodexSessionChannel,
   readCodexSessionHistory,
   readCodexSkillCommands,
@@ -34,6 +32,7 @@ export function createCodexRegistration(
     readHistory: ({ nativeId, subagentId }) =>
       readCodexSessionHistory(request, subagentId ?? nativeId),
     hasTurn: (nativeId, turnId) => hasCodexSessionTurn(request, nativeId, turnId),
+    externalSessions: createCodexExternalSessions(request, codexHome),
     openLiveSession: (input, controls, emit) =>
       openCodexSessionChannel(input, client, { emit, controls }),
     listCommands: ({ cwd }) => {
@@ -47,12 +46,6 @@ export function createCodexRegistration(
         if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Codex skill shape(s).`)
         return { availability: 'listed' as const, commands }
       })
-    },
-    historyFiles: {
-      directory: path.join(codexHome, 'sessions'),
-      ownerOf: codexHistoryOwner,
-      openReader: openCodexHistoryReader,
-      turnOf: codexHistoryTurn,
     },
     changeableTurnSettings: ['model', 'effort'],
     acceptsAttachments: true,

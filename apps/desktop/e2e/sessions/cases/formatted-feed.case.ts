@@ -102,12 +102,12 @@ async function settledReading(page, drawn) {
 }
 
 export async function proveFormattedFeed(page, fixture: FormattedFixture) {
-  await openSessionByClick(page, await fixtureSession('prose'))
-  await page.waitForSelector(`${ACTIVE_FEED} .feed__viewport [data-feed-row]`)
+  // An external Session's Feed reads its history on open, so the turns are written first.
   const localPicture = path.join(fixture.root, 'formatted-picture.svg')
   await writeFile(localPicture, PICTURE)
   await fixture.append(fixture.transcripts, 'p-formatted', formattedTurn(localPicture))
   await fixture.append(fixture.transcripts, 'p-formatted-after', FOLLOWING_TURN)
+  await openSessionByClick(page, await fixtureSession('prose'))
   const drawn = await firstDrawn(page)
   const settled = await settledReading(page, drawn)
 

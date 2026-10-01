@@ -1,5 +1,3 @@
-import os from 'node:os'
-import path from 'node:path'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { readClaudeHarnessInfo } from './catalog'
@@ -9,13 +7,11 @@ import {
 } from './proof-protocol'
 import { createClaudeSignInDriver, createSystemClaudeReadiness } from './readiness'
 import {
-  claudeHistoryOwner,
-  claudeHistoryTurn,
   claudeSessionChannelOpener,
   claudeSessionRenamer,
+  createClaudeExternalSessions,
   getClaudeSessionSummary,
   listClaudeSessionSummaries,
-  openClaudeHistoryReader,
   readClaudeCommands,
   readClaudeSessionHistory,
 } from './session'
@@ -33,6 +29,7 @@ export function createClaudeRegistration(): HarnessRegistration<'claude'> {
     readCatalog: () => readClaudeHarnessInfo(executable),
     readHistory: ({ nativeId, subagentId, cwd }) =>
       readClaudeSessionHistory(nativeId, cwd, subagentId),
+    externalSessions: createClaudeExternalSessions(executable),
     openLiveSession: claudeSessionChannelOpener(executable),
     listCommands: ({ cwd }) => {
       let rejected = 0
@@ -46,15 +43,6 @@ export function createClaudeRegistration(): HarnessRegistration<'claude'> {
         if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Claude command shape(s).`)
         return { availability: 'listed' as const, commands }
       })
-    },
-    historyFiles: {
-      directory: path.join(
-        process.env.CLAUDE_CONFIG_DIR ?? path.join(os.homedir(), '.claude'),
-        'projects',
-      ),
-      ownerOf: claudeHistoryOwner,
-      openReader: openClaudeHistoryReader,
-      turnOf: claudeHistoryTurn,
     },
     rename: claudeSessionRenamer.rename,
     changeableTurnSettings: [],

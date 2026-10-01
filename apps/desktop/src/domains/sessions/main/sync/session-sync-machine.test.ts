@@ -105,19 +105,15 @@ test('saves each committed batch once and advances progress after each commit', 
   }
 })
 
-test('retries only the failed SQL batch', async () => {
+test('fails on the first failed SQL batch without a retry', async () => {
   const batches: string[][] = []
-  let failSecondBatch = true
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
         fetch: fetchTwoBatchRecords,
         save: fromPromise(async ({ input }) => {
           batches.push(input.records.map((record) => record.nativeId))
-          if (input.records.length === 1 && failSecondBatch) {
-            failSecondBatch = false
-            throw new Error('Locked database.')
-          }
+          if (input.records.length === 1) throw new Error('Locked database.')
         }),
       },
     }),
@@ -125,12 +121,12 @@ test('retries only the failed SQL batch', async () => {
   ).start()
   try {
     actor.send({ type: 'Start' })
-    await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+    await waitFor(actor, (snapshot) => snapshot.matches('Failed'))
     assert.deepEqual(
       batches.map((batch) => batch.length),
-      [50, 1, 1],
+      [50, 1],
     )
-    assert.equal(actor.getSnapshot().context.processed, 51)
+    assert.equal(actor.getSnapshot().context.processed, 50)
   } finally {
     actor.stop()
   }

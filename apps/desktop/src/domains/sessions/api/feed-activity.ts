@@ -2,22 +2,23 @@ import { z } from 'zod'
 import { type FeedContent, toolPresentationKindSchema } from './feed-content'
 import { en as copy } from './locales'
 
-export const feedActivityBaseSchema = z.strictObject({
+// What a Session is doing now, the words the Session List and the Feed both draw (`SessionActivity`).
+export const liveActivitySchema = z.strictObject({
   label: z.string(),
   kind: z.union([toolPresentationKindSchema, z.literal('thought')]),
   open: z.boolean(),
   agentDescription: z.boolean().optional(),
 })
-export const feedActivitySchema = feedActivityBaseSchema.extend({
-  tool: z.string(),
-  target: z.string().nullable(),
-})
-type FeedActivity = z.infer<typeof feedActivitySchema>
+export type LiveActivity = z.infer<typeof liveActivitySchema>
 
-export type FeedActivityState = { activity: FeedActivity | null; callId: string | null }
+export type FeedActivityState = { activity: LiveActivity | null; callId: string | null }
 export const EMPTY_FEED_ACTIVITY: FeedActivityState = { activity: null, callId: null }
 
-function callActivity(content: FeedContent): { id: string; activity: FeedActivity } | null {
+function isOpen(status: string): boolean {
+  return status === 'pending' || status === 'running' || status === 'paused'
+}
+
+function callActivity(content: FeedContent): { id: string; activity: LiveActivity } | null {
   switch (content.kind) {
     case 'tool':
       return {
@@ -28,12 +29,7 @@ function callActivity(content: FeedContent): { id: string; activity: FeedActivit
           ...(content.presentation?.agentDescription === undefined
             ? {}
             : { agentDescription: content.presentation.agentDescription }),
-          open:
-            content.status === 'pending' ||
-            content.status === 'running' ||
-            content.status === 'paused',
-          tool: content.name,
-          target: null,
+          open: isOpen(content.status),
         },
       }
     case 'command':
@@ -42,12 +38,7 @@ function callActivity(content: FeedContent): { id: string; activity: FeedActivit
         activity: {
           label: commandActivityLabel(content.command),
           kind: 'command',
-          open:
-            content.status === 'pending' ||
-            content.status === 'running' ||
-            content.status === 'paused',
-          tool: 'command',
-          target: null,
+          open: isOpen(content.status),
         },
       }
     case 'fileChange':
@@ -56,12 +47,7 @@ function callActivity(content: FeedContent): { id: string; activity: FeedActivit
         activity: {
           label: content.changes.at(-1)?.path ?? content.id,
           kind: 'edited',
-          open:
-            content.status === 'pending' ||
-            content.status === 'running' ||
-            content.status === 'paused',
-          tool: 'fileChange',
-          target: content.changes.at(-1)?.path ?? null,
+          open: isOpen(content.status),
         },
       }
     default:
@@ -87,8 +73,6 @@ export function advanceFeedActivity(
         label: thought.trim(),
         kind: 'thought',
         open: true,
-        tool: 'thought',
-        target: null,
       },
       callId: null,
     }

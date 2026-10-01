@@ -9,7 +9,7 @@ export {
   feedReadingChange,
 } from './feed-reading'
 export { feedReadingRows } from './feed-reading-rows'
-export { FeedRowProjector, feedEntryRows } from './feed-row-entries'
+export { FeedRowProjector, feedEntryRows, projectFeedRowEntries } from './feed-row-entries'
 export { type LiveActivity, liveActivitySchema, type SessionFeedRow } from './feed-rows'
 export {
   type FeedSubagent,

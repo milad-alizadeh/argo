@@ -150,7 +150,7 @@ test('keeps Codex Session identity while syncing title, preview, and cwd changes
   }
 })
 
-test('keeps the first committed batch after the second batch exhausts retries', async () => {
+test('keeps the first committed batch when the second batch fails', async () => {
   const { client, database } = createDatabase()
   const records = Array.from({ length: 51 }, (_value, index) => ({ nativeId: `native-${index}` }))
   let failedBatchAttempts = 0
@@ -183,7 +183,7 @@ test('keeps the first committed batch after the second batch exhausts retries', 
     await waitFor(actor, (snapshot) => snapshot.matches('Failed'))
     assert.equal(client.prepare('SELECT count(*) AS count FROM session').get()?.count, 50)
     assert.equal(actor.getSnapshot().context.processed, 50)
-    assert.equal(failedBatchAttempts, 3)
+    assert.equal(failedBatchAttempts, 1)
   } finally {
     actor.stop()
     client.close()

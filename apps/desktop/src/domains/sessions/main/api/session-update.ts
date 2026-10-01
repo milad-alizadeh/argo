@@ -6,9 +6,11 @@ import { sessionTable } from '@/database/session/schema'
 import { sessionArchive } from '@/database/session-archive/schema'
 import { nextUpdatedAt } from '@/database/timestamp-columns'
 import type { LiveActivity } from '@/domains/sessions/api/feed'
+import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { WORKING_SESSION_STATUSES } from '@/domains/sessions/api/session-live-event'
-import type { Harness } from '@/harnesses/harness'
+import type { Harness, HarnessSession } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
+import { saveSessionSubagents } from '../database'
 import { sessionHistoryIdentity } from '../session-history-identity'
 import type { SessionListChanges } from './session-list-changes'
 
@@ -18,6 +20,8 @@ export type SessionUpdate = {
 } & {
   archived?: boolean
   activity?: LiveActivity | null
+  // Delegation content naming the Session's Subagents.
+  subagents?: readonly FeedContent[]
 }
 
 export type SessionUpdateContext = { database: Database; changes: SessionListChanges }
@@ -71,6 +75,8 @@ export function updateSession(
           .where(and(eq(sessionTable.argoId, sessionId), or(...differs)))
           .run().changes,
       )
+    if (update.subagents !== undefined)
+      changes += saveSessionSubagents(transaction, sessionId, update.subagents)
     if (update.archived === true)
       changes += Number(
         transaction.insert(sessionArchive).values({ sessionId }).onConflictDoNothing().run()
@@ -87,19 +93,24 @@ export function updateSession(
   return written !== undefined
 }
 
-// Updates a Session found by its Harness's own ID. Returns false for one never saved.
-export function updateHarnessSession(
-  context: SessionUpdateContext,
-  session: { harness: Harness; nativeId: string },
-  update: SessionUpdate,
-): boolean {
-  const sessionId = context.database
+// The Argo ID of a Session found by its Harness's own ID, or undefined for one never saved.
+export function harnessSessionId(database: Database, session: HarnessSession): string | undefined {
+  return database
     .select({ id: sessionTable.argoId })
     .from(sessionTable)
     .where(
       and(eq(sessionTable.harness, session.harness), eq(sessionTable.nativeId, session.nativeId)),
     )
     .get()?.id
+}
+
+// Updates a Session found by its Harness's own ID. Returns false for one never saved.
+export function updateHarnessSession(
+  context: SessionUpdateContext,
+  session: HarnessSession,
+  update: SessionUpdate,
+): boolean {
+  const sessionId = harnessSessionId(context.database, session)
   return sessionId !== undefined && updateSession(context, sessionId, update)
 }
 

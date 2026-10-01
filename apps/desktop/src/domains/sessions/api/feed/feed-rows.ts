@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
-import { feedActivityBaseSchema } from '../feed-activity'
+import { liveActivitySchema } from '../feed-activity'
 import {
   feedContentKindSchema,
   SUBAGENT_EVENTS,
@@ -72,8 +72,7 @@ const toolCallSchema = z.strictObject({
 const toolRowSchema = toolCallSchema.extend({ shape: z.literal('tool') })
 
 // What a Session is doing now, the words the Session List and the Feed both draw (`SessionActivity`).
-export const liveActivitySchema = feedActivityBaseSchema
-export type LiveActivity = z.infer<typeof liveActivitySchema>
+export { type LiveActivity, liveActivitySchema } from '../feed-activity'
 
 const subagentRowSchema = z.strictObject({
   shape: z.literal('subagent'),

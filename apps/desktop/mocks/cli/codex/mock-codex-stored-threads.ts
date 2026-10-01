@@ -79,9 +79,11 @@ function readThread(threadId: unknown) {
   return recordedAnswer('thread/read', threadId)?.result
 }
 
-function listTurns(threadId: unknown) {
+// A poll asks for `limit` newest Turns; a Feed read asks for all of them.
+function listTurns(threadId: unknown, limit: unknown) {
   const thread = typeof threadId === 'string' ? started.get(threadId) : undefined
-  if (thread !== undefined) return { data: thread.turns, nextCursor: null }
+  const newest = typeof limit === 'number' ? thread?.turns.slice(-limit) : thread?.turns
+  if (newest !== undefined) return { data: newest, nextCursor: null }
   return recordedAnswer('thread/turns/list', threadId)?.result
 }
 
@@ -103,7 +105,7 @@ export function answerStoredHistory(message: Request, send: Send): boolean {
       answer(message, send, readThread(message.params?.threadId))
       return true
     case 'thread/turns/list':
-      answer(message, send, listTurns(message.params?.threadId))
+      answer(message, send, listTurns(message.params?.threadId, message.params?.limit))
       return true
     case 'thread/loaded/list':
       send({ id: message.id, result: { data: [] } })

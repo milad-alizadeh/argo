@@ -9,7 +9,6 @@ export type { AgentMessageDeltaNotification } from './protocol-generated/v2/agen
 export type { ConfigWriteResponse } from './protocol-generated/v2/config-write-response'
 export type { ReasoningSummaryTextDeltaNotification } from './protocol-generated/v2/reasoning-summary-text-delta-notification'
 export type { SkillMetadata } from './protocol-generated/v2/skill-metadata'
-export type { SubAgentActivityKind } from './protocol-generated/v2/sub-agent-activity-kind'
 export type { Thread } from './protocol-generated/v2/thread'
 export type { ThreadItem } from './protocol-generated/v2/thread-item'
 export type { ThreadListResponse } from './protocol-generated/v2/thread-list-response'
