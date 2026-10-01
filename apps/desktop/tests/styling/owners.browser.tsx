@@ -4,26 +4,18 @@ import { afterEach, beforeAll, describe, expect, test } from 'vitest'
 import { page } from 'vitest/browser'
 import { ComposerEditingProvider } from '@/domains/sessions/renderer/composer/editing/composer-editing-context'
 import { ComposerEditor } from '@/domains/sessions/renderer/composer/editor/session-composer-editor'
-import sessionsCatalog from '@/domains/sessions/renderer/locales/en.json'
 import { Badge } from '@/platform/renderer/components/ui/badge'
-import { initializeRendererI18n } from '@/platform/renderer/i18n/i18n'
 import { AppNavigationRail } from '@/platform/renderer/shell/components/app-navigation-rail'
-import appCatalog from '@/platform/renderer/shell/locales/app.json'
-import { metrics, mountSpecimen } from './browser-fixture'
+import { applyAppearance } from '@/platform/renderer/use-appearance'
+import { initializeShellAndSessionLocales, metrics, mountSpecimen } from './browser-fixture'
 
 let cleanup = () => {}
 afterEach(() => cleanup())
-beforeAll(async () => {
-  await initializeRendererI18n({
-    catalogs: { app: appCatalog, sessions: sessionsCatalog },
-    defaultNamespace: 'app',
-    language: 'en',
-  })
-})
+beforeAll(initializeShellAndSessionLocales)
 
-describe.each(['light', 'dark'])('%s existing owners', (appearance) => {
+describe.each(['light', 'dark'] as const)('%s existing owners', (appearance) => {
   test('the real navigation rail owns all four 20px icons', async () => {
-    document.documentElement.classList.toggle('dark', appearance === 'dark')
+    applyAppearance({ theme: 'neutral', appearance, dark: appearance === 'dark', revision: 0 })
     const mounted = mountSpecimen(
       <MemoryRouter initialEntries={['/projects/styling-fixture/sessions']}>
         <AppNavigationRail />

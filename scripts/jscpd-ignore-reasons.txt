@@ -30,3 +30,7 @@
   apps/desktop/mocks/recordings/*/*/**
     KIND: vendor answers written by `bun run record:vendor-history`. Repeated
     shapes are what the vendor sent; nobody edits them by hand.
+  apps/desktop/tests/styling/fixtures/pristine-dialog.tsx
+    KIND: reviewed shadcn-generated Dialog source used as an independent browser
+    comparator. registry-baseline.test.ts checks its exact recorded source hash.
+    Sharing the production implementation would remove the independent oracle.

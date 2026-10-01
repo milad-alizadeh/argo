@@ -3,23 +3,14 @@ import { afterEach, beforeAll, describe, expect, test } from 'vitest'
 import { page, userEvent } from 'vitest/browser'
 import { SAMPLE_PICTURE } from '@/domains/sessions/renderer/feed/content/feed-samples'
 import { ImageLightbox } from '@/domains/sessions/renderer/feed/content/image-lightbox'
-import sessionsCatalog from '@/domains/sessions/renderer/locales/en.json'
 import * as Registry from '@/platform/renderer/components/ui/dialog'
-import { initializeRendererI18n } from '@/platform/renderer/i18n/i18n'
 import { AppearanceDialog } from '@/platform/renderer/shell/components/appearance-dialog'
-import appCatalog from '@/platform/renderer/shell/locales/app.json'
-import { metrics, mountSpecimen } from './browser-fixture'
+import { initializeShellAndSessionLocales, metrics, mountSpecimen } from './browser-fixture'
 import * as Pristine from './fixtures/pristine-dialog'
 
 let cleanup = () => {}
 afterEach(() => cleanup())
-beforeAll(async () => {
-  await initializeRendererI18n({
-    catalogs: { app: appCatalog, sessions: sessionsCatalog },
-    defaultNamespace: 'app',
-    language: 'en',
-  })
-})
+beforeAll(initializeShellAndSessionLocales)
 
 function specimen(components: typeof Registry) {
   const { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } = components

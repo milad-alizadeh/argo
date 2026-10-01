@@ -3,7 +3,18 @@ import '@fontsource-variable/geist-mono/wght.css'
 import type { ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
+import sessionsCatalog from '@/domains/sessions/renderer/locales/en.json'
+import { initializeRendererI18n } from '@/platform/renderer/i18n/i18n'
+import appCatalog from '@/platform/renderer/shell/locales/app.json'
 import '../../src/platform/renderer/styles/globals.css'
+
+export async function initializeShellAndSessionLocales() {
+  await initializeRendererI18n({
+    catalogs: { app: appCatalog, sessions: sessionsCatalog },
+    defaultNamespace: 'app',
+    language: 'en',
+  })
+}
 
 export function mountSpecimen(content: ReactNode) {
   const container = document.createElement('div')
