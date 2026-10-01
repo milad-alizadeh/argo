@@ -67,7 +67,7 @@ export const Message = kindStory(
   'The Feed is ready.',
 )
 export const Reasoning = kindStory(
-  { kind: 'reasoning', id: 'reasoning', text: 'Inspecting the Session', redacted: false },
+  { kind: 'reasoning', id: 'reasoning', text: 'Inspecting the Session' },
   'Inspecting the Session',
 )
 export const Media: Story = {
@@ -131,11 +131,9 @@ export const Command = kindStory(
     kind: 'command',
     id: 'command',
     command: 'bun test',
-    cwd: '/repo',
     status: 'completed',
     output: '20 pass',
     stderr: null,
-    exitCode: 0,
   },
   'Ran a command',
 )
@@ -147,10 +145,6 @@ export const FileChange = kindStory(
     changes: [{ path: '/repo/feed.ts', change: 'update', diff: '+new line' }],
   },
   'Edited a file',
-)
-export const Search = kindStory(
-  { kind: 'search', id: 'search', query: 'FeedContent', action: null, results: [] },
-  'FeedContent',
 )
 export const Plan = kindStory(
   { kind: 'plan', id: 'plan', text: 'Inspect the Feed' },
@@ -186,9 +180,7 @@ export const Notification = kindStory(
   {
     kind: 'notification',
     id: 'notification',
-    category: 'info',
     text: 'Connected to the Session',
-    priority: null,
   },
   'Connected to the Session',
 )
@@ -216,7 +208,7 @@ export const Marker = kindStory(
   'Conversation compacted',
 )
 export const Refusal = kindStory(
-  { kind: 'refusal', id: 'refusal', reason: 'permission', text: 'Permission denied' },
+  { kind: 'refusal', id: 'refusal', text: 'Permission denied' },
   'Permission denied',
 )
 export const ImageGeneration = kindStory(
@@ -253,11 +245,9 @@ function workStateContents(status: 'running' | 'completed' | 'failed'): FeedCont
       kind: 'command',
       id: `command-${status}`,
       command: 'bun test',
-      cwd: '/repo',
       status,
       output: null,
       stderr: null,
-      exitCode: null,
     },
     { kind: 'fileChange', id: `file-${status}`, status, changes: [] },
     {
@@ -317,7 +307,7 @@ export const FailedWork = workStateStory('failed', 'Failed')
 export const Unsupported: Story = {
   args: {
     feed: catalogFeedContents([
-      { kind: 'reasoning', id: 'redacted', text: null, redacted: true },
+      { kind: 'reasoning', id: 'redacted', text: '' },
       {
         kind: 'media',
         id: 'audio',

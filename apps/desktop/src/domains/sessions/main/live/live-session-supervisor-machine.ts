@@ -262,11 +262,20 @@ function turnConfigurationIsAvailable(
     )
   if (entry?.availability !== 'available') return false
   const model = entry.models.find((candidate) => candidate.value === turnConfiguration.model)
-  return Boolean(
-    model?.efforts.includes(turnConfiguration.effort) &&
-      entry.modes.some((mode) => mode.value === turnConfiguration.mode) &&
-      (model.supportedModes === undefined || model.supportedModes.includes(turnConfiguration.mode)),
+  if (model === undefined && entry.models.length > 0) return false
+  return (
+    offers(model?.efforts ?? [], turnConfiguration.effort) &&
+    offers(
+      entry.modes.map(({ value }) => value),
+      turnConfiguration.mode,
+    ) &&
+    (model?.supportedModes === undefined || model.supportedModes.includes(turnConfiguration.mode))
   )
+}
+
+// A setting the Harness reports no choices for draws no control, so it holds no value to refuse.
+function offers(choices: readonly string[], value: string) {
+  return choices.length === 0 || choices.includes(value)
 }
 
 function acceptsTurnConfigurationChange(

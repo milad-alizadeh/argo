@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 import { createActor, fromPromise } from 'xstate'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import { ACP_HARNESSES } from '@/harnesses/acp/acp-agents'
 import { claudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
@@ -48,7 +49,7 @@ test('returns only the selected Harness as serializable composer choices', async
             harnesses: [
               claudeHarnessInfo(claudeModelCatalogFixture()),
               codexHarnessInfo(codexModelCatalogFixture()),
-              unavailable('claude-acp'),
+              ...ACP_HARNESSES.map((harness) => unavailable(harness)),
             ],
           }),
         ),
@@ -121,7 +122,7 @@ test('repeated reads reuse the settled catalog until an explicit refresh', async
             harnesses: [
               claudeHarnessInfo(claudeModelCatalogFixture()),
               codexHarnessInfo(codexModelCatalogFixture()),
-              unavailable('claude-acp'),
+              ...ACP_HARNESSES.map((harness) => unavailable(harness)),
             ],
           })
         }),
@@ -154,7 +155,7 @@ test('retry reloads a failed catalog once', async () => {
             harnesses: [
               claudeHarnessInfo(claudeModelCatalogFixture()),
               codexHarnessInfo(null),
-              unavailable('claude-acp'),
+              ...ACP_HARNESSES.map((harness) => unavailable(harness)),
             ],
           })
         }),

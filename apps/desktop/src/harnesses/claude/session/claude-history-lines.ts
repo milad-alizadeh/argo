@@ -1,8 +1,8 @@
 import path from 'node:path'
-import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
+import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { HistoryChange, HistoryTurn, HistoryTurnMarker } from '@/harnesses/registration'
-import { decodeClaudeHistoryContent } from './claude-feed-decoder'
+import { claudeFeedContent } from './claude-feed'
 import { ClaudeFeedProjection } from './claude-feed-projection'
 
 const CLOSING_STOP_REASONS = new Set(['end_turn', 'stop_sequence'])
@@ -74,7 +74,7 @@ function contentEvents(
   if (typeof uuid !== 'string' || uuid === '') return []
   if (isMeta === true || isSidechain === true || teamName !== undefined) return []
   const message = { ...record, session_id: '', parent_tool_use_id: null }
-  const decoded = decodeClaudeHistoryContent(message as SessionMessage, reject)
+  const decoded = claudeFeedContent(message as unknown as SDKMessage, reject)
   return decoded
     .flatMap((content) => projection.project(content))
     .map((content) => ({

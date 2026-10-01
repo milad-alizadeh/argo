@@ -1,6 +1,7 @@
 import { expect, test, vi } from 'vitest'
 import { waitFor } from 'xstate'
 import { databaseFrom } from '@/database/database'
+import { ACP_HARNESSES } from '@/harnesses/acp/acp-agents'
 import type { CodexRequest } from '@/harnesses/codex/app-server'
 import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
 import {
@@ -22,7 +23,7 @@ const twoEffortCatalog = harnessCatalogSchema.parse({
   harnesses: [
     unavailable('claude'),
     { ...available, models: [{ ...model, efforts: [openingEffort, 'deep'] }] },
-    unavailable('claude-acp'),
+    ...ACP_HARNESSES.map((harness) => unavailable(harness)),
   ],
 })
 

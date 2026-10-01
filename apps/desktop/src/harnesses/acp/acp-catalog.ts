@@ -9,11 +9,14 @@ import {
 
 type ModeIcon = AvailableHarness['modes'][number]['icon']
 
-// What a concrete ACP Harness names itself and how it draws the modes its agent reports.
-export type AcpCatalogPresentation = {
-  agent: string
-  label: string
-  modeIcon: (value: string) => ModeIcon
+// Mode names agents commonly report; any other mode draws as the manual one.
+const MODE_ICONS: Readonly<Record<string, ModeIcon>> = {
+  default: 'mode-manual',
+  acceptEdits: 'mode-accept-edits',
+  plan: 'mode-plan',
+  auto: 'mode-auto',
+  dontAsk: 'mode-dont-ask',
+  bypassPermissions: 'mode-bypass-permissions',
 }
 
 // The session config categories ACP reserves for the controls Argo's composer draws.
@@ -63,17 +66,16 @@ export function acpConfigSelect(options: readonly unknown[], category: string): 
 
 const exactReading = (value: string) => ({ exact: [value], prefixes: [] })
 
-// Projects the config options a fresh ACP Session reports into the composer's catalog.
+// Projects a fresh Session's config options into the catalog; an unreadable one counts in `rejected`.
 export function acpHarnessInfo(
   harness: Harness,
   configOptions: readonly unknown[],
-  presentation: AcpCatalogPresentation,
-): HarnessInfo {
+  label: string,
+): { info: HarnessInfo; rejected: number } {
   const readings = Object.values(ACP_TURN_SETTING_CATEGORIES).map((category) =>
     acpConfigSelect(configOptions, category),
   )
-  const invalid = readings.find((reading) => reading.kind === 'invalid')
-  if (invalid?.kind === 'invalid') return invalidCatalogResponse(harness, invalid.error)
+  const rejected = readings.filter((reading) => reading.kind === 'invalid').length
   const [model, effort, mode] = readings.map((reading) =>
     reading.kind === 'reported' ? reading.select : null,
   )
@@ -81,9 +83,9 @@ export function acpHarnessInfo(
   const parsed = harnessInfoSchema.safeParse({
     harness,
     availability: 'available',
-    agent: presentation.agent,
-    label: presentation.label,
-    defaultModelId: model?.currentValue,
+    agent: label,
+    label,
+    defaultModelId: model?.currentValue ?? 'default',
     models: (model?.choices ?? []).map((choice) => ({
       value: choice.value,
       label: choice.name,
@@ -101,14 +103,17 @@ export function acpHarnessInfo(
       value: choice.value,
       label: choice.name,
       detail: choice.description ?? '',
-      icon: presentation.modeIcon(choice.value),
+      icon: MODE_ICONS[choice.value] ?? 'mode-manual',
       readings: exactReading(choice.value),
     })),
     opening: {
-      model: model?.currentValue,
+      model: model?.currentValue ?? 'default',
       effort: effort?.currentValue ?? 'default',
       mode: mode?.currentValue ?? 'default',
     },
   })
-  return parsed.success ? parsed.data : invalidCatalogResponse(harness, parsed.error)
+  return {
+    info: parsed.success ? parsed.data : invalidCatalogResponse(harness, parsed.error),
+    rejected,
+  }
 }

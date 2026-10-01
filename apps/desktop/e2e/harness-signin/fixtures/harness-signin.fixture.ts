@@ -8,8 +8,8 @@ import type { ElectronApplication, Page } from 'playwright-core'
 import { openDatabase } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV } from '@/domains/harness-signin/contract/proof-protocol'
+import { acpExecutableOverride } from '@/harnesses/acp/acp-proof-protocol'
 import { HARNESS_SIGNIN_CLAUDE_EXECUTABLE_ENV } from '@/harnesses/claude/proof-protocol'
-import { SESSION_CLAUDE_ACP_EXECUTABLE_ENV } from '@/harnesses/claude-acp/proof-protocol'
 import { HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { writeMockClaudeReadinessCli } from '../../../mocks/cli/claude/mock-claude-readiness-cli'
 import { writeMockCodexReadinessCli } from '../../../mocks/cli/codex/mock-codex-readiness-cli'
@@ -120,7 +120,7 @@ export const test = packagedTest.extend<{
   harnessSignIn: async ({ applicationUnderTest, harnessSignInScenario, root }, use) => {
     const fixture = await prepareReadyProject(root, applicationUnderTest)
     const environment = {
-      [SESSION_CLAUDE_ACP_EXECUTABLE_ENV]: MISSING,
+      [acpExecutableOverride('claude-acp')]: MISSING,
       ...(await environmentFor(root, harnessSignInScenario)),
     }
     const application = await launch(fixture, environment)
