@@ -37,6 +37,8 @@ export type ExternalSessionPollContext = SessionUpdateContext & {
   hasLiveChannel: (sessionId: string) => boolean
   // A live external Session with no saved row.
   discover: (session: HarnessSession) => void
+  // Reads an open Feed again; a closed one reads nothing.
+  refreshFeed: (sessionId: string) => void
 }
 
 // What a transcript stat compares between ticks; Argo reads none of the file's content.
@@ -114,6 +116,8 @@ export class ExternalSessionPoll {
   readonly #failing = new Set<Harness>()
   // Each Harness's last reported count of unrecognised live records, so a count is reported once.
   readonly #rejected = new Map<Harness, number>()
+  // Sessions a status hook fired for, even before the first listing; a tick reads no Feed for them.
+  readonly #hooked = new Set<string>()
   readonly #pending = new Map<string, { session: HarnessSession; update: SessionUpdate }>()
   readonly #reads = new Map<string, ReadState>()
   readonly #queue: HarnessSession[] = []
@@ -184,6 +188,7 @@ export class ExternalSessionPoll {
       return
     }
     if (this.#context.hasLiveChannel(sessionId)) return
+    this.#hooked.add(harnessSessionKey(session))
     // Before the first listing there is no live map, so that listing still closes stale rows.
     const live = this.#live.get(harness)
     const tracked = live?.get(session.nativeId) ?? newTracked(null, null)
@@ -229,11 +234,22 @@ export class ExternalSessionPoll {
       if (sessionId === undefined) this.#discover(session, tracked)
       if (external.readActivity !== undefined) await this.#readChange(session, tracked)
       this.#show(session, tracked, Date.now())
+      this.#refreshUnstamped(session, sessionId, tracked)
     }
     for (const [nativeId, tracked] of previous ?? [])
       if (!current.has(nativeId))
         this.#leave({ harness, nativeId }, tracked, external.readActivity !== undefined)
     if (previous === undefined) this.#closeAll(harness, current)
+  }
+
+  // No transcript means no activity write, so an open Feed with no hook yet reads each tick.
+  #refreshUnstamped(
+    session: HarnessSession,
+    sessionId: string | undefined,
+    tracked: TrackedSession,
+  ): void {
+    if (sessionId === undefined || tracked.transcript !== null) return
+    if (!this.#hooked.has(harnessSessionKey(session))) this.#context.refreshFeed(sessionId)
   }
 
   #reportRejected(harness: Harness, rejected: number): void {
@@ -302,8 +318,7 @@ export class ExternalSessionPoll {
     if (this.#stopped) return
     const key = harnessSessionKey(session)
     const pending = this.#pending.get(key)?.update
-    const subagents = [...(pending?.subagents ?? []), ...(update.subagents ?? [])]
-    this.#pending.set(key, { session, update: { ...pending, ...update, subagents } })
+    this.#pending.set(key, { session, update: { ...pending, ...update } })
     this.#writeTimer ??= setTimeout(() => this.flush(), WRITE_WINDOW_MS)
   }
 
@@ -365,9 +380,7 @@ export class ExternalSessionPoll {
   #receive(session: HarnessSession, reading: ExternalActivityReading | null): void {
     if (reading !== null) {
       const { activity } = projectFeedRowEntries({ history: reading.turn, live: [] })
-      const subagents = reading.turn.filter((content) => content.kind === 'delegation')
-      if (activity !== null || subagents.length > 0)
-        this.#update(session, { ...(activity === null ? {} : { activity }), subagents })
+      if (activity !== null) this.#update(session, { activity })
     }
     const tracked = this.#tracked(session)
     if (tracked === undefined) {
