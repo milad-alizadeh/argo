@@ -210,12 +210,11 @@ function useSessionComposerSend(input: {
       pendingId = pendingSessionId(saved)
       input.onStartingSession(pendingId)
     }
-    const starts = input.identity.kind === 'draft'
     const result = await input.draft?.submit({
       prompt,
       turnConfiguration,
       attachments,
-      ...(starts ? { onSaved } : {}),
+      ...(input.identity.kind === 'draft' ? { onSaved } : {}),
     })
     if (result?.outcome !== 'accepted') {
       input.onStartingSession(null)
