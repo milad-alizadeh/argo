@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import { feedRowLabels } from '@/mocks/sessions/feed-row-labels'
 import type { FeedContent } from '../feed-content'
 import type { SessionLiveEvent } from '../session-live-event'
 import { projectLiveFeedRows } from './live-feed-rows'
@@ -40,10 +41,7 @@ test('updates one status row by vendor identity', () => {
 test('draws a Turn prompt before the Turn status its Harness reported first', () => {
   const prompt: FeedContent = { id: 'prompt-1', kind: 'message', role: 'user', text: 'Go' }
   const reply: FeedContent = { id: 'reply-1', kind: 'message', role: 'assistant', text: 'Done' }
-  const drawn = (events: SessionLiveEvent[]) =>
-    projectLiveFeedRows([], events).map((row) =>
-      'role' in row ? row.role : 'text' in row && row.text,
-    )
+  const drawn = (events: SessionLiveEvent[]) => feedRowLabels(projectLiveFeedRows([], events))
   const promptFirst = [
     content(1, prompt),
     status(2, 'running'),
@@ -58,6 +56,26 @@ test('draws a Turn prompt before the Turn status its Harness reported first', ()
   ]
   expect(drawn(statusFirst)).toEqual(['user', 'running', 'assistant', 'idle'])
   expect(drawn(statusFirst)).toEqual(drawn(promptFirst))
+})
+
+test('keeps a Turn status above a later user row of the same command', () => {
+  const interrupted: FeedContent = {
+    id: 'interrupt-1',
+    kind: 'message',
+    role: 'user',
+    text: '[Request interrupted by user]',
+  }
+  const rows = projectLiveFeedRows(
+    [],
+    [
+      content(1, { id: 'prompt-1', kind: 'message', role: 'user', text: 'Go' }),
+      status(2, 'running'),
+      content(3, { id: 'reply-1', kind: 'message', role: 'assistant', text: 'Partial' }),
+      content(4, interrupted),
+      status(5, 'idle'),
+    ],
+  )
+  expect(feedRowLabels(rows)).toEqual(['user', 'running', 'assistant', 'user', 'idle'])
 })
 
 function question(

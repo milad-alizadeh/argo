@@ -530,23 +530,25 @@ function isPromptRow({ row }: LiveRow): boolean {
   return row.shape === 'prose' && row.role === 'user'
 }
 
-// A command's status rows follow its prompt, whichever its Harness reports first (#3161).
+// A command's status rows follow its first prompt, whichever its Harness reports first (#3161).
 function promptsBeforeTheirStatus(rows: readonly LiveRow[]): LiveRow[] {
   const ordered: LiveRow[] = []
+  const prompted = new Set<string>()
   for (const live of rows) {
-    if (live.commandId === null || !isPromptRow(live)) {
+    const { commandId } = live
+    if (commandId === null || !isPromptRow(live) || prompted.has(commandId)) {
       ordered.push(live)
       continue
     }
+    prompted.add(commandId)
     let start = ordered.length
-    while (start > 0) {
-      const previous = ordered[start - 1]
-      if (previous === undefined || previous.commandId !== live.commandId || isPromptRow(previous))
-        break
-      start -= 1
-    }
-    const turn = ordered.splice(start)
-    ordered.push(...turn.filter((row) => !isStatusRow(row)), live, ...turn.filter(isStatusRow))
+    while (start > 0 && ordered[start - 1]?.commandId === commandId) start -= 1
+    const commandRows = ordered.splice(start)
+    ordered.push(
+      ...commandRows.filter((row) => !isStatusRow(row)),
+      live,
+      ...commandRows.filter(isStatusRow),
+    )
   }
   return ordered
 }

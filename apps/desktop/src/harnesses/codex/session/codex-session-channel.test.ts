@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
 import type { LiveSessionChannelEvent } from '@/harnesses/registration'
 import { recordedCodexNotifications as recorded } from '@/mocks/recordings/codex-app-server'
+import { feedRowLabels } from '@/mocks/sessions/feed-row-labels'
 import {
   mockCodexChannel,
   mockLiveEvents,
@@ -262,22 +263,28 @@ test('Codex controls answer vendor requests and interrupt the active Turn', asyn
   channel.close()
 })
 
-test('Codex channel projects recorded app-server notifications', async () => {
+// An app-server that starts the recorded thread and answers `turn/start` once `answered` settles.
+function recordedTurnRequest(answered: Promise<void> = Promise.resolve()): CodexRequest {
   const threadId = recorded.messages[0]?.params.threadId
-  const started = recorded.messages.find((message) => message.method === 'turn/started')
-  const turnId = started?.params.turn?.id
+  const turnId = recorded.messages.find((message) => message.method === 'turn/started')?.params.turn
+    ?.id
   assert.ok(threadId)
   assert.ok(turnId)
-  const request = (async (method: string, _params: unknown, parse: (value: unknown) => unknown) => {
+  return (async (method: string, _params: unknown, parse: (value: unknown) => unknown) => {
     switch (method) {
       case 'thread/start':
         return parse({ thread: { id: threadId } })
       case 'turn/start':
+        await answered
         return parse({ turn: { id: turnId } })
       default:
         throw new Error(`Unexpected request: ${method}`)
     }
   }) as CodexRequest
+}
+
+test('Codex channel projects recorded app-server notifications', async () => {
+  const request = recordedTurnRequest()
   const { channel, events, notify, subscribed } = mockCodexChannel(request)
   await new Promise((resolve) => setImmediate(resolve))
   assert.equal(subscribed(), true)
@@ -545,7 +552,7 @@ test('Codex thread status reaches the Session status without repeats (ADR-0024)'
 
 const SAMPLE_TURN_ORDER = ['user', 'running', 'assistant', 'idle']
 
-// Finishes the sample Turn and closes the channel; returns its prompt, status and reply rows in Feed order.
+// Finishes the sample Turn and closes the channel; returns its labelled rows in Feed order.
 function finishSampleTurn({
   channel,
   events,
@@ -557,34 +564,29 @@ function finishSampleTurn({
     params: { threadId: 'thread-1', turn: { id: 'turn-1', status: 'completed' } },
   })
   channel.close()
-  return projectLiveFeedRows([], mockLiveEvents(events)).flatMap((row) => {
-    if (row.shape === 'event' && row.event === 'liveStatus') return [row.text]
-    return row.shape === 'prose' ? [row.role] : []
-  })
+  return feedRowLabels(projectLiveFeedRows([], mockLiveEvents(events)))
 }
 
-// A Codex Turn draws prompt, Running, reply, Idle, the order a Claude Turn draws (#3161).
+// A Codex Turn draws prompt, Running, reply, Idle, the order every Harness draws (#3161).
 test('a completed Codex Turn draws Running before the reply and Idle after it', async () => {
   assert.deepEqual(finishSampleTurn(await openOneTurnChannel()), SAMPLE_TURN_ORDER)
 })
 
-// The app-server can report the thread active before it answers `turn/start` (#3161).
-test('a Codex Turn reported active before its turn/start response draws the same order', async () => {
+// The recorded Turn reports the thread active before its prompt, here before `turn/start` answers too.
+test('a recorded Codex Turn answered after its notifications draws the same order', async () => {
   let answerTurnStart = () => {}
-  const request = (async (method: string, _params: unknown, parse: (value: unknown) => unknown) => {
-    if (method === 'thread/start') return parse({ thread: { id: 'thread-1' } })
-    await new Promise<void>((resolve) => {
-      answerTurnStart = resolve
-    })
-    return parse({ turn: { id: 'turn-1' } })
-  }) as CodexRequest
-  const opened = mockCodexChannel(request)
-  await new Promise((resolve) => setImmediate(resolve))
-  opened.notify({
-    method: 'thread/status/changed',
-    params: { threadId: 'thread-1', status: { type: 'active', activeFlags: [] } },
+  const answered = new Promise<void>((resolve) => {
+    answerTurnStart = resolve
   })
+  const request = recordedTurnRequest(answered)
+  const { channel, events, notify } = mockCodexChannel(request)
+  await new Promise((resolve) => setImmediate(resolve))
+  for (const message of recorded.messages) notify(message as WireMessage)
   answerTurnStart()
   await new Promise((resolve) => setImmediate(resolve))
-  assert.deepEqual(finishSampleTurn(opened), SAMPLE_TURN_ORDER)
+  channel.close()
+  assert.deepEqual(
+    feedRowLabels(projectLiveFeedRows([], mockLiveEvents(events))),
+    SAMPLE_TURN_ORDER,
+  )
 })
