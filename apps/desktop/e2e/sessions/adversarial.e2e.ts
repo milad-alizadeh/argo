@@ -1,6 +1,6 @@
 // The Session contracts under the mock CLIs' seeded jitter, split bytes, stalls and failures.
 import { createSessionByClick } from './gestures'
-import { sessionRows } from './page-trpc'
+import { sessionDetails, sessionRows } from './page-trpc'
 import { expect, test } from './session-proof-run'
 
 async function statusFor(page: Parameters<typeof createSessionByClick>[0], sessionId: string) {
@@ -9,8 +9,7 @@ async function statusFor(page: Parameters<typeof createSessionByClick>[0], sessi
 }
 
 async function postureFor(page: Parameters<typeof createSessionByClick>[0], sessionId: string) {
-  const rows = await sessionRows(page)
-  return rows.find((session) => session.id === sessionId)?.posture ?? null
+  return (await sessionDetails(page, sessionId))?.posture ?? null
 }
 
 test.describe('session-adversarial', () => {
@@ -40,10 +39,14 @@ test.describe('session-adversarial', () => {
 test.describe('session-adversarial-stall', () => {
   test.use({ adversarialSeed: 'seed-17' })
 
-  test('shows the stalled reading for a Codex Turn with no Feed row', async ({ session }) => {
+  // A Turn that never replies keeps the running loader past the stall bound, with no Retry (#3170).
+  test('keeps the running loader for a Codex Turn that never replies', async ({ session }) => {
     const page = session.page()
     await createSessionByClick(page, { harness: 'codex', prompt: 'Stall this Turn.' })
-    await expect(page.locator('[data-state="stalled"]')).toBeVisible({ timeout: 12_000 })
+    // Past the Feed's 8 s stall bound (FEED_STALL_TIMEOUT_MS).
+    await page.waitForTimeout(10_000)
+    await expect(page.getByRole('status', { name: 'Loading this Session' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Retry' })).toHaveCount(0)
   })
 })
 

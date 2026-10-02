@@ -6,8 +6,10 @@ import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
+import { USAGE_BUTTON, USAGE_WATCH, usageLabels } from './cases/first-send-labels.case'
 import { prepare } from './fixtures/feed.fixture'
-import { chooseHarness, PERSISTED_ROW } from './gestures'
+import { chooseHarness, openNewSessionByClick, PERSISTED_ROW } from './gestures'
+import { watchLabels } from './label-watch'
 
 async function prepareCodexApp(root: string, applicationUnderTest: string) {
   const fixture = await prepare(root, applicationUnderTest, { projectSelected: true })
@@ -48,9 +50,11 @@ test('packaged Codex live feed resumes from app-server history', async ({
   const launch = await prepareCodexApp(root, applicationUnderTest)
   const first = await launch()
   let sessionId: string
+  let codexUsage: string | null
   try {
     await first.page.getByRole('button', { name: 'New Session', exact: true }).click()
     await chooseHarness(first.page, 'codex')
+    codexUsage = await first.page.locator(USAGE_BUTTON).getAttribute('aria-label')
     await first.page.getByRole('combobox', { name: 'Message' }).fill('First Codex turn')
     await first.page.keyboard.press('Enter')
     const created = first.page.locator(PERSISTED_ROW).filter({ hasText: 'First Codex turn' })
@@ -60,19 +64,31 @@ test('packaged Codex live feed resumes from app-server history', async ({
     await expect(first.page.locator(`.feed__viewport[data-session="${sessionId}"]`)).toContainText(
       'Codex replied to: First Codex turn',
     )
+    // The restart restores this route, so the row click below opens the Session with nothing loaded.
+    await openNewSessionByClick(first.page)
   } finally {
     await closeApplication(first.application)
   }
   const second = await launch()
   try {
-    await second.page
-      .locator(`nav[aria-label="Sessions"] button[data-session-id="${sessionId}"]`)
-      .click()
+    const row = second.page.locator(
+      `nav[aria-label="Sessions"] button[data-session-id="${sessionId}"]`,
+    )
+    await row.waitFor()
+    // Opened after a restart, the footer never shows another Harness's usage (#3172).
+    await second.page.evaluate(watchLabels, USAGE_WATCH)
+    await row.click()
     const feed = second.page.locator(`.feed__viewport[data-session="${sessionId}"]`)
     await expect(feed).toContainText('Codex replied to: First Codex turn')
+    await expect.poll(() => usageLabels(second.page)).toEqual([codexUsage])
     await send(second.page, 'Second Codex turn')
     await expect(feed).toContainText('Codex replied to: Second Codex turn')
     await expect(feed.getByText('Codex replied to: First Codex turn')).toHaveCount(1)
+    // A reload keeps the Session route with nothing loaded, as a deep link does (#3182).
+    await second.page.addInitScript(watchLabels, USAGE_WATCH)
+    await second.page.reload()
+    await expect(feed).toContainText('Codex replied to: Second Codex turn')
+    await expect.poll(() => usageLabels(second.page)).toEqual([codexUsage])
   } finally {
     await closeApplication(second.application)
   }

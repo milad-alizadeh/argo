@@ -135,12 +135,15 @@ export const accountListing = (page: Page) =>
     window.argo.trpc({ id: 0, path: 'accountList', type: 'query', input: undefined }),
   )
 
-// The main process owns the window, so only it can show or hide it as a person would.
+// The main process owns the window, so only it can show or hide it; main sees a real show and hide.
 export const showWindow = (application: ElectronApplication, shown: boolean) =>
   application.evaluate(({ BrowserWindow }, show) => {
     const window = BrowserWindow.getAllWindows()[0]
-    if (show) window?.showInactive()
-    else window?.hide()
+    if (!show) return window?.hide()
+    // Transparent and click-through, so a run never covers the desktop of the person at the machine.
+    window?.setOpacity(0)
+    window?.setIgnoreMouseEvents(true)
+    window?.showInactive()
   }, shown)
 
 // One committed Ticket by native ID: its Argo ID, closure and the time its deletion was confirmed.

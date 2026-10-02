@@ -4,11 +4,12 @@ import type { RouterOutputs } from '@/platform/renderer/trpc-client'
 
 export type SessionListResult = RouterOutputs['sessionList']
 export type Session = SessionListResult['rows'][number]
+export type SessionDetails = NonNullable<RouterOutputs['sessionDetails']>
 export type SessionId = Session['id']
-export type SessionPosture = NonNullable<Session['posture']>
+export type SessionPosture = NonNullable<SessionDetails['posture']>
 export type SessionActivity = NonNullable<Session['activity']>
 export type SessionTicket = NonNullable<Session['ticket']>
-export type SessionTurnConfiguration = Session['turnConfiguration']
+export type SessionTurnConfiguration = SessionDetails['turnConfiguration']
 export type PlanEntryStatus = 'pending' | 'in_progress' | 'completed'
 export type SessionPlan =
   | {
@@ -37,9 +38,6 @@ export type SessionExtras = {
   plan?: SessionPlan | null
   // #2970 lists the shell commands.
   shell?: SessionShellCommand[]
-  // #2968 reports context usage.
-  contextTokens?: number | null
-  contextWindowTokens?: number | null
   // #2969 reports the handoff links.
   handoffTo?: string | null
   handoffFrom?: string | null

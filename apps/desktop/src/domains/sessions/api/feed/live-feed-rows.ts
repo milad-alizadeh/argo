@@ -3,7 +3,7 @@ import type { FeedContent, MediaSource } from '../feed-content'
 import type { SessionLiveEvent } from '../session-live-event'
 import type { BackgroundState } from './background-task-record'
 import { checkedDataImageUrl, dataImageUrl, fileImageUrl } from './feed-images'
-import type { SessionFeedRow } from './feed-rows'
+import { isLiveStatusRow, type SessionFeedRow } from './feed-rows'
 import { fileChangeRows } from './file-change-rows'
 import { derivedId } from './fingerprint'
 
@@ -57,6 +57,16 @@ function toolContentRow(content: Extract<FeedContent, { kind: 'tool' }>): Sessio
     evidence: outputEvidence(title, source),
     text: content.presentation?.text ?? null,
   }
+}
+
+// A recorded question call draws as its question, answered once the call has the Harness's reply.
+function askedQuestionRows(
+  content: Extract<FeedContent, { kind: 'tool' }>,
+): SessionFeedRow[] | null {
+  const questions = content.presentation?.questions
+  if (questions === undefined) return null
+  const answer = textOutput(content)
+  return [{ shape: 'ask', id: content.callId, questions, answer, unsupported: null }]
 }
 
 function commandContentRow(content: Extract<FeedContent, { kind: 'command' }>): SessionFeedRow {
@@ -380,7 +390,7 @@ function contentRow(
 function contentRows(content: FeedContent): SessionFeedRow[] {
   switch (content.kind) {
     case 'tool':
-      return [toolContentRow(content), ...toolOutputRows(content)]
+      return askedQuestionRows(content) ?? [toolContentRow(content), ...toolOutputRows(content)]
     case 'fileChange':
       return fileChangeRows(content, workStatus(content.status))
     default: {
@@ -440,7 +450,13 @@ export function rowKey(row: SessionFeedRow): string {
 }
 
 export type IndexedRows = { rows: SessionFeedRow[]; index: Map<string, number> }
-type LiveRow = { key: string; row: SessionFeedRow; sequence: number }
+type LiveRow = {
+  key: string
+  row: SessionFeedRow
+  sequence: number
+  commandId: string | null
+  vendorEventId: string | null
+}
 type ProjectionState = {
   questionCalls: ReadonlySet<string>
   tools: Map<string, Extract<FeedContent, { kind: 'tool' }>>
@@ -511,9 +527,45 @@ function liveFeedRows(
       key,
       row,
       sequence: event.sequence,
+      commandId: event.commandId,
+      vendorEventId: event.vendorEventId,
     }))
   }
-  return rows
+  return promptsBeforeTheirStatus(rows)
+}
+
+// A command's status rows wait for its first other event, its prompt, and follow that event's rows (#3161).
+function promptsBeforeTheirStatus(rows: readonly LiveRow[]): LiveRow[] {
+  const ordered: LiveRow[] = []
+  const held = new Map<string, LiveRow[]>()
+  const opened = new Set<string>()
+  let opening: { commandId: string; first: LiveRow } | null = null
+  for (const live of rows) {
+    if (opening !== null && !sameEvent(opening.first, live)) {
+      ordered.push(...(held.get(opening.commandId) ?? []))
+      opening = null
+    }
+    const { commandId } = live
+    if (commandId === null || opened.has(commandId)) ordered.push(live)
+    else if (isLiveStatusRow(live.row)) held.set(commandId, [...(held.get(commandId) ?? []), live])
+    else {
+      opened.add(commandId)
+      ordered.push(live)
+      opening = { commandId, first: live }
+    }
+  }
+  if (opening !== null) ordered.push(...(held.get(opening.commandId) ?? []))
+  return ordered
+}
+
+// Rows one vendor event drew, such as a prompt's skill references and its text.
+function sameEvent(first: LiveRow, next: LiveRow): boolean {
+  return (
+    first.vendorEventId !== null &&
+    next.vendorEventId === first.vendorEventId &&
+    next.commandId === first.commandId &&
+    !isLiveStatusRow(next.row)
+  )
 }
 
 // Live events in order, the tool calls their Questions stand for, and the last settled sequence.

@@ -4,6 +4,7 @@ import {
   type ComposerCommandListing,
   composerCommandSchema,
 } from '@/domains/sessions/api/composer-commands'
+import { contextUsageSchema } from '@/domains/sessions/api/context-usage'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { Permission, PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { Question, QuestionAnswer } from '@/domains/sessions/api/questions'
@@ -26,6 +27,7 @@ export const liveSessionChannelEventSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('feed'), body: sessionLiveEventBodySchema }),
   z.strictObject({ type: z.literal('failure'), detail: z.string().min(1) }),
   z.strictObject({ type: z.literal('closed') }),
+  z.strictObject({ type: z.literal('context.usage'), usage: contextUsageSchema }),
   z.strictObject({
     type: z.literal('commands'),
     availability: z.enum(['listed', 'unavailable']),

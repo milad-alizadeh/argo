@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
-import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import { recordedCodexFileChanges as fileChangeTurn } from '@/mocks/recordings/codex-app-server'
-import { mockCodexChannel } from '../../../../mocks/cli/codex/mock-codex-channel'
+import { mockCodexChannel, mockLiveEvents } from '../../../../mocks/cli/codex/mock-codex-channel'
 import { mockTurnsRequest } from '../../../../mocks/cli/codex/mock-codex-turn-pages'
 import type { CodexRequest, WireMessage } from '../app-server/codex-app-server-client'
 import { readCodexSessionHistory } from './codex-session-history'
@@ -23,17 +22,7 @@ async function replayFileChangeTurn() {
   await new Promise((resolve) => setImmediate(resolve))
   for (const message of fileChangeTurn.messages) notify(message as WireMessage)
   channel.close()
-  return events.flatMap((event, index): SessionLiveEvent[] =>
-    event.type === 'feed'
-      ? [
-          {
-            ...event.body,
-            sessionId: '00000000-0000-4000-8000-000000000001',
-            sequence: index + 1,
-          } as SessionLiveEvent,
-        ]
-      : [],
-  )
+  return mockLiveEvents(events)
 }
 
 test('a recorded Codex patch shows its files while it runs', async () => {

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
+import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process'
 import { once } from 'node:events'
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
@@ -71,7 +71,7 @@ async function sessionTexts(run: { configDirectory: string }) {
   return messages.map((message) => `${message.type}: ${JSON.stringify(message.message)}`)
 }
 
-function send(child: ReturnType<typeof spawn>, prompt: string) {
+function send(child: ChildProcessWithoutNullStreams, prompt: string) {
   child.stdin.write(`${ESCAPE}[200~${prompt}${ESCAPE}[201~\r`)
 }
 
@@ -118,7 +118,8 @@ test('a seeded Claude stall leaves the Turn open', async () => {
   const run = await started('seed-6')
   try {
     send(run.child, 'Stall this Turn.')
-    await new Promise((resolve) => setTimeout(resolve, 150))
+    // The mock records the user Turn, then stalls; that record is the signal to check.
+    await waitFor(async () => (await sessionTexts(run)).some((text) => text.startsWith('user: ')))
     assert.equal(run.child.exitCode, null)
     assert.ok(!(await sessionTexts(run)).some((text) => text.includes('Mock Claude read:')))
   } finally {

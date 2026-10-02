@@ -10,6 +10,7 @@ export {
   isThreadNotLoaded,
 } from './codex-app-server-client'
 export type { JsonValue } from './protocol-generated/serde_json/json-value'
+export type { SubAgentSource } from './protocol-generated/sub-agent-source'
 export type { AgentMessageDeltaNotification } from './protocol-generated/v2/agent-message-delta-notification'
 export type { ConfigLayer } from './protocol-generated/v2/config-layer'
 export type { ConfigReadParams } from './protocol-generated/v2/config-read-params'
@@ -24,6 +25,7 @@ export type { ThreadListParams } from './protocol-generated/v2/thread-list-param
 export type { ThreadListResponse } from './protocol-generated/v2/thread-list-response'
 export type { ThreadReadParams } from './protocol-generated/v2/thread-read-params'
 export type { ThreadReadResponse } from './protocol-generated/v2/thread-read-response'
+export type { ThreadTokenUsageUpdatedNotification } from './protocol-generated/v2/thread-token-usage-updated-notification'
 export type { ThreadTurnsListParams } from './protocol-generated/v2/thread-turns-list-params'
 export type { ThreadTurnsListResponse } from './protocol-generated/v2/thread-turns-list-response'
 export type { TurnPlanUpdatedNotification } from './protocol-generated/v2/turn-plan-updated-notification'

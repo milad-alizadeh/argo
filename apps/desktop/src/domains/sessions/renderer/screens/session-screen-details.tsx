@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { skipToken, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
@@ -25,8 +25,10 @@ import {
 } from '../composer'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { type HarnessControl, useAvailableHarnesses } from '../harness'
-import type { ComposerPlan, Session, SessionExtras } from '../types'
+import { SessionTitle } from '../prompt'
+import type { ComposerPlan, SessionDetails, SessionExtras } from '../types'
 import { draftTarget } from './session-draft-target'
+import type { SentConfiguration } from './session-screen-state'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
 import { useTellWorktreeGone } from './use-gone-worktree'
 import { useSessionDetails } from './use-session-details'
@@ -35,22 +37,28 @@ type SessionScreenDetailsProps = {
   permission: ReturnType<typeof import('../composer').useSessionPermission>
   questionPending: boolean
   liveStatus: ReturnType<typeof import('../feed').useFeedReading>['liveStatus']
-  session: (Session & SessionExtras) | null
-  harness: HarnessControl
+  session: (SessionDetails & SessionExtras) | null
+  harness: HarnessControl | null
   selectedSessionId: string | null
   // Whether the selected Session's details have been read, so its composer can open on them.
   sessionLoaded: boolean
   projectState: ProjectsState
   worktreeState: WorktreeOptionsState
   worktreeActions: WorktreeOptionsActions
+  // What this window's Send started the selected Session with, until its details load.
+  sent: SentConfiguration | null
   // A new Session's pending id from its saved prompt, and the Session route that draws it.
-  onStartingSession: (pendingId: string | null, sessionId?: string) => void
+  onStartingSession: (
+    pendingId: string | null,
+    sessionId?: string,
+    sent?: SentConfiguration,
+  ) => void
 }
 
 type SessionsTranslator = ReturnType<typeof useTranslation<'sessions'>>['t']
 
 // The open Feed's steps, else the stored row's step count.
-function composerPlan(session: (Session & SessionExtras) | null): ComposerPlan | null {
+function composerPlan(session: (SessionDetails & SessionExtras) | null): ComposerPlan | null {
   if (session?.plan?.state === 'available') return session.plan
   if (session?.planProgress == null) return session?.plan ?? null
   return { state: 'counted', ...session.planProgress }
@@ -81,26 +89,29 @@ function catalogFailureOf(
 function sessionComposerConfiguration(input: {
   selectedSessionId: string | null
   projectId: string | null
-  session: (Session & SessionExtras) | null
+  session: (SessionDetails & SessionExtras) | null
   sessionLoaded: boolean
   catalogResult: CatalogReadResult | undefined
   catalogFailed: boolean
+  sent: SentConfiguration | null
 }) {
   const catalog = input.catalogResult?.info ?? null
   const catalogFailure = catalogFailureOf(input.catalogResult, input.catalogFailed)
   const identity = composerIdentityOf(input.selectedSessionId, input.projectId)
   const choices = catalog?.availability === 'available' ? catalog : null
-  const initialTurnConfiguration =
+  const loadedConfiguration =
     choices === null || (identity.kind === 'session' && !input.sessionLoaded)
       ? null
       : turnConfigurationFor(choices, { identity, session: input.session })
+  // A new Session's chip keeps what its Send used until the details load (#3179).
+  const initialTurnConfiguration = loadedConfiguration ?? input.sent?.turnConfiguration ?? null
   return { catalogFailure, choices, initialTurnConfiguration, identity }
 }
 
 // A draft has no Turn to ask about, so its tray holds the Worktree row instead of a permission.
 function composerTray(input: {
   identity: ReturnType<typeof composerIdentityOf>
-  harness: HarnessControl
+  harness: HarnessControl | null
   permission: SessionScreenDetailsProps['permission']
   worktree: WorktreeOptionsState
   actions: WorktreeOptionsActions
@@ -112,7 +123,7 @@ function composerTray(input: {
     worktree: null,
     permissionPrompt: (
       <PermissionPrompt
-        harness={harness.harness}
+        harness={harness?.harness}
         headingLevel={2}
         permission={permission.permission}
         onDecide={permission.decide}
@@ -147,7 +158,7 @@ function rememberedHarness(
 
 function useSessionComposerDraft(input: {
   identity: ComposerIdentity
-  harness: HarnessControl
+  harness: HarnessControl | null
   projectState: ProjectsState
   worktreeState: WorktreeOptionsState
   worktreeActions: WorktreeOptionsActions
@@ -170,26 +181,29 @@ function useSessionComposerDraft(input: {
   const targetRestored = identity.kind === 'session' || restoredProjectId === projectId
   const draft = useDurableComposerDraft({ target, choices, opening, targetRestored })
   const loadedTarget = draft?.loadedTarget
+  const pickedHarness = harness?.harness
+  const changeHarness = harness?.onChange
   useEffect(() => {
-    if (projectId === null || restoredProjectId === projectId || loadedTarget === undefined) return
+    const nothingToRestore = restoredProjectId === projectId || loadedTarget === undefined
+    if (projectId === null || pickedHarness === undefined || nothingToRestore) return
     if (loadedTarget === null) {
       setRestoredProjectId(projectId)
       return
     }
     if (loadedTarget.type !== 'project' || loadedTarget.projectId !== projectId) return
-    const remembered = rememberedHarness(harness.harness, loadedTarget.harness, availableHarnesses)
+    const remembered = rememberedHarness(pickedHarness, loadedTarget.harness, availableHarnesses)
     if (remembered === 'unknown') return
     if (remembered !== null) {
-      harness.onChange?.(remembered)
+      changeHarness?.(remembered)
       return
     }
     if (!restoreSwitch(loadedTarget.worktree, worktreeState, worktreeActions.setNewWorktree)) return
     setRestoredProjectId(projectId)
   }, [
     availableHarnesses,
-    harness.harness,
-    harness.onChange,
+    changeHarness,
     loadedTarget,
+    pickedHarness,
     projectId,
     restoredProjectId,
     worktreeActions,
@@ -201,6 +215,7 @@ function useSessionComposerDraft(input: {
 function useSessionComposerSend(input: {
   draft: ReturnType<typeof useDurableComposerDraft>
   identity: ComposerIdentity
+  harness: HarnessControl | null
   projectId: string | null
   onFailure: (failure: DraftSubmitFailure) => void
   onStartingSession: SessionScreenDetailsProps['onStartingSession']
@@ -237,18 +252,29 @@ function useSessionComposerSend(input: {
         queryKey: trpc.worktreeOptions.queryKey({ projectId: input.projectId }),
       })
       // The named Session draws the prompt until its own Feed shows it, whatever the Harness.
-      input.onStartingSession(pendingId, result.sessionId)
+      const harness = input.harness?.harness
+      const sent =
+        harness === undefined || turnConfiguration === null
+          ? undefined
+          : { harness, turnConfiguration }
+      input.onStartingSession(pendingId, result.sessionId, sent)
       navigate(`/projects/${input.projectId}/sessions/${result.sessionId}`, { replace: true })
     }
     return 'accepted'
   }
 }
 
-function useCatalogRead(harness: HarnessControl) {
+// No Harness means an open Session whose details have not loaded, so there is no catalog to read.
+function useCatalogRead(harness: HarnessControl | null) {
   const queryClient = useQueryClient()
-  const catalogQuery = useQuery(trpc.harnessCatalogRead.queryOptions({ harness: harness.harness }))
+  const catalogQuery = useQuery(
+    trpc.harnessCatalogRead.queryOptions(
+      harness === null ? skipToken : { harness: harness.harness },
+    ),
+  )
   const catalogRefresh = useMutation(trpc.harnessCatalogRefresh.mutationOptions())
   const refreshCatalog = () =>
+    harness !== null &&
     catalogRefresh.mutate(
       { harness: harness.harness },
       {
@@ -305,6 +331,7 @@ export function SessionComposerArea({
   projectState,
   worktreeState,
   worktreeActions,
+  sent,
   onStartingSession,
 }: SessionScreenDetailsProps) {
   const { catalogQuery, refreshCatalog } = useCatalogRead(harness)
@@ -317,6 +344,7 @@ export function SessionComposerArea({
       sessionLoaded,
       catalogResult: catalogQuery.data,
       catalogFailed: catalogQuery.isError,
+      sent,
     })
   const composerKey = composerIdentityKey(identity)
   const { draft, targetRestored } = useSessionComposerDraft({
@@ -422,6 +450,7 @@ function SessionComposer({
   const onSend = useSessionComposerSend({
     draft,
     identity,
+    harness,
     projectId: identity.kind === 'draft' ? identity.projectId : null,
     onFailure: reportSendFailure,
     onStartingSession,
@@ -446,9 +475,8 @@ function SessionComposer({
       worktree: worktreeState,
       actions: worktreeActions,
     }),
-    // #2968 fills context usage.
-    contextTokens: session?.contextTokens,
-    contextWindowTokens: session?.contextWindowTokens,
+    contextTokens: session?.contextUsage?.usedTokens,
+    contextWindowTokens: session?.contextUsage?.windowTokens,
     disabled: questionPending || catalogBlocked || (draft?.loadFailed === true && !draft.hasDraft),
     harness,
     plan: composerPlan(session),
@@ -470,17 +498,17 @@ function useComposerFailures(input: {
   catalogFailure: CatalogFailure | null
   composerKey: string
   draft: LoadedDraft | null
-  harness: HarnessControl
+  harness: HarnessControl | null
   onRetryCatalog: () => void
   onRetryDraft: () => void
   permissionFailure: string | null
 }) {
   const { t } = useTranslation('sessions')
   const owner = input.composerKey
-  const catalog = `catalog:${input.harness.harness}`
+  const catalog = `catalog:${input.harness?.harness ?? 'none'}`
   const failures: ComposerFailure[] = []
   if (input.permissionFailure) failures.push({ scope: owner, title: input.permissionFailure })
-  if (input.catalogFailure)
+  if (input.catalogFailure && input.harness)
     failures.push({
       scope: catalog,
       title: catalogFailureMessage(t, input.harness.harness, input.catalogFailure),
@@ -491,16 +519,16 @@ function useComposerFailures(input: {
   if (input.draft?.saveFailed) failures.push({ scope: owner, title: t('composer.draftSaveFailed') })
   const report = useComposerFailureToasts(failures, [owner, catalog])
   return (failure: DraftSubmitFailure) =>
-    report({ scope: owner, title: sendFailureMessage(t, input.harness.harness, failure) })
+    report({ scope: owner, title: sendFailureMessage(t, input.harness?.harness ?? null, failure) })
 }
 
 function sendFailureMessage(
   t: SessionsTranslator,
-  harness: HarnessControl['harness'],
+  harness: Harness | null,
   failure: DraftSubmitFailure,
 ) {
   if (failure.outcome === 'uncertain') return t('composer.sendUncertain')
-  if (failure.reason === null) return t('composer.sendFailed')
+  if (failure.reason === null || harness === null) return t('composer.sendFailed')
   return t(`composer.sendRejected.${failure.reason}`, { harness: harnessLabel(harness) })
 }
 
@@ -524,7 +552,7 @@ function HandoffLink({
         onClick={() => onNavigate(`/projects/${projectId}/sessions/${sessionId}`)}
         type="button"
       >
-        {session === null ? sessionId : session.name}
+        {session === null ? sessionId : <SessionTitle session={session} />}
       </button>
     </p>
   )

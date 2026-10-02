@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import { liveContent } from '@/mocks/sessions/live-events.fixture'
 import { SESSION_LIVE_REPLAY_BYTE_LIMIT, type SessionLiveEvent } from '../session-live-event'
 import { emptyLiveEventBuffer, retainLiveEvent } from './live-event-buffer'
 import { projectLiveFeedRows } from './live-feed-rows'
@@ -27,19 +28,22 @@ test('keeps the first and latest text snapshots in their Feed position', () => {
     vendorEventId: null,
     status: 'running',
   }
+  const prompt = liveContent(0, { kind: 'message', id: 'prompt-1', role: 'user', text: 'Read' })
   const events = [
+    prompt,
     textEvent(1, 'reply-1', 'R'),
     running,
     textEvent(3, 'reply-1', 'Re'),
     textEvent(4, 'reply-1', 'Reading'),
   ]
   const retained = events.reduce(retainLiveEvent, emptyLiveEventBuffer())
-  expect(retained.events.map((event) => event.sequence)).toEqual([1, 2, 4])
+  expect(retained.events.map((event) => event.sequence)).toEqual([0, 1, 2, 4])
   expect(projectLiveFeedRows([], retained.events).map((row) => row.id)).toEqual([
+    'prompt-1',
     'reply-1',
     'status:2',
   ])
-  expect(projectLiveFeedRows([], retained.events)[0]).toMatchObject({ text: 'Reading' })
+  expect(projectLiveFeedRows([], retained.events)[1]).toMatchObject({ text: 'Reading' })
 })
 
 test('drops older content before repeated snapshots exceed the browser byte budget', () => {

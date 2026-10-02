@@ -5,6 +5,7 @@ import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { pendingSessionId } from '@/domains/sessions/api/pending-session'
 import { FALLBACK_DEFAULT_BRANCH } from '@/domains/sessions/api/worktree-request'
+import { DEFAULT_HARNESS } from '@/harnesses/harness'
 import { sessionRow, sessionShellCommand, sessionSubagent } from '@/mocks/sessions/session-rows'
 import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fixture'
 import { installSessionHost } from '@/mocks/sessions/session-story-host'
@@ -16,7 +17,7 @@ import { SessionInspector } from '../inspector/session-inspector'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
 import { SessionList } from '../session-list/session-list'
 import type {
-  Session,
+  SessionDetails,
   SessionExtras,
   SessionFeed,
   SessionShellCommand,
@@ -60,7 +61,7 @@ const SESSION_ROWS = [
       }),
     ],
     shell: [sessionShellCommand({ id: 'quality', command: 'bun run quality' })],
-    contextTokens: 54_000,
+    contextUsage: { usedTokens: 54_000, windowTokens: null },
   }),
   sessionRow({
     id: 'shortcut-review',
@@ -71,7 +72,7 @@ const SESSION_ROWS = [
     cwd: '/workspace/argo',
     updatedAt: '2026-09-13T15:28:00Z',
     shell: [sessionShellCommand({ id: 'codex-command', command: 'bun run typecheck' })],
-    contextTokens: 21_000,
+    contextUsage: { usedTokens: 21_000, windowTokens: null },
   }),
   sessionRow({
     id: 'feed-review',
@@ -85,9 +86,9 @@ const SESSION_ROWS = [
       kind: 'read',
       open: false,
     },
-    contextTokens: 18_000,
+    contextUsage: { usedTokens: 18_000, windowTokens: null },
   }),
-] satisfies (Session & SessionExtras)[]
+] satisfies (SessionDetails & SessionExtras)[]
 
 const SESSION_HISTORY_LABEL = 'Session history'
 const sessionRoute = (projectId: string, sessionId = '') =>
@@ -238,7 +239,7 @@ function ReviewScreen({
   composerRunning?: boolean
   permissionPrompt?: ReactNode
   titleText?: string
-  worktree?: Session['worktree']
+  worktree?: SessionDetails['worktree']
   defaultBranch?: string
 }) {
   const selectedSessionId = useParams().sessionId ?? 'composer-review'
@@ -298,13 +299,13 @@ function ReviewContent({
   composerRunning: boolean
   permissionPrompt: ReactNode
   feed: SessionFeed
-  headerSession: Session
+  headerSession: SessionDetails
   jumpToLatest: (() => void) | null
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   pick: (id: string) => void
   picked: { id: string; count: number } | null
   selectedSessionId: string
-  session: Session & SessionExtras
+  session: SessionDetails & SessionExtras
   shellOutput: SessionShellOutput
   showPlan: boolean
   location: SessionLocation | null
@@ -318,6 +319,7 @@ function ReviewContent({
         activeEvidenceId={null}
         composer={
           <ComposerForm
+            harness={{ harness: DEFAULT_HARNESS }}
             isRunning={composerRunning}
             permissionPrompt={permissionPrompt}
             onInterrupt={async () => true}
@@ -361,7 +363,7 @@ function ReviewContent({
   )
 }
 
-function sessionWithTitle(session: Session, titleText: string | undefined): Session {
+function sessionWithTitle(session: SessionDetails, titleText: string | undefined): SessionDetails {
   return titleText === undefined ? session : { ...session, name: titleText }
 }
 

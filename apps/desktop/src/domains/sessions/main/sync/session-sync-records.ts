@@ -5,6 +5,7 @@ import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import type { SessionWorktree } from '@/database/session/validation'
+import { sessionSubagent } from '@/database/session-subagent/schema'
 import type { SessionSubagentLink, SessionSummary } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
 import { createSessionUpsert, saveDiscoveredSessionSubagents } from '../database'
@@ -35,6 +36,16 @@ export function knownSessionIds(database: Database, harness: Harness): string[] 
     .select({ nativeId: sessionTable.nativeId })
     .from(sessionTable)
     .where(eq(sessionTable.harness, harness))
+    .all()
+    .map((row) => row.nativeId)
+}
+
+// Subagents saved under a parent; discovery reads the rest again until a saved parent links them.
+export function knownSubagentIds(database: Database, harness: Harness): string[] {
+  return database
+    .select({ nativeId: sessionSubagent.nativeId })
+    .from(sessionSubagent)
+    .where(and(eq(sessionSubagent.harness, harness), isNotNull(sessionSubagent.parentSessionId)))
     .all()
     .map((row) => row.nativeId)
 }
@@ -96,6 +107,47 @@ export function matchSessionsToProjects(
   return Promise.all(records.map((record) => withProjectMatch(roots, record)))
 }
 
+function sessionRows(database: Database, harness: Harness, nativeIds: readonly string[]) {
+  if (nativeIds.length === 0) return []
+  return database
+    .select({ argoId: sessionTable.argoId, nativeId: sessionTable.nativeId })
+    .from(sessionTable)
+    .where(and(eq(sessionTable.harness, harness), inArray(sessionTable.nativeId, [...nativeIds])))
+    .all()
+}
+
+// Saves each Subagent under its saved parent, or under none. Returns the Sessions whose reads changed.
+function saveSubagents(
+  database: Database,
+  harness: Harness,
+  subagents: readonly SessionSubagentLink[],
+): string[] {
+  const parentNativeIds = subagents.flatMap(({ parentNativeId }) =>
+    parentNativeId === null ? [] : [parentNativeId],
+  )
+  const parentIds = new Map(
+    sessionRows(database, harness, parentNativeIds).map((row) => [row.nativeId, row.argoId]),
+  )
+  const saved = saveDiscoveredSessionSubagents(
+    database,
+    harness,
+    subagents.map(({ nativeId, parentNativeId }) => ({
+      nativeId,
+      parentSessionId: parentNativeId === null ? null : (parentIds.get(parentNativeId) ?? null),
+    })),
+  )
+  const parents = saved.flatMap(({ parentSessionId }) =>
+    parentSessionId === null ? [] : [parentSessionId],
+  )
+  // A saved Session newly found to be a Subagent leaves the list, so its detail read changes too.
+  const children = sessionRows(
+    database,
+    harness,
+    saved.map(({ nativeId }) => nativeId),
+  ).map(({ argoId }) => argoId)
+  return [...new Set([...parents, ...children])]
+}
+
 export function saveSessionBatch(
   database: Database,
   {
@@ -112,29 +164,7 @@ export function saveSessionBatch(
   database.$client.exec('BEGIN IMMEDIATE')
   try {
     const sessionIds = records.map((record) => upsert({ ...record, harness }))
-    if (subagents.length > 0) {
-      const childrenByParent = new Map<string, string[]>()
-      for (const { nativeId, parentNativeId } of subagents) {
-        const children = childrenByParent.get(parentNativeId) ?? []
-        children.push(nativeId)
-        childrenByParent.set(parentNativeId, children)
-      }
-      const parentRows = database
-        .select({ argoId: sessionTable.argoId, nativeId: sessionTable.nativeId })
-        .from(sessionTable)
-        .where(
-          and(
-            eq(sessionTable.harness, harness),
-            inArray(sessionTable.nativeId, [...childrenByParent.keys()]),
-          ),
-        )
-        .all()
-      for (const { nativeId, argoId } of parentRows)
-        if (
-          saveDiscoveredSessionSubagents(database, argoId, childrenByParent.get(nativeId) ?? []) > 0
-        )
-          sessionIds.push(argoId)
-    }
+    sessionIds.push(...saveSubagents(database, harness, subagents))
     database.$client.exec('COMMIT')
     return sessionIds
   } catch (error) {

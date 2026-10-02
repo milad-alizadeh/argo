@@ -27,6 +27,7 @@ import {
 import { sessionSyncMachine } from './session-sync-machine'
 import {
   knownSessionIds,
+  knownSubagentIds,
   matchSessionsToProjects,
   type SessionRoot,
   saveSessionBatch,
@@ -157,6 +158,7 @@ const sessionSyncActor = fromCallback<
       input: {
         harness,
         knownNativeIds: knownSessionIds(database, harness),
+        knownSubagentNativeIds: knownSubagentIds(database, harness),
         listSessionSummaries,
       },
     },

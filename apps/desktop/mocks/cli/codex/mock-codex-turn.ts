@@ -1,7 +1,7 @@
 import { appendFileSync } from 'node:fs'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
 import { sendPlanUpdate } from './fixtures/mock-codex-plan.ts'
-import { completeTurn } from './fixtures/mock-codex-responses.ts'
+import { completeTurn, sendTokenUsage } from './fixtures/mock-codex-responses.ts'
 import { askQuestion } from './mock-ask-question.ts'
 import { scheduleThreadLifecycle } from './mock-codex-lifecycle.ts'
 
@@ -25,27 +25,7 @@ function sendToolUsage(send: Send, threadId: unknown, turnId: string) {
       },
     },
   })
-  send({
-    method: 'thread/tokenUsage/updated',
-    params: {
-      threadId,
-      turnId,
-      tokenUsage: {
-        last: tokenUsage(),
-        total: tokenUsage(),
-      },
-    },
-  })
-}
-
-function tokenUsage() {
-  return {
-    cachedInputTokens: 0,
-    inputTokens: 23,
-    outputTokens: 5,
-    reasoningOutputTokens: 0,
-    totalTokens: 28,
-  }
+  sendTokenUsage(send, threadId, turnId)
 }
 
 function finishTurn(options: {

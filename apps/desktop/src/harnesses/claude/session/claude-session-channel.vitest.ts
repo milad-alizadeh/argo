@@ -15,6 +15,8 @@ const vendor = vi.hoisted(() => ({
   commands: [] as unknown[],
   executable: undefined as string | undefined,
   commandsHeld: null as Promise<void> | null,
+  contextUsage: { totalTokens: 0, maxTokens: 200_000 },
+  contextUsageRequests: [] as unknown[],
 }))
 
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
@@ -51,6 +53,10 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
       },
       async interrupt() {
         vendor.interrupts += 1
+      },
+      async getContextUsage(options: unknown) {
+        vendor.contextUsageRequests.push(options)
+        return vendor.contextUsage
       },
       async supportedCommands() {
         await vendor.commandsHeld
@@ -196,6 +202,25 @@ test('validates delayed identity and completes each submitted Turn once', async 
   ).toHaveLength(2)
   channel.close()
   expect(events).toContainEqual({ type: 'closed' })
+})
+
+test("reports Claude's own context reading after each Turn ends", async () => {
+  vendor.prompts = []
+  vendor.recordedEvents = []
+  vendor.releaseSecond = null
+  vendor.contextUsage = { totalTokens: 46_000, maxTokens: 200_000 }
+  vendor.contextUsageRequests = []
+  const events: unknown[] = []
+  const channel = claudeSessionChannelOpener(null)(first, undefined, (event) => events.push(event))
+  const usage = () =>
+    events.flatMap((event) => {
+      const parsed = liveSessionChannelEventSchema.parse(event)
+      return parsed.type === 'context.usage' ? [parsed.usage] : []
+    })
+  await until(() => usage().length > 0)
+  expect(usage()).toEqual([{ usedTokens: 46_000, windowTokens: 200_000 }])
+  expect(vendor.contextUsageRequests).toEqual([{ detail: 'summary' }])
+  channel.close()
 })
 
 test('runs the Claude executable the registration resolved', () => {

@@ -6,6 +6,7 @@ import {
   type SDKUserMessage,
 } from '@anthropic-ai/claude-agent-sdk'
 import { readComposerCommands } from '@/domains/sessions/api/composer-commands'
+import { contextUsageSchema } from '@/domains/sessions/api/context-usage'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
@@ -255,6 +256,23 @@ class ClaudeSessionChannel implements LiveSessionChannel {
       this.emit({ type: 'identity', nativeId: message.session_id })
     }
     this.emit({ type: 'turn.completed', commandId: this.activeCommandId })
+    void this.reportContextUsage()
+  }
+
+  // Claude's own `/context` reading after the Turn; `summary` skips its per-category token counts.
+  private async reportContextUsage() {
+    if (this.session === null) return
+    try {
+      const reading = await this.session.getContextUsage({ detail: 'summary' })
+      const usage = contextUsageSchema.safeParse({
+        usedTokens: reading.totalTokens,
+        windowTokens: reading.maxTokens,
+      })
+      if (!usage.success) this.rejected += 1
+      else if (this.open) this.emit({ type: 'context.usage', usage: usage.data })
+    } catch (error) {
+      if (this.open) console.warn(`Claude did not report its context usage: ${String(error)}`)
+    }
   }
 
   private async readResults(querySession: Query) {

@@ -9,12 +9,13 @@ import type { LiveActivity } from '@/domains/sessions/api/feed'
 import { WORKING_SESSION_STATUSES } from '@/domains/sessions/api/session-live-event'
 import type { Harness, HarnessSession } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
+import { laterActivityAt } from '../database'
 import { sessionHistoryIdentity } from '../session-history-identity'
 import type { SessionListChanges } from './session-list-changes'
 
 type StoredUpdate = Pick<
   typeof sessionTable.$inferInsert,
-  'customTitle' | 'status' | 'activityAt' | 'turnConfiguration' | 'planProgress'
+  'customTitle' | 'status' | 'activityAt' | 'turnConfiguration' | 'planProgress' | 'contextUsage'
 >
 export type SessionUpdate = {
   [Column in keyof StoredUpdate]?: NonNullable<StoredUpdate[Column]>
@@ -26,7 +27,7 @@ export type SessionUpdate = {
 export type SessionUpdateContext = { database: Database; changes: SessionListChanges }
 
 // Rebuilt in one key order, so the stored JSON compares equal to an unchanged report.
-function reportedColumns({ turnConfiguration, planProgress }: SessionUpdate) {
+function reportedColumns({ turnConfiguration, planProgress, contextUsage }: SessionUpdate) {
   return {
     ...(turnConfiguration && {
       turnConfiguration: {
@@ -37,6 +38,12 @@ function reportedColumns({ turnConfiguration, planProgress }: SessionUpdate) {
     }),
     ...(planProgress && {
       planProgress: { completed: planProgress.completed, total: planProgress.total },
+    }),
+    ...(contextUsage && {
+      contextUsage: {
+        usedTokens: contextUsage.usedTokens,
+        windowTokens: contextUsage.windowTokens,
+      },
     }),
   }
 }
@@ -64,10 +71,7 @@ function sessionColumns(update: SessionUpdate) {
       : { customTitle: update.customTitle, updatedAt: nextUpdatedAt(sessionTable.updatedAt) }),
     ...(activity === undefined ? {} : { activity }),
     ...(update.status === undefined ? {} : { status: update.status }),
-    // Activity only moves forward, so a late write never ages the row.
-    ...(update.activityAt === undefined
-      ? {}
-      : { activityAt: sql`max(coalesce(${sessionTable.activityAt}, 0), ${update.activityAt})` }),
+    ...(update.activityAt === undefined ? {} : { activityAt: laterActivityAt(update.activityAt) }),
   }
   return { columns, differs }
 }

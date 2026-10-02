@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { DEFAULT_HARNESS, type Harness } from '@/harnesses/harness'
+import type { Harness } from '@/harnesses/harness'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
@@ -116,14 +116,14 @@ function ContextPopoverTrigger({
 export function ContextPopover({
   compact = false,
   capacityTokens,
-  harness = DEFAULT_HARNESS,
+  harness,
   labelled = false,
   percentage,
   usedTokens,
 }: {
   compact?: boolean
   capacityTokens: number | null
-  harness?: Harness
+  harness: Harness
   labelled?: boolean
   percentage: number | null
   usedTokens: number

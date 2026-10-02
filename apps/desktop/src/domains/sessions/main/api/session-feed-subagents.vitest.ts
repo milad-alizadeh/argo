@@ -99,7 +99,12 @@ test('a parent history read indexes its child for the closed roster', async () =
   const started = delegation('call-1', 'started')
   await reads.chain(null).answer([started])
   expect(database.select().from(sessionSubagent).all()).toMatchObject([
-    { sessionId, subagentId: 'agent-1', label: 'Survey adapters', state: 'running' },
+    {
+      parentSessionId: sessionId,
+      nativeId: 'agent-1',
+      label: 'Survey adapters',
+      state: 'running',
+    },
   ])
   expect(announced).toEqual([[sessionId]])
   await parent.caller.sessionFeedRefresh({ sessionId })

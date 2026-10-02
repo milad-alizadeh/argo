@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
 import type {
   CodexRequest,
@@ -6,6 +7,8 @@ import type {
 } from '@/harnesses/codex/app-server/codex-app-server-client'
 import { openCodexSessionChannel } from '@/harnesses/codex/session/codex-session-channel'
 import type { LiveSessionChannelEvent } from '@/harnesses/registration'
+
+const MOCK_SESSION_ID = '00000000-0000-4000-8000-000000000097'
 
 // A Codex channel over a mock app-server client; `notify` delivers what the app-server would.
 export const mockStartInput: SessionStartInput = {
@@ -56,4 +59,30 @@ export function mockCodexChannel(
     },
     subscribed: () => listener !== undefined,
   }
+}
+
+// A channel over an app-server that starts `thread-1` and answers every Turn with `turn-1`.
+export async function openOneTurnCodexChannel() {
+  const request = (async (method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse(
+      method === 'thread/start' ? { thread: { id: 'thread-1' } } : { turn: { id: 'turn-1' } },
+    )) as CodexRequest
+  const opened = mockCodexChannel(request)
+  await new Promise((resolve) => setImmediate(resolve))
+  return opened
+}
+
+// The channel's Feed bodies as the live events a Session records, numbered in emit order.
+export function mockLiveEvents(events: readonly LiveSessionChannelEvent[]): SessionLiveEvent[] {
+  return events.flatMap((event, index): SessionLiveEvent[] =>
+    event.type === 'feed'
+      ? [
+          {
+            ...event.body,
+            sessionId: MOCK_SESSION_ID,
+            sequence: index + 1,
+          } as SessionLiveEvent,
+        ]
+      : [],
+  )
 }

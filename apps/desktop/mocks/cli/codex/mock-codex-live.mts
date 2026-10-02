@@ -11,6 +11,7 @@ import { recordedCodexModels } from '../../recordings/codex-app-server.ts'
 import { MOCK_START_REFUSED_FILE } from '../mock-cli.ts'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
 import { sendPlanUpdate } from './fixtures/mock-codex-plan.ts'
+import { sendTokenUsage } from './fixtures/mock-codex-responses.ts'
 import { createMockCodexSkillsAndConfig } from './fixtures/mock-codex-skills-config.ts'
 import { mockTurnsPage } from './mock-codex-turn-pages.ts'
 
@@ -27,7 +28,9 @@ type Thread = {
   cwd: string
   updatedAt: number
   parentThreadId: string | null
-  name?: string
+  // Codex always sends both: a null name until one is set, and a preview of '' until a prompt.
+  name: string | null
+  preview: string
   path?: string
   turns: Turn[]
 }
@@ -90,6 +93,7 @@ function finish(active: ActiveTurn, status: 'completed' | 'interrupted' | 'faile
     })
   }
   save(thread)
+  sendTokenUsage(send, thread.id, turn.id)
   send({
     method: 'turn/completed',
     params: { threadId: thread.id, turn: { id: turn.id, status, error: null } },
@@ -122,6 +126,7 @@ function finishAdversarially(
   })
   turn.status = plan.outcome === 'failure' ? 'failed' : 'completed'
   save(thread)
+  sendTokenUsage(send, thread.id, turn.id)
   send({
     method: 'turn/completed',
     params: { threadId: thread.id, turn: { id: turn.id, status: turn.status, error: null } },
@@ -269,6 +274,7 @@ function startTurn(id: Request['id'], params: Record<string, unknown>, thread: T
   }
   const turn: Turn = { id: turnId, status: 'inProgress', items: [user] }
   thread.turns.push(turn)
+  if (thread.preview === '') thread.preview = prompt
   thread.updatedAt = Math.floor(Date.now() / 1000)
   save(thread)
   send({ id, result: { turn: { id: turnId } } })
@@ -304,6 +310,8 @@ function handle(message: Request) {
       cwd: String(params.cwd),
       updatedAt: Math.floor(Date.now() / 1000),
       parentThreadId: null,
+      name: null,
+      preview: '',
       turns: [],
     }
     threads.push(thread)

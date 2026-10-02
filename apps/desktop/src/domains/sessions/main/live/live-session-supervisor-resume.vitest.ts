@@ -186,3 +186,39 @@ test('retiring an idle actor keeps the Session identity and the next send resume
     client.close()
   }
 })
+
+// A Send names an untitled stored Session at once and announces it; a named row is left alone (#3167).
+test.each([
+  { saved: { firstPrompt: null }, kept: 'Prompt into untitled', announced: true },
+  { saved: { firstPrompt: '', preview: '' }, kept: 'Prompt into untitled', announced: true },
+  { saved: { firstPrompt: 'Earlier prompt' }, kept: 'Earlier prompt', announced: false },
+  { saved: { firstPrompt: null, preview: 'Codex preview' }, kept: null, announced: false },
+  { saved: { firstPrompt: null, customTitle: 'Named thread' }, kept: null, announced: false },
+])(
+  'a Send into a stored Session saved as $saved keeps first prompt $kept',
+  async ({ saved, kept, announced }) => {
+    const { root, supervisor, database, client, changedSessionIds } = await supervisorFor(
+      async (method, params, parse) =>
+        method === 'thread/resume'
+          ? parse({ thread: { id: (params as { threadId: string }).threadId } })
+          : parse({ turn: { id: 'turn-1' } }),
+    )
+    database
+      .insert(sessionTable)
+      .values({ argoId: 'session-1', harness: 'codex', nativeId: 'native-1', ...saved })
+      .run()
+    try {
+      await send(supervisor, { ...first, sessionId: 'session-1', prompt: 'Prompt into untitled' })
+      assert.equal(
+        client.prepare('SELECT first_prompt FROM session WHERE argo_id = ?').get('session-1')
+          ?.first_prompt,
+        kept,
+      )
+      await Promise.resolve()
+      assert.equal(changedSessionIds.includes('session-1'), announced)
+    } finally {
+      root.send({ type: 'Shutdown' })
+      client.close()
+    }
+  },
+)

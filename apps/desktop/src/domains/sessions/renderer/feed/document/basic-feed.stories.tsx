@@ -265,14 +265,27 @@ function drawnRows(canvasElement: HTMLElement) {
   return [...canvasElement.querySelectorAll<HTMLElement>('[data-feed-row]')]
 }
 
+function twoFrames() {
+  return new Promise<void>((resolve) =>
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+  )
+}
+
 async function waitForScrollToSettle(history: HTMLElement) {
   await waitFor(async () => {
     const position = history.scrollTop
     const height = history.scrollHeight
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-    )
+    await twoFrames()
     expect(history.scrollTop).toBeCloseTo(position, 1)
+    expect(history.scrollHeight).toBe(height)
+  })
+}
+
+// Rows measured, while a smooth scroll may still be moving.
+async function waitForHeightToSettle(history: HTMLElement) {
+  await waitFor(async () => {
+    const height = history.scrollHeight
+    await twoFrames()
     expect(history.scrollHeight).toBe(height)
   })
 }
@@ -1691,6 +1704,91 @@ export const SentPromptRisesToTop: Story = {
   },
 }
 
+// The row just above the prompt starts long, so shortening it moves the prompt up.
+const LONG_EARLIER_TEXT = 'An earlier answer the reader has already read. '.repeat(40)
+const earlierRowId = historyRows.at(-1)?.id ?? ''
+// Few rows, so the earlier row stays in the overscan above a reader at the tail.
+const longReplyRows = Array.from({ length: 4 }, (_unused, index) => ({
+  shape: 'prose' as const,
+  id: `long-reply-${index}`,
+  role: 'assistant' as const,
+  text: `Reply part ${index + 1}: together these parts are longer than the viewport. `.repeat(30),
+}))
+
+function withEarlierText(text: string): SessionFeed {
+  return {
+    ...historyFeed,
+    revision: `history-replied-${text.length}`,
+    rows: [
+      ...historyRows.map((row) => (row.id === earlierRowId ? { ...row, text } : row)),
+      { shape: 'prose', id: 'history-prompt', role: 'user', text: SENT_PROMPT },
+      ...longReplyRows,
+    ],
+  }
+}
+
+function ShrinkAbovePromptHarness() {
+  const [current, setCurrent] = useState<SessionFeed>({
+    ...historyFeed,
+    rows: historyRows.map((row) =>
+      row.id === earlierRowId ? { ...row, text: LONG_EARLIER_TEXT } : row,
+    ),
+  })
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={() => setCurrent(withEarlierText(LONG_EARLIER_TEXT))}>
+        Send prompt and receive a long reply
+      </button>
+      <button type="button" onClick={() => setCurrent(withEarlierText('A short earlier answer.'))}>
+        Shorten an earlier row
+      </button>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          answeringQuestionId={null}
+          failure={null}
+          feed={current}
+          running={false}
+          posture={null}
+          onAnswerQuestion={() => {}}
+          onOpenEvidence={() => {}}
+          onRetryFeed={() => {}}
+          questionFailure={() => null}
+          selectedSessionId="history"
+        />
+      </div>
+    </div>
+  )
+}
+
+// The rows have measured; the prompt may still be rising.
+function distanceFromTail(history: HTMLElement) {
+  return history.scrollHeight - history.clientHeight - history.scrollTop
+}
+
+// A reader who wheels to the tail while a sent prompt is still rising keeps the tail when a row
+// above the prompt then shrinks; the prompt's scroll does not take the Feed back (#2960).
+export const ReaderAtTailKeepsItWhenARowAboveShrinks: Story = {
+  render: () => <ShrinkAbovePromptHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const history = await canvas.findByLabelText('Session history')
+    await waitFor(() => expect(drawnRow(canvasElement, earlierRowId)).toBeDefined())
+    fireEvent.click(canvas.getByRole('button', { name: 'Send prompt and receive a long reply' }))
+    await waitFor(() => expect(drawnRow(canvasElement, 'long-reply-3')).toBeDefined())
+    await waitForHeightToSettle(history)
+    fireEvent.wheel(history, { deltaY: history.scrollHeight })
+    history.scrollTop = history.scrollHeight
+    await waitForScrollToSettle(history)
+    await expect(distanceFromTail(history)).toBeLessThanOrEqual(1)
+
+    fireEvent.click(canvas.getByRole('button', { name: 'Shorten an earlier row' }))
+    await canvas.findByText('A short earlier answer.')
+    await waitForScrollToSettle(history)
+    await expect(distanceFromTail(history)).toBeLessThanOrEqual(1)
+  },
+}
+
 export const HistoryKeepsItsAnchorWhenEarlierRowsArrive: Story = {
   render: () => <HistoryPrependHarness />,
   play: async ({ canvasElement }) => {
@@ -1766,106 +1864,52 @@ function preferReducedMotion(): () => void {
   }
 }
 
-const stalledFeed = {
+const slowReplyFeed = {
   ...feed,
-  sessionId: 'stalled',
-  chainId: 'stalled',
-  revision: 'stalled-one',
+  sessionId: 'slow-reply',
+  chainId: 'slow-reply',
+  revision: 'slow-reply-one',
   rows: [
     {
       shape: 'prose',
-      id: 'stalled-known-reply',
+      id: 'slow-reply-known',
       role: 'assistant',
-      text: 'Keep this known history visible.',
+      text: 'Keep this history visible.',
     },
+    { shape: 'prose', id: 'slow-reply-prompt', role: 'user', text: 'Keep this prompt visible.' },
+    // A Turn status row after the prompt still leaves the Feed waiting for the reply.
+    { shape: 'event', id: 'status:2', event: 'liveStatus', text: 'running' },
   ],
 } satisfies SessionFeed
 
-const stalledPrompt: SessionFeedRow = {
-  shape: 'prose',
-  id: 'stalled-prompt',
-  role: 'user',
-  text: 'Keep this pending prompt visible.',
-}
-
-// A fixture whose Feed never settles. `stallTimeoutMs` stands in for the production bound so the
-// story does not wait on the real one.
-function StalledFeedHarness({ onRetryFeed }: { onRetryFeed: () => void }) {
-  const [otherClicks, setOtherClicks] = useState(0)
-  const [reading, setReading] = useState<SessionFeed>({
-    ...stalledFeed,
-    rows: [...stalledFeed.rows, stalledPrompt],
-  })
-  const [running, setRunning] = useState(true)
-  return (
-    <div className="flex h-dvh flex-col">
-      <button type="button" onClick={() => setOtherClicks((count) => count + 1)}>
-        Other window control ({otherClicks})
-      </button>
-      <div className="min-h-0 flex-1">
-        <BasicFeed
-          activeEvidenceId={null}
-          feed={reading}
-          failure={null}
-          running={running}
-          posture={null}
-          selectedSessionId="stalled"
-          onOpenEvidence={() => {}}
-          onRetryFeed={() => {
-            onRetryFeed()
-            window.setTimeout(() => {
-              setReading({
-                ...stalledFeed,
-                revision: 'stalled-recovered',
-                rows: [
-                  ...stalledFeed.rows,
-                  stalledPrompt,
-                  {
-                    shape: 'prose',
-                    id: 'stalled-recovered-reply',
-                    role: 'assistant',
-                    text: 'The Feed recovered after Retry.',
-                  },
-                ],
-              })
-              setRunning(false)
-            }, 100)
-          }}
-          onAnswerQuestion={() => {}}
-          answeringQuestionId={null}
-          questionFailure={() => null}
-          stallTimeoutMs={50}
-        />
-      </div>
+// A running Turn waits for its reply past the stall bound: the reader keeps the running loader
+// and gets no stall notice (#3170). `stallTimeoutMs` stands in for the production bound.
+export const SlowReplyKeepsTheLoader: Story = {
+  render: () => (
+    <div className="h-dvh">
+      <BasicFeed
+        activeEvidenceId={null}
+        feed={slowReplyFeed}
+        failure={null}
+        running
+        posture="live"
+        selectedSessionId="slow-reply"
+        onOpenEvidence={() => {}}
+        onRetryFeed={() => {}}
+        onAnswerQuestion={() => {}}
+        answeringQuestionId={null}
+        questionFailure={() => null}
+        stallTimeoutMs={50}
+      />
     </div>
-  )
-}
-
-// Past the stall bound, the reader sees a retry action instead of an indefinite spinner, and
-// nothing else in the window stops responding while it shows (#2102).
-export const Stalled: Story = {
-  args: { onRetryFeed: fn() },
-  render: (args) => <StalledFeedHarness onRetryFeed={args.onRetryFeed ?? (() => {})} />,
-  play: async ({ args, canvasElement }) => {
+  ),
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(() => expect(canvas.getByText('Could not load this Session')).toBeInTheDocument())
-    await expect(canvas.getByText(/This Session is external/)).toBeInTheDocument()
-    await expect(canvas.getByText('Keep this known history visible.')).toBeVisible()
-    await expect(canvas.getByText('Keep this pending prompt visible.')).toBeVisible()
-    await expect(canvas.queryByRole('status', { name: 'Loading this Session' })).toBeNull()
-    const retry = canvas.getByRole('button', { name: 'Retry' })
-
-    const otherControl = canvas.getByRole('button', { name: /Other window control/ })
-    await userEvent.click(otherControl)
-    await expect(
-      canvas.getByRole('button', { name: 'Other window control (1)' }),
-    ).toBeInTheDocument()
-
-    await userEvent.click(retry)
-    await waitFor(() => expect(args.onRetryFeed).toHaveBeenCalledOnce())
+    await expect(await canvas.findByText('Keep this prompt visible.')).toBeVisible()
+    await new Promise((resolve) => window.setTimeout(resolve, 300))
     await expect(canvas.getByRole('status', { name: 'Loading this Session' })).toBeInTheDocument()
-    await expect(await canvas.findByText('The Feed recovered after Retry.')).toBeVisible()
-    await expect(canvas.queryByText('Could not load this Session')).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'Retry' })).toBeNull()
+    await expect(canvas.getByText('Keep this history visible.')).toBeVisible()
   },
 }
 

@@ -5,7 +5,8 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "types": [],
+    // Only the `bun:test` module for the renderer tests: no Bun globals reach the renderer.
+    "types": ["bun-types/test"],
     "jsx": "react-jsx",
     "strict": true,
     "noUncheckedIndexedAccess": true,
@@ -33,15 +34,19 @@
     "src/harnesses/*/presentation/**/*.tsx",
     "src/renderer/**/*.ts",
     "src/renderer/**/*.tsx",
+    "tests/**/*.ts",
+    "mocks/sessions/session-story-host.ts",
+    "mocks/sessions/session-selection-host.fixture.ts",
+    "mocks/tickets/renderer-models.ts",
+    "mocks/platform/story-preload.ts",
+    "mocks/sessions/session-rows.ts",
+    "mocks/tickets/scenario.test.ts",
+    "mocks/platform/trpc-transport.test.ts",
     ".storybook/**/*.ts"
   ],
   "exclude": [
-    "src/domains/*/renderer/**/*.test.ts",
-    "src/domains/*/renderer/**/*.test.tsx",
-    "src/renderer/**/*.test.ts",
-    "src/renderer/**/*.test.tsx",
     "src/platform/contract/**/*.test.ts",
-    "src/platform/renderer/**/*.test.ts",
-    "src/platform/renderer/**/*.test.tsx"
+    // This reads source files through the Bun global, so tsconfig.node.json checks it.
+    "src/renderer/catalogs.test.ts"
   ]
 }

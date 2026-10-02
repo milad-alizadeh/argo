@@ -56,6 +56,8 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20261001044322_drop_session_sync_status' },
       { name: '20261001155229_session_turn_configuration' },
       { name: '20261001215510_session_worktree' },
+      { name: '20261002052125_session_subagent_identity' },
+      { name: '20261002154623_session_context_usage' },
     ])
     expect(
       database

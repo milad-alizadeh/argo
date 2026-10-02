@@ -9,6 +9,7 @@ test('returns generic Session records and counts malformed Claude metadata', asy
   const requested: string[] = []
   const result = await listClaudeSessionSummaries({
     knownNativeIds: [ID_ONE],
+    knownSubagentNativeIds: [],
     reader: {
       list: async () => [{ sessionId: 'invalid', summary: 'Bad', lastModified: 1 }],
       listSubagents: async () => [],
@@ -29,6 +30,7 @@ test('reads interactive Sessions and gets metadata for known Argo Sessions', asy
   const requested: string[] = []
   const result = await listClaudeSessionSummaries({
     knownNativeIds: [ID_ONE, ID_TWO],
+    knownSubagentNativeIds: [],
     reader: {
       list: async () => [
         { sessionId: ID_ONE, summary: 'External Session', lastModified: 1, cwd: '/repo' },
@@ -56,6 +58,7 @@ test('reads interactive Sessions and gets metadata for known Argo Sessions', asy
 test('leaves out a custom title Claude does not report', async () => {
   const result = await listClaudeSessionSummaries({
     knownNativeIds: [],
+    knownSubagentNativeIds: [],
     reader: {
       list: async () => [
         { sessionId: ID_ONE, summary: 'Sparse Session', lastModified: 1, customTitle: undefined },
@@ -71,6 +74,7 @@ test('counts a Session whose custom title breaks the SDKSessionInfo type', async
   const outsideType = { sessionId: ID_ONE, summary: 'Cleared', lastModified: 1, customTitle: null }
   const result = await listClaudeSessionSummaries({
     knownNativeIds: [],
+    knownSubagentNativeIds: [],
     reader: {
       list: async () => [outsideType as unknown as SDKSessionInfo],
       get: async () => undefined,
@@ -84,6 +88,7 @@ test('indexes Claude child IDs without reading their messages', async () => {
   const requested: Array<{ sessionId: string; cwd: string | null }> = []
   const result = await listClaudeSessionSummaries({
     knownNativeIds: [],
+    knownSubagentNativeIds: [],
     reader: {
       list: async () => [{ sessionId: ID_ONE, summary: 'Parent', lastModified: 1, cwd: '/repo' }],
       get: async () => undefined,
@@ -111,6 +116,7 @@ test('a failed child-ID scan does not hide another Claude Session', async () => 
   try {
     const result = await listClaudeSessionSummaries({
       knownNativeIds: [],
+      knownSubagentNativeIds: [],
       reader: {
         list: async () => [
           { sessionId: ID_ONE, summary: 'First', lastModified: 1 },

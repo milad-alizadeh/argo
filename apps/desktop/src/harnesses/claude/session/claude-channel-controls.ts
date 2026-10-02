@@ -1,28 +1,8 @@
 import type { CanUseTool } from '@anthropic-ai/claude-agent-sdk'
-import { z } from 'zod'
 import type { Question, QuestionAnswer } from '@/domains/sessions/api/questions'
-import { questionSchema } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { LiveSessionControls } from '@/harnesses/registration'
-import { ASK_USER_QUESTION_TOOL } from './claude-status-hooks'
-
-const askInputSchema = z.object({
-  questions: z
-    .array(
-      z.object({
-        question: z.string().min(1),
-        header: z.string().nullable(),
-        multiSelect: z.boolean(),
-        options: z.array(
-          z.object({
-            label: z.string().min(1),
-            description: z.string().nullable(),
-          }),
-        ),
-      }),
-    )
-    .min(1),
-})
+import { ASK_USER_QUESTION_TOOL, readAskedQuestions } from './claude-asked-questions'
 
 type ControlIdentity = {
   commandId: string
@@ -79,12 +59,11 @@ async function askQuestion(
   toolInput: Parameters<CanUseTool>[1],
   options: Parameters<CanUseTool>[2],
 ): Promise<Awaited<ReturnType<CanUseTool>>> {
-  const parsed = askInputSchema.safeParse(toolInput)
-  if (!parsed.success) {
+  const questions = readAskedQuestions(toolInput)
+  if (questions === null) {
     context.reject()
     return { behavior: 'deny', message: 'Claude sent an unsupported Question.' }
   }
-  const questions = parsed.data.questions.map((question) => questionSchema.parse(question))
   context.emit({ type: 'question', ...context.identity, questions, answer: null })
   context.emitStatus('asking')
   const answers = await context.controls.requestQuestion({

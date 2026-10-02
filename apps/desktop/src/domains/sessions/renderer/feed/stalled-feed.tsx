@@ -9,22 +9,20 @@ import type { SessionPosture } from '../types'
 export function StalledFeed({
   posture,
   onRetry,
-  compact = false,
 }: {
   posture: SessionPosture | null
   onRetry: () => void
-  compact?: boolean
 }) {
   const { t } = useTranslation('sessions')
   return (
     <EmptyState
-      className={compact ? 'mx-auto mt-(--spacing-snug) max-w-sm' : 'h-full'}
+      className="h-full"
       data-state="stalled"
       description={t(
         posture === 'live' ? 'stalled.description.live' : 'stalled.description.external',
       )}
       media={<Icon name="retry" />}
-      size={compact ? 'compact' : 'full'}
+      size="full"
       title={t('stalled.title')}
       actionClassName="flex-row justify-center"
       action={

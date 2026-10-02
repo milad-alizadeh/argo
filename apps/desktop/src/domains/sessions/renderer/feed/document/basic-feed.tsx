@@ -21,7 +21,6 @@ import type { RevealCache } from '../rows/streaming-text'
 import { ToolGroupState } from '../rows/tool-group-state'
 import { AnchoredFeed } from '../scroll/anchored-feed'
 import { useReveals } from '../scroll/reveal'
-import { StalledFeed } from '../stalled-feed'
 import { Standing } from '../standing'
 import { useFeedMeasurementsCache } from '../use-feed-measurements-cache'
 import { useDrawnRow } from './drawn-row'
@@ -112,12 +111,12 @@ export function BasicFeed({
   const document = feed !== null && feed.sessionId === selectedSessionId ? feed : null
   // The selected Feed has no history row to settle its first read (#2102).
   const { retry, retryToken } = useFeedRetry(onRetryFeed)
-  // A Session its Harness has not named yet has no reading to wait on, so it never stalls.
+  // Only the first read of a named Session stalls; a reply wait keeps the running loader (#3170).
   const awaitingFeed =
     failure === null &&
     selectedSessionId !== null &&
     pendingSessionDraft(selectedSessionId) === null &&
-    (document === null || (running && awaitingAssistantReply(document.rows)))
+    document === null
   const stalled = useStallTimer(
     awaitingFeed ? `${selectedSessionId}:${retryToken}` : false,
     stallTimeoutMs,
@@ -144,7 +143,7 @@ export function BasicFeed({
           key={document.sessionId}
           reading={document}
           running={running}
-          stalled={stalled}
+          questionLocked={posture !== 'live'}
           activeEvidenceId={activeEvidenceId}
           initialMeasurementsCache={initialMeasurementsCache(document.sessionId)}
           initialScrollPosition={initialPosition(document.sessionId)}
@@ -158,9 +157,6 @@ export function BasicFeed({
           historyLabel={historyLabel ?? t('historyLabel')}
         />
       )}
-      {stalled && document !== null ? (
-        <StalledFeed compact posture={posture} onRetry={retry} />
-      ) : null}
       {document === null ? (
         <Standing
           failure={failure}
@@ -177,7 +173,7 @@ export function BasicFeed({
 type FeedDocumentProps = {
   reading: SessionFeed
   running: boolean
-  stalled: boolean
+  questionLocked: boolean
   activeEvidenceId: string | null
   initialMeasurementsCache: VirtualItem[]
   initialScrollPosition: number | null
@@ -195,7 +191,7 @@ function EmptyFeed({ title, description }: { title: string; description: string 
 function FeedDocument({
   reading,
   running,
-  stalled,
+  questionLocked,
   activeEvidenceId,
   initialMeasurementsCache,
   initialScrollPosition,
@@ -220,8 +216,7 @@ function FeedDocument({
     onAnswerQuestion,
     answeringQuestionId,
     questionFailure,
-    // Standing, not posture, is what refuses an answer; it lands with the lease (#2861 E2).
-    questionLocked: false,
+    questionLocked,
   })
   const { column, settled } = useSettledFeed({
     sessionId: reading.sessionId,
@@ -256,7 +251,7 @@ function FeedDocument({
         {noRows && !awaitingReply ? (
           <EmptyFeed title={t('empty.blank.title')} description={t('empty.blank.description')} />
         ) : null}
-        {awaitingReply && !stalled ? <FeedLoading state="running" /> : null}
+        {awaitingReply ? <FeedLoading state="running" /> : null}
       </div>
     </div>
   )

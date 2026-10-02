@@ -25,7 +25,8 @@ import { forgetComposerDraft, rememberComposerDraft } from './composer-draft-cac
 import { shouldLoadComposerDraft } from './composer-draft-load'
 import {
   type ComposerDraftActionInput,
-  cancelSaveTimer,
+  cancelPendingSave,
+  type PendingSave,
   useComposerDraftSubmit,
 } from './composer-draft-submit'
 
@@ -342,7 +343,7 @@ function useComposerDraftAutosave(
     persist,
     persisted,
     latestEditing,
-    saveTimer,
+    pendingSaves,
     owner,
     target,
     targetRestored,
@@ -363,14 +364,14 @@ function useComposerDraftAutosave(
         initialFingerprints.current.delete(owner)
         if (baseline === currentFingerprint) return
       }
-      cancelSaveTimer(saveTimer, owner)
-      const timer = window.setTimeout(() => {
-        if (saveTimer.current.get(owner) === timer) saveTimer.current.delete(owner)
+      cancelPendingSave(pendingSaves, owner)
+      const save = () => {
+        if (pendingSaves.current.get(owner)?.save === save) pendingSaves.current.delete(owner)
         void persist(content).catch(() => {
           if (owner !== null) setSaveFailureOwner(owner)
         })
-      }, 250)
-      saveTimer.current.set(owner, timer)
+      }
+      pendingSaves.current.set(owner, { timer: window.setTimeout(save, 250), save })
     },
     [
       initialFingerprints,
@@ -380,7 +381,7 @@ function useComposerDraftAutosave(
       targetRestored,
       persist,
       persisted,
-      saveTimer,
+      pendingSaves,
       setSaveFailureOwner,
       suppressNextEmptyAutosave,
     ],
@@ -451,6 +452,23 @@ export function useDurableComposerDraft(input: DurableComposerDraftInput) {
       }
 }
 
+// A reload drops timers, so a page hide sends every pending save now. A save queued behind an
+// unanswered one still waits for it, since main rejects a stale revision.
+function usePendingSaves() {
+  const pendingSaves = useRef(new Map<string, PendingSave>())
+  useEffect(() => {
+    const sendPending = () => {
+      for (const pending of pendingSaves.current.values()) {
+        window.clearTimeout(pending.timer)
+        pending.save()
+      }
+    }
+    window.addEventListener('pagehide', sendPending)
+    return () => window.removeEventListener('pagehide', sendPending)
+  }, [])
+  return pendingSaves
+}
+
 function useComposerDraftPersistence(input: {
   target: DraftTarget | null
   owner: string | null
@@ -470,7 +488,7 @@ function useComposerDraftPersistence(input: {
   } | null>(null)
   const latestEditing = useRef<ComposerEditing | null>(null)
   const saveChain = useRef<Promise<void>>(Promise.resolve())
-  const saveTimer = useRef(new Map<string, number>())
+  const pendingSaves = usePendingSaves()
   const suppressNextEmptyAutosave = useRef<string | null>(null)
   const persist = usePersistComposerDraft({
     target,
@@ -486,7 +504,7 @@ function useComposerDraftPersistence(input: {
     persist,
     persisted,
     latestEditing,
-    saveTimer,
+    pendingSaves,
     owner,
     target,
     targetRestored,
@@ -498,7 +516,7 @@ function useComposerDraftPersistence(input: {
     persist,
     persisted,
     latestEditing,
-    saveTimer,
+    pendingSaves,
     submit: submitMutation,
     owner,
     setSaveFailureOwner,

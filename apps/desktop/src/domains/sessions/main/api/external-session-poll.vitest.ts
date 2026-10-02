@@ -75,13 +75,19 @@ async function statusOf(id: string) {
   return (await caller.list({ projectId: 'project-1' })).rows.find((row) => row.id === id)?.status
 }
 
-test('a hook that lands while a tick waits on an earlier transcript keeps its status', async () => {
-  await poll.tick()
+// Holds the next stat of a Session's transcript until released; entered settles once it waits.
+function holdStat(nativeId: string) {
   let release = () => {}
   const released = new Promise<void>((resolve) => (release = resolve))
   const entered = new Promise<void>((resolve) =>
-    held.set(`${TRANSCRIPTS}${FIRST}`, { entered: resolve, released }),
+    held.set(`${TRANSCRIPTS}${nativeId}`, { entered: resolve, released }),
   )
+  return { entered, release }
+}
+
+test('a hook that lands while a tick waits on an earlier transcript keeps its status', async () => {
+  await poll.tick()
+  const { entered, release } = holdStat(FIRST)
   const ticking = poll.tick()
   await entered
   const now = Date.now()
@@ -100,6 +106,19 @@ test('a hook that lands while a tick waits on an earlier transcript keeps its st
   await poll.tick()
   poll.flush()
   expect(await statusOf(SECOND)).toBe('unknown')
+})
+
+test('a row saved after a listing waits for the next listing to close it', async () => {
+  const THIRD = '00000000-0000-4000-8000-0000000000c3'
+  const { entered, release } = holdStat(FIRST)
+  const ticking = poll.tick()
+  await entered
+  insertSession(caller.database, { id: THIRD, harness: 'codex', nativeId: THIRD })
+  release()
+  await ticking
+  expect(await statusOf(THIRD)).toBe('unknown')
+  await poll.tick()
+  expect(await statusOf(THIRD)).toBe('idle')
 })
 
 test('a listing that gives a status asks for no read at first sight', async () => {

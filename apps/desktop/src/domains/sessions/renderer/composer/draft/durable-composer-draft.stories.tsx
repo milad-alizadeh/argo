@@ -938,6 +938,20 @@ export const HarnessSwitchSendsAConfigurationTheNewHarnessOffers: Story = {
   },
 }
 
+// A reload right after a choice sends the pending save before the page goes (#3153).
+export const PageHideSendsAPendingSave: Story = {
+  args: { project: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent('Plan this change.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Harness Codex' }))
+    window.dispatchEvent(new PageTransitionEvent('pagehide'))
+    // Well inside the 250 ms autosave delay, so only the page hide can have saved.
+    await new Promise((resolve) => window.setTimeout(resolve, 50))
+    await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('"harness":"codex"')
+  },
+}
+
 export const RestoresSavedCodexConfigurationBeforeSend: Story = {
   args: { project: true, savedProjectHarness: 'codex', initialOutcome: 'reject' },
   play: async ({ canvasElement }) => {

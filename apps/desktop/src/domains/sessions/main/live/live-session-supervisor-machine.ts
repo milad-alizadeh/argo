@@ -29,6 +29,7 @@ import {
   createSessionCommandStore,
   createSessionUpsert,
   type SessionCommandStore,
+  saveFirstPromptOfUntitled,
   saveSessionSubagents,
   setSessionCommandOutcome,
 } from '../database'
@@ -58,11 +59,14 @@ function sessionIsUnavailable(actor: LiveSessionActor): boolean {
   return snapshot.matches('Failed') || snapshot.matches('Closed')
 }
 
-// Whether the channel is open and how its next Turn runs; a change here refreshes selected details.
+// Whether the channel is open, how its next Turn runs and how full its context is; a change here
+// refreshes selected details.
 function liveDetailsOf(actor: LiveSessionActor): string {
+  const { turnConfiguration, contextUsage } = actor.getSnapshot().context
   return JSON.stringify([
     sessionIsUnavailable(actor),
-    actor.getSnapshot().context.turnConfiguration,
+    turnConfiguration,
+    contextUsage,
   ])
 }
 
@@ -756,7 +760,16 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
                 persist: fromPromise(({ input: record }) => {
                   if (record.nativeId === null)
                     throw new Error('Session has no native ID to persist.')
-                  if (record.sessionId !== undefined) return Promise.resolve(record.sessionId)
+                  if (record.sessionId !== undefined) {
+                    // A resumed Session nothing names takes its title from this prompt at once.
+                    const { database, changes } = dependencies
+                    const { sessionId, firstPrompt } = record
+                    if (saveFirstPromptOfUntitled(database, sessionId, firstPrompt))
+                      changes?.changed([
+                        sessionId,
+                      ])
+                    return Promise.resolve(sessionId)
+                  }
                   if (record.projectId === null)
                     throw new Error('New Session has no Project to persist.')
                   const { worktree, ...saved } = record

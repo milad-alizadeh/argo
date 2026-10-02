@@ -1,9 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync, watch } from 'node:fs'
+import type { SDKControlGetContextUsageResponse } from '@anthropic-ai/claude-agent-sdk'
 import {
   SESSION_MOCK_START_HOLD_FILE_ENV,
   waitWhileHoldFileExists,
 } from '@/harnesses/proof-protocol'
+import { MOCK_CONTEXT_USAGE } from '../mock-context-usage.ts'
 import { MOCK_CLAUDE_VERSION } from './mock-claude-cli.ts'
 
 // The command list the CLI reports, from the JSON file this names, shaped like
@@ -52,6 +54,25 @@ const MODELS = [
     supportsAutoMode: false,
   },
 ]
+
+// The mock's answer to a `get_context_usage` control request.
+function contextUsageResponse(): SDKControlGetContextUsageResponse {
+  const { usedTokens, windowTokens } = MOCK_CONTEXT_USAGE.claude
+  return {
+    categories: [],
+    totalTokens: usedTokens,
+    maxTokens: windowTokens,
+    rawMaxTokens: windowTokens,
+    percentage: Math.round((usedTokens / windowTokens) * 100),
+    gridRows: [],
+    model: 'claude-opus-5',
+    memoryFiles: [],
+    mcpTools: [],
+    agents: [],
+    isAutoCompactEnabled: true,
+    apiUsage: null,
+  }
+}
 
 function mockCommands(): unknown {
   const file = process.env[MOCK_CLAUDE_COMMANDS_FILE_ENV]
@@ -116,13 +137,11 @@ export function startMockClaudeSdkStream(
   }
   const handleLine = (line: string) => {
     const input = JSON.parse(line)
-    const initializationId = initializationRequestId(input)
-    if (initializationId !== null) {
-      process.stdout.write(
-        `${JSON.stringify({ type: 'control_response', response: { subtype: 'success', request_id: initializationId, response: { models: MODELS, commands: mockCommands() } } })}\n`,
-      )
-      return
-    }
+    const initializationId = controlRequestId(input, 'initialize')
+    if (initializationId !== null)
+      return respond(initializationId, { models: MODELS, commands: mockCommands() })
+    const contextUsageId = controlRequestId(input, 'get_context_usage')
+    if (contextUsageId !== null) return respond(contextUsageId, contextUsageResponse())
     const permissionId = permissionResponseId(input)
     if (permissionId !== null) {
       pendingPermissions.get(permissionId)?.()
@@ -279,7 +298,13 @@ function writeInitialization(sessionId: string) {
   )
 }
 
-export function initializationRequestId(input: unknown): string | null {
+function respond(requestId: string, response: unknown) {
+  process.stdout.write(
+    `${JSON.stringify({ type: 'control_response', response: { subtype: 'success', request_id: requestId, response } })}\n`,
+  )
+}
+
+export function controlRequestId(input: unknown, subtype: string): string | null {
   if (typeof input !== 'object' || input === null || !('type' in input)) return null
   if (input.type !== 'control_request' || !('request_id' in input) || !('request' in input))
     return null
@@ -288,7 +313,7 @@ export function initializationRequestId(input: unknown): string | null {
     typeof request !== 'object' ||
     request === null ||
     !('subtype' in request) ||
-    request.subtype !== 'initialize'
+    request.subtype !== subtype
   )
     return null
   return typeof input.request_id === 'string' ? input.request_id : null

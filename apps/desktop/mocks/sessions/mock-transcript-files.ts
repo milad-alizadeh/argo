@@ -113,13 +113,16 @@ async function writeSubagents(transcripts: string, name: string, folder: string)
 
 // A Claude transcript root shaped the way the Harness writes one: a folder per working directory
 // holding one `<sessionId>.jsonl` per Session. Written in the given order, so the mtime ordering
-// is the argument order reversed.
+// is the argument order reversed. Each recorded working directory is made too.
 export async function writeFixtureTree(transcripts: string, names: readonly string[]) {
   await mkdir(shellOutputRoot(transcripts), { recursive: true })
   for (const name of names) {
     const lines = await fixtureLines(name)
     const text = withSessionId(placeInProofProject(`${lines.join('\n')}\n`, transcripts), name)
-    const file = await newFixturePath(transcripts, name, recordedCwd(text, name))
+    const cwd = recordedCwd(text, name)
+    // A send resumes in the recorded folder and fails when it is gone.
+    await mkdir(cwd, { recursive: true })
+    const file = await newFixturePath(transcripts, name, cwd)
     await writeFile(file, text)
     await writeSubagents(transcripts, name, path.dirname(file))
   }

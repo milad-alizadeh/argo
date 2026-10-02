@@ -1,4 +1,4 @@
-import { sessionRow } from '@/mocks/sessions/session-rows'
+import { listedSession, sessionRow } from '@/mocks/sessions/session-rows'
 import { storybookAutoCompactProcedures } from './storybook-auto-compact'
 import { subscribeToStorybookCommands } from './storybook-commands'
 import { storybookHarnessSignInProcedures } from './storybook-harness-signin'
@@ -10,13 +10,9 @@ import { ticketsHost } from './tickets-host'
 // (`feed/measure.ts`). A story has no preload, so the one call it reaches is answered here with
 // the zoom a story is drawn at.
 export const host = window
-const storybookSession = sessionRow({
-  id: 'storybook-session',
-  posture: null,
-  name: 'Storybook Session',
-  status: 'idle',
-  cwd: '/storybook/argo',
-})
+const storybookSession = listedSession(
+  sessionRow({ id: 'storybook-session', name: 'Storybook Session', status: 'idle' }),
+)
 const procedureHandlers = (): StorybookProcedureHandlers => {
   return {
     ...storybookProjectProcedures,

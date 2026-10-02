@@ -1,7 +1,7 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { Permission } from '@/domains/sessions/api/permissions'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
-import type { Session } from '@/domains/sessions/renderer/types'
+import type { SessionDetails } from '@/domains/sessions/renderer/types'
 import {
   type FeedRead,
   heldDetails,
@@ -166,7 +166,7 @@ function clearSelectionReads() {
 // stored; a held Session's draft read waits for `releaseDraftRead`, and its details read for
 // `releaseSessionDetails`.
 export function sessionSelectionHost(
-  sessions: readonly Session[],
+  sessions: readonly SessionDetails[],
   options: {
     savedDrafts?: Record<string, string>
     heldDraftReads?: string[]

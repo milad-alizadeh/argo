@@ -4,11 +4,12 @@ import { sessionRow } from '@/mocks/sessions/session-rows'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { SessionShell } from './session-shell'
 
+const TITLE = 'Keep the sidebar control clear of every Session title at every workspace width'
 const session = sessionRow({
   id: '01K5S9WHWCG1S9K3K88P4JBQBP',
   posture: null,
   status: 'idle',
-  name: 'Keep the sidebar control clear of every Session title at every workspace width',
+  name: TITLE,
   cwd: '/workspace/argo/.claude/worktrees/ticket-page-layout',
 })
 
@@ -41,7 +42,7 @@ function SessionLayout() {
 
 function expectIdentityInPageHeader(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
-  const title = canvas.getByRole('heading', { name: session.name })
+  const title = canvas.getByRole('heading', { name: TITLE })
   const header = canvasElement.querySelector<HTMLElement>('[data-component="AppMainHeader"]')
   const identity = canvasElement.querySelector<HTMLElement>('[data-component="SessionIdentity"]')
   if (header === null || identity === null)
@@ -70,7 +71,7 @@ export const Open: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     expectIdentityInPageHeader(canvasElement)
-    const title = canvas.getByRole('heading', { name: session.name })
+    const title = canvas.getByRole('heading', { name: TITLE })
     const header = canvasElement.querySelector<HTMLElement>('[data-component="AppMainHeader"]')
     if (header === null) throw new Error('The Session header is absent.')
     const gutter = Number.parseFloat(getComputedStyle(header).paddingInlineStart)
@@ -86,7 +87,7 @@ export const Collapsed: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
     const opener = await canvas.findByRole('button', { name: 'Open sidebar' })
-    const title = canvas.getByRole('heading', { name: session.name })
+    const title = canvas.getByRole('heading', { name: TITLE })
     await expect(title.getBoundingClientRect().top).toBeLessThan(
       opener.getBoundingClientRect().bottom,
     )

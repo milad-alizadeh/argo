@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { DEFAULT_HARNESS, type Harness } from '@/harnesses/harness'
+import type { Harness } from '@/harnesses/harness'
 import {
   Tooltip,
   TooltipContent,
@@ -85,13 +85,13 @@ export function SessionContextBar({
 }: {
   contextTokens: number | null | undefined
   contextWindowTokens: number | null | undefined
-  harness: Harness | undefined
+  // Null while an open Session's details load: the bar shows nothing Harness-specific (#3171).
+  harness: Harness | null
   isCompacting: boolean
   isHandingOff?: boolean
   onCompact?: () => Promise<boolean>
   onHandoff?: () => Promise<boolean>
 }) {
-  const selectedHarness = harness ?? DEFAULT_HARNESS
   const usedTokens = contextTokens ?? 0
   const capacityTokens = contextWindowTokens ?? null
   const percentage =
@@ -105,27 +105,31 @@ export function SessionContextBar({
       className="@container relative z-0 flex min-h-(--size-session-context-bar) min-w-0 select-none items-center gap-2 rounded-b-xl border bg-card px-3 pt-4 pb-2 shadow-(--shadow-surface) @[56rem]:gap-3 @[56rem]:px-4"
       data-component="SessionContextBar"
     >
-      <div className="shrink-0 pl-2 @[56rem]:pl-4">
-        <UsagePopover harness={selectedHarness} />
-      </div>
-      <div className="shrink-0 @[56rem]:hidden">
-        <ContextPopover
-          compact
-          harness={selectedHarness}
-          capacityTokens={capacityTokens}
-          percentage={percentage}
-          usedTokens={usedTokens}
-        />
-      </div>
-      <div className="hidden shrink-0 @[56rem]:block">
-        <ContextPopover
-          harness={selectedHarness}
-          capacityTokens={capacityTokens}
-          labelled
-          percentage={percentage}
-          usedTokens={usedTokens}
-        />
-      </div>
+      {harness === null ? null : (
+        <>
+          <div className="shrink-0 pl-2 @[56rem]:pl-4">
+            <UsagePopover harness={harness} />
+          </div>
+          <div className="shrink-0 @[56rem]:hidden">
+            <ContextPopover
+              compact
+              harness={harness}
+              capacityTokens={capacityTokens}
+              percentage={percentage}
+              usedTokens={usedTokens}
+            />
+          </div>
+          <div className="hidden shrink-0 @[56rem]:block">
+            <ContextPopover
+              harness={harness}
+              capacityTokens={capacityTokens}
+              labelled
+              percentage={percentage}
+              usedTokens={usedTokens}
+            />
+          </div>
+        </>
+      )}
       <SessionContextActions
         {...{ canCompact, canHandoff, isCompacting, isHandingOff, onCompact, onHandoff }}
       />

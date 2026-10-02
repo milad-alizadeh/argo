@@ -150,7 +150,7 @@ test('announces each changed live child to the roster once', async () => {
     await Promise.resolve()
     expect(announced).toEqual([[sessionId], [sessionId]])
     expect(database.select().from(sessionSubagent).all()).toMatchObject([
-      { sessionId, subagentId: 'child', state: 'completed' },
+      { parentSessionId: sessionId, nativeId: 'child', state: 'completed' },
     ])
   } finally {
     stop()

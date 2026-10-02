@@ -24,12 +24,16 @@
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true
   },
+  // Renderer test that reads source files through the Bun global; tsconfig.web.json excludes it.
+  "files": ["src/renderer/catalogs.test.ts"],
   "include": [
     "src/**/*.ts",
     "*.config.ts",
     "forge.config.ts",
     "scripts/**/*.mts",
-    "tools/**/*.mts"
+    "tools/**/*.mts",
+    "mocks/**/*.ts",
+    "mocks/**/*.mts"
   ],
   "exclude": [
     "src/renderer",
@@ -41,19 +45,13 @@
     "src/harnesses/harness-presentation.ts",
     "src/harnesses/presentation-registry.ts",
     "src/harnesses/*/presentation",
-    "src/harnesses/claude/integration",
-    "src/harnesses/codex/integration",
-    "src/platform/contract/appearance.test.ts",
-    "src/platform/main/appearance.test.ts",
-    "src/domains/projects/**/*.test.ts",
-    "src/platform/contract/commands.test.ts",
-    "src/platform/contract/watch.test.ts",
-    "src/platform/main/watch/**/*.test.ts",
-    "src/platform/main/ipc/every-domain-refuses-untrusted-frames.test.ts",
-    "src/domains/sessions/main/projection/reads.test.ts",
-    "src/harnesses/codex/sessions/thread-titles.test.ts",
-    "src/harnesses/codex/sessions/thread-names.test.ts",
-    "src/harnesses/codex/sessions/managed-thread-titles.test.ts",
-    "src/harnesses/codex/sessions/thread-title-fixtures.ts"
+    // Mocks that import renderer code: tsconfig.web.json includes and checks them.
+    "mocks/sessions/session-story-host.ts",
+    "mocks/sessions/session-selection-host.fixture.ts",
+    "mocks/tickets/renderer-models.ts",
+    "mocks/platform/story-preload.ts",
+    "mocks/sessions/session-rows.ts",
+    "mocks/tickets/scenario.test.ts",
+    "mocks/platform/trpc-transport.test.ts"
   ]
 }

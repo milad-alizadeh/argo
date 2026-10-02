@@ -83,10 +83,14 @@ is exempt by name because it reaches across domains on purpose to build test fix
 `sessions/main/index/session-index/roster-fixtures.ts`.
 `*.test.ts`/`*.stories.tsx` files are exempt too, matching the same allowance the old
 `biome.jsonc` matrix made. Nothing reads the import graph for cycles.
-- **`tsconfig.web.json` sets `"types": []`**, and it is load-bearing. Without it the renderer
-  inherits every package in the root `@types`, `node` among them, and `process.env.SOME_TOKEN`
-  type-checks clean in the one process that must never hold a token, with no import statement for
-  a specifier rule to see.
+- **`tsconfig.web.json`'s `"types": ["bun-types/test"]` keeps Bun globals out of the renderer,
+  but not Node globals.** Package types the project reaches (the main-process router type, the
+  agent SDK, `.storybook`) load `node`, and globals are shared by the whole program, so
+  `process.env.SOME_TOKEN` type-checks clean in renderer source. A tsconfig cannot remove a global
+  that a package type declares. Biome's `noRestrictedGlobals` override in `biome.jsonc` bans
+  `process`, `Buffer`, `require`, `__dirname`, `__filename` and `global` in renderer source instead
+  (#3174); tests are exempt. Its `includes` list is kept by hand: a file the renderer starts to
+  import from outside it is not checked. The rule also misses `globalThis.process`.
 - **`contextIsolation: true` and `nodeIntegration: false` in
   `apps/desktop/src/platform/main/window/create-window.ts` are
   asserted by nothing.** Those two values make any Node reach from the renderer inert at
@@ -117,8 +121,8 @@ imports and 1 duplicate export. Working through that list found:
 
 - Four real bugs: stale relative imports in `apps/desktop/mocks/` and `apps/desktop/tools/` left
   over from a facet reorganisation, pointing at files that had moved or never existed at that
-  path. `tsconfig.e2e.json` sets `noCheck: true` over `mocks/`, so nothing else in the repository
-  would have caught the ones there; `tools/` has the strict `tsconfig.tools.json` (#3068). Knip's own resolution run found these; a person did not.
+  path. `mocks/` is in the strict `tsconfig.node.json` and `tsconfig.web.json` (#3175); `tools/`
+  has the strict `tsconfig.tools.json` (#3068). Knip's own resolution run found these; a person did not.
 - Three stories importing `Meta`/`StoryObj` from `@storybook/react` instead of this repository's
   own `@storybook/react-vite`, out of step with every other story file. Knip's Storybook plugin
   would have covered the framework's own package.

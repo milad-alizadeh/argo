@@ -257,7 +257,7 @@ export const SessionRow = memo(function SessionRow({
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
           <span className="block min-w-0 truncate type-body font-medium text-foreground">
-            <SessionTitle session={session} text={session.name} />
+            <SessionTitle session={session} />
           </span>
           {archived ? (
             <span

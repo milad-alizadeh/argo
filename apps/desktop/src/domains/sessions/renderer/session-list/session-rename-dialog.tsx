@@ -74,7 +74,7 @@ function SessionRenameForm({ onClose, saving, session, setSaving }: SessionRenam
   const [error, setError] = useState<string | null>(null)
   useEffect(() => {
     if (session === null) return
-    setName(session.name)
+    setName(session.name ?? '')
     setError(null)
   }, [session])
 

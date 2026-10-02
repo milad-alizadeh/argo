@@ -18,6 +18,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/platform/renderer/components/ui/context-menu'
+import { useSessionTitleText } from '../prompt'
 import type { Session, SessionId } from '../types'
 import { SESSION_LIST_ROW_HEIGHT, SessionRow } from './session-row'
 
@@ -89,8 +90,9 @@ function SessionMenuItems({
   target,
 }: SessionMenuHandlers & { target: Session }) {
   const { t } = useTranslation('sessions')
+  const title = useSessionTitleText(target.name)
   return (
-    <ContextMenuContent aria-label={t('contextMenu.actions', { title: target.name })}>
+    <ContextMenuContent aria-label={t('contextMenu.actions', { title })}>
       <ContextMenuGroup>
         <ContextMenuItem onClick={() => onRename(target)}>
           {t('contextMenu.rename')}
