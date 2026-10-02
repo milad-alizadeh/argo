@@ -318,6 +318,7 @@ async function chainEntries(
   }).entries
 }
 
+// Read at each send, so a status the story lands after subscribing still shows.
 const latestLiveStatus = (live: readonly SessionLiveEvent[]) =>
   live.findLast((event) => event.type === 'status')?.status ?? null
 
@@ -336,7 +337,6 @@ function sessionFeedSubscribe(
     let entries: FeedReading['entries'] = []
     let reads = 0
     let open = true
-    const liveStatus = subagentId === null ? latestLiveStatus(live) : null
     const send = (state: FeedReading['state'], error: FeedReading['error']) =>
       listener({
         id: request.id,
@@ -348,7 +348,7 @@ function sessionFeedSubscribe(
             state,
             error,
             pendingPermissionId: null,
-            liveStatus,
+            liveStatus: subagentId === null ? latestLiveStatus(live) : null,
             entries,
             hasOlder: false,
             subagents: subagentId === null ? feedSubagents(feedEntryRows(entries)) : [],
