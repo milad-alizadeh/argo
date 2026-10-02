@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
+import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process'
 import { once } from 'node:events'
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
@@ -71,7 +71,7 @@ async function sessionTexts(run: { configDirectory: string }) {
   return messages.map((message) => `${message.type}: ${JSON.stringify(message.message)}`)
 }
 
-function send(child: ReturnType<typeof spawn>, prompt: string) {
+function send(child: ChildProcessWithoutNullStreams, prompt: string) {
   child.stdin.write(`${ESCAPE}[200~${prompt}${ESCAPE}[201~\r`)
 }
 

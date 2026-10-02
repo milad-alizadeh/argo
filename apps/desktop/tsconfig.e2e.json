@@ -19,12 +19,5 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": [
-    "e2e/**/*.ts",
-    "mocks/**/*.ts",
-    "src/harnesses/claude/integration/**/*.ts",
-    "src/harnesses/codex/integration/**/*.ts",
-    "src/domains/projects/**/*.test.ts",
-    "src/platform/main/ipc/every-domain-refuses-untrusted-frames.test.ts"
-  ]
+  "include": ["e2e/**/*.ts"]
 }
