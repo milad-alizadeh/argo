@@ -369,3 +369,21 @@ test('links a saved Session once discovery finds it is a subagent, and keeps its
     client.close()
   }
 })
+
+test('remembers a subagent that names no parent, so the next sync skips it (#3084)', () => {
+  const { client, database } = createDatabase()
+  try {
+    const [childId] = saveSessionBatch(database, 'codex', [{ nativeId: 'parentless' }])
+    const batch = {
+      harness: 'codex' as const,
+      records: [],
+      subagents: [{ nativeId: 'parentless', parentNativeId: null }],
+    }
+    assert.deepEqual(writeSessionBatch(database, batch), [childId])
+    assert.deepEqual(writeSessionBatch(database, batch), [])
+    assert.deepEqual(knownSubagentIds(database, 'codex'), ['parentless'])
+    assert.deepEqual(knownSubagentIds(database, 'claude'), [])
+  } finally {
+    client.close()
+  }
+})

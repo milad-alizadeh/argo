@@ -9,6 +9,7 @@ import {
   getTableColumns,
   isNotNull,
   isNull,
+  notExists,
   type SQL,
   sql,
 } from 'drizzle-orm'
@@ -16,6 +17,7 @@ import { alias } from 'drizzle-orm/sqlite-core'
 import { createSelectSchema } from 'drizzle-orm/zod'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
+import { parentlessSubagent } from '@/database/parentless-subagent/schema'
 import { sessionTable } from '@/database/session/schema'
 import {
   sessionSelectSchema,
@@ -236,13 +238,28 @@ function linkedTicketId(database: Database, source: LinkedTicketSource | null): 
 }
 
 const parentSession = alias(sessionTable, 'parent_session')
-// A Session another Session of its Harness lists as a Subagent is that Session's child, not a row.
-function notListedAsSubagent(database: Database): SQL {
-  const children = database
-    .select({ harness: parentSession.harness, nativeId: sessionSubagent.subagentId })
+// A Subagent is no row: another Session of its Harness lists it, or discovery found it parentless.
+function notListedAsSubagent(database: Database): SQL | undefined {
+  const linked = database
+    .select({ found: sql`1` })
     .from(sessionSubagent)
     .innerJoin(parentSession, eq(parentSession.argoId, sessionSubagent.sessionId))
-  return sql`(${sessionTable.harness}, ${sessionTable.nativeId}) not in ${children}`
+    .where(
+      and(
+        eq(sessionSubagent.subagentId, sessionTable.nativeId),
+        eq(parentSession.harness, sessionTable.harness),
+      ),
+    )
+  const parentless = database
+    .select({ found: sql`1` })
+    .from(parentlessSubagent)
+    .where(
+      and(
+        eq(parentlessSubagent.harness, sessionTable.harness),
+        eq(parentlessSubagent.nativeId, sessionTable.nativeId),
+      ),
+    )
+  return and(notExists(linked), notExists(parentless))
 }
 
 // The stored Sessions `where` selects, with their linked Ticket, archive mark and match count.

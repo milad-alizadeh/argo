@@ -3,6 +3,7 @@ import { test } from 'vitest'
 import { createActor, type EventFrom, fromPromise, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
 import type {
+  SessionSubagentLink,
   SessionSummaryList,
   SessionSummaryListResult,
 } from '@/domains/sessions/api/session-discovery'
@@ -67,7 +68,7 @@ test('saves previously stored child IDs even when the scan has no Session record
   let saved:
     | {
         records: string[]
-        subagents: { nativeId: string; parentNativeId: string }[]
+        subagents: SessionSubagentLink[]
       }
     | undefined
   const actor = createActor(
@@ -108,7 +109,7 @@ test('saves previously stored child IDs even when the scan has no Session record
 test('saves child links after every root batch has been written', async () => {
   const batches: {
     records: string[]
-    subagents: { nativeId: string; parentNativeId: string }[]
+    subagents: SessionSubagentLink[]
   }[] = []
   const actor = createActor(
     sessionSyncMachine.provide({

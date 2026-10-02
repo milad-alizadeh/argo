@@ -1,4 +1,4 @@
-import { primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { index, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { sessionTable } from '@/database/session/schema'
 
 export const SESSION_SUBAGENT_STATES = [
@@ -20,5 +20,9 @@ export const sessionSubagent = sqliteTable(
     label: text(),
     state: text({ enum: SESSION_SUBAGENT_STATES }).notNull(),
   },
-  (table) => [primaryKey({ columns: [table.sessionId, table.subagentId] })],
+  (table) => [
+    primaryKey({ columns: [table.sessionId, table.subagentId] }),
+    // The Session List looks a Session up by its native ID here to leave children out.
+    index('session_subagent_subagent').on(table.subagentId),
+  ],
 )

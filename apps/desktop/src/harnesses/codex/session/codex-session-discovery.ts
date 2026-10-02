@@ -63,9 +63,11 @@ type ParsedThread =
   | { kind: 'parentlessSubagent'; nativeId: string }
   | { kind: 'unrecognised' }
 
+type ParentLink = { nativeId: string; parentNativeId: string }
+
 type ThreadCollections = {
   records: Map<string, SessionSummary>
-  subagents: Map<string, SessionSubagentLink>
+  subagents: Map<string, ParentLink>
   // Listed subagents whose parent only a thread/read names.
   awaitingParentRead: Set<string>
   // Sessions whose source this adapter does not know; kept as Sessions, then reported.
@@ -111,10 +113,7 @@ function sourceParentOf(source: SubAgentSource): string | null {
   return source satisfies never
 }
 
-function rootParentOf(
-  nativeId: string,
-  subagents: ReadonlyMap<string, SessionSubagentLink>,
-): string | null {
+function rootParentOf(nativeId: string, subagents: ReadonlyMap<string, ParentLink>): string | null {
   const visited = new Set([nativeId])
   let parentNativeId = subagents.get(nativeId)?.parentNativeId
   while (parentNativeId !== undefined && subagents.has(parentNativeId)) {
@@ -360,11 +359,19 @@ export function createCodexSessionSummaryList(request: CodexRequest): SessionSum
     const result = await collectCodexThreads(request, input)
     if (result === null) return { records: [], skipped: 0 }
     const { collections, skipped: threadSkips } = result
-    const subagents = [...collections.subagents.keys()].flatMap((nativeId) => {
+    const linked: SessionSubagentLink[] = [...collections.subagents.keys()].flatMap((nativeId) => {
       const parentNativeId = rootParentOf(nativeId, collections.subagents)
       return parentNativeId === null ? [] : [{ nativeId, parentNativeId }]
     })
-    const skipped = threadSkips + collections.subagents.size - subagents.length
+    const skipped = threadSkips + collections.subagents.size - linked.length
+    // Saved with no parent, so the next sync reads it no more.
+    const subagents = [
+      ...linked,
+      ...[...collections.awaitingParentRead].map((nativeId) => ({
+        nativeId,
+        parentNativeId: null,
+      })),
+    ]
     return {
       records: [...collections.records.values()],
       skipped,

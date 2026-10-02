@@ -347,19 +347,32 @@ test('keeps a listed spawned thread out of the Sessions, under the parent its so
   expect(calls).toEqual([expect.objectContaining({ method: 'thread/list' })])
 })
 
-test('reports a subagent thread that names no parent apart from unrecognised records, and lists it as no Session', async () => {
+test('reports a subagent thread that names no parent, lists it as no Session, and reads it once (#3084)', async () => {
   const warn = spyOn(console, 'warn').mockImplementation(() => {})
   try {
     const parentless = {
       thread: { ...structuredClone(guardian.read.thread), parentThreadId: null },
     }
-    const result = await createCodexSessionSummaryList(
-      subagentRequest(guardian.listed, parentless),
-    )({ knownNativeIds: [], knownSubagentNativeIds: [] })
-    expect(result).toEqual({ records: [], skipped: 0 })
+    const list = createCodexSessionSummaryList(subagentRequest(guardian.listed, parentless))
+    const first = await list({ knownNativeIds: [], knownSubagentNativeIds: [] })
+    expect(first).toEqual({
+      records: [],
+      skipped: 0,
+      subagents: [{ nativeId: guardian.listed.id, parentNativeId: null }],
+    })
     expect(warn).toHaveBeenCalledWith(
       'Kept 1 Codex subagent thread(s) that name no parent out of the Sessions.',
     )
+
+    const calls: unknown[] = []
+    const second = await createCodexSessionSummaryList(
+      subagentRequest(guardian.listed, parentless, calls),
+    )({
+      knownNativeIds: [],
+      knownSubagentNativeIds: (first.subagents ?? []).map(({ nativeId }) => nativeId),
+    })
+    expect(second).toEqual({ records: [], skipped: 0 })
+    expect(calls).toEqual([expect.objectContaining({ method: 'thread/list' })])
     expect(
       await createCodexSessionSummaryReader(subagentRequest(guardian.listed, parentless))(
         guardian.listed.id,

@@ -2,7 +2,8 @@ import type { z } from 'zod'
 import type { sessionInsertSchema } from '@/database/session/validation'
 
 export type SessionSummary = Omit<z.infer<typeof sessionInsertSchema>, 'harness'>
-export type SessionSubagentLink = { nativeId: string; parentNativeId: string }
+// A null parent is a Subagent the Harness names no parent for: no Session, and not looked up again.
+export type SessionSubagentLink = { nativeId: string; parentNativeId: string | null }
 
 export type SessionSummaryListResult = {
   records: SessionSummary[]

@@ -10,6 +10,7 @@ import {
   sessionListCaller,
 } from '@/mocks/sessions/session-list-caller'
 import { saveDiscoveredSessionSubagents, saveSessionSubagents } from '../database'
+import { saveSessionBatch } from '../sync'
 import { updateSession } from './session-update'
 
 // Links a Session to a Ticket whose content the provider has saved.
@@ -467,6 +468,32 @@ test('keeps a saved Session another Session of its Harness lists as a Subagent o
     assert.deepEqual([listed.total, listed.rows.map((row) => row.id)], [2, [IDS[0], IDS[2]]])
     assert.equal(await details({ sessionId: IDS[1] }), null)
     assert.equal((await details({ sessionId: IDS[2] }))?.id, IDS[2])
+  } finally {
+    database.$client.close()
+  }
+})
+
+test('keeps a saved Session discovery found to be a subagent with no parent out of the list and detail reads (#3084)', async () => {
+  const { database, list, details } = sessionListCaller()
+  try {
+    insertSession(database, { id: IDS[0], harness: 'codex', nativeId: 'parentless', createdAt: 20 })
+    insertSession(database, {
+      id: IDS[1],
+      harness: 'claude',
+      nativeId: 'parentless',
+      createdAt: 10,
+    })
+    saveSessionBatch(database, {
+      harness: 'codex',
+      records: [],
+      subagents: [{ nativeId: 'parentless', parentNativeId: null }],
+    })
+
+    assert.deepEqual(
+      (await list({ projectId: 'project-1' })).rows.map((row) => row.id),
+      [IDS[1]],
+    )
+    assert.equal(await details({ sessionId: IDS[0] }), null)
   } finally {
     database.$client.close()
   }
