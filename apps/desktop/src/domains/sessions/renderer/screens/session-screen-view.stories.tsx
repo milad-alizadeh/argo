@@ -183,7 +183,6 @@ function ReviewInspector({
       handoff={null}
       onOpenEvidence={() => {}}
       onRetryDelegationFeed={() => {}}
-      posture="live"
       shell={shell}
       shellOutput={shellOutput}
     />
@@ -930,7 +929,7 @@ export const NewSessionDoesNotStall: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'New Session' }))
     await expect(canvas.getByLabelText('Session composer')).toBeVisible()
     await new Promise((resolve) => window.setTimeout(resolve, 100))
-    await expect(canvas.queryByRole('button', { name: 'Retry' })).toBeNull()
+    await expect(canvas.queryByText('Could not load this Session')).toBeNull()
   },
 }
 

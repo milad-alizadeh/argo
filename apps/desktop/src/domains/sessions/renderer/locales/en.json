@@ -25,10 +25,6 @@
       "live": "Argo tried to load the history for this Session, but the load did not finish.",
       "external": "This Session is external. Argo reads its history from a file it does not control, and the read is taking too long."
     },
-    "reply": {
-      "title": "No reply yet",
-      "description": "Argo has not received a reply for this Session yet."
-    },
     "retry": "Retry"
   },
   "question": {

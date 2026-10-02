@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { StrictMode, useEffect, useState } from 'react'
+import { StrictMode, useState } from 'react'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { feedReadingRows } from '@/domains/sessions/api/feed/feed-reading-rows'
 import { projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
@@ -7,7 +7,7 @@ import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { preloadForStories } from '@/mocks/platform/story-preload'
 import { loadCodeLanguage } from '../../ai-elements'
-import type { SessionError, SessionFeed, SessionFeedRow, SessionPosture } from '../../types'
+import type { SessionError, SessionFeed, SessionFeedRow } from '../../types'
 import { BROKEN_PICTURE, RICH_MARKDOWN, SAMPLE_PICTURE } from '../content/feed-samples'
 import { BackgroundWork, type BackgroundWorkLinks } from '../rows/background-work'
 import { FeedJumpToLatest } from '../rows/feed-jump-to-latest'
@@ -1746,198 +1746,59 @@ function preferReducedMotion(): () => void {
   }
 }
 
-const stalledFeed = {
+const slowReplyFeed = {
   ...feed,
-  sessionId: 'stalled',
-  chainId: 'stalled',
-  revision: 'stalled-one',
+  sessionId: 'slow-reply',
+  chainId: 'slow-reply',
+  revision: 'slow-reply-one',
   rows: [
     {
       shape: 'prose',
-      id: 'stalled-known-reply',
+      id: 'slow-reply-known',
       role: 'assistant',
-      text: 'Keep this known history visible.',
+      text: 'Keep this history visible.',
     },
+    { shape: 'prose', id: 'slow-reply-prompt', role: 'user', text: 'Keep this prompt visible.' },
+    // A Turn status row after the prompt still leaves the Feed waiting for the reply.
+    { shape: 'event', id: 'status:2', event: 'liveStatus', text: 'running' },
   ],
 } satisfies SessionFeed
 
-const stalledPrompt: SessionFeedRow = {
-  shape: 'prose',
-  id: 'stalled-prompt',
-  role: 'user',
-  text: 'Keep this pending prompt visible.',
-}
-
-// A fixture whose Feed never settles. `stallTimeoutMs` stands in for the production bound so the
-// story does not wait on the real one.
-function StalledFeedHarness({
-  onRetryFeed,
-  posture = null,
-  afterPrompt = [],
-}: {
-  onRetryFeed: () => void
-  posture?: SessionPosture | null
-  afterPrompt?: SessionFeedRow[]
-}) {
-  const [otherClicks, setOtherClicks] = useState(0)
-  const [reading, setReading] = useState<SessionFeed>({
-    ...stalledFeed,
-    rows: [...stalledFeed.rows, stalledPrompt, ...afterPrompt],
-  })
-  const [running, setRunning] = useState(true)
-  return (
-    <div className="flex h-dvh flex-col">
-      <button type="button" onClick={() => setOtherClicks((count) => count + 1)}>
-        Other window control ({otherClicks})
-      </button>
-      <div className="min-h-0 flex-1">
-        <BasicFeed
-          activeEvidenceId={null}
-          feed={reading}
-          failure={null}
-          running={running}
-          posture={posture}
-          selectedSessionId="stalled"
-          onOpenEvidence={() => {}}
-          onRetryFeed={() => {
-            onRetryFeed()
-            window.setTimeout(() => {
-              setReading({
-                ...stalledFeed,
-                revision: 'stalled-recovered',
-                rows: [
-                  ...stalledFeed.rows,
-                  stalledPrompt,
-                  {
-                    shape: 'prose',
-                    id: 'stalled-recovered-reply',
-                    role: 'assistant',
-                    text: 'The Feed recovered after Retry.',
-                  },
-                ],
-              })
-              setRunning(false)
-            }, 100)
-          }}
-          onAnswerQuestion={() => {}}
-          answeringQuestionId={null}
-          questionFailure={() => null}
-          stallTimeoutMs={50}
-        />
-      </div>
-    </div>
-  )
-}
-
-// Past the stall bound, the reader sees a retry action instead of an indefinite spinner, and
-// nothing else in the window stops responding while it shows (#2102).
-export const Stalled: Story = {
-  args: { onRetryFeed: fn() },
-  render: (args) => <StalledFeedHarness onRetryFeed={args.onRetryFeed ?? (() => {})} />,
-  play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
-    await waitFor(() => expect(canvas.getByText('Could not load this Session')).toBeInTheDocument())
-    await expect(canvas.getByText(/This Session is external/)).toBeInTheDocument()
-    await expect(canvas.getByText('Keep this known history visible.')).toBeVisible()
-    await expect(canvas.getByText('Keep this pending prompt visible.')).toBeVisible()
-    await expect(canvas.queryByRole('status', { name: 'Loading this Session' })).toBeNull()
-    const retry = canvas.getByRole('button', { name: 'Retry' })
-
-    const otherControl = canvas.getByRole('button', { name: /Other window control/ })
-    await userEvent.click(otherControl)
-    await expect(
-      canvas.getByRole('button', { name: 'Other window control (1)' }),
-    ).toBeInTheDocument()
-
-    await userEvent.click(retry)
-    await waitFor(() => expect(args.onRetryFeed).toHaveBeenCalledOnce())
-    await expect(canvas.getByRole('status', { name: 'Loading this Session' })).toBeInTheDocument()
-    await expect(await canvas.findByText('The Feed recovered after Retry.')).toBeVisible()
-    await expect(canvas.queryByRole('button', { name: 'Retry' })).toBeNull()
-  },
-}
-
-// A live Session whose history loaded but whose reply is slow (#3170).
-export const StalledReply: StoryObj<typeof StalledFeedHarness> = {
-  args: { onRetryFeed: fn(), posture: 'live' },
-  render: (args) => <StalledFeedHarness {...args} />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await waitFor(() => expect(canvas.getByText('No reply yet')).toBeInTheDocument())
-    await expect(canvas.getByText(/Argo has not received a reply/)).toBeInTheDocument()
-    await expect(canvas.queryByText('Could not load this Session')).toBeNull()
-    await expect(canvas.getByText('Keep this known history visible.')).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
-  },
-}
-
-// A Turn status row after the prompt still leaves the Feed waiting for the reply.
-export const StalledReplyAfterStatusRow: StoryObj<typeof StalledFeedHarness> = {
-  args: {
-    ...StalledReply.args,
-    afterPrompt: [{ shape: 'event', id: 'status:2', event: 'liveStatus', text: 'running' }],
-  },
-  render: StalledReply.render,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await waitFor(() => expect(canvas.getByText('No reply yet')).toBeVisible())
-    await expect(canvas.getByRole('button', { name: 'Retry' })).toBeVisible()
-  },
-}
-
-// A first read that lands just before the bound on a pending prompt (#3170).
-function SlowFirstReadHarness() {
-  const [reading, setReading] = useState<SessionFeed | null>(null)
-  useEffect(() => {
-    const timer = window.setTimeout(
-      () => setReading({ ...stalledFeed, rows: [...stalledFeed.rows, stalledPrompt] }),
-      1500,
-    )
-    return () => window.clearTimeout(timer)
-  }, [])
-  return (
+// A running Turn waits for its reply past the stall bound: the reader keeps the running loader
+// and gets no stall notice (#3170). `stallTimeoutMs` stands in for the production bound.
+export const SlowReplyKeepsTheLoader: Story = {
+  render: () => (
     <div className="h-dvh">
       <BasicFeed
         activeEvidenceId={null}
-        feed={reading}
+        feed={slowReplyFeed}
         failure={null}
         running
         posture="live"
-        selectedSessionId="stalled"
+        selectedSessionId="slow-reply"
         onOpenEvidence={() => {}}
         onRetryFeed={() => {}}
         onAnswerQuestion={() => {}}
         answeringQuestionId={null}
         questionFailure={() => null}
-        stallTimeoutMs={2000}
+        stallTimeoutMs={50}
       />
     </div>
-  )
-}
-
-export const SlowFirstReadRestartsTheBound: Story = {
-  render: () => <SlowFirstReadHarness />,
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(
-      await canvas.findByText('Keep this pending prompt visible.', {}, { timeout: 3000 }),
-    ).toBeVisible()
-    await new Promise((resolve) => window.setTimeout(resolve, 1000))
+    await expect(await canvas.findByText('Keep this prompt visible.')).toBeVisible()
+    await new Promise((resolve) => window.setTimeout(resolve, 300))
+    await expect(canvas.getByRole('status', { name: 'Loading this Session' })).toBeInTheDocument()
     await expect(canvas.queryByRole('button', { name: 'Retry' })).toBeNull()
-    await waitFor(() => expect(canvas.getByText('No reply yet')).toBeVisible(), { timeout: 5000 })
+    await expect(canvas.getByText('Keep this history visible.')).toBeVisible()
   },
 }
 
 // A Session whose read never answers at all (no SessionFeed ever arrives, #2111's repro):
 // `feed` stays null instead of arriving with empty `rows`. Retry calls `onRetryFeed`, the
 // reader's hook into a fresh IPC attempt, not just the local bound.
-function NeverArrivesHarness({
-  onRetryFeed,
-  posture = null,
-}: {
-  onRetryFeed: () => void
-  posture?: SessionPosture | null
-}) {
+function NeverArrivesHarness({ onRetryFeed }: { onRetryFeed: () => void }) {
   const [otherClicks, setOtherClicks] = useState(0)
   return (
     <div className="flex h-dvh flex-col">
@@ -1950,7 +1811,7 @@ function NeverArrivesHarness({
           feed={null}
           failure={null}
           running={false}
-          posture={posture}
+          posture={null}
           selectedSessionId="never-arrives"
           onOpenEvidence={() => {}}
           onRetryFeed={onRetryFeed}
@@ -1982,18 +1843,6 @@ export const NeverArrives: StoryObj<typeof NeverArrivesHarness> = {
 
     await userEvent.click(canvas.getByRole('button', { name: 'Retry' }))
     await waitFor(() => expect(args.onRetryFeed).toHaveBeenCalledTimes(1))
-  },
-}
-
-// A live Session whose first read never answers keeps the history-load text (#3170).
-export const NeverArrivesLive: StoryObj<typeof NeverArrivesHarness> = {
-  args: { onRetryFeed: fn(), posture: 'live' },
-  render: (args) => <NeverArrivesHarness {...args} />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await waitFor(() => expect(canvas.getByText('Could not load this Session')).toBeInTheDocument())
-    await expect(canvas.getByText(/Argo tried to load the history/)).toBeInTheDocument()
-    await expect(canvas.queryByText('No reply yet')).toBeNull()
   },
 }
 

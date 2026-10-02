@@ -113,7 +113,6 @@ export const RunningSubagent: Story = {
     now: NOW,
     onOpenEvidence: () => {},
     onRetryFeed: () => {},
-    posture: 'live',
     sessionId: 'composer-review',
   },
   render: (args) => <InspectorStory args={args} tokens={4200} />,
@@ -136,21 +135,6 @@ export const RunningSubagent: Story = {
   },
 }
 
-// A live Session's Subagent gets the reply text, not the external text (#3170).
-export const StalledSubagentReply: Story = {
-  args: {
-    ...RunningSubagent.args,
-    feed: { ...FEED, rows: FEED.rows.slice(0, 1) },
-    stallTimeoutMs: 50,
-  },
-  render: (args) => <InspectorStory args={args} />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await waitFor(() => expect(canvas.getByText('No reply yet')).toBeVisible())
-    await expect(canvas.queryByText(/This Session is external/)).toBeNull()
-  },
-}
-
 export const LoadingSubagent: Story = {
   args: {
     activeEvidenceId: null,
@@ -159,7 +143,6 @@ export const LoadingSubagent: Story = {
     failure: null,
     onOpenEvidence: () => {},
     onRetryFeed: () => {},
-    posture: 'live',
     sessionId: 'composer-review',
   },
   render: (args) => <InspectorStory args={args} />,
@@ -178,7 +161,6 @@ export const CompletedSubagent: Story = {
     failure: null,
     onOpenEvidence: () => {},
     onRetryFeed: () => {},
-    posture: 'live',
     sessionId: 'composer-review',
   },
   render: (args) => <InspectorStory args={args} />,

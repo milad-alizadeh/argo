@@ -70,6 +70,6 @@ export function Standing({
         </EmptyHeader>
       </Empty>
     )
-  if (stalled) return <StalledFeed posture={posture} waitingFor="history" onRetry={onRetry} />
+  if (stalled) return <StalledFeed posture={posture} onRetry={onRetry} />
   return <FeedLoading state="loading" />
 }

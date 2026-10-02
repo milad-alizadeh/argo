@@ -3,7 +3,6 @@ import type {
   SessionError,
   SessionEvidence,
   SessionFeed,
-  SessionPosture,
   SessionShellCommand,
   SessionSubagent,
 } from '../types'
@@ -24,7 +23,6 @@ export function SessionInspector({
   handoff,
   onOpenEvidence,
   onRetryDelegationFeed,
-  posture,
   shell,
   shellOutput,
 }: {
@@ -38,7 +36,6 @@ export function SessionInspector({
   handoff: ReactNode
   onOpenEvidence: (evidence: SessionEvidence) => void
   onRetryDelegationFeed: () => void
-  posture: SessionPosture | null
   shell: SessionShellCommand | null
   shellOutput: SessionShellOutput | null
 }) {
@@ -56,7 +53,6 @@ export function SessionInspector({
         failure={delegationFeedError}
         onOpenEvidence={onOpenEvidence}
         onRetryFeed={onRetryDelegationFeed}
-        posture={posture}
         sessionId={sessionId}
       />
     )

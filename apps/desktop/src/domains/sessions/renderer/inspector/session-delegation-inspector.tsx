@@ -14,13 +14,7 @@ import {
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
 import { BasicFeed } from '../feed'
-import type {
-  SessionError,
-  SessionEvidence,
-  SessionFeed,
-  SessionPosture,
-  SessionSubagent,
-} from '../types'
+import type { SessionError, SessionEvidence, SessionFeed, SessionSubagent } from '../types'
 
 import '../feed'
 
@@ -72,9 +66,7 @@ export function SessionDelegationInspector({
   failure,
   onOpenEvidence,
   onRetryFeed,
-  posture,
   sessionId,
-  stallTimeoutMs,
 }: {
   activeEvidenceId: string | null
   delegation: SessionSubagent
@@ -84,10 +76,7 @@ export function SessionDelegationInspector({
   now?: number
   onOpenEvidence: (evidence: SessionEvidence) => void
   onRetryFeed: () => void
-  // The parent Session's posture: a Subagent is read the same way its Session is.
-  posture: SessionPosture | null
   sessionId: string | null
-  stallTimeoutMs?: number
 }) {
   const { t } = useTranslation('sessions')
   const { active, inspector } = useVisibleInspector()
@@ -108,13 +97,12 @@ export function SessionDelegationInspector({
           feedLabel={t('subagentFeedLabel')}
           historyLabel={t('subagentHistoryLabel')}
           running={delegation.state === 'running'}
-          posture={posture}
+          posture={null}
           onAnswerQuestion={() => {}}
           onOpenEvidence={onOpenEvidence}
           onRetryFeed={onRetryFeed}
           questionFailure={() => null}
           selectedSessionId={active ? (feed?.sessionId ?? sessionId) : null}
-          stallTimeoutMs={stallTimeoutMs}
         />
       )}
     </section>

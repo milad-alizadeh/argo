@@ -37,7 +37,6 @@ function Inspector({ model }: { model: SessionScreenModel }) {
       handoff={<SessionHandoffFacts onNavigate={navigate} session={session} />}
       onOpenEvidence={setEvidence}
       onRetryDelegationFeed={model.retryDelegationFeed}
-      posture={session?.posture ?? null}
       shell={model.shell}
       shellOutput={model.shellOutput}
     />
