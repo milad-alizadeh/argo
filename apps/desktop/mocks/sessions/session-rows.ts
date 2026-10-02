@@ -2,15 +2,17 @@
 
 import type {
   Session,
+  SessionDetails,
   SessionExtras,
   SessionShellCommand,
   SessionSubagent,
 } from '@/domains/sessions/renderer/types'
 import { DEFAULT_HARNESS } from '@/harnesses/harness'
 
+// One Session's details; a story's list reads its roster row through `listedSession`.
 export function sessionRow(
-  overrides: Partial<Session & SessionExtras> = {},
-): Session & SessionExtras {
+  overrides: Partial<SessionDetails & SessionExtras> = {},
+): SessionDetails & SessionExtras {
   return {
     id: 'session-one',
     harness: DEFAULT_HARNESS,
@@ -30,6 +32,17 @@ export function sessionRow(
     contextUsage: null,
     ...overrides,
   }
+}
+
+// The roster row main's list read projects from a Session's details.
+export function listedSession({
+  projectId: _projectId,
+  cwd: _cwd,
+  posture: _posture,
+  turnConfiguration: _turnConfiguration,
+  ...listed
+}: SessionDetails & SessionExtras): Session & SessionExtras {
+  return listed
 }
 
 export function sessionShellCommand(

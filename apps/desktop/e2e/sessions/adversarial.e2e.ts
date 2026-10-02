@@ -1,6 +1,6 @@
 // The Session contracts under the mock CLIs' seeded jitter, split bytes, stalls and failures.
 import { createSessionByClick } from './gestures'
-import { sessionRows } from './page-trpc'
+import { sessionDetails, sessionRows } from './page-trpc'
 import { expect, test } from './session-proof-run'
 
 async function statusFor(page: Parameters<typeof createSessionByClick>[0], sessionId: string) {
@@ -9,8 +9,7 @@ async function statusFor(page: Parameters<typeof createSessionByClick>[0], sessi
 }
 
 async function postureFor(page: Parameters<typeof createSessionByClick>[0], sessionId: string) {
-  const rows = await sessionRows(page)
-  return rows.find((session) => session.id === sessionId)?.posture ?? null
+  return (await sessionDetails(page, sessionId))?.posture ?? null
 }
 
 test.describe('session-adversarial', () => {

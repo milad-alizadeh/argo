@@ -26,7 +26,7 @@ import {
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { type HarnessControl, useAvailableHarnesses } from '../harness'
 import { SessionTitle } from '../prompt'
-import type { ComposerPlan, Session, SessionExtras } from '../types'
+import type { ComposerPlan, SessionDetails, SessionExtras } from '../types'
 import { draftTarget } from './session-draft-target'
 import type { SentConfiguration } from './session-screen-state'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
@@ -37,7 +37,7 @@ type SessionScreenDetailsProps = {
   permission: ReturnType<typeof import('../composer').useSessionPermission>
   questionPending: boolean
   liveStatus: ReturnType<typeof import('../feed').useFeedReading>['liveStatus']
-  session: (Session & SessionExtras) | null
+  session: (SessionDetails & SessionExtras) | null
   harness: HarnessControl | null
   selectedSessionId: string | null
   // Whether the selected Session's details have been read, so its composer can open on them.
@@ -58,7 +58,7 @@ type SessionScreenDetailsProps = {
 type SessionsTranslator = ReturnType<typeof useTranslation<'sessions'>>['t']
 
 // The open Feed's steps, else the stored row's step count.
-function composerPlan(session: (Session & SessionExtras) | null): ComposerPlan | null {
+function composerPlan(session: (SessionDetails & SessionExtras) | null): ComposerPlan | null {
   if (session?.plan?.state === 'available') return session.plan
   if (session?.planProgress == null) return session?.plan ?? null
   return { state: 'counted', ...session.planProgress }
@@ -89,7 +89,7 @@ function catalogFailureOf(
 function sessionComposerConfiguration(input: {
   selectedSessionId: string | null
   projectId: string | null
-  session: (Session & SessionExtras) | null
+  session: (SessionDetails & SessionExtras) | null
   sessionLoaded: boolean
   catalogResult: CatalogReadResult | undefined
   catalogFailed: boolean

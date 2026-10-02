@@ -58,10 +58,7 @@ test('pages by sort order, then newest created, then Argo ID', async () => {
       [IDS[0], IDS[1], IDS[2], '00000000-0000-4000-8000-000000000005'],
     )
     assert.deepEqual([first.total, second.total], [4, 4])
-    assert.deepEqual(first.rows.map(({ projectId, archived }) => ({ projectId, archived }))[0], {
-      projectId: 'project-1',
-      archived: false,
-    })
+    assert.equal(first.rows[0]?.archived, false)
     assert.equal(JSON.stringify(first).includes('native'), false)
   } finally {
     database.$client.close()
@@ -153,7 +150,7 @@ test('projects each Session’s worktree, and null for one in the main checkout'
 })
 
 test('names a Session by its custom title, then Ticket title, vendor preview and first prompt', async () => {
-  const { database, list } = sessionListCaller()
+  const { database, list, details } = sessionListCaller()
   try {
     insertSession(database, {
       id: IDS[0],
@@ -197,7 +194,7 @@ test('names a Session by its custom title, then Ticket title, vendor preview and
       result.rows.map(({ name }) => name),
       ['Custom title', 'Ticket title', 'Vendor preview', 'First prompt'],
     )
-    assert.equal(result.rows[0]?.cwd, '/work/one')
+    assert.equal((await details({ sessionId: IDS[0] }))?.cwd, '/work/one')
   } finally {
     database.$client.close()
   }
@@ -359,17 +356,23 @@ test.each([
 ] as const)(
   'a $state channel with live status $live over stored $stored shows $status',
   async ({ state, live, stored, posture, status }) => {
-    const { database, list } = sessionListCaller({
+    const { database, list, details } = sessionListCaller({
       sessions: state === null ? {} : { [IDS[0]]: liveSession(state, live) },
     })
     try {
       insertSession(database, { id: IDS[0], nativeId: 'native-1', status: stored, createdAt: 10 })
 
       const [row] = (await list({ projectId: 'project-1' })).rows
+      const read = await details({ sessionId: IDS[0] })
 
       assert.deepEqual(
-        { posture: row?.posture, status: row?.status, effort: row?.turnConfiguration.effort },
-        { posture, status, effort: posture === null ? null : 'high' },
+        {
+          listed: row?.status,
+          posture: read?.posture,
+          status: read?.status,
+          effort: read?.turnConfiguration.effort,
+        },
+        { listed: status, posture, status, effort: posture === null ? null : 'high' },
       )
     } finally {
       database.$client.close()
@@ -571,6 +574,54 @@ test('reads an archived Session by ID and says it is archived, and nothing for a
     database.$client.close()
   }
 })
+
+for (const harness of ['claude', 'codex'] as const)
+  test(`a ${harness} list row carries only roster facts, and its details add the screen's`, async () => {
+    const { database, list, details } = sessionListCaller()
+    try {
+      insertSession(database, {
+        id: IDS[0],
+        harness,
+        nativeId: 'native-1',
+        cwd: '/work/one',
+        worktreePath: '/worktrees/one',
+        worktreeBranch: 'argo/one',
+        turnConfiguration: { model: 'opus', effort: 'low', mode: null },
+        createdAt: 10,
+      })
+
+      const [row] = (await list({ projectId: 'project-1' })).rows
+      const read = await details({ sessionId: IDS[0] })
+      if (row === undefined || read === null) throw new Error('The Session was not read.')
+      const { projectId, cwd, posture, turnConfiguration, ...shared } = read
+
+      assert.deepEqual(Object.keys(row).sort(), [
+        'activity',
+        'archived',
+        'harness',
+        'id',
+        'name',
+        'planProgress',
+        'status',
+        'subagents',
+        'ticket',
+        'updatedAt',
+        'worktree',
+      ])
+      assert.deepEqual(shared, row)
+      assert.deepEqual(
+        { projectId, cwd, posture, turnConfiguration },
+        {
+          projectId: 'project-1',
+          cwd: '/work/one',
+          posture: null,
+          turnConfiguration: { model: 'opus', effort: 'low', mode: null },
+        },
+      )
+    } finally {
+      database.$client.close()
+    }
+  })
 
 for (const harness of ['claude', 'codex'] as const)
   test(`the list and the detail read return a linked ${harness} Session's Ticket, and none unlinked`, async () => {

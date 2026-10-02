@@ -17,7 +17,7 @@ import { SessionInspector } from '../inspector/session-inspector'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
 import { SessionList } from '../session-list/session-list'
 import type {
-  Session,
+  SessionDetails,
   SessionExtras,
   SessionFeed,
   SessionShellCommand,
@@ -88,7 +88,7 @@ const SESSION_ROWS = [
     },
     contextUsage: { usedTokens: 18_000, windowTokens: null },
   }),
-] satisfies (Session & SessionExtras)[]
+] satisfies (SessionDetails & SessionExtras)[]
 
 const SESSION_HISTORY_LABEL = 'Session history'
 const sessionRoute = (projectId: string, sessionId = '') =>
@@ -239,7 +239,7 @@ function ReviewScreen({
   composerRunning?: boolean
   permissionPrompt?: ReactNode
   titleText?: string
-  worktree?: Session['worktree']
+  worktree?: SessionDetails['worktree']
   defaultBranch?: string
 }) {
   const selectedSessionId = useParams().sessionId ?? 'composer-review'
@@ -299,13 +299,13 @@ function ReviewContent({
   composerRunning: boolean
   permissionPrompt: ReactNode
   feed: SessionFeed
-  headerSession: Session
+  headerSession: SessionDetails
   jumpToLatest: (() => void) | null
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   pick: (id: string) => void
   picked: { id: string; count: number } | null
   selectedSessionId: string
-  session: Session & SessionExtras
+  session: SessionDetails & SessionExtras
   shellOutput: SessionShellOutput
   showPlan: boolean
   location: SessionLocation | null
@@ -363,7 +363,7 @@ function ReviewContent({
   )
 }
 
-function sessionWithTitle(session: Session, titleText: string | undefined): Session {
+function sessionWithTitle(session: SessionDetails, titleText: string | undefined): SessionDetails {
   return titleText === undefined ? session : { ...session, name: titleText }
 }
 

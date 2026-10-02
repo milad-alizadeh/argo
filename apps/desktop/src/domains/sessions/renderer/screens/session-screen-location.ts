@@ -1,10 +1,10 @@
-import type { Session } from '../types'
+import type { SessionDetails } from '../types'
 
 export type SessionLocation = { path: string; base: string | null }
 
 // The header's folder: the worktree, else the cwd; a base shows only when off the default branch.
 export function sessionLocation(
-  session: Pick<Session, 'cwd' | 'worktree'> | null,
+  session: Pick<SessionDetails, 'cwd' | 'worktree'> | null,
   defaultBranch: string,
 ): SessionLocation | null {
   if (session === null) return null

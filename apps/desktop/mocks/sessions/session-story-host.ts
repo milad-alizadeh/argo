@@ -11,17 +11,18 @@ import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event
 import type { SessionListInput } from '@/domains/sessions/renderer/session-list/session-list-query'
 import type { SessionSyncStatus } from '@/domains/sessions/renderer/session-list/use-session-sync'
 import type {
+  SessionDetails,
   SessionError,
   SessionExtras,
   SessionListResult,
-  Session as SessionRow,
 } from '@/domains/sessions/renderer/types'
+import { listedSession } from '@/mocks/sessions/session-rows'
 import { queryClient, type RouterInputs, type RouterOutputs } from '@/platform/renderer/trpc-client'
 
 type Subscribe = typeof window.argo.trpcSubscribe
 type Trpc = typeof window.argo.trpc
-// A story's rows may carry what the UI draws but no read reports yet.
-type Session = SessionRow & SessionExtras
+// A story's Sessions as their details, which may carry what the UI draws but no read reports yet.
+type Session = SessionDetails & SessionExtras
 
 export function announceSessionFeedChange() {
   for (const feeds of openFeeds.values()) {
@@ -78,7 +79,10 @@ export function storySessionPage(sessions: readonly Session[], read: SessionList
   const listed = sessions.filter(
     (session) => read.filter === 'all' || session.archived === (read.filter === 'archived'),
   )
-  return { total: listed.length, rows: listed.slice(read.offset, read.offset + read.limit) }
+  return {
+    total: listed.length,
+    rows: listed.slice(read.offset, read.offset + read.limit).map(listedSession),
+  }
 }
 
 export type SessionHostOptions = {
@@ -234,8 +238,7 @@ export function installSessionHost(
   const readList = async (input: Partial<SessionListRead>) => {
     const read = listRead(input)
     reads.push(read)
-    const listed = rows().map((session) => ({ ...session, projectId: read.projectId }))
-    return structuredClone(await (list?.(read) ?? storySessionPage(listed, read)))
+    return structuredClone(await (list?.(read) ?? storySessionPage(rows(), read)))
   }
   const trpc = (async (request) => {
     switch (request.path) {
