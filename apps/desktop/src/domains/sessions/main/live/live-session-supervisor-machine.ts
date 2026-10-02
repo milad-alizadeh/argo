@@ -18,18 +18,18 @@ import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-e
 import type { SessionSubmitRejection } from '@/domains/sessions/api/session-submit-rejection'
 import type { HarnessRegistry } from '@/harnesses/registry'
 import type { harnessCatalogMachine } from '@/platform/main/harness-catalog/harness-catalog-machine'
-import {
+import type {
   SessionListChanges,
-  type SessionLiveInput,
-  type SessionSendInput,
-  type SessionStartInput,
-  updateSession,
+  SessionLiveInput,
+  SessionSendInput,
+  SessionStartInput,
 } from '../api'
 import {
   bindSessionCommand,
   createSessionCommandStore,
   createSessionUpsert,
   type SessionCommandStore,
+  saveFirstPromptOfUntitled,
   saveSessionSubagents,
   setSessionCommandOutcome,
 } from '../database'
@@ -562,10 +562,6 @@ function sendValidationError(
 
 export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupervisorInput) {
   const commands = createSessionCommandStore(dependencies.database)
-  const storedSessions = {
-    database: dependencies.database,
-    changes: dependencies.changes ?? new SessionListChanges(),
-  }
   return xstateSetup({
     types: {
       context: {} as SupervisorContext,
@@ -762,12 +758,14 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
                   if (record.nativeId === null)
                     throw new Error('Session has no native ID to persist.')
                   if (record.sessionId !== undefined) {
-                    // A resumed Session with no saved prompt takes its title from this one at once.
-                    if (record.firstPrompt !== '')
-                      updateSession(storedSessions, record.sessionId, {
-                        firstPrompt: record.firstPrompt,
-                      })
-                    return Promise.resolve(record.sessionId)
+                    // A resumed Session nothing names takes its title from this prompt at once.
+                    const { database, changes } = dependencies
+                    const { sessionId, firstPrompt } = record
+                    if (saveFirstPromptOfUntitled(database, sessionId, firstPrompt))
+                      changes?.changed([
+                        sessionId,
+                      ])
+                    return Promise.resolve(sessionId)
                   }
                   if (record.projectId === null)
                     throw new Error('New Session has no Project to persist.')

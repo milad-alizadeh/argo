@@ -34,7 +34,7 @@ import { planProgressSchema } from '@/domains/sessions/api/feed-content'
 import { reportedTurnConfigurationSchema } from '@/domains/sessions/api/reported-turn-configuration'
 import { sessionListInputSchema } from '@/domains/sessions/api/session-list-input'
 import { identifierSchema } from '@/shared/validation'
-import { type StoredSubagent, storedSessionSubagents } from '../database'
+import { type StoredSubagent, storedSessionSubagents, transcriptName } from '../database'
 import { type LiveSessionSupervisorActor, liveSessionActorFor } from '../live'
 import type { SessionListChanges } from './session-list-changes'
 import { updateSession } from './session-update'
@@ -186,7 +186,7 @@ function linkedTicket({ projectId, key, createdAt, ...content }: StoredSessionRo
 // The name a row shows, strongest first; null when nothing names it. An empty text names nothing.
 const shownName = sql<
   string | null
->`coalesce(${sessionTable.customTitle}, ${ticketContent.title}, nullif(${sessionTable.preview}, ''), nullif(${sessionTable.firstPrompt}, ''))`
+>`coalesce(${sessionTable.customTitle}, ${ticketContent.title}, ${transcriptName})`
 
 const storedSessionColumns = {
   passed: passedSessionColumns,

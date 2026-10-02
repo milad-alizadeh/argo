@@ -187,15 +187,17 @@ test('retiring an idle actor keeps the Session identity and the next send resume
   }
 })
 
-// A Send into a stored Session nothing names gives it a title at once; a stored prompt stays (#3167).
+// A Send names an untitled stored Session at once and announces it; a named row is left alone (#3167).
 test.each([
-  { stored: null, kept: 'Prompt into untitled' },
-  { stored: '', kept: 'Prompt into untitled' },
-  { stored: 'Earlier prompt', kept: 'Earlier prompt' },
+  { saved: { firstPrompt: null }, kept: 'Prompt into untitled', announced: true },
+  { saved: { firstPrompt: '', preview: '' }, kept: 'Prompt into untitled', announced: true },
+  { saved: { firstPrompt: 'Earlier prompt' }, kept: 'Earlier prompt', announced: false },
+  { saved: { firstPrompt: null, preview: 'Codex preview' }, kept: null, announced: false },
+  { saved: { firstPrompt: null, customTitle: 'Named thread' }, kept: null, announced: false },
 ])(
-  'a Send into a stored Session with first prompt $stored keeps $kept',
-  async ({ stored, kept }) => {
-    const { root, supervisor, database, client } = await supervisorFor(
+  'a Send into a stored Session saved as $saved keeps first prompt $kept',
+  async ({ saved, kept, announced }) => {
+    const { root, supervisor, database, client, changedSessionIds } = await supervisorFor(
       async (method, params, parse) =>
         method === 'thread/resume'
           ? parse({ thread: { id: (params as { threadId: string }).threadId } })
@@ -203,7 +205,7 @@ test.each([
     )
     database
       .insert(sessionTable)
-      .values({ argoId: 'session-1', harness: 'codex', nativeId: 'native-1', firstPrompt: stored })
+      .values({ argoId: 'session-1', harness: 'codex', nativeId: 'native-1', ...saved })
       .run()
     try {
       await send(supervisor, { ...first, sessionId: 'session-1', prompt: 'Prompt into untitled' })
@@ -212,6 +214,8 @@ test.each([
           ?.first_prompt,
         kept,
       )
+      await Promise.resolve()
+      assert.equal(changedSessionIds.includes('session-1'), announced)
     } finally {
       root.send({ type: 'Shutdown' })
       client.close()
