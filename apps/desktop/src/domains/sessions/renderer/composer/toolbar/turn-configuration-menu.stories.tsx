@@ -176,13 +176,15 @@ export const ChoosesModelAndEffort: Story = {
     await userEvent.click(within(models).getByRole('radio', { name: /Sonnet 5/ }))
     await expect(within(models).getByRole('radio', { name: /Sonnet 5/ })).toBeChecked()
 
-    const effort = page().getByRole('slider', { name: 'Effort' })
-    await expect(effort).toHaveAttribute('aria-valuetext', 'Medium')
+    const effort = page().getByRole('slider', { name: /^Effort/ })
+    await expect(effort).toHaveAccessibleName('Effort Medium')
     // user-event cannot step a native range, so the drag lands as the change it produces.
     fireEvent.change(effort, { target: { value: '4' } })
-    await expect(effort).toHaveAttribute('aria-valuetext', 'Max')
+    await expect(effort).toHaveAccessibleName('Effort Max')
+    await expect(effort).toHaveAttribute('aria-valuenow', '4')
     fireEvent.change(effort, { target: { value: '3' } })
-    await expect(effort).toHaveAttribute('aria-valuetext', 'Extra high')
+    await expect(effort).toHaveAccessibleName('Effort Extra high')
+    await expect(effort).toHaveAttribute('aria-valuenow', '3')
     const harnesses = page().getByRole('tablist', { name: 'Harness' })
     for (const label of ['Claude Code', 'Codex']) {
       const tab = within(harnesses).getByRole('tab', { name: label })
@@ -210,10 +212,9 @@ export const UsesLiveCodexCatalog: Story = {
     const models = await page().findByRole('radiogroup', { name: 'Model' })
     await expect(within(models).getAllByRole('radio')).toHaveLength(1)
     await expect(within(models).getByRole('radio', { name: /GPT-5.6-Terra/ })).toBeChecked()
-    await expect(page().getByRole('slider', { name: 'Effort' })).toHaveAttribute(
-      'aria-valuetext',
-      'Balances speed and reasoning',
-    )
+    const effort = page().getByRole('slider', { name: /^Effort/ })
+    await expect(effort).toHaveAccessibleName('Effort Balances speed and reasoning')
+    await expect(effort).toBeDisabled()
     await expect(page().queryByRole('status')).toBeNull()
   },
 }
@@ -229,9 +230,8 @@ export const UsesLiveClaudeCatalog: Story = {
     const models = await page().findByRole('radiogroup', { name: 'Model' })
     await expect(within(models).getAllByRole('radio')).toHaveLength(4)
     await userEvent.click(within(models).getByRole('radio', { name: /Haiku 4.5/ }))
-    await expect(page().getByRole('slider', { name: 'Effort' })).toHaveAttribute(
-      'aria-valuetext',
-      'Medium',
+    await expect(page().getByRole('slider', { name: /^Effort/ })).toHaveAccessibleName(
+      'Effort Medium',
     )
     await expect(page().queryByRole('status')).toBeNull()
   },
@@ -326,7 +326,7 @@ export const ChoosesByKeyboard: Story = {
     await expect(haiku).toHaveFocus()
     await expect(haiku).toBeChecked()
     await userEvent.tab()
-    await expect(page().getByRole('slider', { name: 'Effort' })).toHaveFocus()
+    await expect(page().getByRole('slider', { name: /^Effort/ })).toHaveFocus()
 
     await userEvent.keyboard('{Escape}')
     await expectRoleHidden('radiogroup', 'Model')
@@ -384,10 +384,11 @@ export const NarrowModelDetails: Story = {
     await userEvent.click(model)
     await expect(model).toBeChecked()
     await userEvent.tab()
-    const effort = page().getByRole('slider', { name: 'Effort' })
+    const effort = page().getByRole('slider', { name: /^Effort/ })
     await expect(effort).toHaveFocus()
     fireEvent.change(effort, { target: { value: '2' } })
-    await expect(effort).toHaveAttribute('aria-valuetext', 'High')
+    await expect(effort).toHaveAccessibleName('Effort High')
+    await expect(effort).toHaveAttribute('aria-valuenow', '2')
     await userEvent.keyboard('{Escape}')
     await expectRoleHidden('radiogroup', 'Model')
     await expect(trigger).toHaveFocus()

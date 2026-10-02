@@ -11,6 +11,7 @@ import {
   ProjectSetupPlanReview,
 } from '../plan/project-setup-plan-review'
 import { projectSetupRecoveryText } from '../project-setup-recovery-text'
+import '../plan/project-setup-plan-review-parts.css'
 
 type ReviewScreenProps = {
   command: (command: ProjectSetupCommand) => Promise<void>
@@ -118,7 +119,7 @@ function ReviewingDiff({ command, snapshot }: ReviewScreenProps) {
         <span className="mx-auto grid size-14 place-items-center rounded-full bg-diff-added/10 text-diff-added">
           <Icon name="success" className="size-7" />
         </span>
-        <h1 className="onboarding-stage-heading mt-5 type-title font-heading" tabIndex={-1}>
+        <h1 className="onboarding-stage-heading mt-5" tabIndex={-1}>
           {t('setup.actor.reviewing-diff.title')}
         </h1>
         <p className="mt-2 type-body text-muted-foreground">

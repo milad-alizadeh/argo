@@ -43,7 +43,7 @@ export function TargetReview({
           label={t('setup.actor.reviewing-plan.dependencies')}
           value={joinOrNone(target.dependencies, t('setup.actor.reviewing-plan.none'))}
         />
-        <p className="type-label text-muted-foreground">{target.evidence}</p>
+        <p className="onboarding-detail text-muted-foreground">{target.evidence}</p>
       </div>
       <div className="px-3.5 py-3">
         <h2 className="flex items-center gap-2 type-heading">
@@ -66,7 +66,7 @@ function CommandList({ commands }: { commands: SetupPlan['targets'][number]['com
   const { t } = useTranslation('projects')
   return (
     <div>
-      <h3 className="flex items-center gap-2 type-label font-semibold">
+      <h3 className="flex items-center gap-2 onboarding-emphasis">
         <Icon name="source-code" className="text-muted-foreground" size="control" />
         {t('setup.actor.reviewing-plan.commands')}
       </h3>
@@ -95,10 +95,10 @@ function RecommendationRows({
         <li className="border-t py-2.5 first:border-t-0" key={recommendation.id}>
           <span className="flex min-w-0 items-center gap-2">
             <ToolIcon iconUrl={recommendation.iconUrl} />
-            <strong className="type-body font-semibold">{recommendation.recommendedChoice}</strong>
+            <strong className="onboarding-title">{recommendation.recommendedChoice}</strong>
           </span>
           <span className="ml-6 block min-w-0">
-            <p className="type-control text-muted-foreground">{recommendation.reason}</p>
+            <p className="onboarding-detail text-muted-foreground">{recommendation.reason}</p>
             <PackageNames names={recommendation.packageNames} />
           </span>
         </li>

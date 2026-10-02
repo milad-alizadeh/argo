@@ -1,5 +1,6 @@
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 import type { SetupDocument } from '../model/setup-document'
+import './project-setup-plan-review-parts.css'
 
 export type SetupSectionModel = SetupDocument['plan'][number] & { fieldIds: readonly string[] }
 
@@ -22,7 +23,7 @@ const sectionIcons = {
 export function SectionIcon({ icon }: { icon: SetupSectionModel['icon'] }) {
   const iconName = icon ? sectionIcons[icon] : 'folder'
   return (
-    <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted">
+    <div className="onboarding-media-tile size-9">
       <Icon name={iconName} className="size-4" />
     </div>
   )

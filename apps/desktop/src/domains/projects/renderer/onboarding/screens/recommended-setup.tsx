@@ -6,6 +6,7 @@ import type { SetupSectionModel } from '../plan/setup-plan-sections'
 import { SetupPlanSummary } from '../plan/setup-plan-summary'
 import type { SetupAnswer } from '../use-setup-answers'
 import { isJson, SetupPage } from './setup-page'
+import '../plan/project-setup-plan-review-parts.css'
 
 export function RecommendedSetup({
   answers,
@@ -48,8 +49,8 @@ export function RecommendedSetup({
       }
     >
       <Badge variant="secondary">{t('setup.document.recommended')}</Badge>
-      <h2 className="mt-3 type-title">{t('setup.document.readyTitle')}</h2>
-      <p className="mt-2 max-w-2xl type-body text-muted-foreground">
+      <h2 className="mt-3 onboarding-stage-heading">{t('setup.document.readyTitle')}</h2>
+      <p className="mt-2 max-w-2xl onboarding-detail text-muted-foreground">
         {t('setup.document.readyDescription')}
       </p>
       <section className="mt-6">

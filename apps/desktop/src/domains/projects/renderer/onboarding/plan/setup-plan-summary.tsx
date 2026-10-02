@@ -7,6 +7,7 @@ import {
 } from '../model/setup-document'
 import type { SetupAnswer } from '../use-setup-answers'
 import { fieldsForSection, SectionIcon, type SetupSectionModel } from './setup-plan-sections'
+import './project-setup-plan-review-parts.css'
 
 export function SetupPlanSummary({
   answers,
@@ -47,8 +48,8 @@ function SetupSummary({
     <div className="flex items-start gap-4 px-4 py-2.5">
       <SectionIcon icon={section.icon} />
       <div className="min-w-0">
-        <h4 className="type-body font-medium">{text.label}</h4>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 type-label text-muted-foreground">
+        <h4 className="onboarding-title">{text.label}</h4>
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 onboarding-detail text-muted-foreground">
           {fields.length > 0
             ? fields.map((field) => (
                 <SummaryValue
@@ -101,7 +102,7 @@ function SummaryValue({
       {mono ? (
         <code className="rounded bg-muted px-1 py-0.5 font-mono text-foreground">{value}</code>
       ) : (
-        <span className="font-medium text-foreground">{value}</span>
+        <span className="onboarding-emphasis text-foreground">{value}</span>
       )}
     </span>
   )

@@ -134,9 +134,9 @@ const plan = planFixture({
     {
       id: 'target-site',
       name: 'website',
-      path: 'apps/site',
+      path: 'apps/sites/customer-facing-web-platform/packages/marketing-website',
       isDefault: false,
-      evidence: 'apps/site/package.json workspace entry',
+      evidence: 'apps/sites/customer-facing-web-platform/packages/marketing-website/package.json',
       packageManager: 'bun',
       framework: 'Vite + React',
       commands: {
@@ -145,7 +145,7 @@ const plan = planFixture({
         build: 'bun run build',
         test: 'bun test',
       },
-      dependencies: ['vite', 'react'],
+      dependencies: ['vite', 'react', '@argo/workspace-conventions-for-generated-projects'],
       risks: [],
     },
   ],
@@ -182,7 +182,11 @@ const plan = planFixture({
       targetIds: ['target-desktop'],
       recommendedChoice: 'Storybook',
       iconUrl: 'https://storybook.js.org/icon.svg',
-      packageNames: ['storybook', '@storybook/react-vite'],
+      packageNames: [
+        'storybook',
+        '@storybook/react-vite',
+        '@argo/workspace-conventions-for-generated-projects',
+      ],
       links: ['https://storybook.js.org'],
       alternatives: [],
       reason: 'Review every onboarding state before it reaches the desktop app.',
@@ -384,12 +388,14 @@ ChoosingSetupMethod.play = async ({ args, canvasElement }) => {
 
 TargetsAndTools.play = async ({ args, canvasElement }) => {
   const canvas = within(canvasElement)
+  const target = canvas.getByRole('button', { name: /desktop/ })
   await expect(canvas.getByText('Storybook')).toBeVisible()
   await expect(canvas.getByText('Electron + React')).toBeVisible()
-  await expect(canvas.getByRole('button', { name: /desktop/ })).toHaveAttribute(
-    'aria-expanded',
-    'true',
-  )
+  await expect(target).toHaveAttribute('aria-expanded', 'true')
+  await userEvent.click(target)
+  await expect(target).toHaveAttribute('aria-expanded', 'false')
+  await userEvent.click(target)
+  await expect(target).toHaveAttribute('aria-expanded', 'true')
   await userEvent.click(canvas.getByRole('button', { name: 'Continue to Project setup' }))
   await expect(args.command).toHaveBeenCalledWith({ type: 'continue-plan-review' })
 }
@@ -402,7 +408,12 @@ ProjectSetup.play = async ({ args, canvasElement }) => {
     'aria-expanded',
     'true',
   )
-  await expect(canvas.getByRole('switch', { name: 'Include Argo agent skills' })).toBeChecked()
+  const skillsSwitch = canvas.getByRole('switch', { name: 'Include Argo agent skills' })
+  await expect(skillsSwitch).toBeChecked()
+  await userEvent.click(skillsSwitch)
+  await expect(skillsSwitch).not.toBeChecked()
+  await userEvent.click(skillsSwitch)
+  await expect(skillsSwitch).toBeChecked()
   await userEvent.click(canvas.getByRole('button', { name: 'Preview apply and verify' }))
   await expect(args.command).toHaveBeenCalledWith(expect.objectContaining({ type: 'accept-plan' }))
 }

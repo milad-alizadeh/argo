@@ -14,6 +14,7 @@ import {
   ProjectSetupShell,
 } from './project-setup-layout'
 import { ProjectSetupScreen } from './project-setup-screen'
+import '../plan/project-setup-plan-review-parts.css'
 
 type ProjectSetupViewProps = {
   command: (command: ProjectSetupCommand) => Promise<void>
@@ -52,21 +53,18 @@ export function ProjectSetupView({ command, project, snapshot }: ProjectSetupVie
           {snapshot.screen === 'customizing-project-setup' ? (
             <Button
               aria-label={t('setup.actor.customizing-project-setup.backAction')}
-              className="-ml-2 mb-3 size-9"
+              className="-ml-2 mb-3"
               onClick={() => void command({ type: 'back' })}
-              size="icon-sm"
+              size="icon-lg"
               variant="ghost"
             >
               <Icon name="back" />
             </Button>
           ) : null}
-          <h1
-            className="onboarding-stage-heading type-title font-heading text-foreground"
-            tabIndex={-1}
-          >
+          <h1 className="onboarding-stage-heading text-foreground" tabIndex={-1}>
             {title}
           </h1>
-          <p className="mt-2 max-w-2xl type-body text-muted-foreground">{description}</p>
+          <p className="mt-2 max-w-2xl onboarding-detail text-muted-foreground">{description}</p>
         </header>
       )}
       <ProjectSetupScreen command={command} snapshot={snapshot} />
@@ -90,7 +88,7 @@ function ProjectSetupEvidence({ snapshot }: Pick<ProjectSetupViewProps, 'snapsho
       ) : null}
       <ol className={plan ? 'mt-7 grid border-t pt-5' : 'mt-5 grid'}>
         {snapshot.progress.length === 0 ? (
-          <li className="relative grid min-h-11 grid-cols-[var(--size-icon-control)_minmax(0,1fr)] gap-2.5 type-control text-muted-foreground">
+          <li className="relative grid min-h-11 grid-cols-[var(--size-icon-control)_minmax(0,1fr)] gap-2.5 onboarding-detail text-muted-foreground">
             <span className="z-10 grid size-(--size-icon-control) place-items-center rounded-full border bg-sidebar">
               <Icon name="setup-step-pending" className="size-3" />
             </span>
@@ -99,7 +97,7 @@ function ProjectSetupEvidence({ snapshot }: Pick<ProjectSetupViewProps, 'snapsho
         ) : (
           snapshot.progress.map((step) => (
             <li
-              className="group relative grid min-h-11 grid-cols-[var(--size-icon-control)_minmax(0,1fr)] gap-2.5 type-control text-muted-foreground before:absolute before:left-3 before:h-11 before:w-px before:bg-border last:before:hidden data-[complete=true]:text-foreground"
+              className="group relative grid min-h-11 grid-cols-[var(--size-icon-control)_minmax(0,1fr)] gap-2.5 onboarding-detail text-muted-foreground before:absolute before:left-3 before:h-11 before:w-px before:bg-border last:before:hidden data-[complete=true]:text-foreground"
               data-complete={step.status === 'passed'}
               key={step.stepId}
             >
