@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
+import { stat } from 'node:fs/promises'
 import { createInterface } from 'node:readline'
 import { executableVersion } from '@/harnesses/cli/executable-version'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
@@ -409,16 +410,21 @@ function openProcess(executable: string): CodexChannel {
   })
 }
 
-async function resolveCodexExecutable(signal: AbortSignal): Promise<CodexExecutable | null> {
-  const executable =
-    process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('codex')
-  // An empty override pins a machine with no Codex, as the sign-in override does.
-  if (!executable) return null
-  const version = await executableVersion(executable)
-  if (signal.aborted) throw signal.reason
-  return {
-    executable,
-    version,
+// Spawns `--version` only when the executable path or file changes, not once per request (#3137).
+function createCodexExecutableResolver() {
+  let known: { executable: string; file: string; version: string } | null = null
+  return async (signal: AbortSignal): Promise<CodexExecutable | null> => {
+    const executable =
+      process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('codex')
+    // An empty override pins a machine with no Codex, as the sign-in override does.
+    if (!executable) return null
+    const { dev, ino, size, mtimeMs } = await stat(executable)
+    const file = `${dev}:${ino}:${size}:${mtimeMs}`
+    if (known?.executable !== executable || known.file !== file) {
+      known = { executable, file, version: await executableVersion(executable) }
+    }
+    if (signal.aborted) throw signal.reason
+    return { executable, version: known.version }
   }
 }
 
@@ -479,7 +485,7 @@ class CodexAppServerClientInstance implements CodexAppServerClient {
   private retryTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(options: CodexAppServerClientOptions) {
-    this.resolveExecutable = options.resolveExecutable ?? resolveCodexExecutable
+    this.resolveExecutable = options.resolveExecutable ?? createCodexExecutableResolver()
     this.openChannel = options.openChannel ?? openProcess
   }
 

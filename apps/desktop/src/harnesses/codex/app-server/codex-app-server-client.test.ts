@@ -5,6 +5,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { MOCK_CODEX_VERSION } from '@/mocks/cli/codex/mock-codex-cli'
 import { recordedCodexModels } from '@/mocks/recordings/codex-app-server'
+import { SESSION_CODEX_EXECUTABLE_ENV } from '../proof-protocol'
 import {
   type CodexChannel,
   CodexUnavailableError,
@@ -51,6 +52,51 @@ createInterface({ input: process.stdin }).on('line', (line) => {
     assert.equal(await readFile(closed, 'utf8'), 'closed')
   } finally {
     client.shutdown()
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
+test('checks the executable version once per connection and again when the file changes', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-client-version-'))
+  const executable = path.join(directory, 'codex')
+  const server = path.join(directory, 'server.mjs')
+  const starts = path.join(directory, 'starts')
+  const versions = path.join(directory, 'versions')
+  await writeFile(
+    server,
+    `import { appendFileSync } from 'node:fs'; import { createInterface } from 'node:readline';
+appendFileSync(${JSON.stringify(starts)}, 'started\\n');
+createInterface({ input: process.stdin }).on('line', (line) => {
+  const request = JSON.parse(line);
+  if (request.id !== undefined) process.stdout.write(JSON.stringify({ id: request.id, result: {} }) + '\\n');
+});`,
+  )
+  const writeExecutable = (version: string) =>
+    writeFile(
+      executable,
+      `#!/bin/sh\nif [ "$1" = "--version" ]; then echo version >> "${versions}"; echo 'codex-cli ${version}'; exit 0; fi\nexec "${process.execPath}" "${server}"\n`,
+    )
+  const lineCount = async (file: string) => (await readFile(file, 'utf8')).trim().split('\n').length
+  await writeExecutable(MOCK_CODEX_VERSION)
+  await chmod(executable, 0o755)
+  const previous = process.env[SESSION_CODEX_EXECUTABLE_ENV]
+  process.env[SESSION_CODEX_EXECUTABLE_ENV] = executable
+  const client = createCodexAppServerClient()
+  try {
+    for (let index = 0; index < 5; index += 1) {
+      await client.request('thread/list', {}, (value) => value)
+    }
+    assert.equal(await lineCount(versions), 1)
+    assert.equal(await lineCount(starts), 1)
+
+    await writeExecutable(`${MOCK_CODEX_VERSION}-next`)
+    await client.request('thread/list', {}, (value) => value)
+    assert.equal(await lineCount(versions), 2)
+    assert.equal(await lineCount(starts), 2)
+  } finally {
+    client.shutdown()
+    if (previous === undefined) delete process.env[SESSION_CODEX_EXECUTABLE_ENV]
+    else process.env[SESSION_CODEX_EXECUTABLE_ENV] = previous
     await rm(directory, { recursive: true, force: true })
   }
 })
