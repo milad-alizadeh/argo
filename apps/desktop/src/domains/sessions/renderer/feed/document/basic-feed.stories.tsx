@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { StrictMode, useState } from 'react'
+import { StrictMode, useEffect, useState } from 'react'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { feedReadingRows } from '@/domains/sessions/api/feed/feed-reading-rows'
 import { projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
@@ -1862,10 +1862,51 @@ export const StalledReply: StoryObj<typeof StalledFeedHarness> = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitFor(() => expect(canvas.getByText('No reply yet')).toBeInTheDocument())
-    await expect(canvas.getByText(/the agent has not replied yet/)).toBeInTheDocument()
+    await expect(canvas.getByText(/Argo has not received a reply/)).toBeInTheDocument()
     await expect(canvas.queryByText('Could not load this Session')).toBeNull()
     await expect(canvas.getByText('Keep this known history visible.')).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+  },
+}
+
+// A first read that lands just before the bound on a pending prompt (#3170).
+function SlowFirstReadHarness() {
+  const [reading, setReading] = useState<SessionFeed | null>(null)
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setReading({ ...stalledFeed, rows: [...stalledFeed.rows, stalledPrompt] }),
+      1500,
+    )
+    return () => window.clearTimeout(timer)
+  }, [])
+  return (
+    <div className="h-dvh">
+      <BasicFeed
+        activeEvidenceId={null}
+        feed={reading}
+        failure={null}
+        running
+        posture="live"
+        selectedSessionId="stalled"
+        onOpenEvidence={() => {}}
+        onRetryFeed={() => {}}
+        onAnswerQuestion={() => {}}
+        answeringQuestionId={null}
+        questionFailure={() => null}
+        stallTimeoutMs={2000}
+      />
+    </div>
+  )
+}
+
+export const SlowFirstReadRestartsTheBound: Story = {
+  render: () => <SlowFirstReadHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('Keep this pending prompt visible.', {}, { timeout: 3000 })).toBeVisible()
+    await new Promise((resolve) => window.setTimeout(resolve, 1000))
+    await expect(canvasElement.querySelector('[data-state="stalled"]')).toBeNull()
+    await waitFor(() => expect(canvas.getByText('No reply yet')).toBeVisible(), { timeout: 5000 })
   },
 }
 

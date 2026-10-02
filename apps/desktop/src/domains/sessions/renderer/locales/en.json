@@ -27,7 +27,7 @@
     },
     "reply": {
       "title": "No reply yet",
-      "description": "The history for this Session loaded, but the agent has not replied yet."
+      "description": "Argo has not received a reply for this Session yet."
     },
     "retry": "Retry"
   },

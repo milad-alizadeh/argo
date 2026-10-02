@@ -120,8 +120,11 @@ export function BasicFeed({
     selectedSessionId !== null &&
     pendingSessionDraft(selectedSessionId) === null &&
     (document === null || (running && awaitingAssistantReply(document.rows)))
+  // The reply wait starts its own bound, so a slow first read does not count against the reply.
   const stalled = useStallTimer(
-    awaitingFeed ? `${selectedSessionId}:${retryToken}` : false,
+    awaitingFeed
+      ? `${selectedSessionId}:${retryToken}:${document === null ? 'history' : 'reply'}`
+      : false,
     stallTimeoutMs,
   )
   useEffect(() => {
