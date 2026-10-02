@@ -38,11 +38,7 @@ import {
   SessionInteractionBroker,
 } from '@/domains/sessions/main/live'
 import type { SessionSyncSupervisorActor } from '@/domains/sessions/main/sync'
-import {
-  createOwnedWorktree,
-  listProjectPullRequests,
-  removeOwnedWorktrees,
-} from '@/domains/sessions/main/worktree'
+import { createOwnedWorktree, removeOwnedWorktrees } from '@/domains/sessions/main/worktree'
 import {
   failInterruptedTicketSearches,
   markInterruptedTicketScans,
@@ -250,17 +246,7 @@ function routerForWindow(options: {
             draftId,
             from,
             worktreeRoot: path.join(app.getPath('userData'), 'worktrees'),
-            providers: PROVIDER_REGISTRY,
           }),
-        ),
-      listPullRequests: (project) =>
-        listProjectPullRequests(
-          {
-            access: domains.access,
-            connections: domains.connections,
-            providers: PROVIDER_REGISTRY,
-          },
-          project,
         ),
       removeOwnedWorktrees: (input) => queueWorktreeRemoval(database, actors, input),
       exclusive,

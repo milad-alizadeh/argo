@@ -8,7 +8,6 @@ import { sessionTable } from '@/database/session/schema'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
 import { pendingSessionId } from '@/domains/sessions/api/pending-session'
 import type { SessionSubmitRejection } from '@/domains/sessions/api/session-submit-rejection'
-import type { WorktreeStart } from '@/domains/sessions/api/worktree-request'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
 import { deleteComposerDraft, draftTurnConfigurationSchema, readComposerDraft } from '../database'
@@ -66,7 +65,7 @@ export type SessionProcedureContext = {
   createOwnedWorktree: (
     projectId: string,
     draftId: string,
-    from: WorktreeStart | null,
+    from: string | null,
   ) => Promise<{ path: string; branch: string }>
   acceptsAttachments: (harness: Harness) => boolean
 }

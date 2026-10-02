@@ -10,8 +10,8 @@
   amendment). The **only entity in the L1 triangle that Argo owns rather than observes**
   (Account is owned too, but sits outside it). Argo keeps no registry of the Project's
   checkouts. A new-Session draft runs in the **main checkout**, or in a **new worktree** started
-  from a local branch or an open pull request. The Project remembers the Worktree switch, which
-  starts off; the start is not remembered. See L2 · Session for the worktree a Session owns and
+  from a local branch. The Project remembers the Worktree switch, which starts off; the branch
+  is not remembered. See L2 · Session for the worktree a Session owns and
   when Argo removes it.
 
 - **Account** — one authenticated identity with a provider: **one OAuth grant, one token in the

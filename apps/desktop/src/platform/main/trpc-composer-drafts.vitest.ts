@@ -9,7 +9,6 @@ import { composerDraft } from '@/database/composer-draft/schema'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
-import type { WorktreeStart } from '@/domains/sessions/api/worktree-request'
 import {
   type LiveSessionSupervisorActor,
   SessionSubmitRejectedError,
@@ -17,7 +16,6 @@ import {
 import { createOwnedWorktree } from '@/domains/sessions/main/worktree'
 import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { initFixtureRepo } from '@/mocks/projects/worktree-repo.fixture'
-import { PROVIDER_REGISTRY } from '@/providers/registry'
 import { type AppRouterDependencies, createAppRouter } from './trpc-router'
 
 const projectId = 'project-1'
@@ -62,7 +60,7 @@ function caller(send: LiveSessionSupervisorActor['send'] = () => {}) {
     sessions: {
       database,
       supervisor: { send } as LiveSessionSupervisorActor,
-      createOwnedWorktree: (projectId: string, draftId: string, from: WorktreeStart | null) =>
+      createOwnedWorktree: (projectId: string, draftId: string, from: string | null) =>
         exclusive(() =>
           createOwnedWorktree({
             database,
@@ -70,7 +68,6 @@ function caller(send: LiveSessionSupervisorActor['send'] = () => {}) {
             draftId,
             from,
             worktreeRoot: path.join(userData, 'worktrees'),
-            providers: PROVIDER_REGISTRY,
           }),
         ),
       acceptsAttachments: (harness: string) => harness !== 'claude',
@@ -147,7 +144,7 @@ test('saves a Project draft target without changing its content and sends from t
   const target = {
     type: 'project' as const,
     projectId,
-    worktree: { type: 'new' as const, from: { type: 'branch' as const, branch: 'main' } },
+    worktree: { type: 'new' as const, from: 'main' },
     harness: 'claude' as const,
   }
   const saved = await caller().composerDraftSave({
@@ -275,7 +272,7 @@ test('retains a new-Session draft whose start branch is gone, and starts nothing
     starts += 1
   })
   const created = await api.composerDraftCreate({
-    target: { ...mainTarget, worktree: { type: 'new', from: { type: 'branch', branch: 'gone' } } },
+    target: { ...mainTarget, worktree: { type: 'new', from: 'gone' } },
     content,
   })
   await expect(submitCreated(api, created)).rejects.toThrow('worktree-create-failed')

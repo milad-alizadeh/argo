@@ -1,29 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo, useRef, useState } from 'react'
-import type { WorktreeStart } from '@/domains/sessions/api/worktree-request'
 import { type RouterOutputs, trpc } from '@/platform/renderer/trpc-client'
 
 type WorktreeOptionsOutput = RouterOutputs['worktreeOptions']
 type WorktreeOptions = Extract<WorktreeOptionsOutput, { type: 'worktree.options' }>
-export type PullRequestListing = RouterOutputs['worktreePullRequests']
 export type WorktreeCheckout = WorktreeOptions['checkout']
 
-// `options` is null while loading. `from` is null for the current checkout's branch.
+// `options` is null while loading. `from`, the branch a new worktree starts from, is null for the
+// main checkout's current branch.
 export type WorktreeOptionsState = {
   options: { checkout: WorktreeCheckout; branches: readonly string[] } | null
   newWorktree: boolean
-  from: WorktreeStart | null
-  // Null while the pull requests load, or while the switch is off.
-  pullRequests: PullRequestListing | null
+  from: string | null
   saveFailed: boolean
 }
 
 export type WorktreeOptionsActions = {
   setNewWorktree: (newWorktree: boolean) => void
-  chooseFrom: (from: WorktreeStart | null) => void
+  chooseFrom: (from: string | null) => void
 }
-
-const UNREACHABLE: PullRequestListing = { type: 'unavailable', reason: 'unreachable' }
 
 type ForProject<T> = { projectId: string; value: T }
 
@@ -80,16 +75,9 @@ export function useWorktreeOptions(
   const options = query.data?.type === 'worktree.options' ? query.data : undefined
   const remembered = useRememberedSwitch(projectId, options)
   // The start is never remembered: each Project, and each visit, begins on the current branch.
-  const [from, setFrom] = useState<ForProject<WorktreeStart | null> | null>(null)
-  const pullRequests = useQuery({
-    ...trpc.worktreePullRequests.queryOptions({ projectId: projectId ?? '' }),
-    enabled: projectId !== null && remembered.newWorktree,
-    staleTime: 60_000,
-    retry: false,
-  })
-  const listing = pullRequests.isError ? UNREACHABLE : (pullRequests.data ?? null)
+  const [from, setFrom] = useState<ForProject<string | null> | null>(null)
   const chooseFrom = useCallback(
-    (value: WorktreeStart | null) => {
+    (value: string | null) => {
       if (projectId !== null) setFrom({ projectId, value })
     },
     [projectId],
@@ -100,10 +88,9 @@ export function useWorktreeOptions(
         options === undefined ? null : { checkout: options.checkout, branches: options.branches },
       newWorktree: remembered.newWorktree,
       from: forProject(from, projectId) ?? null,
-      pullRequests: remembered.newWorktree ? listing : null,
       saveFailed: remembered.saveFailed,
     }),
-    [options, remembered.newWorktree, remembered.saveFailed, from, projectId, listing],
+    [options, remembered.newWorktree, remembered.saveFailed, from, projectId],
   )
   const actions = useMemo(
     () => ({ setNewWorktree: remembered.setNewWorktree, chooseFrom }),

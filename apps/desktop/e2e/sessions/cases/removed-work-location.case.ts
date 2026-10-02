@@ -1,4 +1,4 @@
-// A new Session in a new worktree starts from the branch chosen under "From", and the Worktree switch
+// A new Session in a new worktree starts from the branch chosen in the branch picker, and the Worktree switch
 // is remembered for the Project. A saved Session whose worktree is gone continues in the main
 // checkout, as Claude Code does. All of it holds for every Harness.
 import { execFile } from 'node:child_process'

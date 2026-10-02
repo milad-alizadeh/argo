@@ -50,7 +50,7 @@
   Facts read later from vendor history are vendor-sourced.
 
   A Session has **`0..1` worktree**: a `path` and a `branch`. Every Session worktree is one that
-  Argo made for that Session, from a branch or a pull request chosen under "From". With no
+  Argo made for that Session, from a local branch chosen in the composer. With no
   worktree, the Session runs in its `cwd`, which is the Project's main checkout for a new Session.
   A Session from before ADR-0049 that ran in a linked worktree made outside Argo keeps that folder
   as its `cwd` and has no worktree. Argo never removes the main checkout or a folder that is not a

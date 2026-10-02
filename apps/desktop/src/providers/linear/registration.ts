@@ -6,6 +6,4 @@ export const linearRegistration: ProviderRegistration<'linear'> = {
   provider: 'linear',
   accounts: linearAccounts,
   tickets: linearTickets,
-  // Linear hosts no code.
-  pullRequests: null,
 }

@@ -76,24 +76,6 @@ function visibleRepositories(exchange: Exchange, user: MockUser) {
 
 const REPOSITORY_PATH =
   /^\/repos\/([^/]+\/[^/]+)(?:\/issues(?:\/(\d+)(?:\/(sub_issues|dependencies\/blocked_by))?)?)?$/
-const PULLS_PATH = /^\/repos\/([^/]+\/[^/]+)\/pulls$/
-
-// The open pull requests, as GitHub's pulls listing shapes them.
-function pullRequests(exchange: Exchange, user: MockUser, scope: string) {
-  const repository = exchange.state.repositories.get(scope.toLowerCase())
-  if (!repository?.visibleTo.includes(user.id)) {
-    return send(exchange.response, 404, { message: 'Not Found' })
-  }
-  const open = repository.issues.filter((issue) => issue.pullRequest && isOpen(issue))
-  page(
-    exchange,
-    open.map((issue) => ({
-      number: issue.number,
-      title: issue.title,
-      head: { ref: issue.branch ?? `pull-${issue.number}` },
-    })),
-  )
-}
 
 function repositoryRead(exchange: Exchange, user: MockUser) {
   const { state, response, url } = exchange
@@ -135,8 +117,6 @@ function apiRead(exchange: Exchange) {
   if (url.pathname === '/user') return send(response, 200, { id: user.id, login: user.login })
   if (url.pathname === '/search/issues') return search(exchange, user)
   if (url.pathname === '/user/repos') return visibleRepositories(exchange, user)
-  const pulls = url.pathname.match(PULLS_PATH)?.[1]
-  if (pulls !== undefined) return pullRequests(exchange, user, pulls)
   repositoryRead(exchange, user)
 }
 

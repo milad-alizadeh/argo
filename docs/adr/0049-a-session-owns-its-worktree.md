@@ -25,17 +25,14 @@ The composer of a new Session shows a Worktree row in the tray above the editor:
 
 - The row has a switch labeled "Worktree". The Project remembers the switch. A new Project starts
   with the switch off.
+- The branch comes first in the row, and the switch follows it. You can click the label to
+  change the switch.
 - If the switch is off, the row shows the branch of the main checkout as plain text. The Session
   runs in the main checkout.
-- If the switch is on, the row shows a "From" dropdown that you can search. It lists the local
-  branches, then the open pull requests of the Project's GitHub repository. Argo makes a new
-  worktree on a new `argo/session-…` branch, from the start you chose.
-- The start always begins on the current branch of the main checkout. Argo does not remember it.
-- For a pull request, Argo fetches `refs/pull/<number>/head` from the GitHub remote and starts
-  the worktree at that commit. Argo reads the pull requests through the GitHub provider, as the
-  Account of the Project's Ticket Connection, or else as the first connected GitHub Account.
-- If the Project has no GitHub remote, no connected Account, or no access to GitHub, the dropdown
-  lists branches only, with one line that says why.
+- If the switch is on, the branch becomes a dropdown that you can search. It lists the local
+  branches. Argo makes a new worktree on a new `argo/session-…` branch, from the branch you chose.
+- The dropdown always begins on the current branch of the main checkout. Argo does not remember
+  the branch you chose.
 - A new worktree starts at a commit. Uncommitted changes in the main checkout stay there and do
   not go into the new worktree.
 
@@ -48,12 +45,8 @@ Prior art:
   <https://code.claude.com/docs/en/desktop#work-in-parallel-with-sessions>.
 - Paseo has an Isolation control with a "Starting ref":
   <https://github.com/getpaseo/paseo/blob/b5b43edd65cc1253493b13cca3941dd390df6ef3/packages/app/src/screens/new-workspace-screen.tsx>.
-  Its picker lists branches and pull requests together:
-  <https://github.com/getpaseo/paseo/blob/b5b43edd65cc1253493b13cca3941dd390df6ef3/packages/app/src/screens/new-workspace-picker-item.ts>.
 - Codex asks for a base branch after you choose Worktree:
   <https://learn.chatgpt.com/docs/environments/git-worktrees>.
-- Conductor starts a workspace from a branch or a pull request:
-  <https://www.conductor.build/docs/concepts/workflow>.
 
 Argo follows Claude Code's cleanup rule for a Session worktree when its Session is archived:
 

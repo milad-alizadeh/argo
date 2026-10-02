@@ -747,7 +747,10 @@ export const Open: Story = {
     await waitFor(() =>
       expect(canvas.getByRole('region', { name: 'Subagent' })).toBeInTheDocument(),
     )
-    await expect(canvas.getByRole('button', { name: 'Collapse Session inspector' })).toBeVisible()
+    // The inspector slides open, so its button is in the tree before it is visible.
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Collapse Session inspector' })).toBeVisible(),
+    )
 
     await expectDelegatedFeedSurvivesCollapse(canvas)
 

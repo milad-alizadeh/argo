@@ -7,7 +7,6 @@ import { expect, test } from 'vitest'
 import { sessionTable } from '@/database/session/schema'
 import { registeredRepoFixture } from '@/mocks/projects/registered-repo.fixture'
 import { addLinkedWorktree } from '@/mocks/projects/worktree-repo.fixture'
-import { PROVIDER_REGISTRY } from '@/providers/registry'
 import { createOwnedWorktree } from './worktree-create-owned'
 import { removeOwnedWorktrees, worktreesWithWork } from './worktree-removal'
 
@@ -23,7 +22,6 @@ async function ownedSession() {
     draftId: 'draft-1',
     from: null,
     worktreeRoot,
-    providers: PROVIDER_REGISTRY,
   })
   database
     .insert(sessionTable)

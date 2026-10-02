@@ -7,11 +7,9 @@ import { eq } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { projectSelectSchema } from '@/database/project/validation'
-import type { WorktreeStart } from '@/domains/sessions/api/worktree-request'
 import { gitCommonDirectory } from '@/platform/main/git-worktrees'
 import { readWorktreeBranch } from './worktree-branch'
 import { projectFolders } from './worktree-options'
-import { fetchPullRequestHead, type PullRequestProviders } from './worktree-pull-requests'
 
 const run = promisify(execFile)
 
@@ -38,13 +36,8 @@ function branchExists(projectPath: string, branch: string): Promise<boolean> {
 
 // The commit a new worktree starts at. Only commits move over: the main checkout's uncommitted
 // changes stay where they are.
-async function startCommit(
-  checkout: string,
-  from: WorktreeStart | null,
-  providers: PullRequestProviders,
-): Promise<string> {
-  if (from?.type === 'pull-request') return fetchPullRequestHead(checkout, providers, from.number)
-  const ref = from === null ? 'HEAD' : `refs/heads/${from.branch}`
+async function startCommit(checkout: string, from: string | null): Promise<string> {
+  const ref = from === null ? 'HEAD' : `refs/heads/${from}`
   const { stdout } = await run('git', ['-C', checkout, 'rev-parse', '--verify', `${ref}^{commit}`])
   return stdout.trim()
 }
@@ -80,14 +73,13 @@ async function ensureWorktreeOnDisk(input: {
   await run('git', arguments_, { timeout: 120_000 })
 }
 
-// The worktree Argo makes for a new Session draft, from `from`. A second Send of the draft reuses it.
+// The worktree Argo makes for a new Session draft, from the local branch `from`. A second Send of the draft reuses it.
 export async function createOwnedWorktree(input: {
   database: Database
   projectId: string
   draftId: string
-  from: WorktreeStart | null
+  from: string | null
   worktreeRoot: string
-  providers: PullRequestProviders
 }): Promise<{ path: string; branch: string }> {
   const registered = projectSelectSchema.safeParse(
     input.database
@@ -105,7 +97,7 @@ export async function createOwnedWorktree(input: {
     projectRoot: { ...registered.data, path: main },
     worktreePath,
     branch,
-    start: () => startCommit(main, input.from, input.providers),
+    start: () => startCommit(main, input.from),
   })
   return { path: worktreePath, branch }
 }

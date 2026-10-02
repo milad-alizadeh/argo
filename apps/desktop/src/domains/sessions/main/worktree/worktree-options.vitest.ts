@@ -3,32 +3,18 @@ import { promisify } from 'node:util'
 import { initTRPC } from '@trpc/server'
 import { expect, test } from 'vitest'
 import { registeredRepoFixture } from '@/mocks/projects/registered-repo.fixture'
-import {
-  worktreeOptionsProcedure,
-  worktreePullRequestsProcedure,
-  worktreeSwitchProcedure,
-} from './worktree-options'
-import type { PullRequestListing } from './worktree-pull-requests'
+import { worktreeOptionsProcedure, worktreeSwitchProcedure } from './worktree-options'
 
 const run = promisify(execFile)
 
-async function options(listing: PullRequestListing = { type: 'listed', pullRequests: [] }) {
+async function options() {
   const { repository, database } = await registeredRepoFixture()
-  const asked: { id: string; checkout: string }[] = []
-  const context = {
-    database,
-    exclusive: async <T>(work: () => Promise<T>) => work(),
-    listPullRequests: async (project: { id: string; checkout: string }) => {
-      asked.push(project)
-      return listing
-    },
-  }
+  const context = { database, exclusive: async <T>(work: () => Promise<T>) => work() }
   const caller = initTRPC
     .create()
     .router({
       options: worktreeOptionsProcedure(context),
       switch: worktreeSwitchProcedure(context),
-      pullRequests: worktreePullRequestsProcedure(context),
     })
     .createCaller({})
   const read = async () => {
@@ -36,7 +22,7 @@ async function options(listing: PullRequestListing = { type: 'listed', pullReque
     if (result.type !== 'worktree.options') throw new Error(result.code)
     return result
   }
-  return { repository, caller, read, asked }
+  return { repository, caller, read }
 }
 
 test('a new Project starts with the switch off, on its main checkout and current branch', async () => {
@@ -78,15 +64,6 @@ test('a detached main checkout has no current branch', async () => {
   const { repository, read } = await options()
   await run('git', ['-C', repository, 'checkout', '--quiet', '--detach'])
   expect((await read()).checkout.branch).toBeNull()
-})
-
-test('asks for pull requests from the main checkout, and passes on why there are none', async () => {
-  const { repository, caller, asked } = await options({ type: 'unavailable', reason: 'no-remote' })
-  expect(await caller.pullRequests({ projectId: 'project-1' })).toEqual({
-    type: 'unavailable',
-    reason: 'no-remote',
-  })
-  expect(asked).toEqual([{ id: 'project-1', checkout: repository }])
 })
 
 test('an unknown Project has no options', async () => {

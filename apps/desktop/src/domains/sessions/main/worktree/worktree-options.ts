@@ -1,5 +1,5 @@
 // What the composer's Worktree row offers a new Session: the Project's remembered switch, its main
-// checkout and current branch, and the local branches and pull requests a new worktree can start from.
+// checkout and current branch, and the local branches a new worktree can start from.
 import { execFile } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { realpath } from 'node:fs/promises'
@@ -10,14 +10,12 @@ import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { projectSelectSchema } from '@/database/project/validation'
-import { pullRequestsUnavailableSchema } from '@/domains/sessions/api/worktree-request'
 import {
   gitCommonDirectory,
   linkedWorktreePaths,
   mainWorktreePath,
 } from '@/platform/main/git-worktrees'
 import { readWorktreeBranch } from './worktree-branch'
-import type { PullRequestListing } from './worktree-pull-requests'
 
 const run = promisify(execFile)
 const t = initTRPC.create()
@@ -37,24 +35,10 @@ const optionsOutputSchema = z.discriminatedUnion('type', [
     code: z.literal('missing-project'),
   }),
 ])
-const pullRequestsOutputSchema = z.discriminatedUnion('type', [
-  z.strictObject({
-    type: z.literal('listed'),
-    pullRequests: z.array(
-      z.strictObject({
-        number: z.number().int().positive(),
-        title: z.string(),
-        branch: z.string().min(1),
-      }),
-    ),
-  }),
-  z.strictObject({ type: z.literal('unavailable'), reason: pullRequestsUnavailableSchema }),
-])
 
 export type WorktreeOptionsContext = {
   database: Database
   exclusive: <T>(work: () => Promise<T>) => Promise<T>
-  listPullRequests: (project: { id: string; checkout: string }) => Promise<PullRequestListing>
 }
 
 type ProjectFolders = { main: string; linked: string[] }
@@ -123,7 +107,7 @@ export function worktreeOptionsProcedure(context: WorktreeOptionsContext) {
     .query(({ input }) => context.exclusive(() => readOptions(context.database, input.projectId)))
 }
 
-// The Worktree switch, remembered for the Project. The "From" choice is never remembered.
+// The Worktree switch, remembered for the Project. The start branch is never remembered.
 export function worktreeSwitchProcedure(context: WorktreeOptionsContext) {
   return t.procedure
     .input(inputSchema.extend({ newWorktree: z.boolean() }))
@@ -141,17 +125,4 @@ export function worktreeSwitchProcedure(context: WorktreeOptionsContext) {
         return { newWorktree: input.newWorktree }
       }),
     )
-}
-
-export function worktreePullRequestsProcedure(context: WorktreeOptionsContext) {
-  return t.procedure
-    .input(inputSchema)
-    .output(pullRequestsOutputSchema)
-    .query(async ({ input }) => {
-      const registered = readProject(context.database, input.projectId)
-      if (!registered.success)
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'missing-project' })
-      const { main } = await projectFolders(registered.data.path)
-      return context.listPullRequests({ id: input.projectId, checkout: main })
-    })
 }

@@ -4,7 +4,6 @@ import { identifierSchema } from '@/shared/validation'
 import {
   type WorktreeOptionsContext,
   worktreeOptionsProcedure,
-  worktreePullRequestsProcedure,
   worktreeSwitchProcedure,
   worktreesWithWork,
 } from '../worktree'
@@ -36,7 +35,6 @@ export function sessionWorktreeProcedures(context: WorktreeOptionsContext) {
   return {
     worktreeOptions: worktreeOptionsProcedure(context),
     worktreeSwitch: worktreeSwitchProcedure(context),
-    worktreePullRequests: worktreePullRequestsProcedure(context),
     sessionWorktreeWork: sessionWorktreeWorkProcedure(context),
   }
 }

@@ -36,8 +36,6 @@ function projectReply(request: StorybookTrpcRequest): StorybookTrpcResponse | nu
       })
     case 'worktreeSwitch':
       return success({ newWorktree: (request.input as { newWorktree: boolean }).newWorktree })
-    case 'worktreePullRequests':
-      return success({ type: 'listed', pullRequests: [] })
     default:
       return null
   }

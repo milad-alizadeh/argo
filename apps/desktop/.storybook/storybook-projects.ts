@@ -5,7 +5,6 @@ type ProjectOpenReply = RouterOutputs['projectOpen']
 type ProjectRelocateReply = RouterOutputs['projectRelocate']
 type WorktreeOptionsReply = RouterOutputs['worktreeOptions']
 type WorktreeSwitchReply = RouterOutputs['worktreeSwitch']
-type WorktreePullRequestsReply = RouterOutputs['worktreePullRequests']
 
 type StorybookProjectProcedures = {
   projectOpen: (request: { projectId: string }) => Promise<ProjectOpenReply>
@@ -17,7 +16,6 @@ type StorybookProjectProcedures = {
     projectId: string
     newWorktree: boolean
   }) => Promise<WorktreeSwitchReply>
-  worktreePullRequests: (request: { projectId: string }) => Promise<WorktreePullRequestsReply>
 }
 
 const primaryProject = { id: 'storybook-project', name: 'argo', path: '/storybook/argo' }
@@ -45,5 +43,4 @@ export const storybookProjectProcedures: StorybookProjectProcedures = {
   projectRelocate: () => Promise.resolve(secondaryProject),
   worktreeOptions: () => Promise.resolve(worktreeOptions()),
   worktreeSwitch: ({ newWorktree }) => Promise.resolve({ newWorktree }),
-  worktreePullRequests: () => Promise.resolve({ type: 'listed', pullRequests: [] }),
 }

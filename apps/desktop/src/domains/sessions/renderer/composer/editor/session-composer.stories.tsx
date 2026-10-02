@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import type { WorktreeStart } from '@/domains/sessions/api/worktree-request'
 import type { Harness } from '@/harnesses/harness'
 import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '@/mocks/sessions/harness-catalog.fixture'
@@ -33,7 +32,7 @@ function EverythingComposerStory() {
   const [harness, setHarness] = useState<Harness>('claude')
   const [turnConfiguration, setTurnConfiguration] = useState(CLAUDE_TURN_CONFIGURATION.opening)
   const [newWorktree, setNewWorktree] = useState(true)
-  const [from, setFrom] = useState<WorktreeStart | null>(null)
+  const [from, setFrom] = useState<string | null>(null)
 
   return (
     <ComposerForm
@@ -52,7 +51,6 @@ function EverythingComposerStory() {
         options: WORKTREE_OPTIONS,
         newWorktree,
         from,
-        pullRequests: { type: 'listed', pullRequests: [] },
         saveFailed: false,
         onNewWorktreeChange: setNewWorktree,
         onFromChange: setFrom,
