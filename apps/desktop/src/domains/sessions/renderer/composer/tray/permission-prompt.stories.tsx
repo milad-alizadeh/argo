@@ -64,28 +64,11 @@ export const DenyOnly: Story = {
 
 // Claude's gate remembers similar calls; the same answer reads as a Session-wide allow for Codex.
 export const AllowSimilar: Story = {
-  render: (args) => {
-    const [answer, setAnswer] = useState<string | null>(null)
-    return (
-      <>
-        <PermissionPrompt
-          {...args}
-          onDecide={async (decision) => {
-            setAnswer(decision)
-            return true
-          }}
-        />
-        <output aria-label="Answer">{answer}</output>
-      </>
-    )
-  },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'More ways to allow' }))
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Allow similar' }))
-    await expect(canvas.getByRole('status', { name: 'Answer' })).toHaveTextContent(
-      'allowForSession',
-    )
+    await expect(args.onDecide).toHaveBeenCalledWith('allowForSession')
   },
 }
 
@@ -141,5 +124,36 @@ export const Refused: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Deny' }))
     await expect(canvas.getByRole('button', { name: 'Allow' })).toBeEnabled()
     await expect(canvas.getByRole('button', { name: 'Deny' })).toBeEnabled()
+  },
+}
+
+export const SplitActionKeyboard: Story = {
+  args: { onDecide: fn(async () => false) },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: 'More ways to allow' })
+    await userEvent.tab()
+    await expect(canvas.getByRole('button', { name: 'Deny' })).toHaveFocus()
+    await userEvent.tab()
+    await expect(canvas.getByRole('button', { name: 'Allow' })).toHaveFocus()
+    await userEvent.tab()
+    await expect(trigger).toHaveFocus()
+    await userEvent.keyboard('{ArrowDown}')
+    await expect(await screen.findByRole('menuitem', { name: 'Allow similar' })).toHaveFocus()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
+    await expect(trigger).toHaveFocus()
+    await expect(args.onDecide).not.toHaveBeenCalled()
+    await userEvent.keyboard('{ArrowDown}')
+    await waitFor(() =>
+      expect(screen.getByRole('menuitem', { name: 'Allow similar' })).toHaveFocus(),
+    )
+    await userEvent.keyboard('{Enter}')
+    await waitFor(() => expect(args.onDecide).toHaveBeenCalledWith('allowForSession'))
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
+    await waitFor(() => {
+      expect(trigger).toBeEnabled()
+      expect(trigger).toHaveFocus()
+    })
   },
 }

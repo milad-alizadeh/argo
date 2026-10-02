@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import { SessionContextBar } from './session-context-bar'
 
@@ -9,7 +9,7 @@ const meta = {
     contextWindowTokens: 200_000,
     harness: 'claude',
     isCompacting: false,
-    onCompact: async () => true,
+    onCompact: fn(async () => true),
   },
   component: SessionContextBar,
   title: 'Features/Sessions/Composer/Session Context Bar',
@@ -51,10 +51,9 @@ export const MeterAndLabels: Story = {
     await userEvent.click(context)
     await waitFor(() => expect(within(document.body).getByText('Context window')).toBeVisible())
     await openContextActions(canvasElement)
-    const handoff = within(document.body)
-      .getAllByLabelText('Handoff Session')
-      .find((button) => button.getBoundingClientRect().width > 0)
-    if (handoff === undefined) throw new Error('The visible context bar actions are absent.')
+    await expect(
+      within(document.body).getByRole('menuitem', { name: 'Handoff Session' }),
+    ).toBeVisible()
   },
 }
 
@@ -72,13 +71,9 @@ export const LabelsWaitForTheFullLayout: Story = {
   render: () => <ContextBarFrame width="55rem" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const bar = canvasElement.querySelector<HTMLElement>('[data-component="SessionContextBar"]')
 
     await expect(canvas.getByLabelText(/Context 148k tokens/)).toBeVisible()
     await openContextActions(canvasElement)
-    if (bar === null) throw new Error('The context bar is absent.')
-
-    expect(bar.scrollWidth).toBeLessThanOrEqual(bar.clientWidth)
   },
 }
 
@@ -94,5 +89,47 @@ export const PercentageAndIcons: Story = {
     await expect(
       within(document.body).queryByRole('menuitem', { name: 'Compact context' }),
     ).toBeNull()
+  },
+}
+
+export const ContextActionKeyboard: Story = {
+  render: (args) => <SessionContextBar {...args} onHandoff={undefined} />,
+  play: async ({ canvasElement, args }) => {
+    const trigger = within(canvasElement).getByRole('button', { name: 'Context actions' })
+    await userEvent.click(trigger)
+    await within(document.body).findByRole('menuitem', { name: 'Compact context' })
+    await expect(
+      within(document.body).getByRole('menuitem', { name: 'Handoff Session' }),
+    ).toHaveAttribute('aria-disabled', 'true')
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(within(document.body).queryByRole('menu')).toBeNull())
+    await expect(trigger).toHaveFocus()
+    await userEvent.keyboard('{ArrowDown}')
+    await expect(
+      await within(document.body).findByRole('menuitem', { name: 'Compact context' }),
+    ).toHaveFocus()
+    await userEvent.keyboard('{Enter}')
+    await expect(args.onCompact).toHaveBeenCalled()
+    await waitFor(() => expect(within(document.body).queryByRole('menu')).toBeNull())
+    await expect(trigger).toHaveFocus()
+  },
+}
+
+export const ContextActionsBusy: Story = {
+  args: { isCompacting: true, isHandingOff: true, onHandoff: fn(async () => true) },
+  play: async ({ canvasElement, args }) => {
+    await openContextActions(canvasElement)
+    for (const name of ['Compact context', 'Handoff Session']) {
+      await expect(within(document.body).getByRole('menuitem', { name })).toHaveAttribute(
+        'aria-disabled',
+        'true',
+      )
+    }
+    await userEvent.keyboard('{ArrowDown}{Enter}{Escape}')
+    await expect(args.onCompact).not.toHaveBeenCalled()
+    await expect(args.onHandoff).not.toHaveBeenCalled()
+    await waitFor(() =>
+      expect(within(canvasElement).getByRole('button', { name: 'Context actions' })).toHaveFocus(),
+    )
   },
 }

@@ -20,6 +20,8 @@ const STANDING_ALLOW_LABELS = {
 
 export type PermissionAnswer = 'allow' | 'allowForSession' | 'deny'
 
+const allowButtonSeparatorRecipe = 'bg-primary-foreground/25'
+
 export function AllowButton({
   allowLabel,
   harness,
@@ -50,7 +52,7 @@ export function AllowButton({
           {allowLabel}
         </Button>
       ) : null}
-      {canAllow ? <ButtonGroupSeparator className="bg-primary-foreground/25" /> : null}
+      {canAllow ? <ButtonGroupSeparator className={allowButtonSeparatorRecipe} /> : null}
       <DropdownMenu>
         <DropdownMenuTrigger
           disabled={disabled}

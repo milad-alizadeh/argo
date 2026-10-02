@@ -14,6 +14,12 @@ import {
   type TurnConfiguration,
   type TurnConfigurationChoices,
 } from '../turn-configuration/turn-configuration'
+import { ChoiceRow } from './choice-row'
+import {
+  composerMenuPopupRecipe,
+  composerMenuTriggerRecipe,
+  composerRichOptionRecipe,
+} from './composer-menu-recipes'
 import { EffortSlider } from './effort-slider'
 
 export type TurnConfigurationControlProps = {
@@ -64,7 +70,7 @@ export function TurnConfigurationMenu({
         render={
           <InputGroupButton
             variant="ghost"
-            className="max-w-80 min-w-0 text-foreground"
+            className={composerMenuTriggerRecipe('max-w-80 min-w-0')}
             aria-label={`Choose Turn configuration: ${[label, ...facts].join(', ')}`}
           />
         }
@@ -87,7 +93,9 @@ export function TurnConfigurationMenu({
         align="start"
         side="top"
         tabIndex={0}
-        className="max-h-(--size-session-menu-max-height) w-(--size-session-menu) gap-0 overflow-y-auto p-0"
+        className={composerMenuPopupRecipe(
+          'max-h-[min(var(--size-session-menu-max-height),var(--available-height))] gap-0 overflow-hidden p-0 **:data-[slot=tabs]:min-h-0 **:data-[slot=tabs-content]:flex **:data-[slot=tabs-content]:min-h-0 **:data-[slot=tabs-content]:flex-col',
+        )}
       >
         <HarnessTabs harness={harness.harness} onChange={harness.onChange}>
           {body}
@@ -139,8 +147,12 @@ function ConfigurationBody({
     )
   return (
     <>
-      <ModelOptions {...turnConfiguration} />
-      <EffortSlider {...turnConfiguration} />
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <ModelOptions {...turnConfiguration} />
+      </div>
+      <div className="shrink-0">
+        <EffortSlider {...turnConfiguration} />
+      </div>
     </>
   )
 }
@@ -162,13 +174,14 @@ function ModelOptions({ choices, value, onChange }: TurnConfigurationControlProp
           const active = value.model === model.value
           return (
             // A native radio group: arrows move both focus and the choice, and only the checked one is a Tab stop.
-            <label
+            <ChoiceRow
               key={model.value}
-              className={`flex min-h-12 w-full items-center rounded-md px-2.5 py-1.5 text-left transition-colors has-focus-visible:ring-3 has-focus-visible:ring-ring/50 ${
-                active ? 'bg-foreground text-background' : 'hover:bg-muted'
-              }`}
+              selected={active}
+              htmlFor={`${name}-${model.value}`}
+              onFocus={(event) => event.currentTarget.scrollIntoView({ block: 'nearest' })}
             >
               <input
+                id={`${name}-${model.value}`}
                 type="radio"
                 name={name}
                 value={model.value}
@@ -188,18 +201,18 @@ function ModelOptions({ choices, value, onChange }: TurnConfigurationControlProp
                 }}
                 className="sr-only"
               />
-              <span className="min-w-0">
-                <span className="block type-heading">{model.label}</span>
+              <span className={composerRichOptionRecipe.content}>
+                <span className={composerRichOptionRecipe.label}>{model.label}</span>
                 {model.detail ? (
                   <span
-                    className={`mt-0.5 block type-meta ${active ? 'text-background/80' : 'text-muted-foreground'}`}
+                    className={`${composerRichOptionRecipe.detail} ${active ? 'text-background/80' : 'text-muted-foreground'}`}
                   >
                     {model.detail}
                   </span>
                 ) : null}
               </span>
               {active ? <Icon name="confirmed" className="ml-auto size-4" /> : null}
-            </label>
+            </ChoiceRow>
           )
         })}
       </div>

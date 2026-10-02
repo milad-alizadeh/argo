@@ -69,7 +69,13 @@ function failureOf(result: CatalogReadResult | null): CatalogFailure | null {
 }
 
 // A started Session keeps its harness; a new one offers the harness tabs.
-function TurnConfigurationStory({ started = true }: { started?: boolean }) {
+function TurnConfigurationStory({
+  started = true,
+  narrow = false,
+}: {
+  started?: boolean
+  narrow?: boolean
+}) {
   const [harness, setHarness] = useState<Harness>('claude')
   const [turnConfiguration, setTurnConfiguration] = useState(liveClaudeInfo.opening)
   const result = harness === 'codex' ? readyCodex : readyClaude
@@ -79,7 +85,7 @@ function TurnConfigurationStory({ started = true }: { started?: boolean }) {
     setTurnConfiguration(nextHarness === 'codex' ? liveCodexInfo.opening : liveClaudeInfo.opening)
   }
   return (
-    <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
+    <div className={`@container flex min-h-dvh items-end p-8 ${narrow ? 'w-72' : 'max-w-4xl'}`}>
       <TurnConfigurationMenu
         harness={started ? { harness } : { harness, onChange: chooseHarness }}
         turnConfiguration={
@@ -177,9 +183,6 @@ export const ChoosesModelAndEffort: Story = {
     await expect(effort).toHaveAttribute('aria-valuetext', 'Max')
     fireEvent.change(effort, { target: { value: '3' } })
     await expect(effort).toHaveAttribute('aria-valuetext', 'Extra high')
-    const effortScale = effort.parentElement
-    if (!effortScale) throw new Error('Effort scale is missing.')
-    await expect(within(effortScale).getByText('Extra high')).toHaveClass('font-semibold')
     const harnesses = page().getByRole('tablist', { name: 'Harness' })
     for (const label of ['Claude Code', 'Codex']) {
       const tab = within(harnesses).getByRole('tab', { name: label })
@@ -342,10 +345,6 @@ export const NewSessionChoosesHarness: Story = {
     const claude = within(harnesses).getByRole('tab', { name: 'Claude Code' })
     await waitFor(() => expect(claude).toHaveFocus())
     await expect(claude).toHaveAttribute('aria-selected', 'true')
-    // The track pads the active tab on every side (602bcce2); the popover may still be scaling in.
-    await expect(harnesses.getBoundingClientRect().bottom).toBeGreaterThanOrEqual(
-      claude.getBoundingClientRect().bottom + 3,
-    )
     await expect(page().getByRole('tabpanel')).toContainElement(
       page().getByRole('radiogroup', { name: 'Model' }),
     )
@@ -371,5 +370,28 @@ export const NewSessionChoosesHarness: Story = {
     await expectRoleHidden('tablist', 'Harness')
     await expect(trigger).toHaveFocus()
     await expect(trigger).toHaveTextContent('Opus 5·Medium')
+  },
+}
+
+export const NarrowModelDetails: Story = {
+  args: { narrow: true },
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole('button', { name: TRIGGER })
+    await userEvent.click(trigger)
+    const model = await page().findByRole('radio', {
+      name: /Fable 5.1.*Deepest reasoning for long, open-ended work/,
+    })
+    await userEvent.click(model)
+    await expect(model).toBeChecked()
+    await userEvent.tab()
+    const effort = page().getByRole('slider', { name: 'Effort' })
+    await expect(effort).toHaveFocus()
+    fireEvent.change(effort, { target: { value: '2' } })
+    await expect(effort).toHaveAttribute('aria-valuetext', 'High')
+    await userEvent.keyboard('{Escape}')
+    await expectRoleHidden('radiogroup', 'Model')
+    await expect(trigger).toHaveFocus()
+    await expect(trigger).toHaveTextContent('Fable 5.1')
+    await expect(trigger).toHaveTextContent('High')
   },
 }

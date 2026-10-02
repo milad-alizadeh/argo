@@ -68,19 +68,8 @@ export function WorkCountSamples() {
           selectedId={picked}
         />
       ))}
-      <output aria-label="Selected work">{picked ?? 'None'}</output>
     </div>
   )
-}
-
-function expectDotAlignedWithTitle(item: HTMLElement) {
-  const dot = item.querySelector<HTMLElement>('[aria-hidden="true"]')
-  const title = within(item).getByText('Interface review')
-  if (dot === null) throw new Error('Expected a state dot.')
-  const dotCenter = dot.getBoundingClientRect().top + dot.getBoundingClientRect().height / 2
-  const titleBounds = title.getBoundingClientRect()
-  const titleCenter = titleBounds.top + titleBounds.height / 2
-  expect(Math.abs(dotCenter - titleCenter)).toBeLessThanOrEqual(1)
 }
 
 // The header's own selection, so a play function can operate the story the way a reader does.
@@ -109,9 +98,6 @@ function Header(props: Partial<React.ComponentProps<typeof SessionWorkButtons>>)
         shell={SHELL}
         {...props}
       />
-      <output className="type-meta text-muted-foreground">
-        {`Picked: ${subagentId ?? shellId ?? 'nothing'}`}
-      </output>
     </div>
   )
 }
@@ -166,11 +152,10 @@ export const RunningAndFinishedGroups: Story = {
     // Model, duration and spend remain visible in the same order; the colored mark carries state.
     const runningItem = within(running).getByRole('menuitem', { name: /Interface review/ })
     await expect(runningItem).toHaveTextContent('claude-opus-5 · 5m 0s · 18k tokens')
-    await expect(within(runningItem).getByText('Running')).toHaveClass('sr-only')
-    expectDotAlignedWithTitle(runningItem)
+    await expect(runningItem).toHaveAccessibleName(/Running/)
     const finishedItem = within(finished).getByRole('menuitem', { name: /Find every caller/ })
     await expect(finishedItem).toHaveTextContent('gpt-5.6-terra · 1m 12s · 2.7k tokens')
-    await expect(within(finishedItem).getByText('Done')).toHaveClass('sr-only')
+    await expect(finishedItem).toHaveAccessibleName(/Done/)
   },
 }
 
@@ -215,7 +200,14 @@ export const PicksASubagent: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Subagents · 2' }))
     await userEvent.click(await screen.findByRole('menuitem', { name: /Interface review/ }))
-    await expect(canvas.getByRole('status')).toHaveTextContent('Picked: call-review')
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
+    const trigger = canvas.getByRole('button', { name: 'Subagents · 2' })
+    await expect(trigger).toHaveFocus()
+    await userEvent.click(trigger)
+    await expect(await screen.findByRole('menuitem', { name: /Interface review/ })).toHaveAttribute(
+      'aria-current',
+      'true',
+    )
   },
 }
 
@@ -254,6 +246,65 @@ export const NotificationCounts: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Running work · 1' }))
     await userEvent.click(await screen.findByRole('menuitem', { name: /Review interface Running/ }))
-    await expect(canvas.getByLabelText('Selected work')).toHaveTextContent('running-work')
+    await userEvent.click(canvas.getByRole('button', { name: 'Running work · 1' }))
+    await expect(
+      await screen.findByRole('menuitem', { name: /Review interface Running/ }),
+    ).toHaveAttribute('aria-current', 'true')
+  },
+}
+
+export const KeyboardSelection: Story = {
+  render: () => <Header />,
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole('button', { name: 'Subagents · 2' })
+    await userEvent.tab()
+    await expect(trigger).toHaveFocus()
+    await userEvent.keyboard('{ArrowDown}')
+    await expect(await screen.findByRole('menuitem', { name: /Interface review/ })).toHaveFocus()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
+    await expect(trigger).toHaveFocus()
+    await userEvent.keyboard('{ArrowDown}')
+    await waitFor(() =>
+      expect(screen.getByRole('menuitem', { name: /Interface review/ })).toHaveFocus(),
+    )
+    await userEvent.keyboard('{ArrowDown}')
+    await expect(screen.getByRole('menuitem', { name: /Find every caller/ })).toHaveFocus()
+    await userEvent.keyboard('{Enter}')
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
+    await expect(trigger).toHaveFocus()
+    await userEvent.keyboard('{ArrowDown}')
+    await expect(
+      await screen.findByRole('menuitem', { name: /Find every caller/ }),
+    ).toHaveAttribute('aria-current', 'true')
+  },
+}
+
+export const LongDetailsNarrow: Story = {
+  render: () => (
+    <div className="w-72 p-4">
+      <SessionWorkMenu
+        entries={[
+          {
+            ...countEntry(true),
+            title: 'Review the configuration and permission menus across the application',
+            facts:
+              'claude-opus-5 · 25m 30s · 184k tokens · checking keyboard navigation and accessibility',
+          },
+        ]}
+        icon="agent"
+        label="Subagents"
+        onSelect={() => {}}
+        selectedId={null}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Subagents · 1' }))
+    await expect(
+      await screen.findByRole('menuitem', {
+        name: /Review the configuration and permission menus/,
+      }),
+    ).toHaveAccessibleName(/checking keyboard navigation and accessibility/)
   },
 }

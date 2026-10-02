@@ -1,11 +1,10 @@
 import { useTranslation } from 'react-i18next'
+import { MenuDropdownTrigger } from '@/platform/renderer/components/dropdown-trigger'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import { Button } from '@/platform/renderer/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
 
 export function SessionContextActions({
@@ -26,23 +25,16 @@ export function SessionContextActions({
   const { t } = useTranslation('sessions')
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            aria-label={t('composer.contextActions')}
-            className="shrink-0"
-            size="icon-sm"
-            type="button"
-            variant="ghost"
-          >
-            <Icon name="context-actions" />
-          </Button>
-        }
+      <MenuDropdownTrigger
+        aria-label={t('composer.contextActions')}
+        className="shrink-0"
+        icon="context-actions"
+        iconOnly
+        label={t('composer.contextActions')}
       />
       <DropdownMenuContent align="end" side="top" className="w-max">
         <DropdownMenuItem
           aria-label={t('composer.compactAction')}
-          className="type-control"
           disabled={!canCompact || isCompacting}
           onClick={() => void onCompact?.()}
         >
@@ -51,7 +43,6 @@ export function SessionContextActions({
         </DropdownMenuItem>
         <DropdownMenuItem
           aria-label={t('composer.handoffAction')}
-          className="type-control"
           disabled={!canHandoff || isHandingOff}
           onClick={() => void onHandoff?.()}
         >
