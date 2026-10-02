@@ -36,7 +36,8 @@ export async function readWindowRoute(
     return undefined
   }
   const [savedRoute, projectId, sessionId, query = ''] = match
-  if (!listProjects(database).some((item) => item.id === projectId)) return undefined
+  if (projectId === undefined || !listProjects(database).some((item) => item.id === projectId))
+    return undefined
   if (sessionId === undefined || sessionId === 'new') return savedRoute
   if (sessionInProject(database, sessionId, projectId)) return savedRoute
   return `/projects/${projectId}/sessions${query}`
