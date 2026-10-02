@@ -13,9 +13,9 @@ import {
 
 // The Session List, a Session, or `new`: a reopened draft is harmless, since SQLite keeps it.
 const SESSIONS_ROUTE = /^\/projects\/([^/?#]+)\/sessions(?:\/([^/?#]+))?(\?[^#]*)?$/
-const routeDocumentSchema = z.object({ route: z.string().regex(SESSIONS_ROUTE) })
+const routeDocumentSchema = z.object({ route: z.string() })
 
-function routePath(userData: string): string {
+export function windowRoutePath(userData: string): string {
   return portablePath(userData, 'window-route.json')
 }
 
@@ -24,18 +24,21 @@ export async function readWindowRoute(
   userData: string,
   database: Database,
 ): Promise<string | undefined> {
-  const read = await readDocument(routePath(userData))
-  if (!read.ok) return undefined
+  const read = await readDocument(windowRoutePath(userData))
+  if (!read.ok) {
+    if (read.reason !== 'missing') console.warn(`Ignored a saved window route: ${read.reason}.`)
+    return undefined
+  }
   const parsed = routeDocumentSchema.safeParse(read.document)
-  if (!parsed.success) {
+  const match = parsed.success ? SESSIONS_ROUTE.exec(parsed.data.route) : null
+  if (match === null) {
     console.warn('Ignored an unrecognised saved window route.')
     return undefined
   }
-  const [route, projectId, sessionId, query = ''] = SESSIONS_ROUTE.exec(parsed.data.route) ?? []
-  if (route === undefined || projectId === undefined) return undefined
+  const [savedRoute, projectId, sessionId, query = ''] = match
   if (!listProjects(database).some((item) => item.id === projectId)) return undefined
-  if (sessionId === undefined || sessionId === 'new') return route
-  if (sessionInProject(database, sessionId, projectId)) return route
+  if (sessionId === undefined || sessionId === 'new') return savedRoute
+  if (sessionInProject(database, sessionId, projectId)) return savedRoute
   return `/projects/${projectId}/sessions${query}`
 }
 
@@ -43,8 +46,12 @@ export function rememberWindowRoute(window: BrowserWindow, userData: string): vo
   const queue = createWriteQueue()
   window.webContents.on('did-navigate-in-page', (_event, url, isMainFrame) => {
     // The route lives in the hash until #2972 moves the window to path routing.
+    if (!isMainFrame) return
     const route = new URL(url).hash.slice(1)
-    if (isMainFrame && SESSIONS_ROUTE.test(route))
-      void queue(() => writeDocument(routePath(userData), { route }))
+    if (SESSIONS_ROUTE.test(route))
+      void queue(async () => {
+        if (!(await writeDocument(windowRoutePath(userData), { route })))
+          console.warn('Could not save the window route.')
+      })
   })
 }

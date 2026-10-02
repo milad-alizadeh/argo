@@ -5,8 +5,8 @@ import path from 'node:path'
 import { test } from 'vitest'
 import { insertProject, migratedDatabase } from '@/mocks/database/migrated-database'
 import { insertSession } from '@/mocks/sessions/session-list-caller'
-import { portablePath, writeDocument } from '../storage/portable-file'
-import { readWindowRoute } from './window-route'
+import { writeDocument } from '../storage/portable-file'
+import { readWindowRoute, windowRoutePath } from './window-route'
 
 const SESSION = '00000000-0000-4000-8000-000000000001'
 const OTHER_PROJECT_SESSION = '00000000-0000-4000-8000-000000000002'
@@ -17,7 +17,7 @@ async function savedRoute(document: Record<string, unknown> | null) {
   insertProject(database, 'project-1')
   insertSession(database, { id: SESSION, projectId: 'project-1' })
   insertSession(database, { id: OTHER_PROJECT_SESSION, projectId: 'project-3' })
-  if (document !== null) await writeDocument(portablePath(userData, 'window-route.json'), document)
+  if (document !== null) await writeDocument(windowRoutePath(userData), document)
   try {
     return await readWindowRoute(userData, database)
   } finally {

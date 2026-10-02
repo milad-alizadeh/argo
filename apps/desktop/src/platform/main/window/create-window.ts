@@ -44,12 +44,10 @@ export function createDesktopWindow(request: {
   const rendererURL = request.developmentServerURL ?? pathToFileURL(rendererPath).href
   request.attach(window, rendererURL)
 
-  const hash = request.route ?? ''
-  if (request.developmentServerURL)
-    void window.loadURL(
-      hash === '' ? request.developmentServerURL : `${request.developmentServerURL}#${hash}`,
-    )
-  else void window.loadFile(rendererPath, { hash })
+  const { developmentServerURL, route } = request
+  if (developmentServerURL)
+    void window.loadURL(route ? `${developmentServerURL}#${route}` : developmentServerURL)
+  else void window.loadFile(rendererPath, { hash: route })
 
   window.webContents.once('did-finish-load', () => request.loaded(window))
   return window
