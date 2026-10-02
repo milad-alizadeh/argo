@@ -33,9 +33,7 @@ export async function proveContract(page) {
 
   assert.deepEqual(
     await sendSessionUpdate(page, { sessionIds: ['not-a-session'], archived: true }),
-    {
-      sessionIds: [],
-    },
+    { sessionIds: [] },
   )
 
   const reading = await sessionFeed(page, first.id)

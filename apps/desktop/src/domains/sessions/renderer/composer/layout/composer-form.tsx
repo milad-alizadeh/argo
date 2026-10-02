@@ -10,8 +10,8 @@ import type {
   CatalogFailure,
   TurnConfigurationControlProps,
 } from '../toolbar/turn-configuration-menu'
-import { WorkspaceMenu, type WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
 import { AttachmentTray } from '../tray/attachment-tray'
+import { WorktreeRow, type WorktreeRowProps } from '../tray/worktree-row'
 import {
   supportedConfiguration,
   type TurnConfigurationChoices,
@@ -48,7 +48,8 @@ export type ComposerFormProps = {
   turnConfigurationChoices?: TurnConfigurationChoices | null
   catalogFailure?: CatalogFailure | null
   refreshCatalog?: () => void
-  workspace?: WorkspaceMenuControlProps | null
+  // A new Session's Worktree row; drawn only while no permission prompt is passed.
+  worktree?: WorktreeRowProps | null
   initialEditing?: Partial<ComposerEditing>
   onEditingChange?: (editing: ComposerEditing) => void
   commands?: ComposerCommandListing
@@ -130,7 +131,7 @@ function ComposerFormSurface({
   turnConfigurationChoices,
   catalogFailure = null,
   refreshCatalog,
-  workspace = null,
+  worktree = null,
   commands,
   tickets,
   projectId,
@@ -161,12 +162,9 @@ function ComposerFormSurface({
         send()
       }}
     >
-      <AttachmentTray>{permissionPrompt}</AttachmentTray>
-      {workspace ? (
-        <div className="mb-2 px-1">
-          <WorkspaceMenu {...workspace} />
-        </div>
-      ) : null}
+      <AttachmentTray>
+        {permissionPrompt ?? (worktree ? <WorktreeRow {...worktree} /> : null)}
+      </AttachmentTray>
       <ComposerCard
         contextTokens={contextTokens}
         contextWindowTokens={contextWindowTokens}

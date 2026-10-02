@@ -15,7 +15,7 @@ export const mockStartInput: SessionStartInput = {
   commandId: '00000000-0000-4000-8000-000000000001',
   harness: 'codex',
   projectId: '00000000-0000-4000-8000-000000000099',
-  workspaceId: '00000000-0000-4000-8000-000000000098',
+  worktree: null,
   cwd: '/repo',
   prompt: 'first',
   attachments: [],

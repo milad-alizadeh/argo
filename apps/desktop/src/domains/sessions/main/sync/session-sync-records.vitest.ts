@@ -1,19 +1,19 @@
 import assert from 'node:assert/strict'
-import { test } from 'vitest'
+import { symlink } from 'node:fs/promises'
+import path from 'node:path'
+import { onTestFinished, test } from 'vitest'
 import { createActor, fromPromise, waitFor } from 'xstate'
 import type {
   SessionSummaryList,
   SessionSummaryListResult,
 } from '@/domains/sessions/api/session-discovery'
-import {
-  insertProject,
-  insertWorkspace,
-  migratedDatabase,
-} from '@/mocks/database/migrated-database'
+import { insertProject, migratedDatabase } from '@/mocks/database/migrated-database'
+import { addLinkedWorktree, worktreeRepoFixture } from '@/mocks/projects/worktree-repo.fixture'
 import { sessionSyncMachine } from './session-sync-machine'
 import {
   knownSessionIds,
   matchSessionsToProjects,
+  sessionRoots,
   saveSessionBatch as writeSessionBatch,
 } from './session-sync-records'
 
@@ -30,36 +30,115 @@ const ID = '00000000-0000-4000-8000-000000000001'
 function createDatabase() {
   const database = migratedDatabase()
   insertProject(database, 'project-1', '/repo')
-  insertWorkspace(database, 'workspace-1', 'project-1')
   return { client: database.$client, database }
 }
 
-test('matches cwd to the deepest registered Project root and keeps sparse metadata', () => {
+test('matches cwd to its registered Project root and keeps sparse metadata', async () => {
   const { client, database } = createDatabase()
   try {
-    const records = matchSessionsToProjects(database, [
-      { nativeId: ID, preview: 'Summary', activityAt: 1, cwd: '/repo/project-1/workspace-1/src' },
+    const records = await matchSessionsToProjects(await sessionRoots(database), [
+      { nativeId: ID, preview: 'Summary', activityAt: 1, cwd: '/repo/src' },
     ])
     assert.deepEqual(records, [
-      {
-        nativeId: ID,
-        activityAt: 1,
-        preview: 'Summary',
-        cwd: '/repo/project-1/workspace-1/src',
-        projectId: 'project-1',
-        workspaceId: 'workspace-1',
-      },
+      { nativeId: ID, activityAt: 1, preview: 'Summary', cwd: '/repo/src', projectId: 'project-1' },
     ])
     saveSessionBatch(database, 'claude', records)
     assert.deepEqual(
       Object.assign(
         {},
         client
-          .prepare('SELECT project_id, workspace_id, custom_title, activity_at FROM session')
+          .prepare('SELECT project_id, worktree_path, custom_title, activity_at FROM session')
           .get(),
       ),
-      { project_id: 'project-1', workspace_id: 'workspace-1', custom_title: null, activity_at: 1 },
+      { project_id: 'project-1', worktree_path: null, custom_title: null, activity_at: 1 },
     )
+  } finally {
+    client.close()
+  }
+})
+
+test('gives a Session in a linked worktree its Project and that worktree, whoever made it', async () => {
+  const { project } = await worktreeRepoFixture({ after: (cleanup) => onTestFinished(cleanup) })
+  const linked = await addLinkedWorktree(project)
+  const database = migratedDatabase()
+  try {
+    insertProject(database, 'project-git', project)
+    const records = await matchSessionsToProjects(await sessionRoots(database), [
+      { nativeId: ID, cwd: path.join(linked, 'src') },
+      { nativeId: 'in-main', cwd: project },
+    ])
+    assert.deepEqual(
+      records.map(({ projectId, worktreePath, worktreeBranch }) => ({
+        projectId,
+        worktreePath,
+        worktreeBranch,
+      })),
+      [
+        { projectId: 'project-git', worktreePath: linked, worktreeBranch: 'feature' },
+        { projectId: 'project-git', worktreePath: undefined, worktreeBranch: undefined },
+      ],
+    )
+    saveSessionBatch(database, 'claude', records)
+    assert.deepEqual(
+      database.$client
+        .prepare('SELECT worktree_path, worktree_branch FROM session ORDER BY native_id')
+        .all()
+        .map((row) => Object.assign({}, row)),
+      [
+        { worktree_path: linked, worktree_branch: 'feature' },
+        { worktree_path: null, worktree_branch: null },
+      ],
+    )
+  } finally {
+    database.$client.close()
+  }
+})
+
+test('a linked worktree the Project was added from is no Session worktree', async () => {
+  const { project } = await worktreeRepoFixture({ after: (cleanup) => onTestFinished(cleanup) })
+  const linked = await addLinkedWorktree(project)
+  const database = migratedDatabase()
+  try {
+    insertProject(database, 'project-linked', linked)
+    const [record] = await matchSessionsToProjects(await sessionRoots(database), [
+      { nativeId: ID, cwd: linked },
+    ])
+    assert.equal(record?.projectId, 'project-linked')
+    assert.equal(record?.worktreePath, undefined)
+  } finally {
+    database.$client.close()
+  }
+})
+
+test('matches a Session whose cwd reaches a linked worktree through a symlink', async () => {
+  const { project } = await worktreeRepoFixture({ after: (cleanup) => onTestFinished(cleanup) })
+  const linked = await addLinkedWorktree(project)
+  const alias = path.join(path.dirname(project), 'alias')
+  await symlink(linked, alias)
+  const database = migratedDatabase()
+  try {
+    insertProject(database, 'project-git', project)
+    const [record] = await matchSessionsToProjects(await sessionRoots(database), [
+      { nativeId: ID, cwd: alias },
+    ])
+    assert.equal(record?.projectId, 'project-git')
+  } finally {
+    database.$client.close()
+  }
+})
+
+test('a Session keeps its Project after its own worktree folder is gone', async () => {
+  const { client, database } = createDatabase()
+  try {
+    client
+      .prepare(
+        "INSERT INTO session (argo_id, harness, native_id, project_id, worktree_path, worktree_branch) VALUES ('session-1', 'codex', ?, 'project-1', '/elsewhere/gone', 'argo/gone')",
+      )
+      .run(ID)
+    const [record] = await matchSessionsToProjects(await sessionRoots(database), [
+      { nativeId: ID, cwd: '/elsewhere/gone' },
+    ])
+    assert.equal(record?.projectId, 'project-1')
   } finally {
     client.close()
   }

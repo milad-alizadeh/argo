@@ -14,7 +14,10 @@ import {
   harnessSignInExpiresAfterMs,
 } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
-import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
+import {
+  isWorkingStatus,
+  sessionLiveEventBodySchema,
+} from '@/domains/sessions/api/session-live-event'
 import {
   clearWorkingStatuses,
   ExternalSessionPoll,
@@ -35,6 +38,11 @@ import {
   SessionInteractionBroker,
 } from '@/domains/sessions/main/live'
 import type { SessionSyncSupervisorActor } from '@/domains/sessions/main/sync'
+import {
+  createWorktree,
+  type RemovedWorktree,
+  removeSessionWorktrees,
+} from '@/domains/sessions/main/worktree'
 import {
   failInterruptedTicketSearches,
   markInterruptedTicketScans,
@@ -58,7 +66,6 @@ import {
   ticketSyncTiming,
 } from '@/domains/tickets/main/sync'
 import { projectTicketScope } from '@/domains/tickets/main/ticket-connection'
-import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { harnessSchema } from '@/harnesses/harness'
 import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
 import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
@@ -235,15 +242,18 @@ function routerForWindow(options: {
     },
     sessions: {
       database,
-      ensureManagedWorkspace: (projectId, draftId) =>
+      createWorktree: (projectId, draftId, from) =>
         exclusive(() =>
-          ensureManagedWorkspace({
+          createWorktree({
             database,
             projectId,
             draftId,
+            from,
             worktreeRoot: path.join(app.getPath('userData'), 'worktrees'),
           }),
         ),
+      removeSessionWorktrees: (input) => queueWorktreeRemoval(database, actors, input),
+      exclusive,
       rename: ({ harness, nativeId, title }) => {
         const rename = registry[harness].rename
         if (rename === undefined) throw new Error(`${harness} Session renaming is unavailable.`)
@@ -261,7 +271,6 @@ function routerForWindow(options: {
       sessionSync: actors.sessionSync,
     },
     tickets: ticketProcedureContext({ database, actors, domains }),
-    workspaces: { database, exclusive },
   })
 }
 
@@ -388,6 +397,37 @@ function liveChannelCheck(actors: WindowActors) {
       !session.getSnapshot().matches('Closed')
     )
   }
+}
+
+// True while a live channel is mid-Turn, or about to start one, for the Session.
+function turnRunningCheck(actors: WindowActors) {
+  return (sessionId: string) => {
+    const snapshot = liveSessionActorFor(actors.sessions, sessionId)?.getSnapshot()
+    if (snapshot === undefined || snapshot.matches('Failed') || snapshot.matches('Closed'))
+      return false
+    const status = snapshot.context.status
+    return !snapshot.matches('Ready') || (status !== null && isWorkingStatus(status))
+  }
+}
+
+// One removal at a time, so two archives never race over the same worktree.
+const worktreeRemovals = createWriteQueue()
+
+// The archive already happened, so a failed removal is reported and answered with no outcomes.
+async function queueWorktreeRemoval(
+  database: Database,
+  actors: WindowActors,
+  input: Parameters<typeof removeSessionWorktrees>[1],
+): Promise<RemovedWorktree[]> {
+  const removed = await worktreeRemovals(() =>
+    removeSessionWorktrees({ database, isRunning: turnRunningCheck(actors) }, input),
+  ).catch((error: unknown) => {
+    console.error('Session worktree removal failed.', error)
+    return []
+  })
+  const left = removed.filter(({ outcome }) => outcome === 'running' || outcome === 'refused')
+  if (left.length > 0) console.warn(`${left.length} Session worktree(s) were not removed.`, left)
+  return removed
 }
 
 // The Session services the app runs once, not per window: one set of Feed readers, the Session

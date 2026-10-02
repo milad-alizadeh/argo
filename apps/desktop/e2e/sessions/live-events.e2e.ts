@@ -10,7 +10,6 @@ import { expect, test } from '../packaged-proof'
 import { openRoute } from '../packaged-window'
 
 const projectId = '00000000-0000-4000-8000-000000000091'
-const workspaceId = '00000000-0000-4000-8000-000000000092'
 const sessionId = '00000000-0000-4000-8000-000000000093'
 const commandId = '00000000-0000-4000-8000-000000000094'
 
@@ -87,22 +86,9 @@ async function seedSession(root: string): Promise<string> {
     .run(projectId, projectPath, projectPath)
   database.$client
     .prepare(
-      'INSERT INTO workspace (id, project_id, kind, display_name, path) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO session (argo_id, harness, native_id, project_id, cwd, first_prompt) VALUES (?, ?, ?, ?, ?, ?)',
     )
-    .run(workspaceId, projectId, 'main', 'Main', projectPath)
-  database.$client
-    .prepare(
-      'INSERT INTO session (argo_id, harness, native_id, project_id, workspace_id, cwd, first_prompt) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    )
-    .run(
-      sessionId,
-      'claude',
-      'native-live-feed-proof',
-      projectId,
-      workspaceId,
-      projectPath,
-      'Inspect this',
-    )
+    .run(sessionId, 'claude', 'native-live-feed-proof', projectId, projectPath, 'Inspect this')
   database.$client.close()
   return userData
 }

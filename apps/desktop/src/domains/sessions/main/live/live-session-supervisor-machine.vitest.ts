@@ -213,14 +213,14 @@ test('rejects a changed Codex stance instead of silently retaining the opening s
         {},
         client
           .prepare(
-            'SELECT argo_id, project_id, workspace_id, first_prompt, cwd FROM session WHERE argo_id = ?',
+            'SELECT argo_id, project_id, worktree_path, first_prompt, cwd FROM session WHERE argo_id = ?',
           )
           .get(sessionId),
       ),
       {
         argo_id: sessionId,
         project_id: 'project-1',
-        workspace_id: 'workspace-1',
+        worktree_path: null,
         first_prompt: 'first',
         cwd: '/repo',
       },

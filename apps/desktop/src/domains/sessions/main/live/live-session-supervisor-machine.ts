@@ -10,6 +10,7 @@ import {
   setup as xstateSetup,
 } from 'xstate'
 import type { Database } from '@/database/database'
+import { sessionWorktreeColumns } from '@/database/session/validation'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
@@ -756,12 +757,14 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
                   if (record.nativeId === null)
                     throw new Error('Session has no native ID to persist.')
                   if (record.sessionId !== undefined) return Promise.resolve(record.sessionId)
-                  if (record.projectId === null || record.workspaceId === null)
-                    throw new Error('New Session has no Project Workspace to persist.')
+                  if (record.projectId === null)
+                    throw new Error('New Session has no Project to persist.')
+                  const { worktree, ...saved } = record
                   return Promise.resolve(
                     createSessionUpsert(dependencies.database)({
-                      ...record,
+                      ...saved,
                       nativeId: record.nativeId,
+                      ...sessionWorktreeColumns(worktree),
                     }),
                   )
                 }),

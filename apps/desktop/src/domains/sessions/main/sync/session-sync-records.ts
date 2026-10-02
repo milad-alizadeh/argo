@@ -1,17 +1,20 @@
+import { realpath } from 'node:fs/promises'
 import path from 'node:path'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, isNotNull } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
-import { workspace } from '@/database/workspace/schema'
+import type { SessionWorktree } from '@/database/session/validation'
 import type { SessionSubagentLink, SessionSummary } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
 import { createSessionUpsert, saveDiscoveredSessionSubagents } from '../database'
+import { projectFolders } from '../worktree'
 
-type SessionRoot = {
+// `worktree` is a linked worktree git lists, other than the folder the Project was added from.
+export type SessionRoot = {
   projectId: string
-  workspaceId: string | null
   path: string
+  worktree: Omit<SessionWorktree, 'base'> | null
 }
 
 function contains(root: string, candidate: string): boolean {
@@ -36,42 +39,61 @@ export function knownSessionIds(database: Database, harness: Harness): string[] 
     .map((row) => row.nativeId)
 }
 
-function sessionRoots(database: Database): SessionRoot[] {
+// Each Project's own folder, its main checkout and every linked worktree git lists for it. Read once
+// per sync: it reads every Project's `.git` layout.
+export async function sessionRoots(database: Database): Promise<SessionRoot[]> {
   const projects = database.select({ id: project.id, path: project.path }).from(project).all()
-  const workspaces = database
-    .select({ projectId: workspace.projectId, id: workspace.id, path: workspace.path })
-    .from(workspace)
+  const perProject = await Promise.all(
+    projects.map(async (candidate): Promise<SessionRoot[]> => {
+      const [folders, own] = await Promise.all([
+        projectFolders(candidate.path),
+        realpath(candidate.path).catch(() => candidate.path),
+      ])
+      return [
+        { projectId: candidate.id, path: candidate.path, worktree: null },
+        { projectId: candidate.id, path: folders.main, worktree: null },
+        ...folders.linked.map((linked) => ({
+          projectId: candidate.id,
+          path: linked.path,
+          worktree: linked.path === own ? null : linked,
+        })),
+      ]
+    }),
+  )
+  // A Session's own worktree keeps its Project after the folder is gone, so a resume can move it.
+  const worktrees = database
+    .select({ projectId: sessionTable.projectId, path: sessionTable.worktreePath })
+    .from(sessionTable)
+    .where(and(isNotNull(sessionTable.projectId), isNotNull(sessionTable.worktreePath)))
     .all()
-  return [
-    ...projects.map((candidate) => ({
-      projectId: candidate.id,
-      workspaceId: null,
-      path: candidate.path,
-    })),
-    ...workspaces.map((candidate) => ({
-      projectId: candidate.projectId,
-      workspaceId: candidate.id,
-      path: candidate.path,
-    })),
-  ]
+    .flatMap((row) =>
+      row.projectId !== null && row.path !== null
+        ? [{ projectId: row.projectId, path: row.path, worktree: null }]
+        : [],
+    )
+  return [...perProject.flat(), ...worktrees]
 }
 
-function withProjectMatch(roots: readonly SessionRoot[], record: SessionSummary): SessionSummary {
+// Git lists real paths, so a cwd under a symlink such as macOS's /var matches by its real path too.
+// A Session in a linked worktree gets that worktree, whoever made it; any other match keeps the
+// stored worktree, so a removed one stays until a resume moves the Session to the main checkout.
+async function withProjectMatch(
+  roots: readonly SessionRoot[],
+  record: SessionSummary,
+): Promise<SessionSummary> {
   if (record.cwd == null) return record
-  const root = matchRoot(roots, record.cwd)
-  return {
-    ...record,
-    projectId: root?.projectId ?? null,
-    workspaceId: root?.workspaceId ?? null,
-  }
+  const cwd = record.cwd
+  const root = matchRoot(roots, cwd) ?? matchRoot(roots, await realpath(cwd).catch(() => cwd))
+  const matched = { ...record, projectId: root?.projectId ?? null }
+  if (root?.worktree == null) return matched
+  return { ...matched, worktreePath: root.worktree.path, worktreeBranch: root.worktree.branch }
 }
 
 export function matchSessionsToProjects(
-  database: Database,
+  roots: readonly SessionRoot[],
   records: readonly SessionSummary[],
-): SessionSummary[] {
-  const roots = sessionRoots(database)
-  return records.map((record) => withProjectMatch(roots, record))
+): Promise<SessionSummary[]> {
+  return Promise.all(records.map((record) => withProjectMatch(roots, record)))
 }
 
 export function saveSessionBatch(

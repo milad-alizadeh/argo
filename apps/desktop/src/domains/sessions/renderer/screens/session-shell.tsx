@@ -9,7 +9,7 @@ import {
 import { SessionTitle } from '../prompt'
 import type { Session } from '../types'
 import { SESSION_SPLIT } from './session-screen-layout'
-import type { SessionWorkspaceIdentity } from './session-screen-workspace'
+import type { SessionLocation } from './session-screen-location'
 import { SessionWorkspace, type SessionWorkspaceProps } from './session-workspace'
 
 import './session-screen.css'
@@ -19,21 +19,48 @@ type SessionShellProps = Omit<SessionWorkspaceProps, 'header'> & {
   // nothing here and the bar stays empty (#1582).
   headerControls?: ReactNode
   session?: Pick<Session, 'harness' | 'name'> | null
-  workspaceIdentity?: SessionWorkspaceIdentity | null
+  // The folder the header names under the title, read-only, and the worktree's base branch.
+  location?: SessionLocation | null
   inspector: ReactNode
   inspectorBar?: ReactNode
   defaultInspectorCollapsed?: boolean
   inspectorReveal?: string | null
 }
 
+// The Feed's inline-code look, so a path or branch reads as a ref.
+const REF_CHIP = 'min-w-0 truncate rounded-md bg-muted px-1 font-mono'
+
+// The folder is cut at its start, so its end, which names the worktree, stays in view.
+function SessionLocationMetadata({ location }: { location: SessionLocation }) {
+  const { t } = useTranslation('sessions')
+  return (
+    <p
+      data-component="SessionLocationMetadata"
+      className="flex w-full min-w-0 items-center gap-(--spacing-shell-tight) type-meta text-muted-foreground"
+    >
+      <Icon name="branch" className="size-(--size-icon-inline) shrink-0" />
+      <code className={`${REF_CHIP} min-w-24 text-left [direction:rtl]`} title={location.path}>
+        <span dir="ltr">{location.path}</span>
+      </code>
+      {location.base !== null ? (
+        <>
+          <span className="shrink-0">{t('identity.from')}</span>
+          <code className={`${REF_CHIP} max-w-2/5 shrink-0`} title={location.base}>
+            {location.base}
+          </code>
+        </>
+      ) : null}
+    </p>
+  )
+}
+
 function SessionIdentity({
   session,
-  workspaceIdentity,
+  location,
 }: {
   session: SessionShellProps['session']
-  workspaceIdentity: SessionWorkspaceIdentity | null
+  location: SessionLocation | null
 }) {
-  const { t } = useTranslation('sessions')
   if (session === null || session === undefined) return null
   return (
     <div
@@ -43,21 +70,7 @@ function SessionIdentity({
       <h1 className="w-full truncate type-heading">
         <SessionTitle session={session} text={session.name} />
       </h1>
-      {workspaceIdentity !== null && workspaceIdentity.branch !== null ? (
-        <div
-          data-component="SessionMetadata"
-          className="w-full min-w-0 type-meta text-muted-foreground"
-        >
-          <p
-            data-component="SessionBranchMetadata"
-            className="flex min-w-0 max-w-48 items-center gap-(--spacing-shell-tight)"
-          >
-            <Icon name="branch" className="size-(--size-icon-inline) shrink-0" />
-            <span className="shrink-0">{t('identity.branch')}</span>
-            <span className="min-w-0 truncate">{workspaceIdentity.branch}</span>
-          </p>
-        </div>
-      ) : null}
+      {location !== null ? <SessionLocationMetadata location={location} /> : null}
     </div>
   )
 }
@@ -76,7 +89,7 @@ function SessionHeaderControls({ children }: { children: ReactNode }) {
 export function SessionShell({
   headerControls = null,
   session = null,
-  workspaceIdentity = null,
+  location = null,
   inspector,
   inspectorBar = null,
   defaultInspectorCollapsed = false,
@@ -100,7 +113,7 @@ export function SessionShell({
             {...workspaceProps}
             header={
               <AppPageHeader>
-                <SessionIdentity session={session} workspaceIdentity={workspaceIdentity} />
+                <SessionIdentity location={location} session={session} />
                 <SessionHeaderControls>
                   {headerControls}
                   <InspectorHeaderControls />
