@@ -196,13 +196,18 @@ export const Selection: Story = {
       'aria-disabled',
       'true',
     )
-    await userEvent.keyboard('{End}{Enter}')
+    await waitFor(() => expect(page().getByRole('option', { name: 'Name' })).toHaveFocus())
+    await userEvent.keyboard('{End}')
+    await waitFor(() => expect(page().getByRole('option', { name: 'Date' })).toHaveFocus())
+    await userEvent.keyboard('{Enter}')
     await waitFor(() => expect(page().queryByRole('listbox')).toBeNull())
     await expect(trigger).toHaveTextContent('Date')
-    await expect(trigger).toHaveFocus()
-    await userEvent.keyboard('{ArrowDown}{Escape}')
+    await waitFor(() => expect(trigger).toHaveFocus())
+    await userEvent.keyboard('{ArrowDown}')
+    await waitFor(() => expect(page().getByRole('option', { name: 'Date' })).toHaveFocus())
+    await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(page().queryByRole('listbox')).toBeNull())
-    await expect(trigger).toHaveFocus()
+    await waitFor(() => expect(trigger).toHaveFocus())
   },
 }
 
