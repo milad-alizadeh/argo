@@ -69,6 +69,19 @@
       ],
       "outputs": []
     },
+    "build:vite": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!src/**/*.test.ts",
+        "!src/**/*.stories.tsx",
+        "!e2e/**",
+        "!tests/**",
+        "!tools/**",
+        "!**/*.md",
+        "$TURBO_ROOT$/bun.lock"
+      ],
+      "outputs": [".vite/**"]
+    },
     "test:e2e": {
       "inputs": [
         "e2e/**",

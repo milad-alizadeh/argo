@@ -15,7 +15,7 @@ export async function applicationUnderTest(root: string): Promise<string> {
   if (packagedRun) return await packagedTestCopy(root)
   const main = path.join(process.cwd(), '.vite', 'build', 'main.js')
   await stat(main).catch(() => {
-    throw new Error(`${main} is missing. Run \`bun run build:vite\` in apps/desktop first.`)
+    throw new Error(`${main} is missing. Run \`bun run build:vite:cached\` in apps/desktop first.`)
   })
   return process.cwd()
 }

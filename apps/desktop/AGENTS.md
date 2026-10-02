@@ -27,6 +27,11 @@ Test assets live outside `src/`, and a mock is called a mock.
 - Run e2e locally against the Vite build: `bun run test:e2e` builds it and never packages the app.
   Only CI sets `ARGO_E2E_PACKAGED=1` to run the same cases against the packaged app. Do not package
   to run e2e.
+- The e2e build is the `build:vite` Turborepo task, cached in `<git common dir>/turbo-cache`, which
+  every worktree of the clone shares. Unchanged inputs restore `.vite` in about a second. A cold
+  build waits for one of two machine-wide build slots.
+- While you edit and re-run cases in a loop, keep `bun run build:vite:watch` open and run
+  `bunx playwright test` after each `built in` line. Watch mode rebuilds only the changed targets.
 - Cases build on the `test` in `e2e/packaged-proof.ts` and declare their starting state as a
   fixture option (`test.use`), never as a case that runs first. A flow variant, such as the
   real-Harness backend, is a project `use` option on the same file, never a copy.
