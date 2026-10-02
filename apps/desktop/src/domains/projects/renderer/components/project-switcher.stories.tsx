@@ -9,7 +9,7 @@ function ProjectSwitcherStory() {
   const [queryClient] = useState(() => new QueryClient())
   return (
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/projects/argo/sessions']}>
+      <MemoryRouter initialEntries={['/projects/storybook-project/sessions']}>
         <ProjectSwitcher />
       </MemoryRouter>
     </QueryClientProvider>
@@ -28,15 +28,33 @@ export const ProjectActions: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const menu = within(canvasElement.ownerDocument.body)
-    const currentProject = () => canvas.getByRole('button', { name: /^Current project:/ })
-    await waitFor(() => expect(currentProject()).toBeEnabled())
-    await userEvent.click(currentProject())
+    const currentProject = (name: string) =>
+      canvas.getByRole('button', { name: `Current project: ${name}` })
+    await waitFor(() => expect(currentProject('argo')).toBeEnabled())
+    await userEvent.click(currentProject('argo'))
     await waitFor(() => expect(menu.getByText('Switch project')).toBeInTheDocument())
-    await userEvent.click(menu.getByRole('menuitem', { name: 'Switch to argo' }))
+    await expect(menu.getByRole('menuitem', { name: 'Switch to argo' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    await userEvent.click(menu.getByRole('menuitem', { name: 'Switch to worktree' }))
     // The previous menu's closing animation leaves it briefly unclickable, still in the DOM.
     await waitFor(() => expect(menu.queryByRole('menu')).toBeNull())
-    await waitFor(() => expect(currentProject()).toBeEnabled())
-    await userEvent.click(currentProject())
+    await waitFor(() => expect(currentProject('worktree')).toBeEnabled())
+    await userEvent.click(currentProject('worktree'))
+    await waitFor(() => expect(menu.getByText('Switch project')).toBeInTheDocument())
+    await expect(menu.getByRole('menuitem', { name: 'Switch to worktree' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    await expect(menu.getByRole('menuitem', { name: 'Switch to argo' })).not.toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(currentProject('worktree')).toHaveFocus())
+    await waitFor(() => expect(menu.queryByRole('menu')).toBeNull())
+    await userEvent.click(currentProject('worktree'))
     await waitFor(() => expect(menu.getByText('Switch project')).toBeInTheDocument())
     await userEvent.click(menu.getByRole('menuitem', { name: 'Add project' }))
     await waitFor(() => expect(menu.queryByRole('menu')).toBeNull())

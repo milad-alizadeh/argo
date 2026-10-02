@@ -44,6 +44,7 @@ export function ProjectSwitcher() {
               <DropdownMenuItem
                 key={project.id}
                 aria-label={t('switcher.switchTo', { name: project.name })}
+                aria-current={project.id === projectState.project?.id ? 'page' : undefined}
                 onClick={() => navigate(`/projects/${project.id}/sessions`)}
               >
                 <Icon name="folder" />

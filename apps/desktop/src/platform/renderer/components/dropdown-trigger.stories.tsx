@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { useState } from 'react'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { CommandSearchField } from './design-system/search-field'
 import { SearchablePickerItem } from './design-system/searchable-picker'
 import { MenuDropdownTrigger, SearchableDropdownTrigger } from './dropdown-trigger'
@@ -12,23 +13,38 @@ function TriggerStory({
   searchable,
   iconOnly,
   disabled = false,
+  longTitle = false,
+  controlled = false,
+  onTriggerClick,
 }: {
   searchable: boolean
   iconOnly: boolean
   disabled?: boolean
+  longTitle?: boolean
+  controlled?: boolean
+  onTriggerClick?: () => void
 }) {
+  const [open, setOpen] = useState(false)
+  let label = searchable ? 'New worktree' : 'Projects'
+  if (longTitle) label = 'The Atlas of Forgotten Maps and Marginalia'
+  let ariaLabel = searchable ? 'Choose worktree' : 'Choose project'
+  if (longTitle) ariaLabel = label
   const trigger = {
-    'aria-label': searchable ? 'Choose worktree' : 'Choose project',
+    'aria-label': ariaLabel,
     icon: searchable ? ('worktree' as const) : ('folder' as const),
     iconOnly,
-    label: searchable ? 'New worktree' : 'Projects',
+    label,
     disabled,
     appearance: 'menu' as const,
+    onClick: onTriggerClick,
   }
   return (
     <div className="p-8">
       {searchable ? (
-        <Popover>
+        <Popover
+          open={controlled ? open : undefined}
+          onOpenChange={controlled ? setOpen : undefined}
+        >
           <SearchableDropdownTrigger {...trigger} />
           <PopoverContent className="w-(--size-session-menu) max-w-(--size-session-menu-max-width) gap-0 p-0">
             <PopoverTitle className="sr-only">Worktrees</PopoverTitle>
@@ -58,12 +74,15 @@ function TriggerStory({
           </PopoverContent>
         </Popover>
       ) : (
-        <DropdownMenu>
+        <DropdownMenu
+          open={controlled ? open : undefined}
+          onOpenChange={controlled ? setOpen : undefined}
+        >
           <MenuDropdownTrigger {...trigger} />
           <DropdownMenuContent className="max-w-[calc(100vw-2rem)]">
             <DropdownMenuItem>Argo</DropdownMenuItem>
-            <DropdownMenuItem className="max-w-full truncate">
-              A project name long enough to check popup bounds
+            <DropdownMenuItem className="max-w-full">
+              <span className="min-w-0 truncate">The Atlas of Forgotten Maps and Marginalia</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -110,6 +129,38 @@ export const DisabledMenu: Story = {
     const trigger = within(canvasElement).getByRole('button', { name: 'Choose project' })
     await expect(trigger).toBeDisabled()
     await expect(within(document.body).queryByRole('menu')).toBeNull()
+  },
+}
+
+export const LongTitle: Story = {
+  args: { searchable: false, iconOnly: false, longTitle: true },
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole('button', {
+      name: 'The Atlas of Forgotten Maps and Marginalia',
+    })
+    await expect(trigger).toHaveAccessibleName('The Atlas of Forgotten Maps and Marginalia')
+    await userEvent.click(trigger)
+    await expect(
+      await within(document.body).findByRole('menuitem', {
+        name: 'The Atlas of Forgotten Maps and Marginalia',
+      }),
+    ).toBeVisible()
+  },
+}
+
+export const ControlledSearchMergesClick: Story = {
+  args: { searchable: true, iconOnly: false, controlled: true, onTriggerClick: fn() },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: 'Choose worktree' })
+    await userEvent.click(trigger)
+    await waitFor(() =>
+      expect(within(document.body).getByLabelText('Search worktrees')).toBeVisible(),
+    )
+    await expect(args.onTriggerClick).toHaveBeenCalledTimes(1)
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(trigger).toHaveFocus())
+    await expect(within(document.body).queryByLabelText('Search worktrees')).toBeNull()
   },
 }
 
