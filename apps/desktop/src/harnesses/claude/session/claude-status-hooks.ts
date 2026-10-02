@@ -6,8 +6,7 @@ import { z } from 'zod'
 import { STATUS_HOOK_EVENTS } from '@/harnesses/host/status-hooks'
 import type { ExternalSessionHooks, HookTableChanges } from '@/harnesses/registration'
 import { writeDocument } from '@/platform/main/storage/portable-file'
-
-export const ASK_USER_QUESTION_TOOL = 'AskUserQuestion'
+import { ASK_USER_QUESTION_TOOL } from './claude-asked-questions'
 
 // The user settings Claude reads its hooks from (https://code.claude.com/docs/en/hooks).
 export const claudeSettingsFile = (env: NodeJS.ProcessEnv, home: string) =>

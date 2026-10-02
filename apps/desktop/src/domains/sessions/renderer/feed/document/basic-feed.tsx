@@ -175,7 +175,6 @@ export function BasicFeed({
 type FeedDocumentProps = {
   reading: SessionFeed
   running: boolean
-  // Argo can answer only a Session whose channel it holds (#2205), so any other posture draws locked.
   questionLocked: boolean
   activeEvidenceId: string | null
   initialMeasurementsCache: VirtualItem[]

@@ -4,9 +4,8 @@ import type {
   MediaSource,
   ToolPresentation,
 } from '@/domains/sessions/api/feed-content'
-import { readAskedQuestions } from '@/domains/sessions/api/questions'
+import { ASK_USER_QUESTION_TOOL, readAskedQuestions } from './claude-asked-questions'
 import { decodeClaudeText, type RejectClaudeShape } from './claude-feed-envelopes'
-import { ASK_USER_QUESTION_TOOL } from './claude-status-hooks'
 
 type Message = Extract<SDKMessage, { type: 'user' | 'assistant' }>
 type System = Extract<SDKMessage, { type: 'system' }>
