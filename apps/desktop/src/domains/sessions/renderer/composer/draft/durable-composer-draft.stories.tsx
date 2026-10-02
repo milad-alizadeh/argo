@@ -1093,18 +1093,11 @@ export const PageHideSendsAPendingSave: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent('Plan this change.')
-    const send = window.argo.trpc
-    const saves: MockInput[] = []
-    window.argo.trpc = (request) => {
-      if (request.path === 'composerDraftSave') saves.push(request.input as MockInput)
-      return send(request)
-    }
     await userEvent.click(canvas.getByRole('button', { name: 'Harness Codex' }))
     window.dispatchEvent(new PageTransitionEvent('pagehide'))
-    await new Promise((resolve) => window.setTimeout(resolve, 0))
-    await expect(saves.map(({ target }) => target)).toContainEqual(
-      expect.objectContaining({ harness: 'codex' }),
-    )
+    // Well inside the 250 ms autosave delay, so only the page hide can have saved.
+    await new Promise((resolve) => window.setTimeout(resolve, 50))
+    await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('"harness":"codex"')
   },
 }
 

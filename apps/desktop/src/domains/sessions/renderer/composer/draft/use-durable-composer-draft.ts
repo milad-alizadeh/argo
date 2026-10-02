@@ -458,7 +458,7 @@ function usePendingSaves() {
   const pendingSaves = useRef(new Map<string, PendingSave>())
   useEffect(() => {
     const sendPending = () => {
-      for (const pending of [...pendingSaves.current.values()]) {
+      for (const pending of pendingSaves.current.values()) {
         window.clearTimeout(pending.timer)
         pending.save()
       }
