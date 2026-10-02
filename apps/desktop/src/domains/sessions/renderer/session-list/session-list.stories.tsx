@@ -94,6 +94,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 let historyAvailable = false
+let releaseRenameFailure: (() => void) | null = null
 
 // A Session whose history is missing keeps its badge while another is open, until a read finds it.
 export const UnavailableHistoryRecovers: Story = {
@@ -150,7 +151,20 @@ async function renameDiscoveredSession(canvas: ReturnType<typeof within>) {
   await expect(input).toHaveAttribute('aria-invalid', 'true')
   await expect(input).toHaveAttribute('aria-describedby', 'session-name-error')
   await expect(host.updates).toHaveLength(0)
-  await userEvent.type(input, '  Keep the Session list stable\n')
+  await userEvent.type(input, '  Keep the Session list stable')
+  await userEvent.keyboard('{Enter}')
+  await waitFor(() => expect(input).toBeDisabled())
+  await expect(within(dialog).getByRole('button', { name: 'Cancel' })).toBeDisabled()
+  await expect(within(dialog).getByRole('button', { name: 'Saving…' })).toBeDisabled()
+  await expect(within(dialog).queryByRole('button', { name: 'Close' })).toBeNull()
+  releaseRenameFailure?.()
+  await expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+    'Argo could not rename this Session.',
+  )
+  await expect(input).toBeEnabled()
+  await expect(input).toHaveValue('  Keep the Session list stable')
+  await expect(input).toHaveAttribute('aria-invalid', 'true')
+  await userEvent.click(input)
   await userEvent.keyboard('{Enter}')
   await expect(
     await canvas.findByRole('button', { name: /Keep the Session list stable/ }),
@@ -160,6 +174,7 @@ async function renameDiscoveredSession(canvas: ReturnType<typeof within>) {
   )
   await expect(host.updates).toEqual([
     { sessionIds: ['prose'], title: '  Keep the Session list stable' },
+    { sessionIds: ['prose'], title: '  Keep the Session list stable' },
   ])
   await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
     `${SESSIONS_ROUTE}/second-session`,
@@ -167,6 +182,27 @@ async function renameDiscoveredSession(canvas: ReturnType<typeof within>) {
 }
 
 export const Discovered: Story = {
+  beforeEach: () => {
+    releaseRenameFailure = null
+    let failFirstRename = true
+    const restore = showing(listed, {
+      update: async ({ sessionIds }) => {
+        if (failFirstRename) {
+          failFirstRename = false
+          await new Promise<void>((resolve) => {
+            releaseRenameFailure = resolve
+          })
+          throw new Error('Argo could not rename this Session.')
+        }
+        return { sessionIds }
+      },
+    })
+    return () => {
+      releaseRenameFailure?.()
+      releaseRenameFailure = null
+      restore()
+    }
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const search = canvas.getByRole('textbox', { name: 'Search Sessions' })
