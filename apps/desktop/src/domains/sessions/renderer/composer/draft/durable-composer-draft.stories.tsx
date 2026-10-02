@@ -944,11 +944,13 @@ export const PageHideSendsAPendingSave: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent('Plan this change.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Harness Codex' }))
+    draftFixture.changeHarness()
     window.dispatchEvent(new PageTransitionEvent('pagehide'))
     // Well inside the 250 ms autosave delay, so only the page hide can have saved.
     await new Promise((resolve) => window.setTimeout(resolve, 50))
-    await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('"harness":"codex"')
+    await expect(draftFixture.server.drafts.get('project-1')?.target).toMatchObject({
+      harness: 'codex',
+    })
   },
 }
 

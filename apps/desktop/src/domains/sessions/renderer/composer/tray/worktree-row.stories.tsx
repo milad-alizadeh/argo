@@ -104,7 +104,7 @@ export const KeyboardSelectionAndFocusReturn: Story = {
     trigger.focus()
     await userEvent.keyboard('{Enter}')
     const search = await page().findByRole('combobox', { name: 'Search branches' })
-    await expect(search).toHaveFocus()
+    await waitFor(() => expect(search).toHaveFocus())
     await userEvent.type(search, 'release')
     await expect(page().getByRole('option', { name: 'release/1.4' })).toBeVisible()
     await userEvent.keyboard('{ArrowDown}{Enter}')
@@ -142,7 +142,10 @@ export const NoMatches: Story = {
 export const Loading: Story = {
   args: { loading: true },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('switch', { name: 'Worktree' })).toBeDisabled()
+    const control = within(canvasElement).getByRole('switch', { name: 'Worktree' })
+    await expect(control).toHaveAttribute('aria-disabled', 'true')
+    await userEvent.click(control)
+    await expect(control).not.toBeChecked()
   },
 }
 

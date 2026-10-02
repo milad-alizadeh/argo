@@ -116,6 +116,9 @@ export const ResizeExpandedInspector: Story = {
     )
 
     await userEvent.click(canvas.getByRole('button', { name: /^Collapse sidebar$/ }))
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Open sidebar' })).toBeVisible())
+    await expect(canvas.getByRole('button', { name: 'Restore Session sidebar' })).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Restore Session sidebar' }))
     await waitFor(
       () => {
         expect(canvas.getByRole('button', { name: 'Expand Session sidebar' })).toBeVisible()

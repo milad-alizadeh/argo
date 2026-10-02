@@ -130,11 +130,13 @@ export const NarrowMenu: Story = {
       name: 'Choose permission mode: Manual',
     })
     await userEvent.click(trigger)
-    await expect(
-      await page().findByRole('menuitemradio', {
-        name: /Don't ask.*Deny anything not approved in advance/,
-      }),
-    ).toBeVisible()
+    await waitFor(() =>
+      expect(
+        page().getByRole('menuitemradio', {
+          name: /Don't ask.*Deny anything not approved in advance/,
+        }),
+      ).toBeVisible(),
+    )
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
     await expect(trigger).toHaveFocus()
@@ -152,7 +154,8 @@ export const KeyboardDismissal: Story = {
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
     await expect(trigger).toHaveFocus()
-    await userEvent.click(trigger)
+    await userEvent.keyboard('{ArrowDown}')
+    await waitFor(() => expect(page().getByRole('menuitemradio', { name: /Manual/ })).toHaveFocus())
     await userEvent.tab()
     await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
     await expect(canvas.getByRole('button', { name: 'Send message' })).toHaveFocus()

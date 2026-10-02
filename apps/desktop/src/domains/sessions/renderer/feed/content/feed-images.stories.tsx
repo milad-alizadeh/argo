@@ -234,11 +234,15 @@ export const LightboxFromKeyboard: Story = {
       ).toHaveFocus(),
     )
     await userEvent.tab()
-    await expect(within(dialog).getByRole('button', { name: 'Close image preview' })).toHaveFocus()
+    await waitFor(() =>
+      expect(within(dialog).getByRole('button', { name: 'Close image preview' })).toHaveFocus(),
+    )
     await userEvent.tab()
-    await expect(
-      within(dialog).getByRole('button', { name: 'Download The attached reference' }),
-    ).toHaveFocus()
+    await waitFor(() =>
+      expect(
+        within(dialog).getByRole('button', { name: 'Download The attached reference' }),
+      ).toHaveFocus(),
+    )
     await userEvent.keyboard('{Escape}')
     await expectClosed()
   },

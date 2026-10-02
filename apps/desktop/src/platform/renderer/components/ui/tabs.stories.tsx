@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs'
 
 const meta = { title: 'Design System/Primitives/Tabs', component: Tabs } satisfies Meta<typeof Tabs>
@@ -11,9 +11,9 @@ export const Selection: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const activity = canvas.getByRole('tab', { name: 'Activity' })
-    await expect(canvas.getByRole('tabpanel')).toHaveTextContent('Project overview.')
+    await expect(canvas.getByRole('tabpanel', { name: 'Overview' })).toHaveTextContent('Project overview.')
     await userEvent.click(activity)
     await expect(activity).toHaveAttribute('aria-selected', 'true')
-    await expect(canvas.getByRole('tabpanel')).toHaveTextContent('Recent activity.')
+    await waitFor(() => expect(canvas.getByRole('tabpanel', { name: 'Activity' })).toHaveTextContent('Recent activity.'))
   },
 }

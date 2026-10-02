@@ -128,7 +128,8 @@ async function openEscapeAndReturn(
   const first = controls[0]
   const last = controls[controls.length - 1]
   if (!first || !last) throw new Error(`${kind} has no focusable controls.`)
-  await userEvent.click(last)
+  last.focus()
+  await waitFor(() => expect(last).toHaveFocus())
   await userEvent.tab()
   await waitFor(() => expect(first).toHaveFocus())
   await userEvent.tab({ shift: true })
