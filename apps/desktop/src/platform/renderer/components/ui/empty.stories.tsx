@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from './empty'
 
-const meta = { title: 'Foundations/Primitives/Empty', component: Empty } satisfies Meta<typeof Empty>
+const meta = { title: 'Design System/Primitives/Empty', component: Empty } satisfies Meta<typeof Empty>
 export default meta
 type Story = StoryObj<typeof meta>
 

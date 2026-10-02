@@ -1,14 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
+import { EmptyState } from '@/platform/renderer/components/design-system/empty-state'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/platform/renderer/components/ui/empty'
 import { HarnessSignInCards } from '../components'
 
 // Nothing in the app can run a Session with no Harness signed in, so this replaces the whole
@@ -22,18 +15,13 @@ export function NoHarnessReadyScreen({ harnesses }: { harnesses: HarnessReadines
       data-component="NoHarnessReadyScreen"
     >
       <div className="panel-window-chrome" />
-      <Empty>
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <Icon name="connect" />
-          </EmptyMedia>
-          <EmptyTitle>{t('empty.title')}</EmptyTitle>
-          <EmptyDescription>{t('empty.description')}</EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent className="max-w-lg">
-          <HarnessSignInCards harnesses={harnesses} />
-        </EmptyContent>
-      </Empty>
+      <EmptyState
+        action={<HarnessSignInCards harnesses={harnesses} />}
+        actionClassName="max-w-lg"
+        description={t('empty.description')}
+        media={<Icon name="connect" />}
+        title={t('empty.title')}
+      />
     </main>
   )
 }

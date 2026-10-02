@@ -199,7 +199,9 @@ export const NoTranscript: Story = {
   render: (args) => <InspectorStory args={args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('No transcript found')).toBeVisible()
+    await expect(
+      canvas.getByRole('heading', { name: 'No transcript found', level: 2 }),
+    ).toBeVisible()
     await expect(canvas.queryByRole('article')).toBeNull()
   },
 }
@@ -213,7 +215,9 @@ export const MissingTranscript: Story = {
   },
   render: (args) => <InspectorStory args={args} />,
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('No transcript found')).toBeVisible()
+    await expect(
+      within(canvasElement).getByRole('heading', { name: 'No transcript found', level: 2 }),
+    ).toBeVisible()
   },
 }
 

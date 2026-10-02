@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AccountSummary } from '@/domains/accounts/contract/contract'
+import { EmptyState } from '@/platform/renderer/components/design-system/empty-state'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
@@ -10,14 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/platform/renderer/components/ui/card'
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/platform/renderer/components/ui/empty'
 import { Field, FieldGroup, FieldLabel } from '@/platform/renderer/components/ui/field'
 import {
   Select,
@@ -53,18 +46,12 @@ export type ConnectSourceFormProps = ConnectSourceFieldsProps & {
 function NoAccount({ onConnectAccount }: { onConnectAccount: () => void }) {
   const { t } = useTranslation('tickets')
   return (
-    <Empty className="h-full">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <Icon name="connect" />
-        </EmptyMedia>
-        <EmptyTitle>{t('connect.form.noAccount.title')}</EmptyTitle>
-        <EmptyDescription>{t('connect.form.noAccount.description')}</EmptyDescription>
-      </EmptyHeader>
-      <EmptyContent>
-        <Button onClick={onConnectAccount}>{t('connect.form.noAccount.connect')}</Button>
-      </EmptyContent>
-    </Empty>
+    <EmptyState
+      action={<Button onClick={onConnectAccount}>{t('connect.form.noAccount.connect')}</Button>}
+      description={t('connect.form.noAccount.description')}
+      media={<Icon name="connect" />}
+      title={t('connect.form.noAccount.title')}
+    />
   )
 }
 

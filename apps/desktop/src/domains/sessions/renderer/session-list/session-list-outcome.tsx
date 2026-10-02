@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
+import { EmptyState } from '@/platform/renderer/components/design-system/empty-state'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/platform/renderer/components/ui/empty'
 import { Skeleton } from '@/platform/renderer/components/ui/skeleton'
 import { SESSION_LIST_ROW_HEIGHT } from './session-row'
 
@@ -48,14 +48,11 @@ export function SessionListOutcome({ state }: { state: SessionListState }) {
       return <SessionListLoading />
     case 'empty':
       return (
-        <Empty className="flex-none px-4 py-8">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <Icon name="no-sessions" />
-            </EmptyMedia>
-            <EmptyTitle>{t('noSessionsFound')}</EmptyTitle>
-          </EmptyHeader>
-        </Empty>
+        <EmptyState
+          media={<Icon name="no-sessions" />}
+          size="compact"
+          title={t('noSessionsFound')}
+        />
       )
     case 'ready':
       return null

@@ -1,27 +1,18 @@
 import { useTranslation } from 'react-i18next'
 import { AppPageSurface } from '@/platform/renderer/app/components/app-shell'
+import { EmptyState } from '@/platform/renderer/components/design-system/empty-state'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/platform/renderer/components/ui/empty'
 
 export function TicketDetailEmpty() {
   const { t } = useTranslation('tickets')
   return (
     <AppPageSurface>
-      <Empty className="min-h-0 flex-1">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <Icon name="ticket" />
-          </EmptyMedia>
-          <EmptyTitle>{t('detail.empty.title')}</EmptyTitle>
-          <EmptyDescription>{t('detail.empty.description')}</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      <EmptyState
+        className="min-h-0"
+        description={t('detail.empty.description')}
+        media={<Icon name="ticket" />}
+        title={t('detail.empty.title')}
+      />
     </AppPageSurface>
   )
 }
@@ -31,14 +22,11 @@ export function TicketDetailReading({ reference }: { reference: string }) {
   const { t } = useTranslation('tickets')
   return (
     <div className="flex h-full min-h-0 flex-col" role="status">
-      <Empty className="min-h-0 flex-1">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <Icon name="ticket" />
-          </EmptyMedia>
-          <EmptyTitle>{t('loading.ticket', { reference })}</EmptyTitle>
-        </EmptyHeader>
-      </Empty>
+      <EmptyState
+        className="min-h-0"
+        media={<Icon name="ticket" />}
+        title={t('loading.ticket', { reference })}
+      />
     </div>
   )
 }

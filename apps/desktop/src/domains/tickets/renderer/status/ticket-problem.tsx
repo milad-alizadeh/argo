@@ -1,36 +1,26 @@
+import { EmptyState } from '@/platform/renderer/components/design-system/empty-state'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/platform/renderer/components/ui/empty'
 import type { TicketProblemProps } from '../lib'
 
 export function TicketProblem({ icon, title, description, alert, actions }: TicketProblemProps) {
   return (
-    <Empty className="h-full" role={alert ? 'alert' : undefined}>
-      <EmptyHeader>
-        <EmptyMedia className={alert ? 'text-status-danger' : undefined} variant="icon">
-          <Icon name={icon} />
-        </EmptyMedia>
-        <EmptyTitle>{title}</EmptyTitle>
-        <EmptyDescription>{description}</EmptyDescription>
-      </EmptyHeader>
-      <EmptyContent className="flex-row justify-center">
-        {actions.map((action) => (
-          <Button
-            key={action.label}
-            onClick={action.onClick}
-            variant={action.primary ? 'default' : 'ghost'}
-          >
-            {action.label}
-          </Button>
-        ))}
-      </EmptyContent>
-    </Empty>
+    <EmptyState
+      actionClassName="flex-row justify-center"
+      action={actions.map((action) => (
+        <Button
+          key={action.label}
+          onClick={action.onClick}
+          variant={action.primary ? 'default' : 'ghost'}
+        >
+          {action.label}
+        </Button>
+      ))}
+      description={description}
+      media={<Icon name={icon} />}
+      mediaClassName={alert ? 'text-status-danger' : undefined}
+      role={alert ? 'alert' : undefined}
+      title={title}
+    />
   )
 }

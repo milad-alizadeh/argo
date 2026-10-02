@@ -1,14 +1,8 @@
 import { useTranslation } from 'react-i18next'
+import { EmptyState } from '@/platform/renderer/components/design-system/empty-state'
+import { Notice } from '@/platform/renderer/components/design-system/notice'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/platform/renderer/components/ui/empty'
 import { sessionFailureState } from '../session-failure-state'
 import type { SessionError, SessionPosture } from '../types'
 import { FeedLoading } from './feed-loading'
@@ -48,27 +42,27 @@ export function Standing({
         className="grid h-full place-items-center p-6"
         data-state={sessionFailureState(failure.code)}
       >
-        <Alert className="max-w-sm" variant="destructive">
-          <Icon name="triangle-alert" />
-          <AlertTitle>{t('standing.failure')}</AlertTitle>
-          <AlertDescription>{failure.message}</AlertDescription>
+        <Notice
+          className="max-w-sm"
+          heading={t('standing.failure')}
+          icon="triangle-alert"
+          tone="danger"
+        >
+          {failure.message}
           <Button onClick={onRetry} type="button" variant="outline">
             {t('standing.retry')}
           </Button>
-        </Alert>
+        </Notice>
       </section>
     )
   if (!selected)
     return (
-      <Empty className="h-full" data-state="unselected">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <Icon name="messages-square" />
-          </EmptyMedia>
-          <EmptyTitle>{t('standing.unselectedTitle')}</EmptyTitle>
-          <EmptyDescription>{t('standing.unselectedDescription')}</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      <EmptyState
+        data-state="unselected"
+        description={t('standing.unselectedDescription')}
+        media={<Icon name="messages-square" />}
+        title={t('standing.unselectedTitle')}
+      />
     )
   if (stalled) return <StalledFeed posture={posture} onRetry={onRetry} />
   return <FeedLoading state="loading" />

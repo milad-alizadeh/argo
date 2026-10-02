@@ -1,14 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { AccountsDialog, useAccountsDialog } from '@/domains/accounts/renderer'
 import { AppPageSurface } from '@/platform/renderer/app/components/app-shell'
+import { EmptyState } from '@/platform/renderer/components/design-system/empty-state'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/platform/renderer/components/ui/empty'
 import { Skeleton } from '@/platform/renderer/components/ui/skeleton'
 import { ConnectSourceFields, ConnectSourceForm } from '../connection'
 import { TicketDeck } from '../detail'
@@ -38,15 +32,11 @@ function Loading({ label }: { label: string }) {
 function NoProject() {
   const { t } = useTranslation('tickets')
   return (
-    <Empty className="h-full">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <Icon name="repository" />
-        </EmptyMedia>
-        <EmptyTitle>{t('screen.noProject.title')}</EmptyTitle>
-        <EmptyDescription>{t('screen.noProject.description')}</EmptyDescription>
-      </EmptyHeader>
-    </Empty>
+    <EmptyState
+      description={t('screen.noProject.description')}
+      media={<Icon name="repository" />}
+      title={t('screen.noProject.title')}
+    />
   )
 }
 
@@ -114,7 +104,7 @@ export function TicketsScreenView() {
 export function TicketsScreen({ view }: TicketsScreenProps) {
   const { t } = useTranslation('tickets')
   return (
-    <main aria-label={t('screen.label')} className="panel-frame">
+    <main aria-label={t('screen.label')} className="screen-layout">
       <Body view={view} />
     </main>
   )

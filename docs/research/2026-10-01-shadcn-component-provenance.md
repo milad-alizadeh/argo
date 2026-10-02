@@ -169,3 +169,32 @@ toggle            f06447a03bcc1e510f3a50d5e7735bd82bdc17bc77849596709727c215bcc2
 tooltip           2f55867faecee2d3616cfd8c6a80b538909a21e62fdfa2788b1ead56093e5395
 use-mobile        f4bfd840445a84352265d7cf66fcd886454b6a2f3834f7caf29d00f68620f87d
 ```
+
+## Empty source restoration record (#3110)
+
+Evidence recorded on 2026-10-01: the selected `base-nova` `empty` payload returned HTTP 200 at
+`https://ui.shadcn.com/r/styles/base-nova/empty.json`; its raw response SHA-256 is
+`e89ffe0fc2969956f6e1d601bd3f00b068600ac08e31590f65344e79ff242230` (from the fetch above).
+The installed `shadcn@4.21.0` CLI's read-only `add empty --view empty.tsx -c <app>` output was
+compared with the local source by the audit's Babel TSX AST method. The source restored for #3110
+is `apps/desktop/src/platform/renderer/components/ui/empty.tsx`, SHA-256
+`6e0d82dd8ce3c01ecb4673386f6beba013dc51dae39dbc5e0381798fd58601ab`. This is the identity of
+the checked-in restored source, not a claim of byte-for-byte identity with a separately archived
+CLI output. The audit establishes matching component bodies after normalization.
+
+| Field | Recorded value |
+| --- | --- |
+| Registry item and style | built-in `empty`, `base-nova`; fetched 2026-10-01 19:34:13 UTC |
+| CLI | `shadcn@4.21.0`, read-only `add --view` / `--diff` comparison |
+| Declared app configuration | `apps/desktop/components.json`: `base-nova`, `tsx: true`, CSS variables, Phosphor icons, `@/platform/renderer/components/ui` target alias |
+| Local source imports | `class-variance-authority` (`cva`, `VariantProps`) and the `cn` alias (`apps/desktop/src/platform/renderer/lib/utils`); React's `ComponentProps` namespace is used for DOM prop types |
+| Output target | `apps/desktop/src/platform/renderer/components/ui/empty.tsx` |
+| Recorded generation transforms | selected built-in `base-nova` registry payload; `add empty --view empty.tsx -c <app>` view generation and target import aliasing; the configured Phosphor icon transform has no effect on Empty because the item imports no icons; no local adaptation retained in this source |
+| Restored source hash | `6e0d82dd8ce3c01ecb4673386f6beba013dc51dae39dbc5e0381798fd58601ab` (SHA-256) |
+
+The checked-in audit preserves the raw payload hash, CLI version, selected style, transformation
+method and AST comparison, but not the raw JSON or the CLI output as separate files. Therefore the
+registry JSON's `dependencies` and `registryDependencies` arrays cannot be re-read from repository
+evidence here, and a standalone CLI-output byte hash cannot be supplied. The local import list
+above is verified from the restored target source; do not treat it as a reconstruction of those
+unavailable payload fields. No new upstream fetch was made for this focused record.

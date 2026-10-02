@@ -5,14 +5,8 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { hasSubagentTranscript } from '@/domains/sessions/api/feed'
+import { EmptyState } from '@/platform/renderer/components/design-system/empty-state'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/platform/renderer/components/ui/empty'
 import { BasicFeed } from '../feed'
 import type { SessionError, SessionEvidence, SessionFeed, SessionSubagent } from '../types'
 
@@ -47,15 +41,12 @@ function hasNoTranscript(
 function NoTranscript() {
   const { t } = useTranslation('sessions')
   return (
-    <Empty className="h-full" data-state="no-transcript">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <Icon name="agent" />
-        </EmptyMedia>
-        <EmptyTitle>{t('subagentNoTranscript.title')}</EmptyTitle>
-        <EmptyDescription>{t('subagentNoTranscript.description')}</EmptyDescription>
-      </EmptyHeader>
-    </Empty>
+    <EmptyState
+      data-state="no-transcript"
+      description={t('subagentNoTranscript.description')}
+      media={<Icon name="agent" />}
+      title={t('subagentNoTranscript.title')}
+    />
   )
 }
 
