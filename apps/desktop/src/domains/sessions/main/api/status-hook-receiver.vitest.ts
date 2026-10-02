@@ -293,6 +293,29 @@ test('a Session with no transcript reads its open Feed each tick until a hook fi
   feed.close()
 })
 
+test('a hook status before the first listing outranks the listed one', async () => {
+  await receiver.start()
+  saved()
+  await post('PermissionRequest', SESSION, 'shell')
+  await listedRunning(SESSION)
+  expect((await row()).status).toBe('permission')
+})
+
+test('a transcript the listing names late keeps the hook status, so the quiet limit still applies', async () => {
+  await receiver.start()
+  saved()
+  await listedRunning()
+  const now = Date.now()
+  vi.spyOn(Date, 'now').mockReturnValue(now)
+  await post('PermissionRequest', SESSION, 'shell')
+  harness.state.listed = [{ nativeId: SESSION, status: null, transcript: '/no/such/transcript' }]
+  await poll.tick()
+  poll.flush()
+  expect((await row()).status).toBe('permission')
+  await atQuietLimit(now)
+  expect((await row()).status).toBe('unknown')
+})
+
 test('a hook before the first listing still stops the tick reads', async () => {
   await receiver.start()
   saved()
