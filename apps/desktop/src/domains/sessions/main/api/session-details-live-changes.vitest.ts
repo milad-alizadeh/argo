@@ -27,6 +27,15 @@ const twoEffortCatalog = harnessCatalogSchema.parse({
   ],
 })
 
+// Starts the first Codex Session and waits for its first Feed event.
+async function startedSession(supervisor: Parameters<typeof start>[0]) {
+  const { sessionId } = await start(supervisor, first)
+  const child = liveSessionActorFor(supervisor, sessionId)
+  if (child === undefined) throw new Error('The started Session has no live actor.')
+  await waitFor(child, (snapshot) => snapshot.context.feedSerial >= 1)
+  return { sessionId, child }
+}
+
 type Details = { posture: string | null; effort: string | null }
 
 // Starts a Codex Session whose first Turn completes, then reads its details on each announced change
@@ -47,10 +56,7 @@ async function detailsAroundSecondSend(
   })
   const seen: Details[] = []
   try {
-    const { sessionId } = await start(supervisor, first)
-    const child = liveSessionActorFor(supervisor, sessionId)
-    if (child === undefined) throw new Error('The started Session has no live actor.')
-    await waitFor(child, (snapshot) => snapshot.context.feedSerial >= 1)
+    const { sessionId, child } = await startedSession(supervisor)
     completeCodexTurn(notify, 'turn-2')
     await waitFor(child, (snapshot) => snapshot.matches('Ready'))
     const read = async () => {
@@ -110,10 +116,7 @@ test('shows the context usage a live Turn reported when it ended, and keeps it o
   const database = databaseFrom(client)
   const { details, stopWatching } = sessionListCaller({ database, supervisor })
   try {
-    const { sessionId } = await start(supervisor, first)
-    const child = liveSessionActorFor(supervisor, sessionId)
-    if (child === undefined) throw new Error('The started Session has no live actor.')
-    await waitFor(child, (snapshot) => snapshot.context.feedSerial >= 1)
+    const { sessionId } = await startedSession(supervisor)
     notify({
       method: 'thread/tokenUsage/updated',
       params: {
