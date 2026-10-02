@@ -88,7 +88,7 @@ async function cornerPopup(canvasElement: HTMLElement) {
 }
 
 const meta = {
-  title: 'App/Shell',
+  title: 'App/Shell/Application Shell',
   component: AppShellStoryComposition,
   excludeStories: ['AppShellStoryComposition'],
   parameters: { layout: 'fullscreen' },

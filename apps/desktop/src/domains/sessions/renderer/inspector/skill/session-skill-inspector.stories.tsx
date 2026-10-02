@@ -32,7 +32,7 @@ function answerSkillReads(content: string | null) {
 }
 
 const meta = {
-  title: 'Sessions/Screen/Skill Inspector',
+  title: 'Features/Sessions/Screens/Skill Inspector',
   component: SessionEvidenceInspector,
   parameters: { layout: 'fullscreen' },
   decorators: [

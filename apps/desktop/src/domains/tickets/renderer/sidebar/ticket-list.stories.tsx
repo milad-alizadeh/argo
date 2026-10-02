@@ -38,7 +38,7 @@ const tagRailParent = {
 }
 
 const meta = {
-  title: 'Tickets/List',
+  title: 'Features/Tickets/Sidebar/Ticket List',
   component: TicketList,
   args: {
     backlog: backlog({ tickets: [wayfinder(), prototype(), standalone()] }),

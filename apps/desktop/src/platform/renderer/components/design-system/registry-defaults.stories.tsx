@@ -108,7 +108,7 @@ async function playInputs({ canvasElement }: { canvasElement: HTMLElement }) {
 }
 
 const meta = {
-  title: 'Components/StylingFoundation/RegistryDefaults',
+  title: 'Design System/Foundations/Registry Defaults',
   excludeStories: ['longControlLabel', 'longInputValue', 'ButtonSpecimen', 'InputSpecimen'],
   parameters: { layout: 'padded' },
 } satisfies Meta

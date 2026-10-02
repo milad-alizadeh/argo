@@ -64,7 +64,7 @@ function RouteOutput() {
 }
 
 const meta = {
-  title: 'Sessions/SessionList',
+  title: 'Features/Sessions/Session List',
   component: SessionList,
   parameters: { layout: 'fullscreen', route: SESSIONS_ROUTE },
   decorators: [
@@ -888,6 +888,75 @@ function sessionListScroll(canvasElement: HTMLElement) {
   const scroll = canvasElement.querySelector<HTMLElement>('[data-slot="session-list-scroll"]')
   if (scroll === null) throw new Error('The sessionList has no scrolled container.')
   return scroll
+}
+
+async function expectScrollFades(scroll: HTMLElement, top: boolean, bottom: boolean) {
+  await waitFor(() => {
+    const fades = scroll.getAnimations().filter((animation) => animation instanceof CSSAnimation)
+    const topFade = fades.find((animation) => animation.animationName === 'scroll-fade-reveal-t')
+    const bottomFade = fades.find((animation) => animation.animationName === 'scroll-fade-reveal-b')
+    expect(topFade).toBeDefined()
+    expect(bottomFade).toBeDefined()
+    const topProgress = topFade?.effect?.getComputedTiming().progress ?? null
+    const bottomProgress = bottomFade?.effect?.getComputedTiming().progress ?? null
+    expect(topProgress !== null && topProgress > 0).toBe(top)
+    expect(bottomProgress !== null && bottomProgress < 1).toBe(bottom)
+  })
+}
+
+async function reachSessionListEnd(scroll: HTMLElement) {
+  await waitFor(async () => {
+    scroll.scrollTop = scroll.scrollHeight
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    expect(scroll.scrollTop + scroll.clientHeight).toBe(scroll.scrollHeight)
+    const bottomFade = scroll
+      .getAnimations()
+      .find(
+        (animation) =>
+          animation instanceof CSSAnimation && animation.animationName === 'scroll-fade-reveal-b',
+      )
+    expect(bottomFade?.effect?.getComputedTiming().progress).toBe(1)
+  })
+}
+
+export const ScrollEdgesFollowTheReader: Story = {
+  beforeEach: () =>
+    showing(manySessions, {
+      list: async (read) => ({
+        total: read.search === '' ? manySessions.length : 1,
+        rows: read.search === '' ? manySessions : manySessions.slice(0, 1),
+      }),
+    }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await rowsShown(canvasElement)
+    const scroll = sessionListScroll(canvasElement)
+    await expectScrollFades(scroll, false, true)
+
+    scroll.scrollTop = (scroll.scrollHeight - scroll.clientHeight) / 2
+    scroll.dispatchEvent(new Event('scroll'))
+    await expectScrollFades(scroll, true, true)
+
+    await reachSessionListEnd(scroll)
+    await expectScrollFades(scroll, true, false)
+    const last = await canvas.findByRole('button', { name: /Session number 79/ })
+    await userEvent.click(last)
+    await expect(last).toHaveAttribute('aria-current', 'page')
+    await userEvent.keyboard('{ArrowUp}')
+    await expect(canvas.getByRole('button', { name: /Session number 78/ })).toHaveFocus()
+    scroll.scrollTop = 0
+    scroll.dispatchEvent(new Event('scroll'))
+    await expectScrollFades(scroll, false, true)
+
+    await typeSearch(canvasElement, 'Session number 0')
+    await waitFor(() =>
+      expect(canvas.getAllByRole('button', { name: /Session number/ })).toHaveLength(1),
+    )
+    await expectScrollFades(scroll, false, false)
+    await userEvent.clear(canvas.getByRole('textbox', { name: 'Search Sessions' }))
+    await canvas.findByRole('button', { name: /Session number 1\b/ })
+    await expectScrollFades(scroll, false, true)
+  },
 }
 
 export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {

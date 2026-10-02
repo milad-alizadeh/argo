@@ -21,7 +21,7 @@ function answerWorkspaceReads(files: Record<string, string>) {
 }
 
 const meta = {
-  title: 'Sessions/Screen/File Inspector',
+  title: 'Features/Sessions/Screens/File Inspector',
   component: SessionEvidenceInspector,
   parameters: { layout: 'fullscreen' },
   decorators: [

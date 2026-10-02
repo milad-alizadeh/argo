@@ -17,7 +17,7 @@ function ProjectSwitcherStory() {
 }
 
 const meta = {
-  title: 'Projects/Project Switcher',
+  title: 'Features/Projects/Project Switcher',
   component: ProjectSwitcherStory,
 } satisfies Meta<typeof ProjectSwitcherStory>
 

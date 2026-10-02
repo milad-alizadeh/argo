@@ -6,7 +6,7 @@ import { ticketWorkPath } from './ticket-work-path'
 import { TicketsSidebarContent, type TicketsSidebarContentProps } from './tickets-sidebar'
 
 const meta = {
-  title: 'Tickets/Sidebar',
+  title: 'Features/Tickets/Sidebar/Tickets Sidebar',
   component: TicketsSidebarContent,
   parameters: { layout: 'fullscreen' },
   decorators: [

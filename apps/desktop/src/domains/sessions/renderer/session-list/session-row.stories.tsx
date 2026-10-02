@@ -39,7 +39,7 @@ export function SessionToneSamples({ onSelect = () => {} }: { onSelect?: (id: Se
 }
 
 const meta = {
-  title: 'Sessions/SessionList/SessionRow',
+  title: 'Features/Sessions/Session List/Session Row',
   component: SessionToneSamples,
   excludeStories: ['SESSION_STATUS_NAMES', 'SessionToneSamples'],
   args: { onSelect: fn() },

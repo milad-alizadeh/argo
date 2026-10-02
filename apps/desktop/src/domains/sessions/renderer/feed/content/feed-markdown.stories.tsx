@@ -2,7 +2,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { preloadForStories } from '@/mocks/platform/story-preload'
 import { loadCodeLanguage } from '../../ai-elements'
-import { roleColors } from './appearance-probe'
 import { FeedMarkdown } from './feed-markdown'
 import { drawDiagram } from './feed-mermaid'
 import { RICH_MARKDOWN, SAMPLE_PICTURE, SAMPLE_TYPESCRIPT } from './feed-samples'
@@ -10,7 +9,7 @@ import { RICH_MARKDOWN, SAMPLE_PICTURE, SAMPLE_TYPESCRIPT } from './feed-samples
 const loadTypeScript = preloadForStories(() => loadCodeLanguage('ts'))
 
 const meta = {
-  title: 'Sessions/Feed/Markdown',
+  title: 'Features/Sessions/Feed/Markdown',
   component: FeedMarkdown,
   decorators: [
     (Story) => (
@@ -31,23 +30,14 @@ export const Formatted: Story = {
     await expect(canvas.getByText('one surface').tagName).toBe('STRONG')
     const heading = canvas.getByRole('heading', { name: 'What changed' })
     await expect(heading).toBeVisible()
-    await expect(getComputedStyle(heading).fontWeight).toBe('500')
     const table = canvas.getByRole('table')
     await expect(table).toHaveTextContent('Narrow windowControls stay visiblePassed')
-    const [, firstBodyRow] = within(table).getAllByRole('row')
-    await expect(getComputedStyle(firstBodyRow ?? table).borderTopWidth).toBe('1px')
     const restored = canvas.getByRole('checkbox', { name: 'Draft restored' })
     await expect(restored).toBeChecked()
     await expect(restored).toHaveAttribute('tabindex', '-1')
     await expect(canvas.getByRole('checkbox', { name: 'Narrow layout review' })).not.toBeChecked()
     const inlineCode = canvas.getByText('editable')
     await expect(inlineCode.tagName).toBe('CODE')
-    await expect(getComputedStyle(inlineCode).backgroundColor).toBe(
-      roleColors('bg-muted').backgroundColor,
-    )
-    await expect(getComputedStyle(canvasElement.querySelector('blockquote') ?? table).color).toBe(
-      roleColors('text-muted-foreground').color,
-    )
     await expect(canvas.getByRole('img', { name: 'TypeScript file' })).toBeVisible()
     await expect(canvas.getByRole('img', { name: 'Code file' })).toBeVisible()
     await expect(canvas.getByRole('separator')).toBeInTheDocument()

@@ -9,7 +9,7 @@ import {
 import { ContextPopover } from './context-popover'
 
 const meta = {
-  title: 'Sessions/Composer/Context Popover',
+  title: 'Features/Sessions/Composer/Context Popover',
   component: ContextPopover,
   args: { capacityTokens: 200_000, harness: 'codex', percentage: 74, usedTokens: 148_000 },
   decorators: [(Story) => <div className="p-16">{Story()}</div>],

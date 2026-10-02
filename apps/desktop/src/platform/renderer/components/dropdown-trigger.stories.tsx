@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { CommandSearchField } from './design-system/search-field'
+import { SearchablePickerItem } from './design-system/searchable-picker'
 import { MenuDropdownTrigger, SearchableDropdownTrigger } from './dropdown-trigger'
 import { Icon } from './icon/icon'
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command'
+import { Command, CommandGroup, CommandList } from './ui/command'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu'
 import { Popover, PopoverContent, PopoverTitle } from './ui/popover'
 
@@ -31,30 +33,24 @@ function TriggerStory({
           <PopoverContent className="w-(--size-session-menu) max-w-(--size-session-menu-max-width) gap-0 p-0">
             <PopoverTitle className="sr-only">Worktrees</PopoverTitle>
             <Command defaultValue="New worktree">
-              <div className="mx-1">
-                <CommandInput
-                  appearance="inline"
-                  aria-label="Search worktrees"
-                  placeholder="Search worktrees"
-                />
-              </div>
+              <CommandSearchField aria-label="Search worktrees" placeholder="Search worktrees" />
               <CommandList className="max-h-56">
                 <CommandGroup>
-                  <CommandItem data-checked value="New worktree">
+                  <SearchablePickerItem data-checked value="New worktree">
                     <Icon name="worktree" />
-                    <span className="type-control">New worktree</span>
-                  </CommandItem>
-                  <CommandItem value="main">
+                    <span>New worktree</span>
+                  </SearchablePickerItem>
+                  <SearchablePickerItem value="main">
                     <Icon name="worktree" />
-                    <span className="type-control">main</span>
-                  </CommandItem>
+                    <span>main</span>
+                  </SearchablePickerItem>
                 </CommandGroup>
                 <CommandGroup className="border-t border-border" heading="Existing worktrees">
                   {['linked-feature', 'design-system', 'session-search'].map((name) => (
-                    <CommandItem key={name} value={name}>
+                    <SearchablePickerItem key={name} value={name}>
                       <Icon name="worktree" />
-                      <span className="min-w-0 truncate type-control">{name}</span>
-                    </CommandItem>
+                      <span className="min-w-0 truncate">{name}</span>
+                    </SearchablePickerItem>
                   ))}
                 </CommandGroup>
               </CommandList>
@@ -77,7 +73,7 @@ function TriggerStory({
 }
 
 const meta = {
-  title: 'Components/Dropdown Trigger',
+  title: 'Design System/Patterns/Dropdown Trigger',
   component: TriggerStory,
 } satisfies Meta<typeof TriggerStory>
 
@@ -159,13 +155,11 @@ export const LabelSearch: Story = {
     await waitFor(() =>
       expect(within(document.body).getByPlaceholderText('Search worktrees')).toBeVisible(),
     )
-    const searchGroup = document.body.querySelector('[data-slot="input-group"]')
-    const firstOption = document.body.querySelector('[data-slot="command-item"]')
-    if (!searchGroup || !firstOption) throw new Error('Search popup rows did not render')
-    const searchBounds = searchGroup.getBoundingClientRect()
-    const optionBounds = firstOption.getBoundingClientRect()
-    await expect(searchBounds.left).toBeCloseTo(optionBounds.left, 0)
-    await expect(searchBounds.right).toBeCloseTo(optionBounds.right, 0)
+    const search = within(document.body).getByRole('combobox', { name: 'Search worktrees' })
+    await userEvent.type(search, 'main')
+    await expect(within(document.body).getByRole('option', { name: 'main' })).toBeVisible()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(trigger).toHaveFocus())
   },
 }
 

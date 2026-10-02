@@ -44,7 +44,7 @@ export function AnchoredWorkspace() {
 }
 
 const meta = {
-  title: 'Sessions/Screen/Workspace',
+  title: 'Features/Sessions/Screens/Workspace',
   component: AnchoredWorkspace,
   excludeStories: ['AnchoredWorkspace'],
   parameters: { layout: 'fullscreen' },

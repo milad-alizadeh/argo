@@ -9,7 +9,7 @@ import { TicketProblem } from './ticket-problem'
 const recovery = { onRetry: fn(), onReconnect: fn(), onDisconnectSource: fn(), provider: null }
 
 const meta = {
-  title: 'Tickets/Ticket Problem',
+  title: 'Features/Tickets/Ticket Problem',
   component: TicketProblem,
   parameters: { layout: 'fullscreen' },
   decorators: [

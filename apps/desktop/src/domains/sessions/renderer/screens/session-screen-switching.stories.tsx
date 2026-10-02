@@ -132,7 +132,7 @@ async function switchTo(
 }
 
 const meta = {
-  title: 'Sessions/Screen/Switching',
+  title: 'Features/Sessions/Screens/Switching',
   component: AppRouteSessionScreen,
   parameters: { layout: 'fullscreen' },
   args: { sessionId: 'claude-first' },

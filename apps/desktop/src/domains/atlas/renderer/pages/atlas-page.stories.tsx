@@ -3,7 +3,7 @@ import { expect, within } from 'storybook/test'
 import { AtlasPage } from './atlas-page'
 
 const meta = {
-  title: 'Atlas/Atlas Page',
+  title: 'Features/Atlas/Atlas Page',
   component: AtlasPage,
 } satisfies Meta<typeof AtlasPage>
 

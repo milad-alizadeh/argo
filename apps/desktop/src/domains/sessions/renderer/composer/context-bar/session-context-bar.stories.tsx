@@ -12,7 +12,7 @@ const meta = {
     onCompact: async () => true,
   },
   component: SessionContextBar,
-  title: 'Sessions/Composer/Session Context Bar',
+  title: 'Features/Sessions/Composer/Session Context Bar',
 } satisfies Meta<typeof SessionContextBar>
 
 export default meta

@@ -30,7 +30,7 @@ function AppearanceStory({ reject = false }: { reject?: boolean }) {
 }
 
 const meta = {
-  title: 'App/Navigation Rail/Appearance Dialog',
+  title: 'App/Navigation/Appearance Dialog',
   component: AppearanceStory,
   parameters: { layout: 'centered' },
 } satisfies Meta<typeof AppearanceStory>

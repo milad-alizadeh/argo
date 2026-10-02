@@ -55,7 +55,7 @@ function restartedHost(row = resumable) {
 }
 
 const meta = {
-  title: 'Sessions/Screen/Resume',
+  title: 'Features/Sessions/Screens/Resume',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
   decorators: [

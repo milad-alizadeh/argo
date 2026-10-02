@@ -128,7 +128,7 @@ function CatalogStory({
 }
 
 const meta = {
-  title: 'Sessions/Composer/Turn Configuration Menu',
+  title: 'Features/Sessions/Composer/Turn Configuration Menu',
   component: TurnConfigurationStory,
 } satisfies Meta<typeof TurnConfigurationStory>
 

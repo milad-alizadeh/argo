@@ -3,7 +3,7 @@ import { expect, userEvent, within } from 'storybook/test'
 import { FileDiffList } from './file-diff-list'
 
 const meta = {
-  title: 'Components/File Diff List',
+  title: 'Design System/Patterns/File Diff List',
   component: FileDiffList,
   args: {
     accessibleName: 'Setup file changes',

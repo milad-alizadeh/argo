@@ -89,7 +89,7 @@ async function cornerPopup(canvasElement: HTMLElement) {
 }
 
 const meta = {
-  title: 'Workspace/Shell',
+  title: 'App/Workspace/Workspace Shell',
   component: WorkspaceShellStoryComposition,
   excludeStories: ['WorkspaceShellStoryComposition'],
   parameters: { layout: 'fullscreen' },

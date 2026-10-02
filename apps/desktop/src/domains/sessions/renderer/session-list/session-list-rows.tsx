@@ -200,7 +200,7 @@ export function SessionRows(props: SessionRowsProps) {
   )
   return (
     <div
-      className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-3"
+      className="min-h-0 min-w-0 flex-1 scroll-fade overflow-x-hidden overflow-y-auto py-3"
       data-slot="session-list-scroll"
       ref={scrollRef}
     >

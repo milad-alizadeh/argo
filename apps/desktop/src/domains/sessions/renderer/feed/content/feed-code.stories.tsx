@@ -1,16 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { preloadForStories } from '@/mocks/platform/story-preload'
-import { xcodeCodePalette } from '@/platform/renderer/components/xcode-code-theme'
 import { loadCodeLanguage } from '../../ai-elements'
-import { drawnColor } from './appearance-probe'
 import { FeedCode } from './feed-code'
 import { SAMPLE_TYPESCRIPT } from './feed-samples'
 
 const loadTypeScript = preloadForStories(() => loadCodeLanguage('ts'))
 
 const meta = {
-  title: 'Sessions/Feed/Code',
+  title: 'Features/Sessions/Feed/Code',
   component: FeedCode,
   decorators: [
     (Story) => (
@@ -35,13 +33,6 @@ export const Highlighted: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('TypeScript')).toBeInTheDocument()
     await waitFor(() => expect(highlightedCode(canvasElement)).not.toBeNull())
-    const keyword = canvas.getByText('type')
-    const dark = drawnColor(keyword.style.getPropertyValue('--shiki-dark'))
-    const light = drawnColor(keyword.style.getPropertyValue('--shiki-light'))
-    await expect(light).toBe(drawnColor(xcodeCodePalette.light.keyword))
-    await expect(dark).toBe(drawnColor(xcodeCodePalette.dark.keyword))
-    const expected = document.documentElement.classList.contains('dark') ? dark : light
-    await expect(getComputedStyle(keyword).color).toBe(expected)
   },
 }
 

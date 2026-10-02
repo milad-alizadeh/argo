@@ -11,7 +11,7 @@ const plan: SessionPlan = {
 }
 
 const meta = {
-  title: 'Sessions/Composer/Layout',
+  title: 'Features/Sessions/Composer/Layout',
   component: ComposerStory,
   decorators: [
     (Story, { parameters }) => (

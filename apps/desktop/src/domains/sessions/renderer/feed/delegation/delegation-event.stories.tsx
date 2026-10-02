@@ -18,7 +18,7 @@ const RESPONDED_ROW: Row = {
 }
 
 const meta = {
-  title: 'Sessions/Feed/Delegation',
+  title: 'Features/Sessions/Feed/Delegation',
   component: DelegationEvent,
   parameters: { layout: 'fullscreen' },
   render: (args) => (

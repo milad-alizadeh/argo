@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { WorkspaceSummary } from '@/domains/workspaces/renderer'
+import { CommandSearchField } from '@/platform/renderer/components/design-system/search-field'
+import { SearchablePickerItem } from '@/platform/renderer/components/design-system/searchable-picker'
 import { SearchableDropdownTrigger } from '@/platform/renderer/components/dropdown-trigger'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
-  CommandItem,
   CommandList,
 } from '@/platform/renderer/components/ui/command'
 import { Popover, PopoverContent, PopoverTitle } from '@/platform/renderer/components/ui/popover'
@@ -18,6 +18,7 @@ export type WorkspaceMenuControlProps = {
   workspace: WorkspaceSummary | null
   choice: string | null
   saveFailed: boolean
+  disabled?: boolean
   onSelect: (choice: string) => void
 }
 
@@ -44,13 +45,10 @@ function WorkspaceChoices({
   }
   return (
     <Command defaultValue={selectedValue} key={selectedValue ?? choice}>
-      <div className="mx-1">
-        <CommandInput
-          appearance="inline"
-          aria-label={t('composer.workspace.search')}
-          placeholder={t('composer.workspace.search')}
-        />
-      </div>
+      <CommandSearchField
+        aria-label={t('composer.workspace.search')}
+        placeholder={t('composer.workspace.search')}
+      />
       <CommandList className="max-h-56">
         <CommandEmpty>
           <span aria-disabled="true" role="option" tabIndex={-1}>
@@ -58,27 +56,25 @@ function WorkspaceChoices({
           </span>
         </CommandEmpty>
         <CommandGroup>
-          <CommandItem
+          <SearchablePickerItem
             aria-current={choice === 'new' ? 'true' : undefined}
             data-checked={choice === 'new'}
             onSelect={() => onSelect('new')}
             value={t('composer.workspace.newWorktree')}
           >
             <Icon name="worktree" />
-            <span className="type-control">{t('composer.workspace.newWorktree')}</span>
-          </CommandItem>
+            <span>{t('composer.workspace.newWorktree')}</span>
+          </SearchablePickerItem>
           {main ? (
-            <CommandItem
+            <SearchablePickerItem
               aria-current={choice === main.id ? 'true' : undefined}
               data-checked={choice === main.id}
               onSelect={() => onSelect(main.id)}
               value={main.facts.branch ?? main.displayName}
             >
               <Icon name="worktree" />
-              <span className="min-w-0 truncate type-control">
-                {main.facts.branch ?? main.displayName}
-              </span>
-            </CommandItem>
+              <span className="min-w-0 truncate">{main.facts.branch ?? main.displayName}</span>
+            </SearchablePickerItem>
           ) : null}
         </CommandGroup>
         {linked.length > 0 ? (
@@ -87,7 +83,7 @@ function WorkspaceChoices({
             heading={t('composer.workspace.existingWorktrees')}
           >
             {linked.map((candidate) => (
-              <CommandItem
+              <SearchablePickerItem
                 aria-current={choice === candidate.id ? 'true' : undefined}
                 data-checked={choice === candidate.id}
                 key={candidate.id}
@@ -96,8 +92,8 @@ function WorkspaceChoices({
                 value={workspaceValue(candidate)}
               >
                 <Icon name="worktree" />
-                <span className="min-w-0 truncate type-control">{candidate.displayName}</span>
-              </CommandItem>
+                <span className="min-w-0 truncate">{candidate.displayName}</span>
+              </SearchablePickerItem>
             ))}
           </CommandGroup>
         ) : null}
@@ -111,6 +107,7 @@ export function WorkspaceMenu({
   workspace,
   choice,
   saveFailed,
+  disabled = false,
   onSelect,
 }: WorkspaceMenuControlProps) {
   const { t } = useTranslation('sessions')
@@ -129,9 +126,10 @@ export function WorkspaceMenu({
     <div className="flex min-w-0 flex-col items-start gap-1">
       <Popover open={open} onOpenChange={setOpen}>
         <SearchableDropdownTrigger
-          appearance="workspace"
+          appearance="menu"
           aria-label={t('composer.workspace.chooseLabel', { workspace: label })}
           className="max-w-full"
+          disabled={disabled}
           icon="worktree"
           label={label}
           type="button"

@@ -111,7 +111,7 @@ function AccountToRepositoryForm() {
 }
 
 const meta = {
-  title: 'Tickets/Screen',
+  title: 'Features/Tickets/Screens/Tickets',
   component: TicketsScreenStory,
   parameters: { layout: 'fullscreen' },
   decorators: [
@@ -509,6 +509,17 @@ export const LongBacklog: Story = {
       },
       { timeout: 5000 },
     )
+  },
+}
+
+export const LoadingMoreTickets: Story = {
+  args: {
+    view: ticketsView({ tickets: [standalone()], hasMore: true, loadingMore: true }),
+  },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByRole('status', { name: 'Reading more Tickets' }),
+    ).toBeVisible()
   },
 }
 

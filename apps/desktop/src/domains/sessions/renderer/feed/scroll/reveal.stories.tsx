@@ -57,7 +57,7 @@ function AbandonedRevealHarness() {
 }
 
 const meta = {
-  title: 'Sessions/Feed/Reveal',
+  title: 'Features/Sessions/Feed/Reveal',
   component: AbandonedRevealHarness,
 } satisfies Meta<typeof AbandonedRevealHarness>
 

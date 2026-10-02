@@ -107,7 +107,9 @@ async function listWorkspaces(
   const workspaces = await reconcileWorkspaces(context.database, registered.data)
   const choice = registered.data.lastWorkspaceChoice
   const availableChoice =
-    choice !== 'new' && !workspaces.some((candidate) => candidate.id === choice) ? 'new' : choice
+    choice !== 'new' && !workspaces.some((candidate) => candidate.id === choice)
+      ? (workspaces.find((candidate) => candidate.kind === 'main')?.id ?? 'new')
+      : choice
   return {
     type: 'workspace.listed',
     requestId: input.requestId,

@@ -47,7 +47,7 @@ import {
 } from '@/platform/renderer/components/ui/sheet'
 
 const meta = {
-  title: 'Components/Dialogs',
+  title: 'Design System/Primitives/Dialogs',
   parameters: { layout: 'centered' },
 } satisfies Meta
 

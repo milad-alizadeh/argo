@@ -50,7 +50,7 @@ function withBridge(sessionId: string, reply: SessionTurnConfiguration) {
 }
 
 const meta = {
-  title: 'Sessions/Screen/Turn Configuration',
+  title: 'Features/Sessions/Screens/Turn Configuration',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
   decorators: [

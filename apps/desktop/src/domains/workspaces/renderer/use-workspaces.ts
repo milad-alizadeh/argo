@@ -33,13 +33,20 @@ export function useWorkspaces(projectId: string | null): [WorkspaceState, Worksp
   })
   const workspaceState = useMemo(() => {
     if (query.data?.type !== 'workspace.listed') return IDLE
-    const choice = localChoice?.projectId === projectId ? localChoice.choice : query.data.choice
-    const workspace = query.data.workspaces.find((candidate) => candidate.id === choice) ?? null
+    const requestedChoice =
+      localChoice?.projectId === projectId ? localChoice.choice : query.data.choice
+    const workspace =
+      requestedChoice === 'new'
+        ? null
+        : (query.data.workspaces.find((candidate) => candidate.id === requestedChoice) ??
+          query.data.workspaces.find((candidate) => candidate.kind === 'main') ??
+          null)
+    const choice = requestedChoice === 'new' ? 'new' : (workspace?.id ?? 'new')
     return {
       workspaces: query.data.workspaces,
       workspace,
       choice,
-      saveFailed: saveFailureProjectId === projectId || (choice !== 'new' && workspace === null),
+      saveFailed: saveFailureProjectId === projectId,
     }
   }, [query.data, localChoice, projectId, saveFailureProjectId])
   const selectWorkspace = useCallback(

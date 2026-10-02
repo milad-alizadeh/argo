@@ -43,7 +43,7 @@ const multiSelect: AskRow = {
 }
 
 const meta = {
-  title: 'Sessions/Feed/Question',
+  title: 'Features/Sessions/Feed/Question',
   component: FeedQuestion,
   args: {
     row: singleSelect,

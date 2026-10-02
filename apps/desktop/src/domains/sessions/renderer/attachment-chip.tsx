@@ -38,37 +38,24 @@ export function AttachmentChip({
   const { name, title, extension } = parseFilename(path)
   return (
     <Attachment
-      className="relative h-(--size-composer-attachment) w-fit min-w-(--size-composer-attachment-chip-min) max-w-(--size-composer-attachment-chip-max) shrink-0 items-start border-border"
-      size="xs"
+      className="w-(--size-composer-attachment-chip-max)!"
+      orientation="vertical"
+      size="default"
       state={failed ? 'error' : 'done'}
     >
-      <AttachmentMedia
-        className="relative !size-(--size-attachment-thumbnail) overflow-hidden rounded-lg bg-muted"
-        variant={isImage ? 'image' : 'icon'}
-      >
-        {isImage ? (
-          <img
-            alt=""
-            className="absolute inset-0 !size-full object-cover"
-            src={fileImageUrl(path) ?? undefined}
-          />
-        ) : (
-          <Icon name="file" className="size-6" />
-        )}
+      <AttachmentMedia variant={isImage ? 'image' : 'icon'}>
+        {isImage ? <img alt={name} src={fileImageUrl(path) ?? undefined} /> : <Icon name="file" />}
       </AttachmentMedia>
-      <AttachmentContent className="!min-w-0 !max-w-28 self-start overflow-hidden pr-6">
-        <AttachmentTitle
-          className="!block !max-w-24 !overflow-hidden !text-ellipsis !whitespace-nowrap type-control"
-          title={name}
-        >
-          {title}
-        </AttachmentTitle>
-        <AttachmentDescription className="type-meta">
-          {failed
-            ? t('composer.attachment.notFound')
-            : t('composer.attachment.fileType', { extension: extension?.toUpperCase() })}
-        </AttachmentDescription>
-      </AttachmentContent>
+      {!isImage && (
+        <AttachmentContent>
+          <AttachmentTitle title={name}>{title}</AttachmentTitle>
+          <AttachmentDescription>
+            {failed
+              ? t('composer.attachment.notFound')
+              : t('composer.attachment.fileType', { extension: extension?.toUpperCase() })}
+          </AttachmentDescription>
+        </AttachmentContent>
+      )}
       {children}
     </Attachment>
   )

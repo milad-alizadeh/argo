@@ -23,7 +23,7 @@ function stalledFeedHost() {
 }
 
 const meta = {
-  title: 'Sessions/Screen/Feed Stall',
+  title: 'Features/Sessions/Screens/Feed Stall',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
   decorators: [

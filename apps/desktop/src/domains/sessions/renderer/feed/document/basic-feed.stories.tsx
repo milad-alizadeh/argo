@@ -31,7 +31,7 @@ const readFailure = {
 } satisfies SessionError
 
 const meta = {
-  title: 'Sessions/Feed',
+  title: 'Features/Sessions/Feed/Session Feed',
   component: BasicFeed,
   parameters: { layout: 'fullscreen' },
   decorators: [

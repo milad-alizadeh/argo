@@ -61,7 +61,7 @@ export function TicketStatusSamples() {
 }
 
 const meta = {
-  title: 'Tickets/Status/Ticket Status',
+  title: 'Features/Tickets/Status/Ticket Status',
   excludeStories: ['CATEGORY_STATUS', 'STATUS_SAMPLES', 'PRIORITY_SAMPLES', 'TicketStatusSamples'],
   parameters: { layout: 'padded' },
 } satisfies Meta

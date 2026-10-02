@@ -58,7 +58,7 @@ const commentaryToolGroups = new ToolGroupState()
 const liveCommentaryGroups = new ToolGroupState()
 
 const meta = {
-  title: 'Sessions/Feed/Tool Line',
+  title: 'Features/Sessions/Feed/Tool Line',
   component: FeedToolLine,
   args: { activeEvidenceId: null, call: edited, live: false, onOpen: () => {} },
 } satisfies Meta<typeof FeedToolLine>

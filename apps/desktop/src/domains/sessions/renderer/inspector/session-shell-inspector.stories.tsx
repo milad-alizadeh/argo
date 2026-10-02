@@ -15,7 +15,7 @@ const WATCH = sessionShellCommand({
 })
 
 const meta = {
-  title: 'Sessions/Screen/Shell Inspector',
+  title: 'Features/Sessions/Screens/Shell Inspector',
   component: SessionShellInspector,
   parameters: { layout: 'fullscreen' },
   args: { now: NOW },

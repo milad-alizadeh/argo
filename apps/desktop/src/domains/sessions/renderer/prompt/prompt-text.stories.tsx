@@ -3,7 +3,7 @@ import { expect, within } from 'storybook/test'
 import { PromptText } from './prompt-text'
 
 const meta = {
-  title: 'Sessions/Prompt/Prompt Text',
+  title: 'Features/Sessions/Prompt/Prompt Text',
   component: PromptText,
   decorators: [
     (Story) => (

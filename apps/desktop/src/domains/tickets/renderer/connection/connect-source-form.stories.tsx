@@ -11,7 +11,7 @@ const hubot = { ...githubAccount, id: 'github:1', login: 'hubot' }
 const repository = (scope: string) => ({ scope, label: scope })
 
 const meta = {
-  title: 'Tickets/Connection/Connect Source Form',
+  title: 'Features/Tickets/Connection/Connect Source Form',
   component: ConnectSourceForm,
   args: {
     projectName: 'argo',

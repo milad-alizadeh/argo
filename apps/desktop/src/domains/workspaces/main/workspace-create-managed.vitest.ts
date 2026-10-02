@@ -103,3 +103,37 @@ test('starts with New worktree and remembers an existing checkout choice', async
     client.close()
   }
 })
+
+test('falls back to the main checkout when the selected worktree is removed', async () => {
+  const { root, repository, client, database, projectId } = await fixture()
+  try {
+    const linkedPath = path.join(root, 'linked')
+    await run('git', ['-C', repository, 'worktree', 'add', '-b', 'linked', linkedPath])
+    const exclusive = async <T>(work: () => Promise<T>) => work()
+    const context = { database, exclusive }
+    const caller = initTRPC
+      .create()
+      .router({
+        list: workspaceListProcedure(context),
+        choose: workspaceChooseProcedure(context),
+      })
+      .createCaller({})
+    const initial = await caller.list({ projectId })
+    expect(initial.type).toBe('workspace.listed')
+    if (initial.type !== 'workspace.listed') return
+    const linked = initial.workspaces.find((candidate) => candidate.kind === 'imported')
+    const main = initial.workspaces.find((candidate) => candidate.kind === 'main')
+    expect(linked).toBeDefined()
+    expect(main).toBeDefined()
+    if (linked === undefined || main === undefined) return
+    await caller.choose({ projectId, choice: linked.id })
+    await run('git', ['-C', repository, 'worktree', 'remove', linkedPath])
+    const restored = await caller.list({ projectId })
+    expect(restored.type).toBe('workspace.listed')
+    if (restored.type !== 'workspace.listed') return
+    expect(restored.choice).toBe(main.id)
+    expect(restored.workspaces.some((candidate) => candidate.id === linked.id)).toBe(false)
+  } finally {
+    client.close()
+  }
+})

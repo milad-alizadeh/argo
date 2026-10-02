@@ -82,7 +82,7 @@ function liveFeedHost() {
 }
 
 const meta = {
-  title: 'Sessions/Screen/Feed Resilience',
+  title: 'Features/Sessions/Screens/Feed Resilience',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
   decorators: [

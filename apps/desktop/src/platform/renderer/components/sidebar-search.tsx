@@ -1,12 +1,5 @@
-import { Icon } from './icon/icon'
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-  inlineSearchGroupClassName,
-} from './ui/input-group'
+import { SearchField } from './design-system/search-field'
 
-// The search field at the head of a sidebar: borderless until focused.
 export function SidebarSearch({
   label,
   maxLength,
@@ -21,17 +14,12 @@ export function SidebarSearch({
   value: string
 }) {
   return (
-    <InputGroup className={inlineSearchGroupClassName}>
-      <InputGroupAddon className="pl-(--spacing-shell-icon)">
-        <Icon name="search" />
-      </InputGroupAddon>
-      <InputGroupInput
-        aria-label={label}
-        maxLength={maxLength}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        value={value}
-      />
-    </InputGroup>
+    <SearchField
+      aria-label={label}
+      maxLength={maxLength}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={placeholder}
+      value={value}
+    />
   )
 }

@@ -32,7 +32,7 @@ const connected = {
 const revoked = { ...octocat(), id: 'github:1', login: 'hubot', state: 'revoked' as const }
 
 const meta = {
-  title: 'Accounts/Accounts Panel',
+  title: 'Features/Accounts/Accounts Panel',
   component: AccountsPanel,
   // The panel lives in a `sm:max-w-md` dialog, so the story draws it at that width.
   decorators: [

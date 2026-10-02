@@ -150,7 +150,7 @@ function HistoricalResolvedModelStory({ onSend }: { onSend: ComposerFormProps['o
 }
 
 const meta = {
-  title: 'Sessions/Composer/Turn Lifecycle',
+  title: 'Features/Sessions/Composer/Turn Lifecycle',
   component: LiveComposerStory,
   decorators: [
     (Story, { parameters }) => (

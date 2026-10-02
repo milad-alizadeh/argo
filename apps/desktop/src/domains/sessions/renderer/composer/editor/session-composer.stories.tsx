@@ -72,7 +72,7 @@ function EverythingComposerStory() {
 }
 
 const meta = {
-  title: 'Sessions/Composer',
+  title: 'Features/Sessions/Composer/Composer',
   component: EverythingComposerStory,
   decorators: [
     (Story, { parameters }) => (

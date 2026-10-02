@@ -1,14 +1,10 @@
-import { Combobox as ComboboxPrimitive } from '@base-ui/react'
-import { CaretDownIcon, CheckIcon, XIcon } from "@phosphor-icons/react";
-import { cn } from 'cn'
 import * as React from 'react'
+import { Combobox as ComboboxPrimitive } from '@base-ui/react'
+import { cn } from 'cn'
+
 import { Button } from './button'
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from './input-group'
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from './input-group'
+import { CaretDownIcon, XIcon, CheckIcon } from '@phosphor-icons/react'
 
 const Combobox = ComboboxPrimitive.Root
 
@@ -24,7 +20,7 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
       {...props}
     >
       {children}
-      <CaretDownIcon strokeWidth={2} className="pointer-events-none size-4 text-muted-foreground" />
+      <CaretDownIcon className="pointer-events-none size-4 text-muted-foreground" />
     </ComboboxPrimitive.Trigger>
   )
 }
@@ -37,7 +33,7 @@ function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
       className={cn(className)}
       {...props}
     >
-      <XIcon strokeWidth={2} className="pointer-events-none" />
+      <XIcon className="pointer-events-none" />
     </ComboboxPrimitive.Clear>
   )
 }
@@ -48,12 +44,10 @@ function ComboboxInput({
   disabled = false,
   showTrigger = true,
   showClear = false,
-  triggerLabel = 'Show options',
   ...props
 }: ComboboxPrimitive.Input.Props & {
   showTrigger?: boolean
   showClear?: boolean
-  triggerLabel?: string
 }) {
   return (
     <InputGroup className={cn('w-auto', className)}>
@@ -64,9 +58,6 @@ function ComboboxInput({
             size="icon-xs"
             variant="ghost"
             render={<ComboboxTrigger />}
-            // Button's own tab stop overrides the trigger's -1; the arrow keys open the list from the input.
-            tabIndex={-1}
-            aria-label={triggerLabel}
             data-slot="input-group-button"
             className="group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
             disabled={disabled}
@@ -145,7 +136,7 @@ function ComboboxItem({ className, children, ...props }: ComboboxPrimitive.Item.
           <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />
         }
       >
-        <CheckIcon strokeWidth={2} className="pointer-events-none" />
+        <CheckIcon className="pointer-events-none" />
       </ComboboxPrimitive.ItemIndicator>
     </ComboboxPrimitive.Item>
   )
@@ -232,7 +223,7 @@ function ComboboxChip({
           className="-ml-1 opacity-50 hover:opacity-100"
           data-slot="combobox-chip-remove"
         >
-          <XIcon strokeWidth={2} className="pointer-events-none" />
+          <XIcon className="pointer-events-none" />
         </ComboboxPrimitive.ChipRemove>
       )}
     </ComboboxPrimitive.Chip>
@@ -255,18 +246,18 @@ function useComboboxAnchor() {
 
 export {
   Combobox,
-  ComboboxChip,
-  ComboboxChips,
-  ComboboxChipsInput,
-  ComboboxCollection,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxGroup,
   ComboboxInput,
-  ComboboxItem,
-  ComboboxLabel,
+  ComboboxContent,
   ComboboxList,
+  ComboboxItem,
+  ComboboxGroup,
+  ComboboxLabel,
+  ComboboxCollection,
+  ComboboxEmpty,
   ComboboxSeparator,
+  ComboboxChips,
+  ComboboxChip,
+  ComboboxChipsInput,
   ComboboxTrigger,
   ComboboxValue,
   useComboboxAnchor,

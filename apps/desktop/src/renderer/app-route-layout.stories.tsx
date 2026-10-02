@@ -71,7 +71,7 @@ function AppRouteLayoutStory({
 }
 
 const meta = {
-  title: 'App/Route Layout',
+  title: 'App/Routing/Route Layout',
   component: AppRouteLayoutStory,
   parameters: { layout: 'fullscreen' },
 } satisfies Meta<typeof AppRouteLayoutStory>

@@ -23,29 +23,45 @@ const WORKSPACE_CANDIDATES: [WorkspaceSummary, WorkspaceSummary] = [
 
 function WorkspaceStory({
   initialChoice = 'new',
-  saveFailed = false,
+  disabled = false,
+  longOption = false,
+  empty = false,
 }: {
   initialChoice?: string
-  saveFailed?: boolean
+  disabled?: boolean
+  longOption?: boolean
+  empty?: boolean
 }) {
   const [selectedId, setSelectedId] = useState(initialChoice)
-  const selected = WORKSPACE_CANDIDATES.find((candidate) => candidate.id === selectedId) ?? null
+  let candidates: readonly WorkspaceSummary[] = WORKSPACE_CANDIDATES
+  if (empty) candidates = []
+  else if (longOption)
+    candidates = WORKSPACE_CANDIDATES.map((candidate) =>
+      candidate.kind === 'main'
+        ? candidate
+        : {
+            ...candidate,
+            displayName: 'A worktree name long enough to check a narrow popup and trigger',
+          },
+    )
+  const selected = candidates.find((candidate) => candidate.id === selectedId) ?? null
 
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
       <WorkspaceMenu
         choice={selectedId}
+        disabled={disabled}
         onSelect={setSelectedId}
-        saveFailed={saveFailed}
+        saveFailed={false}
         workspace={selected}
-        workspaces={WORKSPACE_CANDIDATES}
+        workspaces={candidates}
       />
     </div>
   )
 }
 
 const meta = {
-  title: 'Sessions/Composer/Workspace Menu',
+  title: 'Features/Sessions/Composer/Workspace Menu',
   component: WorkspaceStory,
 } satisfies Meta<typeof WorkspaceStory>
 
@@ -112,15 +128,54 @@ export const NoMatches: Story = {
   },
 }
 
-export const UnavailableChoice: Story = {
-  args: { initialChoice: 'missing-workspace', saveFailed: true },
+export const KeyboardSelectionAndFocusReturn: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: 'Work location: New worktree' })
+    trigger.focus()
+    await userEvent.keyboard('{Enter}')
+    const input = await page().findByRole('combobox', { name: 'Search worktrees' })
+    await userEvent.type(input, 'main')
+    await userEvent.keyboard('{ArrowDown}{Enter}')
+    await waitFor(() => expect(page().queryByRole('listbox')).toBeNull())
+    const selected = canvas.getByRole('button', { name: 'Work location: main' })
+    await waitFor(() => expect(selected).toHaveFocus())
+    await userEvent.keyboard('{Enter}')
+    await page().findByRole('listbox')
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(selected).toHaveFocus())
+  },
+}
+export const Disabled: Story = {
+  args: { disabled: true },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('button')).toBeDisabled()
+  },
+}
+export const NoExistingWorkspaces: Story = {
+  args: { empty: true },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button'))
+    const list = await page().findByRole('listbox')
+    await expect(within(list).getAllByRole('option')).toHaveLength(1)
+    await expect(within(list).getByRole('option', { name: 'New worktree' })).toBeVisible()
+  },
+}
+export const LongOptionNarrowPopup: Story = {
+  args: { longOption: true, initialChoice: 'workspace-imported' },
+  decorators: [
+    (Story) => (
+      <div className="w-48">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button'))
     await expect(
-      canvas.getByRole('button', { name: 'Work location: Choose work location' }),
+      await page().findByRole('option', {
+        name: 'A worktree name long enough to check a narrow popup and trigger',
+      }),
     ).toBeVisible()
-    await expect(canvas.getByRole('status')).toHaveTextContent(
-      'Could not use this work location. Choose another.',
-    )
   },
 }

@@ -41,7 +41,7 @@ function AutoRestrictedModeStory() {
 }
 
 const meta = {
-  title: 'Sessions/Composer/Mode Menu',
+  title: 'Features/Sessions/Composer/Mode Menu',
   component: ModeStory,
 } satisfies Meta<typeof ModeStory>
 

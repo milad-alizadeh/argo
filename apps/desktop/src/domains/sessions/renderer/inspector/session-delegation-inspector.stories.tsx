@@ -65,7 +65,7 @@ function endedFeed(state: 'completed' | 'failed') {
 }
 
 const meta = {
-  title: 'Sessions/Screen/Subagent Inspector',
+  title: 'Features/Sessions/Screens/Subagent Inspector',
   component: SessionDelegationInspector,
   parameters: { layout: 'fullscreen' },
   decorators: [

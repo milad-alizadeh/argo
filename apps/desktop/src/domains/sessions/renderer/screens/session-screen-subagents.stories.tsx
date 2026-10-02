@@ -62,7 +62,7 @@ const childContent: FeedContent[] = [
 ]
 
 const meta = {
-  title: 'Sessions/Screen/Subagents',
+  title: 'Features/Sessions/Screens/Subagents',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
   decorators: [

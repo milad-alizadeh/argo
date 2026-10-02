@@ -7,7 +7,7 @@ const FLOWCHART = 'flowchart LR\n  Backlog --> Ticket --> Session'
 const loadMermaid = preloadForStories(() => drawDiagram('mermaid-preload', FLOWCHART, false))
 
 const meta = {
-  title: 'Sessions/Feed/Mermaid',
+  title: 'Features/Sessions/Feed/Mermaid',
   component: FeedMermaid,
   decorators: [
     (Story) => (

@@ -22,7 +22,7 @@ const command = {
 }
 
 const meta = {
-  title: 'Sessions/Screen/Evidence Inspector',
+  title: 'Features/Sessions/Screens/Evidence Inspector',
   component: SessionEvidenceInspector,
   parameters: { layout: 'fullscreen' },
   decorators: [

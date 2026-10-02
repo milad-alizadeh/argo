@@ -1,0 +1,1305 @@
+{
+  "checkedAt": "2026-10-02",
+  "runner": "Live Storybook storyFinished reports on port 6007, including each owning play and the existing required a11y reporter.",
+  "theme": "default",
+  "modeRuns": {
+    "light": 49,
+    "dark": 49
+  },
+  "playRunsPassed": 98,
+  "axeScansPassed": 98,
+  "violations": 0,
+  "results": [
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-combobox--raw",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-combobox--raw&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-combobox--empty",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-combobox--empty&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-combobox--selected",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-combobox--selected&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-combobox--disabled",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-combobox--disabled&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-combobox--invalid",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-combobox--invalid&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-combobox--long-option-narrow",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-combobox--long-option-narrow&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-command--raw",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-command--raw&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-command--empty",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-command--empty&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-command--selected",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-command--selected&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-command--disabled",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-command--disabled&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-command--invalid",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-command--invalid&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-command--long-option-narrow",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-command--long-option-narrow&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-search-field--search",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-search-field--search&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-search-field--disabled",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-search-field--disabled&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-search-field--invalid",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-search-field--invalid&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-input-group--raw",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-input-group--raw&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-input-group--populated",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-input-group--populated&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-input-group--disabled",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-input-group--disabled&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-input-group--invalid",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-input-group--invalid&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-sidebar-search--search",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-sidebar-search--search&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-sidebar-search--populated",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-sidebar-search--populated&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "sessions-composer-workspace-menu--workspace-picker",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/sessions-composer-workspace-menu--workspace-picker&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "sessions-composer-workspace-menu--main-checkout",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/sessions-composer-workspace-menu--main-checkout&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "sessions-composer-workspace-menu--no-matches",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/sessions-composer-workspace-menu--no-matches&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "sessions-composer-workspace-menu--keyboard-selection-and-focus-return",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/sessions-composer-workspace-menu--keyboard-selection-and-focus-return&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "sessions-composer-workspace-menu--disabled",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/sessions-composer-workspace-menu--disabled&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "sessions-composer-workspace-menu--no-existing-workspaces",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/sessions-composer-workspace-menu--no-existing-workspaces&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "sessions-composer-workspace-menu--long-option-narrow-popup",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/sessions-composer-workspace-menu--long-option-narrow-popup&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-connect-source-form--connect-repository",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--connect-repository&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-connect-source-form--no-match",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--no-match&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-connect-source-form--keyboard-order",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--keyboard-order&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-connect-source-form--switch-account",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--switch-account&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-connect-source-form--reading-repositories",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--reading-repositories&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-connect-source-form--no-repositories",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--no-repositories&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-connect-source-form--repositories-unreadable",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--repositories-unreadable&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-connect-source-form--checking",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--checking&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-connect-source-form--repository-refused",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--repository-refused&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-connect-source-form--no-account",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--no-account&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-connect-source-form--connect-team",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--connect-team&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-source-field--picker",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-source-field--picker&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-source-field--empty-results",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-source-field--empty-results&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-source-field--no-sources",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-source-field--no-sources&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-source-field--selected",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-source-field--selected&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-source-field--disabled",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-source-field--disabled&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-source-field--invalid",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-source-field--invalid&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "tickets-connection-source-field--long-option-narrow",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-source-field--long-option-narrow&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-combobox--raw",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-combobox--raw&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-combobox--empty",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-combobox--empty&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-combobox--selected",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-combobox--selected&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-combobox--disabled",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-combobox--disabled&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-combobox--invalid",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-combobox--invalid&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-combobox--long-option-narrow",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-combobox--long-option-narrow&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-command--raw",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-command--raw&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-command--empty",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-command--empty&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-command--selected",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-command--selected&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-command--disabled",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-command--disabled&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-command--invalid",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-command--invalid&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-command--long-option-narrow",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-command--long-option-narrow&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-search-field--search",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-search-field--search&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-search-field--disabled",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-search-field--disabled&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-search-field--invalid",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-search-field--invalid&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-input-group--raw",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-input-group--raw&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-input-group--populated",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-input-group--populated&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-input-group--disabled",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-input-group--disabled&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-input-group--invalid",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-input-group--invalid&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-sidebar-search--search",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-sidebar-search--search&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-sidebar-search--populated",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-sidebar-search--populated&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "sessions-composer-workspace-menu--workspace-picker",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/sessions-composer-workspace-menu--workspace-picker&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "sessions-composer-workspace-menu--main-checkout",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/sessions-composer-workspace-menu--main-checkout&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "sessions-composer-workspace-menu--no-matches",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/sessions-composer-workspace-menu--no-matches&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "sessions-composer-workspace-menu--keyboard-selection-and-focus-return",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/sessions-composer-workspace-menu--keyboard-selection-and-focus-return&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "sessions-composer-workspace-menu--disabled",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/sessions-composer-workspace-menu--disabled&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "sessions-composer-workspace-menu--no-existing-workspaces",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/sessions-composer-workspace-menu--no-existing-workspaces&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "sessions-composer-workspace-menu--long-option-narrow-popup",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/sessions-composer-workspace-menu--long-option-narrow-popup&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-connect-source-form--connect-repository",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--connect-repository&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-connect-source-form--no-match",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--no-match&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-connect-source-form--keyboard-order",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--keyboard-order&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-connect-source-form--switch-account",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--switch-account&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-connect-source-form--reading-repositories",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--reading-repositories&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-connect-source-form--no-repositories",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--no-repositories&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-connect-source-form--repositories-unreadable",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--repositories-unreadable&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-connect-source-form--checking",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--checking&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-connect-source-form--repository-refused",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--repository-refused&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-connect-source-form--no-account",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--no-account&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-connect-source-form--connect-team",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-connect-source-form--connect-team&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-source-field--picker",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-source-field--picker&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-source-field--empty-results",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-source-field--empty-results&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-source-field--no-sources",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-source-field--no-sources&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-source-field--selected",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-source-field--selected&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-source-field--disabled",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-source-field--disabled&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-source-field--invalid",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-source-field--invalid&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "tickets-connection-source-field--long-option-narrow",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/tickets-connection-source-field--long-option-narrow&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-dropdown-trigger--label-search",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-dropdown-trigger--label-search&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-dropdown-trigger--icon-search",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-dropdown-trigger--icon-search&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-dropdown-trigger--label-search",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-dropdown-trigger--label-search&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-dropdown-trigger--icon-search",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-dropdown-trigger--icon-search&globals=theme:dark;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": false,
+      "id": "components-sidebar-search--empty-query",
+      "mode": "light",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-sidebar-search--empty-query&globals=theme:light;themeIdentity:default"
+    },
+    {
+      "accessibility": [
+        {
+          "status": "passed",
+          "violations": []
+        }
+      ],
+      "dark": true,
+      "id": "components-sidebar-search--empty-query",
+      "mode": "dark",
+      "status": "success",
+      "url": "http://localhost:6007/?path=/story/components-sidebar-search--empty-query&globals=theme:dark;themeIdentity:default"
+    }
+  ],
+  "canvasCleanup": {
+    "focusedModeRuns": 34,
+    "violations": 0,
+    "description": "Command and SourceField selection mirrors, SourceField test-only Continue button, and SidebarSearch fabricated results removed. Callback spies and accessible state remain inside play functions. Real ConnectSourceForm Keyboard Order verifies the actual next control.",
+    "storySourceSha256": {
+      "apps/desktop/src/platform/renderer/components/command.stories.tsx": "a52e2bb90649e00d2be6dd4643ed724f0ad8d71b9403c017276963915ee0cbf0",
+      "apps/desktop/src/platform/renderer/components/sidebar-search.stories.tsx": "7481fb7ae5d28ebb5937654c2135ed4b500328052d57713034a328b9895c75c0",
+      "apps/desktop/src/domains/tickets/renderer/connection/source-field.stories.tsx": "85cd50652d0a6bf25041a07bb6d4c454da3199c207cf2f9a405e8673b91fad2c"
+    }
+  },
+  "workspaceFallback": {
+    "focusedModeRuns": 14,
+    "violations": 0,
+    "nodeApiTestsPassed": 3,
+    "description": "UnavailableChoice removed. Missing saved and optimistic choices resolve to main; actual save failures remain separate.",
+    "storySourceSha256": "e30c296d49e28198846f170f59fede38a053f452b5b2b9bf048c6d1126563cf0"
+  }
+}

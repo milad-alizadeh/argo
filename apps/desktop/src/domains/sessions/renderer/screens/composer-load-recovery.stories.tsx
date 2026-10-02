@@ -61,7 +61,7 @@ function ComposerCatalogRecovery() {
 }
 
 const meta = {
-  title: 'Sessions/Composer/Load Recovery',
+  title: 'Features/Sessions/Composer/Load Recovery',
   component: ComposerCatalogRecovery,
 } satisfies Meta<typeof ComposerCatalogRecovery>
 

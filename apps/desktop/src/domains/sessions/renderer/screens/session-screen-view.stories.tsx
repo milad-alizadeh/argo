@@ -627,7 +627,7 @@ async function expectShellReopensWithOutput(canvasElement: HTMLElement) {
 }
 
 const meta = {
-  title: 'Sessions/Screen',
+  title: 'Features/Sessions/Screens/Session Screen',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen', route: reviewRoute() },
   decorators: [

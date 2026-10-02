@@ -118,7 +118,7 @@ function Header(props: Partial<React.ComponentProps<typeof SessionWorkButtons>>)
 }
 
 const meta = {
-  title: 'Sessions/Screen/Work Buttons',
+  title: 'Features/Sessions/Work/Work Buttons',
   component: SessionWorkButtons,
   excludeStories: ['WorkCountSamples'],
   parameters: { layout: 'fullscreen' },

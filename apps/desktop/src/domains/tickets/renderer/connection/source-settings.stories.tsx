@@ -5,7 +5,7 @@ import { connection } from '@/mocks/tickets/renderer-models'
 import { SourceSettings } from './source-settings'
 
 const meta = {
-  title: 'Tickets/Connection/Source Settings',
+  title: 'Features/Tickets/Connection/Source Settings',
   component: SourceSettings,
   decorators: [
     (Story) => (

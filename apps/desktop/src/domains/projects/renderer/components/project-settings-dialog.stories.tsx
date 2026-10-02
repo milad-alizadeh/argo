@@ -31,7 +31,7 @@ function ProjectSettingsStory() {
 }
 
 const meta = {
-  title: 'Projects/Project Settings Dialog',
+  title: 'Features/Projects/Project Settings Dialog',
   component: ProjectSettingsStory,
 } satisfies Meta<typeof ProjectSettingsStory>
 

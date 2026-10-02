@@ -96,9 +96,15 @@ decisions and their reasons in the implementation ticket.
 A component is reviewed in Storybook; a screen is reviewed by a render command
 (`docs/design-stack.md`, `README.md`).
 
-A story's `title:` nests under its owning parent component's group, one level per parent,
-matching folder placement (`Sessions/Composer/*`); a shared cross-domain primitive stays under
-`Components/`.
+Use readable title case and group stories by product ownership: `Design System/Primitives/<Name>`
+for base or registry controls, `Design System/Patterns/<Name>` for app-owned compositions,
+`Design System/Foundations/<Showcase>` for token or theme showcases,
+`Features/<Domain>/<Component>` for feature UI, and `App/<Area>/<Component>` for shell UI.
+
+Mode and Theme are global Storybook toolbar controls. Keep one canonical story per component
+state or behavior; stories inherit the selected globals. Assert behavioral events in `play`
+functions, and keep the canvas to realistic product or component UI. Never add Light/Dark
+duplicate stories, story-level mode forcing, theme test matrices, or visible test/debug output.
 
 For rendered UI work, a `play` function is the TDD seam: operate the story through visible
 controls and assert reader-visible behaviour and accessible semantics. Dedicated browser

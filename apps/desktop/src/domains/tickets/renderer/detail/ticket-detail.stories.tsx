@@ -8,7 +8,7 @@ import { TicketDetail } from './ticket-detail'
 const URL_BODY = `See https://github.com/octocat/hello-world/blob/main/${'deeply-nested-'.repeat(12)}path.md`
 
 const meta = {
-  title: 'Tickets/Ticket Detail',
+  title: 'Features/Tickets/Ticket Detail',
   component: TicketDetail,
   parameters: { layout: 'fullscreen' },
   decorators: [

@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import { capitalized } from '@/domains/accounts/renderer'
+import { SearchablePickerInput } from '@/platform/renderer/components/design-system/searchable-picker'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Combobox,
   ComboboxContent,
   ComboboxEmpty,
-  ComboboxInput,
   ComboboxItem,
   ComboboxList,
 } from '@/platform/renderer/components/ui/combobox'
@@ -96,7 +96,7 @@ export function SourceField(props: SourceFieldProps) {
         onValueChange={onChange}
         value={scope}
       >
-        <ComboboxInput
+        <SearchablePickerInput
           aria-describedby={described ? NOTE_ID : undefined}
           aria-invalid={problem ? true : undefined}
           className="w-full"

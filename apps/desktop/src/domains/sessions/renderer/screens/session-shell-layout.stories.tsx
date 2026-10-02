@@ -51,7 +51,7 @@ function expectIdentityInPageHeader(canvasElement: HTMLElement) {
 }
 
 const meta = {
-  title: 'Sessions/Screen/Layout',
+  title: 'Features/Sessions/Screens/Layout',
   component: SessionLayout,
   parameters: { layout: 'fullscreen' },
   decorators: [

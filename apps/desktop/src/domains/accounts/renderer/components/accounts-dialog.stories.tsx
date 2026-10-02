@@ -45,7 +45,7 @@ function AccountsDialogStory() {
 }
 
 const meta = {
-  title: 'Accounts/Accounts Dialog',
+  title: 'Features/Accounts/Accounts Dialog',
   component: AccountsDialogStory,
 } satisfies Meta<typeof AccountsDialogStory>
 

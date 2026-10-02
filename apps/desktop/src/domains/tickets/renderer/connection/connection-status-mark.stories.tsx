@@ -5,7 +5,7 @@ import type { ConnectionSummary } from '../hooks/ticket-reply'
 import { ConnectionStatusMark } from './connection-status-mark'
 
 const meta = {
-  title: 'Tickets/Connection/Connection Status Mark',
+  title: 'Features/Tickets/Connection/Connection Status Mark',
   component: ConnectionStatusMark,
   args: { children: 'GitHub · octocat' },
 } satisfies Meta<typeof ConnectionStatusMark>

@@ -32,7 +32,7 @@ function TicketSessions({ onOpenSession }: { onOpenSession: (id: string) => void
 }
 
 const meta = {
-  title: 'Tickets/Ticket Detail/Linked Sessions',
+  title: 'Features/Tickets/Ticket Detail/Linked Sessions',
   component: TicketSessions,
   args: { onOpenSession: fn() },
 } satisfies Meta<typeof TicketSessions>

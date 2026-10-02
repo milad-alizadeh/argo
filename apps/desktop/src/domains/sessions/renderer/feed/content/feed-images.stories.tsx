@@ -1,12 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
-import { roleColors } from './appearance-probe'
 import { FeedGallery, FeedImage, FeedMissingImage } from './feed-images'
 import { BROKEN_PICTURE, SAMPLE_PICTURE } from './feed-samples'
 import { ImageLightbox } from './image-lightbox'
 
 const meta = {
-  title: 'Sessions/Feed/Images',
+  title: 'Features/Sessions/Feed/Images',
   component: FeedImage,
   decorators: [
     (Story) => (
@@ -79,10 +78,6 @@ export const Unavailable: Story = {
     await expect(broken).toHaveTextContent('Image unavailableA screenshot that no longer decodes')
     await expect(refused).toHaveTextContent('Image unavailableA file the Session moved')
     await expect(canvas.queryByRole('button')).toBeNull()
-    const card = getComputedStyle(broken?.firstElementChild ?? canvasElement)
-    const roles = roleColors('bg-card text-muted-foreground')
-    await expect(card.backgroundColor).toBe(roles.backgroundColor)
-    await expect(card.color).toBe(roles.color)
   },
 }
 

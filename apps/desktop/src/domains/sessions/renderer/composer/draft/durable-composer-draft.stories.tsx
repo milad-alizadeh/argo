@@ -672,7 +672,7 @@ function storedDraftSummaries(drafts: Map<string, DraftValue>) {
 }
 
 const meta = {
-  title: 'Sessions/Composer/Durable Draft',
+  title: 'Features/Sessions/Composer/Durable Draft',
   component: DurableDraftStory,
 } satisfies Meta<typeof DurableDraftStory>
 

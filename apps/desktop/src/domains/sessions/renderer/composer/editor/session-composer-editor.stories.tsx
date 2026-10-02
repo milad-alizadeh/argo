@@ -204,7 +204,7 @@ function MarkdownShortcutsStory() {
 }
 
 const meta = {
-  title: 'Sessions/Composer/Text Editor',
+  title: 'Features/Sessions/Composer/Text Editor',
   component: ComposerStory,
   decorators: [
     (Story, { parameters }) => (

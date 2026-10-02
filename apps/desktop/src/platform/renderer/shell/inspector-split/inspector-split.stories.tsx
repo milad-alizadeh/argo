@@ -21,7 +21,7 @@ function InspectorSplitWorkspace() {
 }
 
 const meta = {
-  title: 'Components/Inspector Split',
+  title: 'Design System/Patterns/Inspector Split',
   component: InspectorSplit,
   parameters: { layout: 'fullscreen' },
   decorators: [
