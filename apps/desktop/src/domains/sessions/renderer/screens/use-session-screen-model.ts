@@ -37,10 +37,16 @@ function useWorkInspector({
   // #2970 fills the shell commands.
   const shell = session?.shell?.find((command) => command.id === work.shellId) ?? null
   const delegation = pickedSubagent(subagents, work)
+  const feedShowsRunning = feedSubagents.some(
+    (subagent) => subagent.id === delegation?.id && subagent.state === 'running',
+  )
   const delegationFeed = useDelegationFeed(
     selectedSessionId,
     delegation?.id ?? null,
-    delegation?.state === 'running',
+    delegation?.state === 'running' ||
+      (delegation?.state === 'unknown' &&
+        (feedShowsRunning ||
+          (work.opened?.id === delegation?.id && work.opened.state === 'running'))),
   )
   const subagentUsage = useDelegationUsage(subagents.length === 0 ? null : selectedSessionId)
   const shellOutput = useShellOutput(

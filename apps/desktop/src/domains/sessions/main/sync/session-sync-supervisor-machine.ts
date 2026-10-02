@@ -12,6 +12,7 @@ import {
 } from 'xstate'
 import type { Database } from '@/database/database'
 import type {
+  SessionSubagentLink,
   SessionSummary,
   SessionSummaryList,
   SessionSummaryReader,
@@ -84,10 +85,11 @@ type SyncActorEvent =
 async function saveSummaries(
   { database, changes, harness }: Pick<SessionSyncActorInput, 'database' | 'changes' | 'harness'>,
   summaries: readonly SessionSummary[],
+  subagents: readonly SessionSubagentLink[] = [],
   roots: Promise<SessionRoot[]> = sessionRoots(database),
 ): Promise<void> {
-  const matched = await matchSessionsToProjects(await roots, summaries)
-  changes.changed(saveSessionBatch(database, harness, matched))
+  const records = await matchSessionsToProjects(await roots, summaries)
+  changes.changed(saveSessionBatch(database, { harness, records, subagents }))
 }
 
 type DiscoverFinished = {
@@ -131,7 +133,7 @@ const sessionSyncActor = fromCallback<
       actors: {
         save: fromPromise(async ({ input: saveInput }) => {
           roots ??= sessionRoots(database)
-          await saveSummaries(input, saveInput.records, roots)
+          await saveSummaries(input, saveInput.records, saveInput.subagents, roots)
         }),
       },
     }),

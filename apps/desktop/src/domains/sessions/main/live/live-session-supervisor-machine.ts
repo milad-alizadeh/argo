@@ -11,13 +11,19 @@ import {
 } from 'xstate'
 import type { Database } from '@/database/database'
 import { sessionWorktreeColumns } from '@/database/session/validation'
+import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { SessionSubmitRejection } from '@/domains/sessions/api/session-submit-rejection'
 import type { HarnessRegistry } from '@/harnesses/registry'
 import type { harnessCatalogMachine } from '@/platform/main/harness-catalog/harness-catalog-machine'
-import type { SessionLiveInput, SessionSendInput, SessionStartInput } from '../api'
+import type {
+  SessionListChanges,
+  SessionLiveInput,
+  SessionSendInput,
+  SessionStartInput,
+} from '../api'
 import {
   bindSessionCommand,
   createSessionCommandStore,
@@ -32,6 +38,12 @@ import type { SessionEventJournal } from './session-event-journal'
 import type { SessionInteractionBroker } from './session-interaction-broker'
 
 type LiveSessionActor = ActorRefFrom<typeof liveSessionMachine>
+type Delegation = Extract<
+  FeedContent,
+  {
+    kind: 'delegation'
+  }
+>
 function sessionActor(
   self: {
     system: LiveSessionSupervisorActor['system']
@@ -113,24 +125,46 @@ function trackCommandSnapshot(
 export function recordLiveSessionEvents(
   session: LiveSessionActor,
   journal?: SessionEventJournal,
-  database?: Database,
+  storage?: {
+    database: Database
+    changes?: SessionListChanges
+  },
 ): () => void {
   let sessionId: string | null = null
   let inFlightCommandId: string | null = session.getSnapshot().context.first.commandId
+  const pendingSubagents = new Map<string, Delegation>()
   const eventSubscription = session.on('feed', ({ body }) => {
-    if (database !== undefined) recordCommandFeed(database, body)
-    if (database !== undefined && sessionId !== null && body.type === 'content')
-      saveSessionSubagents(database, sessionId, [
-        body.content,
-      ])
+    if (storage !== undefined) recordCommandFeed(storage.database, body)
+    if (storage !== undefined && body.type === 'content' && body.content.kind === 'delegation') {
+      if (sessionId === null) pendingSubagents.set(body.content.agentId, body.content)
+      else {
+        const written = saveSessionSubagents(storage.database, sessionId, [
+          body.content,
+        ])
+        if (written > 0)
+          storage.changes?.changed([
+            sessionId,
+          ])
+      }
+    }
     if (sessionId === null) journal?.stage(session, body)
     else journal?.append(sessionId, body)
   })
   const subscription = session.subscribe((snapshot) => {
-    if (database !== undefined)
-      inFlightCommandId = trackCommandSnapshot(database, snapshot, inFlightCommandId)
+    if (storage !== undefined)
+      inFlightCommandId = trackCommandSnapshot(storage.database, snapshot, inFlightCommandId)
     if (sessionId !== null || snapshot.context.argoId === null) return
     sessionId = snapshot.context.argoId
+    if (storage !== undefined && pendingSubagents.size > 0) {
+      const written = saveSessionSubagents(storage.database, sessionId, [
+        ...pendingSubagents.values(),
+      ])
+      if (written > 0)
+        storage.changes?.changed([
+          sessionId,
+        ])
+      pendingSubagents.clear()
+    }
     journal?.bind(session, sessionId)
   })
   return () => {
@@ -200,6 +234,7 @@ type LiveSessionSupervisorInput = {
   registry: HarnessRegistry
   journal?: SessionEventJournal
   interactions?: SessionInteractionBroker
+  changes?: SessionListChanges
 }
 type LiveSessionSupervisorEvent =
   | {
@@ -753,7 +788,10 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
               session: actor,
             },
           })
-          const stop = recordLiveSessionEvents(actor, dependencies.journal, dependencies.database)
+          const stop = recordLiveSessionEvents(actor, dependencies.journal, {
+            database: dependencies.database,
+            changes: dependencies.changes,
+          })
           spawn('observeLiveEvents', {
             id: `events:${actorId}`,
             input: {

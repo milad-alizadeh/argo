@@ -216,7 +216,6 @@ const sessionListOrder = [
 ]
 
 const keyedContent = alias(ticketContent, 'keyed_ticket_content')
-
 // The saved Ticket a link's key names in the Project's Ticket scope; the first if keys repeat.
 function linkedTicketId(database: Database, source: LinkedTicketSource | null): SQL {
   if (source === null) return sql`null`

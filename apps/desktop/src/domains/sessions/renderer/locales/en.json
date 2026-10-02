@@ -369,6 +369,7 @@
     "tokens": "{{amount}} tokens"
   },
   "workState": {
+    "unknown": "Unknown",
     "pending": "Pending",
     "running": "Running",
     "paused": "Paused",

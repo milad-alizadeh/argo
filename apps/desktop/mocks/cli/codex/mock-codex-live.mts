@@ -26,6 +26,7 @@ type Thread = {
   id: string
   cwd: string
   updatedAt: number
+  parentThreadId: string | null
   name?: string
   path?: string
   turns: Turn[]
@@ -288,12 +289,7 @@ function handle(message: Request) {
     return send({
       id,
       result: {
-        data: storedThreads().map(({ id: threadId, cwd, updatedAt, name }) => ({
-          id: threadId,
-          cwd,
-          updatedAt,
-          name,
-        })),
+        data: storedThreads().map(({ turns: _turns, ...thread }) => thread),
         nextCursor: null,
       },
     })
@@ -307,6 +303,7 @@ function handle(message: Request) {
       id: identifier(threads.length + 1),
       cwd: String(params.cwd),
       updatedAt: Math.floor(Date.now() / 1000),
+      parentThreadId: null,
       turns: [],
     }
     threads.push(thread)

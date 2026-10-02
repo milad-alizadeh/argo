@@ -13,9 +13,17 @@ import { sessionSyncMachine } from './session-sync-machine'
 import {
   knownSessionIds,
   matchSessionsToProjects,
-  saveSessionBatch,
+  saveSessionBatch as writeSessionBatch,
   sessionRoots,
 } from './session-sync-records'
+
+function saveSessionBatch(
+  database: Parameters<typeof writeSessionBatch>[0],
+  harness: Parameters<typeof writeSessionBatch>[1]['harness'],
+  records: Parameters<typeof writeSessionBatch>[1]['records'],
+) {
+  return writeSessionBatch(database, { harness, records })
+}
 
 const ID = '00000000-0000-4000-8000-000000000001'
 

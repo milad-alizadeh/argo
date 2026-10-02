@@ -10,6 +10,8 @@ import type {
   ExternalSessions,
   LiveExternalSession,
 } from '@/harnesses/registration'
+import { isIdentifier } from '@/shared/validation'
+import { saveDiscoveredSessionSubagents, saveSessionSubagents } from '../database'
 import {
   harnessSessionId,
   type SessionUpdate,
@@ -18,6 +20,7 @@ import {
 } from './session-update'
 
 const EXTERNAL_POLL_MS = 2_000
+const SUBAGENT_LOOKUP_MS = 30_000
 // A killed terminal writes nothing more, so a settled running or permission status this quiet
 // shows unknown; an approval dismissed with Esc sends no hook event either.
 export const RUNNING_QUIET_LIMIT_MS = 5 * 60_000
@@ -46,7 +49,7 @@ type TranscriptStamp = { inode: number; size: number; modifiedMs: number }
 
 type TrackedSession = {
   transcript: string | null
-  // The transcript's last stat; null until the first one, which only records it.
+  // The transcript's last stat; null until the first one.
   stamp: TranscriptStamp | null
   // The status the listing gave this tick; null when only an activity read can tell.
   listed: ExternalSessionStatus | null
@@ -59,6 +62,10 @@ type TrackedSession = {
   // The last read could not answer yet, so the next tick reads again.
   retry: boolean
   discovered: boolean
+  subagentsFailed: boolean
+  subagentsRejected: number
+  subagentsCheckedAt: number | null
+  subagentsCwd: string | null
 }
 
 // A Session waiting its turn, being read, or being read with one more read asked for after it.
@@ -96,13 +103,17 @@ const newTracked = (
   shown: null,
   retry: false,
   discovered: false,
+  subagentsFailed: false,
+  subagentsRejected: 0,
+  subagentsCheckedAt: null,
+  subagentsCwd: null,
 })
 
 // The stored status and activity of Sessions that run outside Argo, from one poll. Each tick lists
 // every Harness's live external Sessions, stats each transcript, asks the Harness about each one
 // that changed or left, and diffs the list against the last tick's. The first sight of a transcript
-// only records its stamp, so startup reads nothing. Updates merge into one write per Session a
-// window, and activity reads run one at a time, since one vendor read can take a large file whole.
+// reads only when nothing gives a status yet. Updates merge into one write per Session a window,
+// and activity reads run one at a time, since one vendor read can take a large file whole.
 export class ExternalSessionPoll {
   readonly #context: ExternalSessionPollContext
   readonly #external: ReadonlyMap<Harness, ExternalSessions>
@@ -243,6 +254,7 @@ export class ExternalSessionPoll {
       current.set(listed.nativeId, tracked)
       if (sessionId === undefined) this.#discover(session, tracked)
       if (external.readActivity !== undefined) await this.#readChange(session, tracked)
+      await this.#indexSubagents(session, sessionId, tracked)
       this.#show(session, tracked, Date.now())
       this.#refreshUnstamped(session, sessionId, tracked)
     }
@@ -250,6 +262,48 @@ export class ExternalSessionPoll {
       if (!current.has(nativeId))
         this.#leave({ harness, nativeId }, tracked, external.readActivity !== undefined)
     if (previous === undefined) this.#closeAll(harness, current)
+  }
+
+  async #indexSubagents(
+    session: HarnessSession,
+    sessionId: string | undefined,
+    tracked: TrackedSession,
+  ): Promise<void> {
+    const listSubagents = this.#external.get(session.harness)?.listSubagents
+    if (sessionId === undefined || listSubagents === undefined) return
+    const cwd =
+      this.#context.database
+        .select({ cwd: sessionTable.cwd })
+        .from(sessionTable)
+        .where(eq(sessionTable.argoId, sessionId))
+        .get()?.cwd ?? null
+    const now = Date.now()
+    if (
+      tracked.subagentsCheckedAt !== null &&
+      tracked.subagentsCwd === cwd &&
+      now - tracked.subagentsCheckedAt < SUBAGENT_LOOKUP_MS
+    )
+      return
+    tracked.subagentsCheckedAt = now
+    tracked.subagentsCwd = cwd
+    try {
+      const ids: unknown = await listSubagents(session.nativeId, cwd)
+      if (!Array.isArray(ids)) throw new Error('The vendor returned no Subagent ID list.')
+      const valid = ids.filter(isIdentifier)
+      const rejected = ids.length - valid.length
+      if (rejected > 0 && rejected !== tracked.subagentsRejected)
+        console.warn(`Rejected ${rejected} unrecognised ${session.harness} Subagent ID(s).`)
+      tracked.subagentsRejected = rejected
+      tracked.subagentsFailed = false
+      if (
+        saveDiscoveredSessionSubagents(this.#context.database, sessionId, [...new Set(valid)]) > 0
+      )
+        this.#context.changes.changed([sessionId])
+    } catch (error) {
+      if (!tracked.subagentsFailed)
+        console.warn(`Could not list ${session.harness} Subagents for ${session.nativeId}:`, error)
+      tracked.subagentsFailed = true
+    }
   }
 
   // No transcript means no activity write, so an open Feed with no hook yet reads each tick.
@@ -297,8 +351,7 @@ export class ExternalSessionPoll {
     return before
   }
 
-  // A transcript seen for the first time only records its stamp; a later change asks for a read,
-  // as does a read that could not answer yet.
+  // A first transcript read can establish status or find Codex children.
   async #readChange(session: HarnessSession, tracked: TrackedSession): Promise<void> {
     if (tracked.transcript === null) return
     const stamp = await stampOf(tracked.transcript)
@@ -309,7 +362,9 @@ export class ExternalSessionPoll {
       tracked.changedAt = Date.now()
       this.#update(session, { activityAt: tracked.changedAt })
     }
-    if (!changed && !tracked.retry) return
+    const firstWithoutStatus =
+      stamp !== null && before === null && shownStatus(tracked, Date.now()) === null
+    if (!changed && !tracked.retry && !firstWithoutStatus) return
     tracked.retry = false
     this.#read(session)
   }
@@ -405,6 +460,12 @@ export class ExternalSessionPoll {
     if (reading !== null) {
       const { activity } = projectFeedRowEntries({ history: reading.turn, live: [] })
       if (activity !== null) this.#update(session, { activity })
+      const sessionId = harnessSessionId(this.#context.database, session)
+      if (
+        sessionId !== undefined &&
+        saveSessionSubagents(this.#context.database, sessionId, reading.turn) > 0
+      )
+        this.#context.changes.changed([sessionId])
     }
     const tracked = this.#tracked(session)
     if (tracked === undefined) {
