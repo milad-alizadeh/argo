@@ -1773,14 +1773,16 @@ const stalledPrompt: SessionFeedRow = {
 function StalledFeedHarness({
   onRetryFeed,
   posture = null,
+  afterPrompt = [],
 }: {
   onRetryFeed: () => void
   posture?: SessionPosture | null
+  afterPrompt?: SessionFeedRow[]
 }) {
   const [otherClicks, setOtherClicks] = useState(0)
   const [reading, setReading] = useState<SessionFeed>({
     ...stalledFeed,
-    rows: [...stalledFeed.rows, stalledPrompt],
+    rows: [...stalledFeed.rows, stalledPrompt, ...afterPrompt],
   })
   const [running, setRunning] = useState(true)
   return (
@@ -1851,7 +1853,7 @@ export const Stalled: Story = {
     await waitFor(() => expect(args.onRetryFeed).toHaveBeenCalledOnce())
     await expect(canvas.getByRole('status', { name: 'Loading this Session' })).toBeInTheDocument()
     await expect(await canvas.findByText('The Feed recovered after Retry.')).toBeVisible()
-    await expect(canvas.queryByText('Could not load this Session')).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'Retry' })).toBeNull()
   },
 }
 
@@ -1866,6 +1868,20 @@ export const StalledReply: StoryObj<typeof StalledFeedHarness> = {
     await expect(canvas.queryByText('Could not load this Session')).toBeNull()
     await expect(canvas.getByText('Keep this known history visible.')).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+  },
+}
+
+// A Turn status row after the prompt still leaves the Feed waiting for the reply.
+export const StalledReplyAfterStatusRow: StoryObj<typeof StalledFeedHarness> = {
+  args: {
+    ...StalledReply.args,
+    afterPrompt: [{ shape: 'event', id: 'status:2', event: 'liveStatus', text: 'running' }],
+  },
+  render: StalledReply.render,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(canvas.getByText('No reply yet')).toBeVisible())
+    await expect(canvas.getByRole('button', { name: 'Retry' })).toBeVisible()
   },
 }
 
@@ -1903,7 +1919,9 @@ export const SlowFirstReadRestartsTheBound: Story = {
   render: () => <SlowFirstReadHarness />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Keep this pending prompt visible.', {}, { timeout: 3000 })).toBeVisible()
+    await expect(
+      await canvas.findByText('Keep this pending prompt visible.', {}, { timeout: 3000 }),
+    ).toBeVisible()
     await new Promise((resolve) => window.setTimeout(resolve, 1000))
     await expect(canvas.queryByRole('button', { name: 'Retry' })).toBeNull()
     await waitFor(() => expect(canvas.getByText('No reply yet')).toBeVisible(), { timeout: 5000 })
