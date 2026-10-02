@@ -101,8 +101,8 @@ const newTracked = (
 // The stored status and activity of Sessions that run outside Argo, from one poll. Each tick lists
 // every Harness's live external Sessions, stats each transcript, asks the Harness about each one
 // that changed or left, and diffs the list against the last tick's. The first sight of a transcript
-// only records its stamp, so startup reads nothing. Updates merge into one write per Session a
-// window, and activity reads run one at a time, since one vendor read can take a large file whole.
+// reads only when nothing gives a status yet. Updates merge into one write per Session a window,
+// and activity reads run one at a time, since one vendor read can take a large file whole.
 export class ExternalSessionPoll {
   readonly #context: ExternalSessionPollContext
   readonly #external: ReadonlyMap<Harness, ExternalSessions>
@@ -273,8 +273,8 @@ export class ExternalSessionPoll {
     return before
   }
 
-  // A transcript seen for the first time only records its stamp; a later change asks for a read,
-  // as does a read that could not answer yet.
+  // A transcript seen for the first time asks for a read only when no listing or hook gives a
+  // status; a later change asks for a read, as does a read that could not answer yet.
   async #readChange(session: HarnessSession, tracked: TrackedSession): Promise<void> {
     if (tracked.transcript === null) return
     const stamp = await stampOf(tracked.transcript)
@@ -285,7 +285,12 @@ export class ExternalSessionPoll {
       tracked.changedAt = Date.now()
       this.#update(session, { activityAt: tracked.changedAt })
     }
-    if (!changed && !tracked.retry) return
+    const firstWithoutStatus =
+      stamp !== null &&
+      before === null &&
+      shownStatus(tracked, Date.now()) === null &&
+      !this.#hooked.has(harnessSessionKey(session))
+    if (!changed && !tracked.retry && !firstWithoutStatus) return
     tracked.retry = false
     this.#read(session)
   }

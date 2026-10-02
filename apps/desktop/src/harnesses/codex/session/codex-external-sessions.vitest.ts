@@ -78,13 +78,36 @@ function quietWarnings() {
   return vi.spyOn(console, 'warn').mockImplementation(() => {})
 }
 
-test('startup reads no history: the first tick keeps the stored status and line', async () => {
-  saved(RUNNING, { status: 'idle', activity: JSON.stringify(STORED_LINE) })
-  const before = await row(RUNNING)
+test('an open idle thread shows idle after the first tick, as a listed Claude Session does', async () => {
+  saved(RUNNING)
   await threads.open(RUNNING)
+  threads.answer(RUNNING, 'completed')
+  await tickAndWrite()
+  expect(threads.turnsReads).toEqual([RUNNING])
+  expect((await row(RUNNING)).status).toBe('idle')
+})
+
+test('a status a hook settled before the first sight is not read over', async () => {
+  saved(RUNNING)
+  poll.hookEvent('codex', {
+    event: 'PermissionRequest',
+    nativeId: RUNNING,
+    status: 'permission',
+    activity: null,
+  })
+  await threads.open(RUNNING)
+  threads.answer(RUNNING, 'completed')
   await tickAndWrite()
   expect(threads.turnsReads).toEqual([])
-  expect(await row(RUNNING)).toEqual({ ...before, status: 'idle', activity: STORED_LINE })
+  expect((await row(RUNNING)).status).toBe('permission')
+})
+
+test('an open running thread shows running after the first tick', async () => {
+  saved(RUNNING, { status: 'idle', activity: JSON.stringify(STORED_LINE) })
+  await threads.open(RUNNING)
+  threads.answer(RUNNING, 'running')
+  await tickAndWrite()
+  expect((await row(RUNNING)).status).toBe('running')
 })
 
 test('a running Session with no Feed open stores its status and newest command', async () => {
@@ -95,7 +118,7 @@ test('a running Session with no Feed open stores its status and newest command',
   threads.answer(RUNNING, 'running')
   threads.append(RUNNING, 'any bytes\n')
   await tickAndWrite()
-  expect(threads.turnsReads).toEqual([RUNNING])
+  expect(threads.turnsReads).toEqual([RUNNING, RUNNING])
   expect((await row(RUNNING)).status).toBe('running')
   expect((await row(RUNNING)).activity).toMatchObject({
     kind: 'command',
@@ -126,12 +149,12 @@ test('a Subagent the newest Turn started is not stored for the external Session'
   expect(found?.subagents).toEqual([])
 })
 
-test('an unchanged rollout asks for nothing', async () => {
+test('an unchanged rollout asks for nothing after the first read', async () => {
   saved(RUNNING)
   await threads.open(RUNNING)
   await tickAndWrite()
   await tickAndWrite()
-  expect(threads.turnsReads).toEqual([])
+  expect(threads.turnsReads).toEqual([RUNNING])
 })
 
 test('a rewritten, truncated or touched rollout counts as a change', async () => {
@@ -142,7 +165,7 @@ test('a rewritten, truncated or touched rollout counts as a change', async () =>
   await tickAndWrite()
   utimesSync(threads.rollout(RUNNING), new Date(1_000_000), new Date(1_000_000))
   await tickAndWrite()
-  expect(threads.turnsReads).toEqual([RUNNING, RUNNING])
+  expect(threads.turnsReads).toEqual([RUNNING, RUNNING, RUNNING])
 })
 
 test('a large append is one read', async () => {
@@ -152,7 +175,7 @@ test('a large append is one read', async () => {
   threads.answer(RUNNING, 'running')
   threads.append(RUNNING, `${'x'.repeat(4 * 1024 * 1024)}\n`)
   await tickAndWrite()
-  expect(threads.turnsReads).toEqual([RUNNING])
+  expect(threads.turnsReads).toEqual([RUNNING, RUNNING])
   expect((await row(RUNNING)).status).toBe('running')
 })
 
@@ -185,7 +208,8 @@ test('a Turn with no step yet keeps the stored line', async () => {
 })
 
 test('a thread no process has loaded, with its lock held, shows idle', async () => {
-  saved(RUNNING, { status: 'running' })
+  saved(RUNNING)
+  threads.answer(RUNNING, 'running')
   await threads.open(RUNNING)
   await tickAndWrite()
   threads.answer(RUNNING, notLoadedError(RUNNING))
@@ -204,7 +228,7 @@ test('a read that fails just after a submit shows running and reads again on the
   expect((await row(RUNNING)).status).toBe('running')
   threads.answer(RUNNING, 'completed')
   await tickAndWrite()
-  expect(threads.turnsReads).toEqual([RUNNING, RUNNING])
+  expect(threads.turnsReads).toEqual([RUNNING, RUNNING, RUNNING])
   expect((await row(RUNNING)).status).toBe('idle')
 })
 
@@ -262,9 +286,10 @@ test('the first tick closes every Session an earlier run saved that it does not 
   // A poll made now finds these rows as an earlier run left them.
   poll.stop()
   startPoll()
+  threads.answer(RUNNING, 'running')
   await threads.open(RUNNING)
   await tickAndWrite()
-  expect((await row(RUNNING)).status).toBe('unknown')
+  expect((await row(RUNNING)).status).toBe('running')
   expect((await row(OTHER)).status).toBe('idle')
 })
 
@@ -325,6 +350,9 @@ test('reads run one at a time across Sessions, and a Session that changes mid-re
   await threads.open(RUNNING)
   await threads.open(OTHER)
   await tickAndWrite()
+  // The first tick read each new thread once.
+  const first = [RUNNING, OTHER]
+  expect(threads.turnsReads).toEqual(first)
   const settle: ((page: unknown) => void)[] = []
   let asked = () => {}
   // Each read waits on a lock probe process, so wait for the read itself rather than a fixed time.
@@ -345,7 +373,7 @@ test('reads run one at a time across Sessions, and a Session that changes mid-re
   threads.append(RUNNING, 'x\n')
   await poll.tick()
   await reading
-  expect(threads.turnsReads).toEqual([RUNNING])
+  expect(threads.turnsReads).toEqual([...first, RUNNING])
   for (const expected of [
     [RUNNING, OTHER],
     [RUNNING, OTHER, RUNNING],
@@ -353,28 +381,28 @@ test('reads run one at a time across Sessions, and a Session that changes mid-re
     reading = nextAsk()
     settle.shift()?.(recordedTurnsPage('running'))
     await reading
-    expect(threads.turnsReads).toEqual(expected)
+    expect(threads.turnsReads).toEqual([...first, ...expected])
   }
   settle.shift()?.(recordedTurnsPage('running'))
   await poll.readsSettled()
-  expect(threads.turnsReads).toEqual([RUNNING, OTHER, RUNNING])
+  expect(threads.turnsReads).toEqual([...first, RUNNING, OTHER, RUNNING])
   expect(settle).toEqual([])
 })
 
 test('one Session’s updates within the write window reach SQLite as one write', async () => {
-  const announced: string[][] = []
-  caller.sessionListChanges.subscribe((sessionIds) => announced.push([...sessionIds]))
   saved(RUNNING)
   await threads.open(RUNNING)
-  await poll.tick()
+  await tickAndWrite()
+  const announced: string[][] = []
+  caller.sessionListChanges.subscribe((sessionIds) => announced.push([...sessionIds]))
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   threads.answer(RUNNING, 'running')
   threads.append(RUNNING, 'x\n')
   await poll.tick()
   await poll.readsSettled()
-  expect(threads.turnsReads).toEqual([RUNNING])
+  expect(threads.turnsReads).toEqual([RUNNING, RUNNING])
   await vi.advanceTimersByTimeAsync(0)
-  expect((await row(RUNNING)).status).toBe('unknown')
+  expect((await row(RUNNING)).status).toBe('idle')
   await vi.advanceTimersByTimeAsync(500)
   expect((await row(RUNNING)).status).toBe('running')
   expect((await row(RUNNING)).activity).not.toBeNull()
@@ -417,6 +445,6 @@ test('a locked thread with no rollout yet logs nothing and is read once it store
   threads.answer(RUNNING, 'running')
   threads.append(RUNNING, 'x\n')
   await tickAndWrite()
-  expect(threads.turnsReads).toEqual([RUNNING])
+  expect(threads.turnsReads).toEqual([RUNNING, RUNNING])
   expect((await row(RUNNING)).status).toBe('running')
 })
