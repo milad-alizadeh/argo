@@ -1,4 +1,5 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import type { Permission } from '@/domains/sessions/api/permissions'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import type { Session } from '@/domains/sessions/renderer/types'
 import {
@@ -6,6 +7,7 @@ import {
   heldDetails,
   heldReads,
   installSessionHost,
+  type SessionHostOptions,
 } from '@/mocks/sessions/session-story-host'
 import { claudeHarnessInfoFixture, codexHarnessInfoFixture } from './harness-catalog.fixture'
 
@@ -26,12 +28,17 @@ function projectReply(request: StorybookTrpcRequest): StorybookTrpcResponse | nu
       return success([project])
     case 'projectOpen':
       return success(project)
-    case 'workspaceList':
+    case 'worktreeOptions':
       return success({
-        type: 'workspace.listed',
+        type: 'worktree.options',
         requestId: '00000000-0000-4000-8000-000000000001',
-        workspaces: [],
+        newWorktree: false,
+        checkout: { path: project.path, branch: 'main' },
+        branches: ['main'],
+        defaultBranch: 'main',
       })
+    case 'worktreeSwitch':
+      return success({ newWorktree: (request.input as { newWorktree: boolean }).newWorktree })
     default:
       return null
   }
@@ -166,6 +173,9 @@ export function sessionSelectionHost(
     heldDetails?: string[]
     feed?: FeedRead
     live?: readonly SessionLiveEvent[]
+    // A Permission its Session is waiting on; every other Session waits on none.
+    permission?: Permission
+    goneWorktrees?: SessionHostOptions['goneWorktrees']
   } = {},
 ) {
   const before = window.argo
@@ -189,6 +199,13 @@ export function sessionSelectionHost(
     trpc: (async (request) =>
       projectReply(request) ??
       composerReply(request) ??
+      (request.path === 'sessionPermissionRead'
+        ? success(
+            options.permission?.sessionId === (request.input as { sessionId: string }).sessionId
+              ? options.permission
+              : null,
+          )
+        : null) ??
       // Screen stories open the shell inspector and read this tail. Production stays absent.
       (request.path === 'sessionShellOutput'
         ? {
@@ -201,6 +218,7 @@ export function sessionSelectionHost(
   const host = installSessionHost(sessions, {
     feed: options.feed ?? readFeed,
     live: options.live,
+    goneWorktrees: options.goneWorktrees,
   })
   return Object.assign(
     () => {

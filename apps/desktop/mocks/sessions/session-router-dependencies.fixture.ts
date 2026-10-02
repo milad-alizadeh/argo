@@ -36,6 +36,5 @@ export function sessionRouterDependencies(
     projects: { database },
     sessions: { ...context, readers: sessions.readers ?? new SessionFeedReaders(context) },
     tickets: {},
-    workspaces: { database },
   } as unknown as AppRouterDependencies
 }

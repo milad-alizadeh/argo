@@ -71,6 +71,7 @@ export function publishSessionSyncStatus(status: Partial<SessionSyncStatus>) {
 
 type SessionListRead = SessionListInput & { offset: number; limit: number }
 type SessionUpdate = RouterInputs['sessionUpdate']
+type WorktreeRemoval = RouterInputs['sessionWorktreeRemove']
 
 // One page of the rows in the order given, by archive filter only: no sort, search or Ticket.
 export function storySessionPage(sessions: readonly Session[], read: SessionListRead) {
@@ -80,7 +81,7 @@ export function storySessionPage(sessions: readonly Session[], read: SessionList
   return { total: listed.length, rows: listed.slice(read.offset, read.offset + read.limit) }
 }
 
-type SessionHostOptions = {
+export type SessionHostOptions = {
   // Replaces the page read from the host's rows; a Session error answers as a failed read.
   list?: (read: SessionListRead) => Promise<SessionListResult | SessionError>
   // Says which IDs an update changed, or throws; the host applies those and announces them.
@@ -88,6 +89,12 @@ type SessionHostOptions = {
   // The recorded history every Feed of the story reads.
   feed?: FeedRead
   live?: readonly SessionLiveEvent[]
+  // What each archived Session's worktree holds; none by default, so archive asks nothing.
+  worktreeWork?: () => Promise<RouterOutputs['sessionWorktreeWork']>
+  // Each removed worktree's outcome; none by default.
+  removeWorktrees?: (removal: WorktreeRemoval) => Promise<RouterOutputs['sessionWorktreeRemove']>
+  // Sessions whose worktree folder is gone; opening one moves it to its Project's main checkout.
+  goneWorktrees?: { sessionIds: readonly string[]; mainCheckout: string }
 }
 
 // Called, it restores the window and clears the query cache, so a story's `beforeEach` returns it.
@@ -95,6 +102,8 @@ export type SessionHost = (() => void) & {
   // Every Session List read and Session update the host answered, in order.
   reads: SessionListRead[]
   updates: SessionUpdate[]
+  // Every worktree removal the renderer asked for, in order.
+  removals: WorktreeRemoval[]
   rows: () => readonly Session[]
   // Main stores each changed row, adding any new one, then announces the change.
   change: (changed: readonly Session[]) => void
@@ -169,12 +178,42 @@ function storedRows(initial: readonly Session[], changeReaders: Set<ChangeReader
   }
 }
 
+// Main's worktree replies: what an archive would ask about, removals, and gone folders on open.
+function worktreeReplies(
+  { worktreeWork, removeWorktrees, goneWorktrees }: SessionHostOptions,
+  { rows, change }: Pick<ReturnType<typeof storedRows>, 'rows' | 'change'>,
+) {
+  const removals: WorktreeRemoval[] = []
+  const leaveGoneWorktree = ({ sessionId }: { sessionId: string }) => {
+    const row = rows().find(({ id }) => id === sessionId)
+    const gone = goneWorktrees?.sessionIds.includes(sessionId) ? row?.worktree?.path : undefined
+    if (row === undefined || gone === undefined) return { worktreeGone: null }
+    change([{ ...row, worktree: null, cwd: goneWorktrees?.mainCheckout ?? row.cwd }])
+    return { worktreeGone: gone }
+  }
+  const reply = async (path: string, input: unknown): Promise<{ data: unknown } | null> => {
+    switch (path) {
+      case 'sessionWorktreeWork':
+        return { data: (await worktreeWork?.()) ?? { worktrees: [] } }
+      case 'sessionWorktreeRemove':
+        removals.push(input as WorktreeRemoval)
+        return { data: (await removeWorktrees?.(input as WorktreeRemoval)) ?? { worktrees: [] } }
+      case 'sessionLeaveGoneWorktree':
+        return { data: leaveGoneWorktree(input as { sessionId: string }) }
+      default:
+        return null
+    }
+  }
+  return { removals, reply }
+}
+
 // The story's main process for Sessions: the list, details, updates, change and sync signals, and
 // Feeds. Rows belong to whichever Project the list reads, copied as IPC would copy them.
 export function installSessionHost(
   initial: readonly Session[],
-  { list, update, feed, live }: SessionHostOptions = {},
+  options: SessionHostOptions = {},
 ): SessionHost {
+  const { list, update, feed, live } = options
   const before = window.argo
   queryClient.clear()
   syncStatus = IDLE_SYNC_STATUS
@@ -182,6 +221,7 @@ export function installSessionHost(
   const updates: SessionUpdate[] = []
   const changeReaders = new Set<ChangeReader>()
   const { rows, change, dropChangeSignal } = storedRows(initial, changeReaders)
+  const { removals, reply: worktreeReply } = worktreeReplies(options, { rows, change })
   const applyUpdate = async (input: SessionUpdate) => {
     updates.push(input)
     const known = rows()
@@ -211,8 +251,10 @@ export function installSessionHost(
       }
       case 'sessionUpdate':
         return { result: { data: await applyUpdate(request.input as SessionUpdate) } }
-      default:
-        return before.trpc(request)
+      default: {
+        const result = await worktreeReply(request.path, request.input)
+        return result === null ? before.trpc(request) : { result }
+      }
     }
   }) as Trpc
   const subscribe = sessionSignals(before.trpcSubscribe, changeReaders)
@@ -225,7 +267,7 @@ export function installSessionHost(
     window.argo = before
     queryClient.clear()
   }
-  return Object.assign(restore, { reads, updates, rows, change, dropChangeSignal })
+  return Object.assign(restore, { reads, updates, removals, rows, change, dropChangeSignal })
 }
 
 // A story's recorded vendor history for one chain, the same input main's reader takes.

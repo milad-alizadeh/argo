@@ -13,10 +13,10 @@ const SKILL_FILE = 'SKILL.md'
 
 export type SessionFileReadContext = { database: Database }
 
-// A relative path resolves against the workspace. An absolute path must already lie inside it.
-export function fileInWorkspace(workspace: string, requested: string): string | null {
-  const file = path.resolve(workspace, requested)
-  const relative = path.relative(workspace, file)
+// A relative path resolves against the Session folder. An absolute path must already lie inside it.
+export function fileInFolder(folder: string, requested: string): string | null {
+  const file = path.resolve(folder, requested)
+  const relative = path.relative(folder, file)
   return relative.startsWith('..') || path.isAbsolute(relative) ? null : file
 }
 
@@ -31,15 +31,12 @@ export async function skillFileContent(requested: string): Promise<string | null
   return file === null ? null : await readFile(file, 'utf8').catch(() => null)
 }
 
-// Lexical containment is not enough: a link inside the workspace can point outside it.
-export async function readFileInWorkspace(
-  workspace: string,
-  requested: string,
-): Promise<string | null> {
-  const file = fileInWorkspace(workspace, requested)
+// Lexical containment is not enough: a link inside the folder can point outside it.
+export async function readFileInFolder(folder: string, requested: string): Promise<string | null> {
+  const file = fileInFolder(folder, requested)
   if (file === null) return null
   const [root, resolved] = await Promise.all([
-    realpath(workspace).catch(() => null),
+    realpath(folder).catch(() => null),
     realpath(file).catch(() => null),
   ])
   if (root === null || resolved === null) return null
@@ -48,16 +45,14 @@ export async function readFileInWorkspace(
   return readFile(resolved, 'utf8').catch(() => null)
 }
 
-async function workspaceFileContent(database: Database, sessionId: string, requested: string) {
+async function sessionFolderFileContent(database: Database, sessionId: string, requested: string) {
   const session = database
     .select({ cwd: sessionTable.cwd })
     .from(sessionTable)
     .where(eq(sessionTable.argoId, sessionId))
     .get()
-  const workspace = session?.cwd
-  return workspace === null || workspace === undefined
-    ? null
-    : readFileInWorkspace(workspace, requested)
+  const folder = session?.cwd
+  return folder === null || folder === undefined ? null : readFileInFolder(folder, requested)
 }
 
 export function sessionFileReadProcedures(context: SessionFileReadContext) {
@@ -70,7 +65,7 @@ export function sessionFileReadProcedures(context: SessionFileReadContext) {
       .input(z.strictObject({ sessionId: identifierSchema, path: z.string() }))
       .output(contentSchema)
       .query(async ({ input }) => ({
-        content: await workspaceFileContent(context.database, input.sessionId, input.path),
+        content: await sessionFolderFileContent(context.database, input.sessionId, input.path),
       })),
   }
 }

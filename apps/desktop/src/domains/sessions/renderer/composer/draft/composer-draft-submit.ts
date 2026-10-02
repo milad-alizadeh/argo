@@ -5,7 +5,7 @@ import {
   sessionSubmitRejectionSchema,
 } from '@/domains/sessions/api/session-submit-rejection'
 import type { AppRouter } from '@/platform/main/trpc-router'
-import type { RouterInputs } from '@/platform/renderer/trpc-client'
+import type { RouterInputs, RouterOutputs } from '@/platform/renderer/trpc-client'
 import type { ComposerEditing } from '../editing/composer-editing'
 import type { TurnConfiguration } from '../turn-configuration/turn-configuration'
 
@@ -29,7 +29,9 @@ type DraftSubmission = {
   // Told the saved revision before main is asked to send it.
   onSaved?: (saved: PersistedDraft) => void
 }
-type DraftSubmitResult = { outcome: 'accepted'; sessionId: string } | DraftSubmitFailure
+type DraftSubmitResult =
+  | { outcome: 'accepted'; sessionId: string; worktreeGone: string | null }
+  | DraftSubmitFailure
 // A debounced autosave, kept with its save so a page hide can send it at once.
 export type PendingSave = { timer: number; save: () => void }
 export type ComposerDraftActionInput = {
@@ -45,7 +47,7 @@ type ComposerDraftSubmitInput = ComposerDraftActionInput & {
   setSendFailure: React.Dispatch<
     React.SetStateAction<{ owner: string; outcome: 'rejected' | 'uncertain' } | null>
   >
-  submit: (input: RouterInputs['sessionSubmit']) => Promise<{ sessionId: string }>
+  submit: (input: RouterInputs['sessionSubmit']) => Promise<RouterOutputs['sessionSubmit']>
   clearAcceptedDraft: (saved: PersistedDraft) => void
 }
 type PersistInput = {
@@ -186,7 +188,11 @@ async function sendPersistedDraft(input: {
       input.persisted.current.delete(input.owner)
     input.clearAcceptedDraft(input.saved)
     input.setSendFailure((failure) => (failure?.owner === input.owner ? null : failure))
-    return { outcome: 'accepted', sessionId: result.sessionId } satisfies DraftSubmitResult
+    return {
+      outcome: 'accepted',
+      sessionId: result.sessionId,
+      worktreeGone: result.worktreeGone,
+    } satisfies DraftSubmitResult
   } catch (error) {
     const failure = submitFailure(error)
     input.setSendFailure({ owner: input.owner, outcome: failure.outcome })

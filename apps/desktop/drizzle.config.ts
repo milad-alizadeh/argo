@@ -4,7 +4,6 @@ export default defineConfig({
   dialect: 'sqlite',
   schema: [
     './src/database/project/schema.ts',
-    './src/database/workspace/schema.ts',
     './src/database/session/schema.ts',
     './src/database/session/command-schema.ts',
     './src/database/composer-draft/schema.ts',

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isTRPCClientError } from '@trpc/client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AppRouter } from '@/platform/main/trpc-router'
-import { type RouterInputs, trpc } from '@/platform/renderer/trpc-client'
+import { type RouterInputs, type RouterOutputs, trpc } from '@/platform/renderer/trpc-client'
 import type { ComposerEditing } from '../editing/composer-editing'
 import type {
   TurnConfiguration,
@@ -475,7 +475,7 @@ function useComposerDraftPersistence(input: {
   targetRestored: boolean
   create: (input: RouterInputs['composerDraftCreate']) => Promise<DraftValue>
   save: (input: RouterInputs['composerDraftSave']) => Promise<DraftValue>
-  submitMutation: (input: RouterInputs['sessionSubmit']) => Promise<{ sessionId: string }>
+  submitMutation: (input: RouterInputs['sessionSubmit']) => Promise<RouterOutputs['sessionSubmit']>
   queryClient: ReturnType<typeof useQueryClient>
 }) {
   const { target, owner, targetRestored, create, save, submitMutation, queryClient } = input

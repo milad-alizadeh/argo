@@ -10,7 +10,6 @@ import {
 import { type ProjectApiContext, projectProcedures } from '@/domains/projects/main/api'
 import { type SessionApiContext, sessionProcedures } from '@/domains/sessions/main/api'
 import { type TicketProcedureContext, ticketProcedures } from '@/domains/tickets/main/api'
-import { type WorkspaceApiContext, workspaceProcedures } from '@/domains/workspaces/main/api'
 import {
   type HarnessCatalogApiContext,
   harnessCatalogProcedures,
@@ -24,7 +23,6 @@ export type AppRouterDependencies = HarnessCatalogApiContext & {
   projects: ProjectApiContext
   sessions: SessionApiContext
   tickets: TicketProcedureContext
-  workspaces: WorkspaceApiContext
 }
 
 export function createAppRouter(dependencies: AppRouterDependencies) {
@@ -34,7 +32,6 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     ...harnessCatalogProcedures(dependencies),
     ...sessionProcedures(dependencies.sessions),
     ...projectProcedures(dependencies.projects),
-    ...workspaceProcedures(dependencies.workspaces),
     ...ticketProcedures(dependencies.tickets),
   })
 }

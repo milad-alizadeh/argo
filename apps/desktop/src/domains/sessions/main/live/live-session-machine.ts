@@ -27,7 +27,7 @@ export type QueuedLiveSessionCommand = Pick<
 type LiveSessionPersistInput = {
   harness: string
   projectId: string | null
-  workspaceId: string | null
+  worktree: SessionStartInput['worktree']
   cwd: string
   nativeId: string | null
   firstPrompt: string
@@ -272,10 +272,8 @@ export const liveSessionMachine = xstateSetup({
           harness: 'resume' in context.first ? context.first.resume.harness : context.first.harness,
           projectId:
             'resume' in context.first ? context.first.resume.projectId : context.first.projectId,
-          workspaceId:
-            'resume' in context.first
-              ? context.first.resume.workspaceId
-              : context.first.workspaceId,
+          // A resumed Session keeps the worktree it was saved with.
+          worktree: 'resume' in context.first ? null : context.first.worktree,
           cwd: 'resume' in context.first ? context.first.resume.cwd : context.first.cwd,
           nativeId: context.nativeId,
           firstPrompt: context.first.prompt,

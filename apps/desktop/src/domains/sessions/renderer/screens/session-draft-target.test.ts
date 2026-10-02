@@ -1,32 +1,25 @@
 import { expect, test } from 'bun:test'
-import type { WorkspaceState } from '@/domains/workspaces/renderer'
 import { draftTarget } from './session-draft-target'
 
-const main = {
-  id: 'workspace-main',
-  kind: 'main' as const,
-  displayName: 'Main checkout',
-  path: '/project',
-  facts: { branch: 'main', headSha: 'abc123', dirty: false },
-}
-const workspace: WorkspaceState = {
-  workspaces: [main],
-  workspace: main,
-  choice: main.id,
-  saveFailed: false,
-}
+const options = { checkout: { path: '/project', branch: 'main' }, branches: ['main', 'base'] }
 const input = {
   identity: { kind: 'draft' as const, projectId: 'project-one' },
   harness: { harness: 'codex' as const },
   projectId: 'project-one',
 }
 
-test('starts a new worktree only for the explicit New worktree choice', () => {
+test('a new Session draft runs in the main checkout, or in a new worktree from its start', () => {
   expect(
-    draftTarget({ ...input, workspace: { ...workspace, workspace: null, choice: 'new' } }),
-  ).toMatchObject({ workspaceId: null })
-  expect(draftTarget({ ...input, workspace })).toMatchObject({ workspaceId: main.id })
+    draftTarget({ ...input, worktree: { options, newWorktree: false, from: null } }),
+  ).toMatchObject({ worktree: { type: 'main' } })
+  const from = 'base'
+  expect(draftTarget({ ...input, worktree: { options, newWorktree: true, from } })).toMatchObject({
+    worktree: { type: 'new', from },
+  })
+})
+
+test('a new Session draft has no target until the options load', () => {
   expect(
-    draftTarget({ ...input, workspace: { ...workspace, workspace: null, choice: main.id } }),
+    draftTarget({ ...input, worktree: { options: null, newWorktree: true, from: null } }),
   ).toBeNull()
 })
