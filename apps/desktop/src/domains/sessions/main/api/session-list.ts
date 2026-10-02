@@ -9,6 +9,7 @@ import {
   getTableColumns,
   isNotNull,
   isNull,
+  notExists,
   type SQL,
   sql,
 } from 'drizzle-orm'
@@ -238,6 +239,21 @@ function linkedTicketId(database: Database, source: LinkedTicketSource | null): 
   return sql`(${found})`
 }
 
+// A Session saved as a Subagent of its Harness is a child, with or without a known parent, not a row.
+function notListedAsSubagent(database: Database): SQL {
+  return notExists(
+    database
+      .select({ found: sql`1` })
+      .from(sessionSubagent)
+      .where(
+        and(
+          eq(sessionSubagent.harness, sessionTable.harness),
+          eq(sessionSubagent.nativeId, sessionTable.nativeId),
+        ),
+      ),
+  )
+}
+
 // The stored Sessions `where` selects, with their linked Ticket, archive mark and match count.
 function storedSessionQuery(
   database: Database,
@@ -250,7 +266,7 @@ function storedSessionQuery(
     .leftJoin(sessionTicketLink, eq(sessionTicketLink.sessionId, sessionTable.argoId))
     .leftJoin(ticketContent, eq(ticketContent.ticketId, linkedTicketId(database, source)))
     .leftJoin(sessionArchive, eq(sessionArchive.sessionId, sessionTable.argoId))
-    .where(where)
+    .where(and(where, notListedAsSubagent(database)))
 }
 
 type StoredSessionRow = ReturnType<ReturnType<typeof storedSessionQuery>['all']>[number]

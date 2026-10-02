@@ -25,13 +25,17 @@ import {
 import { readMockReplyDelayMs } from '@/harnesses/proof-protocol'
 import { recordedAcpDiscovery as recorded } from '@/mocks/recordings/claude-acp'
 import { MOCK_CLAUDE_ACP_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
+import type { MockClaudeAcpOptions } from './mock-claude-acp-cli.ts'
 import { mockClaudeAcpFolder, mockClaudeAcpReply } from './mock-claude-acp-transcripts.ts'
 
 process.title = MOCK_CLAUDE_ACP_PROCESS_TITLE
 
 const folder = mockClaudeAcpFolder(process.argv[2] ?? process.cwd())
 const REPLY_DELAY_MS = readMockReplyDelayMs()
-const options = JSON.parse(readFileSync(process.argv[3] ?? '', 'utf8'))
+// `writeMockClaudeAcp` writes this file beside the executable.
+const options: MockClaudeAcpOptions & { requestLog?: string } = JSON.parse(
+  readFileSync(process.argv[3] ?? '', 'utf8'),
+)
 function record(method: string) {
   if (options.requestLog !== undefined)
     appendFileSync(options.requestLog, `${JSON.stringify({ method })}\n`)

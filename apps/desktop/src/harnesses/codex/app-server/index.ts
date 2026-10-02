@@ -10,6 +10,7 @@ export {
   isThreadNotLoaded,
 } from './codex-app-server-client'
 export type { JsonValue } from './protocol-generated/serde_json/json-value'
+export type { SubAgentSource } from './protocol-generated/sub-agent-source'
 export type { AgentMessageDeltaNotification } from './protocol-generated/v2/agent-message-delta-notification'
 export type { ConfigLayer } from './protocol-generated/v2/config-layer'
 export type { ConfigReadParams } from './protocol-generated/v2/config-read-params'

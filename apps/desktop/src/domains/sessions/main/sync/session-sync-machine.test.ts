@@ -3,24 +3,33 @@ import { test } from 'vitest'
 import { createActor, type EventFrom, fromPromise, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
 import type {
+  SessionSubagentLink,
   SessionSummaryList,
   SessionSummaryListResult,
 } from '@/domains/sessions/api/session-discovery'
-import { SESSION_SYNC_BATCH_SIZE, sessionSyncMachine } from './session-sync-machine'
+import {
+  SESSION_SYNC_BATCH_SIZE,
+  type SessionSyncListing,
+  sessionSyncMachine,
+} from './session-sync-machine'
 
 const twoBatchRecords = Array.from({ length: SESSION_SYNC_BATCH_SIZE + 1 }, (_value, index) => ({
   nativeId: `native-${index}`,
   customTitle: null,
 }))
 const listSessionSummaries: SessionSummaryList = async () => ({ records: [], skipped: 0 })
-const input = { harness: 'claude' as const, knownNativeIds: [], listSessionSummaries }
-const fetchTwoBatchRecords = fromPromise<
-  SessionSummaryListResult,
-  { knownNativeIds: string[]; listSessionSummaries: SessionSummaryList }
->(async () => ({
-  records: twoBatchRecords,
-  skipped: 0,
-}))
+const input = {
+  harness: 'claude' as const,
+  knownNativeIds: [],
+  knownSubagentNativeIds: [],
+  listSessionSummaries,
+}
+const fetchTwoBatchRecords = fromPromise<SessionSummaryListResult, SessionSyncListing>(
+  async () => ({
+    records: twoBatchRecords,
+    skipped: 0,
+  }),
+)
 
 test('moves from Idle through Fetching and Saving to Ready', async () => {
   let saved = 0
@@ -58,7 +67,7 @@ test('saves previously stored child IDs even when the scan has no Session record
   let saved:
     | {
         records: string[]
-        subagents: { nativeId: string; parentNativeId: string }[]
+        subagents: SessionSubagentLink[]
       }
     | undefined
   const actor = createActor(
@@ -99,7 +108,7 @@ test('saves previously stored child IDs even when the scan has no Session record
 test('saves child links after every root batch has been written', async () => {
   const batches: {
     records: string[]
-    subagents: { nativeId: string; parentNativeId: string }[]
+    subagents: SessionSubagentLink[]
   }[] = []
   const actor = createActor(
     sessionSyncMachine.provide({
@@ -141,10 +150,7 @@ test('fails after three fetch attempts', async () => {
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
-        fetch: fromPromise<
-          SessionSummaryListResult,
-          { knownNativeIds: string[]; listSessionSummaries: SessionSummaryList }
-        >(async () => {
+        fetch: fromPromise<SessionSummaryListResult, SessionSyncListing>(async () => {
           attempts += 1
           throw new Error('Claude is unavailable.')
         }),

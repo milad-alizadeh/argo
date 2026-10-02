@@ -188,6 +188,50 @@
   //             never add an entry to make a build pass.
   "overrides": [
     {
+      // #3174: package types in the renderer program load `node`, so only this rule bans Node globals
+      // there. The list covers every source file the renderer bundle imports; tests may read files.
+      "includes": [
+        "apps/desktop/src/renderer/**",
+        "apps/desktop/src/platform/renderer/**",
+        "apps/desktop/src/platform/contract/**",
+        "apps/desktop/src/domains/*/renderer/**",
+        "apps/desktop/src/domains/*/contract/**",
+        "apps/desktop/src/domains/*/api/**",
+        "apps/desktop/src/shared/**",
+        "apps/desktop/src/harnesses/*/presentation/**",
+        "apps/desktop/src/harnesses/harness.ts",
+        "apps/desktop/src/harnesses/harness-presentation.ts",
+        "apps/desktop/src/harnesses/presentation-registry.ts",
+        "apps/desktop/src/harnesses/copy-registry.ts",
+        "apps/desktop/src/harnesses/acp/acp-agents.ts",
+        "apps/desktop/src/harnesses/codex/auto-compact-limit.ts",
+        "apps/desktop/src/providers/*/presentation.ts",
+        "apps/desktop/src/providers/presentation-registry.ts",
+        "apps/desktop/src/providers/copy-registry.ts",
+        "!**/*.test.ts",
+        "!**/*.test.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedGlobals": {
+              "level": "error",
+              "options": {
+                "deniedGlobals": {
+                  "process": "The renderer has no Node. Read settings through the preload bridge.",
+                  "Buffer": "The renderer has no Node. Use Uint8Array.",
+                  "require": "The renderer has no Node. Use an import.",
+                  "__dirname": "The renderer has no Node.",
+                  "__filename": "The renderer has no Node.",
+                  "global": "The renderer has no Node. Use globalThis."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "includes": [
         "apps/desktop/src/domains/projects/main/**/*.ts",
         "apps/desktop/src/domains/tickets/main/**/*.ts"

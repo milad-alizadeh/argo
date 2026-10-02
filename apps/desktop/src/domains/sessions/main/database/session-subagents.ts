@@ -1,10 +1,17 @@
-import { inArray, sql } from 'drizzle-orm'
+import { eq, inArray, sql } from 'drizzle-orm'
+import { z } from 'zod'
 import type { Database } from '@/database/database'
+import { sessionTable } from '@/database/session/schema'
 import { type SESSION_SUBAGENT_STATES, sessionSubagent } from '@/database/session-subagent/schema'
 import { sessionSubagentSelectSchema } from '@/database/session-subagent/validation'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import type { Harness } from '@/harnesses/harness'
 
 type Delegation = Extract<FeedContent, { kind: 'delegation' }>
+// A Subagent keeps the first parent saved for it; a later save only fills a missing one.
+const keptParent = sql`coalesce(${sessionSubagent.parentSessionId}, excluded.parent_session_id)`
+// The rows read here are all under a parent, so a row without one is unrecognised.
+const parentedSubagentSchema = sessionSubagentSelectSchema.extend({ parentSessionId: z.string() })
 export type StoredSubagent = {
   id: string
   label: string | null
@@ -34,15 +41,6 @@ function subagentsOf(content: readonly FeedContent[]): StoredSubagent[] {
   return [...subagents.values()]
 }
 
-function subagentRows(sessionId: string, subagents: readonly StoredSubagent[]) {
-  return subagents.map((subagent) => ({
-    sessionId,
-    subagentId: subagent.id,
-    label: subagent.label,
-    state: subagent.state,
-  }))
-}
-
 // Saves the Subagents delegation content names. Returns how many rows changed.
 export function saveSessionSubagents(
   database: Database,
@@ -58,41 +56,71 @@ export function saveSessionSubagentFacts(
   subagents: readonly StoredSubagent[],
 ): number {
   if (subagents.length === 0) return 0
+  const parent = database
+    .select({ harness: sessionTable.harness })
+    .from(sessionTable)
+    .where(eq(sessionTable.argoId, sessionId))
+    .get()
+  if (parent === undefined) {
+    console.warn(
+      `Skipped ${subagents.length} Subagent(s) of Session ${sessionId}, which is not saved.`,
+    )
+    return 0
+  }
   const { changes } = database
     .insert(sessionSubagent)
-    .values(subagentRows(sessionId, subagents))
+    .values(
+      subagents.map((subagent) => ({
+        harness: parent.harness,
+        nativeId: subagent.id,
+        parentSessionId: sessionId,
+        label: subagent.label,
+        state: subagent.state,
+      })),
+    )
     .onConflictDoUpdate({
-      target: [sessionSubagent.sessionId, sessionSubagent.subagentId],
+      target: [sessionSubagent.harness, sessionSubagent.nativeId],
       // A Subagent that ends names no description, so the label it started with stands.
       set: {
+        parentSessionId: keptParent,
         label: sql`coalesce(excluded.label, ${sessionSubagent.label})`,
         state: sql`excluded.state`,
       },
-      setWhere: sql`${sessionSubagent.state} is not excluded.state or coalesce(excluded.label, ${sessionSubagent.label}) is not ${sessionSubagent.label}`,
+      setWhere: sql`${sessionSubagent.parentSessionId} is null or ${sessionSubagent.state} is not excluded.state or coalesce(excluded.label, ${sessionSubagent.label}) is not ${sessionSubagent.label}`,
     })
     .run()
   return Number(changes)
 }
 
+export type DiscoveredSubagent = { nativeId: string; parentSessionId: string | null }
+
+// Saves the Subagents discovery found; returns those saved first or given their first parent.
 export function saveDiscoveredSessionSubagents(
   database: Database,
-  sessionId: string,
-  childIds: readonly string[],
-): number {
-  if (childIds.length === 0) return 0
-  const { changes } = database
+  harness: Harness,
+  subagents: readonly DiscoveredSubagent[],
+): DiscoveredSubagent[] {
+  if (subagents.length === 0) return []
+  return database
     .insert(sessionSubagent)
     .values(
-      childIds.map((subagentId) => ({
-        sessionId,
-        subagentId,
+      subagents.map((subagent) => ({
+        ...subagent,
+        harness,
         label: null,
         state: 'unknown' as const,
       })),
     )
-    .onConflictDoNothing()
-    .run()
-  return Number(changes)
+    .onConflictDoUpdate({
+      target: [sessionSubagent.harness, sessionSubagent.nativeId],
+      set: { parentSessionId: keptParent },
+      setWhere: sql`${sessionSubagent.parentSessionId} is null and excluded.parent_session_id is not null`,
+    })
+    .returning({
+      nativeId: sessionSubagent.nativeId,
+      parentSessionId: sessionSubagent.parentSessionId,
+    })
+    .all()
 }
 
 export function storedSessionSubagents(
@@ -104,23 +132,23 @@ export function storedSessionSubagents(
   const rows = database
     .select()
     .from(sessionSubagent)
-    .where(inArray(sessionSubagent.sessionId, [...sessionIds]))
+    .where(inArray(sessionSubagent.parentSessionId, [...sessionIds]))
     .orderBy(sql`rowid`)
     .all()
   let rejected = 0
   for (const row of rows) {
-    const parsed = sessionSubagentSelectSchema.safeParse(row)
+    const parsed = parentedSubagentSchema.safeParse(row)
     if (!parsed.success) {
       rejected += 1
       continue
     }
-    const subagents = bySession.get(parsed.data.sessionId) ?? []
+    const subagents = bySession.get(parsed.data.parentSessionId) ?? []
     subagents.push({
-      id: parsed.data.subagentId,
+      id: parsed.data.nativeId,
       label: parsed.data.label,
       state: parsed.data.state,
     })
-    bySession.set(parsed.data.sessionId, subagents)
+    bySession.set(parsed.data.parentSessionId, subagents)
   }
   if (rejected > 0) console.warn(`Skipped ${rejected} unrecognised stored Subagent(s).`)
   return bySession

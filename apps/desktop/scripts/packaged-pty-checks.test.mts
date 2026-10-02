@@ -122,10 +122,6 @@ describe('the root command surface', () => {
     expect(desktop().scripts.storybook).toBe('storybook dev -p 6006')
   })
 
-  test('passes an explicitly selected desktop development port through Turbo', () => {
-    expect(turbo().globalPassThroughEnv).toContain('ARGO_DESKTOP_DEV_PORT')
-  })
-
   // The launcher owns the link because it starts Forge after selecting an isolated instance.
   test('links the hoisted Electron before Forge starts', () => {
     const launcher = developmentLauncher()

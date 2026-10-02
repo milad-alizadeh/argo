@@ -17,7 +17,10 @@ test('a thread the mock started elsewhere is discovered with its first prompt (#
   const session = openLiveSession(client, { ...mockStartInput, cwd: root, prompt: PROMPT })
   try {
     await waitFor(() => session.has('turn.completed'))
-    const { records } = await createCodexSessionSummaryList(client.request)({ knownNativeIds: [] })
+    const { records } = await createCodexSessionSummaryList(client.request)({
+      knownNativeIds: [],
+      knownSubagentNativeIds: [],
+    })
     const [record] = records
     expect(records).toHaveLength(1)
     expect(record?.preview).toBe(PROMPT)

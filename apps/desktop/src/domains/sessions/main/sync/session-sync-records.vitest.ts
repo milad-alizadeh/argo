@@ -3,15 +3,13 @@ import { symlink } from 'node:fs/promises'
 import path from 'node:path'
 import { onTestFinished, test } from 'vitest'
 import { createActor, fromPromise, waitFor } from 'xstate'
-import type {
-  SessionSummaryList,
-  SessionSummaryListResult,
-} from '@/domains/sessions/api/session-discovery'
+import type { SessionSummaryListResult } from '@/domains/sessions/api/session-discovery'
 import { insertProject, migratedDatabase } from '@/mocks/database/migrated-database'
 import { addLinkedWorktree, worktreeRepoFixture } from '@/mocks/projects/worktree-repo.fixture'
-import { sessionSyncMachine } from './session-sync-machine'
+import { type SessionSyncListing, sessionSyncMachine } from './session-sync-machine'
 import {
   knownSessionIds,
+  knownSubagentIds,
   matchSessionsToProjects,
   sessionRoots,
   saveSessionBatch as writeSessionBatch,
@@ -248,10 +246,10 @@ test('keeps the first committed batch when the second batch fails', async () => 
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
-        fetch: fromPromise<
-          SessionSummaryListResult,
-          { knownNativeIds: string[]; listSessionSummaries: SessionSummaryList }
-        >(async () => ({ records, skipped: 0 })),
+        fetch: fromPromise<SessionSummaryListResult, SessionSyncListing>(async () => ({
+          records,
+          skipped: 0,
+        })),
         save: fromPromise(async ({ input }) => {
           if (input.records[0]?.nativeId === 'native-50') {
             failedBatchAttempts += 1
@@ -265,6 +263,7 @@ test('keeps the first committed batch when the second batch fails', async () => 
       input: {
         harness: 'claude',
         knownNativeIds: [],
+        knownSubagentNativeIds: [],
         listSessionSummaries: async () => ({ records: [], skipped: 0 }),
       },
     },
@@ -315,6 +314,86 @@ test('keeps a live-saved Model and Effort when a later scan finds older ones', (
       },
     ])
     assert.deepEqual(storedTurnConfiguration(client), live)
+  } finally {
+    client.close()
+  }
+})
+
+test('links a saved Session once discovery finds it is a Subagent, and keeps its row (#3084)', () => {
+  const { client, database } = createDatabase()
+  try {
+    const [, childId] = saveSessionBatch(database, 'codex', [
+      { nativeId: 'parent' },
+      { nativeId: 'child' },
+    ])
+    saveSessionBatch(database, 'claude', [{ nativeId: 'child' }])
+    const batch = {
+      harness: 'codex' as const,
+      records: [{ nativeId: 'parent' }],
+      subagents: [
+        { nativeId: 'child', parentNativeId: 'parent' },
+        { nativeId: 'orphan-child', parentNativeId: 'unsaved-parent' },
+      ],
+    }
+    const [parentId, ...changed] = writeSessionBatch(database, batch)
+    assert.deepEqual(
+      client
+        .prepare('SELECT harness, native_id FROM session ORDER BY harness, native_id')
+        .all()
+        .map((row) => Object.assign({}, row)),
+      [
+        { harness: 'claude', native_id: 'child' },
+        { harness: 'codex', native_id: 'child' },
+        { harness: 'codex', native_id: 'parent' },
+      ],
+    )
+    const subagentRows = () =>
+      client
+        .prepare(
+          'SELECT harness, native_id, parent_session_id FROM session_subagent ORDER BY rowid',
+        )
+        .all()
+        .map((row) => Object.assign({}, row))
+    // A child whose parent is not saved yet is still a Subagent, with no parent.
+    assert.deepEqual(subagentRows(), [
+      { harness: 'codex', native_id: 'child', parent_session_id: parentId },
+      { harness: 'codex', native_id: 'orphan-child', parent_session_id: null },
+    ])
+    assert.deepEqual(changed, [parentId, childId])
+    assert.deepEqual(writeSessionBatch(database, batch), [parentId])
+    // Discovery reads a Subagent with no saved parent again, so only `child` is known.
+    assert.deepEqual(knownSubagentIds(database, 'codex'), ['child'])
+    assert.deepEqual(knownSubagentIds(database, 'claude'), [])
+
+    // Once its parent is saved, the child takes it on the next read.
+    const [laterParentId, ...laterChanged] = writeSessionBatch(database, {
+      ...batch,
+      records: [{ nativeId: 'unsaved-parent' }],
+    })
+    assert.deepEqual(laterChanged, [laterParentId])
+    assert.deepEqual(subagentRows()[1], {
+      harness: 'codex',
+      native_id: 'orphan-child',
+      parent_session_id: laterParentId,
+    })
+    assert.deepEqual(knownSubagentIds(database, 'codex'), ['child', 'orphan-child'])
+  } finally {
+    client.close()
+  }
+})
+
+test('saves a Subagent that names no parent, and leaves it for the next sync to read again (#3084)', () => {
+  const { client, database } = createDatabase()
+  try {
+    const [childId] = saveSessionBatch(database, 'codex', [{ nativeId: 'parentless' }])
+    const batch = {
+      harness: 'codex' as const,
+      records: [],
+      subagents: [{ nativeId: 'parentless', parentNativeId: null }],
+    }
+    assert.deepEqual(writeSessionBatch(database, batch), [childId])
+    assert.deepEqual(writeSessionBatch(database, batch), [])
+    assert.deepEqual(knownSubagentIds(database, 'codex'), [])
   } finally {
     client.close()
   }

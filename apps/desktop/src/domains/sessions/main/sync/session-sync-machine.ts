@@ -8,17 +8,20 @@ import type {
 import type { Harness } from '@/harnesses/harness'
 export const SESSION_SYNC_BATCH_SIZE = 50
 
+// The stored Sessions and parented Subagents one sync lists against, and the Harness's listing.
+export type SessionSyncListing = {
+  knownNativeIds: string[]
+  knownSubagentNativeIds: string[]
+  listSessionSummaries: SessionSummaryList
+}
+
 export const sessionSyncMachine = setup({
   types: {
-    input: {} as {
+    input: {} as SessionSyncListing & {
       harness: Harness
-      knownNativeIds: string[]
-      listSessionSummaries: SessionSummaryList
     },
-    context: {} as {
+    context: {} as SessionSyncListing & {
       harness: Harness
-      knownNativeIds: string[]
-      listSessionSummaries: SessionSummaryList
       records: SessionSummary[]
       subagents: SessionSubagentLink[]
       processed: number
@@ -51,15 +54,10 @@ export const sessionSyncMachine = setup({
         },
   },
   actors: {
-    fetch: fromPromise<
-      SessionSummaryListResult,
-      {
-        knownNativeIds: string[]
-        listSessionSummaries: SessionSummaryList
-      }
-    >(({ input }) =>
+    fetch: fromPromise<SessionSummaryListResult, SessionSyncListing>(({ input }) =>
       input.listSessionSummaries({
         knownNativeIds: input.knownNativeIds,
+        knownSubagentNativeIds: input.knownSubagentNativeIds,
       }),
     ),
     save: fromPromise<
@@ -122,6 +120,7 @@ export const sessionSyncMachine = setup({
   context: ({ input }) => ({
     harness: input.harness,
     knownNativeIds: input.knownNativeIds,
+    knownSubagentNativeIds: input.knownSubagentNativeIds,
     listSessionSummaries: input.listSessionSummaries,
     records: [],
     subagents: [],
@@ -148,6 +147,7 @@ export const sessionSyncMachine = setup({
         src: 'fetch',
         input: ({ context }) => ({
           knownNativeIds: context.knownNativeIds,
+          knownSubagentNativeIds: context.knownSubagentNativeIds,
           listSessionSummaries: context.listSessionSummaries,
         }),
         onDone: [
