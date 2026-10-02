@@ -12,6 +12,7 @@
         "@biomejs/biome": "2.5.4",
         "@types/bun": "^1.4.2",
         "@types/node": "24.13.3",
+        "bun-types": "^1.4.2",
         "dependency-cruiser": "18.4.0",
         "drizzle-kit": "^1.0.0-rc.4",
         "jscpd": "^5.0.12",

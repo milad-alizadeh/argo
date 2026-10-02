@@ -83,10 +83,10 @@ is exempt by name because it reaches across domains on purpose to build test fix
 `sessions/main/index/session-index/roster-fixtures.ts`.
 `*.test.ts`/`*.stories.tsx` files are exempt too, matching the same allowance the old
 `biome.jsonc` matrix made. Nothing reads the import graph for cycles.
-- **`tsconfig.web.json` sets `"types": []`**, and it is load-bearing. Without it the renderer
-  inherits every package in the root `@types`, `node` among them, and `process.env.SOME_TOKEN`
-  type-checks clean in the one process that must never hold a token, with no import statement for
-  a specifier rule to see.
+- **`tsconfig.web.json`'s `"types": ["bun-types/test"]` keeps Bun globals out of the renderer,
+  but not Node globals.** The project also includes `.storybook/**/*.ts`, whose package types load
+  `node` (for example `@storybook/builder-vite` imports `vite`'s types). Globals are shared by the
+  whole program, so `process.env.SOME_TOKEN` type-checks clean in renderer source (#3174). Until that is fixed, the runtime settings in the next item are the only guard.
 - **`contextIsolation: true` and `nodeIntegration: false` in
   `apps/desktop/src/platform/main/window/create-window.ts` are
   asserted by nothing.** Those two values make any Node reach from the renderer inert at
