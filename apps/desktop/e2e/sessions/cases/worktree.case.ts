@@ -22,6 +22,23 @@ export async function reload(page: Page) {
   await page.waitForFunction(() => typeof window.argo?.trpc === 'function')
 }
 
+// Keeps the text of every toast the page shows. The notice closes after 5s, and a loaded runner can
+// stall the test past that between a reload and its next read (CI run 36993106639).
+function recordToasts() {
+  const shown: string[] = []
+  Object.assign(window, { shownToasts: shown })
+  new MutationObserver(() => {
+    for (const toast of document.querySelectorAll('[data-slot="toast"]')) {
+      const text = toast.textContent ?? ''
+      if (toast.checkVisibility() && !shown.includes(text)) shown.push(text)
+    }
+  }).observe(document, { childList: true, subtree: true, characterData: true })
+}
+
+function shownToasts(page: Page) {
+  return page.evaluate(() => (window as { shownToasts?: string[] }).shownToasts ?? [])
+}
+
 function worktreeSwitch(page: Page) {
   return page.getByRole('switch', { name: 'Worktree' })
 }
@@ -106,7 +123,7 @@ async function proveResume(
 
   // A reload opens the Session again, before any Send.
   await reload(page)
-  await expect(page.getByText(WORKTREE_GONE)).toBeVisible()
+  await expect.poll(() => shownToasts(page)).toContainEqual(expect.stringMatching(WORKTREE_GONE))
   const again = `Reply again from the removed ${harness} worktree.`
   await sendReplacingDraft(page, again)
   await backend.waitForReply(page, { harness, prompt: again })
@@ -118,6 +135,7 @@ export async function proveSessionWorktree(
   backend: SessionHarnessBackend,
 ) {
   await git(project, ['commit', '--allow-empty', '--quiet', '-m', 'base'])
+  await page.addInitScript(recordToasts)
   await openNewSessionByClick(page)
   // A new Project starts in its main checkout.
   await expect(worktreeSwitch(page)).toHaveAttribute('aria-checked', 'false')
