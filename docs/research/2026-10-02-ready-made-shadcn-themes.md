@@ -1,6 +1,7 @@
 # Ready-made shadcn themes for Argo
 
-**Checked:** 2026-10-02  
+**Checked:** 2026-10-02
+
 **Scope:** color-only use in Argo Desktop's existing Tailwind v4, shadcn Base UI token system. Theme means the selected color scheme; Mode means System, Light, or Dark. Each selected Theme must include both appearances, while System resolves the operating-system mode without changing the Theme.
 
 ## Recommendation
