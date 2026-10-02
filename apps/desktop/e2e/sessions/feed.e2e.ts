@@ -33,6 +33,7 @@ import { proveSelectionSurvivesRestart } from './cases/session-list-restart.case
 import { proveSessionListWindow } from './cases/session-list-window.case'
 import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
+import { proveTurnChipKeepsConfiguration } from './cases/turn-chip.case'
 import { proveLiveCodexModelChoices } from './cases/turn-configuration.case'
 import { proveSessionWorktree } from './cases/worktree.case'
 import { ACTIVE_FEED } from './feed-selectors'
@@ -382,6 +383,10 @@ test.describe('with a Harness that holds its start', () => {
 
     test(`session-${harness}-footer-keeps-harness`, async ({ session, backend }) => {
       await proveFooterKeepsHarness(session.page(), backend, harness)
+    })
+
+    test(`session-${harness}-turn-chip-keeps-configuration`, async ({ session, backend }) => {
+      await proveTurnChipKeepsConfiguration(session.page(), backend, harness)
     })
   }
 })
