@@ -10,6 +10,7 @@ import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversaria
 import { MOCK_START_REFUSED_FILE } from '../mock-cli.ts'
 import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { MOCK_CLAUDE_AGENTS_ENV } from './mock-claude-agents.ts'
+import { newestChainUuid } from './mock-claude-chain.ts'
 import { MOCK_CLAUDE_HELP, MOCK_CLAUDE_VERSION } from './mock-claude-cli.ts'
 import { createMockClaudeHooks } from './mock-claude-hooks.ts'
 import { replyToSdkPrompt } from './mock-claude-sdk-reply.ts'
@@ -84,7 +85,7 @@ function appendTranscript(data: string | Uint8Array) {
   mkdirSync(folder, { recursive: true })
   appendFileSync(transcript, data)
 }
-let parentUuid: string | null = null
+let parentUuid = newestChainUuid(transcript)
 function record(
   type: 'user' | 'assistant',
   message: Record<string, unknown>,
