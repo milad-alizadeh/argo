@@ -29,7 +29,7 @@ export function SessionRenameDialog({
 
   useEffect(() => {
     if (session === null) return
-    setName(session.name)
+    setName(session.name ?? '')
     setError(null)
   }, [session])
 

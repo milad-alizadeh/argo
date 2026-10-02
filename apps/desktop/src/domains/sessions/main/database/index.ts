@@ -17,6 +17,7 @@ export {
   setSessionCommandOutcome,
 } from './session-command-outcomes'
 export { createSessionCommandStore, type SessionCommandStore } from './session-command-store'
+export { saveFirstPromptOfUntitled, transcriptName } from './session-first-prompt'
 export {
   type StoredSubagent,
   saveDiscoveredSessionSubagents,

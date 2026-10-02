@@ -24,7 +24,7 @@ import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 import { ACTIVE_FEED } from './feed-selectors'
 import { prepare } from './fixtures/feed.fixture'
-import { openSessionByClick, PERSISTED_ROW } from './gestures'
+import { openSessionByClick, PERSISTED_ROW, sendFromComposer } from './gestures'
 import { sessionRows } from './page-trpc'
 
 const OLDER = 'Older terminal Session'
@@ -34,8 +34,13 @@ const UNTITLED_PROMPT = 'Started in a terminal and never named'
 const EARLIER = Date.parse('2026-09-01T09:00:00.000Z')
 const LATER = Date.parse('2026-09-02T09:00:00.000Z')
 
-// A Session with a null title has only its first prompt to show.
-type ExternalSession = { nativeId: string; title: string | null; activityAt: number }
+// A Session with a null title has only its first prompt to show, and with neither, nothing.
+type ExternalSession = {
+  nativeId: string
+  title: string | null
+  prompt?: string
+  activityAt: number
+}
 // What the stubbed CLI or app-server reports about a Session another process runs.
 type StatusSource = {
   harness: 'claude' | 'codex'
@@ -89,8 +94,8 @@ function claudeSource(): StatusSource {
       cwd = project
       const records = sessions.map((session) => ({
         sessionId: session.nativeId,
-        summary: session.title ?? UNTITLED_PROMPT,
-        firstPrompt: session.title ?? UNTITLED_PROMPT,
+        summary: session.title ?? '',
+        firstPrompt: session.prompt,
         lastModified: session.activityAt,
         cwd: project,
       }))
@@ -154,10 +159,10 @@ function codexSource(): StatusSource {
         name: session.title,
         preview: '',
         path: codexRollout(root, session),
-        turns: session.title === null ? [codexTurn(UNTITLED_PROMPT, 'completed')] : [],
+        turns: session.prompt === undefined ? [] : [codexTurn(session.prompt, 'completed')],
       }))
       await writeFile(codexState(root), JSON.stringify(threads))
-      return { CODEX_HOME: codexHome(root) }
+      return { CODEX_HOME: codexHome(root), ARGO_CODEX_E2E_STATE: codexState(root) }
     },
     holdLive,
     // No process holds a thread's writer lock.
@@ -187,8 +192,8 @@ async function launch(root: string, applicationUnderTest: string, source: Status
       [SESSION_CODEX_EXECUTABLE_ENV]: await writeMockCodexLive(root),
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
       [ACCEPTANCE_ENV]: '0',
-      ARGO_CODEX_E2E_STATE: codexState(root),
-      // Empty folders for the Harness the case does not seed, so parallel apps share no config.
+      // Empty places for the Harness the case does not seed, so it adds no rows and shares no config.
+      ARGO_CODEX_E2E_STATE: path.join(root, 'unseeded-codex-state.json'),
       CLAUDE_CONFIG_DIR: path.join(root, 'unseeded-claude-config'),
       CODEX_HOME: path.join(root, 'unseeded-codex-home'),
       ...(await source.seed(root, fixture.project, sessions)),
@@ -299,31 +304,60 @@ for (const createSource of [claudeSource, codexSource]) {
   })
 }
 
-// Claude and Codex rows draw the same title for a Session nobody named (#3077, #3148).
+// Claude and Codex rows draw the same title for a Session nobody named, and never its ID (#3167).
+const UNTITLED_CASES = [
+  {
+    title: 'shows its first prompt',
+    prompt: UNTITLED_PROMPT,
+    name: UNTITLED_PROMPT,
+    shown: UNTITLED_PROMPT,
+    sent: undefined,
+  },
+  {
+    title: 'and no prompt shows Untitled Session until a sent prompt names it',
+    prompt: undefined,
+    name: null,
+    shown: 'Untitled Session',
+    sent: 'Prompt into untitled',
+  },
+] as const
 for (const createSource of [claudeSource, codexSource]) {
-  test(`a ${createSource().harness} Session started elsewhere with no title shows its first prompt`, async ({
-    root,
-    applicationUnderTest,
-  }) => {
-    const titled = createSource()
-    const untitled = {
-      nativeId: '00000000-0000-4000-8000-00000000e003',
-      title: null,
-      activityAt: LATER,
-    }
-    const source: StatusSource = {
-      ...titled,
-      seed: (root, project) => titled.seed(root, project, [untitled]),
-    }
-    const { application, page } = await launch(root, applicationUnderTest, source)
-    try {
-      await expect
-        .poll(async () => (await sessionRows(page)).map(({ name }) => name), { timeout: 30_000 })
-        .toContain(UNTITLED_PROMPT)
-      await expect(rowTitled(page, UNTITLED_PROMPT)).toHaveCount(1)
-    } finally {
-      await closeApplication(application)
-      await source.stop()
-    }
-  })
+  for (const { title, prompt, name, shown, sent } of UNTITLED_CASES) {
+    test(`a ${createSource().harness} Session started elsewhere with no title ${title}`, async ({
+      root,
+      applicationUnderTest,
+    }) => {
+      const titled = createSource()
+      const untitled = {
+        nativeId: '00000000-0000-4000-8000-00000000e003',
+        title: null,
+        prompt,
+        activityAt: LATER,
+      }
+      const source: StatusSource = {
+        ...titled,
+        seed: (root, project) => titled.seed(root, project, [untitled]),
+      }
+      const { application, page } = await launch(root, applicationUnderTest, source)
+      try {
+        await expect
+          .poll(async () => (await sessionRows(page)).map((row) => row.name), { timeout: 30_000 })
+          .toEqual([name])
+        await expect(rowTitled(page, shown)).toHaveCount(1)
+        const shownId = page.locator(PERSISTED_ROW).filter({ hasText: /[0-9a-f]{8}-[0-9a-f]{4}-/ })
+        await expect(shownId).toHaveCount(0)
+        if (sent === undefined) return
+        // The row and header take the prompt as the title live, with no reload.
+        const [row] = await sessionRows(page)
+        if (row === undefined) throw new Error('The untitled Session row is absent.')
+        await openSessionByClick(page, row.id)
+        await sendFromComposer(page, sent)
+        await expect(rowTitled(page, sent)).toHaveCount(1, { timeout: 10_000 })
+        await expect(page.getByRole('heading', { level: 1, name: sent })).toBeVisible()
+      } finally {
+        await closeApplication(application)
+        await source.stop()
+      }
+    })
+  }
 }

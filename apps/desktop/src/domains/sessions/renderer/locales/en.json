@@ -10,6 +10,7 @@
     "failed": "Could not sync Sessions."
   },
   "newSession": "New Session",
+  "untitledSession": "Untitled Session",
   "identity": {
     "from": "from"
   },

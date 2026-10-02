@@ -324,7 +324,7 @@ test('names a Session saved with an empty preview by its first prompt (#3077)', 
   }
 })
 
-test('names a Session by its title, else its ID', async () => {
+test('names a Session by its title, else by nothing, never its ID (#3167)', async () => {
   const { database, list } = sessionListCaller()
   try {
     insertSession(database, {
@@ -334,12 +334,13 @@ test('names a Session by its title, else its ID', async () => {
       createdAt: 30,
     })
     insertSession(database, { id: IDS[1], nativeId: 'native-2', createdAt: 20 })
+    insertSession(database, { id: IDS[2], nativeId: 'native-3', firstPrompt: '', createdAt: 10 })
 
     const result = await list({ projectId: 'project-1' })
 
     assert.deepEqual(
       result.rows.map(({ name }) => name),
-      ['Prompt', IDS[1]],
+      ['Prompt', null, null],
     )
   } finally {
     database.$client.close()
