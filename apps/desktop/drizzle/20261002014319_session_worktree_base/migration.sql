@@ -1,1 +1,0 @@
-ALTER TABLE `session` ADD `worktree_base` text;

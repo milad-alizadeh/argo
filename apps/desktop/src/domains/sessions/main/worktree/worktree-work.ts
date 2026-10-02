@@ -1,7 +1,4 @@
-import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
-
-const run = promisify(execFile)
+import { runGit } from './worktree-folder'
 
 // What removing a worktree would delete. A count git could not read is null, and is never clean.
 export type WorktreeWork = {
@@ -12,7 +9,7 @@ export type WorktreeWork = {
 }
 
 function count(arguments_: string[], parse: (stdout: string) => number): Promise<number | null> {
-  return run('git', arguments_).then(
+  return runGit(arguments_).then(
     ({ stdout }) => parse(stdout),
     () => null,
   )

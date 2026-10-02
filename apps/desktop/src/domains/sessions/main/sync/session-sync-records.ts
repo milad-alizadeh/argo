@@ -8,10 +8,10 @@ import type { SessionWorktree } from '@/database/session/validation'
 import type { SessionSummary } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
 import { createSessionUpsert } from '../database'
-import { projectFolders, readWorktreeBranch } from '../worktree'
+import { projectFolders } from '../worktree'
 
 // `worktree` is a linked worktree git lists, other than the folder the Project was added from.
-type SessionRoot = {
+export type SessionRoot = {
   projectId: string
   path: string
   worktree: Omit<SessionWorktree, 'base'> | null
@@ -39,28 +39,24 @@ export function knownSessionIds(database: Database, harness: Harness): string[] 
     .map((row) => row.nativeId)
 }
 
-// Each Project's own folder, its main checkout and every linked worktree git lists for it.
-async function sessionRoots(database: Database): Promise<SessionRoot[]> {
+// Each Project's own folder, its main checkout and every linked worktree git lists for it. Read once
+// per sync: it reads every Project's `.git` layout.
+export async function sessionRoots(database: Database): Promise<SessionRoot[]> {
   const projects = database.select({ id: project.id, path: project.path }).from(project).all()
   const perProject = await Promise.all(
-    projects.map(async (candidate) => {
-      const folders = await projectFolders(candidate.path).catch(() => ({
-        main: candidate.path,
-        linked: [],
-      }))
-      const own = await realpath(candidate.path).catch(() => candidate.path)
-      const linked = await Promise.all(
-        folders.linked.map(async (folder) => ({
-          projectId: candidate.id,
-          path: folder,
-          worktree:
-            folder === own ? null : { path: folder, branch: await readWorktreeBranch(folder) },
-        })),
-      )
+    projects.map(async (candidate): Promise<SessionRoot[]> => {
+      const [folders, own] = await Promise.all([
+        projectFolders(candidate.path),
+        realpath(candidate.path).catch(() => candidate.path),
+      ])
       return [
         { projectId: candidate.id, path: candidate.path, worktree: null },
         { projectId: candidate.id, path: folders.main, worktree: null },
-        ...linked,
+        ...folders.linked.map((linked) => ({
+          projectId: candidate.id,
+          path: linked.path,
+          worktree: linked.path === own ? null : linked,
+        })),
       ]
     }),
   )
@@ -93,11 +89,10 @@ async function withProjectMatch(
   return { ...matched, worktreePath: root.worktree.path, worktreeBranch: root.worktree.branch }
 }
 
-export async function matchSessionsToProjects(
-  database: Database,
+export function matchSessionsToProjects(
+  roots: readonly SessionRoot[],
   records: readonly SessionSummary[],
 ): Promise<SessionSummary[]> {
-  const roots = await sessionRoots(database)
   return Promise.all(records.map((record) => withProjectMatch(roots, record)))
 }
 

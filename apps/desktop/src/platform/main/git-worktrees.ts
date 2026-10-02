@@ -1,6 +1,5 @@
-// The one reader of a Project's `.git` layout: the common git directory, and the raw paths of the
-// main worktree and every linked one. Session scoping (project-scope.ts) and worktree discovery
-// both build on this rather than each walking `.git` and `worktrees/*/gitdir` by hand.
+// The one reader of a Project's `.git` layout: the common git directory, the main worktree, and
+// every linked one with its branch.
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 
@@ -23,16 +22,24 @@ export function mainWorktreePath(commonDirectory: string): string | null {
   return path.basename(commonDirectory) === '.git' ? path.dirname(commonDirectory) : null
 }
 
-// Every linked worktree's root, read from `<common>/worktrees/<name>/gitdir`. Unresolved: callers
-// that need symlinks settled (macOS `/tmp` vs `/private/tmp`) resolve them themselves.
-export async function linkedWorktreePaths(commonDirectory: string): Promise<string[]> {
+// Every linked worktree's root and branch (null when detached), from `<common>/worktrees/<name>/`.
+// Unresolved: callers settle symlinks (macOS `/tmp` vs `/private/tmp`) themselves.
+export async function linkedWorktrees(
+  commonDirectory: string,
+): Promise<{ path: string; branch: string | null }[]> {
   const worktrees = path.join(commonDirectory, 'worktrees')
   const names = await readdir(worktrees).catch(() => [])
-  const roots = await Promise.all(
+  const found = await Promise.all(
     names.map(async (name) => {
-      const gitdir = await readFile(path.join(worktrees, name, 'gitdir'), 'utf8').catch(() => null)
-      return gitdir === null ? null : path.dirname(path.resolve(worktrees, name, gitdir.trim()))
+      const [gitdir, head] = await Promise.all(
+        ['gitdir', 'HEAD'].map((file) =>
+          readFile(path.join(worktrees, name, file), 'utf8').catch(() => null),
+        ),
+      )
+      if (gitdir === null || gitdir === undefined) return null
+      const branch = head?.match(/^ref: refs\/heads\/(.+)\s*$/)?.[1] ?? null
+      return { path: path.dirname(path.resolve(worktrees, name, gitdir.trim())), branch }
     }),
   )
-  return roots.filter((root) => root !== null)
+  return found.filter((worktree) => worktree !== null)
 }

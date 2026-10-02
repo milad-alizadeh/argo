@@ -38,7 +38,11 @@ import {
   SessionInteractionBroker,
 } from '@/domains/sessions/main/live'
 import type { SessionSyncSupervisorActor } from '@/domains/sessions/main/sync'
-import { createWorktree, removeSessionWorktrees } from '@/domains/sessions/main/worktree'
+import {
+  createWorktree,
+  type RemovedWorktree,
+  removeSessionWorktrees,
+} from '@/domains/sessions/main/worktree'
 import {
   failInterruptedTicketSearches,
   markInterruptedTicketScans,
@@ -409,14 +413,21 @@ function turnRunningCheck(actors: WindowActors) {
 // One removal at a time, so two archives never race over the same worktree.
 const worktreeRemovals = createWriteQueue()
 
-function queueWorktreeRemoval(
+// The archive already happened, so a failed removal is reported and answered with no outcomes.
+async function queueWorktreeRemoval(
   database: Database,
   actors: WindowActors,
   input: Parameters<typeof removeSessionWorktrees>[1],
-): void {
-  void worktreeRemovals(() =>
+): Promise<RemovedWorktree[]> {
+  const removed = await worktreeRemovals(() =>
     removeSessionWorktrees({ database, isRunning: turnRunningCheck(actors) }, input),
-  ).catch((error) => console.error('Session worktree removal failed.', error))
+  ).catch((error: unknown) => {
+    console.error('Session worktree removal failed.', error)
+    return []
+  })
+  const left = removed.filter(({ outcome }) => outcome === 'running' || outcome === 'refused')
+  if (left.length > 0) console.warn(`${left.length} Session worktree(s) were not removed.`, left)
+  return removed
 }
 
 // The Session services the app runs once, not per window: one set of Feed readers, the Session

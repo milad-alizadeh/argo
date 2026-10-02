@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { fileInWorkspace, readFileInWorkspace, skillFileContent } from './session-file-reads'
+import { fileInFolder, readFileInFolder, skillFileContent } from './session-file-reads'
 
 const directories: string[] = []
 
@@ -18,19 +18,19 @@ async function scratch() {
 }
 
 describe('session file reads', () => {
-  test('a workspace file stays inside the session directory', async () => {
+  test('a file stays inside the session directory', async () => {
     const root = await scratch()
-    const workspace = path.join(root, 'workspace')
-    const inside = path.join(workspace, 'src', 'note.txt')
+    const folder = path.join(root, 'folder')
+    const inside = path.join(folder, 'src', 'note.txt')
     await mkdir(path.dirname(inside), { recursive: true })
     await writeFile(inside, 'inside')
-    assert.equal(fileInWorkspace(workspace, 'src/note.txt'), inside)
-    assert.equal(fileInWorkspace(workspace, '../outside.txt'), null)
+    assert.equal(fileInFolder(folder, 'src/note.txt'), inside)
+    assert.equal(fileInFolder(folder, '../outside.txt'), null)
     const outside = path.join(root, 'secret.txt')
     await writeFile(outside, 'secret')
-    await symlink(outside, path.join(workspace, 'linked.txt'))
-    assert.equal(await readFileInWorkspace(workspace, 'src/note.txt'), 'inside')
-    assert.equal(await readFileInWorkspace(workspace, 'linked.txt'), null)
+    await symlink(outside, path.join(folder, 'linked.txt'))
+    assert.equal(await readFileInFolder(folder, 'src/note.txt'), 'inside')
+    assert.equal(await readFileInFolder(folder, 'linked.txt'), null)
   })
 
   test('a skill read returns only a real SKILL.md', async () => {

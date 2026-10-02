@@ -30,3 +30,22 @@ export const sessionWorktreeSchema = z.strictObject({
   base: sessionSelectSchema.shape.worktreeBase,
 })
 export type SessionWorktree = z.infer<typeof sessionWorktreeSchema>
+
+type SessionWorktreeColumns = {
+  worktreePath: string | null
+  worktreeBranch: string | null
+  worktreeBase: string | null
+}
+
+export function sessionWorktreeFromColumns(row: SessionWorktreeColumns): SessionWorktree | null {
+  const { worktreePath: path, worktreeBranch: branch, worktreeBase: base } = row
+  return path === null ? null : { path, branch, base }
+}
+
+export function sessionWorktreeColumns(worktree: SessionWorktree | null): SessionWorktreeColumns {
+  return {
+    worktreePath: worktree?.path ?? null,
+    worktreeBranch: worktree?.branch ?? null,
+    worktreeBase: worktree?.base ?? null,
+  }
+}

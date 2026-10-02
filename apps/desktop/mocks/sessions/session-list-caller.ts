@@ -82,8 +82,9 @@ export function sessionListCaller({
       renames.push(request)
       await rename(request)
     },
-    removeSessionWorktrees: (input: (typeof removalRequests)[number]) => {
+    removeSessionWorktrees: async (input: (typeof removalRequests)[number]) => {
       removalRequests.push(input)
+      return []
     },
   }
   const stopWatching = watchSessionList(context)

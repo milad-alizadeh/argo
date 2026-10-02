@@ -102,7 +102,6 @@ The desktop domains now have these owners:
 | Projects | `domains/projects/main`, `renderer` | `main/api/project-register.ts` owns Project registration; `renderer/onboarding/screens/project-setup-screen.tsx` owns setup. |
 | Sessions | `domains/sessions/api`, `main`, `renderer` | `api/session-live-event.ts` owns Feed messages; `main/sync/session-sync-machine.ts` owns sync; `renderer/screens/session-screen-details.tsx` owns the screen. |
 | Tickets | `domains/tickets/contract`, `main`, `renderer` | `api/ticket.ts` owns runtime-neutral Ticket values; `main/api/ticket-procedures.ts` owns tRPC procedure schemas; callers infer types from the router; `main/ticket-index-service.ts` owns SQLite list reads; `renderer/sidebar/ticket-row.tsx` owns row display. |
-| Workspaces | `domains/workspaces/main`, `renderer` | `main/workspace-resolve-path.ts` owns path lookup; `renderer/use-workspaces.ts` owns workspace choices. |
 | Providers | `src/providers/` | `providers/registry.ts` selects adapters; `providers/github/issues.ts` and `providers/linear/issues.ts` read Tickets. |
 | Harnesses | `src/harnesses/` | `harnesses/claude/registration.ts` and `harnesses/codex/registration.ts` connect vendor protocols to Sessions. |
 | Renderer composition | `src/renderer/main.tsx`, `src/renderer/app-router.tsx`, `src/renderer/catalogs.ts` | These files assemble routes, catalogs, and domains. They do not own domain behavior. |

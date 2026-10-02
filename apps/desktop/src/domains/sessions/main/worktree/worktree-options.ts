@@ -1,9 +1,7 @@
 // What the composer's Worktree row offers a new Session: the Project's remembered switch, its main
 // checkout and current branch, and the local branches a new worktree can start from.
-import { execFile } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { realpath } from 'node:fs/promises'
-import { promisify } from 'node:util'
 import { initTRPC, TRPCError } from '@trpc/server'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -12,12 +10,12 @@ import { project } from '@/database/project/schema'
 import { projectSelectSchema } from '@/database/project/validation'
 import {
   gitCommonDirectory,
-  linkedWorktreePaths,
+  linkedWorktrees,
   mainWorktreePath,
 } from '@/platform/main/git-worktrees'
 import { readWorktreeBranch } from './worktree-branch'
+import { runGit } from './worktree-folder'
 
-const run = promisify(execFile)
 const t = initTRPC.create()
 
 const inputSchema = z.strictObject({ projectId: projectSelectSchema.shape.id })
@@ -41,25 +39,37 @@ export type WorktreeOptionsContext = {
   exclusive: <T>(work: () => Promise<T>) => Promise<T>
 }
 
-type ProjectFolders = { main: string; linked: string[] }
+type LinkedWorktree = { path: string; branch: string | null }
+type ProjectFolders = { main: string; linked: LinkedWorktree[] }
 
-// The main checkout and every linked worktree git lists, by real path.
+// The main checkout and every linked worktree git lists, by real path. Reads files, never runs git.
 export async function projectFolders(projectPath: string): Promise<ProjectFolders> {
   const common = await gitCommonDirectory(projectPath)
   const main = mainWorktreePath(common) ?? projectPath
   const resolvedMain = await realpath(main).catch(() => main)
-  const linked = new Set<string>()
-  for (const candidate of await linkedWorktreePaths(common)) {
+  const linked = new Map<string, LinkedWorktree>()
+  for (const candidate of await linkedWorktrees(common)) {
     // A worktree deleted without `git worktree prune` still has its gitdir entry.
-    const resolved = await realpath(candidate).catch(() => null)
-    if (resolved !== null && resolved !== resolvedMain) linked.add(resolved)
+    const resolved = await realpath(candidate.path).catch(() => null)
+    if (resolved !== null && resolved !== resolvedMain)
+      linked.set(resolved, { path: resolved, branch: candidate.branch })
   }
-  return { main: resolvedMain, linked: [...linked] }
+  return { main: resolvedMain, linked: [...linked.values()] }
+}
+
+// The Project's main checkout, or null for a Project that is not registered.
+export async function mainCheckout(database: Database, projectId: string): Promise<string | null> {
+  const registered = database
+    .select({ path: project.path })
+    .from(project)
+    .where(eq(project.id, projectId))
+    .get()
+  return registered === undefined ? null : (await projectFolders(registered.path)).main
 }
 
 // Local branches, the most recently committed first.
 async function localBranches(checkout: string): Promise<string[]> {
-  const listed = await run('git', [
+  const listed = await runGit([
     '-C',
     checkout,
     'for-each-ref',

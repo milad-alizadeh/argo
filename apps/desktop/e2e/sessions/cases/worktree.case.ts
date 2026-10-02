@@ -1,6 +1,5 @@
-// A new Session in a new worktree starts from the branch chosen in the branch picker, and the Worktree switch
-// is remembered for the Project. A saved Session whose worktree is gone continues in the main
-// checkout, as Claude Code does. All of it holds for every Harness.
+// A new worktree starts from the chosen branch, the Worktree switch is remembered per Project, and
+// a Session whose worktree is gone continues in the main checkout, for every Harness.
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { expect } from '@playwright/test'
@@ -111,7 +110,7 @@ async function proveResume(
   await backend.waitForReply(page, { harness, prompt: again })
 }
 
-export async function proveRemovedWorkLocation(
+export async function proveSessionWorktree(
   page: Page,
   project: string,
   backend: SessionHarnessBackend,

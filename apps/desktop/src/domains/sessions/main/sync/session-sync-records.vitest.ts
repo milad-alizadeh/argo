@@ -10,7 +10,12 @@ import type {
 import { insertProject, migratedDatabase } from '@/mocks/database/migrated-database'
 import { addLinkedWorktree, worktreeRepoFixture } from '@/mocks/projects/worktree-repo.fixture'
 import { sessionSyncMachine } from './session-sync-machine'
-import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
+import {
+  knownSessionIds,
+  matchSessionsToProjects,
+  saveSessionBatch,
+  sessionRoots,
+} from './session-sync-records'
 
 const ID = '00000000-0000-4000-8000-000000000001'
 
@@ -23,7 +28,7 @@ function createDatabase() {
 test('matches cwd to its registered Project root and keeps sparse metadata', async () => {
   const { client, database } = createDatabase()
   try {
-    const records = await matchSessionsToProjects(database, [
+    const records = await matchSessionsToProjects(await sessionRoots(database), [
       { nativeId: ID, preview: 'Summary', activityAt: 1, cwd: '/repo/src' },
     ])
     assert.deepEqual(records, [
@@ -50,7 +55,7 @@ test('gives a Session in a linked worktree its Project and that worktree, whoeve
   const database = migratedDatabase()
   try {
     insertProject(database, 'project-git', project)
-    const records = await matchSessionsToProjects(database, [
+    const records = await matchSessionsToProjects(await sessionRoots(database), [
       { nativeId: ID, cwd: path.join(linked, 'src') },
       { nativeId: 'in-main', cwd: project },
     ])
@@ -87,7 +92,9 @@ test('a linked worktree the Project was added from is no Session worktree', asyn
   const database = migratedDatabase()
   try {
     insertProject(database, 'project-linked', linked)
-    const [record] = await matchSessionsToProjects(database, [{ nativeId: ID, cwd: linked }])
+    const [record] = await matchSessionsToProjects(await sessionRoots(database), [
+      { nativeId: ID, cwd: linked },
+    ])
     assert.equal(record?.projectId, 'project-linked')
     assert.equal(record?.worktreePath, undefined)
   } finally {
@@ -103,7 +110,9 @@ test('matches a Session whose cwd reaches a linked worktree through a symlink', 
   const database = migratedDatabase()
   try {
     insertProject(database, 'project-git', project)
-    const [record] = await matchSessionsToProjects(database, [{ nativeId: ID, cwd: alias }])
+    const [record] = await matchSessionsToProjects(await sessionRoots(database), [
+      { nativeId: ID, cwd: alias },
+    ])
     assert.equal(record?.projectId, 'project-git')
   } finally {
     database.$client.close()
@@ -118,7 +127,7 @@ test('a Session keeps its Project after its own worktree folder is gone', async 
         "INSERT INTO session (argo_id, harness, native_id, project_id, worktree_path, worktree_branch) VALUES ('session-1', 'codex', ?, 'project-1', '/elsewhere/gone', 'argo/gone')",
       )
       .run(ID)
-    const [record] = await matchSessionsToProjects(database, [
+    const [record] = await matchSessionsToProjects(await sessionRoots(database), [
       { nativeId: ID, cwd: '/elsewhere/gone' },
     ])
     assert.equal(record?.projectId, 'project-1')

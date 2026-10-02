@@ -182,6 +182,16 @@
       "autoincrement": false,
       "default": null,
       "generated": null,
+      "name": "worktree_base",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
       "name": "custom_title",
       "entityType": "columns",
       "table": "session"

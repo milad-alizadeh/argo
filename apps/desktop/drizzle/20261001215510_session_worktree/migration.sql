@@ -28,6 +28,7 @@ CREATE TABLE `__new_session` (
 	`project_id` text,
 	`worktree_path` text,
 	`worktree_branch` text,
+	`worktree_base` text,
 	`custom_title` text,
 	`preview` text,
 	`first_prompt` text,

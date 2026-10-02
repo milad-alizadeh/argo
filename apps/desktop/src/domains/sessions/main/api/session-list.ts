@@ -18,8 +18,8 @@ import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import {
-  type SessionWorktree,
   sessionSelectSchema,
+  sessionWorktreeFromColumns,
   sessionWorktreeSchema,
 } from '@/database/session/validation'
 import { sessionArchive } from '@/database/session-archive/schema'
@@ -154,7 +154,7 @@ function sessionListRow(
   const liveStatus = live?.status === 'unknown' ? null : live?.status
   return {
     ...row.passed,
-    worktree: sessionWorktree(row),
+    worktree: sessionWorktreeFromColumns(row),
     id: row.id,
     posture: live === null ? null : ('live' as const),
     name: row.name,
@@ -174,11 +174,6 @@ function sessionListRow(
       },
     planProgress: storedValue(planProgressSchema, row.planProgress, 'Plan progress'),
   }
-}
-
-function sessionWorktree(row: StoredSessionRow): SessionWorktree | null {
-  const { worktreePath: path, worktreeBranch: branch, worktreeBase: base } = row
-  return path === null ? null : { path, branch, base }
 }
 
 // A Session with no link joins no row, so every link column is null.

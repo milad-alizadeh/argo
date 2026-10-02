@@ -1,22 +1,26 @@
-// Archiving a Session removes its worktree, as Claude Code does on exit: a clean one goes at once,
-// and one that holds work, or whose state git could not read, goes only when the person chose
+// Archiving removes a Session's clean worktree; one with work or unreadable state goes only on
 // Remove. A worktree another unarchived Session runs in stays; the main checkout is never read.
-import { execFile } from 'node:child_process'
-import { stat } from 'node:fs/promises'
-import { promisify } from 'node:util'
 import { and, eq, inArray, isNotNull, isNull, notExists, notInArray } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/sqlite-core'
+import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
-import type { SessionWorktree } from '@/database/session/validation'
+import { type SessionWorktree, sessionWorktreeSchema } from '@/database/session/validation'
 import { sessionArchive } from '@/database/session-archive/schema'
+import { identifierSchema } from '@/shared/validation'
+import { folderPresent, runGit } from './worktree-folder'
 import { isClean, readWorktreeWork, type WorktreeWork } from './worktree-work'
 
-const run = promisify(execFile)
-
-export type WorktreeRemoval = 'clean' | 'all'
-export type RemovalOutcome = 'removed' | 'missing' | 'running' | 'kept' | 'refused'
+// Which worktrees an archive removes: only clean ones, or every one the person chose to.
+export const worktreeRemovalSchema = z.enum(['clean', 'all'])
+export type WorktreeRemoval = z.infer<typeof worktreeRemovalSchema>
+const removalOutcomeSchema = z.enum(['removed', 'missing', 'running', 'kept', 'refused'])
+export type RemovalOutcome = z.infer<typeof removalOutcomeSchema>
+export const removedWorktreeSchema = sessionWorktreeSchema
+  .omit({ base: true })
+  .extend({ sessionId: identifierSchema, outcome: removalOutcomeSchema })
+export type RemovedWorktree = z.infer<typeof removedWorktreeSchema>
 
 export type RemovalContext = {
   database: Database
@@ -25,13 +29,6 @@ export type RemovalContext = {
 }
 
 type ArchivedWorktree = Omit<SessionWorktree, 'base'> & { sessionId: string; projectPath: string }
-
-function present(folder: string): Promise<boolean> {
-  return stat(folder).then(
-    (found) => found.isDirectory(),
-    () => false,
-  )
-}
 
 const other = alias(sessionTable, 'other_session')
 
@@ -77,7 +74,7 @@ export async function worktreesWithWork(
 ): Promise<HeldWorktree[]> {
   const found = await Promise.all(
     archivedWorktrees(database, sessionIds).map(async (worktree): Promise<HeldWorktree[]> => {
-      if (!(await present(worktree.path))) return []
+      if (!(await folderPresent(worktree.path))) return []
       const work = await readWorktreeWork(worktree.path, worktree.branch)
       return isClean(work) ? [] : [{ ...worktree, work }]
     }),
@@ -91,20 +88,20 @@ async function removeOne(
   removal: WorktreeRemoval,
 ): Promise<RemovalOutcome> {
   if (context.isRunning(worktree.sessionId)) return 'running'
-  if (!(await present(worktree.path))) return 'missing'
+  if (!(await folderPresent(worktree.path))) return 'missing'
   const clean = isClean(await readWorktreeWork(worktree.path, worktree.branch))
   if (!clean && removal === 'clean') return 'kept'
   const git = ['-C', worktree.projectPath]
   // A clean tree goes without `--force`, so git itself refuses one that changed since it was read.
   const force = clean ? [] : ['--force']
-  const removed = await run('git', [...git, 'worktree', 'remove', ...force, worktree.path]).then(
+  const removed = await runGit([...git, 'worktree', 'remove', ...force, worktree.path]).then(
     () => true,
     () => false,
   )
   if (!removed) return 'refused'
   // `-D`, because a squash-merged branch never reads as merged; the checks above made it safe.
   if (worktree.branch !== null)
-    await run('git', [...git, 'branch', '-D', worktree.branch]).catch(() => undefined)
+    await runGit([...git, 'branch', '-D', worktree.branch]).catch(() => undefined)
   return 'removed'
 }
 
@@ -112,12 +109,16 @@ async function removeOne(
 export async function removeSessionWorktrees(
   context: RemovalContext,
   input: { sessionIds: readonly string[]; removal: WorktreeRemoval },
-): Promise<{ sessionId: string; outcome: RemovalOutcome }[]> {
-  const outcomes: { sessionId: string; outcome: RemovalOutcome }[] = []
-  for (const worktree of archivedWorktrees(context.database, input.sessionIds))
+): Promise<RemovedWorktree[]> {
+  const outcomes: RemovedWorktree[] = []
+  for (const worktree of archivedWorktrees(context.database, input.sessionIds)) {
+    const outcome = await removeOne(context, worktree, input.removal)
     outcomes.push({
       sessionId: worktree.sessionId,
-      outcome: await removeOne(context, worktree, input.removal),
+      path: worktree.path,
+      branch: worktree.branch,
+      outcome,
     })
+  }
   return outcomes
 }

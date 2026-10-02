@@ -69,10 +69,14 @@ type WorktreeRequest = z.infer<typeof worktreeRequestSchema>
 type StoredDraft = z.infer<typeof composerDraftSelectSchema>
 
 function worktreeFromRow(row: StoredDraft): WorktreeRequest | null {
-  if (row.worktree === null) return null
-  return worktreeRequestSchema.parse(
-    row.worktree === 'new' ? { type: 'new', from: row.worktreeFromBranch } : { type: 'main' },
-  )
+  switch (row.worktree) {
+    case null:
+      return null
+    case 'main':
+      return { type: 'main' }
+    case 'new':
+      return worktreeRequestSchema.parse({ type: 'new', from: row.worktreeFromBranch })
+  }
 }
 
 function worktreeColumns(worktree: WorktreeRequest | null) {

@@ -1,25 +1,23 @@
-import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { mkdir, realpath, stat } from 'node:fs/promises'
 import path from 'node:path'
-import { promisify } from 'node:util'
 import { eq } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { projectSelectSchema } from '@/database/project/validation'
 import type { SessionWorktree } from '@/database/session/validation'
 import { gitCommonDirectory } from '@/platform/main/git-worktrees'
+import { isRecord } from '@/shared/validation'
 import { readWorktreeBranch } from './worktree-branch'
+import { runGit } from './worktree-folder'
 import { projectFolders } from './worktree-options'
 
-const run = promisify(execFile)
-
 function hasCode(error: unknown, code: string | number): boolean {
-  return typeof error === 'object' && error !== null && 'code' in error && error.code === code
+  return isRecord(error) && error.code === code
 }
 
 function branchExists(projectPath: string, branch: string): Promise<boolean> {
-  return run('git', [
+  return runGit([
     '-C',
     projectPath,
     'show-ref',
@@ -39,7 +37,7 @@ function branchExists(projectPath: string, branch: string): Promise<boolean> {
 // changes stay where they are.
 async function startCommit(checkout: string, from: string | null): Promise<string> {
   const ref = from === null ? 'HEAD' : `refs/heads/${from}`
-  const { stdout } = await run('git', ['-C', checkout, 'rev-parse', '--verify', `${ref}^{commit}`])
+  const { stdout } = await runGit(['-C', checkout, 'rev-parse', '--verify', `${ref}^{commit}`])
   return stdout.trim()
 }
 
@@ -71,7 +69,7 @@ async function ensureWorktreeOnDisk(input: {
   const arguments_ = (await branchExists(projectRoot.path, branch))
     ? ['-C', projectRoot.path, 'worktree', 'add', worktreePath, branch]
     : ['-C', projectRoot.path, 'worktree', 'add', '-b', branch, worktreePath, await input.start()]
-  await run('git', arguments_, { timeout: 120_000 })
+  await runGit(arguments_, { timeout: 120_000 })
 }
 
 // The worktree made for a new Session draft, from the local branch `from`, else the main checkout's

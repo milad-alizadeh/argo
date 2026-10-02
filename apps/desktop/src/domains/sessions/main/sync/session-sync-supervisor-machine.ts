@@ -24,7 +24,13 @@ import {
   sessionSyncStatusSchema,
 } from '../session-sync-status'
 import { sessionSyncMachine } from './session-sync-machine'
-import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
+import {
+  knownSessionIds,
+  matchSessionsToProjects,
+  type SessionRoot,
+  saveSessionBatch,
+  sessionRoots,
+} from './session-sync-records'
 
 type RegisteredHarnesses = Partial<
   Record<
@@ -78,8 +84,9 @@ type SyncActorEvent =
 async function saveSummaries(
   { database, changes, harness }: Pick<SessionSyncActorInput, 'database' | 'changes' | 'harness'>,
   summaries: readonly SessionSummary[],
+  roots: Promise<SessionRoot[]> = sessionRoots(database),
 ): Promise<void> {
-  const matched = await matchSessionsToProjects(database, summaries)
+  const matched = await matchSessionsToProjects(await roots, summaries)
   changes.changed(saveSessionBatch(database, harness, matched))
 }
 
@@ -118,11 +125,13 @@ const sessionSyncActor = fromCallback<
   SyncActorEvent
 >(({ input, sendBack }) => {
   const { database, harness, listSessionSummaries } = input
+  let roots: Promise<SessionRoot[]> | undefined
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
         save: fromPromise(async ({ input: saveInput }) => {
-          await saveSummaries(input, saveInput.records)
+          roots ??= sessionRoots(database)
+          await saveSummaries(input, saveInput.records, roots)
         }),
       },
     }),

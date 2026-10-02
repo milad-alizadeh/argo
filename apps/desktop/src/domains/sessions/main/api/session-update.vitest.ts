@@ -196,6 +196,7 @@ test('archiving moves known Sessions to the archived filter and back, skipping a
 
     assert.deepEqual(await update({ sessionIds: [IDS[0], IDS[1]], archived: true }), {
       sessionIds: [IDS[0]],
+      worktrees: [],
     })
     assert.equal((await details({ sessionId: IDS[0] }))?.archived, true)
     assert.deepEqual(await idsIn(list, 'active'), [])

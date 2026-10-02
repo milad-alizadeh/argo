@@ -71,7 +71,7 @@ async function branchExists(repository: string, branch: string): Promise<boolean
 test('a clean worktree goes on archive, with its branch', async () => {
   const { database, remove, expectGone } = await worktreeSession()
   expect(await worktreesWithWork(database, ['session-1'])).toEqual([])
-  expect(await remove('clean')).toEqual([{ sessionId: 'session-1', outcome: 'removed' }])
+  expect(await remove('clean')).toMatchObject([{ sessionId: 'session-1', outcome: 'removed' }])
   await expectGone()
 })
 
@@ -81,9 +81,9 @@ test('a worktree with changed files is kept unless the person chose Remove', asy
   expect(await worktreesWithWork(database, ['session-1'])).toMatchObject([
     { sessionId: 'session-1', work: { changedFiles: 1, ownCommits: 0 } },
   ])
-  expect(await remove('clean')).toEqual([{ sessionId: 'session-1', outcome: 'kept' }])
+  expect(await remove('clean')).toMatchObject([{ sessionId: 'session-1', outcome: 'kept' }])
   expect(await present(worktree.path)).toBe(true)
-  expect(await remove('all')).toEqual([{ sessionId: 'session-1', outcome: 'removed' }])
+  expect(await remove('all')).toMatchObject([{ sessionId: 'session-1', outcome: 'removed' }])
   await expectGone()
 })
 
@@ -102,7 +102,7 @@ test('a worktree with commits on no other branch is kept unless the person chose
   expect(await worktreesWithWork(database, ['session-1'])).toMatchObject([
     { work: { changedFiles: 0, ownCommits: 1 } },
   ])
-  expect(await remove('clean')).toEqual([{ sessionId: 'session-1', outcome: 'kept' }])
+  expect(await remove('clean')).toMatchObject([{ sessionId: 'session-1', outcome: 'kept' }])
   expect(await present(worktree.path)).toBe(true)
 })
 
@@ -112,13 +112,13 @@ test('a worktree git cannot read is kept and reported as unchecked', async () =>
   expect(await worktreesWithWork(database, ['session-1'])).toMatchObject([
     { work: { changedFiles: null, ownCommits: null } },
   ])
-  expect(await remove('clean')).toEqual([{ sessionId: 'session-1', outcome: 'kept' }])
+  expect(await remove('clean')).toMatchObject([{ sessionId: 'session-1', outcome: 'kept' }])
   expect(await present(worktree.path)).toBe(true)
 })
 
 test('a worktree stays while its Session has a Turn in progress, even after Remove', async () => {
   const { worktree, remove } = await worktreeSession()
-  expect(await remove('all', true)).toEqual([{ sessionId: 'session-1', outcome: 'running' }])
+  expect(await remove('all', true)).toMatchObject([{ sessionId: 'session-1', outcome: 'running' }])
   expect(await present(worktree.path)).toBe(true)
 })
 
@@ -143,7 +143,7 @@ test('a clean worktree made outside Argo goes on archive too, with its branch', 
       { database, isRunning: () => false },
       { sessionIds: ['session-outside'], removal: 'clean' },
     ),
-  ).toEqual([{ sessionId: 'session-outside', outcome: 'removed' }])
+  ).toMatchObject([{ sessionId: 'session-outside', outcome: 'removed' }])
   expect(await present(outside)).toBe(false)
   expect(await branchExists(repository, 'outside')).toBe(false)
 })

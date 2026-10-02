@@ -4,7 +4,7 @@ import path from 'node:path'
 import type { Page } from 'playwright-core'
 import { MOCK_START_REFUSED_FILE } from '@/mocks/cli/mock-cli'
 import { chooseHarness, openNewSessionByClick } from '../gestures'
-import { reload, sendRefused } from './removed-work-location.case'
+import { reload, sendRefused } from './worktree.case'
 
 const START_FAILED = /could not start, so the Turn was not sent/
 

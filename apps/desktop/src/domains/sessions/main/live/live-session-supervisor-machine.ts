@@ -10,6 +10,7 @@ import {
   setup as xstateSetup,
 } from 'xstate'
 import type { Database } from '@/database/database'
+import { sessionWorktreeColumns } from '@/database/session/validation'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
@@ -728,9 +729,7 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
                     createSessionUpsert(dependencies.database)({
                       ...saved,
                       nativeId: record.nativeId,
-                      worktreePath: worktree?.path ?? null,
-                      worktreeBranch: worktree?.branch ?? null,
-                      worktreeBase: worktree?.base ?? null,
+                      ...sessionWorktreeColumns(worktree),
                     }),
                   )
                 }),

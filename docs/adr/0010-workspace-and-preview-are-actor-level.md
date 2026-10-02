@@ -1,9 +1,7 @@
 # 0010 · Workspace identity belongs to the Actor, not the Session
 
-Status: superseded by ADR-0049 · 2026-07-20
-
-> **Superseded by ADR-0049 · 2026-10-01:** a Session owns its worktree; there is no Workspace
-> entity and no worktree per tree node. The Preview rule below stands.
+Status: Workspace rule superseded by ADR-0049 (2026-10-01), where a Session owns its worktree;
+the Preview rule stands · 2026-07-20
 
 > **Terminology superseded by the #182 rebuild** (see `CONTEXT.md` → L3). The *substance*
 > stands — workspace identity + Preview attach at the recursive tree node, not the Session,
