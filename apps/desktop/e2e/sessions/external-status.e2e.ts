@@ -210,7 +210,7 @@ for (const createSource of [claudeSource, codexSource]) {
       await expect(rows.first()).toContainText(NEWER)
       await expect(dot).toHaveAttribute('data-variant', 'unknown')
 
-      // The poll runs every 2 s, and a Codex rollout first seen only records its size.
+      // The poll runs every 2 s.
       await expect(async () => {
         await source.openTurn(root, older)
         await expect(dot).toHaveAttribute('data-variant', 'active', { timeout: 3_000 })

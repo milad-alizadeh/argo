@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import type { ExternalSessions, LiveExternalSession } from '@/harnesses/registration'
+import type {
+  ExternalSessionStatus,
+  ExternalSessions,
+  LiveExternalSession,
+} from '@/harnesses/registration'
 import { insertSession, sessionListCaller } from '@/mocks/sessions/session-list-caller'
 import { ExternalSessionPoll, RUNNING_QUIET_LIMIT_MS } from './external-session-poll'
 
@@ -23,9 +27,13 @@ vi.mock('node:fs/promises', async (original) => {
 
 const FIRST = '00000000-0000-4000-8000-0000000000c1'
 const SECOND = '00000000-0000-4000-8000-0000000000c2'
+// The status every listing gives; null where only an activity read can tell.
+let listedStatus: ExternalSessionStatus | null
+// Each Session an activity read asked about, in order.
+let reads: string[]
 const listed = (nativeId: string): LiveExternalSession => ({
   nativeId,
-  status: null,
+  status: listedStatus,
   transcript: `${TRANSCRIPTS}${nativeId}`,
 })
 
@@ -34,9 +42,14 @@ let poll: ExternalSessionPoll
 
 beforeEach(() => {
   caller = sessionListCaller()
+  listedStatus = null
+  reads = []
   const external: ExternalSessions = {
     listLive: async () => ({ sessions: [listed(FIRST), listed(SECOND)], rejected: 0 }),
-    readActivity: async () => ({ turn: [], status: null, retry: false }),
+    readActivity: async (nativeId) => {
+      reads.push(nativeId)
+      return { turn: [], status: null, retry: false }
+    },
   }
   poll = new ExternalSessionPoll({
     database: caller.database,
@@ -87,4 +100,19 @@ test('a hook that lands while a tick waits on an earlier transcript keeps its st
   await poll.tick()
   poll.flush()
   expect(await statusOf(SECOND)).toBe('unknown')
+})
+
+test('a listing that gives a status asks for no read at first sight', async () => {
+  listedStatus = 'idle'
+  await poll.tick()
+  await poll.tick()
+  await poll.readsSettled()
+  expect(reads).toEqual([])
+})
+
+test('a listing that gives no status asks for one read at first sight', async () => {
+  await poll.tick()
+  await poll.tick()
+  await poll.readsSettled()
+  expect(reads).toEqual([FIRST, SECOND])
 })

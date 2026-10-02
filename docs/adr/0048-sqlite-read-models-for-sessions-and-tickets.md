@@ -2,7 +2,7 @@
 
 Status: accepted · 2026-09-24 · Session discovery amended 2026-09-27
 
-## Amendment · external Sessions and the Session List · 2026-09-28, 2026-10-01
+## Amendment · external Sessions and the Session List · 2026-09-28, 2026-10-01, 2026-10-02
 
 A Session that runs outside Argo, in a terminal, an IDE or another app, gets its row's status and
 activity line from one poll in main (#2940). A Harness registration that can see such Sessions
@@ -20,8 +20,10 @@ time or inode asks for a read. Activity reads run one at a time across every Ses
 vendor read can take a large transcript whole. A Session has at most one read queued or in flight,
 and a change during its read asks for one more after it. A read that fails keeps the stored status
 and line, and a read that could not answer yet asks again on the next tick. The first sight of a
-transcript only records its stamp, so startup reads nothing and the stored status and line stand
-until the file changes. Argo starts no file watcher for Session history.
+transcript records its stamp. It also asks for one read when no listing or hook gives a status
+yet, so an open Session that writes nothing shows its status at once, and Claude and Codex rows
+agree (#3144). Otherwise the stored status and line stand until the file changes. Argo starts
+no file watcher for Session history.
 
 The activity line is the newest Turn's activity by the Feed's own rules, so every Harness's row
 draws it the same way. A status a read settles outranks the listed one. The tick compares its list
