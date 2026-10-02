@@ -27,6 +27,9 @@ export async function closeApplication(
   application: ElectronApplication | undefined,
 ): Promise<void> {
   if (application === undefined) return
+  // The trace file lives in the launch's artifacts folder, which Playwright deletes as the process
+  // exits; a frame still being appended then fails, and `close()` rethrows that failure.
+  await application.context().tracing.stop()
   await application
     .evaluate(
       ({ app }) =>
