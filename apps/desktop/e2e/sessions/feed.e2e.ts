@@ -15,6 +15,7 @@ import { proveClaudeAcpControls, proveClaudeAcpDiscovery } from './cases/claude-
 import { proveClaudeRename } from './cases/claude-rename.case'
 import { provePackagedCodexResume } from './cases/codex-resume.case'
 import { proveCodexThreadName } from './cases/codex-thread-name.case'
+import { proveComposerMemory } from './cases/composer-memory.case'
 import { proveSessionCreatedByClick } from './cases/create.case'
 import { proveDelegationCards } from './cases/delegation-card.case'
 import { proveSessionDiagram } from './cases/diagram.case'
@@ -140,6 +141,10 @@ test('session-diagram', async ({ session }) => {
     transcripts: session.fixture.claudeTranscripts,
     append: appendProse,
   })
+})
+
+test('session-composer-memory', async ({ session }) => {
+  await proveComposerMemory(session.page())
 })
 
 test('session-live-codex-model-choices', async ({ session }) => {
