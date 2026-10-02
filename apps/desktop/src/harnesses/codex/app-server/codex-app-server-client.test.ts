@@ -3,9 +3,9 @@ import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { executableVersion } from '@/harnesses/cli/executable-version'
 import { MOCK_CODEX_VERSION } from '@/mocks/cli/codex/mock-codex-cli'
 import { recordedCodexModels } from '@/mocks/recordings/codex-app-server'
-import { SESSION_CODEX_EXECUTABLE_ENV } from '../proof-protocol'
 import {
   type CodexChannel,
   CodexUnavailableError,
@@ -56,7 +56,7 @@ createInterface({ input: process.stdin }).on('line', (line) => {
   }
 })
 
-test('checks the executable version once per connection and again when the file changes', async () => {
+async function countingCodex() {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-client-version-'))
   const executable = path.join(directory, 'codex')
   const server = path.join(directory, 'server.mjs')
@@ -71,33 +71,69 @@ createInterface({ input: process.stdin }).on('line', (line) => {
   if (request.id !== undefined) process.stdout.write(JSON.stringify({ id: request.id, result: {} }) + '\\n');
 });`,
   )
-  const writeExecutable = (version: string) =>
-    writeFile(
+  const writeVersion = async (version: string) => {
+    await writeFile(
       executable,
       `#!/bin/sh\nif [ "$1" = "--version" ]; then echo version >> "${versions}"; echo 'codex-cli ${version}'; exit 0; fi\nexec "${process.execPath}" "${server}"\n`,
     )
+    await chmod(executable, 0o755)
+  }
+  await writeVersion(MOCK_CODEX_VERSION)
   const lineCount = async (file: string) => (await readFile(file, 'utf8')).trim().split('\n').length
-  await writeExecutable(MOCK_CODEX_VERSION)
-  await chmod(executable, 0o755)
-  const previous = process.env[SESSION_CODEX_EXECUTABLE_ENV]
-  process.env[SESSION_CODEX_EXECUTABLE_ENV] = executable
-  const client = createCodexAppServerClient()
+  const client = createCodexAppServerClient({
+    resolveExecutable: async () => ({ executable, version: await executableVersion(executable) }),
+  })
+  return {
+    client,
+    writeVersion,
+    versionChecks: () => lineCount(versions),
+    serverStarts: () => lineCount(starts),
+    dispose: async () => {
+      client.shutdown()
+      await rm(directory, { recursive: true, force: true })
+    },
+  }
+}
+
+test('checks the executable version once across sequential requests on one connection', async () => {
+  const codex = await countingCodex()
   try {
     for (let index = 0; index < 5; index += 1) {
-      await client.request('thread/list', {}, (value) => value)
+      await codex.client.request('thread/list', {}, (value) => value)
     }
-    assert.equal(await lineCount(versions), 1)
-    assert.equal(await lineCount(starts), 1)
-
-    await writeExecutable(`${MOCK_CODEX_VERSION}-next`)
-    await client.request('thread/list', {}, (value) => value)
-    assert.equal(await lineCount(versions), 2)
-    assert.equal(await lineCount(starts), 2)
+    assert.equal(await codex.versionChecks(), 1)
+    assert.equal(await codex.serverStarts(), 1)
   } finally {
-    client.shutdown()
-    if (previous === undefined) delete process.env[SESSION_CODEX_EXECUTABLE_ENV]
-    else process.env[SESSION_CODEX_EXECUTABLE_ENV] = previous
-    await rm(directory, { recursive: true, force: true })
+    await codex.dispose()
+  }
+})
+
+test('checks the executable version once across concurrent requests', async () => {
+  const codex = await countingCodex()
+  try {
+    await Promise.all(
+      Array.from({ length: 20 }, () => codex.client.request('thread/list', {}, (value) => value)),
+    )
+    await Promise.all(
+      Array.from({ length: 20 }, () => codex.client.request('thread/list', {}, (value) => value)),
+    )
+    assert.equal(await codex.versionChecks(), 1)
+    assert.equal(await codex.serverStarts(), 1)
+  } finally {
+    await codex.dispose()
+  }
+})
+
+test('restarts the app-server when the executable file changes to a new version', async () => {
+  const codex = await countingCodex()
+  try {
+    await codex.client.request('thread/list', {}, (value) => value)
+    await codex.writeVersion(`${MOCK_CODEX_VERSION}-next`)
+    await codex.client.request('thread/list', {}, (value) => value)
+    assert.equal(await codex.versionChecks(), 2)
+    assert.equal(await codex.serverStarts(), 2)
+  } finally {
+    await codex.dispose()
   }
 })
 
