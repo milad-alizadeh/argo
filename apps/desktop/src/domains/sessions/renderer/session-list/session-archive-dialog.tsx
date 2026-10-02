@@ -15,8 +15,14 @@ import type { SessionId } from '../types'
 
 export type HeldWorktree = RouterOutputs['sessionWorktreeWork']['worktrees'][number]
 
-// The archive waiting on the person: `worktrees` is null when Argo could not check them at all.
-export type ArchiveQuestion = { sessionIds: SessionId[]; worktrees: HeldWorktree[] | null }
+// Unchecked when main could not read the worktrees; each is then named with its work unknown.
+export type ArchiveQuestion = {
+  sessionIds: SessionId[]
+  worktrees: HeldWorktree[]
+  checked: boolean
+}
+
+export type ArchiveAnswer = 'keep' | 'remove' | 'cancel'
 
 function WorktreeWork({ worktree }: { worktree: HeldWorktree }) {
   const { t } = useTranslation('sessions')
@@ -41,16 +47,16 @@ function WorktreeWork({ worktree }: { worktree: HeldWorktree }) {
   )
 }
 
-// Asks before an archive removes worktree work, as Claude Code does on exit.
+// Asks before an archive removes worktree work.
 export function SessionArchiveDialog({
   question,
   onAnswer,
 }: {
   question: ArchiveQuestion | null
-  onAnswer: (answer: 'keep' | 'remove' | 'cancel') => void
+  onAnswer: (answer: ArchiveAnswer) => void
 }) {
   const { t } = useTranslation('sessions')
-  const worktrees = question?.worktrees ?? null
+  const worktrees = question?.worktrees ?? []
   return (
     <AlertDialog
       onOpenChange={(open) => {
@@ -61,13 +67,15 @@ export function SessionArchiveDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {t('archiveWorktree.title', { count: worktrees?.length ?? 1 })}
+            {t('archiveWorktree.title', { count: Math.max(worktrees.length, 1) })}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {worktrees === null ? t('archiveWorktree.unchecked') : t('archiveWorktree.description')}
+            {question?.checked === false
+              ? t('archiveWorktree.unchecked')
+              : t('archiveWorktree.description')}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        {worktrees !== null ? (
+        {worktrees.length > 0 ? (
           <ul className="grid gap-1 type-meta">
             {worktrees.map((worktree) => (
               <WorktreeWork key={worktree.sessionId} worktree={worktree} />

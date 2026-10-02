@@ -48,7 +48,7 @@ export type ComposerFormProps = {
   turnConfigurationChoices?: TurnConfigurationChoices | null
   catalogFailure?: CatalogFailure | null
   refreshCatalog?: () => void
-  // A new Session's Worktree row; null for a running Session.
+  // A new Session's Worktree row; drawn only while no permission prompt is passed.
   worktree?: WorktreeRowProps | null
   initialEditing?: Partial<ComposerEditing>
   onEditingChange?: (editing: ComposerEditing) => void
@@ -163,8 +163,7 @@ function ComposerFormSurface({
       }}
     >
       <AttachmentTray>
-        {worktree ? <WorktreeRow {...worktree} /> : null}
-        {permissionPrompt}
+        {permissionPrompt ?? (worktree ? <WorktreeRow {...worktree} /> : null)}
       </AttachmentTray>
       <ComposerCard
         contextTokens={contextTokens}

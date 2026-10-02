@@ -826,7 +826,6 @@ export const ArchiveFromContextMenu: Story = {
   },
 }
 
-// Argo follows Claude Code's cleanup rule: https://code.claude.com/docs/en/worktrees
 const heldWork = {
   sessionId: 'prose',
   path: '/workspace/argo-worktrees/prose',
@@ -870,19 +869,55 @@ export const ArchiveRemovesWorkWhenAsked: Story = {
   },
 }
 
-// Cancel archives nothing; a state Argo could not read asks the same question and says so.
-export const ArchiveAsksWhenWorkIsUnchecked: Story = {
+// A removal main refused is told, not left silent.
+export const ArchiveTellsARefusedRemoval: Story = {
   beforeEach: () =>
     showing(listed, {
-      worktreeWork: async () => {
-        throw new Error('git could not be read')
-      },
+      worktreeWork: async () => ({ worktrees: [heldWork] }),
+      update: async ({ sessionIds }) => ({
+        sessionIds,
+        worktrees: [
+          { sessionId: 'prose', path: heldWork.path, branch: heldWork.branch, outcome: 'refused' },
+        ],
+      }),
     }),
+  play: async ({ canvasElement }) => {
+    const dialog = await archiveFirstRow(canvasElement)
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Remove' }))
+    await waitFor(() =>
+      expect(
+        within(document.body).getByText(
+          'Argo could not remove the worktree /workspace/argo-worktrees/prose.',
+        ),
+      ).toBeVisible(),
+    )
+  },
+}
+
+// Cancel archives nothing; a state Argo could not read names each worktree it could not check.
+export const ArchiveAsksWhenWorkIsUnchecked: Story = {
+  beforeEach: () =>
+    showing(
+      [
+        {
+          ...session,
+          worktree: { path: heldWork.path, branch: heldWork.branch, base: 'main' },
+        },
+        secondSession,
+      ],
+      {
+        worktreeWork: async () => {
+          throw new Error('git could not be read')
+        },
+      },
+    ),
   play: async ({ canvasElement }) => {
     const dialog = await archiveFirstRow(canvasElement)
     await waitFor(() =>
       expect(within(dialog).getByText(/Argo could not check the worktrees/)).toBeVisible(),
     )
+    await expect(within(dialog).getByText('argo/prose')).toBeVisible()
+    await expect(within(dialog).getByText(/changed files not checked/)).toBeVisible()
     await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
     await waitFor(() => expect(within(document.body).queryByRole('alertdialog')).toBeNull())
     await expect(host.updates).toEqual([])

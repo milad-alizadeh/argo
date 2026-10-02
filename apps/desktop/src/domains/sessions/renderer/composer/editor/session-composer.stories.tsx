@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
+import { expect, within } from 'storybook/test'
 import type { Harness } from '@/harnesses/harness'
 import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '@/mocks/sessions/harness-catalog.fixture'
@@ -78,3 +79,27 @@ type Story = StoryObj<typeof EverythingComposerStory>
 // and the worktree picker. Manual/visual review, not a behaviour assertion (each control already
 // has its own dedicated story above).
 export const Everything: Story = { tags: ['view-only'] }
+
+// A permission card owns the tray, so a Worktree row passed beside it is not drawn.
+export const PermissionHidesWorktreeRow: Story = {
+  render: () => (
+    <ComposerForm
+      onSend={async () => true}
+      permissionPrompt={<p>Permission card</p>}
+      sessionId="session-one"
+      worktree={{
+        options: WORKTREE_OPTIONS,
+        newWorktree: false,
+        from: null,
+        saveFailed: false,
+        setNewWorktree: () => undefined,
+        chooseFrom: () => undefined,
+      }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Permission card')).toBeVisible()
+    await expect(canvas.queryByRole('switch', { name: 'Worktree' })).toBeNull()
+  },
+}

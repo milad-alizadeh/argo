@@ -189,9 +189,12 @@ export function installSessionHost(
     const known = rows()
       .filter(({ id }) => input.sessionIds.includes(id))
       .map(({ id }) => id)
-    const { sessionIds } = (await update?.(input)) ?? { sessionIds: known }
+    const { sessionIds, worktrees } = (await update?.(input)) ?? {
+      sessionIds: known,
+      worktrees: [],
+    }
     change(updatedRows(rows(), input, sessionIds))
-    return { sessionIds }
+    return { sessionIds, worktrees }
   }
   const readList = async (input: Partial<SessionListRead>) => {
     const read = listRead(input)

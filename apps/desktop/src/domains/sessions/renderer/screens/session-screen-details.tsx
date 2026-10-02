@@ -97,12 +97,28 @@ function sessionComposerConfiguration(input: {
   return { catalogFailure, choices, initialTurnConfiguration, identity }
 }
 
-function worktreeControl(
-  identity: ReturnType<typeof composerIdentityOf>,
-  worktree: WorktreeOptionsState,
-  actions: WorktreeOptionsActions,
-) {
-  return identity.kind === 'draft' ? { ...worktree, ...actions } : null
+// A draft has no Turn to ask about, so its tray holds the Worktree row instead of a permission.
+function composerTray(input: {
+  identity: ReturnType<typeof composerIdentityOf>
+  harness: HarnessControl
+  permission: SessionScreenDetailsProps['permission']
+  worktree: WorktreeOptionsState
+  actions: WorktreeOptionsActions
+}): Pick<ComposerFormProps, 'worktree' | 'permissionPrompt'> {
+  const { identity, harness, permission, worktree, actions } = input
+  if (identity.kind === 'draft')
+    return { worktree: { ...worktree, ...actions }, permissionPrompt: null }
+  return {
+    worktree: null,
+    permissionPrompt: (
+      <PermissionPrompt
+        harness={harness.harness}
+        headingLevel={2}
+        permission={permission.permission}
+        onDecide={permission.decide}
+      />
+    ),
+  }
 }
 
 // Restores a saved draft's switch; its start is never restored. False while the options load.
@@ -425,20 +441,18 @@ function SessionComposer({
     turnConfigurationChoices: choices,
     catalogFailure,
     refreshCatalog: draft === null ? onRetryCatalog : onRefreshCatalog,
-    worktree: worktreeControl(identity, worktreeState, worktreeActions),
+    ...composerTray({
+      identity,
+      harness,
+      permission,
+      worktree: worktreeState,
+      actions: worktreeActions,
+    }),
     // #2968 fills context usage.
     contextTokens: session?.contextTokens,
     contextWindowTokens: session?.contextWindowTokens,
     disabled: questionPending || catalogBlocked || (draft?.loadFailed === true && !draft.hasDraft),
     harness,
-    permissionPrompt: (
-      <PermissionPrompt
-        harness={harness.harness}
-        headingLevel={2}
-        permission={permission.permission}
-        onDecide={permission.decide}
-      />
-    ),
     plan: composerPlan(session),
     projectId,
     commandCwd:

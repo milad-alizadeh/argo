@@ -255,7 +255,9 @@
     "ownCommitsUnchecked": "commits not checked",
     "cancel": "Cancel",
     "keep": "Keep",
-    "remove": "Remove"
+    "remove": "Remove",
+    "running": "The worktree {{path}} stays, because a Turn is running in it.",
+    "refused": "Argo could not remove the worktree {{path}}."
   },
   "contextMenu": {
     "actions": "{{title}} actions",

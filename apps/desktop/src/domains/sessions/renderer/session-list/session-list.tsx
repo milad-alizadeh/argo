@@ -3,6 +3,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import { useProjects } from '@/domains/projects/renderer'
+import type {
+  RemovalOutcome,
+  RemovedWorktree,
+  WorktreeRemoval,
+} from '@/domains/sessions/main/worktree'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { type RouterInputs, trpcClient } from '@/platform/renderer/trpc-client'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
@@ -10,6 +15,7 @@ import { useObservedFeedReading } from '../feed'
 import type { Session, SessionId } from '../types'
 import { useSessionListFocus, useSessionListSelection } from './hooks/use-session-list-selection'
 import {
+  type ArchiveAnswer,
   type ArchiveQuestion,
   type HeldWorktree,
   SessionArchiveDialog,
@@ -58,12 +64,10 @@ function sessionListState(
   return count === 0 ? 'empty' : 'ready'
 }
 
-type WorktreeRemoval = NonNullable<RouterInputs['sessionUpdate']['worktrees']>
-
-// The ids main updated (#2194), or null when the update failed and its reason was shown.
+// The ids main updated (#2194) and its worktree outcomes, or null when the update failed and said so.
 async function updateArchived(toasts: Toasts, update: RouterInputs['sessionUpdate']) {
   try {
-    return (await trpcClient.sessionUpdate.mutate(update)).sessionIds
+    return await trpcClient.sessionUpdate.mutate(update)
   } catch (error) {
     toasts.add({
       title: toasts.t('bulkSelect.failure'),
@@ -76,8 +80,8 @@ async function updateArchived(toasts: Toasts, update: RouterInputs['sessionUpdat
 }
 
 async function restoreSessions(toasts: Toasts, sessionIds: SessionId[]) {
-  const restored = await updateArchived(toasts, { sessionIds, archived: false })
-  if (restored === null || restored.length === 0) return
+  const restored = (await updateArchived(toasts, { sessionIds, archived: false }))?.sessionIds
+  if (restored === undefined || restored.length === 0) return
   toasts.add({
     title: toasts.t('bulkSelect.restored', { count: restored.length }),
     type: 'success',
@@ -90,8 +94,9 @@ async function archiveSessions(
   sessionIds: SessionId[],
   worktrees: WorktreeRemoval,
 ) {
-  const applied = await updateArchived(toasts, { sessionIds, archived: true, worktrees })
-  if (applied === null) return
+  const updated = await updateArchived(toasts, { sessionIds, archived: true, worktrees })
+  if (updated === null) return
+  const applied = updated.sessionIds
   const { add, t } = toasts
   if (applied.length > 0)
     add({
@@ -109,31 +114,70 @@ async function archiveSessions(
       type: 'error',
       timeout: UNDO_TOAST_TIMEOUT_MS,
     })
+  for (const worktree of updated.worktrees) tellUnremoved(toasts, worktree)
 }
 
-// The Session worktrees an archive would ask about, or null when main could not say.
-async function heldWorktrees(sessionIds: SessionId[]): Promise<HeldWorktree[] | null> {
+// Only a worktree the archive meant to remove, yet left, is worth a toast.
+const UNREMOVED_TOAST = {
+  removed: null,
+  missing: null,
+  kept: null,
+  running: { title: 'archiveWorktree.running', type: 'info' },
+  refused: { title: 'archiveWorktree.refused', type: 'error' },
+} as const satisfies Record<RemovalOutcome, { title: string; type: 'info' | 'error' } | null>
+
+function tellUnremoved(toasts: Toasts, worktree: RemovedWorktree) {
+  const toast = UNREMOVED_TOAST[worktree.outcome]
+  if (toast !== null)
+    toasts.add({ title: toasts.t(toast.title, { path: worktree.path }), type: toast.type })
+}
+
+// When main cannot check, each listed Session's own worktree is named with its work unknown.
+async function archiveQuestion(
+  sessionIds: SessionId[],
+  sessions: readonly Session[],
+): Promise<ArchiveQuestion> {
   try {
-    return (await trpcClient.sessionWorktreeWork.query({ sessionIds })).worktrees
+    const { worktrees } = await trpcClient.sessionWorktreeWork.query({ sessionIds })
+    return { sessionIds, worktrees, checked: true }
   } catch {
-    return null
+    const worktrees = sessions.flatMap(({ id, worktree }): HeldWorktree[] =>
+      sessionIds.includes(id) && worktree !== null
+        ? [
+            {
+              sessionId: id,
+              path: worktree.path,
+              branch: worktree.branch,
+              changedFiles: null,
+              ownCommits: null,
+            },
+          ]
+        : [],
+    )
+    return { sessionIds, worktrees, checked: false }
   }
 }
+
+const REMOVAL_FOR_ANSWER = { keep: 'clean', remove: 'all' } as const satisfies Record<
+  Exclude<ArchiveAnswer, 'cancel'>,
+  WorktreeRemoval
+>
 
 // Removes clean Session worktrees at once; asks about any holding work or left unchecked.
-function useSessionArchive(toasts: Toasts) {
+function useSessionArchive(toasts: Toasts, sessions: readonly Session[]) {
   const [question, setQuestion] = useState<ArchiveQuestion | null>(null)
   const archive = async (sessionIds: SessionId[]) => {
-    const worktrees = await heldWorktrees(sessionIds)
-    if (worktrees !== null && worktrees.length === 0)
+    const asked = await archiveQuestion(sessionIds, sessions)
+    if (asked.checked && asked.worktrees.length === 0)
       return archiveSessions(toasts, sessionIds, 'clean')
-    setQuestion({ sessionIds, worktrees })
+    setQuestion(asked)
   }
-  const answer = (choice: 'keep' | 'remove' | 'cancel') => {
+  const answer = (choice: ArchiveAnswer) => {
     const asked = question
     setQuestion(null)
-    if (asked === null || choice === 'cancel') return
-    void archiveSessions(toasts, asked.sessionIds, choice === 'remove' ? 'all' : 'clean')
+    if (asked === null) return
+    if (choice === 'cancel') return
+    void archiveSessions(toasts, asked.sessionIds, REMOVAL_FOR_ANSWER[choice])
   }
   return { question, answer, archive }
 }
@@ -179,7 +223,7 @@ export function SessionList() {
   const sidebar = useRef<HTMLElement>(null)
   const { filter, setFilter, search, setSearch, query, sessions } = useListedSessions(projectId)
   const { onNew, onOpenTicket, onSelect } = useSessionListNavigation(projectId)
-  const archive = useSessionArchive({ add, t })
+  const archive = useSessionArchive({ add, t }, sessions)
   const selection = useSessionListSelection(sessions, selectedSessionId, {
     onArchiveSelected: (sessionIds) => void archive.archive(sessionIds),
     onSelect,
