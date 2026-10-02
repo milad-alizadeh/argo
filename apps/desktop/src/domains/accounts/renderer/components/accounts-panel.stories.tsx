@@ -300,7 +300,7 @@ export const DisconnectManyConnections: Story = {
 // A language with no catalog of its own falls back to English, so the stub proves the switch: the
 // one key it holds is drawn from the stub and the rest stay English (#2130).
 const STUB_LANGUAGE = 'zz'
-const STUB_EMPTY = 'STUB no Account'
+const STUB_EMPTY = 'Aucun compte connecté.'
 
 export const StubLanguage: Story = {
   args: { listing: listing([]) },

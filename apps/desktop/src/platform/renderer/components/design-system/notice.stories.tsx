@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { createRef, useState } from 'react'
+import { createRef } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { Button } from '../ui/button'
 import { Notice } from './notice'
@@ -103,16 +103,12 @@ export const LongError: Story = {
   },
 }
 
+const retryConnection = fn()
 function RecoverableNotice() {
-  const [recovered, setRecovered] = useState(false)
-  return recovered ? (
-    <Notice tone="success" icon="success" heading="Connection restored">
-      Tickets are available again.
-    </Notice>
-  ) : (
+  return (
     <Notice tone="warning" icon="warning" heading="The provider did not respond">
       <p>Retry the connection when the provider is available.</p>
-      <Button onClick={() => setRecovered(true)} size="sm">
+      <Button onClick={retryConnection} size="sm">
         Retry connection
       </Button>
     </Notice>
@@ -120,12 +116,14 @@ function RecoverableNotice() {
 }
 
 export const RecoveryAction: Story = {
+  beforeEach: () => {
+    retryConnection.mockClear()
+  },
   render: () => <RecoverableNotice />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Retry connection' }))
-    await expect(canvas.getByRole('alert')).toHaveTextContent('Connection restored')
-    await expect(canvas.queryByRole('button', { name: 'Retry connection' })).toBeNull()
+    await expect(retryConnection).toHaveBeenCalledOnce()
   },
 }
 

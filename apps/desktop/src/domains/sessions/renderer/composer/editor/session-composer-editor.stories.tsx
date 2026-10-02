@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
-import { Button } from '@/platform/renderer/components/ui/button'
 import type { ComposerEditing } from '../editing/composer-editing'
 import { ComposerForm, type ComposerFormProps } from '../layout/composer-form'
 import { ComposerStory, STORY_COMMANDS, STORY_TICKETS } from './composer-story-samples'
@@ -44,7 +43,8 @@ Formatting is preserved while you edit.`
 const CODEX_REFERENCE_DRAFT =
   'Run `bun run quality` before @argo-plugin reviews it. See [notes](https://example.com/notes).'
 
-// Closing the composer stands in for leaving the Session page and coming back to it.
+let setComposerOpen: (open: boolean) => void
+let landDraft: (afterCommit?: () => void) => void
 function ClosableComposerStory({
   harness = 'claude',
   onSend,
@@ -53,13 +53,13 @@ function ClosableComposerStory({
   onSend: ComposerFormProps['onSend']
 }) {
   const [open, setOpen] = useState(true)
+  useEffect(() => {
+    setComposerOpen = setOpen
+  }, [])
   const [editing, setEditing] = useState<ComposerEditing>()
 
   return (
     <>
-      <Button onClick={() => setOpen(!open)} type="button" variant="outline">
-        {open ? 'Leave the Session' : 'Return to the Session'}
-      </Button>
       {open ? (
         <ComposerForm
           harness={{ harness }}
@@ -87,40 +87,23 @@ function UnsettledSendStory({ onSend }: { onSend: ComposerFormProps['onSend'] })
 
 const LANDED_DRAFT = 'Restored draft'
 
-// The saved draft lands; with press, a control takes focus before the next frame (#3036).
-function DraftLandsStory({
-  onSend,
-  press,
-}: {
-  onSend: ComposerFormProps['onSend']
-  press: boolean
-}) {
+function DraftLandsStory({ onSend }: { onSend: ComposerFormProps['onSend'] }) {
   const [loading, setLoading] = useState(true)
-  const pressed = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    landDraft = (afterCommit) => {
+      flushSync(() => setLoading(false))
+      // Lexical applies the DOM selection before a subsequent press (#3036).
+      if (afterCommit) queueMicrotask(afterCommit)
+    }
+  }, [])
   return (
-    <>
-      <Button
-        onClick={() => {
-          flushSync(() => setLoading(false))
-          // Lexical applies the DOM selection in a microtask, and a real press always comes after it.
-          if (press) queueMicrotask(() => pressed.current?.focus())
-        }}
-        type="button"
-        variant="outline"
-      >
-        Land the draft
-      </Button>
-      <Button ref={pressed} type="button" variant="outline">
-        Pressed control
-      </Button>
-      <ComposerForm
-        focusOnMount
-        initialEditing={loading ? undefined : { prompt: LANDED_DRAFT }}
-        loading={loading}
-        onSend={onSend}
-        sessionId="landing-session"
-      />
-    </>
+    <ComposerForm
+      focusOnMount
+      initialEditing={loading ? undefined : { prompt: LANDED_DRAFT }}
+      loading={loading}
+      onSend={onSend}
+      sessionId="landing-session"
+    />
   )
 }
 
@@ -257,9 +240,9 @@ export const DraftOutlivesItsComposer: Story = {
 
     await userEvent.click(canvas.getByLabelText('Message'))
     await userEvent.type(canvas.getByLabelText('Message'), 'Half a thought.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Leave the Session' }))
+    flushSync(() => setComposerOpen(false))
     await expect(canvas.queryByLabelText('Message')).toBeNull()
-    await userEvent.click(canvas.getByRole('button', { name: 'Return to the Session' }))
+    flushSync(() => setComposerOpen(true))
     await expect(canvas.getByLabelText('Message')).toHaveTextContent('Half a thought.')
     await expect(canvas.getByRole('button', { name: 'Send message' })).toBeEnabled()
   },
@@ -441,10 +424,10 @@ export const CodexDraftRestoresUnsupportedReference: Story = {
 
     await userEvent.click(canvas.getByLabelText('Message'))
     await userEvent.paste(CODEX_REFERENCE_DRAFT)
-    await userEvent.click(canvas.getByRole('button', { name: 'Leave the Session' }))
+    flushSync(() => setComposerOpen(false))
     await expect(canvas.queryByLabelText('Message')).toBeNull()
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Return to the Session' }))
+    flushSync(() => setComposerOpen(true))
     await expect(canvas.getByLabelText('Message')).toBeVisible()
 
     await expect(canvasElement.querySelector('[data-reference="@argo-plugin"]')).toBeNull()
@@ -500,12 +483,11 @@ export const SkillMentionPaste: Story = {
 
 // Focus asked for on arrival lands with the draft, so it never takes focus back from a later press.
 export const PressAsTheDraftLandsKeepsFocus: Story = {
-  render: (args) => <DraftLandsStory onSend={args.onSend} press />,
+  render: (args) => <DraftLandsStory onSend={args.onSend} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const pressed = canvas.getByRole('button', { name: 'Pressed control' })
-
-    await userEvent.click(canvas.getByRole('button', { name: 'Land the draft' }))
+    landDraft(() => canvas.getByRole('button', { name: 'Add context' }).focus())
+    const pressed = canvas.getByRole('button', { name: 'Add context' })
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
     await expect(canvas.getByRole('combobox', { name: 'Message' })).toHaveTextContent(LANDED_DRAFT)
     await expect(pressed).toHaveFocus()
@@ -514,12 +496,12 @@ export const PressAsTheDraftLandsKeepsFocus: Story = {
 
 // A landed draft takes focus with the caret after its last character.
 export const LandedDraftPutsTheCaretAtTheEnd: Story = {
-  render: (args) => <DraftLandsStory onSend={args.onSend} press={false} />,
+  render: (args) => <DraftLandsStory onSend={args.onSend} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByRole('combobox', { name: 'Message' })
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Land the draft' }))
+    landDraft()
     await waitFor(() => expect(composer).toHaveFocus())
     await waitFor(() => expect(composer).toHaveTextContent(LANDED_DRAFT))
     const selection = window.getSelection()

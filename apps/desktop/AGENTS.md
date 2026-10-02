@@ -106,13 +106,13 @@ for base or registry controls, `Design System/Patterns/<Name>` for app-owned com
 `Features/<Domain>/<Component>` for feature UI, and `App/<Area>/<Component>` for shell UI.
 
 Mode and Theme are global Storybook toolbar controls. Keep one canonical story per component
-state or behavior; stories inherit the selected globals. Assert behavioral events in `play`
-functions, and keep the canvas to realistic product or component UI. Never add Light/Dark
-duplicate stories, story-level mode forcing, theme test matrices, or visible test/debug output.
+state or behavior, inheriting the selected globals.
 
-For rendered UI work, a `play` function is the TDD seam: operate the story through visible
-controls and assert reader-visible behaviour and accessible semantics. Dedicated browser
-contracts in `tests/styling/` prove classes and computed measurements.
+Render realistic product or component UI. In `play`, operate visible controls and assert
+product-owned outcomes or accessible semantics; use explicit callback spies for presentational
+interactions. Keep simulation controls and test observations in private fixtures. A `play`
+function is the TDD seam for rendered UI; browser contracts in `tests/styling/` prove classes
+and computed measurements.
 
 Every story runs a required axe scan. A story only for looking at takes the `view-only` tag
 instead of an empty `play`. Fix a finding, usually with a shared token; disable an axe rule only for

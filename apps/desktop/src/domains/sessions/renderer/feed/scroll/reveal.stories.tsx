@@ -1,19 +1,22 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Suspense, startTransition, useRef, useState } from 'react'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { Suspense, startTransition, useEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
+import { expect, fn, waitFor, within } from 'storybook/test'
 import type { SessionFeedRow } from '../../types'
 import type { Settled } from '../document/use-settled-feed'
-import { useReveals } from './reveal'
+import { useRevealAnimation, useReveals } from './reveal'
 
-const reply: SessionFeedRow = {
+const reply = {
   shape: 'prose',
   id: 'abandoned-reply',
   role: 'assistant',
-  text: 'This reply must reveal when its render commits.',
-}
+  text: 'The settings panel now uses the shared spacing tokens.',
+} satisfies SessionFeedRow
 const neverSettles = new Promise<never>(() => {})
 
 type Phase = 'history' | 'abandoned' | 'delivered'
+let deliverPhase: (phase: Phase) => void
+const abandonedRender = fn()
 
 function RevealProbe({
   phase,
@@ -27,32 +30,24 @@ function RevealProbe({
     rows: phase === 'history' ? [] : [reply],
   }
   const reveals = useReveals(settled)
+  const paragraph = useRef<HTMLParagraphElement>(null)
+  useRevealAnimation(paragraph, reveals.get(reply.id))
   if (phase === 'abandoned') {
     onAbandonedRender()
     throw neverSettles
   }
-  return <output data-testid="reveal-result">{reveals.has(reply.id) ? 'revealing' : phase}</output>
+  return phase === 'history' ? null : <p ref={paragraph}>{reply.text}</p>
 }
 
 function AbandonedRevealHarness() {
   const [phase, setPhase] = useState<Phase>('history')
-  const attempted = useRef<HTMLOutputElement>(null)
+  useEffect(() => {
+    deliverPhase = setPhase
+  }, [])
   return (
-    <div>
-      <button type="button" onClick={() => startTransition(() => setPhase('abandoned'))}>
-        Attempt reply render
-      </button>
-      <button type="button" onClick={() => setPhase('delivered')}>
-        Deliver reply
-      </button>
-      <output data-attempted="false" data-testid="render-attempt" ref={attempted} />
-      <Suspense fallback={<p>Waiting for reply</p>}>
-        <RevealProbe
-          onAbandonedRender={() => attempted.current?.setAttribute('data-attempted', 'true')}
-          phase={phase}
-        />
-      </Suspense>
-    </div>
+    <Suspense fallback={<p>Waiting for reply</p>}>
+      <RevealProbe onAbandonedRender={abandonedRender} phase={phase} />
+    </Suspense>
   )
 }
 
@@ -65,17 +60,19 @@ export default meta
 type Story = StoryObj<typeof AbandonedRevealHarness>
 
 export const AbandonedRenderStillRevealsOnCommit: Story = {
+  beforeEach: () => {
+    abandonedRender.mockClear()
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    expect(canvas.getByTestId('reveal-result')).toHaveTextContent('history')
-    await userEvent.click(canvas.getByRole('button', { name: 'Attempt reply render' }))
-    await waitFor(() =>
-      expect(canvas.getByTestId('render-attempt')).toHaveAttribute('data-attempted', 'true'),
-    )
-    expect(canvas.getByTestId('reveal-result')).toHaveTextContent('history')
+    startTransition(() => deliverPhase('abandoned'))
+    await waitFor(() => expect(abandonedRender).toHaveBeenCalled())
+    expect(canvas.queryByText(reply.text)).toBeNull()
     // A render-time mutation consumes the reveal once its 250 ms preview expires.
     await new Promise((resolve) => setTimeout(resolve, 400))
-    await userEvent.click(canvas.getByRole('button', { name: 'Deliver reply' }))
-    await waitFor(() => expect(canvas.getByTestId('reveal-result')).toHaveTextContent('revealing'))
+    flushSync(() => deliverPhase('delivered'))
+    const paragraph = canvas.getByText(reply.text)
+    await expect(paragraph).toBeVisible()
+    await expect(paragraph.getAnimations()).toHaveLength(1)
   },
 }

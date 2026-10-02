@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import * as React from 'react'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { Badge } from '../ui/badge'
 import { StatusBadge } from './status-badge'
 import { indicatorToneRecipe, statusToneRecipe } from './tone-recipes'
@@ -14,8 +14,9 @@ export const NATIVE_BADGE_VARIANTS = [
   'link',
 ] as const
 
+const removeBadge = fn()
+
 export function NativeBadges() {
-  const [count, setCount] = React.useState(0)
   return (
     <div className="grid justify-items-start gap-4">
       <div className="flex flex-wrap gap-2">
@@ -28,11 +29,7 @@ export function NativeBadges() {
       <Badge render={<a href="#badge-destination" />} variant="secondary">
         Badge destination
       </Badge>
-      <Badge
-        onClick={() => setCount((value) => value + 1)}
-        render={<button type="button" />}
-        variant="destructive"
-      >
+      <Badge onClick={removeBadge} render={<button type="button" />} variant="destructive">
         Remove badge
       </Badge>
       <Badge render={<button disabled type="button" />} variant="secondary">
@@ -41,7 +38,6 @@ export function NativeBadges() {
       <Badge render={<a href="#badge-destination" />} variant="destructive">
         Destructive destination
       </Badge>
-      <output aria-label="Removal count">{count}</output>
       <span id="badge-destination">Destination</span>
     </div>
   )
@@ -90,6 +86,9 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Native: Story = {
+  beforeEach: () => {
+    removeBadge.mockClear()
+  },
   render: () => <NativeBadges />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -106,7 +105,7 @@ export const Native: Story = {
     await userEvent.tab()
     await expect(remove).toHaveFocus()
     await userEvent.keyboard('{Enter}')
-    await expect(canvas.getByLabelText('Removal count')).toHaveTextContent('1')
+    await expect(removeBadge).toHaveBeenCalledOnce()
     await expect(canvas.getByRole('button', { name: 'Disabled badge' })).toBeDisabled()
     await expect(canvas.getByRole('link', { name: 'Destructive destination' })).toHaveAttribute(
       'href',

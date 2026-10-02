@@ -58,7 +58,12 @@ const parentContent: FeedContent[] = [
   },
 ]
 const childContent: FeedContent[] = [
-  { kind: 'message', id: 'child-reply', role: 'assistant', text: 'Child transcript loaded.' },
+  {
+    kind: 'message',
+    id: 'child-reply',
+    role: 'assistant',
+    text: 'I found two controls that need accessible names.',
+  },
 ]
 
 const meta = {
@@ -129,7 +134,11 @@ export const SubagentRowOpensItsFeed: Story = {
       }),
     )
     await waitFor(() => expect(readSubagentIds).toContain(SUBAGENT_ID))
-    await waitFor(() => expect(canvas.getByText('Child transcript loaded.')).toBeVisible())
+    await waitFor(() => {
+      const row = canvasElement.querySelector('[data-feed-row="child-reply"]')
+      expect(row).toBeVisible()
+      expect(row).toHaveTextContent('I found two controls that need accessible names.')
+    })
   },
 }
 
@@ -139,6 +148,10 @@ export const SubagentsControlOpensItsFeed: Story = {
     await userEvent.click(await canvas.findByRole('button', { name: 'Subagents · 1' }))
     await userEvent.click(await screen.findByRole('menuitem', { name: new RegExp(SUBAGENT_NAME) }))
     await waitFor(() => expect(readSubagentIds).toContain(SUBAGENT_ID))
-    await waitFor(() => expect(canvas.getByText('Child transcript loaded.')).toBeVisible())
+    await waitFor(() => {
+      const row = canvasElement.querySelector('[data-feed-row="child-reply"]')
+      expect(row).toBeVisible()
+      expect(row).toHaveTextContent('I found two controls that need accessible names.')
+    })
   },
 }

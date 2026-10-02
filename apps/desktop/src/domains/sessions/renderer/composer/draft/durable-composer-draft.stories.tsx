@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import type { Harness } from '@/harnesses/harness'
 import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
@@ -291,120 +292,15 @@ function createServer(input: {
   return server
 }
 
-function DraftOwnerControls({
-  project,
-  onSession,
-  onReload,
-  onScreenReload,
-  onWorktree,
-  onHarness,
-}: {
-  project: boolean
-  onSession: (sessionId: string) => void
-  onReload: () => void
-  onScreenReload: () => void
-  onWorktree: () => void
-  onHarness: () => void
-}) {
-  return (
-    <>
-      <button onClick={() => onSession('session-a')} type="button">
-        Session A
-      </button>
-      <button onClick={() => onSession('session-b')} type="button">
-        Session B
-      </button>
-      <button onClick={() => onSession('session-a')} type="button">
-        Reopen Session A
-      </button>
-      <button onClick={onReload} type="button">
-        Reload composer
-      </button>
-      <button onClick={onScreenReload} type="button">
-        Reload screen
-      </button>
-      {project ? (
-        <>
-          <button onClick={onWorktree} type="button">
-            New worktree
-          </button>
-          <button onClick={onHarness} type="button">
-            Harness Codex
-          </button>
-        </>
-      ) : null}
-    </>
-  )
-}
-
-function DraftTimingControls({ server }: { server: Server }) {
-  return (
-    <>
-      <button
-        onClick={() => {
-          server.holdSessionASave = true
-        }}
-        type="button"
-      >
-        Hold Session A saves
-      </button>
-      <button onClick={() => server.releaseSave()} type="button">
-        Release Session A save
-      </button>
-      <button onClick={() => (server.holdSubmit = true)} type="button">
-        Hold Sends
-      </button>
-      <button onClick={() => server.releaseSubmit()} type="button">
-        Release Send
-      </button>
-      <button
-        onClick={() => {
-          server.failSessionASave = true
-          server.releaseSave()
-        }}
-        type="button"
-      >
-        Fail Session A save
-      </button>
-      <button
-        onClick={() => {
-          queryClient.setQueryData(
-            trpc.composerDraftRead.queryKey({ type: 'session', sessionId: 'session-a' }),
-            savedDraft('session-a', 'Late Session A read.', Date.now()),
-          )
-        }}
-        type="button"
-      >
-        Apply late Session A read
-      </button>
-    </>
-  )
-}
-
-function DraftReadControls({ server, target }: { server: Server; target: DraftTarget }) {
-  return (
-    <>
-      <button
-        onClick={() => {
-          server.draftReadFailures = 1
-          server.notify()
-        }}
-        type="button"
-      >
-        Fail next draft read
-      </button>
-      <button
-        onClick={() =>
-          void queryClient.invalidateQueries({
-            queryKey: trpc.composerDraftRead.queryKey(target),
-          })
-        }
-        type="button"
-      >
-        Refresh draft
-      </button>
-    </>
-  )
+let draftFixture: {
+  server: Server
+  target: DraftTarget
+  saveFailed: boolean
+  selectSession: (sessionId: string) => void
+  reloadComposer: () => void
+  reloadScreen: () => void
+  changeWorktree: () => void
+  changeHarness: () => void
 }
 
 function useDraftStoryRetryFocus(draft: ReturnType<typeof useDurableComposerDraft>) {
@@ -553,21 +449,20 @@ function DurableDraftScreen({
   })
   const { focusComposerAfterRetry, retryDraftLoad, clearRecoveryFocus } =
     useDraftStoryRetryFocus(draft)
+  useEffect(() => {
+    draftFixture = {
+      server,
+      target,
+      saveFailed: draft?.saveFailed ?? false,
+      selectSession: (nextSession) => flushSync(() => setSessionId(nextSession)),
+      reloadComposer: () => flushSync(() => setComposerVersion((version) => version + 1)),
+      reloadScreen: () => flushSync(onReloadScreen),
+      changeWorktree: () => flushSync(() => setWorktree({ type: 'new', from: null })),
+      changeHarness: () => flushSync(() => setHarness('codex')),
+    }
+  })
   return (
     <div className="mx-auto flex h-[560px] max-w-3xl flex-col gap-3 p-6">
-      <div className="flex gap-2">
-        <DraftOwnerControls
-          project={project}
-          onSession={setSessionId}
-          onReload={() => setComposerVersion((version) => version + 1)}
-          onScreenReload={onReloadScreen}
-          onWorktree={() => setWorktree({ type: 'new', from: null })}
-          onHarness={() => setHarness('codex')}
-        />
-        <DraftTimingControls server={server} />
-        <DraftReadControls server={server} target={target} />
-      </div>
-      <DraftStoryDetails server={server} draft={draft} target={target} />
       {draft && (targetRestored || draft.loadFailed) ? (
         <DurableDraftComposer
           draft={draft}
@@ -580,37 +475,6 @@ function DurableDraftScreen({
         />
       ) : null}
     </div>
-  )
-}
-
-function DraftStoryDetails({
-  server,
-  draft,
-  target,
-}: {
-  server: Server
-  draft: ReturnType<typeof useDurableComposerDraft>
-  target: DraftTarget
-}) {
-  return (
-    <>
-      <output
-        aria-label="Stored drafts"
-        data-save-pending={server.savePending}
-        data-submit-pending={server.submitPending}
-        data-read-failures={server.draftReadFailures}
-      >
-        {JSON.stringify(storedDraftSummaries(server.drafts))}
-      </output>
-      <output aria-label="Submitted target">{JSON.stringify(server.submittedTarget)}</output>
-      <output aria-label="Submitted Turn configuration">
-        {JSON.stringify(server.submittedTurnConfiguration)}
-      </output>
-      <output aria-label="Send commands">{JSON.stringify(server.submissions)}</output>
-      <output aria-label="Current save failure">{String(draft?.saveFailed ?? false)}</output>
-      <output aria-label="Session A save rejected">{String(server.sessionASaveRejected)}</output>
-      <output aria-label="Current target">{JSON.stringify(target)}</output>
-    </>
   )
 }
 
@@ -663,15 +527,6 @@ function DurableDraftComposer({
   )
 }
 
-function storedDraftSummaries(drafts: Map<string, DraftValue>) {
-  return [...drafts.values()].map(({ target, prompt, revision, turnConfiguration }) => ({
-    target,
-    prompt,
-    revision,
-    turnConfiguration,
-  }))
-}
-
 const meta = {
   title: 'Features/Sessions/Composer/Durable Draft',
   component: DurableDraftStory,
@@ -687,7 +542,7 @@ export const RestoresAndRetainsRejectedDrafts: Story = {
     const editor = await canvas.findByLabelText('Message')
     await expect(editor).toHaveTextContent('Restored Session A draft.')
     await expect(canvas.getByRole('button', { name: 'Remove notes' })).toBeInTheDocument()
-    await userEvent.click(canvas.getByRole('button', { name: 'Reload composer' }))
+    draftFixture.reloadComposer()
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
       'Restored Session A draft.',
     )
@@ -698,9 +553,9 @@ export const RestoresAndRetainsRejectedDrafts: Story = {
       ),
     ).toBeInTheDocument()
     await waitFor(() =>
-      expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('Restored Session A draft.'),
+      expect(draftFixture.server.drafts.get('session-a')?.prompt).toBe('Restored Session A draft.'),
     )
-    await userEvent.click(canvas.getByRole('button', { name: 'Reload composer' }))
+    draftFixture.reloadComposer()
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
       'Restored Session A draft.',
     )
@@ -718,11 +573,11 @@ export const RestoredReferenceSurvivesSwitchAndRejectedKeyboardSend: Story = {
     await expect(canvas.getByText('Implement')).toBeVisible()
     await expect(editor).toHaveTextContent('for this.')
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    draftFixture.selectSession('session-b')
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
       'Restored Session B draft.',
     )
-    await userEvent.click(canvas.getByRole('button', { name: 'Reopen Session A' }))
+    draftFixture.selectSession('session-a')
     const restored = await canvas.findByLabelText('Message')
     await expect(canvas.getByText('Implement')).toBeVisible()
     await userEvent.click(restored)
@@ -732,7 +587,7 @@ export const RestoredReferenceSurvivesSwitchAndRejectedKeyboardSend: Story = {
         'The Turn could not be sent. Your draft is still saved.',
       ),
     ).toBeInTheDocument()
-    await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent(
+    await expect(draftFixture.server.drafts.get('session-a')?.prompt).toBe(
       'Use [$implement](/skills/implement/SKILL.md) for this.',
     )
     await expect(canvas.getByText('Implement')).toBeVisible()
@@ -760,11 +615,11 @@ export const KeepsLoadedDraftAfterRefreshFails: Story = {
     const canvas = within(canvasElement)
     const editor = await canvas.findByLabelText('Message')
     await expect(editor).toHaveTextContent('Restored Session A draft.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Fail next draft read' }))
-    await userEvent.click(canvas.getByRole('button', { name: 'Refresh draft' }))
-    await waitFor(() =>
-      expect(canvas.getByLabelText('Stored drafts')).toHaveAttribute('data-read-failures', '0'),
-    )
+    draftFixture.server.draftReadFailures = 1
+    void queryClient.invalidateQueries({
+      queryKey: trpc.composerDraftRead.queryKey(draftFixture.target),
+    })
+    await waitFor(() => expect(draftFixture.server.draftReadFailures).toBe(0))
     await expect(editor).toHaveTextContent('Restored Session A draft.')
     const page = within(canvasElement.ownerDocument.body)
     await expect(await page.findByText('Argo could not load this draft.')).toBeVisible()
@@ -783,13 +638,17 @@ export const KeepsUnavailableConfigurationUntilSubmit: Story = {
     const canvas = within(canvasElement)
     const editor = await canvas.findByLabelText('Message')
     await expect(editor).toHaveTextContent('Restored Session A draft.')
-    const store = canvas.getByLabelText('Stored drafts')
-    await expect(store).toHaveTextContent('model-no-longer-available')
-    await expect(store).toHaveTextContent('"revision":0')
+    await expect(draftFixture.server.drafts.get('session-a')).toMatchObject({
+      revision: 0,
+      turnConfiguration: { model: 'model-no-longer-available' },
+    })
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
-    await waitFor(() => expect(store).toHaveTextContent(choices.opening.model))
-    await expect(store).toHaveTextContent('"revision":1')
-    await expect(store).not.toHaveTextContent('model-no-longer-available')
+    await waitFor(() =>
+      expect(draftFixture.server.drafts.get('session-a')).toMatchObject({
+        revision: 1,
+        turnConfiguration: { model: choices.opening.model },
+      }),
+    )
     await expect(editor).toHaveTextContent('Restored Session A draft.')
   },
 }
@@ -801,16 +660,16 @@ export const AcceptedSendClearsTheCachedDraft: Story = {
     await expect(editor).toHaveTextContent('Restored Session A draft.')
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
     await waitFor(() => expect(editor).not.toHaveTextContent('Restored Session A draft.'))
-    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    draftFixture.selectSession('session-b')
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
       'Restored Session B draft.',
     )
-    await userEvent.click(canvas.getByRole('button', { name: 'Reopen Session A' }))
+    draftFixture.selectSession('session-a')
     await expect(await canvas.findByLabelText('Message')).not.toHaveTextContent(
       'Restored Session A draft.',
     )
     await waitFor(() =>
-      expect(canvas.getByLabelText('Stored drafts')).not.toHaveTextContent(
+      expect(draftFixture.server.drafts.get('session-a')?.prompt).not.toBe(
         'Restored Session A draft.',
       ),
     )
@@ -829,13 +688,11 @@ export const UncertainSendKeepsItsDraftWithoutResending: Story = {
       ),
     ).toBeInTheDocument()
     await expect(editor).toHaveTextContent('Restored Session A draft.')
-    await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent(
+    await expect(draftFixture.server.drafts.get('session-a')?.prompt).toBe(
       'Restored Session A draft.',
     )
     await waitFor(() => {
-      const commands = JSON.parse(
-        canvas.getByLabelText('Send commands').textContent ?? '[]',
-      ) as MockInput[]
+      const commands = draftFixture.server.submissions
       expect(commands).toHaveLength(1)
       expect(commands[0]?.expectedRevision).toBe(0)
       expect(commands[0]?.commandId).toMatch(
@@ -849,26 +706,19 @@ export const SwitchingSessionsDuringSendKeepsTheOtherDraft: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await canvas.findByLabelText('Message')
-    await userEvent.click(canvas.getByRole('button', { name: 'Hold Sends' }))
+    draftFixture.server.holdSubmit = true
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
-    await waitFor(() =>
-      expect(canvas.getByLabelText('Stored drafts')).toHaveAttribute('data-submit-pending', 'true'),
-    )
-    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    await waitFor(() => expect(draftFixture.server.submitPending).toBe(true))
+    draftFixture.selectSession('session-b')
     const otherEditor = await canvas.findByLabelText('Message')
     await expect(otherEditor).toHaveTextContent('Restored Session B draft.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Release Send' }))
-    await waitFor(() =>
-      expect(canvas.getByLabelText('Stored drafts')).toHaveAttribute(
-        'data-submit-pending',
-        'false',
-      ),
-    )
+    draftFixture.server.releaseSubmit()
+    await waitFor(() => expect(draftFixture.server.submitPending).toBe(false))
     await expect(otherEditor).toHaveTextContent('Restored Session B draft.')
-    await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent(
+    await expect(draftFixture.server.drafts.get('session-b')?.prompt).toBe(
       'Restored Session B draft.',
     )
-    await userEvent.click(canvas.getByRole('button', { name: 'Reopen Session A' }))
+    draftFixture.selectSession('session-a')
     await expect(await canvas.findByLabelText('Message')).not.toHaveTextContent(
       'Restored Session A draft.',
     )
@@ -879,25 +729,18 @@ export const AcceptedSendKeepsAlreadySavedNewerEdit: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const editor = await canvas.findByLabelText('Message')
-    await userEvent.click(canvas.getByRole('button', { name: 'Hold Sends' }))
+    draftFixture.server.holdSubmit = true
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
-    await waitFor(() =>
-      expect(canvas.getByLabelText('Stored drafts')).toHaveAttribute('data-submit-pending', 'true'),
-    )
+    await waitFor(() => expect(draftFixture.server.submitPending).toBe(true))
     await userEvent.clear(editor)
     await userEvent.type(editor, 'A newer Session A draft.')
     await waitFor(() =>
-      expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('A newer Session A draft.'),
+      expect(draftFixture.server.drafts.get('session-a')?.prompt).toBe('A newer Session A draft.'),
     )
-    await userEvent.click(canvas.getByRole('button', { name: 'Release Send' }))
-    await waitFor(() =>
-      expect(canvas.getByLabelText('Stored drafts')).toHaveAttribute(
-        'data-submit-pending',
-        'false',
-      ),
-    )
+    draftFixture.server.releaseSubmit()
+    await waitFor(() => expect(draftFixture.server.submitPending).toBe(false))
     await expect(editor).toHaveTextContent('A newer Session A draft.')
-    await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent(
+    await expect(draftFixture.server.drafts.get('session-a')?.prompt).toBe(
       'A newer Session A draft.',
     )
   },
@@ -907,31 +750,24 @@ export const AcceptedSendRecreatesANewerEditSavedAfterAcceptance: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const editor = await canvas.findByLabelText('Message')
-    await userEvent.click(canvas.getByRole('button', { name: 'Hold Sends' }))
-    await userEvent.click(canvas.getByRole('button', { name: 'Hold Session A saves' }))
+    draftFixture.server.holdSubmit = true
+    draftFixture.server.holdSessionASave = true
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
-    await waitFor(() =>
-      expect(canvas.getByLabelText('Stored drafts')).toHaveAttribute('data-submit-pending', 'true'),
-    )
+    await waitFor(() => expect(draftFixture.server.submitPending).toBe(true))
     await userEvent.clear(editor)
     await userEvent.type(editor, 'Saved after acceptance.')
-    await serverRequestedSave(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: 'Release Send' }))
+    await serverRequestedSave()
+    draftFixture.server.releaseSubmit()
+    await waitFor(() => expect(draftFixture.server.submitPending).toBe(false))
+    draftFixture.server.releaseSave()
     await waitFor(() =>
-      expect(canvas.getByLabelText('Stored drafts')).toHaveAttribute(
-        'data-submit-pending',
-        'false',
-      ),
+      expect(draftFixture.server.drafts.get('session-a')?.prompt).toBe('Saved after acceptance.'),
     )
-    await userEvent.click(canvas.getByRole('button', { name: 'Release Session A save' }))
-    await waitFor(() =>
-      expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('Saved after acceptance.'),
-    )
-    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    draftFixture.selectSession('session-b')
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
       'Restored Session B draft.',
     )
-    await userEvent.click(canvas.getByRole('button', { name: 'Reopen Session A' }))
+    draftFixture.selectSession('session-a')
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
       'Saved after acceptance.',
     )
@@ -943,44 +779,49 @@ export const AcceptedSendStaysClearedAfterARenderDuringItsSave: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const editor = await canvas.findByLabelText('Message')
-    await userEvent.click(canvas.getByRole('button', { name: 'Hold Session A saves' }))
+    draftFixture.server.holdSessionASave = true
     await userEvent.clear(editor)
     await userEvent.type(editor, 'Sent while saving.')
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
-    await serverRequestedSave(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: 'Release Session A save' }))
+    await serverRequestedSave()
+    draftFixture.server.releaseSave()
     await waitFor(() => expect(editor).not.toHaveTextContent('Sent while saving.'))
-    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    draftFixture.selectSession('session-b')
     const otherEditor = await canvas.findByLabelText('Message')
     await expect(otherEditor).toHaveTextContent('Restored Session B draft.')
     await userEvent.type(otherEditor, ' Saved later.')
     // Session B's autosave is armed after any Session A one, so it lands after it too.
     await waitFor(() =>
-      expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('Saved later.'),
+      expect(draftFixture.server.drafts.get('session-b')?.prompt).toContain('Saved later.'),
     )
-    await expect(canvas.getByLabelText('Stored drafts')).not.toHaveTextContent('Sent while saving.')
+    await expect(draftFixture.server.drafts.get('session-a')?.prompt).not.toBe('Sent while saving.')
   },
 }
 
 export const TargetSwitchKeepsAnInFlightSaveWithItsOwner: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await canvas.findByLabelText('Message')
-    await userEvent.click(canvas.getByRole('button', { name: 'Hold Session A saves' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Message')).toHaveTextContent('Restored Session A draft.'),
+    )
+    draftFixture.server.holdSessionASave = true
     const editor = canvas.getByLabelText('Message')
+    await userEvent.click(editor)
     await userEvent.clear(editor)
+    await waitFor(() => expect(editor.textContent).toBe(''))
     await userEvent.type(editor, 'Updated Session A draft.')
-    await serverRequestedSave(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    await serverRequestedSave()
+    draftFixture.selectSession('session-b')
     const otherEditor = await canvas.findByLabelText('Message')
     await expect(otherEditor).toHaveTextContent('Restored Session B draft.')
+    await userEvent.click(otherEditor)
     await userEvent.clear(otherEditor)
+    await waitFor(() => expect(otherEditor.textContent).toBe(''))
     await userEvent.type(otherEditor, 'Updated Session B draft.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Release Session A save' }))
+    draftFixture.server.releaseSave()
     await waitFor(() => {
-      const store = canvas.getByLabelText('Stored drafts').textContent ?? ''
-      expect(store).toContain('Updated Session A draft.')
-      expect(store).toContain('Updated Session B draft.')
+      expect(draftFixture.server.drafts.get('session-a')?.prompt).toBe('Updated Session A draft.')
+      expect(draftFixture.server.drafts.get('session-b')?.prompt).toBe('Updated Session B draft.')
     })
     await expect(canvas.getByLabelText('Message')).toHaveTextContent('Updated Session B draft.')
   },
@@ -990,17 +831,18 @@ export const SavesOneOwnerInRevisionOrder: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const editor = await canvas.findByLabelText('Message')
-    await userEvent.click(canvas.getByRole('button', { name: 'Hold Session A saves' }))
+    draftFixture.server.holdSessionASave = true
     await userEvent.clear(editor)
     await userEvent.type(editor, 'First revision.')
-    await serverRequestedSave(canvasElement)
+    await serverRequestedSave()
     await userEvent.clear(editor)
     await userEvent.type(editor, 'Second revision.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Release Session A save' }))
+    draftFixture.server.releaseSave()
     await waitFor(() => {
-      const store = canvas.getByLabelText('Stored drafts')
-      expect(store).toHaveTextContent('Second revision.')
-      expect(store).toHaveTextContent('"revision":2')
+      expect(draftFixture.server.drafts.get('session-a')).toMatchObject({
+        prompt: 'Second revision.',
+        revision: 2,
+      })
     })
   },
 }
@@ -1011,10 +853,14 @@ export const LateSessionReadKeepsTheCurrentDraft: Story = {
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
       'Restored Session A draft.',
     )
-    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    draftFixture.selectSession('session-b')
     const editor = await canvas.findByLabelText('Message')
     await expect(editor).toHaveTextContent('Restored Session B draft.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Apply late Session A read' }))
+    queryClient.setQueryData(
+      trpc.composerDraftRead.queryKey({ type: 'session', sessionId: 'session-a' }),
+      savedDraft('session-a', 'Late Session A read.', Date.now()),
+    )
+    await new Promise((resolve) => requestAnimationFrame(resolve))
     await expect(canvas.getByLabelText('Message')).toHaveTextContent('Restored Session B draft.')
   },
 }
@@ -1023,19 +869,18 @@ export const LateSessionSaveFailureKeepsTheCurrentOwner: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const editor = await canvas.findByLabelText('Message')
-    await userEvent.click(canvas.getByRole('button', { name: 'Hold Session A saves' }))
+    draftFixture.server.holdSessionASave = true
     await userEvent.clear(editor)
     await userEvent.type(editor, 'Session A pending save.')
-    await serverRequestedSave(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    await serverRequestedSave()
+    draftFixture.selectSession('session-b')
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
       'Restored Session B draft.',
     )
-    await userEvent.click(canvas.getByRole('button', { name: 'Fail Session A save' }))
-    await waitFor(() =>
-      expect(canvas.getByLabelText('Session A save rejected')).toHaveTextContent('true'),
-    )
-    await expect(canvas.getByLabelText('Current save failure')).toHaveTextContent('false')
+    draftFixture.server.failSessionASave = true
+    draftFixture.server.releaseSave()
+    await waitFor(() => expect(draftFixture.server.sessionASaveRejected).toBe(true))
+    await expect(draftFixture.saveFailed).toBe(false)
     await expect(canvas.getByLabelText('Message')).toHaveTextContent('Restored Session B draft.')
   },
 }
@@ -1046,28 +891,35 @@ export const ProjectTargetChangesWithoutTextPersistForSend: Story = {
     const canvas = within(canvasElement)
     const editor = await canvas.findByLabelText('Message')
     await expect(editor).toHaveTextContent('Plan this change.')
-    await userEvent.click(canvas.getByRole('button', { name: 'New worktree' }))
-    const store = canvas.getByLabelText('Stored drafts')
-    await waitFor(() => expect(store).toHaveTextContent('"worktree":{"type":"new","from":null}'))
-    await expect(store).toHaveTextContent('"harness":"claude"')
-    await userEvent.click(canvas.getByRole('button', { name: 'Harness Codex' }))
-    await waitFor(() => expect(store).toHaveTextContent('"revision":2'))
-    await expect(store).toHaveTextContent('"harness":"codex"')
-    await userEvent.click(canvas.getByRole('button', { name: 'Reload screen' }))
+    draftFixture.changeWorktree()
     await waitFor(() =>
-      expect(canvas.getByLabelText('Current target')).toHaveTextContent(
-        '"worktree":{"type":"new","from":null}',
-      ),
+      expect(draftFixture.server.drafts.get('project-1')?.target).toMatchObject({
+        worktree: { type: 'new', from: null },
+        harness: 'claude',
+      }),
     )
-    await expect(canvas.getByLabelText('Current target')).toHaveTextContent('"harness":"codex"')
+    draftFixture.changeHarness()
+    await waitFor(() =>
+      expect(draftFixture.server.drafts.get('project-1')).toMatchObject({
+        revision: 2,
+        target: { harness: 'codex' },
+      }),
+    )
+    draftFixture.reloadScreen()
+    await waitFor(() =>
+      expect(draftFixture.target).toMatchObject({
+        worktree: { type: 'new', from: null },
+        harness: 'codex',
+      }),
+    )
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent('Plan this change.')
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
     await waitFor(() =>
-      expect(canvas.getByLabelText('Submitted target')).toHaveTextContent(
-        '"worktree":{"type":"new","from":null}',
-      ),
+      expect(draftFixture.server.submittedTarget).toMatchObject({
+        worktree: { type: 'new', from: null },
+        harness: 'codex',
+      }),
     )
-    await expect(canvas.getByLabelText('Submitted target')).toHaveTextContent('"harness":"codex"')
   },
 }
 
@@ -1076,15 +928,13 @@ export const HarnessSwitchSendsAConfigurationTheNewHarnessOffers: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent('Plan this change.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Harness Codex' }))
-    await waitFor(() =>
-      expect(canvas.getByLabelText('Current target')).toHaveTextContent('"harness":"codex"'),
-    )
+    draftFixture.changeHarness()
+    await waitFor(() => expect(draftFixture.target).toMatchObject({ harness: 'codex' }))
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
-    const submitted = canvas.getByLabelText('Submitted Turn configuration')
-    await waitFor(() => expect(submitted).not.toHaveTextContent('null'))
-    const { mode } = JSON.parse(submitted.textContent ?? 'null') as { mode: string }
-    await expect(codexChoices.modes.map(({ value }) => value)).toContain(mode)
+    await waitFor(() => expect(draftFixture.server.submittedTurnConfiguration).not.toBeNull())
+    await expect(codexChoices.modes.map(({ value }) => value)).toContain(
+      draftFixture.server.submittedTurnConfiguration?.mode,
+    )
   },
 }
 
@@ -1092,18 +942,19 @@ export const RestoresSavedCodexConfigurationBeforeSend: Story = {
   args: { project: true, savedProjectHarness: 'codex', initialOutcome: 'reject' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const store = canvas.getByLabelText('Stored drafts')
-    await expect(store).toHaveTextContent('"model":"gpt-6-astra"')
-    await expect(await canvas.findByLabelText('Message')).toHaveTextContent('Plan this change.')
-    await waitFor(() =>
-      expect(canvas.getByLabelText('Current target')).toHaveTextContent('"harness":"codex"'),
+    await expect(draftFixture.server.drafts.get('project-1')?.turnConfiguration.model).toBe(
+      'gpt-6-astra',
     )
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent('Plan this change.')
+    await waitFor(() => expect(draftFixture.target).toMatchObject({ harness: 'codex' }))
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
     await within(canvasElement.ownerDocument.body).findByText(
       'The Turn could not be sent. Your draft is still saved.',
     )
-    await expect(store).toHaveTextContent('"model":"gpt-6-astra"')
-    await expect(store).toHaveTextContent('"revision":0')
+    await expect(draftFixture.server.drafts.get('project-1')).toMatchObject({
+      revision: 0,
+      turnConfiguration: { model: 'gpt-6-astra' },
+    })
   },
 }
 
@@ -1113,17 +964,14 @@ export const CreatesProjectDraftAfterEmptyRead: Story = {
     const canvas = within(canvasElement)
     await canvas.findByLabelText('Message')
     await waitFor(() =>
-      expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('"projectId":"project-1"'),
+      expect(draftFixture.server.drafts.get('project-1')?.target).toMatchObject({
+        projectId: 'project-1',
+      }),
     )
-    await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('"revision":0')
+    await expect(draftFixture.server.drafts.get('project-1')?.revision).toBe(0)
   },
 }
 
-async function serverRequestedSave(canvasElement: HTMLElement) {
-  await waitFor(() =>
-    expect(within(canvasElement).getByLabelText('Stored drafts')).toHaveAttribute(
-      'data-save-pending',
-      'true',
-    ),
-  )
+async function serverRequestedSave() {
+  await waitFor(() => expect(draftFixture.server.savePending).toBe(true))
 }

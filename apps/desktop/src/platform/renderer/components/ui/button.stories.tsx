@@ -1,7 +1,6 @@
 import { MagnifyingGlassIcon } from '@phosphor-icons/react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import * as React from 'react'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { Button } from './button'
 
 const longControlLabel = 'Save the complete configuration for the selected project'
@@ -15,12 +14,11 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Variants: Story = {
-  render: () => {
-    const [saved, setSaved] = React.useState(false)
+  args: { onClick: fn() },
+  render: (args) => {
     return (
       <div className="flex max-w-full flex-wrap items-center gap-4">
-        <Button onClick={() => setSaved(true)}>Save</Button>
-        {saved && <p role="status">Configuration saved.</p>}
+        <Button onClick={args.onClick}>Save</Button>
         <Button disabled>Unavailable</Button>
         <Button aria-invalid variant="outline">Invalid action</Button>
         <Button aria-label="Search" size="icon-xs"><MagnifyingGlassIcon /></Button>
@@ -35,13 +33,13 @@ export const Variants: Story = {
       </div>
     )
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const save = canvas.getByRole('button', { name: 'Save' })
     save.focus()
     await expect(save).toHaveFocus()
     await userEvent.keyboard('{Enter}')
-    await expect(canvas.getByRole('status')).toHaveTextContent('Configuration saved.')
+    await expect(args.onClick).toHaveBeenCalledOnce()
     await userEvent.tab()
     await expect(canvas.getByRole('button', { name: 'Invalid action' })).toHaveFocus()
     await expect(canvas.getByRole('button', { name: 'Unavailable' })).toBeDisabled()

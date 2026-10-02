@@ -2,16 +2,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 import { createMemoryRouter, Navigate, RouterProvider } from 'react-router'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import type { HarnessReadinessState } from '@/domains/harness-signin/contract/contract'
 import { SessionList } from '@/domains/sessions/renderer/session-list/session-list'
 import type { Harness } from '@/harnesses/harness'
 import { QUERY_KEYS } from '@/platform/renderer/lib/query-client'
 import { AppRouteLayout } from './app-router'
 
-function SectionScreen({ section }: { section: string }) {
-  return <h1>{section}</h1>
-}
+let routeRouter: ReturnType<typeof createMemoryRouter>
 
 function AppRouteLayoutStory({
   projectScoped = false,
@@ -33,8 +31,8 @@ function AppRouteLayoutStory({
     if (noHarnessEntry) return projectScoped ? '/projects/storybook-project/tickets' : '/tickets'
     return projectScoped ? '/projects/storybook-project/sessions' : '/sessions'
   })()
-  const [router] = useState(() =>
-    createMemoryRouter(
+  const [router] = useState(() => {
+    routeRouter = createMemoryRouter(
       [
         {
           element: <AppRouteLayout />,
@@ -45,13 +43,13 @@ function AppRouteLayoutStory({
               handle: { sidebar: <SessionList /> },
               // The sidebar reopens the last selected Session, so that path must resolve.
               children: [
-                { index: true, element: <SectionScreen section="Sessions screen" /> },
-                { path: ':sessionId', element: <SectionScreen section="Sessions screen" /> },
+                { index: true, element: <main /> },
+                { path: ':sessionId', element: <main /> },
               ],
             },
             {
               path: projectScoped ? '/projects/:projectId/tickets' : '/tickets',
-              element: <SectionScreen section="Tickets screen" />,
+              element: <main />,
             },
           ],
         },
@@ -59,8 +57,9 @@ function AppRouteLayoutStory({
       {
         initialEntries: [initialEntry],
       },
-    ),
-  )
+    )
+    return routeRouter
+  })
   return (
     <QueryClientProvider client={queryClient}>
       <div className="h-dvh">
@@ -225,7 +224,9 @@ export const LaunchWithNoHarnessReadyRedirects: Story = {
   beforeEach: () => mockHarnessTrpc({ harnessReadinessList: () => noHarnessInstalled }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByRole('heading', { name: 'Sessions screen' })).toBeVisible()
+    await waitFor(() =>
+      expect(routeRouter.state.location.pathname).toMatch(/\/sessions(?:\/[^/]+)?$/),
+    )
     await expect(canvas.queryByText('Sign in to a Harness')).toBeNull()
   },
 }
@@ -235,16 +236,24 @@ export const SectionSwitchDrawsTheChosenScreen: Story = {
   args: { projectScoped: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await canvas.findByRole('heading', { name: 'Sessions screen' })
+    await waitFor(() =>
+      expect(routeRouter.state.location.pathname).toMatch(/\/sessions(?:\/[^/]+)?$/),
+    )
     await userEvent.click(canvas.getByRole('button', { name: 'Tickets' }))
-    await expect(await canvas.findByRole('heading', { name: 'Tickets screen' })).toBeVisible()
+    await waitFor(() =>
+      expect(routeRouter.state.location.pathname).toBe('/projects/storybook-project/tickets'),
+    )
     await expect(canvas.getByRole('button', { name: 'Tickets' })).toHaveAttribute(
       'aria-current',
       'page',
     )
-    await expect(canvas.queryByRole('heading', { name: 'Sessions screen' })).toBeNull()
     await userEvent.click(canvas.getByRole('button', { name: 'Sessions' }))
-    await expect(await canvas.findByRole('heading', { name: 'Sessions screen' })).toBeVisible()
-    await expect(canvas.queryByRole('heading', { name: 'Tickets screen' })).toBeNull()
+    await waitFor(() =>
+      expect(routeRouter.state.location.pathname).toMatch(/\/sessions(?:\/[^/]+)?$/),
+    )
+    await expect(canvas.getByRole('button', { name: 'Sessions' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
   },
 }

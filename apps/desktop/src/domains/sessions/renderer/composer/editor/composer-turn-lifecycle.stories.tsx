@@ -1,10 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import type { Harness } from '@/harnesses/harness'
 import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '@/mocks/sessions/harness-catalog.fixture'
-import { Button } from '@/platform/renderer/components/ui/button'
 import { ComposerForm, type ComposerFormProps } from '../layout/composer-form'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 import { configurationFromReading } from '../turn-configuration/turn-configuration'
@@ -53,31 +52,24 @@ function LiveComposerStory() {
   )
 }
 
-// The send stays pending until the reader finishes it, so a Session switch can land mid-send.
+let switchSession: (sessionId: string) => void
+let finishSend: (sent: boolean) => void
+
 function PendingSendStory() {
   const [sessionId, setSessionId] = useState('session-one')
-  const finish = useRef<(sent: boolean) => void>(() => {})
-
+  useEffect(() => {
+    switchSession = setSessionId
+  }, [])
   return (
-    <>
-      <div className="mb-4 flex gap-2">
-        <Button onClick={() => setSessionId('session-two')} type="button" variant="outline">
-          Session two
-        </Button>
-        <Button onClick={() => finish.current(true)} type="button" variant="outline">
-          Finish send
-        </Button>
-      </div>
-      <ComposerForm
-        onSend={() =>
-          new Promise<boolean>((resolve) => {
-            finish.current = resolve
-          })
-        }
-        plan={null}
-        sessionId={sessionId}
-      />
-    </>
+    <ComposerForm
+      onSend={() =>
+        new Promise<boolean>((resolve) => {
+          finishSend = resolve
+        })
+      }
+      plan={null}
+      sessionId={sessionId}
+    />
   )
 }
 
@@ -103,26 +95,20 @@ function TurnConfigurationComposerStory({
   running?: boolean
   sessionId: string
 }) {
-  const [isRunning, setRunning] = useState(running)
   const [turnConfiguration, setTurnConfiguration] = useState(CLAUDE_TURN_CONFIGURATION.opening)
 
   return (
-    <>
-      <Button onClick={() => setRunning(false)} type="button" variant="outline">
-        Finish turn
-      </Button>
-      <ComposerForm
-        isRunning={isRunning}
-        onSend={onSend}
-        sessionId={sessionId}
-        harness={{ harness: 'claude' }}
-        turnConfiguration={{
-          choices: CLAUDE_TURN_CONFIGURATION,
-          value: turnConfiguration,
-          onChange: setTurnConfiguration,
-        }}
-      />
-    </>
+    <ComposerForm
+      isRunning={running}
+      onSend={onSend}
+      sessionId={sessionId}
+      harness={{ harness: 'claude' }}
+      turnConfiguration={{
+        choices: CLAUDE_TURN_CONFIGURATION,
+        value: turnConfiguration,
+        onChange: setTurnConfiguration,
+      }}
+    />
   )
 }
 
@@ -207,10 +193,14 @@ export const SendFinishesInAnotherSession: Story = {
     const canvas = within(canvasElement)
 
     await sendDraft(canvas, 'Sent from session one.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Session two' }))
+    switchSession('session-two')
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Message')).not.toHaveTextContent('Sent from session one.'),
+    )
     await userEvent.click(canvas.getByLabelText('Message'))
     await userEvent.type(canvas.getByLabelText('Message'), 'Drafted in session two.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Finish send' }))
+    finishSend(true)
+    await new Promise((resolve) => requestAnimationFrame(resolve))
     await expect(canvas.getByLabelText('Message')).toHaveTextContent('Drafted in session two.')
   },
 }

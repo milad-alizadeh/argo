@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { MemoryRouter, Route, Routes, useLocation, useNavigate, useParams } from 'react-router'
+import { type ReactNode, useState } from 'react'
+import { createMemoryRouter, RouterProvider, useParams } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { sessionRow, sessionSubagent } from '@/mocks/sessions/session-rows'
 import {
@@ -53,14 +54,27 @@ function OpenSessionFeed() {
   return null
 }
 
-// A note, not an `output`: the stories count the list's status regions.
-function RouteOutput() {
-  const location = useLocation()
-  return (
-    <p aria-label="Session route" className="sr-only" role="note">
-      {location.pathname + location.search}
-    </p>
-  )
+let sessionRouter: ReturnType<typeof createMemoryRouter>
+
+function SessionListFrame({ children, route }: { children: ReactNode; route: string }) {
+  const [router] = useState(() => {
+    sessionRouter = createMemoryRouter(
+      [
+        {
+          path: '/projects/:projectId/sessions/:sessionId?',
+          element: (
+            <>
+              <div className="h-dvh w-80">{children}</div>
+              <OpenSessionFeed />
+            </>
+          ),
+        },
+      ],
+      { initialEntries: [route] },
+    )
+    return sessionRouter
+  })
+  return <RouterProvider router={router} />
 }
 
 const meta = {
@@ -69,22 +83,9 @@ const meta = {
   parameters: { layout: 'fullscreen', route: SESSIONS_ROUTE },
   decorators: [
     (Story, { parameters }) => (
-      <MemoryRouter initialEntries={[parameters.route as string]}>
-        <Routes>
-          <Route
-            path="/projects/:projectId/sessions/:sessionId?"
-            element={
-              <>
-                <div className="h-dvh w-80">
-                  <Story />
-                </div>
-                <OpenSessionFeed />
-                <RouteOutput />
-              </>
-            }
-          />
-        </Routes>
-      </MemoryRouter>
+      <SessionListFrame route={parameters.route as string}>
+        <Story />
+      </SessionListFrame>
     ),
   ],
   beforeEach: () => showing(listed),
@@ -176,7 +177,7 @@ async function renameDiscoveredSession(canvas: ReturnType<typeof within>) {
     { sessionIds: ['prose'], title: '  Keep the Session list stable' },
     { sessionIds: ['prose'], title: '  Keep the Session list stable' },
   ])
-  await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
+  await expect(sessionRouter.state.location.pathname + sessionRouter.state.location.search).toBe(
     `${SESSIONS_ROUTE}/second-session`,
   )
 }
@@ -212,7 +213,7 @@ export const Discovered: Story = {
     await expect(row).toHaveAccessibleName(/Idle/)
     await expect(row.querySelector('svg')).not.toBeNull()
     await userEvent.click(row)
-    await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
+    await expect(sessionRouter.state.location.pathname + sessionRouter.state.location.search).toBe(
       `${SESSIONS_ROUTE}/prose`,
     )
     await expect(row).toHaveAttribute('aria-current', 'page')
@@ -225,7 +226,7 @@ export const Discovered: Story = {
     expect(second.matches(':focus-visible')).toBe(true)
     await userEvent.keyboard('{Enter}')
     await expect(second).toHaveAttribute('aria-current', 'page')
-    await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
+    await expect(sessionRouter.state.location.pathname + sessionRouter.state.location.search).toBe(
       `${SESSIONS_ROUTE}/second-session`,
     )
     await renameDiscoveredSession(canvas)
@@ -857,7 +858,7 @@ export const ArchivedRowsCanBeOpened: Story = {
     await userEvent.click(
       await canvas.findByRole('button', { name: /Open the archived transcript/ }),
     )
-    await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
+    await expect(sessionRouter.state.location.pathname + sessionRouter.state.location.search).toBe(
       `${SESSIONS_ROUTE}/archived-session?status=archived`,
     )
   },
@@ -1213,19 +1214,6 @@ export const SearchDoesNotShowInitialSkeleton: Story = {
   },
 }
 
-function OpenSecondProject() {
-  const navigate = useNavigate()
-  const { search } = useLocation()
-  return (
-    <button
-      onClick={() => navigate(`/projects/storybook-worktree/sessions${search}`)}
-      type="button"
-    >
-      Open the second Project
-    </button>
-  )
-}
-
 function projectSessions(projectId: string): Session[] {
   return [false, true].map((archived) => {
     const name = `${archived ? 'Archived' : 'Active'} in ${projectId}`
@@ -1241,12 +1229,6 @@ function projectSessions(projectId: string): Session[] {
 
 // Another Project reads its own active and archived rows, keeping the search the reader typed.
 export const ProjectSwitchReadsThatProject: Story = {
-  render: () => (
-    <>
-      <OpenSecondProject />
-      <SessionList />
-    </>
-  ),
   beforeEach: () =>
     showing([], { list: async (read) => storySessionPage(projectSessions(read.projectId), read) }),
   play: async ({ canvasElement }) => {
@@ -1261,7 +1243,9 @@ export const ProjectSwitchReadsThatProject: Story = {
         search: 'active',
       }),
     )
-    await userEvent.click(canvas.getByRole('button', { name: 'Open the second Project' }))
+    await sessionRouter.navigate(
+      `/projects/storybook-worktree/sessions${sessionRouter.state.location.search}`,
+    )
     await canvas.findByRole('button', { name: /Active in storybook-worktree/ })
     await expect(host.reads.at(-1)).toMatchObject({
       projectId: 'storybook-worktree',
