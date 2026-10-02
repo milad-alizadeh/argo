@@ -19,6 +19,8 @@ export {
 export { createSessionCommandStore, type SessionCommandStore } from './session-command-store'
 export {
   type StoredSubagent,
+  saveDiscoveredSessionSubagents,
+  saveSessionSubagentFacts,
   saveSessionSubagents,
   storedSessionSubagents,
 } from './session-subagents'

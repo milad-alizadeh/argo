@@ -1,12 +1,12 @@
 import path from 'node:path'
-import { eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { workspace } from '@/database/workspace/schema'
-import type { SessionSummary } from '@/domains/sessions/api/session-discovery'
+import type { SessionSubagentLink, SessionSummary } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
-import { createSessionUpsert } from '../database'
+import { createSessionUpsert, saveDiscoveredSessionSubagents } from '../database'
 
 type SessionRoot = {
   projectId: string
@@ -76,13 +76,43 @@ export function matchSessionsToProjects(
 
 export function saveSessionBatch(
   database: Database,
-  harness: Harness,
-  records: readonly SessionSummary[],
+  {
+    harness,
+    records,
+    subagents = [],
+  }: {
+    harness: Harness
+    records: readonly SessionSummary[]
+    subagents?: readonly SessionSubagentLink[]
+  },
 ): string[] {
   const upsert = createSessionUpsert(database)
   database.$client.exec('BEGIN IMMEDIATE')
   try {
     const sessionIds = records.map((record) => upsert({ ...record, harness }))
+    if (subagents.length > 0) {
+      const childrenByParent = new Map<string, string[]>()
+      for (const { nativeId, parentNativeId } of subagents) {
+        const children = childrenByParent.get(parentNativeId) ?? []
+        children.push(nativeId)
+        childrenByParent.set(parentNativeId, children)
+      }
+      const parentRows = database
+        .select({ argoId: sessionTable.argoId, nativeId: sessionTable.nativeId })
+        .from(sessionTable)
+        .where(
+          and(
+            eq(sessionTable.harness, harness),
+            inArray(sessionTable.nativeId, [...childrenByParent.keys()]),
+          ),
+        )
+        .all()
+      for (const { nativeId, argoId } of parentRows)
+        if (
+          saveDiscoveredSessionSubagents(database, argoId, childrenByParent.get(nativeId) ?? []) > 0
+        )
+          sessionIds.push(argoId)
+    }
     database.$client.exec('COMMIT')
     return sessionIds
   } catch (error) {

@@ -80,8 +80,7 @@ function Group({
 }
 
 // A notification badge pinned to the icon's corner. It is green while anything is still going and
-// grey once everything has come back, so the count answers "is something still running" without
-// the list being opened. The ring cuts it out of the icon beneath it.
+// grey when nothing is known to be running. The ring cuts it out of the icon beneath it.
 function Badge({ count, running }: { count: number; running: boolean }) {
   return (
     <span
@@ -111,8 +110,12 @@ export function SessionWorkMenu({
   selectedId: string | null
 }) {
   if (entries.length === 0) return null
-  const running = entries.filter((entry) => entry.running)
-  const finished = entries.filter((entry) => !entry.running)
+  const running = entries.filter((entry) => entry.status === 'running')
+  const unknown = entries.filter((entry) => entry.status === 'unknown')
+  const finished = entries.filter(
+    (entry) =>
+      entry.status === 'completed' || entry.status === 'failed' || entry.status === 'interrupted',
+  )
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -124,7 +127,18 @@ export function SessionWorkMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-(--size-session-popover)">
         <Group entries={running} label="Running" onSelect={onSelect} selectedId={selectedId} />
-        {running.length > 0 && finished.length > 0 ? <DropdownMenuSeparator /> : null}
+        {running.length > 0 && unknown.length > 0 ? <DropdownMenuSeparator /> : null}
+        {unknown.length > 0 ? (
+          <Group
+            entries={unknown}
+            label={unknown[0]?.state ?? ''}
+            onSelect={onSelect}
+            selectedId={selectedId}
+          />
+        ) : null}
+        {(running.length > 0 || unknown.length > 0) && finished.length > 0 ? (
+          <DropdownMenuSeparator />
+        ) : null}
         <Group entries={finished} label="Finished" onSelect={onSelect} selectedId={selectedId} />
       </DropdownMenuContent>
     </DropdownMenu>

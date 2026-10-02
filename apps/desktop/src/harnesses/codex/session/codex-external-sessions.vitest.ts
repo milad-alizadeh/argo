@@ -7,6 +7,7 @@ import {
   notLoadedError,
   recordedTurnsPage,
 } from '@/mocks/cli/codex/mock-codex-external-threads'
+import { recordedCodexSubagents } from '@/mocks/recordings/codex-app-server'
 import { insertSession, sessionListCaller } from '@/mocks/sessions/session-list-caller'
 import { createCodexExternalSessions } from './codex-external-sessions'
 
@@ -126,26 +127,23 @@ test('a running Session with no Feed open stores its status and newest command',
   expect((await row(RUNNING)).updatedAt).not.toBe(before.updatedAt)
 })
 
-test('a Subagent the newest Turn started is not stored for the external Session', async () => {
+test('indexes a child from a recorded Codex Turn on the first active poll', async () => {
   saved(RUNNING)
+  threads.answer(RUNNING, {
+    page: { data: recordedCodexSubagents.thread.turns, nextCursor: null },
+  })
   await threads.open(RUNNING)
-  await tickAndWrite()
-  const page = recordedTurnsPage('running') as { data: { items: unknown[] }[] }
-  for (const turn of page.data)
-    turn.items.push({
-      type: 'subAgentActivity',
-      id: 'spawn-1',
-      kind: 'started',
-      agentThreadId: 'agent-thread-1',
-      agentPath: 'explorer',
-    })
-  threads.answer(RUNNING, { page })
-  threads.append(RUNNING, 'any bytes\n')
   await tickAndWrite()
   const found = (await caller.list({ projectId: 'project-1' })).rows.find(
     (each) => each.id === RUNNING,
   )
-  expect(found?.subagents).toEqual([])
+  expect(found?.subagents).toEqual([
+    {
+      id: '01a0f92c-1bbb-76d1-b698-ec5e2b91ed06',
+      label: expect.any(String),
+      state: 'completed',
+    },
+  ])
 })
 
 test('an unchanged rollout asks for nothing after the first read', async () => {
