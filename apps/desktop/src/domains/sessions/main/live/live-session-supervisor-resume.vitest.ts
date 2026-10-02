@@ -186,3 +186,35 @@ test('retiring an idle actor keeps the Session identity and the next send resume
     client.close()
   }
 })
+
+// A Send into a stored Session nothing names gives it a title at once; a stored prompt stays (#3167).
+test.each([
+  { stored: null, kept: 'Prompt into untitled' },
+  { stored: '', kept: 'Prompt into untitled' },
+  { stored: 'Earlier prompt', kept: 'Earlier prompt' },
+])(
+  'a Send into a stored Session with first prompt $stored keeps $kept',
+  async ({ stored, kept }) => {
+    const { root, supervisor, database, client } = await supervisorFor(
+      async (method, params, parse) =>
+        method === 'thread/resume'
+          ? parse({ thread: { id: (params as { threadId: string }).threadId } })
+          : parse({ turn: { id: 'turn-1' } }),
+    )
+    database
+      .insert(sessionTable)
+      .values({ argoId: 'session-1', harness: 'codex', nativeId: 'native-1', firstPrompt: stored })
+      .run()
+    try {
+      await send(supervisor, { ...first, sessionId: 'session-1', prompt: 'Prompt into untitled' })
+      assert.equal(
+        client.prepare('SELECT first_prompt FROM session WHERE argo_id = ?').get('session-1')
+          ?.first_prompt,
+        kept,
+      )
+    } finally {
+      root.send({ type: 'Shutdown' })
+      client.close()
+    }
+  },
+)

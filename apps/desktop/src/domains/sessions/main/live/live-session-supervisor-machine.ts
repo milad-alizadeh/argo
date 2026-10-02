@@ -18,11 +18,12 @@ import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-e
 import type { SessionSubmitRejection } from '@/domains/sessions/api/session-submit-rejection'
 import type { HarnessRegistry } from '@/harnesses/registry'
 import type { harnessCatalogMachine } from '@/platform/main/harness-catalog/harness-catalog-machine'
-import type {
+import {
   SessionListChanges,
-  SessionLiveInput,
-  SessionSendInput,
-  SessionStartInput,
+  type SessionLiveInput,
+  type SessionSendInput,
+  type SessionStartInput,
+  updateSession,
 } from '../api'
 import {
   bindSessionCommand,
@@ -561,6 +562,10 @@ function sendValidationError(
 
 export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupervisorInput) {
   const commands = createSessionCommandStore(dependencies.database)
+  const storedSessions = {
+    database: dependencies.database,
+    changes: dependencies.changes ?? new SessionListChanges(),
+  }
   return xstateSetup({
     types: {
       context: {} as SupervisorContext,
@@ -756,7 +761,14 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
                 persist: fromPromise(({ input: record }) => {
                   if (record.nativeId === null)
                     throw new Error('Session has no native ID to persist.')
-                  if (record.sessionId !== undefined) return Promise.resolve(record.sessionId)
+                  if (record.sessionId !== undefined) {
+                    // A resumed Session with no saved prompt takes its title from this one at once.
+                    if (record.firstPrompt !== '')
+                      updateSession(storedSessions, record.sessionId, {
+                        firstPrompt: record.firstPrompt,
+                      })
+                    return Promise.resolve(record.sessionId)
+                  }
                   if (record.projectId === null)
                     throw new Error('New Session has no Project to persist.')
                   const { worktree, ...saved } = record

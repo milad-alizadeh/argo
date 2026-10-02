@@ -332,12 +332,13 @@ test('names a Session by its title, else by nothing, never its ID (#3167)', asyn
       createdAt: 30,
     })
     insertSession(database, { id: IDS[1], nativeId: 'native-2', createdAt: 20 })
+    insertSession(database, { id: IDS[2], nativeId: 'native-3', firstPrompt: '', createdAt: 10 })
 
     const result = await list({ projectId: 'project-1' })
 
     assert.deepEqual(
       result.rows.map(({ name }) => name),
-      ['Prompt', null],
+      ['Prompt', null, null],
     )
   } finally {
     database.$client.close()

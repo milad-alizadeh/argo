@@ -183,10 +183,10 @@ function linkedTicket({ projectId, key, createdAt, ...content }: StoredSessionRo
     : { projectId, key, createdAt, ...content }
 }
 
-// The name a row shows, strongest first; null when nothing names it. An empty preview names nothing.
+// The name a row shows, strongest first; null when nothing names it. An empty text names nothing.
 const shownName = sql<
   string | null
->`coalesce(${sessionTable.customTitle}, ${ticketContent.title}, nullif(${sessionTable.preview}, ''), ${sessionTable.firstPrompt})`
+>`coalesce(${sessionTable.customTitle}, ${ticketContent.title}, nullif(${sessionTable.preview}, ''), nullif(${sessionTable.firstPrompt}, ''))`
 
 const storedSessionColumns = {
   passed: passedSessionColumns,

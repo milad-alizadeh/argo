@@ -14,7 +14,7 @@ import type { SessionListChanges } from './session-list-changes'
 
 type StoredUpdate = Pick<
   typeof sessionTable.$inferInsert,
-  'customTitle' | 'status' | 'activityAt' | 'turnConfiguration' | 'planProgress'
+  'customTitle' | 'firstPrompt' | 'status' | 'activityAt' | 'turnConfiguration' | 'planProgress'
 >
 export type SessionUpdate = {
   [Column in keyof StoredUpdate]?: NonNullable<StoredUpdate[Column]>
@@ -48,6 +48,8 @@ function sessionColumns(update: SessionUpdate) {
   const differs: SQL[] = []
   if (update.customTitle !== undefined)
     differs.push(sql`${sessionTable.customTitle} is not ${update.customTitle}`)
+  if (update.firstPrompt !== undefined)
+    differs.push(sql`coalesce(${sessionTable.firstPrompt}, '') = ''`)
   if (activity !== undefined) differs.push(sql`${sessionTable.activity} is not ${activity}`)
   if (update.status !== undefined) differs.push(sql`${sessionTable.status} is not ${update.status}`)
   if (update.activityAt !== undefined)
@@ -62,6 +64,12 @@ function sessionColumns(update: SessionUpdate) {
     ...(update.customTitle === undefined
       ? {}
       : { customTitle: update.customTitle, updatedAt: nextUpdatedAt(sessionTable.updatedAt) }),
+    // The first prompt is kept once saved; a later one only fills an empty row.
+    ...(update.firstPrompt === undefined
+      ? {}
+      : {
+          firstPrompt: sql`coalesce(nullif(${sessionTable.firstPrompt}, ''), ${update.firstPrompt})`,
+        }),
     ...(activity === undefined ? {} : { activity }),
     ...(update.status === undefined ? {} : { status: update.status }),
     // Activity only moves forward, so a late write never ages the row.

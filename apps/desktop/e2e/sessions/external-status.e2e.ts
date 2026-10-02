@@ -24,7 +24,7 @@ import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 import { ACTIVE_FEED } from './feed-selectors'
 import { prepare } from './fixtures/feed.fixture'
-import { openSessionByClick, PERSISTED_ROW } from './gestures'
+import { openSessionByClick, PERSISTED_ROW, sendFromComposer } from './gestures'
 import { sessionRows } from './page-trpc'
 
 const OLDER = 'Older terminal Session'
@@ -286,16 +286,18 @@ const UNTITLED_CASES = [
     prompt: UNTITLED_PROMPT,
     name: UNTITLED_PROMPT,
     shown: UNTITLED_PROMPT,
+    sent: undefined,
   },
   {
-    title: 'and no prompt shows Untitled Session',
+    title: 'and no prompt shows Untitled Session until a sent prompt names it',
     prompt: undefined,
     name: null,
     shown: 'Untitled Session',
+    sent: 'Prompt into untitled',
   },
 ] as const
 for (const createSource of [claudeSource, codexSource]) {
-  for (const { title, prompt, name, shown } of UNTITLED_CASES) {
+  for (const { title, prompt, name, shown, sent } of UNTITLED_CASES) {
     test(`a ${createSource().harness} Session started elsewhere with no title ${title}`, async ({
       root,
       applicationUnderTest,
@@ -319,6 +321,14 @@ for (const createSource of [claudeSource, codexSource]) {
         await expect(rowTitled(page, shown)).toHaveCount(1)
         const shownId = page.locator(PERSISTED_ROW).filter({ hasText: /[0-9a-f]{8}-[0-9a-f]{4}-/ })
         await expect(shownId).toHaveCount(0)
+        if (sent === undefined) return
+        // The row and header take the prompt as the title live, with no reload.
+        const [row] = await sessionRows(page)
+        if (row === undefined) throw new Error('The untitled Session row is absent.')
+        await openSessionByClick(page, row.id)
+        await sendFromComposer(page, sent)
+        await expect(rowTitled(page, sent)).toHaveCount(1, { timeout: 10_000 })
+        await expect(page.getByRole('heading', { level: 1, name: sent })).toBeVisible()
       } finally {
         await closeApplication(application)
         await source.stop()
