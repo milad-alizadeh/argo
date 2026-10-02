@@ -15,6 +15,7 @@ import { proveClaudeAcpControls, proveClaudeAcpDiscovery } from './cases/claude-
 import { proveClaudeRename } from './cases/claude-rename.case'
 import { provePackagedCodexResume } from './cases/codex-resume.case'
 import { proveCodexThreadName } from './cases/codex-thread-name.case'
+import { proveComposerMemory } from './cases/composer-memory.case'
 import { proveSessionCreatedByClick } from './cases/create.case'
 import { proveDelegationCards } from './cases/delegation-card.case'
 import { proveSessionDiagram } from './cases/diagram.case'
@@ -27,6 +28,7 @@ import { proveRefusedStart } from './cases/refused-start.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveContract } from './cases/session-list-contract.case'
 import { provePackagedSessionListSelection } from './cases/session-list-interaction.case'
+import { proveSelectionSurvivesRestart } from './cases/session-list-restart.case'
 import { proveSessionListWindow } from './cases/session-list-window.case'
 import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
@@ -114,6 +116,10 @@ test('session-list-selection', async ({ session }) => {
   await provePackagedSessionListSelection(session.page())
 })
 
+test('session-list-restart', async ({ session }) => {
+  await proveSelectionSurvivesRestart(session.page(), () => session.restart())
+})
+
 test('session-delegation-cards', async ({ session }) => {
   await proveDelegationCards(session.page())
 })
@@ -135,6 +141,10 @@ test('session-diagram', async ({ session }) => {
     transcripts: session.fixture.claudeTranscripts,
     append: appendProse,
   })
+})
+
+test('session-composer-memory', async ({ session }) => {
+  await proveComposerMemory(session.page())
 })
 
 test('session-live-codex-model-choices', async ({ session }) => {
