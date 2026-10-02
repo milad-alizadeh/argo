@@ -3,12 +3,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import { useProjects } from '@/domains/projects/renderer'
+import type {
+  RemovalOutcome,
+  RemovedWorktree,
+  WorktreeRemoval,
+} from '@/domains/sessions/main/worktree'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
-import { trpcClient } from '@/platform/renderer/trpc-client'
+import { type RouterInputs, trpcClient } from '@/platform/renderer/trpc-client'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { useObservedFeedReading } from '../feed'
 import type { Session, SessionId } from '../types'
 import { useSessionListFocus, useSessionListSelection } from './hooks/use-session-list-selection'
+import {
+  type ArchiveAnswer,
+  type ArchiveQuestion,
+  type HeldWorktree,
+  SessionArchiveDialog,
+} from './session-archive-dialog'
 import { SessionListHeader } from './session-list-header'
 import { SessionListOutcome, type SessionListState } from './session-list-outcome'
 import { useSessionListFilter, useSessionListQuery, useSettledSearch } from './session-list-query'
@@ -17,7 +28,7 @@ import { SessionRenameDialog } from './session-rename-dialog'
 
 const NO_SESSIONS: Session[] = []
 
-// A short-lived Undo: a manual dismiss and the timeout both leave the archive standing.
+// The Undo window: a dismiss or the timeout leaves the archive standing and lets its worktrees go.
 const UNDO_TOAST_TIMEOUT_MS = 8000
 
 type Toasts = { add: ReturnType<typeof useToastManager>['add']; t: TFunction<'sessions'> }
@@ -53,10 +64,10 @@ function sessionListState(
   return count === 0 ? 'empty' : 'ready'
 }
 
-// The ids main updated (#2194), or null when the update failed and its reason was shown.
-async function updateArchived(toasts: Toasts, sessionIds: SessionId[], archived: boolean) {
+// The ids main updated (#2194), or null when the update failed and said so.
+async function updateArchived(toasts: Toasts, update: RouterInputs['sessionUpdate']) {
   try {
-    return (await trpcClient.sessionUpdate.mutate({ sessionIds, archived })).sessionIds
+    return await trpcClient.sessionUpdate.mutate(update)
   } catch (error) {
     toasts.add({
       title: toasts.t('bulkSelect.failure'),
@@ -69,8 +80,8 @@ async function updateArchived(toasts: Toasts, sessionIds: SessionId[], archived:
 }
 
 async function restoreSessions(toasts: Toasts, sessionIds: SessionId[]) {
-  const restored = await updateArchived(toasts, sessionIds, false)
-  if (restored === null || restored.length === 0) return
+  const restored = (await updateArchived(toasts, { sessionIds, archived: false }))?.sessionIds
+  if (restored === undefined || restored.length === 0) return
   toasts.add({
     title: toasts.t('bulkSelect.restored', { count: restored.length }),
     type: 'success',
@@ -78,10 +89,30 @@ async function restoreSessions(toasts: Toasts, sessionIds: SessionId[]) {
   })
 }
 
-async function archiveSessions(toasts: Toasts, sessionIds: SessionId[]) {
-  const applied = await updateArchived(toasts, sessionIds, true)
-  if (applied === null) return
+// Main removes the archived Sessions' worktrees it may, then each one it left is told.
+async function removeArchivedWorktrees(
+  toasts: Toasts,
+  sessionIds: SessionId[],
+  removal: WorktreeRemoval,
+) {
+  try {
+    const { worktrees } = await trpcClient.sessionWorktreeRemove.mutate({ sessionIds, removal })
+    for (const worktree of worktrees) tellUnremoved(toasts, worktree)
+  } catch (error) {
+    toasts.add({
+      title: toasts.t('archiveWorktree.removeFailed'),
+      description: error instanceof Error ? error.message : undefined,
+      type: 'error',
+    })
+  }
+}
+
+async function archiveSessions(toasts: Toasts, sessionIds: SessionId[], removal: WorktreeRemoval) {
+  const updated = await updateArchived(toasts, { sessionIds, archived: true })
+  if (updated === null) return
+  const applied = updated.sessionIds
   const { add, t } = toasts
+  let undone = false
   if (applied.length > 0)
     add({
       title: t('bulkSelect.archived', { count: applied.length }),
@@ -89,7 +120,14 @@ async function archiveSessions(toasts: Toasts, sessionIds: SessionId[]) {
       timeout: UNDO_TOAST_TIMEOUT_MS,
       actionProps: {
         children: t('bulkSelect.undo'),
-        onClick: () => void restoreSessions(toasts, applied),
+        onClick: () => {
+          undone = true
+          void restoreSessions(toasts, applied)
+        },
+      },
+      // The Undo window is the toast's life; Undo within it keeps every worktree.
+      onClose: () => {
+        if (!undone) void removeArchivedWorktrees(toasts, applied, removal)
       },
     })
   if (applied.length < sessionIds.length)
@@ -98,6 +136,71 @@ async function archiveSessions(toasts: Toasts, sessionIds: SessionId[]) {
       type: 'error',
       timeout: UNDO_TOAST_TIMEOUT_MS,
     })
+}
+
+// Only a worktree the archive meant to remove, yet left, is worth a toast.
+const UNREMOVED_TOAST = {
+  removed: null,
+  missing: null,
+  kept: null,
+  running: { title: 'archiveWorktree.running', type: 'info' },
+  refused: { title: 'archiveWorktree.refused', type: 'error' },
+} as const satisfies Record<RemovalOutcome, { title: string; type: 'info' | 'error' } | null>
+
+function tellUnremoved(toasts: Toasts, worktree: RemovedWorktree) {
+  const toast = UNREMOVED_TOAST[worktree.outcome]
+  if (toast !== null)
+    toasts.add({ title: toasts.t(toast.title, { path: worktree.path }), type: toast.type })
+}
+
+// When main cannot check, each listed Session's own worktree is named with its work unknown.
+async function archiveQuestion(
+  sessionIds: SessionId[],
+  sessions: readonly Session[],
+): Promise<ArchiveQuestion> {
+  try {
+    const { worktrees } = await trpcClient.sessionWorktreeWork.query({ sessionIds })
+    return { sessionIds, worktrees, checked: true }
+  } catch {
+    const worktrees = sessions.flatMap(({ id, worktree }): HeldWorktree[] =>
+      sessionIds.includes(id) && worktree !== null
+        ? [
+            {
+              sessionId: id,
+              path: worktree.path,
+              branch: worktree.branch,
+              changedFiles: null,
+              ownCommits: null,
+            },
+          ]
+        : [],
+    )
+    return { sessionIds, worktrees, checked: false }
+  }
+}
+
+const REMOVAL_FOR_ANSWER = { keep: 'clean', remove: 'all' } as const satisfies Record<
+  Exclude<ArchiveAnswer, 'cancel'>,
+  WorktreeRemoval
+>
+
+// Removes clean Session worktrees once the Undo closes; asks about any holding work or unchecked.
+function useSessionArchive(toasts: Toasts, sessions: readonly Session[]) {
+  const [question, setQuestion] = useState<ArchiveQuestion | null>(null)
+  const archive = async (sessionIds: SessionId[]) => {
+    const asked = await archiveQuestion(sessionIds, sessions)
+    if (asked.checked && asked.worktrees.length === 0)
+      return archiveSessions(toasts, sessionIds, 'clean')
+    setQuestion(asked)
+  }
+  const answer = (choice: ArchiveAnswer) => {
+    const asked = question
+    setQuestion(null)
+    if (asked === null) return
+    if (choice === 'cancel') return
+    void archiveSessions(toasts, asked.sessionIds, REMOVAL_FOR_ANSWER[choice])
+  }
+  return { question, answer, archive }
 }
 
 // The rows the header's search and filter select for one Project.
@@ -141,8 +244,9 @@ export function SessionList() {
   const sidebar = useRef<HTMLElement>(null)
   const { filter, setFilter, search, setSearch, query, sessions } = useListedSessions(projectId)
   const { onNew, onOpenTicket, onSelect } = useSessionListNavigation(projectId)
+  const archive = useSessionArchive({ add, t }, sessions)
   const selection = useSessionListSelection(sessions, selectedSessionId, {
-    onArchiveSelected: (sessionIds) => void archiveSessions({ add, t }, sessionIds),
+    onArchiveSelected: (sessionIds) => void archive.archive(sessionIds),
     onSelect,
   })
   const focus = useSessionListFocus(sidebar, sessions, selectedSessionId)
@@ -179,6 +283,7 @@ export function SessionList() {
         unavailableSessionIds={useUnavailableSessionIds(selectedSessionId)}
       />
       <SessionRenameDialog onClose={() => setRenameTarget(null)} session={renameTarget} />
+      <SessionArchiveDialog onAnswer={archive.answer} question={archive.question} />
     </aside>
   )
 }

@@ -7,7 +7,6 @@ export type ProjectSummary = RouterOutputs['projectList'][number]
 // A Project open can return only these refusals.
 const PROJECT_ERROR_CODES = [
   'missing-project',
-  'missing-workspace',
   'access-denied',
   'invalid-request',
   'unsupported-version',
@@ -69,7 +68,7 @@ export function useProjects(): [ProjectsState, ProjectActions] {
   // The reads a Project change moves; Session reads follow main's change signal instead.
   const onSuccess = () =>
     Promise.all(
-      [trpc.projectList, trpc.projectOpen, trpc.workspaceList].map((procedure) =>
+      [trpc.projectList, trpc.projectOpen, trpc.worktreeOptions].map((procedure) =>
         queryClient.invalidateQueries({ queryKey: procedure.pathKey() }),
       ),
     )

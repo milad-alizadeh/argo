@@ -25,7 +25,13 @@ import {
   sessionSyncStatusSchema,
 } from '../session-sync-status'
 import { sessionSyncMachine } from './session-sync-machine'
-import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
+import {
+  knownSessionIds,
+  matchSessionsToProjects,
+  type SessionRoot,
+  saveSessionBatch,
+  sessionRoots,
+} from './session-sync-records'
 
 type RegisteredHarnesses = Partial<
   Record<
@@ -76,15 +82,23 @@ type SyncActorEvent =
     }
 
 // Saves Harness summaries under their matched Projects, and announces the Sessions they touched.
-function saveSummaries(
+async function saveSummaries(
   { database, changes, harness }: Pick<SessionSyncActorInput, 'database' | 'changes' | 'harness'>,
-  summaries: readonly SessionSummary[],
-  subagents: readonly SessionSubagentLink[] = [],
-): void {
+  {
+    summaries,
+    subagents = [],
+    roots = sessionRoots(database),
+  }: {
+    summaries: readonly SessionSummary[]
+    subagents?: readonly SessionSubagentLink[]
+    roots?: Promise<SessionRoot[]>
+  },
+): Promise<void> {
+  const records = await matchSessionsToProjects(await roots, summaries)
   changes.changed(
     saveSessionBatch(database, {
       harness,
-      records: matchSessionsToProjects(database, summaries),
+      records,
       subagents,
     }),
   )
@@ -125,11 +139,17 @@ const sessionSyncActor = fromCallback<
   SyncActorEvent
 >(({ input, sendBack }) => {
   const { database, harness, listSessionSummaries } = input
+  let roots: Promise<SessionRoot[]> | undefined
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
         save: fromPromise(async ({ input: saveInput }) => {
-          saveSummaries(input, saveInput.records, saveInput.subagents)
+          roots ??= sessionRoots(database)
+          await saveSummaries(input, {
+            summaries: saveInput.records,
+            subagents: saveInput.subagents,
+            roots,
+          })
         }),
       },
     }),
@@ -192,9 +212,11 @@ const sessionDiscoverActor = fromCallback<
       const summary = await getSessionSummary(nativeId)
       if (stopped) return
       if (summary !== null) {
-        saveSummaries(input, [
-          summary,
-        ])
+        await saveSummaries(input, {
+          summaries: [
+            summary,
+          ],
+        })
         stored = true
       }
     } catch (error) {

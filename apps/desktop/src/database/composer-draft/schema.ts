@@ -3,7 +3,6 @@ import { check, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqli
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { timestampColumns } from '@/database/timestamp-columns'
-import { workspace } from '@/database/workspace/schema'
 import { HARNESSES } from '@/harnesses/harness'
 
 export const composerDraft = sqliteTable(
@@ -12,7 +11,10 @@ export const composerDraft = sqliteTable(
     id: text().primaryKey(),
     projectId: text('project_id').references(() => project.id, { onDelete: 'cascade' }),
     sessionId: text('session_id').references(() => sessionTable.argoId, { onDelete: 'cascade' }),
-    workspaceId: text('workspace_id').references(() => workspace.id, { onDelete: 'cascade' }),
+    // A new-Session draft's folder: the main checkout, or a new worktree. A new worktree starts
+    // from a local branch, or from the main checkout's commit without one.
+    worktree: text({ enum: ['main', 'new'] }),
+    worktreeFromBranch: text('worktree_from_branch'),
     harness: text({ enum: HARNESSES }),
     prompt: text().notNull().default(''),
     attachmentsJson: text('attachments_json').notNull().default('[]'),
@@ -32,7 +34,16 @@ export const composerDraft = sqliteTable(
     ),
     check(
       'composer_draft_new_session_fields',
-      sql`(${table.projectId} IS NULL AND ${table.workspaceId} IS NULL AND ${table.harness} IS NULL) OR (${table.projectId} IS NOT NULL AND ${table.harness} IS NOT NULL)`,
+      sql`(${table.projectId} IS NULL AND ${table.worktree} IS NULL AND ${table.harness} IS NULL) OR (${table.projectId} IS NOT NULL AND ${table.worktree} IS NOT NULL AND ${table.harness} IS NOT NULL)`,
+    ),
+    check('composer_draft_worktree', sql`${table.worktree} IN ('main', 'new')`),
+    check(
+      'composer_draft_worktree_from',
+      sql`${table.worktreeFromBranch} IS NULL OR ${table.worktree} = 'new'`,
+    ),
+    check(
+      'composer_draft_worktree_from_branch',
+      sql`${table.worktreeFromBranch} IS NULL OR (length(${table.worktreeFromBranch}) > 0 AND substr(${table.worktreeFromBranch}, 1, 1) != '-')`,
     ),
     check('composer_draft_revision', sql`${table.revision} >= 0`),
   ],

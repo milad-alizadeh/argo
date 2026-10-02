@@ -106,7 +106,7 @@ test('a live Session replaces its command list when Claude pushes a change', asy
     commandId: '00000000-0000-4000-8000-000000000001',
     harness: 'claude',
     projectId: '00000000-0000-4000-8000-000000000099',
-    workspaceId: '00000000-0000-4000-8000-000000000098',
+    worktree: null,
     cwd: claude.root,
     prompt: 'first',
     attachments: [],

@@ -152,7 +152,7 @@ caption loop burying the four Sessions being steered under fourteen visible rows
 evidence reachable and spends one row on it.
 
 **`SessionFacts` dissolved.** Naming it as an entity would duplicate the homes its members
-already have (Workspace / Delivery / Session status) and invite drift. What is real is the
+already have (Checkout / Delivery / Session status) and invite drift. What is real is the
 honesty tier on each fact, not the bundle.
 
 ## L3 — the naming rebuild
@@ -195,8 +195,9 @@ apart, so the call is the grain at which a time is worth rendering.
 **Plan is Session-scoped (ADR-0020).** ACP delivers it as a session-level update carrying the
 **complete** entry list each time, and CC's TodoWrite outlives the turn that wrote it.
 
-**Workspace is node-scoped (ADR-0010).** The case the ADR exists for: a Subagent without its own
-worktree must render no second chip.
+**The worktree belongs to the Session (ADR-0049).** A Session is the unit a person starts,
+archives and resumes, so it is the unit that creates and removes a worktree. Argo follows Claude
+Code's cleanup rule rather than inventing one, so a person who uses both meets one behaviour.
 
 **Usage is partially ACP-informed, not one ACP object.** Context `used`/`size` + `cost` map to
 ACP's session-level `UsageUpdate`; per-turn in/out tokens map to ACP's `PromptResponse.usage`

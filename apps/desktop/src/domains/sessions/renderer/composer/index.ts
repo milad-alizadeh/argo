@@ -11,6 +11,12 @@ export { DevelopmentIdentityBar } from './identity/development-identity-bar'
 export { ComposerForm, type ComposerFormProps } from './layout/composer-form'
 export type { CatalogFailure } from './toolbar/turn-configuration-menu'
 export {
+  useDefaultBranch,
+  useWorktreeOptions,
+  type WorktreeOptionsActions,
+  type WorktreeOptionsState,
+} from './tray/use-worktree-options'
+export {
   initialTurnConfiguration,
   type TurnConfiguration,
 } from './turn-configuration/turn-configuration'

@@ -13,7 +13,7 @@ export function mockAcpSessionInput(
   return {
     harness: 'claude-acp',
     projectId: 'project-1',
-    workspaceId: 'workspace-1',
+    worktree: null,
     cwd,
     commandId: 'command-1',
     prompt,
