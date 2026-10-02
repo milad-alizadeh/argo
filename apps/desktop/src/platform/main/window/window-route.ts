@@ -1,10 +1,9 @@
 // The window reopens on the Sessions route it last showed, so a restart keeps the selected Session.
-import { and, eq } from 'drizzle-orm'
 import type { BrowserWindow } from 'electron'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
-import { sessionTable } from '@/database/session/schema'
 import { listProjects } from '@/domains/projects/main/api'
+import { sessionInProject } from '@/domains/sessions/main/api'
 import {
   createWriteQueue,
   portablePath,
@@ -18,15 +17,6 @@ const routeDocumentSchema = z.object({ route: z.string().regex(SESSIONS_ROUTE) }
 
 function routePath(userData: string): string {
   return portablePath(userData, 'window-route.json')
-}
-
-function sessionInProject(database: Database, sessionId: string, projectId: string): boolean {
-  const stored = database
-    .select({ argoId: sessionTable.argoId })
-    .from(sessionTable)
-    .where(and(eq(sessionTable.argoId, sessionId), eq(sessionTable.projectId, projectId)))
-    .get()
-  return stored !== undefined
 }
 
 // The saved route, its Session List when the Session left that Project, or undefined.
