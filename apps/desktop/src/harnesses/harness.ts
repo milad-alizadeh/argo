@@ -13,7 +13,7 @@ export const harnessSessionKey = ({ harness, nativeId }: HarnessSession) =>
 // What a surface shows before anyone has picked a Harness.
 export const DEFAULT_HARNESS: Harness = HARNESSES[0]
 
-// The Roster stores an open `harness` string (ADR-0021); an unknown one reads as null.
+// The Roster stores an open `harness` string; an unknown one reads as null.
 export function parseHarness(value: string | null | undefined): Harness | null {
   return harnessSchema.safeParse(value).data ?? null
 }

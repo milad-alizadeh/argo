@@ -1,14 +1,8 @@
-import {
-  type InfiniteData,
-  matchQuery,
-  useInfiniteQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
+import { useInfiniteQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { type RouterInputs, trpc, trpcClient } from '@/platform/renderer/trpc-client'
-import type { SessionId, SessionListResult } from '../types'
-import { listedSessionHarness } from './listed-session-harness'
+import type { SessionListResult } from '../types'
 
 export type SessionListInput = Required<
   Pick<RouterInputs['sessionList'], 'projectId' | 'filter' | 'search'>
@@ -61,10 +55,13 @@ export function useSettledSearch(search: string): string {
   return settled
 }
 
+export const sessionListQueryKey = (input: SessionListInput) =>
+  [...trpc.sessionList.pathKey(), input] as const
+
 // Read page by page; `SessionChanges` reads the loaded pages again when main announces a change.
 export function useSessionListQuery(input: SessionListInput, enabled: boolean) {
   return useInfiniteQuery({
-    queryKey: [...trpc.sessionList.pathKey(), input],
+    queryKey: sessionListQueryKey(input),
     enabled,
     staleTime: Number.POSITIVE_INFINITY,
     // A new search or filter keeps the Project's rows on screen until its first page lands.
@@ -85,28 +82,4 @@ export function useSessionListQuery(input: SessionListInput, enabled: boolean) {
     queryFn: ({ pageParam }) =>
       trpcClient.sessionList.query({ ...input, offset: pageParam, limit: PAGE_SIZE }),
   })
-}
-
-// The Harness any loaded Session list names for a Session, read before its details load (#3172).
-// It follows the query cache, so a list that lands after the Session opened still counts.
-export function useListedSessionHarness(sessionId: SessionId | null) {
-  const queryClient = useQueryClient()
-  const subscribe = useCallback(
-    (onChange: () => void) =>
-      queryClient.getQueryCache().subscribe(({ query }) => {
-        if (matchQuery({ queryKey: trpc.sessionList.pathKey() }, query)) onChange()
-      }),
-    [queryClient],
-  )
-  const read = () => {
-    if (sessionId === null) return null
-    const lists = queryClient.getQueriesData<InfiniteData<SessionListResult>>({
-      queryKey: trpc.sessionList.pathKey(),
-    })
-    return listedSessionHarness(
-      lists.map(([, list]) => list),
-      sessionId,
-    )
-  }
-  return useSyncExternalStore(subscribe, read)
 }

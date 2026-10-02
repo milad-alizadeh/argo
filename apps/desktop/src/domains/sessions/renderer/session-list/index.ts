@@ -1,2 +1,3 @@
+export { useListedSessionHarness } from './listed-session-harness'
 export { SessionList } from './session-list'
-export { useListedSessionHarness, useSessionListQuery } from './session-list-query'
+export { useSessionListQuery } from './session-list-query'
