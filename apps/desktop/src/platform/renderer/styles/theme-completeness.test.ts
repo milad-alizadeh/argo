@@ -41,6 +41,30 @@ test('every registered theme declares exactly the same roles in both appearances
     await compile(source)
   }
   for (const declared of roles) expect(declared).toEqual(roles[0])
+  expect(roles).toHaveLength(THEMES.length * 2)
+})
+
+test('theme catalog supplies each explicit appearance and only Default owns the root fallback', () => {
+  for (const [index, theme] of THEMES.entries()) {
+    const source = sources[index]
+    if (!source) throw new Error('Missing theme source')
+    const rules = postcss.parse(source).nodes.filter((node) => node.type === 'rule')
+    expect(rules[0]?.selector.split(',').map((selector) => selector.trim())).toEqual(
+      theme === 'default'
+        ? [':root', `:root[data-theme="${theme}"]`]
+        : [`:root[data-theme="${theme}"]`],
+    )
+    expect(rules[1]?.selector.split(',').map((selector) => selector.trim())).toEqual(
+      theme === 'default'
+        ? [`:root[data-theme="${theme}"].dark`, ':root.dark:not([data-theme])']
+        : [`:root[data-theme="${theme}"].dark`],
+    )
+    for (const rule of rules) {
+      rule.walkDecls((declaration) => {
+        expect(required.has(declaration.prop)).toBe(true)
+      })
+    }
+  }
 })
 
 test('a role omitted from every theme still fails its actual binding contract', () => {
@@ -62,5 +86,32 @@ test('duplicate role declarations fail independently of complete binding coverag
       rule.append({ prop: '--background', value: 'white' })
     })
     expect(() => declaredRoles(ast.toString())).toThrow('Duplicate theme role')
+  }
+})
+
+test('Theme changes preserve the shared status meanings in each appearance', () => {
+  const statusRoles = [
+    '--status-success',
+    '--status-warning',
+    '--status-danger',
+    '--status-neutral',
+  ]
+  const statuses = sources.map((source) => {
+    const rules = postcss.parse(source).nodes.filter((node) => node.type === 'rule')
+    return rules.map((rule) => {
+      const values = new Map<string, string>()
+      rule.walkDecls((declaration) => {
+        if (statusRoles.includes(declaration.prop)) values.set(declaration.prop, declaration.value)
+      })
+      expect(values.size).toBe(statusRoles.length)
+      return statusRoles.map((role) => values.get(role))
+    })
+  })
+  for (const appearance of [0, 1]) {
+    for (let role = 0; role < statusRoles.length; role += 1) {
+      const colors = statuses.map((theme) => theme[appearance]?.[role])
+      expect(new Set(colors).size, `${statusRoles[role]} differs by theme`).toBe(THEMES.length)
+      expect(colors[0], `${statusRoles[role]} differs by mode`).not.toBe(colors[THEMES.length])
+    }
   }
 })

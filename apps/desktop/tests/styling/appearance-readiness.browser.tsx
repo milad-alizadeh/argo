@@ -9,13 +9,13 @@ afterEach(resetAppearanceDocument)
 test('stale readiness retries only after applying the latest snapshot to DOM and CSS', async () => {
   const previous = window.argo
   const stale: AppearanceState = {
-    theme: 'neutral',
+    theme: 'default',
     appearance: 'light',
     dark: false,
     revision: 0,
   }
   const current: AppearanceState = {
-    theme: 'graphite',
+    theme: 'catppuccin',
     appearance: 'system',
     dark: true,
     revision: 1,
@@ -28,7 +28,7 @@ test('stale readiness retries only after applying the latest snapshot to DOM and
       expect(document.documentElement.style.colorScheme).toBe('dark')
       expect(
         drawnColor(getComputedStyle(document.documentElement).getPropertyValue('--background')),
-      ).toEqual(drawnColor(nativeThemeBackgrounds.graphite.dark))
+      ).toEqual(drawnColor(nativeThemeBackgrounds.catppuccin.dark))
     }
     return { ready, state: current }
   })

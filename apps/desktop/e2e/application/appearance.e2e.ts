@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { ElectronApplication } from 'playwright-core'
+import nativeThemeBackgrounds from '../../src/platform/contract/native-theme-backgrounds.json'
 import { closeApplication } from '../application-under-test'
 import { test as base, expect } from '../packaged-proof'
 import { launch, prepare } from '../projects/fixtures/project.fixture'
@@ -43,21 +44,22 @@ async function selectPreferences(application: ElectronApplication) {
       dark: document.documentElement.classList.contains('dark'),
       scheme: document.documentElement.style.colorScheme,
     })),
-  ).toEqual({ theme: 'neutral', dark: false, scheme: 'light' })
+  ).toEqual({ theme: 'default', dark: false, scheme: 'light' })
   expect(
     await application.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows()[0]?.getBackgroundColor().toLowerCase(),
     ),
-  ).toBe('#ffffff')
+  ).toBe(nativeThemeBackgrounds.default.light)
   await page.getByRole('button', { name: 'Settings', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Appearance', exact: true })
-  await dialog.getByRole('radio', { name: 'Graphite', exact: true }).check()
-  await expect(dialog.getByRole('radio', { name: 'Graphite', exact: true })).toBeChecked()
-  await dialog.getByRole('radio', { name: 'Dark', exact: true }).check()
+  await dialog.getByRole('radio', { name: 'Catppuccin', exact: true }).click()
+  await expect(dialog.getByRole('radio', { name: 'Catppuccin', exact: true })).toBeChecked()
+  await dialog.getByRole('radio', { name: 'Dark', exact: true }).click()
+  await expect(dialog.getByRole('radio', { name: 'Dark', exact: true })).toBeChecked()
   await expect
     .poll(() => page.evaluate(() => window.argo.getAppearance()))
     .toMatchObject({
-      theme: 'graphite',
+      theme: 'catppuccin',
       appearance: 'dark',
       dark: true,
     })
@@ -85,17 +87,17 @@ async function synchronizeWindows(application: ElectronApplication) {
     void second.loadURL(first.webContents.getURL())
   }, preload)
   const second = await nextWindow
-  await second.waitForFunction(() => document.documentElement.dataset.theme === 'graphite')
+  await second.waitForFunction(() => document.documentElement.dataset.theme === 'catppuccin')
   expect(await second.evaluate(() => window.argo.getAppearance())).toMatchObject({
-    theme: 'graphite',
+    theme: 'catppuccin',
     appearance: 'dark',
     dark: true,
   })
   const page = await application.firstWindow()
-  await page.evaluate(() => window.argo.setAppearance({ theme: 'neutral', appearance: 'dark' }))
+  await page.evaluate(() => window.argo.setAppearance({ theme: 'default', appearance: 'dark' }))
   await expect
     .poll(() => second.evaluate(() => document.documentElement.dataset.theme))
-    .toBe('neutral')
+    .toBe('default')
   expect(await second.evaluate(() => document.documentElement.classList.contains('dark'))).toBe(
     true,
   )
@@ -105,21 +107,23 @@ async function synchronizeWindows(application: ElectronApplication) {
         BrowserWindow.getAllWindows().map((window) => window.getBackgroundColor().toLowerCase()),
       ),
     )
-    .toEqual(['#0a0a0a', '#0a0a0a'])
+    .toEqual([nativeThemeBackgrounds.default.dark, nativeThemeBackgrounds.default.dark])
 }
 
 async function systemAndRejection(application: ElectronApplication) {
   const page = await application.firstWindow()
-  await page.evaluate(() => window.argo.setAppearance({ theme: 'graphite', appearance: 'system' }))
+  await page.evaluate(() =>
+    window.argo.setAppearance({ theme: 'catppuccin', appearance: 'system' }),
+  )
   const systemDark = await application.evaluate(
     ({ nativeTheme }) => nativeTheme.shouldUseDarkColors,
   )
   expect(await page.evaluate(() => window.argo.getAppearance())).toMatchObject({
-    theme: 'graphite',
+    theme: 'catppuccin',
     appearance: 'system',
     dark: systemDark,
   })
-  await page.evaluate(() => window.argo.setAppearance({ theme: 'graphite', appearance: 'light' }))
+  await page.evaluate(() => window.argo.setAppearance({ theme: 'catppuccin', appearance: 'light' }))
   const before = await page.evaluate(() => window.argo.getAppearance())
   const rejection = await page.evaluate(async () => {
     try {
@@ -139,12 +143,12 @@ async function systemAndRejection(application: ElectronApplication) {
       revision: 9999,
     })
   })
-  expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe('graphite')
+  expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe('catppuccin')
 }
 
 test.describe('saved preference', () => {
   test.use({ appearanceDocument: JSON.stringify({ appearance: 'light', foreignField: 'keep' }) })
-  test('selects themes and appearance, synchronizes app windows, and restarts with accepted state', async ({
+  test('selects Theme and Mode, synchronizes app windows, and restarts with accepted state', async ({
     themeFixture,
   }) => {
     let application = await launch(themeFixture)
@@ -156,7 +160,7 @@ test.describe('saved preference', () => {
       application = await launch(themeFixture)
       const reopened = await ready(application)
       expect(await reopened.evaluate(() => window.argo.getAppearance())).toMatchObject({
-        theme: 'graphite',
+        theme: 'catppuccin',
         appearance: 'light',
         dark: false,
       })
@@ -165,7 +169,7 @@ test.describe('saved preference', () => {
           await readFile(path.join(themeFixture.userData, 'portable-v1/appearance.json'), 'utf8'),
         ),
       ).toEqual({
-        theme: 'graphite',
+        theme: 'catppuccin',
         appearance: 'light',
         foreignField: 'keep',
       })
@@ -175,14 +179,17 @@ test.describe('saved preference', () => {
   })
 })
 
-for (const [name, document] of [
-  ['missing', undefined],
-  ['malformed', '{'],
-  ['unknown', '{"theme":"unknown","appearance":"light"}'],
+for (const [name, document, appearance] of [
+  ['missing', undefined, 'system'],
+  ['malformed', '{', 'system'],
+  ['unknown', '{"theme":"unknown","appearance":"light"}', 'light'],
+  ['removed', '{"theme":"graphite","appearance":"dark"}', 'dark'],
+  ['removed-neutral', '{"theme":"neutral","appearance":"dark"}', 'dark'],
+  ['superseded', '{"theme":"forest","appearance":"dark"}', 'dark'],
 ] as const) {
   test.describe(name, () => {
     test.use({ appearanceDocument: document })
-    test('starts with Neutral and the resolved System appearance', async ({ themeFixture }) => {
+    test('starts with Default and preserves valid saved Mode', async ({ themeFixture }) => {
       const application = await launch(themeFixture)
       try {
         const page = await ready(application)
@@ -190,8 +197,8 @@ for (const [name, document] of [
           ({ nativeTheme }) => nativeTheme.shouldUseDarkColors,
         )
         expect(await page.evaluate(() => window.argo.getAppearance())).toMatchObject({
-          theme: 'neutral',
-          appearance: 'system',
+          theme: 'default',
+          appearance,
           dark,
         })
         expect(await page.evaluate(() => document.documentElement.classList.contains('dark'))).toBe(

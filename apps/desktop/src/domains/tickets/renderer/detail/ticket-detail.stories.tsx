@@ -78,7 +78,7 @@ export const Default: Story = {
     const blockedTrigger = within(article).getByRole('button', { name: '2 blockers' })
     const blockedIcon = blockedTrigger.querySelector('svg')
     if (blockedIcon === null) throw new Error('Blocked by needs a blocked mark.')
-    await expect(blockedIcon).toHaveClass('text-danger')
+    await expect(blockedIcon).toHaveClass('text-status-danger')
     const dependencies = await openRelation(article, canvasElement, '2 blockers')
     await expect(dependencies).toHaveTextContent('Closed#12 - An old blocker')
     const ticketLink = within(article).getByRole('link', { name: 'Open #607 in GitHub' })

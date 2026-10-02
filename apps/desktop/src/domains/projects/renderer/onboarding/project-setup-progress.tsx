@@ -50,7 +50,7 @@ export function Progress({
             data-status={taskListStatus(step.status)}
             key={step.id}
           >
-            <span className="grid size-8 shrink-0 place-items-center rounded-md bg-muted transition-colors group-data-[status=passed]/step:bg-success/10 group-data-[status=passed]/step:text-success">
+            <span className="grid size-8 shrink-0 place-items-center rounded-md bg-muted transition-colors group-data-[status=passed]/step:bg-status-success/10 group-data-[status=passed]/step:text-status-success">
               <ProgressIcon status={step.status} />
             </span>
             <span className="min-w-0 flex-1">

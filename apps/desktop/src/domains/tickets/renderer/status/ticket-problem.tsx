@@ -14,7 +14,7 @@ export function TicketProblem({ icon, title, description, alert, actions }: Tick
   return (
     <Empty className="h-full" role={alert ? 'alert' : undefined}>
       <EmptyHeader>
-        <EmptyMedia className={alert ? 'text-danger' : undefined} variant="icon">
+        <EmptyMedia className={alert ? 'text-status-danger' : undefined} variant="icon">
           <Icon name={icon} />
         </EmptyMedia>
         <EmptyTitle>{title}</EmptyTitle>

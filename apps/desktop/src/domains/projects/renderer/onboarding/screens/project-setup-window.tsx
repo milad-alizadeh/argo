@@ -103,7 +103,7 @@ function ProjectSetupEvidence({ snapshot }: Pick<ProjectSetupViewProps, 'snapsho
               data-complete={step.status === 'passed'}
               key={step.stepId}
             >
-              <span className="z-10 grid size-(--size-icon-control) place-items-center rounded-full border bg-sidebar group-data-[complete=true]:border-success/40 group-data-[complete=true]:bg-success/10 group-data-[complete=true]:text-success">
+              <span className="z-10 grid size-(--size-icon-control) place-items-center rounded-full border bg-sidebar group-data-[complete=true]:border-status-success/40 group-data-[complete=true]:bg-status-success/10 group-data-[complete=true]:text-status-success">
                 {step.status === 'passed' ? (
                   <Icon name="confirmed" className="size-3" />
                 ) : (

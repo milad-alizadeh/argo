@@ -5,7 +5,7 @@ import { indicatorToneRecipe } from '@/platform/renderer/components/design-syste
 import type { ConnectionSummary } from '../hooks'
 
 const STATE_MARK: Record<ConnectionSummary['state'], string> = {
-  ready: `${indicatorToneRecipe.active} bg-current`,
+  ready: `${indicatorToneRecipe.success} bg-current`,
   'account-expired': `${indicatorToneRecipe.danger} bg-current`,
   'account-revoked': `${indicatorToneRecipe.danger} bg-current`,
   'account-unreadable': `${indicatorToneRecipe.danger} bg-current`,

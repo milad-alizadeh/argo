@@ -14,12 +14,12 @@ import { providerPresentation } from '@/providers/presentation-registry'
 import { closedChildren } from '../lib'
 
 const STATE_ICONS: Record<TicketState, { icon: IconName; tone: string }> = {
-  open: { icon: 'ticket-link-open', tone: 'text-active' },
+  open: { icon: 'ticket-link-open', tone: 'text-status-success' },
   closed: { icon: 'ticket-link-closed', tone: 'text-muted-foreground' },
 }
 
 export const stateIcon = 'size-(--size-icon-meta) shrink-0'
-const blockedIcon = `${stateIcon} text-danger`
+const blockedIcon = `${stateIcon} text-status-danger`
 
 export type Navigation = { listed: ReadonlySet<string>; onSelect: (key: string) => void }
 

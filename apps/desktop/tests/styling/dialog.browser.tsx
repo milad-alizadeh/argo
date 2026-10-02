@@ -3,13 +3,22 @@ import { afterEach, beforeAll, describe, expect, test } from 'vitest'
 import { page, userEvent } from 'vitest/browser'
 import { SAMPLE_PICTURE } from '@/domains/sessions/renderer/feed/content/feed-samples'
 import { ImageLightbox } from '@/domains/sessions/renderer/feed/content/image-lightbox'
+import { THEMES } from '@/platform/contract/appearance'
 import * as Registry from '@/platform/renderer/components/ui/dialog'
 import { AppearanceDialog } from '@/platform/renderer/shell/components/appearance-dialog'
-import { initializeShellAndSessionLocales, metrics, mountSpecimen } from './browser-fixture'
+import {
+  initializeShellAndSessionLocales,
+  metrics,
+  mountSpecimen,
+  resetAppearanceDocument,
+} from './browser-fixture'
 import * as Pristine from './fixtures/pristine-dialog'
 
 let cleanup = () => {}
-afterEach(() => cleanup())
+afterEach(() => {
+  cleanup()
+  resetAppearanceDocument()
+})
 beforeAll(initializeShellAndSessionLocales)
 
 function specimen(components: typeof Registry) {
@@ -65,9 +74,9 @@ async function mount(content: ReactNode) {
   return mounted
 }
 
-async function baseline(dark: boolean) {
+async function baseline(theme: (typeof THEMES)[number], dark: boolean) {
   await page.viewport(1024, 720)
-  document.documentElement.dataset.theme = 'neutral'
+  document.documentElement.dataset.theme = theme
   document.documentElement.classList.toggle('dark', dark)
   await mount(specimen(Pristine))
   const defaults = snapshot()
@@ -76,57 +85,60 @@ async function baseline(dark: boolean) {
   return defaults
 }
 
-describe.each(['light', 'dark'])('%s reviewed Dialog defaults', (appearance) => {
-  test('native registry Dialog matches its independent pristine generated comparator', async () => {
-    const defaults = await baseline(appearance === 'dark')
-    await mount(specimen(Registry))
-    expect(snapshot()).toEqual(defaults)
-    expect(slot('content').closest('body')).toBe(document.body)
-  })
+describe.each(THEMES)('%s Dialog', (theme) => {
+  describe.each(['light', 'dark'])('%s reviewed Dialog defaults', (appearance) => {
+    test('native registry Dialog matches its independent pristine generated comparator', async () => {
+      const defaults = await baseline(theme, appearance === 'dark')
+      await mount(specimen(Registry))
+      expect(snapshot()).toEqual(defaults)
+      expect(slot('content').closest('body')).toBe(document.body)
+    })
 
-  test('Appearance preserves Dialog typography, surface, spacing, overlay and close geometry', async () => {
-    const defaults = await baseline(appearance === 'dark')
-    await mount(
-      <AppearanceDialog
-        state={{ theme: 'neutral', appearance: 'system', dark: appearance === 'dark', revision: 0 }}
-        open
-        onOpenChange={() => {}}
-        onChoose={async () => true}
-      />,
-    )
-    expect(snapshot()).toEqual(defaults)
-    expect(getComputedStyle(slot('content')).maxWidth).toBe('448px')
-  })
+    test('Appearance preserves Dialog typography, surface, spacing, overlay and close geometry', async () => {
+      const defaults = await baseline(theme, appearance === 'dark')
+      await mount(
+        <AppearanceDialog
+          state={{ theme, appearance: 'system', dark: appearance === 'dark', revision: 0 }}
+          open
+          onOpenChange={() => {}}
+          onChoose={async () => true}
+        />,
+      )
+      expect(snapshot()).toEqual(defaults)
+      expect(getComputedStyle(slot('content')).maxWidth).toBe('448px')
+    })
 
-  test('media keeps registry title, description and control metrics in supported slots', async () => {
-    const defaults = await baseline(appearance === 'dark')
-    const mounted = mountSpecimen(
-      <ImageLightbox
-        image={{
-          source: SAMPLE_PICTURE,
-          title: 'Media preview',
-          alt: 'Reference',
-          openLabel: 'Open preview',
-        }}
-      />,
-    )
-    cleanup = mounted.cleanup
-    await userEvent.click(page.getByRole('button', { name: 'Open preview' }))
-    await expect.poll(() => document.querySelector('[data-slot="dialog-content"]')).not.toBeNull()
-    expect({ ...metrics(slot('title')), font: getComputedStyle(slot('title')).fontFamily }).toEqual(
-      defaults.title,
-    )
-    expect(metrics(slot('description'))).toEqual(defaults.description)
-    expect(
-      metrics(page.getByRole('button', { name: 'Close image preview', exact: true }).element()),
-    ).toEqual(defaults.close)
-    const content = getComputedStyle(slot('content'))
-    expect(content.backgroundColor).toBe('rgba(0, 0, 0, 0)')
-    expect(content.borderRadius).toBe('0px')
-    expect(slot('content').getBoundingClientRect().width).toBe(window.innerWidth)
-    expect(slot('content').getBoundingClientRect().height).toBe(window.innerHeight)
-    const overlay = getComputedStyle(slot('overlay'))
-    expect(overlay.backgroundColor).toBe('rgba(0, 0, 0, 0)')
-    expect(overlay.backdropFilter).toBe('none')
+    test('media keeps registry title, description and control metrics in supported slots', async () => {
+      const defaults = await baseline(theme, appearance === 'dark')
+      const mounted = mountSpecimen(
+        <ImageLightbox
+          image={{
+            source: SAMPLE_PICTURE,
+            title: 'Media preview',
+            alt: 'Reference',
+            openLabel: 'Open preview',
+          }}
+        />,
+      )
+      cleanup = mounted.cleanup
+      await userEvent.click(page.getByRole('button', { name: 'Open preview' }))
+      await expect.poll(() => document.querySelector('[data-slot="dialog-content"]')).not.toBeNull()
+      expect({
+        ...metrics(slot('title')),
+        font: getComputedStyle(slot('title')).fontFamily,
+      }).toEqual(defaults.title)
+      expect(metrics(slot('description'))).toEqual(defaults.description)
+      expect(
+        metrics(page.getByRole('button', { name: 'Close image preview', exact: true }).element()),
+      ).toEqual(defaults.close)
+      const content = getComputedStyle(slot('content'))
+      expect(content.backgroundColor).toBe('rgba(0, 0, 0, 0)')
+      expect(content.borderRadius).toBe('0px')
+      expect(slot('content').getBoundingClientRect().width).toBe(window.innerWidth)
+      expect(slot('content').getBoundingClientRect().height).toBe(window.innerHeight)
+      const overlay = getComputedStyle(slot('overlay'))
+      expect(overlay.backgroundColor).toBe('rgba(0, 0, 0, 0)')
+      expect(overlay.backdropFilter).toBe('none')
+    })
   })
 })

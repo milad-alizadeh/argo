@@ -29,7 +29,7 @@ const STATUS_VARIANTS = {
 } as const satisfies Record<Session['status'], SessionStatusVariant>
 
 const STATUS_MARK = {
-  active: `${indicatorToneRecipe.active} bg-current shadow-state-glow animate-[status-light-blink_1.6s_ease-in-out_infinite]`,
+  active: `${indicatorToneRecipe.success} bg-current shadow-state-glow animate-[status-light-blink_1.6s_ease-in-out_infinite]`,
   attention: `${indicatorToneRecipe.warning} bg-current shadow-[0_0_5px_color-mix(in_srgb,currentColor_35%,transparent)] animate-[status-light-blink_1.6s_ease-in-out_infinite]`,
   failed: `${indicatorToneRecipe.danger} bg-current`,
   idle: `${indicatorToneRecipe.neutral} bg-current`,
@@ -269,7 +269,7 @@ export const SessionRow = memo(function SessionRow({
             </span>
           ) : null}
           {unavailable ? (
-            <span className="inline-flex shrink-0 rounded-full border border-danger/50 px-1.5 py-0.5 type-meta text-danger">
+            <span className="inline-flex shrink-0 rounded-full border border-status-danger/50 px-1.5 py-0.5 type-meta text-status-danger">
               {t('standing.missingHistoryBadge')}
             </span>
           ) : null}

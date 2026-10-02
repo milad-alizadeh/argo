@@ -1,13 +1,20 @@
 import { IconContext } from '@phosphor-icons/react'
 import type { Preview } from '@storybook/react-vite'
 import { createElement } from 'react'
+import { useEffect } from 'storybook/preview-api'
 import { storyPreloads } from '../mocks/platform/story-preload'
 import { SessionChanges } from '../src/domains/sessions/renderer'
 import { AppQueryProvider } from '../src/platform/renderer/app-query-provider'
 import { AutoHideScrollbars } from '../src/platform/renderer/auto-hide-scrollbars'
 import '../src/renderer/i18n'
 import '../src/platform/renderer/styles/globals.css'
-import { type AppearanceState, THEMES } from '../src/platform/contract/appearance'
+import {
+  APPEARANCES,
+  type AppearanceState,
+  DEFAULT_APPEARANCE,
+  DEFAULT_THEME,
+  THEMES,
+} from '../src/platform/contract/appearance'
 import { applyAppearance } from '../src/platform/renderer/use-appearance'
 import { host } from './storybook-host'
 
@@ -20,13 +27,15 @@ const preview: Preview = {
   },
   decorators: [
     (Story, context) => {
-      const dark = context.globals.theme === 'dark'
+      const systemAppearance = window.matchMedia('(prefers-color-scheme: dark)')
+      const appearance =
+        APPEARANCES.find((candidate) => candidate === context.globals.theme) ?? DEFAULT_APPEARANCE
       const theme =
-        THEMES.find((candidate) => candidate === context.globals.themeIdentity) ?? 'neutral'
+        THEMES.find((candidate) => candidate === context.globals.themeIdentity) ?? DEFAULT_THEME
       let state: AppearanceState = {
         theme,
-        appearance: 'system',
-        dark,
+        appearance,
+        dark: appearance === 'system' ? systemAppearance.matches : appearance === 'dark',
         revision: ++appearanceRevision,
       }
       applyAppearance(state)
@@ -36,13 +45,25 @@ const preview: Preview = {
         setAppearance: async (preference) => {
           state = {
             ...preference,
-            dark: preference.appearance === 'system' ? dark : preference.appearance === 'dark',
+            dark:
+              preference.appearance === 'system'
+                ? systemAppearance.matches
+                : preference.appearance === 'dark',
             revision: ++appearanceRevision,
           }
           applyAppearance(state)
           return { ok: true, state }
         },
       } as typeof host.argo
+      useEffect(() => {
+        const updated = () => {
+          if (state.appearance !== 'system' || state.dark === systemAppearance.matches) return
+          state = { ...state, dark: systemAppearance.matches, revision: ++appearanceRevision }
+          applyAppearance(state)
+        }
+        systemAppearance.addEventListener('change', updated)
+        return () => systemAppearance.removeEventListener('change', updated)
+      }, [systemAppearance, state])
       return createElement(
         IconContext.Provider,
         { value: { weight: 'regular' } },
@@ -56,22 +77,29 @@ const preview: Preview = {
   ],
   globalTypes: {
     themeIdentity: {
-      defaultValue: 'neutral',
+      name: 'Theme',
+      defaultValue: DEFAULT_THEME,
       description: 'Color theme',
       toolbar: {
+        title: 'Theme',
         icon: 'circlehollow',
         items: [
-          { value: 'neutral', title: 'Neutral' },
-          { value: 'graphite', title: 'Graphite' },
+          { value: 'default', title: 'Default' },
+          { value: 'catppuccin', title: 'Catppuccin' },
+          { value: 'ocean-breeze', title: 'Ocean Breeze' },
+          { value: 'northern-lights', title: 'Northern Lights' },
         ],
       },
     },
     theme: {
+      name: 'Mode',
       defaultValue: 'dark',
-      description: 'Resolved appearance',
+      description: 'Color mode',
       toolbar: {
+        title: 'Mode',
         icon: 'paintbrush',
         items: [
+          { value: 'system', title: 'System' },
           { value: 'light', title: 'Light' },
           { value: 'dark', title: 'Dark' },
         ],

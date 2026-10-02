@@ -1,8 +1,10 @@
 @import "tailwindcss";
 @import "../tokens.css";
 @import "./theme-bindings.css";
-@import "./themes/neutral.css";
-@import "./themes/graphite.css";
+@import "./themes/default.css";
+@import "./themes/catppuccin.css";
+@import "./themes/ocean-breeze.css";
+@import "./themes/northern-lights.css";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "./typography.css";

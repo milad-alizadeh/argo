@@ -42,16 +42,16 @@ const procedureHandlers = (): StorybookProcedureHandlers => {
 host.argo = {
   ...host.argo,
   getAppearance: () =>
-    Promise.resolve({ theme: 'neutral', appearance: 'system', dark: true, revision: 0 }),
+    Promise.resolve({ theme: 'default', appearance: 'system', dark: true, revision: 0 }),
   setAppearance: () =>
     Promise.resolve({
       ok: true,
-      state: { theme: 'neutral', appearance: 'system', dark: true, revision: 0 },
+      state: { theme: 'default', appearance: 'system', dark: true, revision: 0 },
     }),
   appearanceReady: () =>
     Promise.resolve({
       ready: true,
-      state: { theme: 'neutral', appearance: 'system', dark: true, revision: 0 },
+      state: { theme: 'default', appearance: 'system', dark: true, revision: 0 },
     }),
   onAppearanceChanged: () => () => {},
   onCommand: subscribeToStorybookCommands,

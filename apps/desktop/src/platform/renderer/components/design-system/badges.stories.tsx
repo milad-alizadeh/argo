@@ -42,6 +42,12 @@ export const AppTreatments: Story = {
     await expect(canvas.getByText('Needs input')).toBeVisible()
     await expect(canvas.queryByRole('button')).toBeNull()
     await expect(canvas.queryByRole('link')).toBeNull()
-    await expect(canvas.getAllByRole('listitem')).toHaveLength(6)
+    await expect(canvas.getAllByRole('listitem')).toHaveLength(4)
+    for (const tone of ['success', 'warning', 'danger', 'neutral']) {
+      await expect(canvas.getAllByText(tone, { exact: true })).toHaveLength(2)
+    }
+    for (const removed of ['active', 'complete']) {
+      await expect(canvas.queryByText(removed, { exact: true })).toBeNull()
+    }
   },
 }

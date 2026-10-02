@@ -5,9 +5,11 @@ import {
   type AppearanceState,
   appearanceDocumentSchema,
   appearancePreferenceSchema,
+  appearanceSchema,
   DEFAULT_APPEARANCE,
   DEFAULT_THEME,
 } from '@/platform/contract/appearance'
+import { isRecord } from '@/shared/validation'
 import {
   createWriteQueue,
   otherFields,
@@ -30,7 +32,13 @@ async function readPreference(documentPath: string, report: (value: unknown) => 
     const parsed = appearanceDocumentSchema.safeParse(loaded.document)
     if (parsed.success)
       preference = { theme: parsed.data.theme, appearance: parsed.data.appearance }
-    else report(parsed.error)
+    else {
+      report(parsed.error)
+      const appearance = appearanceSchema.safeParse(
+        isRecord(loaded.document) ? loaded.document.appearance : undefined,
+      )
+      if (appearance.success) preference.appearance = appearance.data
+    }
   } else if (loaded.reason !== 'missing') report(loaded.reason)
   return preference
 }

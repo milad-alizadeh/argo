@@ -1,8 +1,8 @@
 import * as React from 'react'
 import { StatusBadge } from '@/platform/renderer/components/design-system/status-badge'
 import {
-  filledToneRecipe,
   indicatorToneRecipe,
+  statusToneRecipe,
 } from '@/platform/renderer/components/design-system/tone-recipes'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 
@@ -55,14 +55,14 @@ export function AppToneTreatments() {
         Needs input
       </StatusBadge>
       <div className="flex gap-2">
-        {Object.entries(filledToneRecipe).map(([tone, recipe]) => (
-          <span
-            className={`rounded-full px-2 text-xs font-medium ${recipe}`}
-            data-treatment="filled"
+        {Object.keys(statusToneRecipe).map((tone) => (
+          <StatusBadge
+            data-treatment="status"
             key={tone}
+            tone={tone as keyof typeof statusToneRecipe}
           >
             {tone}
-          </span>
+          </StatusBadge>
         ))}
       </div>
       <ul className="grid gap-2">

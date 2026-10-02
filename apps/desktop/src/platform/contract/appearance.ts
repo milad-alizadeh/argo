@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
-export const THEMES = ['neutral', 'graphite'] as const
+export const THEMES = ['default', 'catppuccin', 'ocean-breeze', 'northern-lights'] as const
 export const APPEARANCES = ['system', 'light', 'dark'] as const
-export const DEFAULT_THEME = 'neutral'
+export const DEFAULT_THEME = 'default'
 export const DEFAULT_APPEARANCE = 'system'
 export const APPEARANCE_READ_CHANNEL = 'argo:appearance:read'
 export const APPEARANCE_SET_CHANNEL = 'argo:appearance:set'
@@ -10,7 +10,7 @@ export const APPEARANCE_READY_CHANNEL = 'argo:appearance:ready'
 export const APPEARANCE_CHANGED_CHANNEL = 'argo:appearance:changed'
 
 const themeSchema = z.enum(THEMES)
-const appearanceSchema = z.enum(APPEARANCES)
+export const appearanceSchema = z.enum(APPEARANCES)
 export type Appearance = z.infer<typeof appearanceSchema>
 
 export const appearancePreferenceSchema = z.strictObject({

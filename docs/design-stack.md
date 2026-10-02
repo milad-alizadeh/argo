@@ -8,9 +8,10 @@ archive.
   `apps/desktop/src/platform/renderer/styles/themes/`. Each theme supplies light and dark color
   roles. Themes do not change geometry or typography. `styles/theme-bindings.css` binds those
   roles to Tailwind colors. `globals.css` imports these owners and defines global styles only.
-  Register theme identities in `apps/desktop/src/platform/contract/appearance.ts`.
-  The main process owns the saved theme, appearance preference, and resolved appearance.
-  The renderer applies its accepted snapshot before main shows the window.
+  `apps/desktop/src/platform/contract/appearance.ts` owns the finite Theme catalog and Mode values.
+  `platform/main/theme-coordinator.ts` owns the saved Theme, Mode preference, and resolved appearance.
+  `platform/main/appearance.ts` sends accepted state and applies native backgrounds to every window.
+  `platform/renderer/use-appearance.ts` applies accepted state before main shows the window.
   Native window backgrounds come from the actual theme CSS, not a separate palette.
   From `apps/desktop`, run `rtk node tools/styling/generate-native-theme-backgrounds.mts`
   after a theme background change. The command writes
@@ -44,11 +45,11 @@ archive.
 - **Badge and status paint** - Use registry Badge directly for its native variants, typography,
   and 20px height. Keep its destructive tint and focus treatment. Use its `render` prop with
   an actual button for an action or an anchor for navigation. The display-only `StatusBadge` in
-  `components/design-system/status-badge.tsx` supplies the Session attention treatment as a span.
-  It keeps native Badge typography and geometry. `components/design-system/tone-recipes.ts` owns
-  filled active/neutral count paint, subtle warning paint, and active/success/warning/danger/complete/neutral
-  indicator ink. Theme CSS supplies their paired surfaces and foregrounds, plus independent indicator
-  values. Session and Ticket modules keep state mappings, text, glyphs, motion, and count geometry.
+  `components/design-system/status-badge.tsx` applies the shared Success, Warning, Danger, or Neutral
+  recipe as a span, keeping native Badge typography and geometry. Theme CSS assigns each status tone
+  separately in Light and Dark so Theme changes badge and indicator colors. Running and completed
+  states map to Success; they do not add separate color categories. Session and Ticket modules keep
+  state mappings, text, glyphs, motion, and count geometry.
 - **Isolated-state mechanism** — two of them, and they answer different questions. A **story**
   under a renderer facet in `apps/desktop/src/` holds one component in one state, and is
   what a reviewer clicks. The **shipped screen** is launched by the capture into each screen it
@@ -59,7 +60,8 @@ archive.
   working tree. Vercel owns pull request preview deployments outside this repository.
 - **Measurement proof** — `cd apps/desktop && bun run test:styling` runs dedicated browser
   contracts for Button/Input defaults and app callers, custom content recipes, focus, and Icon ownership
-  in Light and Dark. Stories use the existing theme toolbar, not separate appearance stories.
+  in Light and Dark for every Theme. Stories use the existing Theme and Mode toolbar controls.
+  There are no separate Light and Dark story exports.
   Story plays prove behavior and accessibility. Keep their metric assertions in this suite.
   These focused checks do not complete the pending theme, pane, or component work.
 - **Recipe source check** — the Bun typography contract rejects undefined `type-*` classes in
@@ -80,3 +82,32 @@ The renderer shows the window: Chromium throttles a hidden one and the capture c
 unpainted. It does not take the real keyboard or the real mouse.
 
 The design prose no check enforces is `apps/desktop/AGENTS.md`.
+
+## Theme and Mode
+
+The 2026-10-02 decision for #3101 keeps Theme and Mode as independent choices.
+Theme selects a color scheme. Mode selects System, Light, or Dark.
+Every Theme supplies both Light and Dark colors. System follows the operating system without changing Theme.
+The app keeps its existing choice groups. Storybook labels its controls Theme and Mode and follows the browser preference for System.
+
+Default uses cool Zinc gray surfaces with blue primary, selected, and focus colors.
+Catppuccin, Ocean Breeze, and Northern Lights
+are the researched color-only trial candidates. Their upstream colors supply shadcn roles in both Modes.
+Argo supplies shared status colors separately from each Theme's native destructive treatment.
+All schemes keep shared role owners, registry typography, and geometry.
+Default replaces the former Neutral default. The researched candidates replace Neutral, Graphite, and the unfinished Forest trial.
+An explicit invalid or removed saved Theme is reported and counted, then falls back to Default while preserving a valid Mode.
+Missing Theme remains a valid older portable document. Mutation rejects unknown values and retains accepted state.
+Reading a fallback does not rewrite the portable document.
+
+To add a Theme from the repository root:
+
+1. Add its finite identifier in `apps/desktop/src/platform/contract/appearance.ts`.
+2. Add complete Light and Dark assignments in `apps/desktop/src/platform/renderer/styles/themes/<theme>.css`.
+3. Import that file in `styles/globals.css` and add its label to `shell/locales/app.json` and `.storybook/preview.ts`.
+4. From `apps/desktop`, run `rtk node tools/styling/generate-native-theme-backgrounds.mts`, then repeat with `--check`.
+5. Run the completeness, coordinator, native readiness, and styling suites. Review the existing stories in both Modes.
+
+Theme CSS owns Tailwind shade assignments. Component callers consume semantic roles.
+The eight rendered combinations must retain control measurements and make primary, selected, action, and focus colors visibly distinct between Themes.
+Do not change `components.json` or generated `components/ui/` source to add a Theme.

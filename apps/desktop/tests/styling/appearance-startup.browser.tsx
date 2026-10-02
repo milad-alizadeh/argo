@@ -8,13 +8,13 @@ afterEach(resetAppearanceDocument)
 test('a newer subscription snapshot survives an older initial read response', async () => {
   const previous = window.argo
   const older: AppearanceState = {
-    theme: 'neutral',
+    theme: 'default',
     appearance: 'light',
     dark: false,
     revision: 0,
   }
   const newer: AppearanceState = {
-    theme: 'graphite',
+    theme: 'catppuccin',
     appearance: 'dark',
     dark: true,
     revision: 1,
@@ -31,7 +31,7 @@ test('a newer subscription snapshot survives an older initial read response', as
   }
   try {
     await initializeRendererAppearance()
-    expect(document.documentElement.dataset.theme).toBe('graphite')
+    expect(document.documentElement.dataset.theme).toBe('catppuccin')
     expect(document.documentElement.classList.contains('dark')).toBe(true)
     expect(acknowledge).not.toHaveBeenCalled()
   } finally {

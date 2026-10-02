@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import { APPEARANCE_READY_CHANNEL, type AppearanceState } from '@/platform/contract/appearance'
+import {
+  APPEARANCE_READY_CHANNEL,
+  type AppearanceState,
+  THEMES,
+} from '@/platform/contract/appearance'
 import nativeThemeBackgrounds from '@/platform/contract/native-theme-backgrounds.json'
 
 const harness = vi.hoisted(() => {
@@ -8,7 +12,7 @@ const harness = vi.hoisted(() => {
   return {
     handlers,
     listeners,
-    state: { theme: 'neutral', appearance: 'system', dark: false, revision: 0 } as AppearanceState,
+    state: { theme: 'default', appearance: 'system', dark: false, revision: 0 } as AppearanceState,
     coordinator: {
       read: () => harness.state,
       subscribe: (listener: (state: AppearanceState) => void) => {
@@ -40,7 +44,7 @@ const { initializeAppearance, attachAppearanceWatch, focusAppearanceWindow } = a
 )
 const closers: Array<() => void> = []
 beforeEach(async () => {
-  harness.state = { theme: 'neutral', appearance: 'system', dark: false, revision: 0 }
+  harness.state = { theme: 'default', appearance: 'system', dark: false, revision: 0 }
   await initializeAppearance('/unused-fixture')
 })
 afterEach(() => {
@@ -86,7 +90,7 @@ function fixture(show = true, minimized = false) {
 }
 
 function update(revision = 1, dark = true) {
-  harness.state = { theme: 'graphite', appearance: 'system', dark, revision }
+  harness.state = { theme: 'catppuccin', appearance: 'system', dark, revision }
   for (const listener of harness.listeners) listener(harness.state)
 }
 
@@ -99,6 +103,17 @@ test('a stale ready acknowledgement returns current state without exposing the w
   apply(1)
   expect(acknowledge(1)).toEqual({ ready: true, state: harness.state })
   expect(window.show).toHaveBeenCalledOnce()
+})
+
+test.each(THEMES)('%s applies each native background before visibility', (theme) => {
+  for (const appearance of ['light', 'dark'] as const) {
+    harness.state = { theme, appearance, dark: appearance === 'dark', revision: 0 }
+    const { window, apply, acknowledge } = fixture()
+    expect(window.show).not.toHaveBeenCalled()
+    apply(0)
+    acknowledge(0)
+    expect(window.show).toHaveBeenCalledOnce()
+  }
 })
 
 test('focus waits for an acknowledgement of current DOM and native state', () => {

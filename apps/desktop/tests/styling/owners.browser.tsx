@@ -15,7 +15,7 @@ beforeAll(initializeShellAndSessionLocales)
 
 describe.each(['light', 'dark'] as const)('%s existing owners', (appearance) => {
   test('the real navigation rail owns all four 20px icons', async () => {
-    applyAppearance({ theme: 'neutral', appearance, dark: appearance === 'dark', revision: 0 })
+    applyAppearance({ theme: 'default', appearance, dark: appearance === 'dark', revision: 0 })
     const mounted = mountSpecimen(
       <MemoryRouter initialEntries={['/projects/styling-fixture/sessions']}>
         <AppNavigationRail />

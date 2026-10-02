@@ -1,17 +1,13 @@
-export const filledToneRecipe = {
-  active: 'bg-active-surface text-active-foreground',
-  neutral: 'bg-neutral-surface text-neutral-foreground',
-} as const
-
-export const subtleToneRecipe = {
-  warning: 'bg-warning-subtle text-warning-foreground',
+export const statusToneRecipe = {
+  success: 'bg-status-success/15 text-status-success',
+  warning: 'bg-status-warning/15 text-status-warning',
+  danger: 'bg-status-danger/15 text-status-danger',
+  neutral: 'bg-status-neutral/15 text-status-neutral',
 } as const
 
 export const indicatorToneRecipe = {
-  active: 'text-active-indicator',
-  success: 'text-success-indicator',
-  warning: 'text-warning-indicator',
-  danger: 'text-danger-indicator',
-  complete: 'text-complete-indicator',
-  neutral: 'text-neutral-indicator',
+  success: 'text-status-success',
+  warning: 'text-status-warning',
+  danger: 'text-status-danger',
+  neutral: 'text-status-neutral',
 } as const

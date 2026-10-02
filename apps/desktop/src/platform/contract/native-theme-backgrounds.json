@@ -1,10 +1,18 @@
 {
-  "neutral": {
-    "light": "#ffffff",
-    "dark": "#0a0a0a"
-  },
-  "graphite": {
-    "light": "#ffffff",
+  "default": {
+    "light": "#fafafa",
     "dark": "#09090b"
+  },
+  "catppuccin": {
+    "light": "#eef2f9",
+    "dark": "#191928"
+  },
+  "ocean-breeze": {
+    "light": "#f3f9ff",
+    "dark": "#0f182b"
+  },
+  "northern-lights": {
+    "light": "#f8f8f8",
+    "dark": "#1b1d22"
   }
 }

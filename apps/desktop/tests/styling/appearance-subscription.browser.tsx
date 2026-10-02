@@ -11,7 +11,7 @@ afterEach(resetAppearanceDocument)
 test('subscription application acknowledges later revisions only after startup readiness', async () => {
   const previous = window.argo
   let current: AppearanceState = {
-    theme: 'neutral',
+    theme: 'default',
     appearance: 'light',
     dark: false,
     revision: 0,
@@ -35,7 +35,7 @@ test('subscription application acknowledges later revisions only after startup r
   try {
     await initializeRendererAppearance()
     await acknowledgeRendererAppearance()
-    current = { theme: 'graphite', appearance: 'system', dark: true, revision: 1 }
+    current = { theme: 'catppuccin', appearance: 'system', dark: true, revision: 1 }
     if (!receive) throw new Error('Missing appearance subscription')
     receive(current)
     await expect.poll(() => acknowledge.mock.calls.map(([revision]) => revision)).toEqual([0, 1])

@@ -15,7 +15,7 @@ const CATEGORY_TONES: Record<TicketStatus['category'], string> = {
   backlog: indicatorToneRecipe.neutral,
   unstarted: indicatorToneRecipe.neutral,
   started: indicatorToneRecipe.warning,
-  completed: indicatorToneRecipe.complete,
+  completed: indicatorToneRecipe.success,
   canceled: indicatorToneRecipe.neutral,
 }
 

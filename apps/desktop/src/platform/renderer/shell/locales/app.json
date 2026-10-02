@@ -10,11 +10,16 @@
   },
   "appearance": {
     "title": "Appearance",
-    "description": "Theme and color mode",
+    "description": "Theme and mode",
     "close": "Close Appearance",
     "theme": "Theme",
-    "mode": "Color mode",
-    "themes": { "neutral": "Neutral", "graphite": "Graphite" },
+    "mode": "Mode",
+    "themes": {
+      "default": "Default",
+      "catppuccin": "Catppuccin",
+      "ocean-breeze": "Ocean Breeze",
+      "northern-lights": "Northern Lights"
+    },
     "modes": { "system": "System", "light": "Light", "dark": "Dark" },
     "rejected": "Your change could not be saved. Your previous choice is still active."
   },

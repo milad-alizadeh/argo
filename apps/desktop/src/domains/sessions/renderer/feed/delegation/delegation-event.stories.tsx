@@ -89,7 +89,7 @@ export const Stopped: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: /Spec review stopped/ })).toBeVisible()
-    await expect(canvasElement.querySelector('.bg-warn')).not.toBeNull()
+    await expect(canvasElement.querySelector('.bg-status-warning')).not.toBeNull()
   },
 }
 
