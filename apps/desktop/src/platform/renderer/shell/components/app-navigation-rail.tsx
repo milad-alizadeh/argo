@@ -12,6 +12,9 @@ import {
 import { applyAppearance, useTheme } from '../../use-appearance'
 import { AppearanceDialog } from './appearance-dialog'
 
+const navigationControl =
+  'no-drag-region grid size-(--size-navigation-control) place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-selected hover:text-foreground aria-[current=page]:bg-selected aria-[current=page]:text-foreground'
+
 const navigationIcons: Record<Destination, IconName> = {
   Sessions: 'messages-square',
   Tickets: 'ticket',
@@ -60,7 +63,7 @@ export const AppNavigationRail = memo(function AppNavigationRail() {
                   type="button"
                   aria-current={active ? 'page' : undefined}
                   aria-label={label}
-                  className={`no-drag-region grid size-(--size-navigation-control) place-items-center rounded-lg transition-colors ${active ? 'bg-selected text-foreground' : 'text-muted-foreground hover:bg-selected hover:text-foreground'}`}
+                  className={navigationControl}
                   onClick={() => {
                     navigate(`${projectPath}${DESTINATION_PATHS[itemDestination]}`)
                   }}
@@ -84,7 +87,7 @@ export const AppNavigationRail = memo(function AppNavigationRail() {
               type="button"
               aria-label={settingsLabel}
               onClick={() => setAppearanceOpen(true)}
-              className="no-drag-region grid size-(--size-navigation-control) place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-selected hover:text-foreground"
+              className={navigationControl}
             >
               <Icon className="size-(--size-navigation-icon)" name="settings" />
             </TooltipTrigger>

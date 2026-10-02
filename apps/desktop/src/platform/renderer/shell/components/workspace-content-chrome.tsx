@@ -8,7 +8,7 @@ export function WorkspaceContentChrome({ className, ...props }: ComponentPropsWi
     <div
       data-component="WorkspaceContentChrome"
       className={cn(
-        'drag-region flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-background ps-(--inset-shell-content-leading) pe-(--spacing-shell-gutter)',
+        'panel-window-chrome ps-(--inset-shell-content-leading) pe-(--spacing-shell-gutter)',
         className,
       )}
       {...props}

@@ -16,12 +16,8 @@ import {
 export function EmptyProjectWindow({ busy, onAdd }: { busy: boolean; onAdd: () => void }) {
   const { t } = useTranslation('projects')
   return (
-    <main
-      aria-label={t('empty.label')}
-      className="flex h-full min-h-0 flex-col bg-background"
-      data-component="EmptyProjectWindow"
-    >
-      <div className="drag-region h-(--size-chrome-bar) shrink-0" />
+    <main aria-label={t('empty.label')} className="panel-frame" data-component="EmptyProjectWindow">
+      <div className="panel-window-chrome" />
       <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon">

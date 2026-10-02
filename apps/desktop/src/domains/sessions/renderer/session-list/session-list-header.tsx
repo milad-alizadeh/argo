@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { MenuDropdownTrigger } from '@/platform/renderer/components/dropdown-trigger'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { SidebarSearch } from '@/platform/renderer/components/sidebar-search'
 import { Button } from '@/platform/renderer/components/ui/button'
@@ -10,7 +11,6 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
 } from '@/platform/renderer/components/ui/dropdown-menu'
-import { MenuDropdownTrigger } from '@/platform/renderer/components/ui/dropdown-trigger'
 import { Progress } from '@/platform/renderer/components/ui/progress'
 import { FILTER_LABELS, type SessionListFilter } from './session-list-query'
 import { type SessionSyncStatus, useSessionSync } from './use-session-sync'
@@ -54,11 +54,11 @@ function SessionListFilterMenu({
   return (
     <DropdownMenu>
       <MenuDropdownTrigger
+        appearance="menu"
         aria-label={t('filterSessions')}
         icon="session-list-filter"
         iconOnly
         label={t('filterSessions')}
-        variant="ghost"
       />
       <DropdownMenuContent align="end" className="w-max">
         <DropdownMenuRadioGroup

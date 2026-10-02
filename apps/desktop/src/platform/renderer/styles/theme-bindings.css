@@ -18,7 +18,10 @@
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-status-success: var(--status-success);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-foreground: var(--warning-foreground);
   --color-status-warning: var(--status-warning);
+  --color-danger-indicator: var(--danger-indicator);
   --color-status-danger: var(--status-danger);
   --color-status-neutral: var(--status-neutral);
   --color-diff-added: var(--diff-added);

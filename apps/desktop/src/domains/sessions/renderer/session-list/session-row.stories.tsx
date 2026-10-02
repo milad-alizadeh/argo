@@ -1,10 +1,47 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { SESSION_STATUS_NAMES, SessionToneSamples } from '@/mocks/styling/session-tones'
+import { SessionRow } from './session-row'
+import type { Session, SessionId } from '../types'
+import { sessionRow } from '@/mocks/sessions/session-rows'
+
+export const SESSION_STATUS_NAMES: Record<Session['status'], string> = {
+  running: 'Working Session',
+  starting: 'Starting Session',
+  asking: 'Question Session',
+  permission: 'Permission Session',
+  ended: 'Ended Session',
+  stopped: 'Stopped Session',
+  unknown: 'Unknown Session',
+  idle: 'Idle Session',
+}
+
+export function SessionToneSamples({ onSelect = () => {} }: { onSelect?: (id: SessionId) => void }) {
+  return (
+    <div className="w-80">
+      {(Object.entries(SESSION_STATUS_NAMES) as [Session['status'], string][]).map(
+        ([status, name]) => (
+          <SessionRow
+            checked={false}
+            key={status}
+            now={Date.parse('2026-09-01T00:00:00Z')}
+            onFocus={() => {}}
+            onSelect={onSelect}
+            onToggleSelect={() => {}}
+            selected={false}
+            session={sessionRow({ id: status, name, status })}
+            tabbable
+            unavailable={false}
+          />
+        ),
+      )}
+    </div>
+  )
+}
 
 const meta = {
   title: 'Sessions/SessionList/SessionRow',
   component: SessionToneSamples,
+  excludeStories: ['SESSION_STATUS_NAMES', 'SessionToneSamples'],
   args: { onSelect: fn() },
 } satisfies Meta<typeof SessionToneSamples>
 export default meta

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { REGISTER_PROJECT_COMMAND } from '@/platform/contract/commands'
+import { MenuDropdownTrigger } from '@/platform/renderer/components/dropdown-trigger'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   DropdownMenu,
@@ -11,7 +12,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/platform/renderer/components/ui/dropdown-menu'
-import { MenuDropdownTrigger } from '@/platform/renderer/components/ui/dropdown-trigger'
 import { useCommands } from '@/platform/renderer/shell/hooks/use-commands'
 import { useProjects } from '../hooks'
 import { ProjectSettingsDialog } from './project-settings-dialog'
@@ -30,12 +30,12 @@ export function ProjectSwitcher() {
     <>
       <DropdownMenu>
         <MenuDropdownTrigger
+          appearance="project"
           aria-label={t('switcher.current', { name: projectName })}
-          className="max-w-48 gap-(--spacing-shell-tight) border-0 pl-2 pr-(--spacing-shell-icon)"
+          className="max-w-48"
           disabled={projectState.busy}
           icon="folder"
           label={projectName}
-          variant="ghost"
         />
         <DropdownMenuContent align="end" className="w-64">
           <DropdownMenuGroup>

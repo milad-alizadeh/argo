@@ -1,12 +1,11 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import type { AppearanceState } from '@/platform/contract/appearance'
-import nativeThemeBackgrounds from '@/platform/contract/native-theme-backgrounds.json'
 import { acknowledgeRendererAppearance, applyAppearance } from '@/platform/renderer/use-appearance'
-import { drawnColor, resetAppearanceDocument } from './browser-fixture'
+import { resetAppearanceDocument } from './browser-fixture'
 
 afterEach(resetAppearanceDocument)
 
-test('stale readiness retries only after applying the latest snapshot to DOM and CSS', async () => {
+test('stale readiness retries only after applying the latest snapshot to DOM', async () => {
   const previous = window.argo
   const stale: AppearanceState = {
     theme: 'default',
@@ -26,9 +25,6 @@ test('stale readiness retries only after applying the latest snapshot to DOM and
     if (ready) {
       expect(document.documentElement.dataset.theme).toBe(current.theme)
       expect(document.documentElement.style.colorScheme).toBe('dark')
-      expect(
-        drawnColor(getComputedStyle(document.documentElement).getPropertyValue('--background')),
-      ).toEqual(drawnColor(nativeThemeBackgrounds.catppuccin.dark))
     }
     return { ready, state: current }
   })

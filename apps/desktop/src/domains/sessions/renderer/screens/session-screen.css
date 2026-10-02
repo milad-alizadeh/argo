@@ -10,14 +10,14 @@
   height: var(--size-session-feed-top-fade);
   z-index: 10;
   pointer-events: none;
-  background: linear-gradient(to bottom, var(--color-session-surface), transparent);
+  background: linear-gradient(to bottom, var(--background), transparent);
 }
 
 .session-screen__composer {
   --gradient-session-composer-fade: linear-gradient(
     to bottom,
     transparent,
-    var(--color-session-surface) var(--session-composer-fade-length, 100%)
+    var(--background) var(--session-composer-fade-length, 100%)
   );
   /* The composer takes its content's height; the Feed keeps at least half the pane. */
   max-height: 50%;
@@ -44,14 +44,6 @@
 
 .session-screen__composer
   :is([data-component="ComposerCard"], [data-component="SessionContextBar"]) {
-  background-color: var(--color-session-composer);
-  backdrop-filter: blur(var(--blur-session-composer));
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .session-screen__composer
-    :is([data-component="ComposerCard"], [data-component="SessionContextBar"]) {
-    background-color: var(--card);
-    backdrop-filter: none;
-  }
+  background-color: var(--card);
+  --tw-shadow: 0 0 transparent;
 }

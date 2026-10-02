@@ -90,7 +90,8 @@ Theme selects a color scheme. Mode selects System, Light, or Dark.
 Every Theme supplies both Light and Dark colors. System follows the operating system without changing Theme.
 The app keeps its existing choice groups. Storybook labels its controls Theme and Mode and follows the browser preference for System.
 
-Default uses cool Zinc gray surfaces with blue primary, selected, and focus colors.
+Default uses cool Zinc gray surfaces with neutral primary, secondary, muted, and accent roles,
+plus blue selected and focus colors.
 Catppuccin, Ocean Breeze, and Northern Lights
 are the researched color-only trial candidates. Their upstream colors supply shadcn roles in both Modes.
 Argo supplies shared status colors separately from each Theme's native destructive treatment.

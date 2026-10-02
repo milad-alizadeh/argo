@@ -13,11 +13,25 @@
   flex-shrink: 0;
   align-items: center;
   background-color: var(--background);
+  border-bottom: 1px solid var(--border);
 }
 
-/* The one horizontal inset of a sidebar's search bar and rows, so nothing shifts between tabs. */
-@utility sidebar-gutter {
+@utility panel-gutter {
   padding-inline: var(--spacing-shell-gutter);
+}
+
+@utility sidebar-gutter {
+  @apply panel-gutter;
+}
+
+@utility panel-window-chrome {
+  @apply panel-header;
+  -webkit-app-region: drag;
+}
+
+@utility panel-inset {
+  margin-block-end: var(--spacing-shell-inset);
+  margin-inline-end: var(--spacing-shell-inset);
 }
 
 /* Animate the library's outer flex items, leaving direct resizing immediate. */
@@ -77,10 +91,10 @@
   background-color: var(--card);
 }
 
-/* The main content surface of a page: the panel body on the session surface, whatever the tab. */
+/* The page plane shares the window ground; sidebars and inspectors use card. */
 @utility panel-content {
   @apply panel-body;
-  background-color: var(--color-session-surface);
+  background-color: var(--background);
 }
 
 @utility panel-outer-start {
@@ -99,27 +113,14 @@
   --panel-end-radius: 0px;
 }
 
-@utility panel-elevation {
-  position: relative;
-  isolation: isolate;
-
-  &::after {
-    position: absolute;
-    z-index: 30;
-    inset: var(--size-chrome-bar) 0 0;
-    border-radius: var(--radius-2xl);
-    box-shadow: var(--shadow-panel-body);
-    pointer-events: none;
-    content: "";
-  }
-}
-
 /* Keep the full-height resize target while drawing the seam below the chrome. */
 @utility panel-divider {
+  z-index: 10;
+
   &::before {
     position: absolute;
     inset: var(--size-chrome-bar) 0 0;
     content: "";
-    background-color: color-mix(in oklab, var(--border) 60%, transparent);
+    background-color: var(--border);
   }
 }

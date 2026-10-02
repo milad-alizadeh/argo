@@ -18,10 +18,10 @@ export function NoHarnessReadyScreen({ harnesses }: { harnesses: HarnessReadines
   return (
     <main
       aria-label={t('empty.title')}
-      className="flex h-full min-h-0 flex-col bg-background"
+      className="panel-frame"
       data-component="NoHarnessReadyScreen"
     >
-      <div className="drag-region h-(--size-chrome-bar) shrink-0" />
+      <div className="panel-window-chrome" />
       <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon">

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/platform/renderer/components/ui/button'
+import { FieldError } from '@/platform/renderer/components/ui/field'
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,7 @@ export function SessionRenameDialog({
   session: Session | null
 }) {
   const { t } = useTranslation('sessions')
+  const focusSessionId = useRef<string | null>(null)
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -29,9 +31,20 @@ export function SessionRenameDialog({
 
   useEffect(() => {
     if (session === null) return
+    focusSessionId.current = session.id
     setName(session.name)
     setError(null)
   }, [session])
+
+  const returnFocus = () => {
+    const sessionId = focusSessionId.current
+    if (sessionId === null) return true
+    return (
+      [...document.querySelectorAll<HTMLElement>('[data-session-id]')].find(
+        (element) => element.dataset.sessionId === sessionId,
+      ) ?? true
+    )
+  }
 
   const close = () => {
     if (saving) return
@@ -62,7 +75,7 @@ export function SessionRenameDialog({
       }}
       open={open}
     >
-      <DialogContent showCloseButton={!saving}>
+      <DialogContent finalFocus={returnFocus} showCloseButton={!saving}>
         <DialogHeader>
           <DialogTitle>{t('rename.title')}</DialogTitle>
         </DialogHeader>
@@ -83,11 +96,7 @@ export function SessionRenameDialog({
             onChange={(event) => setName(event.target.value)}
             value={name}
           />
-          {error === null ? null : (
-            <p className="type-body text-destructive" id="session-name-error" role="alert">
-              {error}
-            </p>
-          )}
+          {error === null ? null : <FieldError id="session-name-error">{error}</FieldError>}
           <DialogFooter>
             <Button disabled={saving} onClick={close} type="button" variant="outline">
               {t('rename.cancel')}

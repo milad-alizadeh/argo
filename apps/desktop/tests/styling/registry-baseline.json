@@ -1,6 +1,6 @@
 {
   "reviewedAt": "2026-10-01",
-  "cliVersion": "4.21.1",
+  "cliVersion": "4.21.0",
   "configuration": {
     "style": "base-nova",
     "baseColor": "neutral",
@@ -41,8 +41,6 @@
       "url": "https://ui.shadcn.com/r/styles/base-nova/dialog.json",
       "registryTarget": "registry/base-nova/ui/dialog.tsx",
       "target": "src/platform/renderer/components/ui/dialog.tsx",
-      "comparatorTarget": "tests/styling/fixtures/pristine-dialog.tsx",
-      "comparatorSha256": "2c99f880c6d8ad29c048a56db631b216e05b9405cbe83e8ff6595a06d60f7d32",
       "dependencies": ["cn"],
       "registryDependencies": ["button"],
       "payloadSha256": "40fc321d25eb9590d07db54b00d9bc1a74274a549aa06d5915a34ba302ed8b94",
@@ -54,7 +52,78 @@
         "Transform Lucide close icon to Phosphor XIcon with default props.",
         "Keep the CLI cn import; configured Vite and Storybook aliases select the app merger.",
         "Apply repository formatting and type-only imports without changing declarations or classes.",
-        "After CLI generation, normalize the Button import from '@/platform/renderer/components/ui/button' to './button' for same-facet boundaries. Preserve all declarations and classes. The pristine comparator retains the reviewed CLI alias and its separate hash."
+        "After CLI generation, normalize the Button import from '@/platform/renderer/components/ui/button' to './button' for same-facet boundaries. Preserve all declarations and classes."
+      ]
+    },
+    {
+      "name": "alert-dialog",
+      "reviewedAt": "2026-10-02",
+      "url": "https://ui.shadcn.com/r/styles/base-nova/alert-dialog.json",
+      "registryTarget": "registry/base-nova/ui/alert-dialog.tsx",
+      "target": "src/platform/renderer/components/ui/alert-dialog.tsx",
+      "dependencies": ["cn"],
+      "registryDependencies": ["button"],
+      "payloadSha256": "974543244faee02eb4ea40264b7e0bbda2b01c3f2c369de965d2ac771c57a8af",
+      "cliSourceSha256": "054b2d4ebca281ffe099b84c913e90c02b74e45a03b399d05e10ee254c543b23",
+      "sourceSha256": "172ddc85f6c60db6d31196839f7df9e3b17a66b392b53c723257793717eb4c67",
+      "generationTransforms": [
+        "Resolve the Button registry dependency and ui target through the configured aliases.",
+        "Transform registry icon placeholders to the configured Phosphor icons with upstream default props.",
+        "Keep the CLI cn import; configured Vite and Storybook aliases select the app merger.",
+        "Apply repository formatting and type-only imports without changing declarations or classes."
+      ]
+    },
+    {
+      "name": "card",
+      "reviewedAt": "2026-10-02",
+      "url": "https://ui.shadcn.com/r/styles/base-nova/card.json",
+      "registryTarget": "registry/base-nova/ui/card.tsx",
+      "target": "src/platform/renderer/components/ui/card.tsx",
+      "dependencies": ["cn"],
+      "registryDependencies": [],
+      "payloadSha256": "e73e3fe00ab2e14c4db1dccb1ff5c67041a94c0926ac3216c1dc6dd6dee9d7e0",
+      "cliSourceSha256": "728c7cc7b7b5d76541a22d8c5e0b14fba91373f2bb12cbb712bcfa70d6694604",
+      "sourceSha256": "d54f172d702f606bf4eb85ebaf270d05a874294274088f0b6ae8f944100e3673",
+      "generationTransforms": [
+        "Resolve the registry ui target through the configured alias.",
+        "Keep the CLI cn import; configured Vite and Storybook aliases select the app merger.",
+        "Apply repository formatting and type-only imports without changing declarations or classes."
+      ]
+    },
+    {
+      "name": "drawer",
+      "reviewedAt": "2026-10-02",
+      "url": "https://ui.shadcn.com/r/styles/base-nova/drawer.json",
+      "registryTarget": "registry/base-nova/ui/drawer.tsx",
+      "target": "src/platform/renderer/components/ui/drawer.tsx",
+      "dependencies": ["cn", "@base-ui/react"],
+      "registryDependencies": [],
+      "payloadSha256": "fc81c0adadef868df72172c9cf83237b8ab791a4f0f3e300540883be56c26982",
+      "cliSourceSha256": "a1def3e3e59b8155244b0aec532e679ec78379902305c282d98bad1f6ace6918",
+      "sourceSha256": "4e18fc12534e0d0dc2d62a8e14c3f9917033d2e6142a655a003411d80624b4d2",
+      "generationTransforms": [
+        "Resolve the registry ui target through the configured alias.",
+        "Remove the use-client directive for rsc=false.",
+        "Keep the CLI cn import; configured Vite and Storybook aliases select the app merger.",
+        "Apply repository formatting and type-only imports without changing declarations or classes."
+      ]
+    },
+    {
+      "name": "sheet",
+      "reviewedAt": "2026-10-02",
+      "url": "https://ui.shadcn.com/r/styles/base-nova/sheet.json",
+      "registryTarget": "registry/base-nova/ui/sheet.tsx",
+      "target": "src/platform/renderer/components/ui/sheet.tsx",
+      "dependencies": ["cn"],
+      "registryDependencies": ["button"],
+      "payloadSha256": "72b36d92af7fcbc9bd2d1d4ef0cbc65f4fc8178f7bb2bedaf657460f15011cf4",
+      "cliSourceSha256": "6ba12e7106f7dcce9873e9a00b240b9130c7f70117bff2dc10ed99cec0b1718e",
+      "sourceSha256": "52c2dd57386885b51f73878f1cc3e4e047cf41f40ec918e0eec4fbc7d124ef82",
+      "generationTransforms": [
+        "Resolve the Button registry dependency and ui target through the configured aliases.",
+        "Transform registry icon placeholders to the configured Phosphor icons with upstream default props.",
+        "Keep the CLI cn import; configured Vite and Storybook aliases select the app merger.",
+        "Apply repository formatting and type-only imports without changing declarations or classes."
       ]
     },
     {

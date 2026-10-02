@@ -83,7 +83,7 @@ function InspectorPanel({
           panels.state !== 'collapsed' && !panels.isInspectorReady && 'invisible',
         )}
       >
-        <header className="panel-header drag-region gap-(--spacing-shell-tight) px-(--spacing-shell-gutter)">
+        <header className="panel-window-chrome panel-gutter gap-(--spacing-shell-tight)">
           <div className="no-drag-region flex min-w-0 flex-1 items-center">{bar}</div>
           {controls ? (
             <div className="no-drag-region flex shrink-0 items-center gap-(--spacing-shell-tight)">

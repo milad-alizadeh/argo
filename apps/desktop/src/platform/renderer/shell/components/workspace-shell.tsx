@@ -1,4 +1,4 @@
-import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
+import { type ReactNode, type RefObject, useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePanelRef } from 'react-resizable-panels'
 import { Icon } from '../../components/icon/icon'
@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/button'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../components/ui/resizable'
 import { readCssSize } from '../../lib/read-css-size'
 import { AppNavigationRail } from './app-navigation-rail'
+import { useSidebarToggleFocus } from './use-sidebar-toggle-focus'
 
 type WorkspaceShellProps = {
   rail?: ReactNode
@@ -18,7 +19,7 @@ type WorkspaceShellProps = {
 type SidebarHeaderProps = {
   header: ReactNode
   onToggle: () => void
-  toggleRef: RefObject<HTMLButtonElement | null>
+  toggleRef?: RefObject<HTMLButtonElement | null>
 }
 
 type SidebarToggleProps = Pick<SidebarHeaderProps, 'onToggle' | 'toggleRef'>
@@ -32,7 +33,7 @@ function SidebarHeader({ header, onToggle, toggleRef }: SidebarHeaderProps) {
   return (
     <header
       data-component="WorkspaceSidebarHeader"
-      className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center gap-(--spacing-shell-tight) border-b border-border/60 px-(--spacing-shell-gutter)"
+      className="panel-window-chrome panel-gutter gap-(--spacing-shell-tight)"
     >
       <Button
         aria-label={t('shell.collapseSidebar')}
@@ -76,12 +77,15 @@ function WorkspaceSidebar({
   sidebar,
   toggleRef,
 }: SidebarHeaderProps & { isCollapsed: boolean; sidebar: ReactNode }) {
-  if (isCollapsed) return null
   return (
     // A layout wrapper only: the labelled landmark lives one level in, on the content it holds.
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-sidebar">
-      <SidebarHeader header={header} onToggle={onToggle} toggleRef={toggleRef} />
-      <div className="min-h-0 flex-1">{sidebar}</div>
+    <div inert={isCollapsed} className="panel-frame panel-outer-start">
+      <SidebarHeader
+        header={header}
+        onToggle={onToggle}
+        toggleRef={isCollapsed ? undefined : toggleRef}
+      />
+      <div className="panel-body">{sidebar}</div>
     </div>
   )
 }
@@ -89,14 +93,9 @@ function WorkspaceSidebar({
 function AppRail({ rail }: Pick<WorkspaceShellProps, 'rail'>) {
   return (
     <div className="flex min-h-0 w-(--size-navigation-rail) shrink-0 flex-col">
-      <div
-        data-component="AppRailChrome"
-        className="drag-region h-(--size-chrome-bar) shrink-0 border-b border-border/60 bg-sidebar"
-      />
+      <div data-component="AppRailChrome" className="panel-window-chrome" />
       {/* A layout wrapper only: `AppNavigationRail` (or a story's `rail` override) is its own labelled `nav`. */}
-      <div className="no-drag-region min-h-0 flex-1 border-r border-border/60">
-        {rail ?? <AppNavigationRail />}
-      </div>
+      <div className="no-drag-region min-h-0 flex-1">{rail ?? <AppNavigationRail />}</div>
     </div>
   )
 }
@@ -112,10 +111,10 @@ function WorkspaceContent({
     <div
       data-component="WorkspaceContent"
       data-sidebar-state={isSidebarCollapsed ? 'collapsed' : 'open'}
-      className={`relative h-full min-w-0 overflow-hidden bg-background ${
+      className={`panel-frame panel-outer-end relative ${
         isSidebarCollapsed
-          ? '[--inset-shell-content-leading:calc(var(--size-navigation-control)_+_var(--spacing-shell-gutter))]'
-          : '[--inset-shell-content-leading:0px]'
+          ? 'panel-outer-start [--inset-shell-content-leading:calc(var(--size-navigation-control)_+_var(--spacing-shell-gutter)]'
+          : 'panel-inner-start [--inset-shell-content-leading:var(--spacing-shell-gutter)]'
       }`}
     >
       {children}
@@ -131,13 +130,7 @@ export function WorkspaceShell({ rail, sidebar, header, footer, children }: Work
   const contentMinimumWidth = readCssSize('--size-shell-content-min')
   const sidebarToggleRef = useRef<HTMLButtonElement>(null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [shouldFocusSidebarToggle, setShouldFocusSidebarToggle] = useState(false)
-
-  useEffect(() => {
-    if (!shouldFocusSidebarToggle) return
-    sidebarToggleRef.current?.focus()
-    setShouldFocusSidebarToggle(false)
-  }, [shouldFocusSidebarToggle])
+  const requestToggleFocus = useSidebarToggleFocus(sidebarToggleRef, isSidebarCollapsed)
 
   const synchronizeSidebarCollapsed = useCallback(() => {
     setIsSidebarCollapsed((current) =>
@@ -146,52 +139,58 @@ export function WorkspaceShell({ rail, sidebar, header, footer, children }: Work
   }, [sidebarPanelRef])
 
   const toggleSidebar = () => {
+    requestToggleFocus()
     if (isSidebarCollapsed) {
       sidebarPanelRef.current?.resize(sidebarMinimumWidth)
       setIsSidebarCollapsed(false)
-      setShouldFocusSidebarToggle(true)
       return
     }
 
     sidebarPanelRef.current?.collapse()
     setIsSidebarCollapsed(true)
-    setShouldFocusSidebarToggle(true)
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
+    <div data-component="WorkspaceShell" className="panel-frame overflow-hidden">
       <div className="relative flex min-h-0 flex-1">
         <AppRail rail={rail} />
-        <ResizablePanelGroup
-          orientation="horizontal"
-          className="relative min-w-0 flex-1"
-          onLayoutChanged={synchronizeSidebarCollapsed}
-        >
-          {isSidebarCollapsed ? (
-            <CollapsedSidebarControl onToggle={toggleSidebar} toggleRef={sidebarToggleRef} />
-          ) : null}
-          <ResizablePanel
-            id="shell-sidebar"
-            collapsible
-            collapsedSize={0}
-            defaultSize={sidebarDefaultWidth}
-            minSize={sidebarMinimumWidth}
-            maxSize={sidebarMaximumWidth}
-            panelRef={sidebarPanelRef}
+        <div className="panel-inset relative flex min-w-0 flex-1">
+          <ResizablePanelGroup
+            orientation="horizontal"
+            className="panel-motion relative min-w-0 flex-1"
+            onLayoutChanged={synchronizeSidebarCollapsed}
           >
-            <WorkspaceSidebar
-              header={header}
-              isCollapsed={isSidebarCollapsed}
-              onToggle={toggleSidebar}
-              sidebar={sidebar}
-              toggleRef={sidebarToggleRef}
+            {isSidebarCollapsed ? (
+              <CollapsedSidebarControl onToggle={toggleSidebar} toggleRef={sidebarToggleRef} />
+            ) : null}
+            <ResizablePanel
+              id="shell-sidebar"
+              inert={isSidebarCollapsed}
+              collapsible
+              collapsedSize={0}
+              defaultSize={sidebarDefaultWidth}
+              minSize={sidebarMinimumWidth}
+              maxSize={sidebarMaximumWidth}
+              panelRef={sidebarPanelRef}
+            >
+              <WorkspaceSidebar
+                header={header}
+                isCollapsed={isSidebarCollapsed}
+                onToggle={toggleSidebar}
+                sidebar={sidebar}
+                toggleRef={sidebarToggleRef}
+              />
+            </ResizablePanel>
+            <ResizableHandle
+              className={isSidebarCollapsed ? 'w-0 bg-transparent' : 'panel-divider bg-transparent'}
             />
-          </ResizablePanel>
-          <ResizableHandle className={isSidebarCollapsed ? 'bg-transparent' : 'bg-border/60'} />
-          <ResizablePanel id="shell-content" minSize={contentMinimumWidth}>
-            <WorkspaceContent isSidebarCollapsed={isSidebarCollapsed}>{children}</WorkspaceContent>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+            <ResizablePanel id="shell-content" minSize={contentMinimumWidth}>
+              <WorkspaceContent isSidebarCollapsed={isSidebarCollapsed}>
+                {children}
+              </WorkspaceContent>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
       </div>
       {footer ? <div className="shrink-0">{footer}</div> : null}
     </div>

@@ -16,6 +16,7 @@ import { Button } from '../../components/ui/button'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../components/ui/resizable'
 import { readCssSize } from '../../lib/read-css-size'
 import { AppNavigationRail } from '../../shell/components/app-navigation-rail'
+import { useSidebarToggleFocus } from '../../shell/components/use-sidebar-toggle-focus'
 
 type AppShellProps = {
   rail?: ReactNode
@@ -53,7 +54,7 @@ function AppRail({ rail }: Pick<AppShellProps, 'rail'>) {
   const inRouter = useInRouterContext()
   return (
     <div className="flex min-h-0 w-(--size-navigation-rail) shrink-0 flex-col">
-      <div className="drag-region h-(--size-chrome-bar) shrink-0" />
+      <div className="panel-window-chrome" />
       <div className="min-h-0 flex-1">{rail ?? (inRouter ? <AppNavigationRail /> : null)}</div>
     </div>
   )
@@ -72,10 +73,7 @@ const AppShellControlsContext = createContext<AppShellControls | null>(null)
 export function AppPageHeader({ children }: { children?: ReactNode }) {
   const controls = useContext(AppShellControlsContext)
   return (
-    <header
-      data-component="AppMainHeader"
-      className="panel-header drag-region px-(--spacing-shell-gutter)"
-    >
+    <header data-component="AppMainHeader" className="panel-window-chrome panel-gutter">
       {controls ? (
         <div
           className="panel-control-motion"
@@ -110,6 +108,46 @@ export function AppPageSurface({ children }: { children?: ReactNode }) {
   )
 }
 
+function AppSidebar({
+  sidebarRegionRef,
+  sidebarCollapsed,
+  sidebarToggleRef,
+  toggleSidebar,
+  leftHeader,
+  sidebar,
+}: AppShellControls &
+  Pick<AppShellProps, 'sidebar' | 'leftHeader'> & {
+    sidebarRegionRef: RefObject<HTMLElement | null>
+  }) {
+  return (
+    <section
+      ref={sidebarRegionRef}
+      inert={sidebarCollapsed}
+      className="panel-frame panel-outer-start"
+    >
+      <header className="panel-window-chrome panel-gutter gap-(--spacing-shell-tight)">
+        <div
+          className="panel-control-motion"
+          data-visible={!sidebarCollapsed}
+          inert={sidebarCollapsed}
+        >
+          <div>
+            <div className="w-max">
+              <SidebarToggle
+                collapsed={false}
+                onToggle={toggleSidebar}
+                toggleRef={sidebarCollapsed ? undefined : sidebarToggleRef}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="no-drag-region ml-auto min-w-0">{leftHeader}</div>
+      </header>
+      <div className="panel-body">{sidebar}</div>
+    </section>
+  )
+}
+
 function appContentInsets(): CSSProperties {
   return {
     '--inset-shell-content-body': 'var(--spacing-shell-inset)',
@@ -133,12 +171,14 @@ export function AppShell({ rail, sidebar, leftHeader, footer, children }: AppShe
   const sidebarToggleRef = useRef<HTMLButtonElement>(null)
   const sidebarRegionRef = useRef<HTMLElement>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const requestToggleFocus = useSidebarToggleFocus(sidebarToggleRef, sidebarCollapsed)
 
   useEffect(() => {
     sidebarRegionRef.current?.setAttribute('tabindex', '0')
   }, [])
 
   const toggleSidebar = () => {
+    requestToggleFocus()
     if (sidebarCollapsed) {
       sidebarPanelRef.current?.resize(sizes.sidebarMinimum)
       setSidebarCollapsed(false)
@@ -150,10 +190,10 @@ export function AppShell({ rail, sidebar, leftHeader, footer, children }: AppShe
 
   return (
     <AppShellControlsContext.Provider value={{ sidebarCollapsed, toggleSidebar, sidebarToggleRef }}>
-      <div className="panel-frame overflow-hidden">
+      <div data-component="AppShell" className="panel-frame overflow-hidden">
         <div className="flex min-h-0 flex-1">
           <AppRail rail={rail} />
-          <div className="panel-elevation mb-(--spacing-shell-inset) mr-(--spacing-shell-inset) flex min-w-0 flex-1">
+          <div className="panel-inset flex min-w-0 flex-1">
             <ResizablePanelGroup
               className="panel-motion min-w-0 flex-1"
               onLayoutChanged={() =>
@@ -166,31 +206,19 @@ export function AppShell({ rail, sidebar, leftHeader, footer, children }: AppShe
                 collapsedSize={0}
                 defaultSize={sizes.sidebarDefault}
                 id="app-left-sidebar"
+                inert={sidebarCollapsed}
                 maxSize={sizes.sidebarMaximum}
                 minSize={sizes.sidebarMinimum}
                 panelRef={sidebarPanelRef}
               >
-                <section ref={sidebarRegionRef} className="panel-frame panel-outer-start">
-                  <header className="panel-header drag-region gap-(--spacing-shell-tight) px-(--spacing-shell-gutter)">
-                    <div
-                      className="panel-control-motion"
-                      data-visible={!sidebarCollapsed}
-                      inert={sidebarCollapsed}
-                    >
-                      <div>
-                        <div className="w-max">
-                          <SidebarToggle
-                            collapsed={false}
-                            onToggle={toggleSidebar}
-                            toggleRef={sidebarCollapsed ? undefined : sidebarToggleRef}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="no-drag-region ml-auto min-w-0">{leftHeader}</div>
-                  </header>
-                  <div className="panel-body">{sidebar}</div>
-                </section>
+                <AppSidebar
+                  sidebarRegionRef={sidebarRegionRef}
+                  sidebarCollapsed={sidebarCollapsed}
+                  sidebarToggleRef={sidebarToggleRef}
+                  toggleSidebar={toggleSidebar}
+                  leftHeader={leftHeader}
+                  sidebar={sidebar}
+                />
               </ResizablePanel>
               <ResizableHandle
                 className={sidebarCollapsed ? 'w-0 bg-transparent' : 'panel-divider bg-transparent'}

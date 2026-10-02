@@ -1,3 +1,4 @@
+/* Color-only trial: BankkRoll/tweakcn-theme-picker; MIT notice in docs/research/2026-10-02-theme-palette-imports.md. */
 :root[data-theme="ocean-breeze"] {
   --background: oklch(0.98 0.01 244.25);
   --foreground: oklch(0.37 0.03 259.73);
@@ -5,18 +6,21 @@
   --card-foreground: oklch(0.37 0.03 259.73);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.37 0.03 259.73);
-  --primary: oklch(0.72 0.19 149.58);
-  --primary-foreground: oklch(0.22 0.03 260);
+  --primary: oklch(0.48 0.1 180);
+  --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.95 0.03 236.82);
   --secondary-foreground: oklch(0.45 0.03 256.8);
   --muted: oklch(0.97 0 264.54);
   --muted-foreground: oklch(0.52 0.02 264.36);
-  --selected: oklch(0.95 0.05 163.05);
+  --selected: oklch(0.93 0.05 180);
   --accent: oklch(0.95 0.05 163.05);
   --accent-foreground: oklch(0.37 0.03 259.73);
   --destructive: oklch(0.64 0.21 25.33);
   --status-success: oklch(0.45 0.13 163);
+  --warning-subtle: oklch(0.96 0.05 95);
+  --warning-foreground: oklch(0.43 0.09 80);
   --status-warning: oklch(0.42 0.12 68);
+  --danger-indicator: var(--status-danger);
   --status-danger: oklch(0.45 0.21 25);
   --status-neutral: oklch(0.45 0.02 264);
   --diff-added: var(--color-emerald-700);
@@ -30,8 +34,8 @@
   --chart-5: oklch(0.43 0.09 166.91);
   --sidebar: oklch(0.95 0.03 236.82);
   --sidebar-foreground: oklch(0.37 0.03 259.73);
-  --sidebar-primary: oklch(0.72 0.19 149.58);
-  --sidebar-primary-foreground: oklch(0.22 0.03 260);
+  --sidebar-primary: oklch(0.48 0.1 180);
+  --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.95 0.05 163.05);
   --sidebar-accent-foreground: oklch(0.37 0.03 259.73);
   --sidebar-border: oklch(0.93 0.01 264.53);
@@ -62,12 +66,15 @@
   --secondary-foreground: oklch(0.87 0.01 258.34);
   --muted: oklch(0.28 0.04 260.03);
   --muted-foreground: oklch(0.82 0.01 286.07);
-  --selected: oklch(0.37 0.03 259.73);
+  --selected: oklch(0.32 0.06 190);
   --accent: oklch(0.37 0.03 259.73);
   --accent-foreground: oklch(0.87 0.01 258.34);
   --destructive: oklch(0.64 0.21 25.33);
   --status-success: oklch(0.78 0.19 149);
+  --warning-subtle: oklch(0.3 0.055 85);
+  --warning-foreground: oklch(0.88 0.14 90);
   --status-warning: oklch(0.82 0.16 78);
+  --danger-indicator: oklch(0.74 0.2 25);
   --status-danger: oklch(0.72 0.2 25);
   --status-neutral: oklch(0.82 0.01 286);
   --diff-added: var(--color-emerald-400);

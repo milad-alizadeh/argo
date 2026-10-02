@@ -1,7 +1,7 @@
 {
   "default": {
-    "light": "#fafafa",
-    "dark": "#09090b"
+    "light": "#ffffff",
+    "dark": "#0a0a0a"
   },
   "catppuccin": {
     "light": "#eef2f9",

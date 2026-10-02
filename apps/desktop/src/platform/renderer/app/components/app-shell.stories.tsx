@@ -1,14 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import * as React from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { WorkspaceContentChrome } from './workspace-content-chrome'
-import { WorkspaceShell } from './workspace-shell'
+import { AppPageHeader, AppShell } from './app-shell'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
 
 const sidebarRows = Array.from({ length: 40 }, (_, index) => `Sidebar row ${index + 1}`)
 
-export function WorkspaceShellStoryComposition({ children }: { children?: React.ReactNode }) {
+export function AppShellStoryComposition({ children }: { children?: React.ReactNode }) {
   const sidebarScrollRef = React.useRef<HTMLElement>(null)
   React.useEffect(() => {
     sidebarScrollRef.current?.setAttribute('tabindex', '0')
@@ -29,16 +28,16 @@ export function WorkspaceShellStoryComposition({ children }: { children?: React.
     </aside>
   )
   return (
-    <WorkspaceShell
+    <AppShell
       rail={<nav aria-label="Navigation rail" className="h-full" />}
       sidebar={sidebar}
-      header={<span className="type-meta">Project</span>}
+      leftHeader={<span className="type-meta">Project</span>}
     >
       {children ?? (
         <>
-          <WorkspaceContentChrome>
+          <AppPageHeader>
             <span>Workspace controls</span>
-          </WorkspaceContentChrome>
+          </AppPageHeader>
           <div className="panel-content">
             <section className="flex min-h-0 flex-1 flex-col overflow-auto p-3" aria-label="Pane content">
               <h1 className="type-heading">Workspace content</h1>
@@ -54,7 +53,7 @@ export function WorkspaceShellStoryComposition({ children }: { children?: React.
           </div>
         </>
       )}
-    </WorkspaceShell>
+    </AppShell>
   )
 }
 
@@ -89,9 +88,9 @@ async function cornerPopup(canvasElement: HTMLElement) {
 }
 
 const meta = {
-  title: 'Workspace/Shell',
-  component: WorkspaceShellStoryComposition,
-  excludeStories: ['WorkspaceShellStoryComposition'],
+  title: 'App/Shell',
+  component: AppShellStoryComposition,
+  excludeStories: ['AppShellStoryComposition'],
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
@@ -100,7 +99,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof WorkspaceShellStoryComposition>
+} satisfies Meta<typeof AppShellStoryComposition>
 export default meta
 type Story = StoryObj<typeof meta>
 
@@ -112,7 +111,7 @@ export const Collapsed: Story = {
     await expect(canvas.getByRole('button', { name: 'Open sidebar' })).toHaveFocus()
   },
 }
-export const SidebarControls: Story = {
+export const CollapseRestore: Story = {
   play: ({ canvasElement }) => collapseAndRestore(canvasElement),
 }
 export const KeyboardResized: Story = { play: ({ canvasElement }) => keyboardResize(canvasElement) }

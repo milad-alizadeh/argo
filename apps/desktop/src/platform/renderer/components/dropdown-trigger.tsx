@@ -1,23 +1,40 @@
 import { cn } from 'cn'
 import type { ComponentProps } from 'react'
-import { Icon, type IconName } from '../icon/icon'
-import { Button } from './button'
-import { DropdownMenuTrigger } from './dropdown-menu'
-import { PopoverTrigger } from './popover'
+import { Icon, type IconName } from './icon/icon'
+import { Button } from './ui/button'
+import { DropdownMenuTrigger } from './ui/dropdown-menu'
+import { PopoverTrigger } from './ui/popover'
 
-type TriggerProps = Omit<ComponentProps<typeof Button>, 'children' | 'size'> & {
+type TriggerProps = Omit<
+  ComponentProps<typeof Button>,
+  'children' | 'size' | 'variant' | 'className'
+> & {
   icon: IconName
   label: string
+  appearance?: 'menu' | 'project' | 'workspace'
   iconOnly?: boolean
+  className?: string
   'aria-label': string
 }
 
-function triggerButton({ iconOnly = false, className, ...props }: TriggerProps) {
+function triggerButton({
+  appearance = 'menu',
+  iconOnly = false,
+  className,
+  ...props
+}: TriggerProps) {
   const { icon: _icon, label: _label, ...buttonProps } = props
+  const appearanceClasses = {
+    menu: 'min-w-0',
+    project: 'min-w-0 gap-(--spacing-shell-tight) border-0 pl-2 pr-(--spacing-shell-icon)',
+    workspace:
+      'max-w-full rounded-full border-border bg-(--color-session-composer) backdrop-blur-(--blur-session-composer) dark:border-border dark:bg-(--color-session-composer)',
+  }[appearance]
   return (
     <Button
-      className={cn('min-w-0', iconOnly && 'size-7 p-0', className)}
+      className={cn(appearanceClasses, iconOnly && 'size-7 p-0', className)}
       size="sm"
+      variant={appearance === 'workspace' ? 'outline' : 'ghost'}
       {...buttonProps}
     />
   )

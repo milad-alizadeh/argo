@@ -2,6 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
 
+import { SessionWorkMenu } from './session-work-menu'
+import type { WorkEntry } from './session-work-entries'
 import { sessionShellCommand, sessionSubagent } from '@/mocks/sessions/session-rows'
 import { SessionWorkButtons } from './session-work-buttons'
 
@@ -40,6 +42,37 @@ const SHELL = [
     result: 'Background command "bun run build" completed (exit code 0)',
   }),
 ]
+
+function countEntry(running: boolean): WorkEntry {
+  return {
+    id: running ? 'running-work' : 'finished-work',
+    title: running ? 'Review interface' : 'Review complete',
+    monospace: false,
+    status: running ? 'running' : 'completed',
+    mark: 'bg-current',
+    state: running ? 'Running' : 'Done',
+    facts: '',
+  }
+}
+
+export function WorkCountSamples() {
+  const [picked, setPicked] = useState<string | null>(null)
+  return (
+    <div className="flex items-center gap-4">
+      {[true, false].map((running) => (
+        <SessionWorkMenu
+          entries={[countEntry(running)]}
+          icon="agent"
+          key={String(running)}
+          label={running ? 'Running work' : 'Finished work'}
+          onSelect={setPicked}
+          selectedId={picked}
+        />
+      ))}
+      <output aria-label="Selected work">{picked ?? 'None'}</output>
+    </div>
+  )
+}
 
 function expectDotAlignedWithTitle(item: HTMLElement) {
   const dot = item.querySelector<HTMLElement>('[aria-hidden="true"]')
@@ -87,6 +120,7 @@ function Header(props: Partial<React.ComponentProps<typeof SessionWorkButtons>>)
 const meta = {
   title: 'Sessions/Screen/Work Buttons',
   component: SessionWorkButtons,
+  excludeStories: ['WorkCountSamples'],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta<typeof SessionWorkButtons>
 
@@ -212,5 +246,15 @@ export const ShellOnly: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'Shell · 2' })).toBeVisible()
     await expect(canvas.queryByRole('button', { name: /Subagents/ })).toBeNull()
+  },
+}
+
+export const NotificationCounts: Story = {
+  render: () => <WorkCountSamples />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Running work · 1' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: /Review interface Running/ }))
+    await expect(canvas.getByLabelText('Selected work')).toHaveTextContent('running-work')
   },
 }

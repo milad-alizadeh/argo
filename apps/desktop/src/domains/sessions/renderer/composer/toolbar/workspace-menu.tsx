@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { WorkspaceSummary } from '@/domains/workspaces/renderer'
+import { SearchableDropdownTrigger } from '@/platform/renderer/components/dropdown-trigger'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Command,
@@ -10,7 +11,6 @@ import {
   CommandItem,
   CommandList,
 } from '@/platform/renderer/components/ui/command'
-import { SearchableDropdownTrigger } from '@/platform/renderer/components/ui/dropdown-trigger'
 import { Popover, PopoverContent, PopoverTitle } from '@/platform/renderer/components/ui/popover'
 
 export type WorkspaceMenuControlProps = {
@@ -44,11 +44,13 @@ function WorkspaceChoices({
   }
   return (
     <Command defaultValue={selectedValue} key={selectedValue ?? choice}>
-      <CommandInput
-        appearance="inline"
-        aria-label={t('composer.workspace.search')}
-        placeholder={t('composer.workspace.search')}
-      />
+      <div className="mx-1">
+        <CommandInput
+          appearance="inline"
+          aria-label={t('composer.workspace.search')}
+          placeholder={t('composer.workspace.search')}
+        />
+      </div>
       <CommandList className="max-h-56">
         <CommandEmpty>
           <span aria-disabled="true" role="option" tabIndex={-1}>
@@ -127,12 +129,12 @@ export function WorkspaceMenu({
     <div className="flex min-w-0 flex-col items-start gap-1">
       <Popover open={open} onOpenChange={setOpen}>
         <SearchableDropdownTrigger
+          appearance="workspace"
           aria-label={t('composer.workspace.chooseLabel', { workspace: label })}
-          className="max-w-full rounded-full border-border bg-(--color-session-composer) backdrop-blur-(--blur-session-composer) dark:border-border dark:bg-(--color-session-composer)"
+          className="max-w-full"
           icon="worktree"
           label={label}
           type="button"
-          variant="outline"
         />
         <PopoverContent
           align="start"

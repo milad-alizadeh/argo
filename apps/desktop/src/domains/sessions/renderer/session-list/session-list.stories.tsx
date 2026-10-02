@@ -167,11 +167,21 @@ export const Discovered: Story = {
     const input = within(dialog).getByRole('textbox', { name: 'Name' })
     await expect(input).toHaveValue('Read the Session transcript')
     await userEvent.clear(input)
+    await userEvent.keyboard('{Enter}')
+    await expect(within(dialog).getByRole('alert')).toHaveTextContent(
+      'Enter a name for this Session.',
+    )
+    await expect(input).toHaveAttribute('aria-invalid', 'true')
+    await expect(input).toHaveAttribute('aria-describedby', 'session-name-error')
+    await expect(host.updates).toHaveLength(0)
     await userEvent.type(input, '  Keep the Session list stable\n')
     await userEvent.keyboard('{Enter}')
     await expect(
       await canvas.findByRole('button', { name: /Keep the Session list stable/ }),
     ).toBeInTheDocument()
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: /Keep the Session list stable/ })).toHaveFocus(),
+    )
     await expect(host.updates).toEqual([
       { sessionIds: ['prose'], title: '  Keep the Session list stable' },
     ])
