@@ -7,7 +7,7 @@ import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { preloadForStories } from '@/mocks/platform/story-preload'
 import { loadCodeLanguage } from '../../ai-elements'
-import type { SessionError, SessionFeed, SessionFeedRow } from '../../types'
+import type { SessionError, SessionFeed, SessionFeedRow, SessionPosture } from '../../types'
 import { BROKEN_PICTURE, RICH_MARKDOWN, SAMPLE_PICTURE } from '../content/feed-samples'
 import { BackgroundWork, type BackgroundWorkLinks } from '../rows/background-work'
 import { FeedJumpToLatest } from '../rows/feed-jump-to-latest'
@@ -1770,7 +1770,13 @@ const stalledPrompt: SessionFeedRow = {
 
 // A fixture whose Feed never settles. `stallTimeoutMs` stands in for the production bound so the
 // story does not wait on the real one.
-function StalledFeedHarness({ onRetryFeed }: { onRetryFeed: () => void }) {
+function StalledFeedHarness({
+  onRetryFeed,
+  posture = null,
+}: {
+  onRetryFeed: () => void
+  posture?: SessionPosture | null
+}) {
   const [otherClicks, setOtherClicks] = useState(0)
   const [reading, setReading] = useState<SessionFeed>({
     ...stalledFeed,
@@ -1788,7 +1794,7 @@ function StalledFeedHarness({ onRetryFeed }: { onRetryFeed: () => void }) {
           feed={reading}
           failure={null}
           running={running}
-          posture={null}
+          posture={posture}
           selectedSessionId="stalled"
           onOpenEvidence={() => {}}
           onRetryFeed={() => {
@@ -1849,10 +1855,30 @@ export const Stalled: Story = {
   },
 }
 
+// A live Session whose history loaded but whose reply is slow (#3170).
+export const StalledReply: StoryObj<typeof StalledFeedHarness> = {
+  args: { onRetryFeed: fn(), posture: 'live' },
+  render: (args) => <StalledFeedHarness {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(canvas.getByText('No reply yet')).toBeInTheDocument())
+    await expect(canvas.getByText(/the agent has not replied yet/)).toBeInTheDocument()
+    await expect(canvas.queryByText('Could not load this Session')).toBeNull()
+    await expect(canvas.getByText('Keep this known history visible.')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+  },
+}
+
 // A Session whose read never answers at all (no SessionFeed ever arrives, #2111's repro):
 // `feed` stays null instead of arriving with empty `rows`. Retry calls `onRetryFeed`, the
 // reader's hook into a fresh IPC attempt, not just the local bound.
-function NeverArrivesHarness({ onRetryFeed }: { onRetryFeed: () => void }) {
+function NeverArrivesHarness({
+  onRetryFeed,
+  posture = null,
+}: {
+  onRetryFeed: () => void
+  posture?: SessionPosture | null
+}) {
   const [otherClicks, setOtherClicks] = useState(0)
   return (
     <div className="flex h-dvh flex-col">
@@ -1865,7 +1891,7 @@ function NeverArrivesHarness({ onRetryFeed }: { onRetryFeed: () => void }) {
           feed={null}
           failure={null}
           running={false}
-          posture={null}
+          posture={posture}
           selectedSessionId="never-arrives"
           onOpenEvidence={() => {}}
           onRetryFeed={onRetryFeed}
@@ -1897,6 +1923,18 @@ export const NeverArrives: StoryObj<typeof NeverArrivesHarness> = {
 
     await userEvent.click(canvas.getByRole('button', { name: 'Retry' }))
     await waitFor(() => expect(args.onRetryFeed).toHaveBeenCalledTimes(1))
+  },
+}
+
+// A live Session whose first read never answers keeps the history-load text (#3170).
+export const NeverArrivesLive: StoryObj<typeof NeverArrivesHarness> = {
+  args: { onRetryFeed: fn(), posture: 'live' },
+  render: (args) => <NeverArrivesHarness {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(canvas.getByText('Could not load this Session')).toBeInTheDocument())
+    await expect(canvas.getByText(/Argo tried to load the history/)).toBeInTheDocument()
+    await expect(canvas.queryByText('No reply yet')).toBeNull()
   },
 }
 

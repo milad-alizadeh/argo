@@ -161,7 +161,7 @@ export function BasicFeed({
         />
       )}
       {stalled && document !== null ? (
-        <StalledFeed compact posture={posture} onRetry={retry} />
+        <StalledFeed posture={posture} waitingFor="reply" onRetry={retry} />
       ) : null}
       {document === null ? (
         <Standing
