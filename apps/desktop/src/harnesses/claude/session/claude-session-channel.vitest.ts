@@ -470,24 +470,29 @@ test('draws no Feed content and counts nothing for recorded hook and lifecycle f
   }
 })
 
-test('compacts as a /compact Turn that draws no prompt and settles when its result lands', async () => {
+// Opens a channel past its first Turn and starts a compaction, which the mock holds until released.
+async function startHeldCompaction() {
   vendor.prompts = []
   vendor.recordedEvents = []
   vendor.releaseSecond = null
   const events: unknown[] = []
   const channel = claudeSessionChannelOpener(null)(first, undefined, (event) => events.push(event))
   await until(() => events.some((event) => (event as { type: string }).type === 'turn.completed'))
-  const compacted = channel.compact?.()
-  expect(compacted).toBeDefined()
+  const compacted = channel.compact()
+  await until(() => vendor.releaseSecond !== null)
+  const release = vendor.releaseSecond as (() => void) | null
+  return { channel, events, compacted, release: () => release?.() }
+}
+
+test('compacts as a /compact Turn that draws no prompt and settles when its result lands', async () => {
+  const { channel, events, compacted, release } = await startHeldCompaction()
   let settled = false
-  void compacted?.then(() => {
+  void compacted.then(() => {
     settled = true
   })
-  await until(() => vendor.releaseSecond !== null)
   expect(vendor.prompts.at(-1)).toMatchObject({ message: { role: 'user', content: '/compact' } })
   expect(settled).toBe(false)
-  const releaseCompaction = vendor.releaseSecond as (() => void) | null
-  releaseCompaction?.()
+  release()
   await compacted
   const parsed = events.map((event) => liveSessionChannelEventSchema.parse(event))
   const prompts = parsed.flatMap((event) =>
@@ -500,17 +505,9 @@ test('compacts as a /compact Turn that draws no prompt and settles when its resu
 })
 
 test('rejects an interrupted compaction, as the Codex channel does', async () => {
-  vendor.prompts = []
-  vendor.recordedEvents = []
-  vendor.releaseSecond = null
-  const events: unknown[] = []
-  const channel = claudeSessionChannelOpener(null)(first, undefined, (event) => events.push(event))
-  await until(() => events.some((event) => (event as { type: string }).type === 'turn.completed'))
-  const compacted = channel.compact?.()
-  await until(() => vendor.releaseSecond !== null)
+  const { channel, compacted, release } = await startHeldCompaction()
   await channel.interrupt()
-  const releaseCompaction = vendor.releaseSecond as (() => void) | null
-  releaseCompaction?.()
+  release()
   await expect(compacted).rejects.toThrow('Claude compaction was interrupted.')
   channel.close()
 })

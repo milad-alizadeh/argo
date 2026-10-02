@@ -15,10 +15,9 @@ test('Codex compaction runs after the active Turn and settles when its own Turn 
   const { channel, events, notify } = mockCodexChannel(request)
   await new Promise((resolve) => setImmediate(resolve))
   let settled = false
-  const compacted = channel.compact?.().then(() => {
+  const compacted = channel.compact().then(() => {
     settled = true
   })
-  assert.ok(compacted)
   assert.equal(calls.includes('thread/compact/start'), false)
   notify({
     method: 'turn/completed',
