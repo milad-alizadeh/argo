@@ -14,6 +14,7 @@ import {
   type Thread,
   type ThreadListResponse,
 } from '../app-server'
+import { codexTurnContent, codexTurnPages } from './codex-turn-pages'
 
 // Only the Thread fields discovery reads; the generated types own the rest.
 const threadSchema: z.ZodType<
@@ -56,19 +57,53 @@ function rootParentOf(
   return parentNativeId ?? null
 }
 
-function parseThread(raw: unknown): ParsedThread {
+// The first prompt a person wrote, read from the thread's Turns; envelopes are no prompt. A failed
+// read leaves the row to its weaker title rather than failing the scan.
+async function readFirstPrompt(request: CodexRequest, nativeId: string): Promise<string | null> {
+  const pages = codexTurnPages(request, {
+    threadId: nativeId,
+    itemsView: 'summary',
+    sortDirection: 'asc',
+  })
+  let rejected = 0
+  let prompt: string | null = null
+  try {
+    for await (const turns of pages) {
+      const content = turns.flatMap((turn) => codexTurnContent(turn, () => (rejected += 1)))
+      const found = content.find(
+        (entry) => entry.kind === 'message' && entry.role === 'user' && entry.text !== '',
+      )
+      if (found?.kind === 'message') {
+        prompt = found.text
+        break
+      }
+    }
+  } catch (error) {
+    if (!isThreadNotLoaded(error))
+      console.warn(`Could not read the first Codex prompt for ${nativeId}:`, error)
+  }
+  if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Codex prompt shape(s).`)
+  return prompt
+}
+
+async function parseThread(request: CodexRequest, raw: unknown): Promise<ParsedThread> {
   const parsed = threadSchema.safeParse(raw)
   if (!parsed.success) return { kind: 'unrecognised' }
   const thread = parsed.data
   if (thread.parentThreadId !== null)
     return { kind: 'subagent', nativeId: thread.id, parentNativeId: thread.parentThreadId }
+  const preview = thread.preview === '' ? undefined : thread.preview
+  // Codex fills `preview` with the first prompt; only a thread it left unnamed and empty is read.
+  const firstPrompt =
+    thread.name === null && thread.preview === '' ? await readFirstPrompt(request, thread.id) : null
   return {
     kind: 'session',
     summary: {
       nativeId: thread.id,
       activityAt: thread.updatedAt * 1000,
       ...(thread.name === undefined ? {} : { customTitle: thread.name }),
-      ...(thread.preview === undefined ? {} : { preview: thread.preview }),
+      ...(preview === undefined ? {} : { preview }),
+      ...(firstPrompt === null ? {} : { firstPrompt }),
       ...(thread.cwd === undefined ? {} : { cwd: thread.cwd }),
       // A thread records no Mode; a live channel saves the one it ran with.
       ...(thread.model == null && thread.reasoningEffort == null
@@ -112,13 +147,13 @@ async function readCodexThread(
   request: CodexRequest,
   nativeId: string,
 ): Promise<ParsedThread | { kind: 'missing' }> {
+  let thread: unknown
   try {
-    const thread = await request(
+    thread = await request(
       'thread/read',
       { threadId: nativeId, includeTurns: false },
       (value) => z.object({ thread: z.unknown() }).parse(value).thread,
     )
-    return parseThread(thread)
   } catch (error) {
     // An id Codex cannot parse names no thread it could ever return (0.157.0 answers -32600).
     const missing =
@@ -127,6 +162,7 @@ async function readCodexThread(
     if (missing || isThreadNotLoaded(error)) return { kind: 'missing' }
     throw error
   }
+  return parseThread(request, thread)
 }
 
 async function listCodexThreads(request: CodexRequest): Promise<unknown[]> {
@@ -179,7 +215,7 @@ async function collectCodexThreads(
   }
   const collections: ThreadCollections = { records: new Map(), subagents: new Map() }
   let skipped = 0
-  for (const raw of threads) skipped += rememberThread(parseThread(raw), collections)
+  for (const raw of threads) skipped += rememberThread(await parseThread(request, raw), collections)
   skipped += await rememberKnownThreads(request, knownNativeIds, collections)
   return { collections, skipped }
 }
