@@ -5,10 +5,10 @@ import type { SessionHarness } from '@/domains/sessions/renderer/harness/harness
 import { chooseHarness, openNewSessionByClick, sendFromComposer } from '../gestures'
 import type { SessionHarnessBackend } from '../session-harness-backend'
 
-const USAGE_BUTTON = '[data-component="SessionContextBar"] button[aria-label^="Usage"]'
+export const USAGE_BUTTON = '[data-component="SessionContextBar"] button[aria-label^="Usage"]'
 
 // Records each Usage label the footer commits, so a label shown for one frame still counts.
-function watchUsageLabels(selector: string) {
+export function watchUsageLabels(selector: string) {
   const labels: string[] = []
   const record = () => {
     const label = document.querySelector(selector)?.getAttribute('aria-label')
@@ -21,6 +21,10 @@ function watchUsageLabels(selector: string) {
     subtree: true,
   })
   Object.assign(window, { usageLabels: labels })
+}
+
+export function usageLabels(page: Page) {
+  return page.evaluate(() => (window as { usageLabels?: string[] }).usageLabels)
 }
 
 export async function proveFooterKeepsHarness(
@@ -37,6 +41,5 @@ export async function proveFooterKeepsHarness(
   await sendFromComposer(page, prompt)
   await backend.waitForReply(page, { harness, prompt })
   await expect(page).not.toHaveURL(/\/sessions\/new$/)
-  const labels = await page.evaluate(() => (window as { usageLabels?: string[] }).usageLabels)
-  expect(labels).toEqual([picked])
+  expect(await usageLabels(page)).toEqual([picked])
 }

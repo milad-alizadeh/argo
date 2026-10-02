@@ -7,13 +7,13 @@ const picked = HARNESSES[1]
 const chooseHarness = () => {}
 
 describe('sessionHarness', () => {
-  test('a Session started here keeps the picked Harness until its details load', () => {
+  test('a Session keeps its known Harness until its details load', () => {
     const control = sessionHarness({
       selectedSessionId: 'started',
       lastHarness: picked,
       chooseHarness,
       session: null,
-      startedHarness: picked,
+      knownHarness: picked,
     })
     expect(control).toEqual({ harness: picked })
   })
@@ -24,7 +24,7 @@ describe('sessionHarness', () => {
       lastHarness: DEFAULT_HARNESS,
       chooseHarness,
       session: { harness: picked },
-      startedHarness: DEFAULT_HARNESS,
+      knownHarness: DEFAULT_HARNESS,
     })
     expect(control).toEqual({ harness: picked })
   })

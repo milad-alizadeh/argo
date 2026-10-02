@@ -7,19 +7,19 @@ export function sessionHarness({
   lastHarness,
   chooseHarness,
   session,
-  startedHarness,
+  knownHarness,
 }: {
   selectedSessionId: string | null
   lastHarness: Harness
   chooseHarness: (harness: Harness) => void
   session: Pick<Session, 'harness'> | null
-  // The Harness picked at Send for the selected Session, which this screen just started.
-  startedHarness: Harness | null
+  // The Harness known before details load: picked at Send here, else the Session list row's.
+  knownHarness: Harness | null
 }): HarnessControl {
   // An optimistic row has not called `session.start` yet (#2109): the harness it starts under is
   // still the reader's to pick, the same as a Session that has no Roster row at all.
   if (selectedSessionId === null) return { harness: lastHarness, onChange: chooseHarness }
-  // Its details have not loaded yet, so they cannot name its Harness (#3171).
-  if (session === null && startedHarness !== null) return { harness: startedHarness }
+  // Its details have not loaded yet, so they cannot name its Harness (#3171, #3172).
+  if (session === null && knownHarness !== null) return { harness: knownHarness }
   return { harness: harnessOrDefault(session?.harness) }
 }

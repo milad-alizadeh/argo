@@ -16,6 +16,7 @@ import {
 import { isFeedRowPrompt, useFeedReading } from '../feed'
 import { useAvailableHarnesses } from '../harness'
 import { workInspectorReveal } from '../inspector'
+import { useListedSessionHarness } from '../session-list'
 import type { Session, SessionEvidence, SessionExtras } from '../types'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work'
 import { sessionLocation } from './session-screen-location'
@@ -145,6 +146,17 @@ function usePickedHarness() {
   return { lastHarness: pickedHarness ?? availableHarnesses?.[0] ?? DEFAULT_HARNESS, chooseHarness }
 }
 
+// Before details load, a Session started here keeps its pick, else its Session list row names it.
+function useSessionHarness({
+  startedHarness,
+  ...input
+}: Omit<Parameters<typeof sessionHarness>[0], 'knownHarness'> & {
+  startedHarness: Harness | null
+}) {
+  const listedHarness = useListedSessionHarness(input.selectedSessionId)
+  return sessionHarness({ ...input, knownHarness: startedHarness ?? listedHarness })
+}
+
 export function useSessionScreenModel() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
@@ -164,7 +176,7 @@ export function useSessionScreenModel() {
     feedRunning,
     picked.lastHarness,
   )
-  const harness = sessionHarness({ selectedSessionId, session, startedHarness, ...picked })
+  const harness = useSessionHarness({ selectedSessionId, session, startedHarness, ...picked })
   const permission = useSessionPermission(selectedSessionId)
   const question = useSessionQuestion(selectedSessionId)
   const inspector = useWorkInspector({
