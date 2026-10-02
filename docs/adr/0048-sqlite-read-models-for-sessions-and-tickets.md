@@ -29,10 +29,14 @@ The activity line is the newest Turn's activity by the Feed's own rules, so ever
 draws it the same way. A status a read settles outranks the listed one. The tick compares its list
 with the last one. A Session that is new and has no row sends `Discover` once. A Session that left
 the list shows `idle`; where the Harness reads activity, it gets one last read, whose status, such
-as `unknown` for a Turn a crash left unfinished, replaces it. The first tick stores `idle` for every
-saved Session of that Harness it does not find open. A `running` or `permission` status a read or a
-hook settled shows `unknown` once nothing has changed for five minutes, because a killed terminal
-writes nothing more and Esc at a prompt sends no hook; a listed status is fresh from every tick.
+as `unknown` for a Turn a crash left unfinished, replaces it. Each listing stores `idle` once for
+every Session of that Harness saved before it and since the last listing that it does not find open.
+The first listing closes the rows an earlier run left, and a later one closes the rows the sync
+saved since, so the order of the first tick and the sync changes no status (#3168). A row saved
+during a listing waits for the next, since the listing may have missed its Session. A `running` or
+`permission` status a read or a hook settled shows `unknown` once nothing has changed for five
+minutes, because a killed terminal writes nothing more and Esc at a prompt sends no hook; a listed
+status is fresh from every tick.
 A Session with a live Argo channel is skipped, so the channel alone owns its status and activity,
 and the Session List draws the channel's activity over the stored line. A reading that names no
 activity keeps the stored line, so an idle row keeps its last line. Each Session's status, line and

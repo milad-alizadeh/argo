@@ -24,6 +24,11 @@
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true
   },
+  // Renderer tests that read source files through the Bun global; tsconfig.web.json excludes them.
+  "files": [
+    "src/platform/renderer/styles/typography-contract.test.ts",
+    "src/renderer/catalogs.test.ts"
+  ],
   "include": [
     "src/**/*.ts",
     "*.config.ts",
@@ -42,10 +47,7 @@
     "src/harnesses/*/presentation",
     "src/harnesses/claude/integration",
     "src/harnesses/codex/integration",
-    "src/platform/contract/appearance.test.ts",
-    "src/platform/main/appearance.test.ts",
     "src/domains/projects/**/*.test.ts",
-    "src/platform/contract/commands.test.ts",
     "src/platform/contract/watch.test.ts",
     "src/platform/main/watch/**/*.test.ts",
     "src/platform/main/ipc/every-domain-refuses-untrusted-frames.test.ts",

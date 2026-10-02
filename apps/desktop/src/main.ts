@@ -91,6 +91,7 @@ import { createWriteQueue } from '@/platform/main/storage/portable-file'
 import { createAppRouter } from '@/platform/main/trpc-router'
 import { attachTrpcTransport } from '@/platform/main/trpc-transport'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
+import { readWindowRoute, rememberWindowRoute } from '@/platform/main/window/window-route'
 import { providerEndpoints } from '@/providers/endpoints'
 import { PROVIDER_REGISTRY } from '@/providers/registry'
 import { identifierSchema } from '@/shared/validation'
@@ -503,11 +504,13 @@ function createWindow({
   database,
   registry,
   sessionServices,
+  route,
 }: {
   actor: AppActor
   database: Database
   registry: HarnessRegistry
   sessionServices: SessionServices
+  route: string | undefined
 }): void {
   const actors = requireWindowActors(actor)
   actors.sessionSync.send({ type: 'Refresh' })
@@ -517,6 +520,7 @@ function createWindow({
     rendererName: MAIN_WINDOW_VITE_NAME,
     developmentServerURL: MAIN_WINDOW_VITE_DEV_SERVER_URL,
     title: DEVELOPMENT_INSTANCE?.title,
+    route,
     show: !ACCEPTANCE_ENABLED && !PROOF_ENABLED,
     additionalArguments: DEVELOPMENT_INSTANCE
       ? [
@@ -530,6 +534,7 @@ function createWindow({
       : undefined,
     attach: (window, rendererURL) => {
       attachWindowNavigation(window)
+      rememberWindowRoute(window, app.getPath('userData'))
       const detachTrpc = attachWindowTrpc({
         window,
         rendererURL,
@@ -622,15 +627,14 @@ async function ready(actor: AppActor): Promise<void> {
         readWholeHistory((extent) => registry[harness].readHistory(target, extent)),
       ),
     (harness, nativeId, turnId) =>
-      historyReads.run(
-        () => registry[harness].hasTurn?.(nativeId, turnId) ?? Promise.resolve(false),
-      ),
+      historyReads.run(async () => registry[harness].hasTurn?.(nativeId, turnId) ?? false),
   ).catch((error) => console.error('Session command recovery failed.', error))
   void reconcileTicketWriteIntentsAtStartup(applicationDatabase).catch((error) =>
     console.error('Ticket write intent recovery failed.', error),
   )
   sessionServices = startSessionServices(requireWindowActors(actor), applicationDatabase, registry)
-  createWindow({ actor, database: applicationDatabase, registry, sessionServices })
+  const route = await readWindowRoute(app.getPath('userData'), applicationDatabase)
+  createWindow({ actor, database: applicationDatabase, registry, sessionServices, route })
 
   if (ACCEPTANCE_ENABLED) {
     // A window is open and a PTY may still be draining, so this run also stands as the app-shutdown

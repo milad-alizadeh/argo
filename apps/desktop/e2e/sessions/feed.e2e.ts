@@ -5,6 +5,8 @@
 // one it gets, rather than living in a second curated file (#e2e-real-cheap-models).
 import { rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import type { Page } from 'playwright-core'
+import type { Harness } from '@/harnesses/harness'
 import { RECORDED_PROMPTS } from '../../mocks/cli/recorded-prompts'
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
@@ -13,6 +15,7 @@ import { proveClaudeAcpControls, proveClaudeAcpDiscovery } from './cases/claude-
 import { proveClaudeRename } from './cases/claude-rename.case'
 import { provePackagedCodexResume } from './cases/codex-resume.case'
 import { proveCodexThreadName } from './cases/codex-thread-name.case'
+import { proveComposerMemory } from './cases/composer-memory.case'
 import { proveSessionCreatedByClick } from './cases/create.case'
 import { proveDelegationCards } from './cases/delegation-card.case'
 import { proveSessionDiagram } from './cases/diagram.case'
@@ -23,6 +26,7 @@ import {
   writeLongCodexThread,
 } from './cases/feed-pages.case'
 import { growClaudeSession, growCodexThread, proveSmoothScroll } from './cases/feed-scroll.case'
+import { proveFooterKeepsHarness } from './cases/footer-harness.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
 import { proveNewSessionSkipsUninstalledHarness } from './cases/new-session-harness.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
@@ -32,6 +36,7 @@ import { proveRefusedStart } from './cases/refused-start.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveContract } from './cases/session-list-contract.case'
 import { provePackagedSessionListSelection } from './cases/session-list-interaction.case'
+import { proveSelectionSurvivesRestart } from './cases/session-list-restart.case'
 import { proveSessionListWindow } from './cases/session-list-window.case'
 import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
@@ -41,10 +46,11 @@ import { ACTIVE_FEED } from './feed-selectors'
 import { listedSession, nativeIdOf } from './fixture-sessions'
 import { appendProse } from './fixtures/feed.fixture'
 import { writeWindowFillerSessions } from './fixtures/session-list-window.fixture'
-import { openSessionByClick } from './gestures'
+import { openSessionByClick, sendFromComposer } from './gestures'
 import { sessionSyncHoldFile } from './packaged-session-harness'
 import { sessionDetails, sessionRows } from './page-trpc'
 import { assertVendorFeedCorpus, readRealVendorCorpus } from './real-harness/vendor-feed-corpus'
+import type { SessionHarnessBackend } from './session-harness-backend'
 import { expect, test } from './session-proof-run'
 
 test.describe('with no Project selected', () => {
@@ -67,9 +73,15 @@ test('session-shell', async ({ session }) => {
   await proveSessionShell(session.page())
 })
 
-test('session-worktree', async ({ session, backend }) => {
-  await proveSessionWorktree(session.page(), session.fixture.project, backend)
-})
+// One test per Harness: both legs and their five reloads ran 47-61s, against the 60s budget.
+for (const harness of ['claude', 'codex'] as const)
+  test(`session-worktree-${harness}`, async ({ session, backend }) => {
+    await proveSessionWorktree(
+      session.page(),
+      { project: session.fixture.project, backend },
+      harness,
+    )
+  })
 
 test('session-refused-start', async ({ session }) => {
   await proveRefusedStart(session.page(), session.fixture.project)
@@ -119,6 +131,10 @@ test('session-list-selection', async ({ session }) => {
   await provePackagedSessionListSelection(session.page())
 })
 
+test('session-list-restart', async ({ session }) => {
+  await proveSelectionSurvivesRestart(session.page(), () => session.restart())
+})
+
 test('session-delegation-cards', async ({ session }) => {
   await proveDelegationCards(session.page())
 })
@@ -140,6 +156,10 @@ test('session-diagram', async ({ session }) => {
     transcripts: session.fixture.claudeTranscripts,
     append: appendProse,
   })
+})
+
+test('session-composer-memory', async ({ session }) => {
+  await proveComposerMemory(session.page())
 })
 
 test('session-live-codex-model-choices', async ({ session }) => {
@@ -254,22 +274,84 @@ test.describe('with the real Claude SDK history', () => {
   })
 })
 
+// A new Session's reply, finished once the Session List reads it idle.
+async function replyUntilIdle(
+  page: Page,
+  backend: SessionHarnessBackend,
+  reply: { harness: Harness; prompt: string },
+) {
+  const sessionId = await proveSessionCreatedByClick(page, backend, reply)
+  await expect
+    .poll(async () => (await sessionRows(page)).find((row) => row.id === sessionId)?.status)
+    .toBe('idle')
+}
+
 // Hook and lifecycle frames update a Session but draw no Feed row, for each Harness alike (#3003).
 test('session-feed-hides-lifecycle-events', async ({ session, backend }) => {
   const page = session.page()
   for (const harness of ['claude', 'codex'] as const) {
-    const sessionId = await proveSessionCreatedByClick(page, backend, {
+    await replyUntilIdle(page, backend, {
       harness,
       prompt: `Reply once for the ${harness} lifecycle proof.`,
     })
-    await expect
-      .poll(async () => (await sessionRows(page)).find((row) => row.id === sessionId)?.status)
-      .toBe('idle')
     const feed = page.locator(ACTIVE_FEED)
     await expect(feed.locator('[data-feed-row]').first()).toBeVisible()
     await expect(feed.getByText('Unsupported item')).toHaveCount(0)
     await expect(feed.getByText('Status updated')).toHaveCount(0)
   }
+})
+
+type FeedLabelRecorder = { feedLabelObserver?: MutationObserver; feedLabelSamples?: string[][] }
+
+// Records the Feed's row labels on every DOM change, so a short-lived misorder is caught too.
+async function recordFeedLabels(page: Page) {
+  await page.locator(ACTIVE_FEED).evaluate((feed) => {
+    const labels = () =>
+      [...feed.querySelectorAll('[data-feed-row]')].flatMap((row) => {
+        const role = row.getAttribute('data-role')
+        if (role !== null) return [role]
+        const parts = [...row.querySelectorAll('[data-slot="feed-event"] > span')]
+        const [label, status] = parts.map((part) => part.textContent)
+        return label === 'Session status' && status !== undefined ? [status] : []
+      })
+    const samples = [labels()]
+    const recorder = window as unknown as FeedLabelRecorder
+    recorder.feedLabelObserver?.disconnect()
+    recorder.feedLabelObserver = new MutationObserver(() => samples.push(labels()))
+    recorder.feedLabelObserver.observe(feed, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    })
+    recorder.feedLabelSamples = samples
+  })
+  return () => page.evaluate(() => (window as unknown as FeedLabelRecorder).feedLabelSamples ?? [])
+}
+
+// Both Harnesses draw each Turn as prompt, Running, reply, Idle, and never a status first (#3161).
+test('session-feed-status-parity', async ({ session, backend }) => {
+  const page = session.page()
+  const drawn: Partial<Record<Harness, string[]>> = {}
+  for (const harness of ['claude', 'codex'] as const) {
+    await replyUntilIdle(page, backend, {
+      harness,
+      prompt: `Reply once for the ${harness} status parity proof.`,
+    })
+    const feed = page.locator(ACTIVE_FEED)
+    await expect(feed.getByText(/^Session status\s*Idle$/)).toBeVisible()
+    const readLabels = await recordFeedLabels(page)
+    await sendFromComposer(page, `Reply again for the ${harness} status parity proof.`)
+    await expect(feed.getByText(/^Session status\s*Idle$/)).toHaveCount(2)
+    const samples = await readLabels()
+    const statusBeforePrompt = samples.filter((labels) =>
+      labels.some((label, index) => label === 'Running' && labels[index - 1] !== 'user'),
+    )
+    expect(statusBeforePrompt).toEqual([])
+    drawn[harness] = samples.at(-1)
+  }
+  const turn = ['user', 'Running', 'assistant', 'Idle']
+  expect(drawn.claude).toEqual([...turn, ...turn])
+  expect(drawn.codex).toEqual(drawn.claude)
 })
 
 // A skip that reads only the worker's backend decides before the case launches anything.
@@ -350,10 +432,15 @@ test.describe('with a slow Harness', () => {
 test.describe('with a Harness that holds its start', () => {
   test.use({ heldStart: true })
 
-  for (const harness of ['claude', 'codex'] as const)
+  for (const harness of ['claude', 'codex'] as const) {
     test(`session-${harness}-prompt-before-naming`, async ({ session, backend }) => {
       await provePromptBeforeNaming(session.page(), backend, harness)
     })
+
+    test(`session-${harness}-footer-keeps-harness`, async ({ session, backend }) => {
+      await proveFooterKeepsHarness(session.page(), backend, harness)
+    })
+  }
 })
 
 test('shipped fuses stay intact', async () => {
