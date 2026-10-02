@@ -8,6 +8,7 @@ export const RECORDED_PROMPTS = {
   claudeContinue: 'Continue the work: reply with one short sentence.',
   claudeBranch: 'Branch off: reply with one short sentence.',
   codexCommand: 'Run Codex check',
+  codexFollowUp: 'Confirm the check',
   codexReply: 'Continue the check',
   codexNotice:
     '<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>',

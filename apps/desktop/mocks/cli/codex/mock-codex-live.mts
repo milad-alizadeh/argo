@@ -12,6 +12,7 @@ import { MOCK_START_REFUSED_FILE } from '../mock-cli.ts'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
 import { sendPlanUpdate } from './fixtures/mock-codex-plan.ts'
 import { createMockCodexSkillsAndConfig } from './fixtures/mock-codex-skills-config.ts'
+import { mockTurnsPage } from './mock-codex-turn-pages.ts'
 
 type Item = {
   id: string
@@ -32,38 +33,40 @@ type Thread = {
 type ActiveTurn = { thread: Thread; turn: Turn; prompt: string }
 const statePath = process.env.ARGO_CODEX_E2E_STATE
 if (statePath === undefined) throw new Error('Missing ARGO_CODEX_E2E_STATE')
-let threads: Thread[] = []
-try {
-  threads = JSON.parse(readFileSync(statePath, 'utf8')) as Thread[]
-} catch (error) {
-  if (!(error instanceof Error) || !('code' in error) || error.code !== 'ENOENT') throw error
+// Every Codex process shares the store, and another one can write any thread in it at any time.
+function storedThreads(): Thread[] {
+  try {
+    return JSON.parse(readFileSync(statePath as string, 'utf8')) as Thread[]
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return []
+    throw error
+  }
 }
-// Another process's thread is stored on disk, so its newest Turn is read from there each time.
-function newestStoredTurn(threadId: string) {
-  const stored = JSON.parse(readFileSync(statePath as string, 'utf8')) as Thread[]
-  const turn = stored.find((candidate) => candidate.id === threadId)?.turns.at(-1)
-  if (turn === undefined) return []
-  const completedAt =
-    turn.status === 'inProgress' ? null : (turn.completedAt ?? Math.floor(Date.now() / 1000))
-  return [{ ...turn, completedAt }]
+const threads = storedThreads()
+const storedThread = (threadId: string) =>
+  storedThreads().find((candidate) => candidate.id === threadId)
+// Another process's thread is stored on disk, so its Turns are read from there each time.
+function storedTurns(threadId: string) {
+  return (storedThread(threadId)?.turns ?? []).map((turn) => ({
+    ...turn,
+    completedAt:
+      turn.status === 'inProgress' ? null : (turn.completedAt ?? Math.floor(Date.now() / 1000)),
+  }))
 }
-const save = () => writeFileSync(statePath, JSON.stringify(threads))
+// Writes one thread back and keeps what other processes wrote to the rest.
+function save(thread: Thread) {
+  const stored = storedThreads()
+  const index = stored.findIndex((candidate) => candidate.id === thread.id)
+  if (index === -1) stored.push(thread)
+  else stored[index] = thread
+  writeFileSync(statePath as string, JSON.stringify(stored))
+}
 const send = (message: unknown) => process.stdout.write(`${JSON.stringify(message)}\n`)
 const identifier = (index: number) => `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`
 const pending = new Map<string, ActiveTurn>()
 const REPLY_DELAY_MS = readMockReplyDelayMs()
 const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
 let turnIndex = 0
-
-// Another Codex client renames a thread in the shared store, so a list re-reads names from it.
-function storedNames(): Map<string, string> {
-  try {
-    const stored = JSON.parse(readFileSync(statePath, 'utf8')) as Thread[]
-    return new Map(stored.flatMap((thread) => (thread.name ? [[thread.id, thread.name]] : [])))
-  } catch {
-    return new Map()
-  }
-}
 
 function finish(active: ActiveTurn, status: 'completed' | 'interrupted' | 'failed') {
   const { thread, turn, prompt } = active
@@ -85,7 +88,7 @@ function finish(active: ActiveTurn, status: 'completed' | 'interrupted' | 'faile
       params: { threadId: thread.id, turnId: turn.id, item: assistant },
     })
   }
-  save()
+  save(thread)
   send({
     method: 'turn/completed',
     params: { threadId: thread.id, turn: { id: turn.id, status, error: null } },
@@ -117,7 +120,7 @@ function finishAdversarially(
     params: { threadId: thread.id, turnId: turn.id, item: assistant },
   })
   turn.status = plan.outcome === 'failure' ? 'failed' : 'completed'
-  save()
+  save(thread)
   send({
     method: 'turn/completed',
     params: { threadId: thread.id, turn: { id: turn.id, status: turn.status, error: null } },
@@ -266,7 +269,7 @@ function startTurn(id: Request['id'], params: Record<string, unknown>, thread: T
   const turn: Turn = { id: turnId, status: 'inProgress', items: [user] }
   thread.turns.push(turn)
   thread.updatedAt = Math.floor(Date.now() / 1000)
-  save()
+  save(thread)
   send({ id, result: { turn: { id: turnId } } })
   setTimeout(() => notifyTurn({ thread, turn, prompt }), 50)
 }
@@ -280,21 +283,20 @@ function handle(message: Request) {
   if (method === 'initialized') return
   if (method === 'initialize') return send({ id, result: {} })
   if (method === 'model/list') return send({ id, result: recordedCodexModels })
-  if (method === 'thread/list') {
-    const names = storedNames()
+  // Other Codex clients write and rename threads in the shared store, so a list reads it each time.
+  if (method === 'thread/list')
     return send({
       id,
       result: {
-        data: threads.map(({ id: threadId, cwd, updatedAt, name }) => ({
+        data: storedThreads().map(({ id: threadId, cwd, updatedAt, name }) => ({
           id: threadId,
           cwd,
           updatedAt,
-          name: names.get(threadId) ?? name,
+          name,
         })),
         nextCursor: null,
       },
     })
-  }
   if (
     method === 'thread/start' &&
     existsSync(path.join(String(params.cwd), MOCK_START_REFUSED_FILE))
@@ -308,7 +310,7 @@ function handle(message: Request) {
       turns: [],
     }
     threads.push(thread)
-    save()
+    save(thread)
     // Codex names the thread in this answer, so a held start holds it back.
     void waitWhileHoldFileExists(process.env[SESSION_MOCK_START_HOLD_FILE_ENV]).then(() =>
       send({ id, result: { thread: { id: thread.id } } }),
@@ -324,9 +326,11 @@ function handle(message: Request) {
 // A request about one stored thread.
 function handleThread({ id, method, params = {} }: Request, thread: Thread) {
   if (method === 'thread/resume') return send({ id, result: { thread: { id: thread.id } } })
-  if (method === 'thread/read') return send({ id, result: { thread } })
+  // History is paged from `thread/turns/list`; a metadata read carries no Turns.
+  if (method === 'thread/read')
+    return send({ id, result: { thread: { ...(storedThread(thread.id) ?? thread), turns: [] } } })
   if (method === 'thread/turns/list')
-    return send({ id, result: { data: newestStoredTurn(thread.id), nextCursor: null } })
+    return send({ id, result: mockTurnsPage(storedTurns(thread.id), params) })
   if (method === 'turn/start') return startTurn(id, params, thread)
   if (method === 'turn/interrupt') {
     send({ id, result: {} })
