@@ -19,6 +19,7 @@ import { proveComposerMemory } from './cases/composer-memory.case'
 import { proveSessionCreatedByClick } from './cases/create.case'
 import { proveDelegationCards } from './cases/delegation-card.case'
 import { proveSessionDiagram } from './cases/diagram.case'
+import { proveFooterKeepsHarness } from './cases/footer-harness.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
 import { proveNewSessionSkipsUninstalledHarness } from './cases/new-session-harness.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
@@ -374,10 +375,15 @@ test.describe('with a slow Harness', () => {
 test.describe('with a Harness that holds its start', () => {
   test.use({ heldStart: true })
 
-  for (const harness of ['claude', 'codex'] as const)
+  for (const harness of ['claude', 'codex'] as const) {
     test(`session-${harness}-prompt-before-naming`, async ({ session, backend }) => {
       await provePromptBeforeNaming(session.page(), backend, harness)
     })
+
+    test(`session-${harness}-footer-keeps-harness`, async ({ session, backend }) => {
+      await proveFooterKeepsHarness(session.page(), backend, harness)
+    })
+  }
 })
 
 test('shipped fuses stay intact', async () => {

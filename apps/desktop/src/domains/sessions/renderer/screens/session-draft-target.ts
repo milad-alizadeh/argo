@@ -9,12 +9,12 @@ export function draftTarget({
   worktree,
 }: {
   identity: ComposerIdentity
-  harness: HarnessControl
+  harness: HarnessControl | null
   projectId: string | null
   worktree: Pick<WorktreeOptionsState, 'options' | 'newWorktree' | 'from'>
 }): RouterInputs['composerDraftCreate']['target'] | null {
   if (identity.kind === 'session') return { type: 'session', sessionId: identity.sessionId }
-  if (projectId === null || worktree.options === null) return null
+  if (projectId === null || harness === null || worktree.options === null) return null
   return {
     type: 'project',
     projectId,
