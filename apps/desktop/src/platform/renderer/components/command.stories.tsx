@@ -44,7 +44,7 @@ function CommandStory({
           </CommandEmpty>
           <CommandGroup>
             {!empty &&
-              ['main', 'feature/a-long-branch-name-for-a-narrow-picker'].map((value) => (
+              ['main', 'feature/worktree-session-history-and-recovery'].map((value) => (
                 <CommandItem
                   key={value}
                   value={value}
@@ -132,7 +132,7 @@ export const LongOptionNarrow: Story = {
   play: async ({ canvasElement }) => {
     await expect(
       within(canvasElement).getByRole('option', {
-        name: 'feature/a-long-branch-name-for-a-narrow-picker',
+        name: 'feature/worktree-session-history-and-recovery',
       }),
     ).toBeVisible()
   },

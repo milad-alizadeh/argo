@@ -10,7 +10,7 @@ import {
   ComboboxList,
 } from './ui/combobox'
 
-const options = ['main', 'feature/a-long-branch-name-for-a-narrow-picker']
+const options = ['main', 'feature/worktree-session-history-and-recovery']
 function ComboboxStory({
   disabled = false,
   invalid = false,
@@ -77,6 +77,7 @@ export const Raw: Story = {
     await page.findByRole('listbox')
     await userEvent.keyboard('{Escape}')
     await expect(input).toHaveFocus()
+    await waitFor(() => expect(page.queryByRole('listbox')).toBeNull())
   },
 }
 export const Empty: Story = {
@@ -111,7 +112,7 @@ export const LongOptionNarrow: Story = {
   play: async ({ canvasElement }) => {
     const input = within(canvasElement).getByRole('combobox')
     await userEvent.click(input)
-    await userEvent.type(input, 'long-branch')
+    await userEvent.type(input, 'session-history')
     await expect(
       await within(document.body).findByRole('option', { name: options[1] }),
     ).toBeVisible()

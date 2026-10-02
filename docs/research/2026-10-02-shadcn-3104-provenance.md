@@ -163,3 +163,53 @@ Raw registry stories live in `components/command.stories.tsx`, `components/input
 SearchField, SidebarSearch, WorkspaceMenu, and SourceField each have an owning story file.
 Existing ConnectSourceForm stories were exercised without source changes.
 All changes remain uncommitted. No files were staged, pushed, or independently reviewed.
+
+## Gap pass from 6608e471b
+
+The branch added `triggerProps` to generated Combobox after the original implementation.
+The recorded registry candidate does not contain that API.
+This pass restores Combobox from the existing candidate with its recorded SHA-256 identity.
+Biome then formats the source and organizes its imports and exports.
+Command and InputGroup differ from the original normalized candidates only through that same organization.
+The candidate record retains the original identities as `reviewedCandidateSha256` and records the installed identities as `sourceSha256`.
+
+SearchablePickerInput now composes public Base UI Input and registry InputGroup slots with ComboboxTrigger.
+The app composition owns the localized trigger name and its pointer-only tab order.
+It forwards input refs, attributes, and events through the public Input API.
+SourceField supplies a shrinkable text child for long option labels.
+Its Clears Selection story clears the controlled selection and asserts the existing callback receives `null`.
+The Selected story keeps the selected source visible.
+
+WorktreeRow replaces the removed WorkspaceMenu in the current branch.
+Its branch picker now uses CommandSearchField and SearchablePickerItem.
+The trigger and option text inherit registry typography.
+WorktreeRow retains branch selection, controlled popup state, popup dimensions, and save-failure feedback.
+New plays cover keyboard selection, Escape dismissal, focus return, empty results, loading, and a long option in a narrow composition.
+The stories inherit the selected Theme and Mode.
+
+Current affected story links include [raw Combobox](http://localhost:6007/?path=/story/design-system-primitives-combobox--raw),
+[raw Command](http://localhost:6007/?path=/story/design-system-primitives-command--raw),
+[raw InputGroup](http://localhost:6007/?path=/story/design-system-primitives-input-group--raw),
+[SidebarSearch](http://localhost:6007/?path=/story/design-system-patterns-sidebar-search--search),
+[source selection](http://localhost:6007/?path=/story/features-tickets-connection-source-field--selected),
+[clearing source selection](http://localhost:6007/?path=/story/features-tickets-connection-source-field--clears-selection),
+[source long option](http://localhost:6007/?path=/story/features-tickets-connection-source-field--long-option-narrow),
+[WorktreeRow keyboard selection](http://localhost:6007/?path=/story/features-sessions-composer-worktree-row--keyboard-selection-and-focus-return),
+[WorktreeRow empty results](http://localhost:6007/?path=/story/features-sessions-composer-worktree-row--no-matches),
+[WorktreeRow loading](http://localhost:6007/?path=/story/features-sessions-composer-worktree-row--loading),
+and [WorktreeRow long option](http://localhost:6007/?path=/story/features-sessions-composer-worktree-row--long-branch-picker).
+
+Initial live completion reports returned success for 40 states in the inherited Dark mode.
+The blind visual check then found a keyboard play timeout that those reports did not catch.
+Those completion reports do not prove that every interaction passed.
+The follow-up uses the actual Interactions and Accessibility panels as its pass/fail evidence.
+
+The rendered branch search field has the `combobox` role.
+Its `aria-labelledby` pointed to an empty hidden cmdk label because WorktreeRow did not supply Command's public `label` prop.
+WorktreeRow now supplies the existing localized search label through that API.
+The unchanged keyboard play passed all 16 interaction steps, including selection, dismissal, and focus return.
+Its required axe scan reported zero violations, 18 passes, and zero inconclusive results.
+The No Matches play also passed all eight interaction steps with the same axe result.
+The renderer type check and scoped Biome checks passed.
+The restored primitive declarations and classes match the recorded candidates.
+This pass did not run native Electron proof, popup measurement contracts, or the full quality gate.

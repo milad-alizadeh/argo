@@ -8,7 +8,7 @@
     "Read-only shadcn add NAME --view NAME.tsx -c apps/desktop.",
     "Remove CLI preview framing only for transformed-source identity.",
     "Resolve ui aliases and transform registry icon placeholders to Phosphor default props.",
-    "Normalize same-folder imports to relative paths, remove use-client for rsc=false, and apply repository Biome formatting without changing declarations or classes."
+    "Normalize same-folder imports to relative paths, remove use-client for rsc=false, and apply repository Biome formatting and import/export organization without changing declarations or classes."
   ],
   "items": [
     {
@@ -31,7 +31,8 @@
         }
       ],
       "target": "apps/desktop/src/platform/renderer/components/ui/command.tsx",
-      "sourceSha256": "caf83d360238983d6811d1835ecf20fbad27a827259aa54fe6490b8bffd3c671"
+      "reviewedCandidateSha256": "caf83d360238983d6811d1835ecf20fbad27a827259aa54fe6490b8bffd3c671",
+      "sourceSha256": "4340e1342fabfe7de8a87f59ccbe07190f0427016df6c971a0e6c981cf11d322"
     },
     {
       "name": "input-group",
@@ -53,7 +54,8 @@
         }
       ],
       "target": "apps/desktop/src/platform/renderer/components/ui/input-group.tsx",
-      "sourceSha256": "96c19e3c2e2c0ea08d3c7baa3a555eb14558648531d61778c9da2c1076b59198"
+      "reviewedCandidateSha256": "96c19e3c2e2c0ea08d3c7baa3a555eb14558648531d61778c9da2c1076b59198",
+      "sourceSha256": "b8b4a727c2f500e3ae513198174f1ea0c021ddf36057700c0595a09ab074abf5"
     },
     {
       "name": "combobox",
@@ -75,7 +77,8 @@
         }
       ],
       "target": "apps/desktop/src/platform/renderer/components/ui/combobox.tsx",
-      "sourceSha256": "8cd708b1c58681351c2335b39e176a60ab44ad6510757acc2ac233d74efad499"
+      "reviewedCandidateSha256": "8cd708b1c58681351c2335b39e176a60ab44ad6510757acc2ac233d74efad499",
+      "sourceSha256": "68e1286543d81b9af306169f8c394e982ee2e960fc8af14865a0937ef68d5e4e"
     }
   ]
 }

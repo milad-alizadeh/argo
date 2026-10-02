@@ -111,7 +111,7 @@ export function SourceField(props: SourceFieldProps) {
           <ComboboxList aria-label={capitalized(noun.one)}>
             {(item: TicketScope) => (
               <ComboboxItem key={item.scope} value={item}>
-                {item.label}
+                <span className="min-w-0 truncate">{item.label}</span>
               </ComboboxItem>
             )}
           </ComboboxList>

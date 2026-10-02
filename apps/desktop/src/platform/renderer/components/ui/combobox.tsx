@@ -43,12 +43,10 @@ function ComboboxInput({
   disabled = false,
   showTrigger = true,
   showClear = false,
-  triggerProps,
   ...props
 }: ComboboxPrimitive.Input.Props & {
   showTrigger?: boolean
   showClear?: boolean
-  triggerProps?: Pick<ComboboxPrimitive.Trigger.Props, 'aria-label' | 'tabIndex'>
 }) {
   return (
     <InputGroup className={cn('w-auto', className)}>
@@ -56,7 +54,6 @@ function ComboboxInput({
       <InputGroupAddon align="inline-end">
         {showTrigger && (
           <InputGroupButton
-            {...triggerProps}
             size="icon-xs"
             variant="ghost"
             render={<ComboboxTrigger />}

@@ -1,13 +1,13 @@
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { CommandSearchField } from '@/platform/renderer/components/design-system/search-field'
+import { SearchablePickerItem } from '@/platform/renderer/components/design-system/searchable-picker'
 import { SearchableDropdownTrigger } from '@/platform/renderer/components/dropdown-trigger'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
-  CommandItem,
   CommandList,
 } from '@/platform/renderer/components/ui/command'
 import { Popover, PopoverContent, PopoverTitle } from '@/platform/renderer/components/ui/popover'
@@ -32,8 +32,8 @@ function FromChoices({
   // Picking the current branch is the same as the default, so it stays unremembered.
   const pickBranch = (branch: string) => onSelect(branch === current ? null : branch)
   return (
-    <Command>
-      <CommandInput
+    <Command label={t('composer.worktree.search')}>
+      <CommandSearchField
         aria-label={t('composer.worktree.search')}
         placeholder={t('composer.worktree.search')}
       />
@@ -45,20 +45,20 @@ function FromChoices({
         </CommandEmpty>
         <CommandGroup>
           {current === null ? (
-            <CommandItem
+            <SearchablePickerItem
               aria-current={from === null ? 'true' : undefined}
               data-checked={from === null}
               onSelect={() => onSelect(null)}
               value={t('composer.worktree.detached')}
             >
               <Icon name="worktree" />
-              <span className="type-control">{t('composer.worktree.detached')}</span>
-            </CommandItem>
+              <span>{t('composer.worktree.detached')}</span>
+            </SearchablePickerItem>
           ) : null}
           {options.branches.map((branch) => {
             const checked = (from ?? current) === branch
             return (
-              <CommandItem
+              <SearchablePickerItem
                 aria-current={checked ? 'true' : undefined}
                 data-checked={checked}
                 key={branch}
@@ -67,8 +67,8 @@ function FromChoices({
                 value={branch}
               >
                 <Icon name="worktree" />
-                <span className="min-w-0 truncate type-control">{branch}</span>
-              </CommandItem>
+                <span className="min-w-0 truncate">{branch}</span>
+              </SearchablePickerItem>
             )
           })}
         </CommandGroup>
@@ -91,7 +91,7 @@ function FromMenu({
       <SearchableDropdownTrigger
         aria-label={t('composer.worktree.fromLabel', { start: label })}
         // Pulled out by its padding and border, so its icon lines up with the read-only branch.
-        className="-ml-[calc(--spacing(2.5)+var(--size-border))] max-w-full min-w-0 type-control"
+        className="-ml-[calc(--spacing(2.5)+var(--size-border))] max-w-full min-w-0"
         icon="worktree"
         label={label}
         type="button"

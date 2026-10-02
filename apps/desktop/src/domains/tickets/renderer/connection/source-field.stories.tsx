@@ -7,7 +7,7 @@ import { SourceField } from './source-field'
 const scopes = [
   'octocat/hello-world',
   'octocat/spoon-knife',
-  'octocat/a-very-long-repository-name-to-check-narrow-popup',
+  'octocat/atlas-of-forgotten-maps-and-marginalia',
 ].map((scope) => ({ scope, label: scope }))
 function SourceFieldStory({
   empty = false,
@@ -69,6 +69,7 @@ export const Picker: Story = {
     await page.findByRole('listbox')
     await userEvent.keyboard('{Escape}')
     await expect(input).toHaveFocus()
+    await waitFor(() => expect(page.queryByRole('listbox')).toBeNull())
     await expect(trigger).toHaveAttribute('tabindex', '-1')
   },
 }
@@ -91,7 +92,19 @@ export const NoSources: Story = {
 export const Selected: Story = {
   args: { selected: true },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('combobox')).toHaveValue('octocat/hello-world')
+    await expect(within(canvasElement).getByRole('combobox', { name: 'Repository' })).toHaveValue(
+      'octocat/hello-world',
+    )
+  },
+}
+export const ClearsSelection: Story = {
+  args: { selected: true },
+  play: async ({ args, canvasElement }) => {
+    const input = within(canvasElement).getByRole('combobox', { name: 'Repository' })
+    await expect(input).toHaveValue('octocat/hello-world')
+    await userEvent.clear(input)
+    await expect(input).toHaveValue('')
+    await expect(args.onChange).toHaveBeenLastCalledWith(null)
   },
 }
 export const Disabled: Story = {
@@ -118,7 +131,7 @@ export const LongOptionNarrow: Story = {
     const input = canvas.getByRole('combobox', { name: 'Repository' })
     await userEvent.click(canvas.getByRole('button', { name: 'Show repositories' }))
     const listbox = await page.findByRole('listbox', { name: 'Repository' })
-    await userEvent.type(input, 'a-very-long-repository-name-to-check-narrow-popup')
+    await userEvent.type(input, 'atlas-of-forgotten-maps')
     const option = await within(listbox).findByRole('option', { name: scopes[2]?.label })
     await expect(option).toBeVisible()
   },

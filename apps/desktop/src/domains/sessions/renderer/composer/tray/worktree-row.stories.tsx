@@ -13,12 +13,14 @@ function WorktreeRowStory({
   initialNewWorktree = false,
   saveFailed = false,
   narrow = false,
+  loading = false,
 }: {
   branch?: string | null
   initialNewWorktree?: boolean
   saveFailed?: boolean
   // A fixed narrow column, so a long branch truncates at any viewport width.
   narrow?: boolean
+  loading?: boolean
 }) {
   const [newWorktree, setNewWorktree] = useState(initialNewWorktree)
   const [from, setFrom] = useState<string | null>(null)
@@ -28,7 +30,11 @@ function WorktreeRowStory({
       <div className={`mx-auto w-full ${narrow ? 'max-w-96' : 'max-w-(--size-session-column)'}`}>
         <AttachmentTray>
           <WorktreeRow
-            options={{ checkout: { path: '/Users/milad/Developer/argo', branch }, branches }}
+            options={
+              loading
+                ? null
+                : { checkout: { path: '/Users/milad/Developer/argo', branch }, branches }
+            }
             newWorktree={newWorktree}
             from={from}
             saveFailed={saveFailed}
@@ -43,7 +49,7 @@ function WorktreeRowStory({
 }
 
 const meta = {
-  title: 'Sessions/Composer/Worktree Row',
+  title: 'Features/Sessions/Composer/Worktree Row',
   component: WorktreeRowStory,
 } satisfies Meta<typeof WorktreeRowStory>
 
@@ -87,6 +93,69 @@ export const SwitchOnWithBranchChosen: Story = {
     await expect(
       canvas.getByRole('button', { name: 'New worktree from release/1.4' }),
     ).toBeVisible()
+  },
+}
+
+export const KeyboardSelectionAndFocusReturn: Story = {
+  args: { initialNewWorktree: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: 'New worktree from main' })
+    trigger.focus()
+    await userEvent.keyboard('{Enter}')
+    const search = await page().findByRole('combobox', { name: 'Search branches' })
+    await expect(search).toHaveFocus()
+    await userEvent.type(search, 'release')
+    await expect(page().getByRole('option', { name: 'release/1.4' })).toBeVisible()
+    await userEvent.keyboard('{ArrowDown}{Enter}')
+    await waitFor(() => expect(page().queryByRole('listbox')).toBeNull())
+    const selectedTrigger = canvas.getByRole('button', { name: 'New worktree from release/1.4' })
+    await expect(selectedTrigger).toHaveFocus()
+    await userEvent.keyboard('{Enter}')
+    const list = await page().findByRole('listbox')
+    await expect(within(list).getByRole('option', { name: 'release/1.4' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    )
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(page().queryByRole('listbox')).toBeNull())
+    await expect(selectedTrigger).toHaveFocus()
+  },
+}
+
+export const NoMatches: Story = {
+  args: { initialNewWorktree: true },
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole('button', { name: 'New worktree from main' })
+    await userEvent.click(trigger)
+    await userEvent.type(
+      await page().findByRole('combobox', { name: 'Search branches' }),
+      'missing',
+    )
+    await expect(page().getByRole('option', { name: 'No branches found' })).toBeVisible()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(page().queryByRole('listbox')).toBeNull())
+    await expect(trigger).toHaveFocus()
+  },
+}
+
+export const Loading: Story = {
+  args: { loading: true },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('switch', { name: 'Worktree' })).toBeDisabled()
+  },
+}
+
+export const LongBranchPicker: Story = {
+  args: { branch: LONG_BRANCH, initialNewWorktree: true, narrow: true },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByRole('button', { name: `New worktree from ${LONG_BRANCH}` }),
+    )
+    await expect(await page().findByRole('option', { name: LONG_BRANCH })).toHaveAttribute(
+      'aria-current',
+      'true',
+    )
   },
 }
 
