@@ -1,6 +1,5 @@
 // Writes the production Vite output that `electron-forge package` writes, without packaging it, so
 // the local e2e run launches `.vite/build/main.js` with the Electron in node_modules (#2844).
-// `--watch` keeps running and rebuilds only the targets whose files change (#3149).
 import { rm } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { createServer, type Server } from 'node:net'
@@ -14,7 +13,6 @@ const { default: ViteConfigGenerator } = createRequire(import.meta.url)(
   '@electron-forge/plugin-vite/dist/ViteConfig',
 ) as typeof import('@electron-forge/plugin-vite/dist/ViteConfig.js')
 
-const watch = process.argv.includes('--watch')
 const projectDirectory = path.resolve(import.meta.dirname, '..')
 const generator = new ViteConfigGenerator(VITE_PLUGIN_CONFIG, projectDirectory, true)
 const configs = [...(await generator.getBuildConfigs()), ...(await generator.getRendererConfig())]
@@ -45,26 +43,6 @@ async function takeBuildSlot(): Promise<Server> {
 
 const slot = await takeBuildSlot()
 await rm(path.join(projectDirectory, '.vite'), { recursive: true, force: true })
-const firstBuilds: Promise<unknown>[] = []
 // Forge's prePackage hook builds each target with these same two options.
-for (const config of configs) {
-  const result = await build({
-    configFile: false,
-    // Watch mode logs each rebuild, so a reader knows when to run `playwright test`.
-    logLevel: watch ? 'info' : 'warn',
-    ...config,
-    build: { ...config.build, ...(watch ? { watch: {} } : {}) },
-  })
-  // A watcher returns at once; its first build ends at the first END or ERROR event.
-  if ('on' in result) {
-    firstBuilds.push(
-      new Promise((resolve) =>
-        result.on('event', (event) => {
-          if (event.code === 'END' || event.code === 'ERROR') resolve(undefined)
-        }),
-      ),
-    )
-  }
-}
-await Promise.all(firstBuilds)
+for (const config of configs) await build({ configFile: false, logLevel: 'warn', ...config })
 slot.close()

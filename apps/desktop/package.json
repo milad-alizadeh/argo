@@ -19,7 +19,6 @@
     "build": "electron-forge package --arch arm64",
     "build:vite": "node scripts/build-vite.mts",
     "build:vite:cached": "TURBO_CACHE_DIR=\"$(git rev-parse --path-format=absolute --git-common-dir)/turbo-cache\" turbo run build:vite",
-    "build:vite:watch": "node scripts/build-vite.mts --watch",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.e2e.json && tsc --noEmit -p tsconfig.tools.json",
     "test:packaged-contents": "node scripts/assert-packaged-pty.mts",
     "test:packaged-manifest": "bun run desktop:manifest",

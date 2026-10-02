@@ -29,11 +29,8 @@ Test assets live outside `src/`, and a mock is called a mock.
   to run e2e.
 - The e2e build is the `build:vite` Turborepo task, cached in `<git common dir>/turbo-cache`, which
   every worktree of the clone shares. Unchanged inputs restore `.vite` in about a second. A cold
-  build, and the first build of watch mode, waits for one of two machine-wide build slots. You can
-  delete the `turbo-cache` folder at any time; the next build fills it again.
-- `bun run build:vite:watch` rebuilds only the changed target, and you run `bunx playwright test`
-  after its `built in` line. One target takes as long as a full build (#3149), so it saves a
-  command, not time.
+  build waits for one of two machine-wide build slots. You can delete the `turbo-cache` folder at
+  any time; the next build fills it again.
 - Cases build on the `test` in `e2e/packaged-proof.ts` and declare their starting state as a
   fixture option (`test.use`), never as a case that runs first. A flow variant, such as the
   real-Harness backend, is a project `use` option on the same file, never a copy.
