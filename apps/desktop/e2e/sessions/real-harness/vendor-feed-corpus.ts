@@ -7,7 +7,7 @@ import { decodeClaudeSessionMessages } from '@/harnesses/claude/session/claude-s
 import type { ThreadReadResponse } from '@/harnesses/codex/app-server'
 import { readCodexSessionHistory } from '@/harnesses/codex/session/codex-session-history'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
-import { threadReadRequest } from '../../../mocks/cli/codex/recorded-codex-threads'
+import { recordedThreadRequest } from '../../../mocks/cli/codex/recorded-codex-threads'
 import { realClaudeCli } from './real-claude-harness'
 import { realCodexCli } from './real-codex-harness'
 import type { VendorHistoryReader } from './vendor-reply'
@@ -71,7 +71,7 @@ async function contentOf(harness: VendorHarness, corpus: VendorCorpus): Promise<
     case 'claude':
       return decodeClaudeSessionMessages(corpus.claude)
     case 'codex':
-      return readCodexSessionHistory(threadReadRequest(corpus.codex), corpus.codex.id)
+      return readCodexSessionHistory(recordedThreadRequest(corpus.codex), corpus.codex.id)
   }
 }
 

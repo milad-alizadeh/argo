@@ -49,7 +49,7 @@ type TranscriptStamp = { inode: number; size: number; modifiedMs: number }
 
 type TrackedSession = {
   transcript: string | null
-  // The transcript's last stat; null until the first one, which only records it.
+  // The transcript's last stat; null until the first one.
   stamp: TranscriptStamp | null
   // The status the listing gave this tick; null when only an activity read can tell.
   listed: ExternalSessionStatus | null
@@ -112,8 +112,8 @@ const newTracked = (
 // The stored status and activity of Sessions that run outside Argo, from one poll. Each tick lists
 // every Harness's live external Sessions, stats each transcript, asks the Harness about each one
 // that changed or left, and diffs the list against the last tick's. The first sight of a transcript
-// only records its stamp, so startup reads nothing. Updates merge into one write per Session a
-// window, and activity reads run one at a time, since one vendor read can take a large file whole.
+// reads only when nothing gives a status yet. Updates merge into one write per Session a window,
+// and activity reads run one at a time, since one vendor read can take a large file whole.
 export class ExternalSessionPoll {
   readonly #context: ExternalSessionPollContext
   readonly #external: ReadonlyMap<Harness, ExternalSessions>
@@ -121,6 +121,8 @@ export class ExternalSessionPoll {
   readonly #lastEarlierRow: number
   // Each Harness's live Sessions at its last tick; absent before its first.
   readonly #live = new Map<Harness, Map<string, TrackedSession>>()
+  // Sessions hooked before their Harness's first listing, which that listing takes over.
+  readonly #beforeListing = new Map<Harness, Map<string, TrackedSession>>()
   // Sessions that left the list and wait for their last read, by Harness and native ID.
   readonly #leaving = new Map<string, TrackedSession>()
   // Harnesses whose last listing failed, so a failure is reported once until one succeeds.
@@ -200,10 +202,10 @@ export class ExternalSessionPoll {
     }
     if (this.#context.hasLiveChannel(sessionId)) return
     this.#hooked.add(harnessSessionKey(session))
-    // Before the first listing there is no live map, so that listing still closes stale rows.
-    const live = this.#live.get(harness)
-    const tracked = live?.get(session.nativeId) ?? newTracked(null, null)
-    live?.set(session.nativeId, tracked)
+    // Before the first listing a hook is held aside, so that listing still closes stale rows.
+    const live = this.#live.get(harness) ?? this.#hookedBeforeListing(harness)
+    const tracked = live.get(session.nativeId) ?? newTracked(null, null)
+    live.set(session.nativeId, tracked)
     tracked.changedAt = Date.now()
     if (reading.status !== null) tracked.status = reading.status
     this.#update(session, {
@@ -211,7 +213,13 @@ export class ExternalSessionPoll {
       ...(reading.activity === null ? {} : { activity: reading.activity }),
     })
     this.#show(session, tracked, tracked.changedAt)
-    if (event === 'SessionEnd') live?.delete(session.nativeId)
+    if (event === 'SessionEnd') live.delete(session.nativeId)
+  }
+
+  #hookedBeforeListing(harness: Harness): Map<string, TrackedSession> {
+    const hooked = this.#beforeListing.get(harness) ?? new Map<string, TrackedSession>()
+    this.#beforeListing.set(harness, hooked)
+    return hooked
   }
 
   async #tickAll(): Promise<void> {
@@ -233,6 +241,8 @@ export class ExternalSessionPoll {
     if (this.#stopped) return
     this.#reportRejected(harness, list.rejected)
     const previous = this.#live.get(harness)
+    const known = previous ?? this.#beforeListing.get(harness)
+    this.#beforeListing.delete(harness)
     const current = new Map<string, TrackedSession>()
     this.#live.set(harness, current)
     for (const listed of list.sessions) {
@@ -240,11 +250,10 @@ export class ExternalSessionPoll {
       const sessionId = harnessSessionId(this.#context.database, session)
       if (sessionId !== undefined && this.#context.hasLiveChannel(sessionId)) continue
       this.#leaving.delete(harnessSessionKey(session))
-      const tracked = this.#track(listed, previous?.get(listed.nativeId))
+      const tracked = this.#carry(listed, known?.get(listed.nativeId), current.get(listed.nativeId))
       current.set(listed.nativeId, tracked)
       if (sessionId === undefined) this.#discover(session, tracked)
-      if (external.readActivity !== undefined)
-        await this.#readChange(session, tracked, external.readInitialActivity === true)
+      if (external.readActivity !== undefined) await this.#readChange(session, tracked)
       await this.#indexSubagents(session, sessionId, tracked)
       this.#show(session, tracked, Date.now())
       this.#refreshUnstamped(session, sessionId, tracked)
@@ -313,7 +322,22 @@ export class ExternalSessionPoll {
     this.#rejected.set(harness, rejected)
   }
 
-  // The same object across ticks, so a read that lands mid-tick is kept.
+  // A hook that landed during this tick made its own record, whose newer fields win.
+  #carry(
+    listed: LiveExternalSession,
+    before: TrackedSession | undefined,
+    hooked: TrackedSession | undefined,
+  ): TrackedSession {
+    const tracked = this.#track(listed, before ?? hooked)
+    if (hooked === undefined || hooked === tracked) return tracked
+    tracked.status = hooked.status ?? tracked.status
+    tracked.changedAt = hooked.changedAt
+    tracked.shown = hooked.shown
+    return tracked
+  }
+
+  // The same object across ticks, so a read that lands mid-tick is kept. A late transcript keeps a
+  // hook's status.
   #track(
     { transcript, status: listed }: LiveExternalSession,
     before: TrackedSession | undefined,
@@ -323,18 +347,12 @@ export class ExternalSessionPoll {
     if (before.transcript !== transcript) {
       before.transcript = transcript
       before.stamp = null
-      before.status = null
     }
     return before
   }
 
-  // A transcript seen for the first time records its stamp. A Harness can also ask for one
-  // initial read; later changes and unfinished reads ask again.
-  async #readChange(
-    session: HarnessSession,
-    tracked: TrackedSession,
-    readInitialActivity: boolean,
-  ): Promise<void> {
+  // A first transcript read can establish status or find Codex children.
+  async #readChange(session: HarnessSession, tracked: TrackedSession): Promise<void> {
     if (tracked.transcript === null) return
     const stamp = await stampOf(tracked.transcript)
     const before = tracked.stamp
@@ -344,8 +362,9 @@ export class ExternalSessionPoll {
       tracked.changedAt = Date.now()
       this.#update(session, { activityAt: tracked.changedAt })
     }
-    if (!changed && !tracked.retry && !(before === null && stamp !== null && readInitialActivity))
-      return
+    const firstWithoutStatus =
+      stamp !== null && before === null && shownStatus(tracked, Date.now()) === null
+    if (!changed && !tracked.retry && !firstWithoutStatus) return
     tracked.retry = false
     this.#read(session)
   }

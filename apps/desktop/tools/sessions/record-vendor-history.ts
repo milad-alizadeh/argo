@@ -9,6 +9,7 @@ import type {
   CodexAppServerClient,
   ThreadListResponse,
   ThreadReadResponse,
+  ThreadTurnsListParams,
   ThreadTurnsListResponse,
   WireMessage,
 } from '@/harnesses/codex/app-server'
@@ -186,17 +187,12 @@ function turnCompleted(client: CodexAppServerClient, threadId: string): Promise<
   })
 }
 
-async function codexThread(client: CodexAppServerClient, cwd: string, prompt: string) {
-  const { thread } = await client.request(
-    'thread/start',
-    { cwd, model: CODEX_MODEL, approvalPolicy: 'never', sandbox: 'read-only' },
-    (value) => value as { thread: { id: string } },
-  )
-  const completed = turnCompleted(client, thread.id)
+async function codexTurn(client: CodexAppServerClient, threadId: string, prompt: string) {
+  const completed = turnCompleted(client, threadId)
   await client.request(
     'turn/start',
     {
-      threadId: thread.id,
+      threadId,
       input: [{ type: 'text', text: prompt, text_elements: [] }],
       model: CODEX_MODEL,
       effort: CODEX_EFFORT,
@@ -204,7 +200,38 @@ async function codexThread(client: CodexAppServerClient, cwd: string, prompt: st
     (value) => value,
   )
   await completed
-  return thread.id
+}
+
+async function codexThread(client: CodexAppServerClient, cwd: string, prompts: string[]) {
+  const { thread } = await client.request(
+    'thread/start',
+    { cwd, model: CODEX_MODEL, approvalPolicy: 'never', sandbox: 'read-only' },
+    (value) => value as { thread: { id: string } },
+  )
+  for (const prompt of prompts) await codexTurn(client, thread.id, prompt)
+}
+
+// A thread's Turns one to a page, so a thread of two Turns records the cursor between them.
+async function recordCodexTurnPages(client: CodexAppServerClient, threadId: string) {
+  const calls: RecordedCodexCall[] = []
+  let cursor: string | null = null
+  do {
+    const params: ThreadTurnsListParams = {
+      threadId,
+      limit: 1,
+      itemsView: 'full',
+      sortDirection: 'asc',
+      cursor,
+    }
+    const result: ThreadTurnsListResponse = await client.request(
+      'thread/turns/list',
+      params,
+      (value) => value as ThreadTurnsListResponse,
+    )
+    calls.push({ method: 'thread/turns/list', params, result })
+    cursor = result.nextCursor
+  } while (cursor !== null)
+  return calls
 }
 
 async function recordCodex(
@@ -213,9 +240,9 @@ async function recordCodex(
   const client = await codexClientUnderHome(recorder.home, recorder.executables.codex)
   try {
     const cwd = await project(recorder, 'project-codex')
-    await codexThread(client, cwd, RECORDED_PROMPTS.codexCommand)
-    await codexThread(client, cwd, RECORDED_PROMPTS.codexReply)
-    await codexThread(client, cwd, RECORDED_PROMPTS.codexNotice)
+    await codexThread(client, cwd, [RECORDED_PROMPTS.codexCommand, RECORDED_PROMPTS.codexFollowUp])
+    await codexThread(client, cwd, [RECORDED_PROMPTS.codexReply])
+    await codexThread(client, cwd, [RECORDED_PROMPTS.codexNotice])
     const listParams = { limit: 50 }
     const listed = await client.request(
       'thread/list',
@@ -226,20 +253,14 @@ async function recordCodex(
       { method: 'thread/list', params: listParams, result: listed },
     ]
     for (const { id: threadId } of listed.data) {
-      const readParams = { threadId, includeTurns: true }
+      const readParams = { threadId, includeTurns: false as const }
       const read = await client.request(
         'thread/read',
         readParams,
         (value) => value as ThreadReadResponse,
       )
       calls.push({ method: 'thread/read', params: readParams, result: read })
-      const turnsParams = { threadId, limit: 50, itemsView: 'full' as const }
-      const turns = await client.request(
-        'thread/turns/list',
-        turnsParams,
-        (value) => value as ThreadTurnsListResponse,
-      )
-      calls.push({ method: 'thread/turns/list', params: turnsParams, result: turns })
+      calls.push(...(await recordCodexTurnPages(client, threadId)))
     }
     calls.push(await recordCodexConfig(recorder))
     return {
@@ -263,6 +284,16 @@ type CodexSubagentCapture = {
 }
 
 type CodexSubagentRecorder = { root: string; home: string; executable: string }
+
+function startedSubagentId(turns: ThreadTurnsListResponse['data']): string | undefined {
+  const activity = turns
+    .flatMap(({ items }) => items)
+    .find(
+      (item): item is Extract<typeof item, { type: 'subAgentActivity' }> =>
+        item.type === 'subAgentActivity' && item.kind === 'started',
+    )
+  return activity?.agentThreadId
+}
 
 function runCodexSubagent(recorder: CodexSubagentRecorder, cwd: string) {
   execFileSync(
@@ -325,21 +356,19 @@ async function readCodexSubagentCapture(
     const parentId = parent.id
     const parentResponse = await client.request(
       'thread/read',
-      { threadId: parentId, includeTurns: true },
+      { threadId: parentId, includeTurns: false },
       (value) => value as ThreadReadResponse,
     )
+    const parentTurns = await client.request(
+      'thread/turns/list',
+      { threadId: parentId, limit: 50, itemsView: 'full', sortDirection: 'asc' },
+      (value) => value as ThreadTurnsListResponse,
+    )
+    if (parentTurns.nextCursor !== null)
+      throw new Error('The Codex Subagent capture has more than 50 parent Turns.')
     const childId =
       threadList.data.find(({ parentThreadId }) => parentThreadId === parentId)?.id ??
-      parentResponse.thread.turns
-        .flatMap(({ items }) => items)
-        .find(
-          (
-            item,
-          ): item is Extract<
-            ThreadReadResponse['thread']['turns'][number]['items'][number],
-            { type: 'subAgentActivity' }
-          > => item.type === 'subAgentActivity' && item.kind === 'started',
-        )?.agentThreadId
+      startedSubagentId(parentTurns.data)
     if (childId === undefined)
       throw new Error('Codex did not spawn a child for its subagent prompt.')
     const childResponse = await client.request(
@@ -351,7 +380,7 @@ async function readCodexSubagentCapture(
       throw new Error('Codex child Thread did not retain its recorded parentThreadId.')
     }
     return {
-      thread: parentResponse.thread,
+      thread: { ...parentResponse.thread, turns: parentTurns.data },
       threadList,
       childThread: childResponse.thread,
     }

@@ -2,8 +2,9 @@ import { expect, test } from 'bun:test'
 import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
 import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import { mockTurnsRequest } from '@/mocks/cli/codex/mock-codex-turn-pages'
 import { decodeClaudeSessionMessages } from './claude/session/claude-session-history'
-import type { CodexRequest, ThreadItem } from './codex/app-server'
+import type { ThreadItem } from './codex/app-server'
 import { readCodexPlan } from './codex/session/codex-feed'
 import { readCodexSessionHistory } from './codex/session/codex-session-history'
 
@@ -25,9 +26,7 @@ function claudeRows(records: readonly object[]): unknown[] {
 }
 
 async function codexRows(items: readonly ThreadItem[]): Promise<unknown[]> {
-  const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
-    parse({ thread: { turns: [{ id: 'turn-1', items }] } })) as CodexRequest
-  return drawn(await readCodexSessionHistory(request, 'thread-1'))
+  return drawn(await readCodexSessionHistory(mockTurnsRequest([{ items: [...items] }]), 'thread-1'))
 }
 
 const user = (content: unknown) => ({ type: 'user', message: { role: 'user', content } })

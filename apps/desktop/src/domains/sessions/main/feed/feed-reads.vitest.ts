@@ -189,3 +189,14 @@ test('uncertain-command recovery waits for a slot behind open Feeds, then settle
   first.stop()
   second.stop()
 })
+
+test('a read that fails frees its slot for the next read', async () => {
+  const limit = new HistoryReadLimit()
+  const failed = Array.from({ length: HISTORY_READ_SLOTS }, () =>
+    limit.run(async () => {
+      throw new Error('vendor read failed')
+    }),
+  )
+  for (const read of failed) await expect(read).rejects.toThrow('vendor read failed')
+  await expect(limit.run(async () => 'next read')).resolves.toBe('next read')
+})

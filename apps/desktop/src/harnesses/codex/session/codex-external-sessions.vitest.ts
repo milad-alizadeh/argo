@@ -79,13 +79,35 @@ function quietWarnings() {
   return vi.spyOn(console, 'warn').mockImplementation(() => {})
 }
 
-test('startup reads the newest Turn once and keeps a stored line when it finds none', async () => {
-  saved(RUNNING, { status: 'idle', activity: JSON.stringify(STORED_LINE) })
-  const before = await row(RUNNING)
+// A first tick after a hook of each kind, or none; only a hook that gives a status skips the read.
+async function firstTickAfterHook(event: 'SessionStart' | 'PermissionRequest' | null) {
+  saved(RUNNING)
+  const status = event === 'PermissionRequest' ? 'permission' : null
+  if (event !== null) poll.hookEvent('codex', { event, nativeId: RUNNING, status, activity: null })
   await threads.open(RUNNING)
+  threads.answer(RUNNING, 'completed')
   await tickAndWrite()
-  expect(threads.turnsReads).toEqual([RUNNING])
-  expect(await row(RUNNING)).toEqual({ ...before, status: 'idle', activity: STORED_LINE })
+  return { reads: threads.turnsReads, status: (await row(RUNNING)).status }
+}
+
+test('an open idle thread shows idle after the first tick, as a listed Claude Session does', async () => {
+  expect(await firstTickAfterHook(null)).toEqual({ reads: [RUNNING], status: 'idle' })
+})
+
+test('a status a hook settled before the first sight is not read over', async () => {
+  expect(await firstTickAfterHook('PermissionRequest')).toEqual({ reads: [], status: 'permission' })
+})
+
+test('a hook that gives no status still leaves the first read', async () => {
+  expect(await firstTickAfterHook('SessionStart')).toEqual({ reads: [RUNNING], status: 'idle' })
+})
+
+test('an open running thread shows running after the first tick', async () => {
+  saved(RUNNING, { status: 'idle', activity: JSON.stringify(STORED_LINE) })
+  await threads.open(RUNNING)
+  threads.answer(RUNNING, 'running')
+  await tickAndWrite()
+  expect((await row(RUNNING)).status).toBe('running')
 })
 
 test('a running Session with no Feed open stores its status and newest command', async () => {
@@ -124,7 +146,7 @@ test('indexes a child from a recorded Codex Turn on the first active poll', asyn
   ])
 })
 
-test('an unchanged rollout asks for nothing', async () => {
+test('an unchanged rollout asks for nothing after the first read', async () => {
   saved(RUNNING)
   await threads.open(RUNNING)
   await tickAndWrite()
@@ -183,7 +205,8 @@ test('a Turn with no step yet keeps the stored line', async () => {
 })
 
 test('a thread no process has loaded, with its lock held, shows idle', async () => {
-  saved(RUNNING, { status: 'running' })
+  saved(RUNNING)
+  threads.answer(RUNNING, 'running')
   await threads.open(RUNNING)
   await tickAndWrite()
   threads.answer(RUNNING, notLoadedError(RUNNING))
@@ -260,9 +283,10 @@ test('the first tick closes every Session an earlier run saved that it does not 
   // A poll made now finds these rows as an earlier run left them.
   poll.stop()
   startPoll()
+  threads.answer(RUNNING, 'running')
   await threads.open(RUNNING)
   await tickAndWrite()
-  expect((await row(RUNNING)).status).toBe('idle')
+  expect((await row(RUNNING)).status).toBe('running')
   expect((await row(OTHER)).status).toBe('idle')
 })
 
@@ -323,6 +347,9 @@ test('reads run one at a time across Sessions, and a Session that changes mid-re
   await threads.open(RUNNING)
   await threads.open(OTHER)
   await tickAndWrite()
+  // The first tick read each new thread once.
+  const first = [RUNNING, OTHER]
+  expect(threads.turnsReads).toEqual(first)
   const settle: ((page: unknown) => void)[] = []
   let asked = () => {}
   // Each read waits on a lock probe process, so wait for the read itself rather than a fixed time.
@@ -343,28 +370,28 @@ test('reads run one at a time across Sessions, and a Session that changes mid-re
   threads.append(RUNNING, 'x\n')
   await poll.tick()
   await reading
-  expect(threads.turnsReads).toEqual([RUNNING, OTHER, RUNNING])
+  expect(threads.turnsReads).toEqual([...first, RUNNING])
   for (const expected of [
-    [RUNNING, OTHER, RUNNING, OTHER],
-    [RUNNING, OTHER, RUNNING, OTHER, RUNNING],
+    [RUNNING, OTHER],
+    [RUNNING, OTHER, RUNNING],
   ]) {
     reading = nextAsk()
     settle.shift()?.(recordedTurnsPage('running'))
     await reading
-    expect(threads.turnsReads).toEqual(expected)
+    expect(threads.turnsReads).toEqual([...first, ...expected])
   }
   settle.shift()?.(recordedTurnsPage('running'))
   await poll.readsSettled()
-  expect(threads.turnsReads).toEqual([RUNNING, OTHER, RUNNING, OTHER, RUNNING])
+  expect(threads.turnsReads).toEqual([...first, RUNNING, OTHER, RUNNING])
   expect(settle).toEqual([])
 })
 
 test('one Session’s updates within the write window reach SQLite as one write', async () => {
-  const announced: string[][] = []
-  caller.sessionListChanges.subscribe((sessionIds) => announced.push([...sessionIds]))
   saved(RUNNING)
   await threads.open(RUNNING)
-  await poll.tick()
+  await tickAndWrite()
+  const announced: string[][] = []
+  caller.sessionListChanges.subscribe((sessionIds) => announced.push([...sessionIds]))
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   threads.answer(RUNNING, 'running')
   threads.append(RUNNING, 'x\n')
@@ -372,7 +399,7 @@ test('one Session’s updates within the write window reach SQLite as one write'
   await poll.readsSettled()
   expect(threads.turnsReads).toEqual([RUNNING, RUNNING])
   await vi.advanceTimersByTimeAsync(0)
-  expect((await row(RUNNING)).status).toBe('unknown')
+  expect((await row(RUNNING)).status).toBe('idle')
   await vi.advanceTimersByTimeAsync(500)
   expect((await row(RUNNING)).status).toBe('running')
   expect((await row(RUNNING)).activity).not.toBeNull()

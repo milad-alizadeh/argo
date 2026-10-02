@@ -8,6 +8,7 @@ export const RECORDED_PROMPTS = {
   claudeContinue: 'Continue the work: reply with one short sentence.',
   claudeBranch: 'Branch off: reply with one short sentence.',
   codexCommand: 'Run Codex check',
+  codexFollowUp: 'Confirm the check',
   codexReply: 'Continue the check',
   codexSubagent:
     'Spawn exactly one native subagent to list the files in this empty project. Do not do the task yourself. Wait for the subagent to finish, then reply with its list.',

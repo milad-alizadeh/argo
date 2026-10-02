@@ -77,7 +77,14 @@ test('registered Codex reads the selected thread through its shared request and 
   const request = (async (method: string, params: unknown, parse: (value: unknown) => unknown) => {
     calls.push({ method, params })
     return parse({
-      thread: { turns: [{ items: [{ id: 'reply', type: 'agentMessage', text: 'Done' }] }] },
+      data: [
+        {
+          id: 'turn-1',
+          completedAt: 1,
+          items: [{ id: 'reply', type: 'agentMessage', text: 'Done' }],
+        },
+      ],
+      nextCursor: null,
     })
   }) as CodexRequest
   const registrations = {
@@ -98,7 +105,16 @@ test('registered Codex reads the selected thread through its shared request and 
     }),
   ).resolves.toEqual([{ kind: 'message', id: 'reply', role: 'assistant', text: 'Done' }])
   expect(calls).toEqual([
-    { method: 'thread/read', params: { threadId: 'child', includeTurns: true } },
+    {
+      method: 'thread/turns/list',
+      params: {
+        threadId: 'child',
+        limit: 50,
+        cursor: null,
+        itemsView: 'full',
+        sortDirection: 'asc',
+      },
+    },
   ])
 })
 
