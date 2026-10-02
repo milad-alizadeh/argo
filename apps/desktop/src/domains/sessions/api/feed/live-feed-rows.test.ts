@@ -255,6 +255,28 @@ test('shows a Claude Question once when vendor history includes its tool call', 
   expect(rows.map((row) => [row.shape, row.id])).toEqual([['ask', 'question-1']])
 })
 
+test('draws a stored question call as a question row, answered once it has a reply', () => {
+  const questions = [
+    { question: 'Which ink?', header: 'Ink', multiSelect: false, options: [] as never[] },
+  ]
+  const tool: FeedContent = {
+    kind: 'tool',
+    id: 'ask',
+    callId: 'ask-call',
+    name: 'ask',
+    status: 'running',
+    input: null,
+    output: null,
+    summary: null,
+    presentation: { kind: 'tool', label: 'ask', questions },
+  }
+  expect(projectLiveFeedRows([tool], [])).toEqual([
+    { shape: 'ask', id: 'ask-call', questions, answer: null, unsupported: null },
+  ])
+  const answered = { ...tool, status: 'completed', output: [{ kind: 'text', text: 'Black' }] }
+  expect(projectLiveFeedRows([answered as FeedContent], [])).toMatchObject([{ answer: 'Black' }])
+})
+
 const catalogHistory: FeedContent[] = [
   { kind: 'message', id: 'message', role: 'assistant', text: 'Answer' },
   { kind: 'reasoning', id: 'reasoning', text: 'Thinking' },

@@ -5,12 +5,14 @@ import {
   type PromptFile,
   planContent,
 } from '@/domains/sessions/api/feed-content'
+import { readAskedQuestions } from '@/domains/sessions/api/questions'
 import type { JsonValue, ThreadItem, TurnPlanUpdatedNotification, UserInput } from '../app-server'
 import { en as copy } from '../locales'
 import { codexTaskNotification } from './codex-task-notification'
 
 type Item<Type extends ThreadItem['type']> = Extract<ThreadItem, { type: Type }>
 type Tool = Extract<FeedContent, { kind: 'tool' }>
+const REQUEST_USER_INPUT_TOOL = 'request_user_input'
 type Reject = (vendorType: string) => void
 // What the collab call behind a Subagent activity sent; it shares the activity's item id.
 export type CodexCollabFacts = { prompt: string | null; model: string | null }
@@ -109,8 +111,13 @@ function toolCall(item: Item<'mcpToolCall' | 'dynamicToolCall'>): Tool {
           part.type === 'inputText' ? [{ kind: 'text' as const, text: part.text }] : [],
         )
   const call = { id: item.id, kind: 'tool', callId: item.id, summary: null } as const
-  const presentation = { kind: 'tool', label: name } as const
   const input = item.arguments as Tool['input']
+  const questions = name === REQUEST_USER_INPUT_TOOL ? readAskedQuestions(input) : null
+  const presentation = {
+    kind: 'tool',
+    label: name,
+    ...(questions === null ? {} : { questions }),
+  } as const
   return { ...call, name, status: WORK_STATUSES[item.status], input, output, presentation }
 }
 

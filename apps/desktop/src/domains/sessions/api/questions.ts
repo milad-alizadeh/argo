@@ -48,3 +48,33 @@ export function validQuestionAnswers(questions: Question[], answers: QuestionAns
     )
   })
 }
+
+const askedQuestionsSchema = z.object({
+  questions: z
+    .array(
+      z.object({
+        question: z.string().min(1),
+        header: z.string().nullish(),
+        multiSelect: z.boolean().nullish(),
+        options: z
+          .array(z.object({ label: z.string().min(1), description: z.string().nullish() }))
+          .nullish(),
+      }),
+    )
+    .min(1),
+})
+
+// The Questions a Harness's recorded question call asked, or null when its input is not that shape.
+export function readAskedQuestions(input: unknown): Question[] | null {
+  const parsed = askedQuestionsSchema.safeParse(input)
+  if (!parsed.success) return null
+  return parsed.data.questions.map(({ question, header, multiSelect, options }) => ({
+    question,
+    header: header ?? null,
+    multiSelect: multiSelect ?? false,
+    options: (options ?? []).map(({ label, description }) => ({
+      label,
+      description: description ?? null,
+    })),
+  }))
+}

@@ -145,6 +145,7 @@ export function BasicFeed({
           key={document.sessionId}
           reading={document}
           running={running}
+          questionLocked={posture !== 'live'}
           activeEvidenceId={activeEvidenceId}
           initialMeasurementsCache={initialMeasurementsCache(document.sessionId)}
           initialScrollPosition={initialPosition(document.sessionId)}
@@ -174,6 +175,8 @@ export function BasicFeed({
 type FeedDocumentProps = {
   reading: SessionFeed
   running: boolean
+  // Argo can answer only a Session whose channel it holds (#2205), so any other posture draws locked.
+  questionLocked: boolean
   activeEvidenceId: string | null
   initialMeasurementsCache: VirtualItem[]
   initialScrollPosition: number | null
@@ -201,6 +204,7 @@ function EmptyFeed({ title, description }: { title: string; description: string 
 function FeedDocument({
   reading,
   running,
+  questionLocked,
   activeEvidenceId,
   initialMeasurementsCache,
   initialScrollPosition,
@@ -225,8 +229,7 @@ function FeedDocument({
     onAnswerQuestion,
     answeringQuestionId,
     questionFailure,
-    // Standing, not posture, is what refuses an answer; it lands with the lease (#2861 E2).
-    questionLocked: false,
+    questionLocked,
   })
   const { column, settled } = useSettledFeed({
     sessionId: reading.sessionId,

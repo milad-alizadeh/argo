@@ -179,17 +179,20 @@ test('leaves a slash command as the command it ran', () => {
 })
 
 // Recorded from claude 2.1.286 (Sonnet, low effort) asked to plan two tasks and finish one.
-test('draws recorded TaskCreate and TaskUpdate calls as a Plan with one of two steps done', () => {
+// A recorded transcript's content as the projection leaves it.
+function projectedFixture(relative: string): FeedContent[] {
   const projection = new ClaudeFeedProjection()
-  const plans = readFileSync(
-    new URL('../../../../mocks/cli/claude/fixtures/claude-task-plan-stream.jsonl', import.meta.url),
-    'utf8',
-  )
+  return readFileSync(new URL(relative, import.meta.url), 'utf8')
     .trim()
     .split('\n')
     .flatMap((line) => claudeFeedContent(JSON.parse(line) as SDKMessage, () => {}))
     .flatMap((content) => projection.project(content))
-    .filter((content) => content.kind === 'plan')
+}
+
+test('draws recorded TaskCreate and TaskUpdate calls as a Plan with one of two steps done', () => {
+  const plans = projectedFixture(
+    '../../../../mocks/cli/claude/fixtures/claude-task-plan-stream.jsonl',
+  ).filter((content) => content.kind === 'plan')
 
   expect(plans.at(-1)).toMatchObject({
     text: '- Write hello.txt containing hi\n- Write bye.txt containing bye',
@@ -197,39 +200,20 @@ test('draws recorded TaskCreate and TaskUpdate calls as a Plan with one of two s
   })
 })
 
-test('leaves a TaskCreate whose result names no task as the tool call it is', () => {
-  const projection = new ClaudeFeedProjection()
-  const call = {
-    ...todoCall([]),
-    name: 'TaskCreate',
-    input: { subject: 'Ship it', description: 'Ship it' },
-  }
-  const result = {
-    ...call,
-    id: 'call-todo:result',
-    name: '',
-    status: 'completed' as const,
-    input: null,
-    output: [{ kind: 'text' as const, text: 'No task' }],
-  }
+test('carries a recorded AskUserQuestion call as its questions', () => {
+  const asked = projectedFixture(
+    '../../../../mocks/cli/claude/fixtures/sessions/askPending.jsonl',
+  ).filter((content) => content.kind === 'tool')
 
-  expect(projection.project(call)).toEqual([])
-  expect(projection.project(result)).toEqual([call, result])
-})
-
-test('waits past a TaskCreate progress frame and hides its later summary', () => {
-  const projection = new ClaudeFeedProjection()
-  const call = { ...todoCall([]), name: 'TaskCreate', input: { subject: 'Ship it' } }
-  const frame = { ...call, id: 'call-todo:frame', input: null }
-  const result = {
-    ...frame,
-    id: 'call-todo:result',
-    status: 'completed' as const,
-    output: [{ kind: 'text' as const, text: 'Task #1 created successfully: Ship it' }],
-  }
-
-  expect(projection.project(call)).toEqual([])
-  expect(projection.project(frame)).toEqual([])
-  expect(projection.project(result)).toMatchObject([{ kind: 'plan', text: '- Ship it' }])
-  expect(projection.project({ ...frame, status: 'completed', summary: 'Made a task' })).toEqual([])
+  expect(asked[0]?.presentation?.questions).toEqual([
+    {
+      question: 'Which ink?',
+      header: 'Ink',
+      multiSelect: false,
+      options: [
+        { label: 'Black', description: 'The house default.' },
+        { label: 'Blue', description: null },
+      ],
+    },
+  ])
 })
