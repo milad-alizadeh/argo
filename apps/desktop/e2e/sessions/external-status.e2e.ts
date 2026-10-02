@@ -159,7 +159,7 @@ function codexSource(): StatusSource {
         turns: session.prompt === undefined ? [] : [codexTurn(session.prompt, 'completed')],
       }))
       await writeFile(codexState(root), JSON.stringify(threads))
-      return { CODEX_HOME: codexHome(root) }
+      return { CODEX_HOME: codexHome(root), ARGO_CODEX_E2E_STATE: codexState(root) }
     },
     holdLive,
     async openTurn(root, session) {
@@ -187,8 +187,8 @@ async function launch(root: string, applicationUnderTest: string, source: Status
       [SESSION_CODEX_EXECUTABLE_ENV]: await writeMockCodexLive(root),
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
       [ACCEPTANCE_ENV]: '0',
-      ARGO_CODEX_E2E_STATE: codexState(root),
-      // Empty folders for the Harness the case does not seed, so parallel apps share no config.
+      // Empty places for the Harness the case does not seed, so it adds no rows and shares no config.
+      ARGO_CODEX_E2E_STATE: path.join(root, 'unseeded-codex-state.json'),
       CLAUDE_CONFIG_DIR: path.join(root, 'unseeded-claude-config'),
       CODEX_HOME: path.join(root, 'unseeded-codex-home'),
       ...(await source.seed(root, fixture.project, sessions)),
