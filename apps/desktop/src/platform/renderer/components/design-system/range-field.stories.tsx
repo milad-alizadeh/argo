@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useId, useState } from 'react'
-import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
+import { useEffect, useId, useState } from 'react'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { Input } from '../ui/input'
 import { Slider } from '../ui/slider'
 import { RangeField } from './range-field'
@@ -43,6 +43,9 @@ function ThresholdField() {
   const thresholdLabelId = useId()
   const [threshold, setThreshold] = useState(100_000)
   const [thresholdInput, setThresholdInput] = useState(String(threshold))
+  useEffect(() => {
+    setThresholdInput(String(threshold))
+  }, [threshold])
   return (
     <RangeField
       labelId={labelId}
@@ -131,7 +134,7 @@ export const ThresholdBoundsAndInvalidInput: Story = {
     await userEvent.click(input)
     await userEvent.clear(input)
     await userEvent.type(input, '1000000')
-    await fireEvent.blur(input)
+    await userEvent.tab()
     await waitFor(() => expect(input).toHaveValue(190_000))
   },
 }

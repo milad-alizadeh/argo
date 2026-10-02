@@ -44,7 +44,7 @@ export const ThresholdBoundsAndInvalidInput: Story = {
     await userEvent.click(input)
     await userEvent.clear(input)
     await userEvent.type(input, '250000')
-    fireEvent.blur(input)
+    await userEvent.tab()
     await waitFor(() => expect(input).toHaveValue(190_000))
     await expect(slider).toHaveAttribute('aria-valuenow', '95')
   },
