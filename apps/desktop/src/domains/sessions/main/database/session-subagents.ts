@@ -1,4 +1,5 @@
 import { eq, inArray, sql } from 'drizzle-orm'
+import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { type SESSION_SUBAGENT_STATES, sessionSubagent } from '@/database/session-subagent/schema'
@@ -7,6 +8,10 @@ import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { Harness } from '@/harnesses/harness'
 
 type Delegation = Extract<FeedContent, { kind: 'delegation' }>
+// A Subagent keeps the first parent saved for it; a later save only fills a missing one.
+const keptParent = sql`coalesce(${sessionSubagent.parentSessionId}, excluded.parent_session_id)`
+// The rows read here are all under a parent, so a row without one is unrecognised.
+const parentedSubagentSchema = sessionSubagentSelectSchema.extend({ parentSessionId: z.string() })
 export type StoredSubagent = {
   id: string
   label: string | null
@@ -45,7 +50,6 @@ export function saveSessionSubagents(
   return saveSessionSubagentFacts(database, sessionId, subagentsOf(content))
 }
 
-// A Session's own history names its Subagents, so it is their parent from then on.
 export function saveSessionSubagentFacts(
   database: Database,
   sessionId: string,
@@ -57,7 +61,12 @@ export function saveSessionSubagentFacts(
     .from(sessionTable)
     .where(eq(sessionTable.argoId, sessionId))
     .get()
-  if (parent === undefined) return 0
+  if (parent === undefined) {
+    console.warn(
+      `Skipped ${subagents.length} Subagent(s) of Session ${sessionId}, which is not saved.`,
+    )
+    return 0
+  }
   const { changes } = database
     .insert(sessionSubagent)
     .values(
@@ -73,11 +82,11 @@ export function saveSessionSubagentFacts(
       target: [sessionSubagent.harness, sessionSubagent.nativeId],
       // A Subagent that ends names no description, so the label it started with stands.
       set: {
-        parentSessionId: sql`excluded.parent_session_id`,
+        parentSessionId: keptParent,
         label: sql`coalesce(excluded.label, ${sessionSubagent.label})`,
         state: sql`excluded.state`,
       },
-      setWhere: sql`${sessionSubagent.parentSessionId} is not excluded.parent_session_id or ${sessionSubagent.state} is not excluded.state or coalesce(excluded.label, ${sessionSubagent.label}) is not ${sessionSubagent.label}`,
+      setWhere: sql`${sessionSubagent.parentSessionId} is null or ${sessionSubagent.state} is not excluded.state or coalesce(excluded.label, ${sessionSubagent.label}) is not ${sessionSubagent.label}`,
     })
     .run()
   return Number(changes)
@@ -85,8 +94,7 @@ export function saveSessionSubagentFacts(
 
 export type DiscoveredSubagent = { nativeId: string; parentSessionId: string | null }
 
-// Saves the Subagents discovery found; a null parent is one no saved Session is known to have
-// started. Returns those it saved for the first time or gave their first parent.
+// Saves the Subagents discovery found; returns those saved first or given their first parent.
 export function saveDiscoveredSessionSubagents(
   database: Database,
   harness: Harness,
@@ -105,7 +113,7 @@ export function saveDiscoveredSessionSubagents(
     )
     .onConflictDoUpdate({
       target: [sessionSubagent.harness, sessionSubagent.nativeId],
-      set: { parentSessionId: sql`excluded.parent_session_id` },
+      set: { parentSessionId: keptParent },
       setWhere: sql`${sessionSubagent.parentSessionId} is null and excluded.parent_session_id is not null`,
     })
     .returning({
@@ -129,8 +137,8 @@ export function storedSessionSubagents(
     .all()
   let rejected = 0
   for (const row of rows) {
-    const parsed = sessionSubagentSelectSchema.safeParse(row)
-    if (!parsed.success || parsed.data.parentSessionId === null) {
+    const parsed = parentedSubagentSchema.safeParse(row)
+    if (!parsed.success) {
       rejected += 1
       continue
     }

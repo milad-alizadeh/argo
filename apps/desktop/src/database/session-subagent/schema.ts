@@ -9,8 +9,7 @@ export const SESSION_SUBAGENT_STATES = [
   'interrupted',
 ] as const
 
-// One row per Subagent of a Harness. Discovery can know a Subagent's identity before its history
-// establishes a state, and before any saved Session is known to have started it: then the parent is null.
+// One row per Subagent of a Harness; the parent is null until a saved Session is known to own it.
 export const sessionSubagent = sqliteTable(
   'session_subagent',
   {

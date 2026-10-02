@@ -40,12 +40,12 @@ export function knownSessionIds(database: Database, harness: Harness): string[] 
     .map((row) => row.nativeId)
 }
 
-// Subagents already saved, under a parent or none, so discovery need not look their parent up.
+// Subagents saved under a parent; discovery reads the rest again until a saved parent links them.
 export function knownSubagentIds(database: Database, harness: Harness): string[] {
   return database
     .select({ nativeId: sessionSubagent.nativeId })
     .from(sessionSubagent)
-    .where(eq(sessionSubagent.harness, harness))
+    .where(and(eq(sessionSubagent.harness, harness), isNotNull(sessionSubagent.parentSessionId)))
     .all()
     .map((row) => row.nativeId)
 }
@@ -139,7 +139,7 @@ function saveSubagents(
   const parents = saved.flatMap(({ parentSessionId }) =>
     parentSessionId === null ? [] : [parentSessionId],
   )
-  // A saved Session newly found to be a subagent leaves the list, so its detail read changes too.
+  // A saved Session newly found to be a Subagent leaves the list, so its detail read changes too.
   const children = sessionRows(
     database,
     harness,

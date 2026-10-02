@@ -522,7 +522,7 @@ test('keeps a saved Session another Session of its Harness lists as a Subagent o
   }
 })
 
-test('keeps a saved Session discovery found to be a subagent out of the list and detail reads, with no saved parent (#3084)', async () => {
+test('keeps a saved Session discovery found to be a Subagent out of the list and detail reads, with no saved parent (#3084)', async () => {
   const { database, list, details } = sessionListCaller()
   try {
     insertSession(database, { id: IDS[0], harness: 'codex', nativeId: 'parentless', createdAt: 20 })

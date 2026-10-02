@@ -63,11 +63,10 @@ type ParsedThread =
   | { kind: 'parentlessSubagent'; nativeId: string }
   | { kind: 'unrecognised' }
 
-type ParentLink = { nativeId: string; parentNativeId: string }
-
 type ThreadCollections = {
   records: Map<string, SessionSummary>
-  subagents: Map<string, ParentLink>
+  // Each listed subagent's parent, by native ID.
+  subagents: Map<string, string>
   // Listed subagents whose parent only a thread/read names.
   awaitingParentRead: Set<string>
   // Sessions whose source this adapter does not know; kept as Sessions, then reported.
@@ -113,13 +112,13 @@ function sourceParentOf(source: SubAgentSource): string | null {
   return source satisfies never
 }
 
-function rootParentOf(nativeId: string, subagents: ReadonlyMap<string, ParentLink>): string | null {
+function rootParentOf(nativeId: string, subagents: ReadonlyMap<string, string>): string | null {
   const visited = new Set([nativeId])
-  let parentNativeId = subagents.get(nativeId)?.parentNativeId
+  let parentNativeId = subagents.get(nativeId)
   while (parentNativeId !== undefined && subagents.has(parentNativeId)) {
     if (visited.has(parentNativeId)) return null
     visited.add(parentNativeId)
-    parentNativeId = subagents.get(parentNativeId)?.parentNativeId
+    parentNativeId = subagents.get(parentNativeId)
   }
   return parentNativeId ?? null
 }
@@ -205,10 +204,7 @@ function rememberThread(thread: ParsedThread, collections: ThreadCollections): n
       if (!thread.sourceRecognised) collections.unrecognisedSources.add(thread.summary.nativeId)
       return 0
     case 'subagent':
-      collections.subagents.set(thread.nativeId, {
-        nativeId: thread.nativeId,
-        parentNativeId: thread.parentNativeId,
-      })
+      collections.subagents.set(thread.nativeId, thread.parentNativeId)
       collections.records.delete(thread.nativeId)
       collections.awaitingParentRead.delete(thread.nativeId)
       return 0
@@ -336,7 +332,7 @@ async function collectCodexThreads(
     awaitingParentRead: new Set(),
     unrecognisedSources: new Set(),
   }
-  const knownSubagents = new Set(knownSubagentNativeIds ?? [])
+  const knownSubagents = new Set(knownSubagentNativeIds)
   let skipped = 0
   for (const raw of threads) skipped += rememberThread(await parseThread(request, raw), collections)
   skipped += await rememberListedParents(request, collections, knownSubagents)
@@ -364,7 +360,7 @@ export function createCodexSessionSummaryList(request: CodexRequest): SessionSum
       return parentNativeId === null ? [] : [{ nativeId, parentNativeId }]
     })
     const skipped = threadSkips + collections.subagents.size - linked.length
-    // Saved with no parent, so the next sync reads it no more.
+    // Saved with no parent; the next sync reads it again.
     const subagents = [
       ...linked,
       ...[...collections.awaitingParentRead].map((nativeId) => ({

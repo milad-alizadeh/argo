@@ -6,7 +6,6 @@ import { onTestFinished } from 'vitest'
 import { databaseMigrationsFolder, openDatabase } from '@/database/database'
 
 // Seeds the database every migration before `migration` built, then runs every migration.
-// The test's end closes the database and deletes its folder.
 export async function migratedFromBefore(migration: string, seed: string) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-migration-'))
   const earlier = path.join(root, 'migrations')

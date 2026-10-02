@@ -8,19 +8,20 @@ import type {
 import type { Harness } from '@/harnesses/harness'
 export const SESSION_SYNC_BATCH_SIZE = 50
 
+// The stored Sessions and parented Subagents one sync lists against, and the Harness's listing.
+export type SessionSyncListing = {
+  knownNativeIds: string[]
+  knownSubagentNativeIds: string[]
+  listSessionSummaries: SessionSummaryList
+}
+
 export const sessionSyncMachine = setup({
   types: {
-    input: {} as {
+    input: {} as SessionSyncListing & {
       harness: Harness
-      knownNativeIds: string[]
-      knownSubagentNativeIds: string[]
-      listSessionSummaries: SessionSummaryList
     },
-    context: {} as {
+    context: {} as SessionSyncListing & {
       harness: Harness
-      knownNativeIds: string[]
-      knownSubagentNativeIds: string[]
-      listSessionSummaries: SessionSummaryList
       records: SessionSummary[]
       subagents: SessionSubagentLink[]
       processed: number
@@ -53,14 +54,7 @@ export const sessionSyncMachine = setup({
         },
   },
   actors: {
-    fetch: fromPromise<
-      SessionSummaryListResult,
-      {
-        knownNativeIds: string[]
-        knownSubagentNativeIds: string[]
-        listSessionSummaries: SessionSummaryList
-      }
-    >(({ input }) =>
+    fetch: fromPromise<SessionSummaryListResult, SessionSyncListing>(({ input }) =>
       input.listSessionSummaries({
         knownNativeIds: input.knownNativeIds,
         knownSubagentNativeIds: input.knownSubagentNativeIds,

@@ -7,7 +7,11 @@ import type {
   SessionSummaryList,
   SessionSummaryListResult,
 } from '@/domains/sessions/api/session-discovery'
-import { SESSION_SYNC_BATCH_SIZE, sessionSyncMachine } from './session-sync-machine'
+import {
+  SESSION_SYNC_BATCH_SIZE,
+  type SessionSyncListing,
+  sessionSyncMachine,
+} from './session-sync-machine'
 
 const twoBatchRecords = Array.from({ length: SESSION_SYNC_BATCH_SIZE + 1 }, (_value, index) => ({
   nativeId: `native-${index}`,
@@ -20,17 +24,12 @@ const input = {
   knownSubagentNativeIds: [],
   listSessionSummaries,
 }
-const fetchTwoBatchRecords = fromPromise<
-  SessionSummaryListResult,
-  {
-    knownNativeIds: string[]
-    knownSubagentNativeIds: string[]
-    listSessionSummaries: SessionSummaryList
-  }
->(async () => ({
-  records: twoBatchRecords,
-  skipped: 0,
-}))
+const fetchTwoBatchRecords = fromPromise<SessionSummaryListResult, SessionSyncListing>(
+  async () => ({
+    records: twoBatchRecords,
+    skipped: 0,
+  }),
+)
 
 test('moves from Idle through Fetching and Saving to Ready', async () => {
   let saved = 0
@@ -151,14 +150,7 @@ test('fails after three fetch attempts', async () => {
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
-        fetch: fromPromise<
-          SessionSummaryListResult,
-          {
-            knownNativeIds: string[]
-            knownSubagentNativeIds: string[]
-            listSessionSummaries: SessionSummaryList
-          }
-        >(async () => {
+        fetch: fromPromise<SessionSummaryListResult, SessionSyncListing>(async () => {
           attempts += 1
           throw new Error('Claude is unavailable.')
         }),

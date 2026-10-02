@@ -105,6 +105,7 @@ test('pages interactive Codex threads, deduplicates IDs, and reads known missing
   const fixture = recordedRequest(calls)
   const result = await createCodexSessionSummaryList(fixture.request)({
     knownNativeIds: [KNOWN_ID, SAVED_ID],
+    knownSubagentNativeIds: [],
   })
   expect(result).toEqual({
     records: [
@@ -142,21 +143,24 @@ test('lists a page that carries fields discovery does not read', async () => {
       nextCursor: null,
       backwardsCursor: null,
       laterVendorField: true,
-    })) as CodexRequest)({ knownNativeIds: [] })
+    })) as CodexRequest)({ knownNativeIds: [], knownSubagentNativeIds: [] })
   expect(result).toEqual({ records: [{ nativeId: FIRST_ID, activityAt: 1000 }], skipped: 0 })
 })
 
 test('fails a Codex scan when the page envelope is malformed', async () => {
   await expect(
     createCodexSessionSummaryList((async (_method, _params, parse) =>
-      parse({ data: [], nextCursor: 7 })) as CodexRequest)({ knownNativeIds: [] }),
+      parse({ data: [], nextCursor: 7 })) as CodexRequest)({
+      knownNativeIds: [],
+      knownSubagentNativeIds: [],
+    }),
   ).rejects.toThrow()
 })
 
 test('lists no Sessions, rather than failing the scan, on a machine without Codex', async () => {
   const result = await createCodexSessionSummaryList((async () => {
     throw new CodexUnavailableError()
-  }) as CodexRequest)({ knownNativeIds: ['previously-saved'] })
+  }) as CodexRequest)({ knownNativeIds: ['previously-saved'], knownSubagentNativeIds: [] })
   expect(result).toEqual({ records: [], skipped: 0 })
 })
 
@@ -165,7 +169,7 @@ test('propagates a failed read for a known Session so Session sync can retry', a
     createCodexSessionSummaryList((async (method: string, _params, _parse) => {
       if (method === 'thread/list') return { data: [], nextCursor: null }
       throw new Error('app-server read failed')
-    }) as CodexRequest)({ knownNativeIds: ['previously-saved'] }),
+    }) as CodexRequest)({ knownNativeIds: ['previously-saved'], knownSubagentNativeIds: [] }),
   ).rejects.toThrow('app-server read failed')
 })
 
@@ -175,7 +179,7 @@ test('skips a previously saved thread that Codex has removed', async () => {
     calls.push(method)
     if (method === 'thread/list') return parse({ data: [], nextCursor: null })
     throw new Error('Thread not found')
-  }) as CodexRequest)({ knownNativeIds: ['removed-thread'] })
+  }) as CodexRequest)({ knownNativeIds: ['removed-thread'], knownSubagentNativeIds: [] })
 
   expect(result).toEqual({ records: [], skipped: 0 })
   expect(calls).toEqual(['thread/list', 'thread/read'])
@@ -201,7 +205,10 @@ test('gets one thread summary without listing, and null for a thread Codex does 
 test('summarizes the recorded Codex parent Thread', async () => {
   const { thread, threadList } = recordedCodexSubagents
   const result = await createCodexSessionSummaryList((async (_method, _params, parse) =>
-    parse(structuredClone(threadList))) as CodexRequest)({ knownNativeIds: [] })
+    parse(structuredClone(threadList))) as CodexRequest)({
+    knownNativeIds: [],
+    knownSubagentNativeIds: [],
+  })
 
   expect(result.records.map(({ nativeId }) => nativeId)).toEqual([thread.id])
 })
@@ -214,7 +221,7 @@ test('reconciles a saved child from its recorded Thread parentThreadId', async (
     if (method === 'thread/list') return parse({ data: [], nextCursor: null })
     expect((params as { threadId: string }).threadId).toBe(childThread.id)
     return parse({ thread: structuredClone(childThread) })
-  }) as CodexRequest)({ knownNativeIds: [childThread.id] })
+  }) as CodexRequest)({ knownNativeIds: [childThread.id], knownSubagentNativeIds: [] })
 
   expect(result).toEqual({
     records: [],
@@ -231,7 +238,7 @@ test('counts a thread whose preview or cwd breaks the generated Thread type', as
         { id: 'null-cwd', updatedAt: 1, parentThreadId: null, cwd: null },
       ],
       nextCursor: null,
-    })) as CodexRequest)({ knownNativeIds: [] })
+    })) as CodexRequest)({ knownNativeIds: [], knownSubagentNativeIds: [] })
   expect(result).toEqual({ records: [], skipped: 2 })
 })
 
@@ -255,7 +262,7 @@ test('reads the Model and Effort a thread records, and leaves out what it record
         },
       ],
       nextCursor: null,
-    })) as CodexRequest)({ knownNativeIds: [] })
+    })) as CodexRequest)({ knownNativeIds: [], knownSubagentNativeIds: [] })
   expect(result.records).toEqual([
     {
       nativeId: 'configured',
@@ -276,7 +283,7 @@ test('skips a previously saved Session whose id Codex cannot parse, and syncs th
     if ((params as { threadId: string }).threadId === 'proof-codex')
       throw new Error(INVALID_THREAD_ID_MESSAGE)
     return parse({ thread: { id: SAVED_ID, updatedAt: 2, parentThreadId: null } })
-  }) as CodexRequest)({ knownNativeIds: ['proof-codex', SAVED_ID] })
+  }) as CodexRequest)({ knownNativeIds: ['proof-codex', SAVED_ID], knownSubagentNativeIds: [] })
   expect(result).toEqual({ records: [{ nativeId: SAVED_ID, activityAt: 2000 }], skipped: 0 })
 })
 
@@ -299,26 +306,29 @@ function subagentRequest(listed: unknown, read: unknown, calls: unknown[] = []):
   }) as CodexRequest
 }
 
+const guardianUnderItsParent = {
+  records: [],
+  skipped: 0,
+  subagents: [
+    { nativeId: guardian.listed.id, parentNativeId: guardian.read.thread.parentThreadId },
+  ],
+}
+const guardianListAndRead = [
+  expect.objectContaining({ method: 'thread/list' }),
+  { method: 'thread/read', params: { threadId: guardian.listed.id, includeTurns: false } },
+]
+
 test('keeps a listed guardian review thread out of the Sessions, under the parent its read names', async () => {
   const calls: unknown[] = []
   const result = await createCodexSessionSummaryList(
     subagentRequest(guardian.listed, guardian.read, calls),
   )({ knownNativeIds: [guardian.listed.id], knownSubagentNativeIds: [] })
 
-  expect(result).toEqual({
-    records: [],
-    skipped: 0,
-    subagents: [
-      { nativeId: guardian.listed.id, parentNativeId: guardian.read.thread.parentThreadId },
-    ],
-  })
-  expect(calls).toEqual([
-    expect.objectContaining({ method: 'thread/list' }),
-    { method: 'thread/read', params: { threadId: guardian.listed.id, includeTurns: false } },
-  ])
+  expect(result).toEqual(guardianUnderItsParent)
+  expect(calls).toEqual(guardianListAndRead)
 })
 
-test('reads no parent for a listed guardian thread already stored as a Subagent', async () => {
+test('reads no parent for a listed guardian thread already stored under a parent', async () => {
   const calls: unknown[] = []
   const result = await createCodexSessionSummaryList(
     subagentRequest(guardian.listed, guardian.read, calls),
@@ -347,7 +357,7 @@ test('keeps a listed spawned thread out of the Sessions, under the parent its so
   expect(calls).toEqual([expect.objectContaining({ method: 'thread/list' })])
 })
 
-test('reports a subagent thread that names no parent, lists it as no Session, and reads it once (#3084)', async () => {
+test('reports a Subagent thread that names no parent, lists it as no Session, and reads it again until a read names one (#3084)', async () => {
   const warn = spyOn(console, 'warn').mockImplementation(() => {})
   try {
     const parentless = {
@@ -364,15 +374,13 @@ test('reports a subagent thread that names no parent, lists it as no Session, an
       'Kept 1 Codex subagent thread(s) that name no parent out of the Sessions.',
     )
 
+    // Saved with no parent, it is not a known Subagent, so the next sync reads it again.
     const calls: unknown[] = []
     const second = await createCodexSessionSummaryList(
-      subagentRequest(guardian.listed, parentless, calls),
-    )({
-      knownNativeIds: [],
-      knownSubagentNativeIds: (first.subagents ?? []).map(({ nativeId }) => nativeId),
-    })
-    expect(second).toEqual({ records: [], skipped: 0 })
-    expect(calls).toEqual([expect.objectContaining({ method: 'thread/list' })])
+      subagentRequest(guardian.listed, guardian.read, calls),
+    )({ knownNativeIds: [], knownSubagentNativeIds: [] })
+    expect(second).toEqual(guardianUnderItsParent)
+    expect(calls).toEqual(guardianListAndRead)
     expect(
       await createCodexSessionSummaryReader(subagentRequest(guardian.listed, parentless))(
         guardian.listed.id,
@@ -383,14 +391,14 @@ test('reports a subagent thread that names no parent, lists it as no Session, an
   }
 })
 
-test('counts a listed subagent thread whose parent read is unrecognised as unrecognised', async () => {
+test('counts a listed Subagent thread whose parent read is unrecognised as unrecognised', async () => {
   const result = await createCodexSessionSummaryList(
     subagentRequest(guardian.listed, { thread: { id: guardian.listed.id } }),
   )({ knownNativeIds: [], knownSubagentNativeIds: [] })
   expect(result).toEqual({ records: [], skipped: 1 })
 })
 
-test('counts a thread with an unrecognised subagent source as unrecognised', async () => {
+test('counts a thread with an unrecognised Subagent source as unrecognised', async () => {
   const listed = { ...structuredClone(guardian.listed), source: { subAgent: { future: {} } } }
   const result = await createCodexSessionSummaryList(subagentRequest(listed, null))({
     knownNativeIds: [],
@@ -399,7 +407,7 @@ test('counts a thread with an unrecognised subagent source as unrecognised', asy
   expect(result).toEqual({ records: [], skipped: 1 })
 })
 
-test('keeps a thread with an unknown non-subagent source as a Session, and reports it', async () => {
+test('keeps a thread with an unknown non-Subagent source as a Session, and reports it', async () => {
   const warn = spyOn(console, 'warn').mockImplementation(() => {})
   try {
     const [parent] = recordedCodexSubagents.threadList.data
@@ -424,7 +432,7 @@ test('leaves out an empty preview, so the first prompt can name the row (#3077)'
     parse({
       data: [{ id: FIRST_ID, updatedAt: 1, parentThreadId: null, name: 'Named', preview: '' }],
       nextCursor: null,
-    })) as CodexRequest)({ knownNativeIds: [] })
+    })) as CodexRequest)({ knownNativeIds: [], knownSubagentNativeIds: [] })
   expect(result.records).toEqual([{ nativeId: FIRST_ID, activityAt: 1000, customTitle: 'Named' }])
 })
 
@@ -444,6 +452,7 @@ test('reads the first prompt of a recorded thread with no name and no preview', 
       ? parse({ data: [{ ...thread, turns: [] }], nextCursor: null })
       : recordedThreadRequest(thread)(method, params, parse)) as CodexRequest)({
     knownNativeIds: [],
+    knownSubagentNativeIds: [],
   })
   expect(listed.records).toEqual([expect.objectContaining({ firstPrompt: RECORDED_PROMPT })])
 })
@@ -473,7 +482,7 @@ test('lists a thread whose first prompt cannot be read, and the rest of the scan
           nextCursor: null,
         })
       throw new Error('app-server timed out')
-    }) as CodexRequest)({ knownNativeIds: [] })
+    }) as CodexRequest)({ knownNativeIds: [], knownSubagentNativeIds: [] })
     expect(result.records.map(({ nativeId }) => nativeId)).toEqual([unnamed.id, KNOWN_ID])
     expect(result.records[0]).not.toHaveProperty('firstPrompt')
     expect(warn).toHaveBeenCalledTimes(1)
