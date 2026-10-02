@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
-import { test } from 'vitest'
+import { test, vi } from 'vitest'
+import type { z } from 'zod'
 import type { Database } from '@/database/database'
+import type { sessionLiveStatusSchema } from '@/domains/sessions/api/session-live-event'
 import {
   IDS,
   insertSession,
@@ -404,6 +406,50 @@ test('a live channel’s Model, Effort and Mode outrank the stored ones, and sta
     database.$client.close()
   }
 })
+
+test.each(['claude', 'codex'] as const)(
+  'a %s Session Argo drives shows when its Turn started and completed (#3165)',
+  async (harness) => {
+    let status: z.infer<typeof sessionLiveStatusSchema> = 'idle'
+    let state = 'Ready'
+    const session = { getSnapshot: () => liveSession(state, status).getSnapshot() }
+    const { database, details, statusChanged, stopWatching } = sessionListCaller({
+      sessions: { [IDS[0]]: session },
+    })
+    const shownAt = async () => Date.parse((await details({ sessionId: IDS[0] }))?.updatedAt ?? '')
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      insertSession(database, { id: IDS[0], harness, nativeId: 'native-1', activityAt: 1_000 })
+
+      vi.setSystemTime(5_000)
+      status = 'running'
+      statusChanged(IDS[0])
+      assert.equal(await shownAt(), 5_000)
+
+      vi.setSystemTime(9_000)
+      status = 'idle'
+      statusChanged(IDS[0])
+      assert.equal(await shownAt(), 9_000)
+
+      // A change with no Turn starting or ending is not activity.
+      vi.setSystemTime(20_000)
+      statusChanged(IDS[0])
+      assert.equal(await shownAt(), 9_000)
+
+      // A channel that fails mid-Turn ends that Turn too.
+      status = 'running'
+      statusChanged(IDS[0])
+      vi.setSystemTime(30_000)
+      state = 'Failed'
+      statusChanged(IDS[0])
+      assert.equal(await shownAt(), 30_000)
+    } finally {
+      vi.useRealTimers()
+      stopWatching()
+      database.$client.close()
+    }
+  },
+)
 
 test('draws the activity the Session’s Feed published under its title', async () => {
   const { database, list, sessionListChanges } = sessionListCaller()

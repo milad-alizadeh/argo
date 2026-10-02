@@ -33,6 +33,7 @@ import { type LiveActivity, liveActivitySchema } from '@/domains/sessions/api/fe
 import { planProgressSchema } from '@/domains/sessions/api/feed-content'
 import { reportedTurnConfigurationSchema } from '@/domains/sessions/api/reported-turn-configuration'
 import { sessionListInputSchema } from '@/domains/sessions/api/session-list-input'
+import { isWorkingStatus } from '@/domains/sessions/api/session-live-event'
 import { identifierSchema } from '@/shared/validation'
 import { type StoredSubagent, storedSessionSubagents } from '../database'
 import { type LiveSessionSupervisorActor, liveSessionActorFor } from '../live'
@@ -349,14 +350,23 @@ export function sessionListChangedProcedure(context: SessionListContext) {
 }
 
 // Announces each live status change, so every Session List reads the changed row again, and saves
-// the live channel's Model, Effort and Mode, so the row keeps them once the channel is gone.
+// the live channel's Model, Effort and Mode, so the row keeps them once the channel is gone. A Turn
+// that starts or ends saves its time, since the external poll leaves a live Session alone.
 export function watchSessionList(
   context: Pick<SessionListContext, 'database' | 'supervisor' | 'changes'>,
 ): () => void {
+  const sessionsWithTurnUnderWay = new Set<string>()
   const statusChanges = context.supervisor.on('Session status changed', ({ sessionId }) => {
     const live = liveProjection(context, sessionId)
-    if (live !== null)
-      updateSession(context, sessionId, { turnConfiguration: live.turnConfiguration })
+    const turnUnderWay = live !== null && isWorkingStatus(live.status)
+    const turnStartedOrEnded = turnUnderWay !== sessionsWithTurnUnderWay.has(sessionId)
+    if (turnUnderWay) sessionsWithTurnUnderWay.add(sessionId)
+    else sessionsWithTurnUnderWay.delete(sessionId)
+    // A channel that fails mid-Turn has no projection, but its Turn still ended now.
+    updateSession(context, sessionId, {
+      ...(live !== null && { turnConfiguration: live.turnConfiguration }),
+      ...(turnStartedOrEnded && { activityAt: Date.now() }),
+    })
     context.changes.changed([sessionId])
   })
   return () => statusChanges.unsubscribe()
