@@ -114,8 +114,7 @@ async function proveResume(
 
 export async function proveSessionWorktree(
   page: Page,
-  project: string,
-  backend: SessionHarnessBackend,
+  { project, backend }: { project: string; backend: SessionHarnessBackend },
   harness: Harness,
 ) {
   await git(project, ['commit', '--allow-empty', '--quiet', '-m', 'base'])
