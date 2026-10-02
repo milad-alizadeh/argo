@@ -67,21 +67,29 @@ async function decideQuestion(
   )
 }
 
+// Settles when the live Session's Harness has done it; a Session with no live channel refuses.
+function controlSession(
+  context: SessionInteractionContext,
+  type: 'Interrupt' | 'Compact',
+  sessionId: string,
+) {
+  return new Promise<{ accepted: true }>((resolve, reject) => {
+    context.supervisor.send({
+      type,
+      sessionId,
+      reply: { resolve: () => resolve({ accepted: true }), reject },
+    })
+  })
+}
+
 export function sessionInteractionProcedures(context: SessionInteractionContext) {
   return {
-    sessionInterrupt: t.procedure.input(sessionInput).mutation(
-      ({ input }) =>
-        new Promise<{ accepted: true }>((resolve, reject) => {
-          context.supervisor.send({
-            type: 'Interrupt',
-            sessionId: input.sessionId,
-            reply: {
-              resolve: () => resolve({ accepted: true }),
-              reject,
-            },
-          })
-        }),
-    ),
+    sessionInterrupt: t.procedure
+      .input(sessionInput)
+      .mutation(({ input }) => controlSession(context, 'Interrupt', input.sessionId)),
+    sessionCompact: t.procedure
+      .input(sessionInput)
+      .mutation(({ input }) => controlSession(context, 'Compact', input.sessionId)),
     sessionPermissionRead: t.procedure.input(sessionInput).query(({ input }) => {
       const pending = context.interactions.permission(
         sessionIdentityOf(context, input.sessionId).nativeId,

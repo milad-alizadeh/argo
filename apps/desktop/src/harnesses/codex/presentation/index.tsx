@@ -32,4 +32,5 @@ export const codexPresentation: HarnessPresentation = {
   ],
   standingAllow: 'session',
   permissionPlugin: false,
+  compactsContext: true,
 }

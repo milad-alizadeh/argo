@@ -46,6 +46,9 @@ type RequestParams = {
     threadId: string
     turnId: string
   }
+  'thread/compact/start': {
+    threadId: string
+  }
   'model/list': {
     cursor?: string
     limit?: number

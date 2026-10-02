@@ -19,5 +19,6 @@ export function acpPresentation(agent: AcpAgentEntry): HarnessPresentation {
     // ACP's allow_always option lasts for the Session.
     standingAllow: 'session',
     permissionPlugin: false,
+    compactsContext: false,
   }
 }

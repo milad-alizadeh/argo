@@ -61,7 +61,7 @@ export const liveSessionMachine = xstateSetup({
           type: 'Close'
         }
       | {
-          type: 'Interrupt'
+          type: 'Interrupt' | 'Compact'
           reply: {
             resolve: () => void
             reject: (error: Error) => void
@@ -194,10 +194,11 @@ export const liveSessionMachine = xstateSetup({
       type: 'Send',
       command: context.queue[0],
     })),
-    interrupt: sendTo('harness', ({ event }) => {
-      if (event.type !== 'Interrupt') throw new Error('Expected a Session interrupt.')
+    forwardControl: sendTo('harness', ({ event }) => {
+      if (event.type !== 'Interrupt' && event.type !== 'Compact')
+        throw new Error('Expected a Session control.')
       return {
-        type: 'Interrupt',
+        type: event.type,
         reply: event.reply,
       }
     }),
@@ -406,7 +407,10 @@ export const liveSessionMachine = xstateSetup({
       ],
     },
     Interrupt: {
-      actions: 'interrupt',
+      actions: 'forwardControl',
+    },
+    Compact: {
+      actions: 'forwardControl',
     },
     'Answer permission': {
       actions: 'answerPermission',

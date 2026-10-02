@@ -278,6 +278,27 @@ function startTurn(id: Request['id'], params: Record<string, unknown>, thread: T
   setTimeout(() => notifyTurn({ thread, turn, prompt }), 50)
 }
 
+// `thread/compact/start` answers at once, then the compaction streams as its own Turn
+// (codex-rs app-server compaction suite).
+function compactThread(id: Request['id'], thread: Thread) {
+  const item: Item = { id: `turn-${thread.turns.length + 1}-compaction`, type: 'contextCompaction' }
+  const turn: Turn = { id: `turn-${thread.turns.length + 1}`, status: 'completed', items: [item] }
+  thread.turns.push(turn)
+  save(thread)
+  send({ id, result: {} })
+  const threadId = thread.id
+  send({
+    method: 'turn/started',
+    params: { threadId, turn: { id: turn.id, status: 'inProgress' } },
+  })
+  for (const method of ['item/started', 'item/completed'])
+    send({ method, params: { threadId, turnId: turn.id, item } })
+  send({
+    method: 'turn/completed',
+    params: { threadId, turn: { id: turn.id, status: 'completed', error: null } },
+  })
+}
+
 const answerSkillsAndConfig = createMockCodexSkillsAndConfig(send)
 
 function handle(message: Request) {
@@ -334,6 +355,7 @@ function handleThread({ id, method, params = {} }: Request, thread: Thread) {
   if (method === 'thread/turns/list')
     return send({ id, result: mockTurnsPage(storedTurns(thread.id), params) })
   if (method === 'turn/start') return startTurn(id, params, thread)
+  if (method === 'thread/compact/start') return compactThread(id, thread)
   if (method === 'turn/interrupt') {
     send({ id, result: {} })
     const turn = thread.turns.find((candidate) => candidate.id === params.turnId)

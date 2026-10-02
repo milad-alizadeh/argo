@@ -17,5 +17,6 @@ export const claudePresentation: HarnessPresentation = {
   // Claude's gate keeps a standing allow as a rule for similar calls.
   standingAllow: 'similar-calls',
   permissionPlugin: true,
+  compactsContext: true,
 }
 export { default as claudeSparkUrl } from './claude-spark.svg?url'

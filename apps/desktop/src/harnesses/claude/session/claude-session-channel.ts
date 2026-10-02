@@ -24,7 +24,9 @@ import { claudeFeedContent } from './claude-feed'
 import { ClaudeFeedProjection } from './claude-feed-projection'
 import { ClaudeLiveText } from './claude-live-text'
 
-type Send = Pick<SessionStartInput, 'prompt' | 'commandId'>
+type Settle = { resolve: () => void; reject: (error: Error) => void }
+// A compaction is Claude's own `/compact` command, so the Feed draws its marker, not its prompt.
+type Send = Pick<SessionStartInput, 'prompt' | 'commandId'> & { compaction?: Settle }
 type ClaudeLiveInput = SessionLiveInput
 type ClaudeResult = Extract<SDKMessage, { type: 'result' }>
 type ClaudeOutput = Exclude<SDKMessage, ClaudeResult>
@@ -94,6 +96,7 @@ class ClaudeSessionChannel implements LiveSessionChannel {
   })
   private rejected = 0
   private interruptRequested = false
+  private activeCompaction: Settle | null = null
   private opened = false
   private closedEmitted = false
   private seen = new Set<string>()
@@ -163,13 +166,15 @@ class ClaudeSessionChannel implements LiveSessionChannel {
       const command = this.prompts.shift()
       if (command === undefined) continue
       this.activeCommandId = command.commandId
-      this.emitFeed({
-        type: 'content',
-        commandId: command.commandId,
-        turnId: command.commandId,
-        vendorEventId: command.commandId,
-        content: { id: command.commandId, kind: 'message', role: 'user', text: command.prompt },
-      })
+      this.activeCompaction = command.compaction ?? null
+      if (command.compaction === undefined)
+        this.emitFeed({
+          type: 'content',
+          commandId: command.commandId,
+          turnId: command.commandId,
+          vendorEventId: command.commandId,
+          content: { id: command.commandId, kind: 'message', role: 'user', text: command.prompt },
+        })
       this.emitStatus('running')
       yield {
         type: 'user',
@@ -255,6 +260,10 @@ class ClaudeSessionChannel implements LiveSessionChannel {
       this.emit({ type: 'identity', nativeId: message.session_id })
     }
     this.emit({ type: 'turn.completed', commandId: this.activeCommandId })
+    if (message.is_error)
+      this.activeCompaction?.reject(new Error('Claude compaction was interrupted.'))
+    else this.activeCompaction?.resolve()
+    this.activeCompaction = null
   }
 
   private async readResults(querySession: Query) {
@@ -315,10 +324,31 @@ class ClaudeSessionChannel implements LiveSessionChannel {
         console.warn(`Rejected ${this.rejected} unsupported Claude live shape(s).`)
       this.open = false
       this.resolveIdentity(null)
+      this.abandonCompactions()
       this.wakeInput()
       this.session?.close()
       this.emitClosed()
     }
+  }
+
+  compact(): Promise<void> {
+    if (!this.open) return Promise.reject(new Error('Claude Session channel is closed.'))
+    return new Promise<void>((resolve, reject) => {
+      this.prompts.push({
+        prompt: '/compact',
+        commandId: crypto.randomUUID(),
+        compaction: { resolve, reject },
+      })
+      this.wakeInput()
+    })
+  }
+
+  // A compaction still waiting when the channel ends never runs.
+  private abandonCompactions() {
+    const closing = new Error('Claude Session channel is closed.')
+    this.activeCompaction?.reject(closing)
+    this.activeCompaction = null
+    for (const send of this.prompts.splice(0)) send.compaction?.reject(closing)
   }
 
   async interrupt(): Promise<void> {
@@ -348,6 +378,7 @@ class ClaudeSessionChannel implements LiveSessionChannel {
   close(): void {
     this.open = false
     this.resolveIdentity(null)
+    this.abandonCompactions()
     this.wakeInput()
     this.session?.close()
     this.emitClosed()

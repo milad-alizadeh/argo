@@ -11,4 +11,6 @@ export type HarnessPresentation = {
   standingAllow: 'similar-calls' | 'session'
   // Whether the composer can reference the live Argo permission plugin.
   permissionPlugin: boolean
+  // Whether a live Session's composer offers Compact context; the live channel then compacts it.
+  compactsContext: boolean
 }

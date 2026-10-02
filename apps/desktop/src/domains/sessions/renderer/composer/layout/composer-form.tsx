@@ -34,7 +34,6 @@ export type ComposerFormProps = {
   isCompacting?: boolean
   isHandingOff?: boolean
   isRunning?: boolean
-  // #2967 wires Compact; no screen passes it yet.
   onCompact?: () => Promise<boolean>
   // No ticket yet: no screen starts a handoff.
   onHandoff?: () => Promise<boolean>
