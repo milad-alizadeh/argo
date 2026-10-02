@@ -298,6 +298,28 @@ test('lists only one Ticket’s Sessions, most recently linked first, past the f
   }
 })
 
+test('names a Session saved with an empty preview by its first prompt (#3077)', async () => {
+  const { database, list } = sessionListCaller()
+  try {
+    insertSession(database, {
+      id: IDS[0],
+      harness: 'codex',
+      nativeId: 'native-1',
+      preview: '',
+      firstPrompt: 'First prompt',
+    })
+
+    const result = await list({ projectId: 'project-1' })
+
+    assert.deepEqual(
+      result.rows.map(({ name }) => name),
+      ['First prompt'],
+    )
+  } finally {
+    database.$client.close()
+  }
+})
+
 test('names a Session by its title, else its ID', async () => {
   const { database, list } = sessionListCaller()
   try {
