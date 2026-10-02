@@ -4,7 +4,6 @@ import { feedRows, sendSessionUpdate, sessionDetails, sessionFeed, sessionRows }
 async function proveArchiveRoundTrip(page, sessionId) {
   assert.deepEqual(await sendSessionUpdate(page, { sessionIds: [sessionId], archived: true }), {
     sessionIds: [sessionId],
-    worktrees: [],
   })
   assert.equal((await sessionDetails(page, sessionId))?.archived, true)
   const afterArchive = await sessionRows(page)
@@ -34,7 +33,7 @@ export async function proveContract(page) {
 
   assert.deepEqual(
     await sendSessionUpdate(page, { sessionIds: ['not-a-session'], archived: true }),
-    { sessionIds: [], worktrees: [] },
+    { sessionIds: [] },
   )
 
   const reading = await sessionFeed(page, first.id)

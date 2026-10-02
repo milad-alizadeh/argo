@@ -3,11 +3,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
-import {
-  type SessionWorktree,
-  sessionWorktreeColumns,
-  sessionWorktreeSchema,
-} from '@/database/session/validation'
+import { type SessionWorktree, sessionWorktreeSchema } from '@/database/session/validation'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
 import { pendingSessionId } from '@/domains/sessions/api/pending-session'
 import type { SessionSubmitRejection } from '@/domains/sessions/api/session-submit-rejection'
@@ -16,6 +12,7 @@ import { identifierSchema } from '@/shared/validation'
 import { deleteComposerDraft, draftTurnConfigurationSchema, readComposerDraft } from '../database'
 import { type LiveSessionSupervisorActor, SessionSubmitRejectedError } from '../live'
 import { folderPresent, mainCheckout } from '../worktree'
+import { type GoneWorktreeContext, leaveGoneWorktree } from './session-gone-worktree'
 
 const t = initTRPC.create()
 const commandSchema = z.strictObject({
@@ -56,7 +53,7 @@ export type SessionStartInput = z.infer<typeof sessionStartInputSchema>
 export type SessionSendInput = z.infer<typeof sessionSendInputSchema>
 export type SessionLiveInput = SessionStartInput | SessionSendInput
 type SessionSubmitInput = z.infer<typeof inputSchema>
-export type SessionProcedureContext = {
+export type SessionProcedureContext = GoneWorktreeContext & {
   database: Database
   supervisor: LiveSessionSupervisorActor
   createWorktree: (
@@ -139,24 +136,23 @@ async function prepareStart(input: DraftRequest<'project'>): Promise<SessionStar
   return { ...command, harness: target.harness, projectId: target.projectId, ...folder }
 }
 
-// A Session whose worktree folder is gone continues in the Project's main checkout and drops the
-// worktree. https://code.claude.com/docs/en/worktrees
-async function leaveGoneWorktree(
-  database: Database,
-  stored: { sessionId: string; projectId: string | null },
-): Promise<string> {
-  const main = stored.projectId === null ? null : await mainCheckout(database, stored.projectId)
-  if (main === null)
-    throw new TRPCError({
-      code: 'PRECONDITION_FAILED',
-      message: 'folder-missing' satisfies SessionSubmitRejection,
-    })
-  database
-    .update(sessionTable)
-    .set({ cwd: main, ...sessionWorktreeColumns(null) })
-    .where(eq(sessionTable.argoId, stored.sessionId))
-    .run()
-  return main
+// The worktree folder a Send found gone and left, or null; a gone one with nowhere to go refuses.
+async function leftWorktree(
+  context: SessionProcedureContext,
+  sessionId: string,
+): Promise<string | null> {
+  const left = await leaveGoneWorktree(context, sessionId)
+  switch (left.type) {
+    case 'kept':
+      return null
+    case 'moved':
+      return left.gone
+    case 'stranded':
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: 'folder-missing' satisfies SessionSubmitRejection,
+      })
+  }
 }
 
 type PreparedSend = { input: SessionSendInput; worktreeGone: string | null }
@@ -164,6 +160,8 @@ type PreparedSend = { input: SessionSendInput; worktreeGone: string | null }
 async function prepareSend(input: DraftRequest<'session'>): Promise<PreparedSend> {
   const { context, draft, target, command } = input
   const sessionId = target.sessionId
+  // Opening the Session usually left a gone worktree already; a Send still checks.
+  const worktreeGone = await leftWorktree(context, sessionId)
   const stored = context.database
     .select({
       harness: sessionTable.harness,
@@ -178,14 +176,7 @@ async function prepareSend(input: DraftRequest<'session'>): Promise<PreparedSend
   if (stored === undefined) throw new TRPCError({ code: 'NOT_FOUND', message: 'missing-session' })
   const harness = harnessSchema.parse(stored.harness)
   rejectUnsupportedAttachments(context, harness, draft.attachments)
-  const worktreeGone =
-    stored.worktreePath !== null && !(await folderPresent(stored.worktreePath))
-      ? stored.worktreePath
-      : null
-  const cwd =
-    worktreeGone === null
-      ? (stored.cwd ?? stored.worktreePath)
-      : await leaveGoneWorktree(context.database, { sessionId, projectId: stored.projectId })
+  const cwd = stored.cwd ?? stored.worktreePath
   if (cwd === null)
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'missing-session-working-directory' })
   await rejectMissingFolder(cwd)

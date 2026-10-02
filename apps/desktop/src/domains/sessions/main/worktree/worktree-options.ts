@@ -1,5 +1,6 @@
 // What the composer's Worktree row offers a new Session: the Project's remembered switch, its main
-// checkout and current branch, and the local branches a new worktree can start from.
+// checkout and current branch, the local branches a new worktree can start from, and the default
+// branch the Session header compares a worktree's base with.
 import { randomUUID } from 'node:crypto'
 import { realpath } from 'node:fs/promises'
 import { initTRPC, TRPCError } from '@trpc/server'
@@ -8,10 +9,12 @@ import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { projectSelectSchema } from '@/database/project/validation'
+import { FALLBACK_DEFAULT_BRANCH } from '@/domains/sessions/api/worktree-request'
 import {
   gitCommonDirectory,
   linkedWorktrees,
   mainWorktreePath,
+  remoteDefaultBranch,
 } from '@/platform/main/git-worktrees'
 import { readWorktreeBranch } from './worktree-branch'
 import { runGit } from './worktree-folder'
@@ -26,6 +29,7 @@ const optionsOutputSchema = z.discriminatedUnion('type', [
     newWorktree: z.boolean(),
     checkout: z.strictObject({ path: z.string().min(1), branch: z.string().min(1).nullable() }),
     branches: z.array(z.string().min(1)),
+    defaultBranch: z.string().min(1),
   }),
   z.strictObject({
     type: z.literal('worktree.error'),
@@ -101,12 +105,14 @@ async function readOptions(
   const registered = readProject(database, projectId)
   if (!registered.success) return { type: 'worktree.error', requestId, code: 'missing-project' }
   const { main } = await projectFolders(registered.data.path)
+  const common = await gitCommonDirectory(registered.data.path)
   return {
     type: 'worktree.options',
     requestId,
     newWorktree: registered.data.newWorktree,
     checkout: { path: main, branch: await readWorktreeBranch(main) },
     branches: await localBranches(main),
+    defaultBranch: (await remoteDefaultBranch(common)) ?? FALLBACK_DEFAULT_BRANCH,
   }
 }
 

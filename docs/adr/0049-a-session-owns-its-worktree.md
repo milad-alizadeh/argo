@@ -37,8 +37,9 @@ The composer of a new Session shows a Worktree row in the tray above the editor:
   the branch you chose.
 - After the first prompt, the row is gone and the switch and branch cannot change. The Session
   header shows the folder of the Session. For a worktree, it also shows "from" and the base
-  branch, if the base is not the current branch of the main checkout. Argo stores the base with
-  the worktree.
+  branch, if the base is not the Project's default branch. The default branch is the branch that
+  `origin/HEAD` names, or `main` if the clone has no `origin/HEAD`. Argo stores the base with the
+  worktree.
 - A new worktree starts at a commit. Uncommitted changes in the main checkout stay there and do
   not go into the new worktree.
 
@@ -56,8 +57,8 @@ Prior art:
 
 Argo follows Claude Code's cleanup rule for a Session worktree when its Session is archived:
 
-1. A clean worktree is removed, with its branch. Clean means no changed files and no commits that
-   no other branch or remote holds.
+1. A clean worktree is removed, with its branch, when the Undo window of the archive closes. Undo
+   keeps it. Clean means no changed files and no commits that no other branch or remote holds.
 2. A worktree that holds work opens a dialog that says what it holds and offers Keep, Remove and
    Cancel.
 3. When Argo cannot read the worktree's state, it opens the same dialog and says what it could not

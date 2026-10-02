@@ -31,7 +31,23 @@ test('a new Project starts with the switch off, on its main checkout and current
     newWorktree: false,
     checkout: { path: repository, branch: 'main' },
     branches: ['main'],
+    defaultBranch: 'main',
   })
+})
+
+test("the default branch is origin's HEAD, whatever the main checkout is on", async () => {
+  const { repository, read } = await options()
+  await run('git', ['-C', repository, 'branch', 'trunk'])
+  await run('git', ['-C', repository, 'update-ref', 'refs/remotes/origin/trunk', 'trunk'])
+  await run('git', [
+    '-C',
+    repository,
+    'symbolic-ref',
+    'refs/remotes/origin/HEAD',
+    'refs/remotes/origin/trunk',
+  ])
+  await run('git', ['-C', repository, 'checkout', '--quiet', '-b', 'elsewhere'])
+  expect(await read()).toMatchObject({ checkout: { branch: 'elsewhere' }, defaultBranch: 'trunk' })
 })
 
 test('lists every local branch, the most recently committed first', async () => {

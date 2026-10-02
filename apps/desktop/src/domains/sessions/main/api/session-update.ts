@@ -10,12 +10,6 @@ import { WORKING_SESSION_STATUSES } from '@/domains/sessions/api/session-live-ev
 import type { Harness, HarnessSession } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
 import { sessionHistoryIdentity } from '../session-history-identity'
-import {
-  type RemovedWorktree,
-  removedWorktreeSchema,
-  type WorktreeRemoval,
-  worktreeRemovalSchema,
-} from '../worktree'
 import type { SessionListChanges } from './session-list-changes'
 
 type StoredUpdate = Pick<
@@ -164,7 +158,6 @@ const sessionUpdateInputSchema = z
       .pipe(z.string().min(1))
       .optional(),
     archived: z.boolean().optional(),
-    worktrees: worktreeRemovalSchema.optional(),
   })
   .refine((input) => input.title === undefined || input.sessionIds.length === 1, {
     message: 'A title renames exactly one Session.',
@@ -172,24 +165,14 @@ const sessionUpdateInputSchema = z
 
 export type SessionUpdateProcedureContext = SessionUpdateContext & {
   rename: (request: { harness: Harness; nativeId: string; title: string }) => Promise<void>
-  // Runs after an archive, which is what lets a Session worktree go.
-  removeSessionWorktrees: (input: {
-    sessionIds: string[]
-    removal: WorktreeRemoval
-  }) => Promise<RemovedWorktree[]>
 }
 
-// Renames one saved Session or archives several, and returns the updated IDs and each archived
-// worktree's removal. A title goes to the Harness first; an unknown ID is skipped.
+// Renames one saved Session or archives several, and returns the updated IDs. A title goes to the
+// Harness first; an unknown ID is skipped. An archive's worktrees go later, by their own procedure.
 export function sessionUpdateProcedure(context: SessionUpdateProcedureContext) {
   return t.procedure
     .input(sessionUpdateInputSchema)
-    .output(
-      z.strictObject({
-        sessionIds: z.array(identifierSchema),
-        worktrees: z.array(removedWorktreeSchema),
-      }),
-    )
+    .output(z.strictObject({ sessionIds: z.array(identifierSchema) }))
     .mutation(async ({ input }) => {
       const [renamed] = input.sessionIds
       if (input.title !== undefined && renamed !== undefined) {
@@ -199,13 +182,6 @@ export function sessionUpdateProcedure(context: SessionUpdateProcedureContext) {
       const sessionIds = input.sessionIds.filter((sessionId) =>
         updateSession(context, sessionId, { customTitle: input.title, archived: input.archived }),
       )
-      const worktrees =
-        input.archived === true && sessionIds.length > 0
-          ? await context.removeSessionWorktrees({
-              sessionIds,
-              removal: input.worktrees ?? 'clean',
-            })
-          : []
-      return { sessionIds, worktrees }
+      return { sessionIds }
     })
 }

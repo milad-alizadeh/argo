@@ -9,6 +9,7 @@ import { composerDraft } from '@/database/composer-draft/schema'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
+import { SessionListChanges } from '@/domains/sessions/main/api/session-list-changes'
 import {
   type LiveSessionSupervisorActor,
   SessionSubmitRejectedError,
@@ -71,6 +72,7 @@ function caller(send: LiveSessionSupervisorActor['send'] = () => {}) {
           }),
         ),
       acceptsAttachments: (harness: string) => harness !== 'claude',
+      changes: new SessionListChanges(),
     },
   } as unknown as AppRouterDependencies
   return createAppRouter(dependencies).createCaller({})

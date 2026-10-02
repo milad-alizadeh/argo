@@ -8,7 +8,6 @@ import type { Harness } from '@/harnesses/harness'
 import type { CatalogReadResult } from '@/harnesses/harness-catalog'
 import { harnessLabel } from '@/harnesses/presentation-registry'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
-import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { type RouterInputs, trpc } from '@/platform/renderer/trpc-client'
 import type { CatalogFailure, WorktreeOptionsActions, WorktreeOptionsState } from '../composer'
 import {
@@ -29,6 +28,7 @@ import { type HarnessControl, useAvailableHarnesses } from '../harness'
 import type { ComposerPlan, Session, SessionExtras } from '../types'
 import { draftTarget } from './session-draft-target'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
+import { useTellWorktreeGone } from './use-gone-worktree'
 import { useSessionDetails } from './use-session-details'
 
 type SessionScreenDetailsProps = {
@@ -207,8 +207,7 @@ function useSessionComposerSend(input: {
 }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { add } = useToastManager()
-  const { t } = useTranslation('sessions')
+  const tellWorktreeGone = useTellWorktreeGone()
   return async (
     prompt: string,
     turnConfiguration: TurnConfiguration | null,
@@ -231,9 +230,8 @@ function useSessionComposerSend(input: {
       input.onFailure(failure)
       return failure.outcome
     }
-    // The worktree folder was gone, so main moved the Session to the main checkout.
-    if (result.worktreeGone !== null)
-      add({ title: t('composer.worktreeGone', { path: result.worktreeGone }), type: 'info' })
+    // The worktree folder went after the Session opened, so main moved it at Send.
+    if (result.worktreeGone !== null) tellWorktreeGone(result.worktreeGone)
     if (input.identity.kind === 'draft' && input.projectId !== null) {
       void queryClient.invalidateQueries({
         queryKey: trpc.worktreeOptions.queryKey({ projectId: input.projectId }),

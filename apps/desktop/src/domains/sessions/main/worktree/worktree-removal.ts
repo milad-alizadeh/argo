@@ -105,13 +105,25 @@ async function removeOne(
   return 'removed'
 }
 
+// Only a Session still archived lets its worktree go, so a restore that won the race keeps it.
+function stillArchived(database: Database, sessionIds: readonly string[]): string[] {
+  return database
+    .select({ sessionId: sessionArchive.sessionId })
+    .from(sessionArchive)
+    .where(inArray(sessionArchive.sessionId, [...sessionIds]))
+    .all()
+    .map(({ sessionId }) => sessionId)
+}
+
 // The Session keeps its worktree record; a resume finds the folder gone and moves to the main checkout.
 export async function removeSessionWorktrees(
   context: RemovalContext,
   input: { sessionIds: readonly string[]; removal: WorktreeRemoval },
 ): Promise<RemovedWorktree[]> {
+  const archived = stillArchived(context.database, input.sessionIds)
+  if (archived.length === 0) return []
   const outcomes: RemovedWorktree[] = []
-  for (const worktree of archivedWorktrees(context.database, input.sessionIds)) {
+  for (const worktree of archivedWorktrees(context.database, archived)) {
     const outcome = await removeOne(context, worktree, input.removal)
     outcomes.push({
       sessionId: worktree.sessionId,

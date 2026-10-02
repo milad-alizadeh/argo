@@ -43,3 +43,12 @@ export async function linkedWorktrees(
   )
   return found.filter((worktree) => worktree !== null)
 }
+
+// The branch `origin/HEAD` names, or null without one. `git pack-refs` never packs a symbolic ref.
+export async function remoteDefaultBranch(commonDirectory: string): Promise<string | null> {
+  const head = await readFile(
+    path.join(commonDirectory, 'refs', 'remotes', 'origin', 'HEAD'),
+    'utf8',
+  ).catch(() => null)
+  return head?.match(/^ref: refs\/remotes\/origin\/(.+?)\s*$/)?.[1] ?? null
+}

@@ -1,8 +1,17 @@
 import assert from 'node:assert/strict'
+import { execFile } from 'node:child_process'
 import path from 'node:path'
 import { test } from 'node:test'
+import { promisify } from 'node:util'
 import { addLinkedWorktree, worktreeRepoFixture } from '@/mocks/projects/worktree-repo.fixture'
-import { gitCommonDirectory, linkedWorktrees, mainWorktreePath } from './git-worktrees'
+import {
+  gitCommonDirectory,
+  linkedWorktrees,
+  mainWorktreePath,
+  remoteDefaultBranch,
+} from './git-worktrees'
+
+const run = promisify(execFile)
 
 test('reads the main worktree back from its own common directory', async (context) => {
   const { project } = await worktreeRepoFixture(context)
@@ -39,4 +48,20 @@ test('reads a linked worktree own common directory as the main checkout own', as
 
   assert.equal(common, path.join(project, '.git'))
   assert.equal(mainWorktreePath(common), project)
+})
+
+test('reads the default branch from origin/HEAD, even after its refs are packed', async (context) => {
+  const { project } = await worktreeRepoFixture(context)
+  const clone = path.join(path.dirname(project), 'clone')
+  await run('git', ['-C', project, 'branch', '--move', 'main', 'trunk'])
+  await run('git', ['clone', '--quiet', project, clone])
+  await run('git', ['-C', clone, 'pack-refs', '--all'])
+
+  assert.equal(await remoteDefaultBranch(await gitCommonDirectory(clone)), 'trunk')
+})
+
+test('has no default branch without an origin HEAD', async (context) => {
+  const { project } = await worktreeRepoFixture(context)
+
+  assert.equal(await remoteDefaultBranch(await gitCommonDirectory(project)), null)
 })

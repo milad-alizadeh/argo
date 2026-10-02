@@ -73,8 +73,8 @@ async function head(folder: string): Promise<string> {
   return (await git(folder, ['rev-parse', 'HEAD'])).stdout.trim()
 }
 
-// A Session started in a new worktree from a branch, whose worktree is then removed, resumes in
-// the main checkout and says so.
+// A Session started in a new worktree from a branch, whose worktree is then removed, moves to the
+// main checkout as soon as it is opened again, says so, and resumes there.
 async function proveResume(
   page: Page,
   { project, backend }: { project: string; backend: SessionHarnessBackend },
@@ -104,9 +104,11 @@ async function proveResume(
   expect(await head(worktree)).toBe(baseCommit)
   await git(project, ['worktree', 'remove', '--force', worktree])
 
+  // A reload opens the Session again, before any Send.
+  await reload(page)
+  await expect(page.getByText(WORKTREE_GONE)).toBeVisible()
   const again = `Reply again from the removed ${harness} worktree.`
   await sendReplacingDraft(page, again)
-  await expect(page.getByText(WORKTREE_GONE)).toBeVisible()
   await backend.waitForReply(page, { harness, prompt: again })
 }
 

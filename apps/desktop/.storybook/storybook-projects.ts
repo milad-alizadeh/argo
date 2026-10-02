@@ -33,6 +33,7 @@ function worktreeOptions() {
     newWorktree: false,
     checkout: { path: primaryProject.path, branch: 'main' },
     branches: ['main'],
+    defaultBranch: 'main',
   }
 }
 

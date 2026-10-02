@@ -28,7 +28,7 @@ import { SessionRenameDialog } from './session-rename-dialog'
 
 const NO_SESSIONS: Session[] = []
 
-// A short-lived Undo: a manual dismiss and the timeout both leave the archive standing.
+// The Undo window: a dismiss or the timeout leaves the archive standing and lets its worktrees go.
 const UNDO_TOAST_TIMEOUT_MS = 8000
 
 type Toasts = { add: ReturnType<typeof useToastManager>['add']; t: TFunction<'sessions'> }
@@ -64,7 +64,7 @@ function sessionListState(
   return count === 0 ? 'empty' : 'ready'
 }
 
-// The ids main updated (#2194) and its worktree outcomes, or null when the update failed and said so.
+// The ids main updated (#2194), or null when the update failed and said so.
 async function updateArchived(toasts: Toasts, update: RouterInputs['sessionUpdate']) {
   try {
     return await trpcClient.sessionUpdate.mutate(update)
@@ -89,15 +89,30 @@ async function restoreSessions(toasts: Toasts, sessionIds: SessionId[]) {
   })
 }
 
-async function archiveSessions(
+// Main removes the archived Sessions' worktrees it may, then each one it left is told.
+async function removeArchivedWorktrees(
   toasts: Toasts,
   sessionIds: SessionId[],
-  worktrees: WorktreeRemoval,
+  removal: WorktreeRemoval,
 ) {
-  const updated = await updateArchived(toasts, { sessionIds, archived: true, worktrees })
+  try {
+    const { worktrees } = await trpcClient.sessionWorktreeRemove.mutate({ sessionIds, removal })
+    for (const worktree of worktrees) tellUnremoved(toasts, worktree)
+  } catch (error) {
+    toasts.add({
+      title: toasts.t('archiveWorktree.removeFailed'),
+      description: error instanceof Error ? error.message : undefined,
+      type: 'error',
+    })
+  }
+}
+
+async function archiveSessions(toasts: Toasts, sessionIds: SessionId[], removal: WorktreeRemoval) {
+  const updated = await updateArchived(toasts, { sessionIds, archived: true })
   if (updated === null) return
   const applied = updated.sessionIds
   const { add, t } = toasts
+  let undone = false
   if (applied.length > 0)
     add({
       title: t('bulkSelect.archived', { count: applied.length }),
@@ -105,7 +120,14 @@ async function archiveSessions(
       timeout: UNDO_TOAST_TIMEOUT_MS,
       actionProps: {
         children: t('bulkSelect.undo'),
-        onClick: () => void restoreSessions(toasts, applied),
+        onClick: () => {
+          undone = true
+          void restoreSessions(toasts, applied)
+        },
+      },
+      // The Undo window is the toast's life; Undo within it keeps every worktree.
+      onClose: () => {
+        if (!undone) void removeArchivedWorktrees(toasts, applied, removal)
       },
     })
   if (applied.length < sessionIds.length)
@@ -114,7 +136,6 @@ async function archiveSessions(
       type: 'error',
       timeout: UNDO_TOAST_TIMEOUT_MS,
     })
-  for (const worktree of updated.worktrees) tellUnremoved(toasts, worktree)
 }
 
 // Only a worktree the archive meant to remove, yet left, is worth a toast.
@@ -163,7 +184,7 @@ const REMOVAL_FOR_ANSWER = { keep: 'clean', remove: 'all' } as const satisfies R
   WorktreeRemoval
 >
 
-// Removes clean Session worktrees at once; asks about any holding work or left unchecked.
+// Removes clean Session worktrees once the Undo closes; asks about any holding work or unchecked.
 function useSessionArchive(toasts: Toasts, sessions: readonly Session[]) {
   const [question, setQuestion] = useState<ArchiveQuestion | null>(null)
   const archive = async (sessionIds: SessionId[]) => {

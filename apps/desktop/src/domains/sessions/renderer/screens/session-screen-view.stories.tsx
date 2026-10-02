@@ -4,12 +4,12 @@ import { MemoryRouter, Route, Routes, useParams } from 'react-router'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { pendingSessionId } from '@/domains/sessions/api/pending-session'
+import { FALLBACK_DEFAULT_BRANCH } from '@/domains/sessions/api/worktree-request'
 import { sessionRow, sessionShellCommand, sessionSubagent } from '@/mocks/sessions/session-rows'
 import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fixture'
 import { installSessionHost } from '@/mocks/sessions/session-story-host'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
-import type { WorktreeCheckout } from '../composer'
 import { ComposerForm } from '../composer/layout/composer-form'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { SessionInspector } from '../inspector/session-inspector'
@@ -230,7 +230,7 @@ function ReviewScreen({
   permissionPrompt = null,
   titleText,
   worktree = null,
-  checkout = null,
+  defaultBranch = FALLBACK_DEFAULT_BRANCH,
 }: {
   rows?: SessionFeed['rows'] | null
   shellOutput?: SessionShellOutput
@@ -239,7 +239,7 @@ function ReviewScreen({
   permissionPrompt?: ReactNode
   titleText?: string
   worktree?: Session['worktree']
-  checkout?: WorktreeCheckout | null
+  defaultBranch?: string
 }) {
   const selectedSessionId = useParams().sessionId ?? 'composer-review'
   const [jumpToLatest, setJumpToLatest] = useState<{
@@ -259,7 +259,7 @@ function ReviewScreen({
   const feed = rows === null ? feedFor(selectedSessionId) : { ...feedFor(selectedSessionId), rows }
   if (session === undefined) return null
   const headerSession = sessionWithTitle({ ...session, worktree }, titleText)
-  const location = sessionLocation(headerSession, checkout)
+  const location = sessionLocation(headerSession, defaultBranch)
 
   return (
     <ReviewContent
@@ -709,7 +709,6 @@ export const Open: Story = {
         branch: 'feature/composer-review',
         base: 'main',
       }}
-      checkout={{ path: '/workspace/argo', branch: 'main' }}
     />
   ),
   play: async ({ canvasElement }) => {
@@ -723,7 +722,7 @@ export const Open: Story = {
     ).toBeVisible()
     expectNoSessionIdInHeader(canvasElement)
     await expect(canvas.getByText('/worktrees/ticket-1846-composer')).toBeVisible()
-    // Started from the main checkout's own branch, so the header names no base.
+    // Started from the Project's default branch, so the header names no base.
     expect(canvas.queryByText('from')).toBeNull()
     await waitFor(() => expectHeaderActionsAtTrailingEdge(canvasElement), { timeout: 5000 })
     await expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement)
@@ -1094,7 +1093,7 @@ export const NarrowHeader: Story = {
 }
 
 export const MainCheckoutFolder: Story = {
-  render: () => <ReviewScreen checkout={{ path: COMPOSER_REVIEW_FOLDER, branch: 'main' }} />,
+  render: () => <ReviewScreen />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     expectNoSessionIdInHeader(canvasElement)
@@ -1111,7 +1110,6 @@ export const WorktreeFromAnotherBranch: Story = {
         branch: 'argo/session-1846',
         base: 'release/1.4',
       }}
-      checkout={{ path: '/workspace/argo', branch: 'main' }}
     />
   ),
   play: async ({ canvasElement }) => {
@@ -1119,6 +1117,22 @@ export const WorktreeFromAnotherBranch: Story = {
     await expect(canvas.getByText('/worktrees/ticket-1846-composer')).toBeVisible()
     await expect(canvas.getByText('from')).toBeVisible()
     await expect(canvas.getByText('release/1.4')).toBeVisible()
+  },
+}
+
+// The default branch decides, not the main checkout's branch: `main` is named in a `trunk` Project.
+export const WorktreeFromMainInATrunkProject: Story = {
+  render: () => (
+    <ReviewScreen
+      worktree={{ path: '/worktrees/ticket-3140', branch: 'argo/session-3140', base: 'main' }}
+      defaultBranch="trunk"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('/worktrees/ticket-3140')).toBeVisible()
+    await expect(canvas.getByText('from')).toBeVisible()
+    await expect(canvas.getByText('main')).toBeVisible()
   },
 }
 
@@ -1132,7 +1146,6 @@ export const LongBranchName: Story = {
           branch: 'argo/session-long',
           base: 'feature/a-branch-name-that-is-much-longer-than-the-header-can-display-or-the-session-title',
         }}
-        checkout={{ path: '/workspace/argo', branch: 'main' }}
       />
     </div>
   ),

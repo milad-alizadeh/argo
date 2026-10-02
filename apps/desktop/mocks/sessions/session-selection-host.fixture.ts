@@ -7,6 +7,7 @@ import {
   heldDetails,
   heldReads,
   installSessionHost,
+  type SessionHostOptions,
 } from '@/mocks/sessions/session-story-host'
 import { claudeHarnessInfoFixture, codexHarnessInfoFixture } from './harness-catalog.fixture'
 
@@ -34,6 +35,7 @@ function projectReply(request: StorybookTrpcRequest): StorybookTrpcResponse | nu
         newWorktree: false,
         checkout: { path: project.path, branch: 'main' },
         branches: ['main'],
+        defaultBranch: 'main',
       })
     case 'worktreeSwitch':
       return success({ newWorktree: (request.input as { newWorktree: boolean }).newWorktree })
@@ -173,6 +175,7 @@ export function sessionSelectionHost(
     live?: readonly SessionLiveEvent[]
     // A Permission its Session is waiting on; every other Session waits on none.
     permission?: Permission
+    goneWorktrees?: SessionHostOptions['goneWorktrees']
   } = {},
 ) {
   const before = window.argo
@@ -215,6 +218,7 @@ export function sessionSelectionHost(
   const host = installSessionHost(sessions, {
     feed: options.feed ?? readFeed,
     live: options.live,
+    goneWorktrees: options.goneWorktrees,
   })
   return Object.assign(
     () => {

@@ -15,6 +15,10 @@ import {
   type SessionUpdateProcedureContext,
   sessionUpdateProcedure,
 } from '@/domains/sessions/main/api/session-update'
+import {
+  type SessionWorktreeContext,
+  sessionWorktreeProcedures,
+} from '@/domains/sessions/main/api/session-worktree'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live'
 import { saveReadTicket } from '@/domains/tickets/main/database/ticket-upsert'
 import { insertProject, migratedDatabase } from '@/mocks/database/migrated-database'
@@ -71,8 +75,7 @@ export function sessionListCaller({
   const mock = mockSupervisor(sessions)
   const changes = new SessionListChanges()
   const renames: RenameRequest[] = []
-  const removalRequests: Parameters<SessionUpdateProcedureContext['removeSessionWorktrees']>[0][] =
-    []
+  const removalRequests: Parameters<SessionWorktreeContext['removeSessionWorktrees']>[0][] = []
   const context = {
     database,
     supervisor: supervisor ?? (mock.supervisor as never),
@@ -86,7 +89,9 @@ export function sessionListCaller({
       removalRequests.push(input)
       return []
     },
+    exclusive: <T>(work: () => Promise<T>) => work(),
   }
+  const worktrees = sessionWorktreeProcedures(context)
   const stopWatching = watchSessionList(context)
   const caller = initTRPC
     .create()
@@ -95,6 +100,8 @@ export function sessionListCaller({
       changed: sessionListChangedProcedure(context),
       update: sessionUpdateProcedure(context),
       details: sessionDetailsProcedure(context),
+      removeWorktrees: worktrees.sessionWorktreeRemove,
+      leaveGoneWorktree: worktrees.sessionLeaveGoneWorktree,
     })
     .createCaller({})
   const subscribeChanges = async () => {
@@ -108,6 +115,8 @@ export function sessionListCaller({
     list: caller.list,
     update: caller.update,
     details: caller.details,
+    removeWorktrees: caller.removeWorktrees,
+    leaveGoneWorktree: caller.leaveGoneWorktree,
     changes: subscribeChanges,
     sessionListChanges: changes,
     stopWatching,

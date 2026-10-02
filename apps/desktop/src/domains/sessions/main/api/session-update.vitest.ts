@@ -196,17 +196,17 @@ test('archiving moves known Sessions to the archived filter and back, skipping a
 
     assert.deepEqual(await update({ sessionIds: [IDS[0], IDS[1]], archived: true }), {
       sessionIds: [IDS[0]],
-      worktrees: [],
     })
     assert.equal((await details({ sessionId: IDS[0] }))?.archived, true)
     assert.deepEqual(await idsIn(list, 'active'), [])
     assert.deepEqual(await idsIn(list, 'archived'), [IDS[0]])
     assert.deepEqual(await idsIn(list, 'all'), [IDS[0]])
-    assert.deepEqual(removalRequests, [{ sessionIds: [IDS[0]], removal: 'clean' }])
+    // The worktree waits for the Undo to close, so the archive itself removes nothing.
+    assert.deepEqual(removalRequests, [])
 
     await update({ sessionIds: [IDS[0]], archived: false })
     assert.equal((await details({ sessionId: IDS[0] }))?.archived, false)
-    assert.equal(removalRequests.length, 1)
+    assert.deepEqual(removalRequests, [])
     assert.deepEqual(await idsIn(list, 'active'), [IDS[0]])
     assert.deepEqual(await idsIn(list, 'archived'), [])
   } finally {
@@ -214,10 +214,12 @@ test('archiving moves known Sessions to the archived filter and back, skipping a
   }
 })
 
-test('an archive the person confirmed with Remove asks to remove every Session worktree', async () => {
-  const { database, update, removalRequests } = callerWithOneSession()
+test('a removal the person confirmed with Remove asks to remove every Session worktree', async () => {
+  const { database, removeWorktrees, removalRequests } = callerWithOneSession()
   try {
-    await update({ sessionIds: [IDS[0]], archived: true, worktrees: 'all' })
+    assert.deepEqual(await removeWorktrees({ sessionIds: [IDS[0]], removal: 'all' }), {
+      worktrees: [],
+    })
     assert.deepEqual(removalRequests, [{ sessionIds: [IDS[0]], removal: 'all' }])
   } finally {
     database.$client.close()

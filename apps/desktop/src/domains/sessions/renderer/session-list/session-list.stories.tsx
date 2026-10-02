@@ -812,7 +812,17 @@ export const ArchivedRowsCanBeOpened: Story = {
   },
 }
 
+// Closes the Undo toast of an archive, which ends its Undo window.
+async function closeArchivedToast(count = 1) {
+  const name = `Archived ${count} Session${count === 1 ? '' : 's'}`
+  const toast = await within(document.body).findByRole('dialog', { name })
+  // The close control joins the accessibility tree once the toasts expand under the pointer.
+  await userEvent.hover(toast)
+  await userEvent.click(await within(toast).findByRole('button', { name: 'Close toast' }))
+}
+
 // Archiving lives on the row's context menu, with no bulk action bar footer (#2194 follow-up).
+// The clean worktree goes only once the Undo window closes.
 export const ArchiveFromContextMenu: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -820,9 +830,12 @@ export const ArchiveFromContextMenu: Story = {
     await userEvent.pointer({ keys: '[MouseRight]', target: row })
     const archive = await within(document.body).findByRole('menuitem', { name: 'Archive' })
     await userEvent.click(archive)
-    await expect(host.updates).toEqual([
-      { sessionIds: ['prose'], archived: true, worktrees: 'clean' },
-    ])
+    await expect(host.updates).toEqual([{ sessionIds: ['prose'], archived: true }])
+    await expect(host.removals).toEqual([])
+    await closeArchivedToast()
+    await waitFor(() =>
+      expect(host.removals).toEqual([{ sessionIds: ['prose'], removal: 'clean' }]),
+    )
   },
 }
 
@@ -851,8 +864,10 @@ export const ArchiveAsksBeforeRemovingWork: Story = {
     await waitFor(() => expect(within(dialog).getByText('argo/prose')).toBeVisible())
     await expect(host.updates).toEqual([])
     await userEvent.click(within(dialog).getByRole('button', { name: 'Keep' }))
+    await waitFor(() => expect(host.updates).toEqual([{ sessionIds: ['prose'], archived: true }]))
+    await closeArchivedToast()
     await waitFor(() =>
-      expect(host.updates).toEqual([{ sessionIds: ['prose'], archived: true, worktrees: 'clean' }]),
+      expect(host.removals).toEqual([{ sessionIds: ['prose'], removal: 'clean' }]),
     )
   },
 }
@@ -863,9 +878,9 @@ export const ArchiveRemovesWorkWhenAsked: Story = {
   play: async ({ canvasElement }) => {
     const dialog = await archiveFirstRow(canvasElement)
     await userEvent.click(within(dialog).getByRole('button', { name: 'Remove' }))
-    await waitFor(() =>
-      expect(host.updates).toEqual([{ sessionIds: ['prose'], archived: true, worktrees: 'all' }]),
-    )
+    await waitFor(() => expect(host.updates).toEqual([{ sessionIds: ['prose'], archived: true }]))
+    await closeArchivedToast()
+    await waitFor(() => expect(host.removals).toEqual([{ sessionIds: ['prose'], removal: 'all' }]))
   },
 }
 
@@ -874,8 +889,7 @@ export const ArchiveTellsARefusedRemoval: Story = {
   beforeEach: () =>
     showing(listed, {
       worktreeWork: async () => ({ worktrees: [heldWork] }),
-      update: async ({ sessionIds }) => ({
-        sessionIds,
+      removeWorktrees: async () => ({
         worktrees: [
           { sessionId: 'prose', path: heldWork.path, branch: heldWork.branch, outcome: 'refused' },
         ],
@@ -884,6 +898,7 @@ export const ArchiveTellsARefusedRemoval: Story = {
   play: async ({ canvasElement }) => {
     const dialog = await archiveFirstRow(canvasElement)
     await userEvent.click(within(dialog).getByRole('button', { name: 'Remove' }))
+    await closeArchivedToast()
     await waitFor(() =>
       expect(
         within(document.body).getByText(
@@ -941,7 +956,7 @@ export const BulkArchiveAndUndoUpdateEachSession: Story = {
     await userEvent.click(await within(document.body).findByRole('menuitem', { name: 'Archive' }))
     await expect(await canvas.findByText('No Sessions found')).toBeInTheDocument()
     await expect(host.updates).toEqual([
-      { sessionIds: ['prose', 'second-session'], archived: true, worktrees: 'clean' },
+      { sessionIds: ['prose', 'second-session'], archived: true },
     ])
     await userEvent.click(await within(document.body).findByRole('button', { name: 'Undo' }))
     await expect(
@@ -952,6 +967,14 @@ export const BulkArchiveAndUndoUpdateEachSession: Story = {
       { sessionIds: ['prose', 'second-session'], archived: false },
     ])
     await expect(host.reads.length).toBeGreaterThan(reads)
+    // Undo kept the worktrees, so the window closing removes none.
+    await closeArchivedToast(2)
+    await waitFor(() =>
+      expect(
+        within(document.body).queryByRole('dialog', { name: 'Archived 2 Sessions' }),
+      ).toBeNull(),
+    )
+    await expect(host.removals).toEqual([])
   },
 }
 

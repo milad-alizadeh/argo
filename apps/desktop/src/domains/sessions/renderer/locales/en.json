@@ -257,7 +257,8 @@
     "keep": "Keep",
     "remove": "Remove",
     "running": "The worktree {{path}} stays, because a Turn is running in it.",
-    "refused": "Argo could not remove the worktree {{path}}."
+    "refused": "Argo could not remove the worktree {{path}}.",
+    "removeFailed": "Argo could not remove the worktrees of the archived Sessions."
   },
   "contextMenu": {
     "actions": "{{title}} actions",

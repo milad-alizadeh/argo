@@ -12,3 +12,6 @@ export const worktreeRequestSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('main') }),
   z.strictObject({ type: z.literal('new'), from: branchSchema.nullable() }),
 ])
+
+// A Project's default branch when its clone has no `origin/HEAD`, and while its options load.
+export const FALLBACK_DEFAULT_BRANCH = 'main'

@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo, useRef, useState } from 'react'
+import { FALLBACK_DEFAULT_BRANCH } from '@/domains/sessions/api/worktree-request'
 import { type RouterOutputs, trpc } from '@/platform/renderer/trpc-client'
 
 type WorktreeOptionsOutput = RouterOutputs['worktreeOptions']
 type WorktreeOptions = Extract<WorktreeOptionsOutput, { type: 'worktree.options' }>
-export type WorktreeCheckout = WorktreeOptions['checkout']
+type WorktreeCheckout = WorktreeOptions['checkout']
 
 // `options` is null while loading; `from` is null for the main checkout's current branch.
 export type WorktreeOptionsState = {
@@ -65,14 +66,30 @@ function useRememberedSwitch(
   }
 }
 
-export function useWorktreeOptions(
-  projectId: string | null,
-): [WorktreeOptionsState, WorktreeOptionsActions] {
-  const query = useQuery({
+// One read of a Project's options, shared by every hook that selects from it.
+function worktreeOptionsQuery(projectId: string | null) {
+  return {
     ...trpc.worktreeOptions.queryOptions({ projectId: projectId ?? '' }),
     enabled: projectId !== null,
     staleTime: 30_000,
     refetchInterval: 30_000,
+  }
+}
+
+// The Project's default branch, and the fallback while its options load, so the header never waits.
+export function useDefaultBranch(projectId: string | null): string {
+  const { data } = useQuery({
+    ...worktreeOptionsQuery(projectId),
+    select: (data) => (data.type === 'worktree.options' ? data.defaultBranch : undefined),
+  })
+  return data ?? FALLBACK_DEFAULT_BRANCH
+}
+
+export function useWorktreeOptions(
+  projectId: string | null,
+): [WorktreeOptionsState, WorktreeOptionsActions] {
+  const query = useQuery({
+    ...worktreeOptionsQuery(projectId),
     // Dropping each reply's new request id lets an unchanged poll keep its reference.
     select: (data) =>
       data.type === 'worktree.options'

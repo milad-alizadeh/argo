@@ -5,6 +5,7 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { expect, test } from 'vitest'
 import { sessionTable } from '@/database/session/schema'
+import { sessionArchive } from '@/database/session-archive/schema'
 import { registeredRepoFixture } from '@/mocks/projects/registered-repo.fixture'
 import { addLinkedWorktree } from '@/mocks/projects/worktree-repo.fixture'
 import { createWorktree } from './worktree-create'
@@ -35,6 +36,7 @@ async function worktreeSession() {
       worktreeBranch: worktree.branch,
     })
     .run()
+  database.insert(sessionArchive).values({ sessionId: 'session-1' }).run()
   const remove = (removal: 'clean' | 'all', running = false) =>
     removeSessionWorktrees(
       { database, isRunning: () => running },
@@ -138,6 +140,7 @@ test('a clean worktree made outside Argo goes on archive too, with its branch', 
       worktreeBranch: 'outside',
     })
     .run()
+  database.insert(sessionArchive).values({ sessionId: 'session-outside' }).run()
   expect(
     await removeSessionWorktrees(
       { database, isRunning: () => false },
@@ -146,6 +149,13 @@ test('a clean worktree made outside Argo goes on archive too, with its branch', 
   ).toMatchObject([{ sessionId: 'session-outside', outcome: 'removed' }])
   expect(await present(outside)).toBe(false)
   expect(await branchExists(repository, 'outside')).toBe(false)
+})
+
+test('a restored Session keeps its worktree, so an Undo that won the race keeps it', async () => {
+  const { database, worktree, remove } = await worktreeSession()
+  database.delete(sessionArchive).run()
+  expect(await remove('all')).toEqual([])
+  expect(await present(worktree.path)).toBe(true)
 })
 
 test('a worktree another unarchived Session runs in stays', async () => {
@@ -178,6 +188,7 @@ test('the main checkout is never removed', async () => {
       cwd: repository,
     })
     .run()
+  database.insert(sessionArchive).values({ sessionId: 'session-main' }).run()
   expect(await worktreesWithWork(database, ['session-main'])).toEqual([])
   expect(
     await removeSessionWorktrees(
