@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import type { Database } from '@/database/database'
-import { sessionSubagent } from '@/database/session-subagent/schema'
 import {
   IDS,
   insertSession,
@@ -115,69 +114,6 @@ test('pages many archived Sessions apart from the active ones', async () => {
       [5, 5, 5],
     )
     assert.equal(all.total, 6)
-  } finally {
-    database.$client.close()
-  }
-})
-
-test('keeps a saved Codex child out of every roster filter and its detail lookup', async () => {
-  const { database, list, details } = sessionListCaller()
-  try {
-    insertSession(database, {
-      id: IDS[0],
-      harness: 'codex',
-      nativeId: 'child-thread',
-      parentNativeId: 'root-thread',
-      customTitle: 'Keep this metadata',
-      createdAt: 10,
-    })
-    insertSession(database, { id: IDS[1], harness: 'codex', nativeId: 'root-thread' })
-    insertSession(database, { id: IDS[2], harness: 'claude', nativeId: 'child-thread' })
-    database
-      .insert(sessionSubagent)
-      .values({
-        sessionId: IDS[1],
-        subagentId: 'child-thread',
-        label: null,
-        state: 'unknown',
-      })
-      .run()
-
-    const active = await list({ projectId: 'project-1', filter: 'active' })
-    const archived = await list({ projectId: 'project-1', filter: 'archived' })
-    const all = await list({ projectId: 'project-1', filter: 'all' })
-
-    assert.equal(active.total, 2)
-    const root = active.rows.find(({ id }) => id === IDS[1])
-    assert.deepEqual(root?.subagents, [{ id: 'child-thread', label: null, state: 'unknown' }])
-    assert.ok(active.rows.some(({ id }) => id === IDS[2]))
-    assert.deepEqual(archived, { total: 0, rows: [] })
-    assert.equal(all.total, 2)
-    assert.equal(await details({ sessionId: IDS[0] }), null)
-    assert.equal(
-      database.$client.prepare('SELECT custom_title FROM session WHERE argo_id = ?').get(IDS[0])
-        ?.custom_title,
-      'Keep this metadata',
-    )
-  } finally {
-    database.$client.close()
-  }
-})
-
-test('keeps a saved child out of the roster before its parent has a row', async () => {
-  const { database, list, details } = sessionListCaller()
-  try {
-    insertSession(database, {
-      id: IDS[0],
-      harness: 'codex',
-      nativeId: 'child-thread',
-      parentNativeId: 'root-thread',
-    })
-    assert.deepEqual(await list({ projectId: 'project-1', filter: 'all' }), {
-      total: 0,
-      rows: [],
-    })
-    assert.equal(await details({ sessionId: IDS[0] }), null)
   } finally {
     database.$client.close()
   }

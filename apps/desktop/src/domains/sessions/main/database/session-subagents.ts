@@ -1,6 +1,5 @@
-import { and, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm'
+import { inArray, sql } from 'drizzle-orm'
 import type { Database } from '@/database/database'
-import { sessionTable } from '@/database/session/schema'
 import { type SESSION_SUBAGENT_STATES, sessionSubagent } from '@/database/session-subagent/schema'
 import { sessionSubagentSelectSchema } from '@/database/session-subagent/validation'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
@@ -72,14 +71,7 @@ export function saveSessionSubagentFacts(
       setWhere: sql`${sessionSubagent.state} is not excluded.state or coalesce(excluded.label, ${sessionSubagent.label}) is not ${sessionSubagent.label}`,
     })
     .run()
-  return (
-    Number(changes) +
-    classifySavedChildren(
-      database,
-      sessionId,
-      subagents.map(({ id }) => id),
-    )
-  )
+  return Number(changes)
 }
 
 export function saveDiscoveredSessionSubagents(
@@ -99,31 +91,6 @@ export function saveDiscoveredSessionSubagents(
       })),
     )
     .onConflictDoNothing()
-    .run()
-  return Number(changes) + classifySavedChildren(database, sessionId, childIds)
-}
-
-function classifySavedChildren(
-  database: Database,
-  sessionId: string,
-  childIds: readonly string[],
-): number {
-  const parent = database
-    .select({ harness: sessionTable.harness, nativeId: sessionTable.nativeId })
-    .from(sessionTable)
-    .where(eq(sessionTable.argoId, sessionId))
-    .get()
-  if (parent === undefined) return 0
-  const { changes } = database
-    .update(sessionTable)
-    .set({ parentNativeId: parent.nativeId })
-    .where(
-      and(
-        eq(sessionTable.harness, parent.harness),
-        inArray(sessionTable.nativeId, [...new Set(childIds)]),
-        or(isNull(sessionTable.parentNativeId), ne(sessionTable.parentNativeId, parent.nativeId)),
-      ),
-    )
     .run()
   return Number(changes)
 }

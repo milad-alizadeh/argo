@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { and, eq, inArray, isNull, ne, or } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
@@ -96,22 +96,6 @@ export function saveSessionBatch(
         const children = childrenByParent.get(parentNativeId) ?? []
         children.push(nativeId)
         childrenByParent.set(parentNativeId, children)
-        const changedChild = database
-          .update(sessionTable)
-          .set({ parentNativeId })
-          .where(
-            and(
-              eq(sessionTable.harness, harness),
-              eq(sessionTable.nativeId, nativeId),
-              or(
-                isNull(sessionTable.parentNativeId),
-                ne(sessionTable.parentNativeId, parentNativeId),
-              ),
-            ),
-          )
-          .returning({ argoId: sessionTable.argoId })
-          .get()
-        if (changedChild !== undefined) sessionIds.push(changedChild.argoId)
       }
       const parentRows = database
         .select({ argoId: sessionTable.argoId, nativeId: sessionTable.nativeId })

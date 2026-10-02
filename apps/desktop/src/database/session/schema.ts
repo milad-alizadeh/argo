@@ -12,8 +12,6 @@ export const sessionTable = sqliteTable(
     argoId: text('argo_id').primaryKey(),
     harness: text('harness').notNull(),
     nativeId: text('native_id').notNull(),
-    // A discovered child stays outside the Session List even if its parent has no saved row.
-    parentNativeId: text('parent_native_id'),
     projectId: text('project_id').references(() => project.id, { onDelete: 'set null' }),
     workspaceId: text('workspace_id').references(() => workspace.id, { onDelete: 'set null' }),
     customTitle: text('custom_title'),

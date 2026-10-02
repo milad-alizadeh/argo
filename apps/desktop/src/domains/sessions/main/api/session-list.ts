@@ -264,7 +264,7 @@ async function readSessionRow(
     .where(eq(sessionTicketLink.sessionId, sessionId))
     .get()
   const source = link === undefined ? null : await linkedTicketSource(context, link.projectId)
-  const where = and(eq(sessionTable.argoId, sessionId), isNull(sessionTable.parentNativeId))
+  const where = eq(sessionTable.argoId, sessionId)
   return (
     sessionListRows(context, storedSessionQuery(context.database, where, source).all())[0] ?? null
   )
@@ -282,7 +282,6 @@ async function readSessionList(
   } as const satisfies Record<typeof input.filter, SQL | undefined>
   const where = and(
     eq(sessionTable.projectId, input.projectId),
-    isNull(sessionTable.parentNativeId),
     filters[input.filter],
     input.ticketKey === undefined
       ? undefined
