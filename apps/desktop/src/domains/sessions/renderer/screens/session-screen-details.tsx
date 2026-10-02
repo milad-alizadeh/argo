@@ -30,6 +30,7 @@ import type { ComposerPlan, Session, SessionExtras } from '../types'
 import { draftTarget } from './session-draft-target'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
 import { useTellWorktreeGone } from './use-gone-worktree'
+import { useSessionControls } from './use-session-controls'
 import { useSessionDetails } from './use-session-details'
 
 type SessionScreenDetailsProps = {
@@ -290,19 +291,6 @@ function useComposerRetryFocus(
   return { focusComposerAfterRetry, clearRecoveryFocus, retryCatalog, retryDraft }
 }
 
-function useSessionInterrupt(selectedSessionId: string | null) {
-  const { mutateAsync: interrupt } = useMutation(trpc.sessionInterrupt.mutationOptions())
-  if (selectedSessionId === null) return undefined
-  return async () => {
-    try {
-      await interrupt({ sessionId: selectedSessionId })
-      return true
-    } catch {
-      return false
-    }
-  }
-}
-
 // The Session list already knows another process runs it live, so no Send is offered at all (ADR-0040).
 export function SessionComposerArea({
   permission,
@@ -340,13 +328,15 @@ export function SessionComposerArea({
   })
   const { focusComposerAfterRetry, clearRecoveryFocus, retryCatalog, retryDraft } =
     useComposerRetryFocus(catalogQuery, draft)
-  const onInterrupt = useSessionInterrupt(selectedSessionId)
+  const isRunning =
+    liveStatus === 'running' || liveStatus === 'permission' || liveStatus === 'asking'
+  const controls = useSessionControls({ sessionId: selectedSessionId, session, harness, isRunning })
   return (
     <SessionComposer
       {...{ permission, questionPending, session, harness, worktreeState, worktreeActions }}
       projectId={projectState.project?.id ?? null}
-      isRunning={liveStatus === 'running' || liveStatus === 'permission' || liveStatus === 'asking'}
-      onInterrupt={onInterrupt}
+      isRunning={isRunning}
+      controls={controls}
       catalogFailure={catalogFailure}
       choices={choices}
       composerKey={composerKey}
@@ -393,7 +383,7 @@ function SessionComposer({
   onRetryCatalog,
   onRetryDraft,
   isRunning,
-  onInterrupt,
+  controls,
   onStartingSession,
 }: Pick<
   SessionScreenDetailsProps,
@@ -418,9 +408,9 @@ function SessionComposer({
   onRetryCatalog: () => void
   onRetryDraft: () => void
   isRunning: boolean
-  onInterrupt?: () => Promise<boolean>
+  controls: ReturnType<typeof useSessionControls>
 }) {
-  const reportSendFailure = useComposerFailures({
+  const { reportSendFailure, reportCompactFailure } = useComposerFailures({
     catalogFailure,
     composerKey,
     draft,
@@ -470,9 +460,19 @@ function SessionComposer({
     liveSessionId: identity.kind === 'session' ? identity.sessionId : null,
     onSend,
     isRunning,
-    onInterrupt,
+    ...controls,
+    onCompact: reportingFailure(controls.onCompact, reportCompactFailure),
   }
   return <ComposerForm {...form} />
+}
+
+function reportingFailure(control: (() => Promise<boolean>) | undefined, report: () => void) {
+  if (control === undefined) return undefined
+  return async () => {
+    const done = await control()
+    if (!done) report()
+    return done
+  }
 }
 
 // Failures toast instead of drawing above the composer, so an error never moves the card (#2836).
@@ -500,8 +500,14 @@ function useComposerFailures(input: {
     failures.push({ scope: owner, title: t('composer.draftLoadFailed'), retry: input.onRetryDraft })
   if (input.draft?.saveFailed) failures.push({ scope: owner, title: t('composer.draftSaveFailed') })
   const report = useComposerFailureToasts(failures, [owner, catalog])
-  return (failure: DraftSubmitFailure) =>
-    report({ scope: owner, title: sendFailureMessage(t, input.harness?.harness ?? null, failure) })
+  return {
+    reportSendFailure: (failure: DraftSubmitFailure) =>
+      report({
+        scope: owner,
+        title: sendFailureMessage(t, input.harness?.harness ?? null, failure),
+      }),
+    reportCompactFailure: () => report({ scope: owner, title: t('composer.compactFailed') }),
+  }
 }
 
 function sendFailureMessage(

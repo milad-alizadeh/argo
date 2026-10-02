@@ -26,6 +26,7 @@ export type LiveChannelActorEvent =
 type ChannelCommand =
   | { type: 'Send'; command: Parameters<LiveSessionChannel['submit']>[0] }
   | { type: 'Interrupt'; reply: { resolve: () => void; reject: (error: Error) => void } }
+  | { type: 'Compact'; reply: { resolve: () => void; reject: (error: Error) => void } }
   | {
       type: 'Answer permission'
       requestId: string
@@ -113,6 +114,15 @@ function receiveChannelCommand(
     case 'Interrupt':
       void channel
         .interrupt()
+        .then(event.reply.resolve, (error) => event.reply.reject(errorOf(error)))
+      return
+    case 'Compact':
+      if (channel.compact === undefined) {
+        event.reply.reject(new Error('This Harness cannot compact a Session.'))
+        return
+      }
+      void channel
+        .compact()
         .then(event.reply.resolve, (error) => event.reply.reject(errorOf(error)))
       return
     case 'Answer permission':

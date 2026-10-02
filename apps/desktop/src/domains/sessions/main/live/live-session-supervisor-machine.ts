@@ -276,7 +276,7 @@ type LiveSessionSupervisorEvent =
       type: 'Shutdown'
     }
   | {
-      type: 'Interrupt'
+      type: 'Interrupt' | 'Compact'
       sessionId: string
       reply: {
         resolve: () => void
@@ -921,15 +921,15 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
           sessionId: event.input.sessionId,
         })
       },
-      forwardInterrupt: ({ context, event, self }) => {
-        if (event.type !== 'Interrupt') return
+      forwardControl: ({ context, event, self }) => {
+        if (event.type !== 'Interrupt' && event.type !== 'Compact') return
         const actor = sessionActor(self, context.sessions[event.sessionId])
         if (actor === undefined) {
           event.reply.reject(new Error('Session is not active.'))
           return
         }
         actor.send({
-          type: 'Interrupt',
+          type: event.type,
           reply: event.reply,
         })
       },
@@ -1000,7 +1000,10 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
         ],
       },
       Interrupt: {
-        actions: 'forwardInterrupt',
+        actions: 'forwardControl',
+      },
+      Compact: {
+        actions: 'forwardControl',
       },
       'Answer permission': {
         actions: 'forwardAnswer',

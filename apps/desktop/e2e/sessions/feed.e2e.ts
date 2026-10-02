@@ -13,7 +13,6 @@ import { assertShippedFusesIntact } from '../packaged-app'
 import { proveClaudeAcpHistory } from './cases/claude-acp-history.case'
 import { proveClaudeAcpControls, proveClaudeAcpDiscovery } from './cases/claude-acp-session.case'
 import { proveClaudeRename } from './cases/claude-rename.case'
-import { provePackagedCodexResume } from './cases/codex-resume.case'
 import { proveCodexThreadName } from './cases/codex-thread-name.case'
 import { proveComposerMemory } from './cases/composer-memory.case'
 import { proveSessionCreatedByClick } from './cases/create.case'
@@ -27,6 +26,7 @@ import { provePromptBeforeNaming } from './cases/pending-prompt.case'
 import { provePromptLatency } from './cases/prompt-latency.case'
 import { proveRefusedStart } from './cases/refused-start.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
+import { proveResumeAndCompact } from './cases/resume.case'
 import { proveContract } from './cases/session-list-contract.case'
 import { provePackagedSessionListSelection } from './cases/session-list-interaction.case'
 import { proveSelectionSurvivesRestart } from './cases/session-list-restart.case'
@@ -334,9 +334,10 @@ test.describe('with real Session transcript corpora', () => {
   })
 })
 
-test('session-codex-resume', async ({ session, backend }) => {
-  await provePackagedCodexResume(session.page(), { backend, restart: session.restart })
-})
+for (const harness of ['claude', 'codex'] as const)
+  test(`session-${harness}-resume`, async ({ session, backend }) => {
+    await proveResumeAndCompact(session.page(), { backend, harness, restart: session.restart })
+  })
 
 // The real backend links its Claude projects folder to the fixture's, so one read-back serves both.
 test('session-claude-rename', async ({ session, backend }) => {

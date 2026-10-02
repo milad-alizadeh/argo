@@ -467,3 +467,32 @@ test('draws no Feed content and counts nothing for recorded hook and lifecycle f
     warn.mockRestore()
   }
 })
+
+test('compacts as a /compact Turn that draws no prompt and settles when its result lands', async () => {
+  vendor.prompts = []
+  vendor.recordedEvents = []
+  vendor.releaseSecond = null
+  const events: unknown[] = []
+  const channel = claudeSessionChannelOpener(null)(first, undefined, (event) => events.push(event))
+  await until(() => events.some((event) => (event as { type: string }).type === 'turn.completed'))
+  const compacted = channel.compact?.()
+  expect(compacted).toBeDefined()
+  let settled = false
+  void compacted?.then(() => {
+    settled = true
+  })
+  await until(() => vendor.releaseSecond !== null)
+  expect(vendor.prompts.at(-1)).toMatchObject({ message: { role: 'user', content: '/compact' } })
+  expect(settled).toBe(false)
+  const releaseCompaction = vendor.releaseSecond as (() => void) | null
+  releaseCompaction?.()
+  await compacted
+  const parsed = events.map((event) => liveSessionChannelEventSchema.parse(event))
+  const prompts = parsed.flatMap((event) =>
+    event.type === 'feed' && event.body.type === 'content' && event.body.content.kind === 'message'
+      ? [event.body.content.text]
+      : [],
+  )
+  expect(prompts).not.toContain('/compact')
+  channel.close()
+})

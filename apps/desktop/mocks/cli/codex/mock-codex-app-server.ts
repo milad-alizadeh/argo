@@ -90,7 +90,12 @@ function compactThread(message: Request) {
   const threadId = message.params?.threadId
   send({ id: message.id, result: {} })
   compactionItem({ method: 'item/started', send, threadCounter, threadId })
-  setTimeout(() => compactionItem({ method: 'item/completed', send, threadCounter, threadId }), 10)
+  // The app-server ends a compaction's Turn like any other (codex-rs app-server compaction suite).
+  setTimeout(() => {
+    compactionItem({ method: 'item/completed', send, threadCounter, threadId })
+    const turnId = `mock-compact-turn-${threadCounter}`
+    completeTurn({ outcome: 'reply', send, threadId, turnId })
+  }, 10)
 }
 const lines = createInterface({ input: process.stdin })
 lines.on('line', (line) => {

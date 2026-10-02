@@ -35,7 +35,14 @@ import {
   readCodexInteraction,
 } from './codex-session-interactions'
 import { dispatchCodexNotification } from './codex-session-notifications'
-import { APPROVAL_TIMEOUT_MS, inputItems } from './codex-session-protocol'
+import {
+  APPROVAL_TIMEOUT_MS,
+  abandonCompactions,
+  type CodexActiveTurn,
+  type CodexCompaction,
+  type CodexQueuedWork,
+  inputItems,
+} from './codex-session-protocol'
 import { followCodexSkillCommands } from './codex-skill-commands'
 import { readCodexNickname } from './codex-subagent-nicknames'
 import { readCodexThreadStatus } from './codex-thread-status'
@@ -48,6 +55,7 @@ export type CodexLiveClient = {
 
 type Turn = ThreadReadResponse['thread']['turns'][number]
 type SubagentItem = Extract<ThreadItem, { type: 'subAgentActivity' }>
+type LiveStatus = Extract<SessionLiveEventBody, { type: 'status' }>['status']
 type TurnNotice = { threadId: string; turn: Pick<Turn, 'id' | 'status'> }
 
 class CodexSessionChannel implements LiveSessionChannel {
@@ -55,7 +63,7 @@ class CodexSessionChannel implements LiveSessionChannel {
   private readonly controls: LiveSessionControls | undefined
   private readonly emit: (event: LiveSessionChannelEvent) => void
   private readonly unsubscribe: () => void
-  private readonly queue: LiveSessionCommand[] = []
+  private readonly queue: CodexQueuedWork[] = []
   private readonly seen = new Set<string>()
   private readonly textByItem = new Map<string, string>()
   private readonly reasoningByItem = new Map<string, string[]>()
@@ -71,7 +79,7 @@ class CodexSessionChannel implements LiveSessionChannel {
   private readonly standingAllow = new Set<string>()
   private interactionAbort = new AbortController()
   private nativeId: string | null = null
-  private active: { commandId: string; turnId: string | null; started: boolean } | null = null
+  private active: CodexActiveTurn | null = null
   private opening = true
   private closed = false
   private rejected = 0
@@ -139,6 +147,7 @@ class CodexSessionChannel implements LiveSessionChannel {
     const command = this.queue.shift()
     if (command === undefined || this.nativeId === null || this.closed) return
     this.interactionAbort = new AbortController()
+    if ('compaction' in command) return this.startCompaction(this.nativeId, command)
     this.active = { commandId: command.commandId, turnId: null, started: false }
     try {
       const turnId = await this.client.request(
@@ -157,6 +166,19 @@ class CodexSessionChannel implements LiveSessionChannel {
       this.startTurn(turnId)
     } catch (error) {
       if (this.active?.commandId === command.commandId && !this.active.started) this.fail(error)
+    }
+  }
+
+  // The app-server answers at once; the compaction then streams as a Turn on the same thread.
+  private async startCompaction(threadId: string, { commandId, compaction }: CodexCompaction) {
+    this.active = { commandId, turnId: null, started: false, compaction }
+    try {
+      await this.client.request('thread/compact/start', { threadId }, () => undefined)
+    } catch (error) {
+      if (this.active?.commandId !== commandId || this.active.started) return
+      this.active = null
+      compaction.reject(error instanceof Error ? error : new Error(String(error)))
+      void this.nextTurn()
     }
   }
 
@@ -181,13 +203,7 @@ class CodexSessionChannel implements LiveSessionChannel {
     const reading = readCodexThreadStatus(params)
     if (reading === null) return this.reject('thread/status/changed')
     if (reading.threadId !== this.nativeId || reading.status === null) return
-    this.emitFeed({
-      type: 'status',
-      status: reading.status,
-      commandId: this.active?.commandId ?? null,
-      turnId: this.active?.turnId ?? null,
-      vendorEventId: null,
-    })
+    this.emitStatus(reading.status, this.active?.turnId ?? null)
   }
 
   private startTurn(turnId: string) {
@@ -195,27 +211,45 @@ class CodexSessionChannel implements LiveSessionChannel {
     this.active.turnId = turnId
     this.active.started = true
     this.emit({ type: 'turn.started', commandId: this.active.commandId })
+    this.emitStatus('running', turnId)
+  }
+
+  private emitPermission(pending: CodexApproval, decision: PermissionDecision | null) {
+    const { turnId, itemId: vendorEventId, publicRequestId: requestId, description } = pending
+    const commandId = this.active?.commandId ?? null
     this.emitFeed({
-      type: 'status',
-      status: 'running',
-      commandId: this.active.commandId,
+      type: 'permission',
+      commandId,
       turnId,
-      // A Turn boundary keys no row, so the closing status adds a row instead of replacing this one.
-      vendorEventId: null,
+      vendorEventId,
+      requestId,
+      description,
+      decision,
     })
   }
 
-  private emitInteractionStatus(
-    status: 'running' | 'permission' | 'asking',
-    interaction: CodexInteraction,
-  ) {
+  private emitQuestion(pending: CodexQuestion, answer: string | null) {
+    const { turnId, itemId, questions } = pending
+    const commandId = this.active?.commandId ?? null
     this.emitFeed({
-      type: 'status',
-      status,
-      commandId: this.active?.commandId ?? null,
-      turnId: interaction.turnId,
-      vendorEventId: interaction.itemId,
+      type: 'question',
+      commandId,
+      turnId,
+      vendorEventId: itemId,
+      requestId: itemId,
+      questions,
+      answer,
     })
+  }
+
+  // A Turn boundary keys no row, so its closing status adds a row instead of replacing the opening one.
+  private emitStatus(
+    status: LiveStatus,
+    turnId: string | null,
+    vendorEventId: string | null = null,
+  ) {
+    const commandId = this.active?.commandId ?? null
+    this.emitFeed({ type: 'status', status, commandId, turnId, vendorEventId })
   }
 
   private clearApproval(requestId: string) {
@@ -236,15 +270,7 @@ class CodexSessionChannel implements LiveSessionChannel {
       this.fail(error)
       return
     }
-    this.emitFeed({
-      type: 'permission',
-      commandId: this.active?.commandId ?? null,
-      turnId: pending.turnId,
-      vendorEventId: pending.itemId,
-      requestId,
-      description: pending.description,
-      decision: 'deny',
-    })
+    this.emitPermission(pending, 'deny')
     this.emitFeed({
       type: 'failure',
       commandId: this.active?.commandId ?? null,
@@ -252,7 +278,7 @@ class CodexSessionChannel implements LiveSessionChannel {
       vendorEventId: pending.itemId,
       detail: 'Codex permission expired without an answer.',
     })
-    this.emitInteractionStatus('running', pending)
+    this.emitStatus('running', pending.turnId, pending.itemId)
   }
 
   private reject(method: string) {
@@ -264,15 +290,7 @@ class CodexSessionChannel implements LiveSessionChannel {
     const requestId = interaction.publicRequestId
     if (this.standingAllow.has(interaction.similarityKey)) {
       this.client.respond(interaction.requestId, { decision: 'accept' })
-      this.emitFeed({
-        type: 'permission',
-        commandId: this.active?.commandId ?? null,
-        turnId: interaction.turnId,
-        vendorEventId: interaction.itemId,
-        requestId,
-        description: interaction.description,
-        decision: 'allowForSession',
-      })
+      this.emitPermission(interaction, 'allowForSession')
       return true
     }
     this.pending.set(requestId, interaction)
@@ -288,16 +306,8 @@ class CodexSessionChannel implements LiveSessionChannel {
     const timer = setTimeout(() => this.expireApproval(requestId), APPROVAL_TIMEOUT_MS)
     timer.unref()
     this.approvalTimers.set(requestId, timer)
-    this.emitFeed({
-      type: 'permission',
-      commandId: this.active?.commandId ?? null,
-      turnId: interaction.turnId,
-      vendorEventId: interaction.itemId,
-      requestId,
-      description: interaction.description,
-      decision: null,
-    })
-    this.emitInteractionStatus('permission', interaction)
+    this.emitPermission(interaction, null)
+    this.emitStatus('permission', interaction.turnId, interaction.itemId)
     return true
   }
 
@@ -313,16 +323,8 @@ class CodexSessionChannel implements LiveSessionChannel {
           signal: this.interactionAbort.signal,
         })
         .catch(() => undefined)
-    this.emitFeed({
-      type: 'question',
-      commandId: this.active?.commandId ?? null,
-      turnId: interaction.turnId,
-      vendorEventId: interaction.itemId,
-      requestId,
-      questions: interaction.questions,
-      answer: null,
-    })
-    this.emitInteractionStatus('asking', interaction)
+    this.emitQuestion(interaction, null)
+    this.emitStatus('asking', interaction.turnId, interaction.itemId)
     return true
   }
 
@@ -396,15 +398,11 @@ class CodexSessionChannel implements LiveSessionChannel {
       default:
         return this.reject('turn/completed')
     }
-    const { commandId, turnId } = this.active
-    this.emitFeed({
-      type: 'status',
-      status,
-      commandId,
-      turnId,
-      vendorEventId: null,
-    })
+    const { commandId, turnId, compaction } = this.active
+    this.emitStatus(status, turnId)
     this.emit({ type: 'turn.completed', commandId })
+    if (status === 'idle') compaction?.resolve()
+    else compaction?.reject(new Error(`Codex compaction ended ${notice.turn.status}.`))
     for (const requestId of this.pending.keys()) this.clearApproval(requestId)
     this.interactionAbort.abort()
     this.textByItem.clear()
@@ -503,6 +501,9 @@ class CodexSessionChannel implements LiveSessionChannel {
         turnId: string
         item: ThreadItem
       }
+      // A compaction's Turn may name itself first in its items, not in a `turn/started`.
+      if (threadId === this.nativeId && this.active?.compaction && this.active.turnId === null)
+        this.startTurn(turnId)
       if (threadId !== this.nativeId || this.active?.turnId !== turnId) return
       if (item.type === 'commandExecution') return this.commandItem(item, turnId)
       if (item.type === 'subAgentActivity') return this.subagentItem(item, turnId)
@@ -570,6 +571,14 @@ class CodexSessionChannel implements LiveSessionChannel {
     )
   }
 
+  compact(): Promise<void> {
+    if (this.closed) return Promise.reject(new Error('Codex Session channel is closed.'))
+    return new Promise<void>((resolve, reject) => {
+      this.queue.push({ commandId: crypto.randomUUID(), compaction: { resolve, reject } })
+      if (!this.opening && this.active === null) void this.nextTurn()
+    })
+  }
+
   async answerPermission(requestId: string, decision: PermissionDecision): Promise<boolean> {
     const pending = this.pending.get(requestId)
     if (pending?.kind !== 'permission') return false
@@ -577,17 +586,9 @@ class CodexSessionChannel implements LiveSessionChannel {
     this.controls?.decidePermission(this.nativeId ?? '', requestId, decision)
     if (decision === 'allowForSession') this.standingAllow.add(pending.similarityKey)
     this.clearApproval(requestId)
-    this.emitFeed({
-      type: 'permission',
-      commandId: this.active?.commandId ?? null,
-      turnId: pending.turnId,
-      vendorEventId: pending.itemId,
-      requestId,
-      description: pending.description,
-      decision,
-    })
+    this.emitPermission(pending, decision)
     if (decision === 'cancel') await this.interrupt()
-    else this.emitInteractionStatus('running', pending)
+    else this.emitStatus('running', pending.turnId, pending.itemId)
     return true
   }
 
@@ -599,18 +600,13 @@ class CodexSessionChannel implements LiveSessionChannel {
     this.client.respond(pending.requestId, response)
     this.controls?.decideQuestion(this.nativeId ?? '', requestId, answers)
     this.pending.delete(requestId)
-    this.emitFeed({
-      type: 'question',
-      commandId: this.active?.commandId ?? null,
-      turnId: pending.turnId,
-      vendorEventId: pending.itemId,
-      requestId,
-      questions: pending.questions,
-      answer: Object.values(response.answers)
+    this.emitQuestion(
+      pending,
+      Object.values(response.answers)
         .flatMap(({ answers: values }) => values)
         .join(', '),
-    })
-    this.emitInteractionStatus('running', pending)
+    )
+    this.emitStatus('running', pending.turnId, pending.itemId)
     return true
   }
 
@@ -624,6 +620,7 @@ class CodexSessionChannel implements LiveSessionChannel {
     for (const timer of this.approvalTimers.values()) clearTimeout(timer)
     this.approvalTimers.clear()
     this.standingAllow.clear()
+    abandonCompactions(this.active, this.queue)
     this.unsubscribe()
     this.emit({ type: 'closed' })
   }

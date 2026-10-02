@@ -61,7 +61,7 @@ export const liveSessionMachine = xstateSetup({
           type: 'Close'
         }
       | {
-          type: 'Interrupt'
+          type: 'Interrupt' | 'Compact'
           reply: {
             resolve: () => void
             reject: (error: Error) => void
@@ -198,6 +198,13 @@ export const liveSessionMachine = xstateSetup({
       if (event.type !== 'Interrupt') throw new Error('Expected a Session interrupt.')
       return {
         type: 'Interrupt',
+        reply: event.reply,
+      }
+    }),
+    compact: sendTo('harness', ({ event }) => {
+      if (event.type !== 'Compact') throw new Error('Expected a Session compaction.')
+      return {
+        type: 'Compact',
         reply: event.reply,
       }
     }),
@@ -407,6 +414,9 @@ export const liveSessionMachine = xstateSetup({
     },
     Interrupt: {
       actions: 'interrupt',
+    },
+    Compact: {
+      actions: 'compact',
     },
     'Answer permission': {
       actions: 'answerPermission',
