@@ -1,6 +1,5 @@
-export { readWorktreeBranch } from './worktree-branch'
 export { createWorktree } from './worktree-create'
-export { folderPresent, runGit } from './worktree-folder'
+export { folderPresent } from './worktree-folder'
 export {
   mainCheckout,
   projectFolders,
