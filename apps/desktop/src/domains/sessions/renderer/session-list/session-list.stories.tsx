@@ -1191,3 +1191,20 @@ export const SearchWaitsForTypingToSettle: Story = {
     await expect(host.reads.map((read) => read.search)).toEqual(['', '', 'second'])
   },
 }
+
+// A Session with no title shows the same placeholder for each Harness, never its ID (#3167).
+const untitled = (['claude', 'codex'] as const).map((harness) =>
+  sessionRow({ id: `untitled-${harness}`, harness, posture: null, name: null }),
+)
+
+export const UntitledSessions: Story = {
+  beforeEach: () => showing([session, ...untitled]),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const rows = await canvas.findAllByRole('button', { name: /Untitled Session/ })
+    await expect(rows.map((row) => row.getAttribute('data-session-id'))).toEqual(
+      untitled.map(({ id }) => id),
+    )
+    for (const row of rows) await expect(row).not.toHaveTextContent(/untitled-/)
+  },
+}

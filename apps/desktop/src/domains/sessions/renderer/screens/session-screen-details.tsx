@@ -25,6 +25,7 @@ import {
 } from '../composer'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { type HarnessControl, useAvailableHarnesses } from '../harness'
+import { SessionTitle } from '../prompt'
 import type { ComposerPlan, Session, SessionExtras } from '../types'
 import { draftTarget } from './session-draft-target'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
@@ -524,7 +525,7 @@ function HandoffLink({
         onClick={() => onNavigate(`/projects/${projectId}/sessions/${sessionId}`)}
         type="button"
       >
-        {session === null ? sessionId : session.name}
+        {session === null ? sessionId : <SessionTitle session={session} />}
       </button>
     </p>
   )

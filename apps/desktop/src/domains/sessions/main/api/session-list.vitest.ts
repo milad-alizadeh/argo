@@ -322,7 +322,7 @@ test('names a Session saved with an empty preview by its first prompt (#3077)', 
   }
 })
 
-test('names a Session by its title, else its ID', async () => {
+test('names a Session by its title, else by nothing, never its ID (#3167)', async () => {
   const { database, list } = sessionListCaller()
   try {
     insertSession(database, {
@@ -337,7 +337,7 @@ test('names a Session by its title, else its ID', async () => {
 
     assert.deepEqual(
       result.rows.map(({ name }) => name),
-      ['Prompt', IDS[1]],
+      ['Prompt', null],
     )
   } finally {
     database.$client.close()

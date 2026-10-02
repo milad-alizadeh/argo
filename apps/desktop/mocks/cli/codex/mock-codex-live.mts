@@ -27,7 +27,9 @@ type Thread = {
   cwd: string
   updatedAt: number
   parentThreadId: string | null
-  name?: string
+  // Codex always sends both: a null name until one is set, and a preview of '' until a prompt.
+  name: string | null
+  preview: string
   path?: string
   turns: Turn[]
 }
@@ -269,6 +271,7 @@ function startTurn(id: Request['id'], params: Record<string, unknown>, thread: T
   }
   const turn: Turn = { id: turnId, status: 'inProgress', items: [user] }
   thread.turns.push(turn)
+  if (thread.preview === '') thread.preview = prompt
   thread.updatedAt = Math.floor(Date.now() / 1000)
   save(thread)
   send({ id, result: { turn: { id: turnId } } })
@@ -304,6 +307,8 @@ function handle(message: Request) {
       cwd: String(params.cwd),
       updatedAt: Math.floor(Date.now() / 1000),
       parentThreadId: null,
+      name: null,
+      preview: '',
       turns: [],
     }
     threads.push(thread)

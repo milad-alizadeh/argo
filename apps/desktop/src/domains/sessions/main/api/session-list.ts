@@ -71,7 +71,7 @@ export const sessionListRowSchema = z.strictObject({
   worktree: sessionWorktreeSchema.nullable(),
   id: z.string().uuid(),
   posture: z.literal('live').nullable(),
-  name: z.string(),
+  name: z.string().nullable(),
   status: sessionSelectSchema.shape.status,
   updatedAt: z.iso.datetime(),
   activity: liveActivitySchema.nullable(),
@@ -183,8 +183,10 @@ function linkedTicket({ projectId, key, createdAt, ...content }: StoredSessionRo
     : { projectId, key, createdAt, ...content }
 }
 
-// The name a row shows, strongest first, down to the Session ID; an empty preview names nothing.
-const shownName = sql<string>`coalesce(${sessionTable.customTitle}, ${ticketContent.title}, nullif(${sessionTable.preview}, ''), ${sessionTable.firstPrompt}, ${sessionTable.argoId})`
+// The name a row shows, strongest first; null when nothing names it. An empty preview names nothing.
+const shownName = sql<
+  string | null
+>`coalesce(${sessionTable.customTitle}, ${ticketContent.title}, nullif(${sessionTable.preview}, ''), ${sessionTable.firstPrompt})`
 
 const storedSessionColumns = {
   passed: passedSessionColumns,

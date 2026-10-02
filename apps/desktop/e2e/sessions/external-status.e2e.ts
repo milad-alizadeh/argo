@@ -34,8 +34,13 @@ const UNTITLED_PROMPT = 'Started in a terminal and never named'
 const EARLIER = Date.parse('2026-09-01T09:00:00.000Z')
 const LATER = Date.parse('2026-09-02T09:00:00.000Z')
 
-// A Session with a null title has only its first prompt to show.
-type ExternalSession = { nativeId: string; title: string | null; activityAt: number }
+// A Session with a null title has only its first prompt to show, and with neither, nothing.
+type ExternalSession = {
+  nativeId: string
+  title: string | null
+  prompt?: string
+  activityAt: number
+}
 // What the stubbed CLI or app-server reports about a Session another process runs.
 type StatusSource = {
   harness: 'claude' | 'codex'
@@ -87,8 +92,8 @@ function claudeSource(): StatusSource {
       cwd = project
       const records = sessions.map((session) => ({
         sessionId: session.nativeId,
-        summary: session.title ?? UNTITLED_PROMPT,
-        firstPrompt: session.title ?? UNTITLED_PROMPT,
+        summary: session.title ?? '',
+        firstPrompt: session.prompt,
         lastModified: session.activityAt,
         cwd: project,
       }))
@@ -151,7 +156,7 @@ function codexSource(): StatusSource {
         name: session.title,
         preview: '',
         path: codexRollout(root, session),
-        turns: session.title === null ? [codexTurn(UNTITLED_PROMPT, 'completed')] : [],
+        turns: session.prompt === undefined ? [] : [codexTurn(session.prompt, 'completed')],
       }))
       await writeFile(codexState(root), JSON.stringify(threads))
       return { CODEX_HOME: codexHome(root) }
@@ -274,31 +279,50 @@ for (const createSource of [claudeSource, codexSource]) {
   })
 }
 
-// Claude and Codex rows draw the same title for a Session nobody named (#3077, #3148).
+// Claude and Codex rows draw the same title for a Session nobody named, and never its ID (#3167).
+const UNTITLED_CASES = [
+  {
+    title: 'shows its first prompt',
+    prompt: UNTITLED_PROMPT,
+    name: UNTITLED_PROMPT,
+    shown: UNTITLED_PROMPT,
+  },
+  {
+    title: 'and no prompt shows Untitled Session',
+    prompt: undefined,
+    name: null,
+    shown: 'Untitled Session',
+  },
+] as const
 for (const createSource of [claudeSource, codexSource]) {
-  test(`a ${createSource().harness} Session started elsewhere with no title shows its first prompt`, async ({
-    root,
-    applicationUnderTest,
-  }) => {
-    const titled = createSource()
-    const untitled = {
-      nativeId: '00000000-0000-4000-8000-00000000e003',
-      title: null,
-      activityAt: LATER,
-    }
-    const source: StatusSource = {
-      ...titled,
-      seed: (root, project) => titled.seed(root, project, [untitled]),
-    }
-    const { application, page } = await launch(root, applicationUnderTest, source)
-    try {
-      await expect
-        .poll(async () => (await sessionRows(page)).map(({ name }) => name), { timeout: 30_000 })
-        .toContain(UNTITLED_PROMPT)
-      await expect(rowTitled(page, UNTITLED_PROMPT)).toHaveCount(1)
-    } finally {
-      await closeApplication(application)
-      await source.stop()
-    }
-  })
+  for (const { title, prompt, name, shown } of UNTITLED_CASES) {
+    test(`a ${createSource().harness} Session started elsewhere with no title ${title}`, async ({
+      root,
+      applicationUnderTest,
+    }) => {
+      const titled = createSource()
+      const untitled = {
+        nativeId: '00000000-0000-4000-8000-00000000e003',
+        title: null,
+        prompt,
+        activityAt: LATER,
+      }
+      const source: StatusSource = {
+        ...titled,
+        seed: (root, project) => titled.seed(root, project, [untitled]),
+      }
+      const { application, page } = await launch(root, applicationUnderTest, source)
+      try {
+        await expect
+          .poll(async () => (await sessionRows(page)).map((row) => row.name), { timeout: 30_000 })
+          .toEqual([name])
+        await expect(rowTitled(page, shown)).toHaveCount(1)
+        const shownId = page.locator(PERSISTED_ROW).filter({ hasText: /[0-9a-f]{8}-[0-9a-f]{4}-/ })
+        await expect(shownId).toHaveCount(0)
+      } finally {
+        await closeApplication(application)
+        await source.stop()
+      }
+    })
+  }
 }
