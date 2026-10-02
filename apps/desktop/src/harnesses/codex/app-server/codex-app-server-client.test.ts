@@ -5,11 +5,11 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { MOCK_CODEX_VERSION } from '@/mocks/cli/codex/mock-codex-cli'
 import { recordedCodexModels } from '@/mocks/recordings/codex-app-server'
+import { SESSION_CODEX_EXECUTABLE_ENV } from '../proof-protocol'
 import {
   type CodexChannel,
   CodexUnavailableError,
   createCodexAppServerClient,
-  resolveCodexExecutable,
   type WireMessage,
 } from './codex-app-server-client'
 
@@ -80,9 +80,9 @@ createInterface({ input: process.stdin }).on('line', (line) => {
   }
   await writeVersion(MOCK_CODEX_VERSION)
   const lineCount = async (file: string) => (await readFile(file, 'utf8')).trim().split('\n').length
-  const client = createCodexAppServerClient({
-    resolveExecutable: (signal) => resolveCodexExecutable(signal, executable),
-  })
+  const previous = process.env[SESSION_CODEX_EXECUTABLE_ENV]
+  process.env[SESSION_CODEX_EXECUTABLE_ENV] = executable
+  const client = createCodexAppServerClient()
   return {
     client,
     writeVersion,
@@ -90,6 +90,8 @@ createInterface({ input: process.stdin }).on('line', (line) => {
     serverStarts: () => lineCount(starts),
     dispose: async () => {
       client.shutdown()
+      if (previous === undefined) delete process.env[SESSION_CODEX_EXECUTABLE_ENV]
+      else process.env[SESSION_CODEX_EXECUTABLE_ENV] = previous
       await rm(directory, { recursive: true, force: true })
     },
   }

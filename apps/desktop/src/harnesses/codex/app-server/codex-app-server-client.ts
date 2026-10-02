@@ -412,10 +412,9 @@ function openProcess(executable: string): CodexChannel {
   })
 }
 
-export async function resolveCodexExecutable(
-  signal: AbortSignal,
-  executable = process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('codex'),
-): Promise<CodexExecutable | null> {
+async function resolveCodexExecutable(signal: AbortSignal): Promise<CodexExecutable | null> {
+  const executable =
+    process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('codex')
   // An empty override pins a machine with no Codex, as the sign-in override does.
   if (!executable) return null
   const file = await fileFingerprint(executable)
