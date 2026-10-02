@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test'
+import { expect, spyOn, test } from 'bun:test'
 import { recordedThread, recordedThreadRequest } from '@/mocks/cli/codex/recorded-codex-threads'
 import {
   recordedCodexExternalThreads as externalThreads,
@@ -316,8 +316,36 @@ test('reads the first prompt of a recorded thread with no name and no preview', 
   expect(listed.records).toEqual([expect.objectContaining({ firstPrompt: RECORDED_PROMPT })])
 })
 
-test('takes no envelope as the first prompt of a thread with no name and no preview', async () => {
-  const thread = unnamedThread(RECORDED_ENVELOPE)
+test('skips an envelope Turn and takes the real prompt after it as the first prompt', async () => {
+  const envelope = recordedThread(RECORDED_ENVELOPE)
+  const prompted = recordedThread(RECORDED_PROMPT)
+  const thread = {
+    ...unnamedThread(RECORDED_PROMPT),
+    turns: [...envelope.turns, ...prompted.turns],
+  }
   const summary = await createCodexSessionSummaryReader(recordedThreadRequest(thread))(thread.id)
-  expect(summary).not.toHaveProperty('firstPrompt')
+  expect(summary).toMatchObject({ firstPrompt: RECORDED_PROMPT })
+})
+
+test('lists a thread whose first prompt cannot be read, and the rest of the scan', async () => {
+  const unnamed = unnamedThread(RECORDED_PROMPT)
+  const warn = spyOn(console, 'warn').mockImplementation(() => {})
+  try {
+    const result = await createCodexSessionSummaryList((async (method, _params, parse) => {
+      if (method === 'thread/list')
+        return parse({
+          data: [
+            { ...unnamed, turns: [] },
+            { id: KNOWN_ID, updatedAt: 1, parentThreadId: null, name: 'Named', preview: '' },
+          ],
+          nextCursor: null,
+        })
+      throw new Error('app-server timed out')
+    }) as CodexRequest)({ knownNativeIds: [] })
+    expect(result.records.map(({ nativeId }) => nativeId)).toEqual([unnamed.id, KNOWN_ID])
+    expect(result.records[0]).not.toHaveProperty('firstPrompt')
+    expect(warn).toHaveBeenCalledTimes(1)
+  } finally {
+    warn.mockRestore()
+  }
 })

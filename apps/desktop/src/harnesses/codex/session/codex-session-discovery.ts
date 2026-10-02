@@ -57,25 +57,33 @@ function rootParentOf(
   return parentNativeId ?? null
 }
 
-// The first prompt a person wrote, read from the thread's Turns; envelopes are no prompt.
+// The first prompt a person wrote, read from the thread's Turns; envelopes are no prompt. A failed
+// read leaves the row to its weaker title rather than failing the scan.
 async function readFirstPrompt(request: CodexRequest, nativeId: string): Promise<string | null> {
   const pages = codexTurnPages(request, {
     threadId: nativeId,
     itemsView: 'summary',
     sortDirection: 'asc',
   })
+  let rejected = 0
+  let prompt: string | null = null
   try {
-    // The Feed reports the shapes it cannot draw when it reads them.
-    for await (const turns of pages)
-      for (const turn of turns)
-        for (const content of codexTurnContent(turn, () => {}))
-          if (content.kind === 'message' && content.role === 'user' && content.text !== '')
-            return content.text
+    for await (const turns of pages) {
+      const content = turns.flatMap((turn) => codexTurnContent(turn, () => (rejected += 1)))
+      const found = content.find(
+        (entry) => entry.kind === 'message' && entry.role === 'user' && entry.text !== '',
+      )
+      if (found?.kind === 'message') {
+        prompt = found.text
+        break
+      }
+    }
   } catch (error) {
-    if (isThreadNotLoaded(error)) return null
-    throw error
+    if (!isThreadNotLoaded(error))
+      console.warn(`Could not read the first Codex prompt for ${nativeId}:`, error)
   }
-  return null
+  if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Codex prompt shape(s).`)
+  return prompt
 }
 
 async function parseThread(request: CodexRequest, raw: unknown): Promise<ParsedThread> {
