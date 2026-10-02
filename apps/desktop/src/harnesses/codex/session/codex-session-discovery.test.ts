@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import { recordedThread, recordedThreadRequest } from '@/mocks/cli/codex/recorded-codex-threads'
 import {
   recordedCodexExternalThreads as externalThreads,
   recordedCodexSubagents,
@@ -19,6 +20,9 @@ import {
 const FIRST_ID = 'thread-first'
 const KNOWN_ID = 'thread-known'
 const SAVED_ID = 'thread-previously-saved'
+const RECORDED_PROMPT = 'Run Codex check'
+const RECORDED_ENVELOPE =
+  '<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>'
 type RecordedThread = Pick<Thread, 'id' | 'updatedAt' | 'name'> &
   Partial<Pick<Thread, 'parentThreadId' | 'preview' | 'cwd'>>
 const recorded: {
@@ -281,4 +285,39 @@ test('gets null for a locked thread Codex has not stored yet, so discovery asks 
     throw new Error(externalThreads.readNotLoaded.message)
   }) as CodexRequest)
   expect(await getSummary('01a0f5af-03d4-7891-87e5-bbbfd9058beb')).toBeNull()
+})
+
+test('leaves out an empty preview, so the first prompt can name the row (#3077)', async () => {
+  const result = await createCodexSessionSummaryList((async (_method, _params, parse) =>
+    parse({
+      data: [{ id: FIRST_ID, updatedAt: 1, parentThreadId: null, name: 'Named', preview: '' }],
+      nextCursor: null,
+    })) as CodexRequest)({ knownNativeIds: [] })
+  expect(result.records).toEqual([{ nativeId: FIRST_ID, activityAt: 1000, customTitle: 'Named' }])
+})
+
+// The recorded thread, as Codex lists a thread it has neither named nor previewed.
+function unnamedThread(preview: string) {
+  return { ...recordedThread(preview), name: null, preview: '' }
+}
+
+test('reads the first prompt of a recorded thread with no name and no preview', async () => {
+  const thread = unnamedThread(RECORDED_PROMPT)
+  const getSummary = createCodexSessionSummaryReader(recordedThreadRequest(thread))
+  expect(await getSummary(thread.id)).toMatchObject({ firstPrompt: RECORDED_PROMPT })
+  expect(await getSummary(thread.id)).not.toHaveProperty('preview')
+
+  const listed = await createCodexSessionSummaryList((async (method, params, parse) =>
+    method === 'thread/list'
+      ? parse({ data: [{ ...thread, turns: [] }], nextCursor: null })
+      : recordedThreadRequest(thread)(method, params, parse)) as CodexRequest)({
+    knownNativeIds: [],
+  })
+  expect(listed.records).toEqual([expect.objectContaining({ firstPrompt: RECORDED_PROMPT })])
+})
+
+test('takes no envelope as the first prompt of a thread with no name and no preview', async () => {
+  const thread = unnamedThread(RECORDED_ENVELOPE)
+  const summary = await createCodexSessionSummaryReader(recordedThreadRequest(thread))(thread.id)
+  expect(summary).not.toHaveProperty('firstPrompt')
 })
