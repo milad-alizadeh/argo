@@ -1,5 +1,30 @@
 import { expect } from '@playwright/test'
-import { chooseHarness, openNewSessionByClick, TURN_CONFIGURATION } from '../gestures'
+import { fixtureSession } from '../fixture-sessions'
+import {
+  chooseHarness,
+  openNewSessionByClick,
+  openSessionByClick,
+  TURN_CONFIGURATION,
+} from '../gestures'
+
+// A draft and the Harness a new Session was set to outlive a reload of the window (#3153).
+export async function proveComposerMemory(page) {
+  const message = page.getByRole('combobox', { name: 'Message' })
+  const setupAnswered = await fixtureSession('setupAnswered')
+  await openSessionByClick(page, setupAnswered)
+  await message.click()
+  await page.keyboard.type('Half a thought.')
+  await openNewSessionByClick(page)
+  await chooseHarness(page, 'codex')
+
+  await page.reload()
+  await expect(page.locator(TURN_CONFIGURATION)).toHaveAttribute(
+    'aria-label',
+    /^Choose Turn configuration: Codex, /,
+  )
+  await openSessionByClick(page, setupAnswered)
+  await expect(message).toHaveText('Half a thought.')
+}
 
 export async function proveLiveCodexModelChoices(page) {
   await openNewSessionByClick(page)

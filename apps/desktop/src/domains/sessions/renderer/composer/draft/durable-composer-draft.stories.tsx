@@ -1087,6 +1087,27 @@ export const HarnessSwitchSendsAConfigurationTheNewHarnessOffers: Story = {
   },
 }
 
+// A reload right after a choice sends the pending save before the page goes (#3153).
+export const PageHideSendsAPendingSave: Story = {
+  args: { project: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent('Plan this change.')
+    const send = window.argo.trpc
+    const saves: MockInput[] = []
+    window.argo.trpc = (request) => {
+      if (request.path === 'composerDraftSave') saves.push(request.input as MockInput)
+      return send(request)
+    }
+    await userEvent.click(canvas.getByRole('button', { name: 'Harness Codex' }))
+    window.dispatchEvent(new PageTransitionEvent('pagehide'))
+    await new Promise((resolve) => window.setTimeout(resolve, 0))
+    await expect(saves.map(({ target }) => target)).toContainEqual(
+      expect.objectContaining({ harness: 'codex' }),
+    )
+  },
+}
+
 export const RestoresSavedCodexConfigurationBeforeSend: Story = {
   args: { project: true, savedProjectHarness: 'codex', initialOutcome: 'reject' },
   play: async ({ canvasElement }) => {

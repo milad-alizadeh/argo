@@ -29,7 +29,7 @@ import { provePackagedSessionListSelection } from './cases/session-list-interact
 import { proveSessionListWindow } from './cases/session-list-window.case'
 import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
-import { proveLiveCodexModelChoices } from './cases/turn-configuration.case'
+import { proveComposerMemory, proveLiveCodexModelChoices } from './cases/turn-configuration.case'
 import { ACTIVE_FEED } from './feed-selectors'
 import { appendProse } from './fixtures/feed.fixture'
 import { writeWindowFillerSessions } from './fixtures/session-list-window.fixture'
@@ -132,6 +132,10 @@ test('session-diagram', async ({ session }) => {
     transcripts: session.fixture.claudeTranscripts,
     append: appendProse,
   })
+})
+
+test('session-composer-memory', async ({ session }) => {
+  await proveComposerMemory(session.page())
 })
 
 test('session-live-codex-model-choices', async ({ session }) => {

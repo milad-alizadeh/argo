@@ -30,11 +30,13 @@ type DraftSubmission = {
   onSaved?: (saved: PersistedDraft) => void
 }
 type DraftSubmitResult = { outcome: 'accepted'; sessionId: string } | DraftSubmitFailure
+// A debounced autosave, kept with its save so a page hide can send it at once.
+export type PendingSave = { timer: number; save: () => void }
 export type ComposerDraftActionInput = {
   persist: (content: DraftContent) => Promise<PersistedDraft>
   persisted: React.RefObject<Map<string, PersistedDraft>>
   latestEditing: React.RefObject<ComposerEditing | null>
-  saveTimer: React.RefObject<Map<string, number>>
+  pendingSaves: React.RefObject<Map<string, PendingSave>>
   owner: string | null
   setSaveFailureOwner: React.Dispatch<React.SetStateAction<string | null>>
   suppressNextEmptyAutosave: React.RefObject<string | null>
@@ -61,7 +63,7 @@ export function useComposerDraftSubmit(input: ComposerDraftSubmitInput) {
     persist,
     persisted,
     latestEditing,
-    saveTimer,
+    pendingSaves,
     owner,
     setSaveFailureOwner,
     setSendFailure,
@@ -76,7 +78,7 @@ export function useComposerDraftSubmit(input: ComposerDraftSubmitInput) {
           persist,
           persisted,
           latestEditing,
-          saveTimer,
+          pendingSaves,
           owner,
           setSaveFailureOwner,
           setSendFailure,
@@ -92,7 +94,7 @@ export function useComposerDraftSubmit(input: ComposerDraftSubmitInput) {
       owner,
       persist,
       persisted,
-      saveTimer,
+      pendingSaves,
       setSaveFailureOwner,
       setSendFailure,
       suppressNextEmptyAutosave,
@@ -110,7 +112,7 @@ async function submitDraft({
 }: DraftSubmission & { input: ComposerDraftSubmitInput }) {
   const editing = input.latestEditing.current
   if (editing === null || turnConfiguration === null || input.owner === null) return PLAIN_REJECTION
-  cancelSaveTimer(input.saveTimer, input.owner)
+  cancelPendingSave(input.pendingSaves, input.owner)
   input.setSendFailure((failure) => (failure?.owner === input.owner ? null : failure))
   const saved = await persistDraft({
     persist: input.persist,
@@ -136,11 +138,14 @@ async function submitDraft({
   })
 }
 
-export function cancelSaveTimer(saveTimer: React.RefObject<Map<string, number>>, owner: string) {
-  const timer = saveTimer.current.get(owner)
-  if (timer === undefined) return
-  window.clearTimeout(timer)
-  saveTimer.current.delete(owner)
+export function cancelPendingSave(
+  pendingSaves: React.RefObject<Map<string, PendingSave>>,
+  owner: string,
+) {
+  const pending = pendingSaves.current.get(owner)
+  if (pending === undefined) return
+  window.clearTimeout(pending.timer)
+  pendingSaves.current.delete(owner)
 }
 
 async function persistDraft(input: PersistInput) {
