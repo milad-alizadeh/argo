@@ -1,4 +1,4 @@
-// The Codex threads the mock app-server starts with, written for a packaged proof or a dev run.
+// The Codex threads the mock app-server starts with, and the working folders they record.
 import { mkdir, writeFile } from 'node:fs/promises'
 import { mockCodexStateFile } from '../cli/codex/mock-codex-cli'
 import { recordedThread } from '../cli/codex/recorded-codex-threads'
@@ -20,7 +20,6 @@ function codexThread(request: { name: string; cwd: string; updatedAt: string; ti
 export const CODEX_PARENT = 'codexParent'
 export const CODEX_FIXTURES = [CODEX_PARENT, 'codexChild'] as const
 
-// The Codex threads the mock app-server starts with.
 export async function writeCodexThreads(root: string, codexTranscripts: string) {
   const cwd = proofCwd(codexTranscripts, 'codex')
   // A send resumes in the recorded folder and fails when it is gone.

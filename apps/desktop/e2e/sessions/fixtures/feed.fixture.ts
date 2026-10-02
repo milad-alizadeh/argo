@@ -3,6 +3,7 @@
 import { appendFile, mkdir, realpath } from 'node:fs/promises'
 import path from 'node:path'
 import { claudeConfigDirectory } from '../../../mocks/cli/claude/mock-claude-transcripts'
+import { writeCodexThreads } from '../../../mocks/sessions/mock-codex-thread-files'
 import {
   fixturePath,
   fixtureSessionId,
@@ -10,7 +11,6 @@ import {
   proofProject,
   writeFixtureTree,
 } from '../../../mocks/sessions/mock-transcript-files'
-import { writeCodexThreads } from '../../../mocks/sessions/mock-codex-thread-files'
 import { makeProjectLocallyReady } from '../../projects/fixtures/locally-ready-project'
 import { repository, seedSingleProject } from '../../projects/fixtures/project.fixture'
 import { claudeSessionMessages } from '../real-harness/claude-vendor-reader'

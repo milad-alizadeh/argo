@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
-import { fixtureSession } from '../fixture-sessions'
 import { CODEX_PARENT } from '../../../mocks/sessions/mock-codex-thread-files'
+import { fixtureSession } from '../fixture-sessions'
 import { openSessionByClick, PERSISTED_ROW, waitForRoute } from '../gestures'
 
 type Restart = () => Promise<Page>
