@@ -240,3 +240,42 @@ test('keeps a live-saved Model and Effort when a later scan finds older ones', (
     client.close()
   }
 })
+
+test('takes a saved Session out of the roster once discovery finds it is a subagent', () => {
+  const { client, database } = createDatabase()
+  try {
+    const [, childId] = saveSessionBatch(database, 'codex', [
+      { nativeId: 'parent' },
+      { nativeId: 'child' },
+    ])
+    saveSessionBatch(database, 'claude', [{ nativeId: 'child' }])
+    const [parentId, ...changed] = writeSessionBatch(database, {
+      harness: 'codex',
+      records: [{ nativeId: 'parent' }],
+      subagents: [
+        { nativeId: 'child', parentNativeId: 'parent' },
+        { nativeId: 'orphan-child', parentNativeId: 'unsaved-parent' },
+      ],
+    })
+    assert.deepEqual(
+      client
+        .prepare('SELECT harness, native_id FROM session ORDER BY harness')
+        .all()
+        .map((row) => Object.assign({}, row)),
+      [
+        { harness: 'claude', native_id: 'child' },
+        { harness: 'codex', native_id: 'parent' },
+      ],
+    )
+    assert.deepEqual(
+      client
+        .prepare('SELECT session_id, subagent_id FROM session_subagent')
+        .all()
+        .map((row) => Object.assign({}, row)),
+      [{ session_id: parentId, subagent_id: 'child' }],
+    )
+    assert.deepEqual(changed, [childId, parentId])
+  } finally {
+    client.close()
+  }
+})

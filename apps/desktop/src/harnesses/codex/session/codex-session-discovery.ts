@@ -11,14 +11,34 @@ import {
   type CodexRequest,
   CodexUnavailableError,
   isThreadNotLoaded,
+  type SubAgentSource,
   type Thread,
   type ThreadListResponse,
 } from '../app-server'
 
+const subAgentSourceSchema: z.ZodType<SubAgentSource> = z.union([
+  z.enum(['review', 'compact', 'memory_consolidation']),
+  z.object({
+    thread_spawn: z.object({
+      parent_thread_id: identifierSchema,
+      depth: z.number(),
+      agent_path: z.string().nullable(),
+      agent_nickname: z.string().nullable(),
+      agent_role: z.string().nullable(),
+    }),
+  }),
+  z.object({ other: z.string() }),
+])
+const sessionSourceSchema: z.ZodType<Thread['source']> = z.union([
+  z.enum(['cli', 'vscode', 'exec', 'appServer', 'unknown']),
+  z.object({ custom: z.string() }),
+  z.object({ subAgent: subAgentSourceSchema }),
+])
+
 // Only the Thread fields discovery reads; the generated types own the rest.
 const threadSchema: z.ZodType<
   Pick<Thread, 'id' | 'updatedAt' | 'parentThreadId'> &
-    Partial<Pick<Thread, 'name' | 'preview' | 'cwd' | 'model' | 'reasoningEffort'>>
+    Partial<Pick<Thread, 'name' | 'preview' | 'cwd' | 'model' | 'reasoningEffort' | 'source'>>
 > = z.object({
   id: identifierSchema,
   updatedAt: z.number().int().nonnegative(),
@@ -28,6 +48,7 @@ const threadSchema: z.ZodType<
   cwd: z.string().optional(),
   model: z.string().nullable().optional(),
   reasoningEffort: z.string().nullable().optional(),
+  source: sessionSourceSchema.optional(),
 })
 const pageSchema: z.ZodType<Pick<ThreadListResponse, 'nextCursor'> & { data: unknown[] }> =
   z.object({ data: z.array(z.unknown()), nextCursor: z.string().nullable() })
@@ -35,11 +56,34 @@ const pageSchema: z.ZodType<Pick<ThreadListResponse, 'nextCursor'> & { data: unk
 type ParsedThread =
   | { kind: 'session'; summary: SessionSummary }
   | { kind: 'subagent'; nativeId: string; parentNativeId: string }
+  | { kind: 'parentlessSubagent'; nativeId: string }
   | { kind: 'unrecognised' }
 
 type ThreadCollections = {
   records: Map<string, SessionSummary>
   subagents: Map<string, SessionSubagentLink>
+  // Listed subagents whose parent only thread/read names.
+  parentless: Set<string>
+}
+
+// thread/list leaves parentThreadId null for every subagent; only a spawn's source names its parent.
+function sourceParentOf(source: SubAgentSource): string | null {
+  if (typeof source === 'string')
+    switch (source) {
+      case 'review':
+      case 'compact':
+      case 'memory_consolidation':
+        return null
+      default:
+        return source satisfies never
+    }
+  if ('thread_spawn' in source) return source.thread_spawn.parent_thread_id
+  if ('other' in source) return null
+  return source satisfies never
+}
+
+function subAgentSourceOf(source: Thread['source'] | undefined): SubAgentSource | null {
+  return typeof source === 'object' && 'subAgent' in source ? source.subAgent : null
 }
 
 function rootParentOf(
@@ -60,8 +104,11 @@ function parseThread(raw: unknown): ParsedThread {
   const parsed = threadSchema.safeParse(raw)
   if (!parsed.success) return { kind: 'unrecognised' }
   const thread = parsed.data
-  if (thread.parentThreadId !== null)
-    return { kind: 'subagent', nativeId: thread.id, parentNativeId: thread.parentThreadId }
+  const subAgentSource = subAgentSourceOf(thread.source)
+  const parentNativeId =
+    thread.parentThreadId ?? (subAgentSource === null ? null : sourceParentOf(subAgentSource))
+  if (parentNativeId !== null) return { kind: 'subagent', nativeId: thread.id, parentNativeId }
+  if (subAgentSource !== null) return { kind: 'parentlessSubagent', nativeId: thread.id }
   return {
     kind: 'session',
     summary: {
@@ -87,7 +134,10 @@ function parseThread(raw: unknown): ParsedThread {
 function rememberThread(thread: ParsedThread, collections: ThreadCollections): number {
   switch (thread.kind) {
     case 'session':
-      if (!collections.subagents.has(thread.summary.nativeId))
+      if (
+        !collections.subagents.has(thread.summary.nativeId) &&
+        !collections.parentless.has(thread.summary.nativeId)
+      )
         collections.records.set(thread.summary.nativeId, {
           ...collections.records.get(thread.summary.nativeId),
           ...thread.summary,
@@ -98,6 +148,11 @@ function rememberThread(thread: ParsedThread, collections: ThreadCollections): n
         nativeId: thread.nativeId,
         parentNativeId: thread.parentNativeId,
       })
+      collections.records.delete(thread.nativeId)
+      collections.parentless.delete(thread.nativeId)
+      return 0
+    case 'parentlessSubagent':
+      if (!collections.subagents.has(thread.nativeId)) collections.parentless.add(thread.nativeId)
       collections.records.delete(thread.nativeId)
       return 0
     case 'unrecognised':
@@ -151,6 +206,17 @@ async function listCodexThreads(request: CodexRequest): Promise<unknown[]> {
   return threads
 }
 
+async function rememberListedParents(
+  request: CodexRequest,
+  collections: ThreadCollections,
+): Promise<void> {
+  for (const nativeId of [...collections.parentless]) {
+    const thread = await readCodexThread(request, nativeId)
+    if (thread.kind === 'subagent') rememberThread(thread, collections)
+    if (thread.kind === 'missing') collections.parentless.delete(nativeId)
+  }
+}
+
 async function rememberKnownThreads(
   request: CodexRequest,
   knownNativeIds: readonly string[],
@@ -158,7 +224,12 @@ async function rememberKnownThreads(
 ): Promise<number> {
   let skipped = 0
   for (const nativeId of knownNativeIds) {
-    if (collections.records.has(nativeId) || collections.subagents.has(nativeId)) continue
+    if (
+      collections.records.has(nativeId) ||
+      collections.subagents.has(nativeId) ||
+      collections.parentless.has(nativeId)
+    )
+      continue
     const thread = await readCodexThread(request, nativeId)
     if (thread.kind !== 'missing') skipped += rememberThread(thread, collections)
   }
@@ -177,11 +248,17 @@ async function collectCodexThreads(
     if (error instanceof CodexUnavailableError) return null
     throw error
   }
-  const collections: ThreadCollections = { records: new Map(), subagents: new Map() }
+  const collections: ThreadCollections = {
+    records: new Map(),
+    subagents: new Map(),
+    parentless: new Set(),
+  }
   let skipped = 0
   for (const raw of threads) skipped += rememberThread(parseThread(raw), collections)
+  await rememberListedParents(request, collections)
   skipped += await rememberKnownThreads(request, knownNativeIds, collections)
-  return { collections, skipped }
+  // A subagent no read gives a parent is neither a Session nor anyone's child.
+  return { collections, skipped: skipped + collections.parentless.size }
 }
 
 export function createCodexSessionSummaryList(request: CodexRequest): SessionSummaryList {
@@ -211,6 +288,9 @@ export function createCodexSessionSummaryReader(request: CodexRequest): SessionS
         return null
       case 'unrecognised':
         console.warn(`Rejected an unrecognised Codex Session summary for ${nativeId}.`)
+        return null
+      case 'parentlessSubagent':
+        console.warn(`Rejected Codex subagent thread ${nativeId}, which names no parent.`)
         return null
       case 'session':
         return thread.summary

@@ -282,3 +282,66 @@ test('gets null for a locked thread Codex has not stored yet, so discovery asks 
   }) as CodexRequest)
   expect(await getSummary('01a0f5af-03d4-7891-87e5-bbbfd9058beb')).toBeNull()
 })
+
+// thread/list answers every subAgent thread with a null parentThreadId; thread/read fills it.
+const { guardian, threadSpawn } = externalThreads.subagents
+
+function subagentRequest(listed: unknown, read: unknown, calls: unknown[]): CodexRequest {
+  return (async (method: string, params, parse) => {
+    calls.push({ method, params })
+    if (method === 'thread/list')
+      return parse({ data: [structuredClone(listed)], nextCursor: null })
+    return parse(structuredClone(read))
+  }) as CodexRequest
+}
+
+test('keeps a listed guardian review thread out of the Sessions, under the parent its read names', async () => {
+  const calls: unknown[] = []
+  const result = await createCodexSessionSummaryList(
+    subagentRequest(guardian.listed, guardian.read, calls),
+  )({ knownNativeIds: [guardian.listed.id] })
+
+  expect(result).toEqual({
+    records: [],
+    skipped: 0,
+    subagents: [
+      { nativeId: guardian.listed.id, parentNativeId: guardian.read.thread.parentThreadId },
+    ],
+  })
+  expect(calls).toEqual([
+    expect.objectContaining({ method: 'thread/list' }),
+    { method: 'thread/read', params: { threadId: guardian.listed.id, includeTurns: false } },
+  ])
+})
+
+test('keeps a listed spawned thread out of the Sessions, under the parent its source names', async () => {
+  const calls: unknown[] = []
+  const result = await createCodexSessionSummaryList(
+    subagentRequest(threadSpawn.listed, threadSpawn.read, calls),
+  )({ knownNativeIds: [] })
+
+  expect(result).toEqual({
+    records: [],
+    skipped: 0,
+    subagents: [
+      {
+        nativeId: threadSpawn.listed.id,
+        parentNativeId: threadSpawn.listed.source.subAgent.thread_spawn.parent_thread_id,
+      },
+    ],
+  })
+  expect(calls).toEqual([expect.objectContaining({ method: 'thread/list' })])
+})
+
+test('counts a subagent thread that names no parent, and lists it as no Session', async () => {
+  const parentless = { thread: { ...structuredClone(guardian.read.thread), parentThreadId: null } }
+  const result = await createCodexSessionSummaryList(
+    subagentRequest(guardian.listed, parentless, []),
+  )({ knownNativeIds: [] })
+  expect(result).toEqual({ records: [], skipped: 1 })
+  expect(
+    await createCodexSessionSummaryReader(subagentRequest(guardian.listed, parentless, []))(
+      guardian.listed.id,
+    ),
+  ).toBeNull()
+})

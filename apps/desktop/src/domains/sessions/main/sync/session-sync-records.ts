@@ -97,6 +97,16 @@ export function saveSessionBatch(
         children.push(nativeId)
         childrenByParent.set(parentNativeId, children)
       }
+      // A Session saved before discovery knew it was a subagent leaves the roster.
+      const childNativeIds = subagents.map(({ nativeId }) => nativeId)
+      for (const { argoId } of database
+        .delete(sessionTable)
+        .where(
+          and(eq(sessionTable.harness, harness), inArray(sessionTable.nativeId, childNativeIds)),
+        )
+        .returning({ argoId: sessionTable.argoId })
+        .all())
+        sessionIds.push(argoId)
       const parentRows = database
         .select({ argoId: sessionTable.argoId, nativeId: sessionTable.nativeId })
         .from(sessionTable)
