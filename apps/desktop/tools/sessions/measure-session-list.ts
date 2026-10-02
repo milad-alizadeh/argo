@@ -1,22 +1,10 @@
-// Reproducible pre-change workload for #2934. Run from apps/desktop through run-tool.mts.
+// Reproducible Session List workload (#2934, #2943). Run from apps/desktop through run-tool.mts.
 
 import { execFileSync } from 'node:child_process'
-import {
-  appendFile,
-  copyFile,
-  mkdir,
-  mkdtemp,
-  readFile,
-  realpath,
-  rm,
-  symlink,
-  writeFile,
-} from 'node:fs/promises'
+import { appendFile, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { performance } from 'node:perf_hooks'
 import process from 'node:process'
-import { DatabaseSync } from 'node:sqlite'
 import {
   type ElectronApplication,
   _electron as electron,
@@ -31,17 +19,22 @@ import * as codexProof from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { applicationUnderTest, launchCommand } from '../../e2e/application-under-test'
 import { prepare } from '../../e2e/sessions/fixtures/feed.fixture'
+import { MOCK_CLAUDE_AGENTS_ENV } from '../../mocks/cli/claude/mock-claude-agents'
+import { mockCodexStateFile } from '../../mocks/cli/codex/mock-codex-cli'
+import { recordedClaudeAgents } from '../../mocks/recordings/claude-cli'
 import { createMockSessionHarnessBackend } from '../../mocks/sessions/mock-session-harness-backend'
 import { proofCwd } from '../../mocks/sessions/mock-transcript-files'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { buildHistory, historyPath, writeHistory } from './feed-history-fixture'
+import { sqlMeasurements } from './session-list-sql'
+import type { Timings } from './session-list-startup-probe.mts'
 
 const PROJECT_ID = 'session-proof-project'
 const SESSION_COUNT = 600
 const ARCHIVED_COUNT = 120
 const HISTORY_BYTES = 12_000_000
 const EXTRA_CLAUDE_FILES = 120
-const EXTRA_CODEX_FILES = 40
+const EXTRA_CODEX_THREADS = 40
 const WAIT_MS = 60_000
 const VIEWPORT = { width: 1440, height: 860 }
 const PRELOAD = path.join(process.cwd(), 'tools/sessions/session-list-startup-probe.mts')
@@ -61,7 +54,7 @@ function savedTitle(index: number) {
   return `Saved Session ${index + 1}`
 }
 
-async function buildCorpus(fixture: Awaited<ReturnType<typeof prepare>>) {
+async function buildCorpus(root: string, fixture: Awaited<ReturnType<typeof prepare>>) {
   const cwd = proofCwd(fixture.claudeTranscripts, 'list-workload')
   await mkdir(cwd, { recursive: true })
   const largeNativeId = '11111111-2222-4333-8444-666666666666'
@@ -73,13 +66,22 @@ async function buildCorpus(fixture: Awaited<ReturnType<typeof prepare>>) {
     const nativeId = `20000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`
     await writeHistory(historyPath(fixture.claudeTranscripts, cwd, nativeId), small)
   }
-  const codexDirectory = path.join(fixture.codexTranscripts, '2026/09/10')
-  const codexExample = path.join(codexDirectory, 'rollout-codexParent.jsonl')
-  const firstCodexLine = (await readFile(codexExample, 'utf8')).split('\n').find(Boolean)
-  if (firstCodexLine === undefined) throw new Error('The recorded Codex transcript is empty.')
-  const codexAppend = `${firstCodexLine}\n`
-  for (let index = 0; index < EXTRA_CODEX_FILES; index += 1)
-    await copyFile(codexExample, path.join(codexDirectory, `rollout-list-${index}.jsonl`))
+  // The mock app-server answers Codex reads from its state file, so the added threads go there.
+  const codexState = mockCodexStateFile(root)
+  const threads = JSON.parse(await readFile(codexState, 'utf8')) as Record<string, unknown>[]
+  const codexExample = threads[0]
+  if (codexExample === undefined) throw new Error('The mock Codex state holds no thread.')
+  const codexThread = (index: number) => ({
+    ...codexExample,
+    id: `30000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+    name: `Added Codex thread ${index + 1}`,
+  })
+  const extraThreads = Array.from({ length: EXTRA_CODEX_THREADS }, (_, index) => codexThread(index))
+  await writeFile(codexState, JSON.stringify([...threads, ...extraThreads]))
+  const codexAppend = async () => {
+    const stored = JSON.parse(await readFile(codexState, 'utf8')) as unknown[]
+    await writeFile(codexState, JSON.stringify([...stored, codexThread(EXTRA_CODEX_THREADS)]))
+  }
 
   const database = openDatabase(fixture.userData)
   const now = Date.now()
@@ -106,7 +108,6 @@ async function buildCorpus(fixture: Awaited<ReturnType<typeof prepare>>) {
     largeNativeId,
     largeBytes: history.bytes,
     largeTurns: history.turns,
-    codexExample,
     codexAppend,
     cwd,
   }
@@ -124,7 +125,14 @@ type MainSnapshot = {
   delay: { p50Ms: number; p95Ms: number; maxMs: number }
   mainRssMb: number
   rendererWorkingSetMb: number
+  // Working set of every other Electron process, by process type.
+  otherProcessesMb: Record<string, number>
   ipc: Record<string, { messages: number; bytes: number }>
+  // Subscriptions the renderer holds open now, by tRPC path.
+  openSubscriptions: Record<string, number>
+  files: Record<string, { opens: number; bytes: number }>
+  spawns: Timings
+  sql: Timings
 }
 
 async function mainSnapshot(application: ElectronApplication): Promise<MainSnapshot> {
@@ -134,6 +142,9 @@ async function mainSnapshot(application: ElectronApplication): Promise<MainSnaps
     const ipc =
       (globalThis as unknown as { __argoListIpc?: MainSnapshot['ipc'] }).__argoListIpc ?? {}
     const delay = probe.delay
+    const open =
+      (globalThis as unknown as { __argoOpenSubscriptions?: Map<number, string> })
+        .__argoOpenSubscriptions ?? new Map<number, string>()
     const nsToMs = (value: number) => Number((value / 1_000_000).toFixed(2))
     return {
       syncReads: probe.syncReads,
@@ -156,7 +167,23 @@ async function mainSnapshot(application: ElectronApplication): Promise<MainSnaps
           .filter((metric) => metric.type === 'Tab')
           .reduce((sum, metric) => sum + (metric.memory?.workingSetSize ?? 0), 0) / 1024,
       ),
+      otherProcessesMb: Object.fromEntries(
+        app
+          .getAppMetrics()
+          .filter((metric) => metric.type !== 'Tab')
+          .map((metric) => [
+            `${metric.type}${metric.serviceName ? ` ${metric.serviceName}` : ''} ${metric.pid}`,
+            Math.round((metric.memory?.workingSetSize ?? 0) / 1024),
+          ]),
+      ),
       ipc: structuredClone(ipc),
+      openSubscriptions: [...open.values()].reduce<Record<string, number>>((counts, path) => {
+        counts[path] = (counts[path] ?? 0) + 1
+        return counts
+      }, {}),
+      files: structuredClone(probe.files),
+      spawns: structuredClone(probe.spawns),
+      sql: structuredClone(probe.sql),
     }
   })
 }
@@ -179,6 +206,9 @@ async function armIpc(application: ElectronApplication) {
     const window = BrowserWindow.getAllWindows()[0]
     if (handlers === undefined || original === undefined || window === undefined) return false
     const subscriptions = new Map<number, string>()
+    const open = new Map<number, string>()
+    ;(globalThis as unknown as { __argoOpenSubscriptions: typeof open }).__argoOpenSubscriptions =
+      open
     const send = window.webContents.send.bind(window.webContents)
     window.webContents.send = (channel: string, ...arguments_: unknown[]) => {
       const message = arguments_[0] as { id?: number } | undefined
@@ -188,9 +218,12 @@ async function armIpc(application: ElectronApplication) {
     }
     handlers.set('argo:trpc', (event, ...arguments_) => {
       const input = arguments_[0] as { id?: number; path?: string; type?: string } | undefined
-      if (input?.path !== undefined) {
-        add(`${input.path}:in`, input)
-        if (input.type === 'subscription') subscriptions.set(input.id ?? -1, input.path)
+      const id = input?.id ?? -1
+      if (input?.type === 'subscriptionStop') open.delete(id)
+      if (input?.path !== undefined) add(`${input.path}:in`, input)
+      if (input?.path !== undefined && input.type === 'subscription') {
+        subscriptions.set(id, input.path)
+        open.set(id, input.path)
       }
       const response = original(event, ...arguments_)
       if (input?.path !== undefined)
@@ -241,6 +274,38 @@ async function rendererSnapshot(page: Page) {
   }, heap.usedSize)
 }
 
+function withoutFiles({ files: _files, ...snapshot }: MainSnapshot) {
+  return snapshot
+}
+
+// What changed between two snapshots of a timing table, slowest total first.
+function timingDelta(before: Timings, after: Timings, limit = 8) {
+  return Object.entries(after)
+    .map(([key, current]) => {
+      const previous = before[key] ?? { count: 0, totalMs: 0, maxMs: 0 }
+      return {
+        key: key.replace(/\s+/g, ' ').slice(0, 160),
+        count: current.count - previous.count,
+        totalMs: Number((current.totalMs - previous.totalMs).toFixed(3)),
+        maxMs: Number(current.maxMs.toFixed(3)),
+      }
+    })
+    .filter(({ count }) => count > 0)
+    .sort((left, right) => right.totalMs - left.totalMs)
+    .slice(0, limit)
+}
+
+// The corpus files a step opened or read, with their bytes.
+function filesDelta(before: MainSnapshot['files'], after: MainSnapshot['files']) {
+  return Object.entries(after)
+    .map(([file, current]) => ({
+      file: path.basename(file),
+      opens: current.opens - (before[file]?.opens ?? 0),
+      bytes: current.bytes - (before[file]?.bytes ?? 0),
+    }))
+    .filter(({ opens, bytes }) => opens > 0 || bytes > 0)
+}
+
 async function step(request: {
   label: string
   page: Page
@@ -281,75 +346,17 @@ async function step(request: {
     activeWatchers: after.activeWatchers,
     listPages,
     listTotal,
-    listOwnedReaderCount: Math.min(listPages * 30, listTotal),
     eventLoopDelay: after.delay,
     mainRssMb: after.mainRssMb,
     rendererWorkingSetMb: after.rendererWorkingSetMb,
+    otherProcessesMb: after.otherProcessesMb,
+    openSubscriptions: after.openSubscriptions,
+    filesRead: filesDelta(before.files, after.files),
+    spawns: timingDelta(before.spawns, after.spawns),
+    sql: timingDelta(before.sql, after.sql),
     ...renderer,
     ipc,
   }
-}
-
-function sqlMeasurements(userData: string) {
-  const databaseFile = path.join(userData, 'argo.sqlite')
-  const database = new DatabaseSync(databaseFile)
-  const listColumns = `session.argo_id, session.harness, session.native_id,
-    session.custom_title, session.preview, session.first_prompt, session.cwd,
-    session.workspace_id, session.activity_at, session.updated_at,
-    session_ticket_link.project_id, session_ticket_link.ticket_key,
-    ticket_content.title, ticket_content.state, session_ticket_link.created_at`
-  // The corpus has one Ticket scope, so the key alone finds the linked Ticket.
-  const listFrom = `FROM session LEFT JOIN session_ticket_link
-    ON session_ticket_link.session_id = session.argo_id
-    LEFT JOIN ticket_content ON ticket_content.ticket_id = (SELECT keyed.ticket_id
-      FROM ticket_content AS keyed WHERE keyed.key = session_ticket_link.ticket_key LIMIT 1)`
-  const inProject = 'session.project_id = ?'
-  const archived = `EXISTS
-    (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)`
-  const active = `${inProject} AND NOT ${archived}`
-  const matching = `instr(lower(coalesce(session.custom_title, ticket_content.title,
-      session.preview, session.first_prompt, '')), lower(?)) > 0`
-  const listOrder = `ORDER BY session.sort_order ASC, session.created_at DESC, session.argo_id ASC
-    LIMIT 30 OFFSET 0`
-  const browse = `SELECT ${listColumns} ${listFrom} WHERE ${active} ${listOrder}`
-  const search = `SELECT ${listColumns} ${listFrom} WHERE ${active} AND ${matching} ${listOrder}`
-  const archive = `SELECT ${listColumns} ${listFrom} WHERE ${inProject} AND ${archived} ${listOrder}`
-  const count = `SELECT count(*) FROM session WHERE ${active}`
-  const queries = [
-    { name: 'browse', sql: browse, arguments: [PROJECT_ID] },
-    { name: 'search', sql: search, arguments: [PROJECT_ID, 'Needle'] },
-    { name: 'search broad', sql: search, arguments: [PROJECT_ID, 'Session'] },
-    { name: 'count', sql: count, arguments: [PROJECT_ID] },
-    { name: 'archive', sql: archive, arguments: [PROJECT_ID] },
-  ]
-  const measurements = queries.map((query) => {
-    const statement = database.prepare(query.sql)
-    const runs: number[] = []
-    for (let index = 0; index < 20; index += 1) {
-      const started = performance.now()
-      statement.all(...query.arguments)
-      runs.push(Number((performance.now() - started).toFixed(4)))
-    }
-    const plan = database.prepare(`EXPLAIN QUERY PLAN ${query.sql}`).all(...query.arguments)
-    let literalSql = query.sql
-    for (const argument of query.arguments)
-      literalSql = literalSql.replace('?', `'${String(argument).replaceAll("'", "''")}'`)
-    const scanStats = execFileSync('sqlite3', ['-cmd', '.scanstats on', databaseFile, literalSql], {
-      encoding: 'utf8',
-    })
-    return { name: query.name, sql: query.sql, runsMs: runs, plan, scanStats }
-  })
-  const update = database.prepare('UPDATE session SET preview = ? WHERE argo_id = ?')
-  const commitsMs: number[] = []
-  for (let index = 0; index < 20; index += 1) {
-    database.exec('BEGIN')
-    update.run(`Updated preview ${index}`, sessionId(0))
-    const started = performance.now()
-    database.exec('COMMIT')
-    commitsMs.push(Number((performance.now() - started).toFixed(4)))
-  }
-  database.close()
-  return { measurements, commitsMs }
 }
 
 type Fixture = Awaited<ReturnType<typeof prepare>>
@@ -357,27 +364,21 @@ type Corpus = Awaited<ReturnType<typeof buildCorpus>>
 
 async function launchEnvironment(root: string, fixture: Fixture) {
   const mock = await createMockSessionHarnessBackend().start({ root, fixture })
-  const homes = {
-    claude: path.join(root, 'claude-config'),
-    codex: path.join(root, 'codex-home'),
-  }
-  await Promise.all(Object.values(homes).map((home) => mkdir(home, { recursive: true })))
-  const claudeConfig = homes.claude
-  const codexHome = homes.codex
-  await symlink(fixture.claudeTranscripts, path.join(claudeConfig, 'projects'))
+  // The fixture keeps each Harness's files under its config folder, as the vendor does.
+  const claudeConfig = path.dirname(fixture.claudeTranscripts)
+  const codexHome = path.dirname(fixture.codexTranscripts)
+  // The poll's `claude agents --json` prints the recorded entries, none of them a corpus Session.
+  const agents = path.join(root, 'claude-agents.json')
+  await writeFile(agents, JSON.stringify(recordedClaudeAgents.output))
   return {
     ...process.env,
-    ARGO_SESSION_LIST_CORPUS_ROOTS: [
-      fixture.claudeTranscripts,
-      fixture.codexTranscripts,
-      claudeConfig,
-      codexHome,
-    ].join(':'),
+    ARGO_SESSION_LIST_CORPUS_ROOTS: [claudeConfig, codexHome].join(':'),
     CLAUDE_CONFIG_DIR: claudeConfig,
     CODEX_HOME: codexHome,
     [claudeProof.SESSION_CLAUDE_EXECUTABLE_ENV]: mock.executables.claude,
     [codexProof.SESSION_CODEX_EXECUTABLE_ENV]: mock.executables.codex,
     ...mock.launchEnv({ slowReply: false }),
+    [MOCK_CLAUDE_AGENTS_ENV]: agents,
     [PROJECT_PROOF_STORE_ENV]: fixture.userData,
     [ACCEPTANCE_ENV]: '0',
   }
@@ -507,7 +508,7 @@ async function archiveAndSelectionGestures(context: GestureContext) {
   })
   const append = await measure('large Claude and Codex append', async () => {
     await appendFile(corpus.largePath, buildHistory(corpus.cwd, 1_000_000).text)
-    await appendFile(corpus.codexExample, corpus.codexAppend)
+    await corpus.codexAppend()
     await page.waitForTimeout(750)
   })
   const selection = await measure('rapid selection', async () => {
@@ -521,7 +522,9 @@ async function archiveAndSelectionGestures(context: GestureContext) {
     for (const id of visibleIds)
       await page.locator(`nav[aria-label="Sessions"] button[data-session-id="${id}"]`).click()
   })
-  return [archive, append, selection]
+  // Nothing moves, so the poll's ticks are the work left.
+  const idle = await measure('idle 10 s', () => page.waitForTimeout(10_000))
+  return [archive, append, selection, idle]
 }
 
 async function runGestures(context: GestureContext) {
@@ -559,7 +562,7 @@ async function reportRun(request: {
       savedSessions: SESSION_COUNT,
       archivedSessions: ARCHIVED_COUNT,
       extraClaudeFiles: EXTRA_CLAUDE_FILES,
-      extraCodexFiles: EXTRA_CODEX_FILES,
+      extraCodexThreads: EXTRA_CODEX_THREADS,
       largeTranscriptBytes: corpus.largeBytes,
       largeTranscriptTurns: corpus.largeTurns,
     },
@@ -567,10 +570,11 @@ async function reportRun(request: {
     cache:
       'fresh temporary userData and Electron process; prebuilt Vite assets and OS file cache not flushed',
     startupMs,
-    startup,
+    // The full-path file map stays out of the report; each read is listed by file name instead.
+    startup: { ...withoutFiles(startup), filesRead: filesDelta({}, startup.files) },
     steps,
-    final: await mainSnapshot(application),
-    sql: sqlMeasurements(fixture.userData),
+    final: withoutFiles(await mainSnapshot(application)),
+    sql: sqlMeasurements(fixture.userData, PROJECT_ID, sessionId(0)),
   }
   const json = value('json')
   if (json !== null) await writeFile(json, `${JSON.stringify(result, null, 2)}\n`)
@@ -602,7 +606,7 @@ async function run() {
   const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'argo-session-list-')))
   try {
     const fixture = await prepare(root, await applicationUnderTest(root), { projectSelected: true })
-    const corpus = await buildCorpus(fixture)
+    const corpus = await buildCorpus(root, fixture)
     const environment = await launchEnvironment(root, fixture)
     await withStartupProbe(root, () => measureApplication({ fixture, corpus, environment }))
   } finally {
