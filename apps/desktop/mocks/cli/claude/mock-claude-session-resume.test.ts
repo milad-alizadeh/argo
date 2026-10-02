@@ -133,10 +133,32 @@ async function converse(executable: string, prompts: string[], resume?: string) 
 const RECORDED = recordedClaudeCompactionChain as ChainRecord[]
 const RECORDED_LIVE_PROMPT = 'Reply with exactly the word BRAVO-TWO-OK and nothing else.'
 const RECORDED_RESUMED_PROMPT = 'Reply with exactly the word CHARLIE-THREE-OK and nothing else.'
+const SUMMARY = RECORDED.find((record) => Reflect.get(record, 'isCompactSummary') === true)?.message
+  ?.content
+
+// What the Agent SDK reader shows of a Session: each message's text, in chain order.
+async function shownTexts(configDirectory: string, sessionId: string) {
+  return (await claudeSessionMessages(configDirectory, sessionId)).map((entry) => {
+    const { content } = entry.message as { content: unknown }
+    if (typeof content === 'string') return content
+    return (content as { text?: string }[]).find((block) => block.text !== undefined)?.text
+  })
+}
+
+async function transcriptRecords(transcripts: string, sessionId: string) {
+  const file = path.join(claudeProjectFolder(transcripts, process.cwd()), `${sessionId}.jsonl`)
+  return (await readFile(file, 'utf8'))
+    .trim()
+    .split('\n')
+    .map((line) => JSON.parse(line) as ChainRecord)
+    .filter((record) => typeof record.uuid === 'string')
+}
 
 test('the recorded Claude chains the prompts after a compaction to its boundary, live and resumed', () => {
   const boundary = boundaryOf(RECORDED)
   assert.equal(boundary.parentUuid, null)
+  const compactPrompt = RECORDED.find((record) => record.uuid === promptUuid(RECORDED, '/compact'))
+  assert.equal(boundary.logicalParentUuid, compactPrompt?.parentUuid)
   for (const prompt of [RECORDED_LIVE_PROMPT, RECORDED_RESUMED_PROMPT])
     assert.equal(ancestry(RECORDED, promptUuid(RECORDED, prompt)).at(-1), boundary.uuid)
 })
@@ -152,38 +174,48 @@ test('a mock Claude compaction chains like the recording, live and after a resum
       '/compact',
       'After compaction',
     ])
-    const texts = async () =>
-      (await claudeSessionMessages(configDirectory, sessionId)).map(
-        (message) =>
-          /(Mock Claude read: )?(Before|After) \w+|continued/.exec(
-            JSON.stringify(message.message),
-          )?.[0],
-      )
-    assert.deepEqual(await texts(), [
-      'continued',
-      'After compaction',
-      'Mock Claude read: After compaction',
-    ])
+    const live = [SUMMARY, 'After compaction', 'Mock Claude read: After compaction']
+    assert.deepEqual(await shownTexts(configDirectory, sessionId), live)
     await converse(executable, ['After resume'], sessionId)
-    assert.deepEqual(await texts(), [
-      'continued',
-      'After compaction',
-      'Mock Claude read: After compaction',
+    assert.deepEqual(await shownTexts(configDirectory, sessionId), [
+      ...live,
       'After resume',
       'Mock Claude read: After resume',
     ])
-    const file = path.join(claudeProjectFolder(transcripts, process.cwd()), `${sessionId}.jsonl`)
-    const records = (await readFile(file, 'utf8'))
-      .trim()
-      .split('\n')
-      .map((line) => JSON.parse(line) as ChainRecord)
-      .filter((record) => typeof record.uuid === 'string')
+    const records = await transcriptRecords(transcripts, sessionId)
     const boundary = boundaryOf(records)
     assert.deepEqual(Object.keys(boundary).sort(), Object.keys(boundaryOf(RECORDED)).sort())
     assert.equal(boundary.parentUuid, null)
-    assert.equal(boundary.logicalParentUuid, records[records.indexOf(boundary) - 1]?.uuid)
+    // The mock records no `/compact` prompt, so the reply before it is what that prompt chained to.
+    const replyBeforeCompact = records.find((record) =>
+      JSON.stringify(record.message).includes('Mock Claude read: Before compaction'),
+    )
+    assert.equal(boundary.logicalParentUuid, replyBeforeCompact?.uuid)
     for (const prompt of ['After compaction', 'After resume'])
       assert.equal(ancestry(records, promptUuid(records, prompt)).at(-1), boundary.uuid)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('a mock Claude resumed straight after a compaction chains its prompt to the boundary', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-compaction-'))
+  const configDirectory = path.join(root, 'claude-config')
+  const transcripts = path.join(configDirectory, 'projects')
+  try {
+    const executable = await writeMockClaude(root, transcripts)
+    const sessionId = await converse(executable, ['Before compaction', '/compact'])
+    await converse(executable, ['After resume'], sessionId)
+    assert.deepEqual(await shownTexts(configDirectory, sessionId), [
+      SUMMARY,
+      'After resume',
+      'Mock Claude read: After resume',
+    ])
+    const records = await transcriptRecords(transcripts, sessionId)
+    assert.equal(
+      ancestry(records, promptUuid(records, 'After resume')).at(-1),
+      boundaryOf(records).uuid,
+    )
   } finally {
     await rm(root, { recursive: true, force: true })
   }

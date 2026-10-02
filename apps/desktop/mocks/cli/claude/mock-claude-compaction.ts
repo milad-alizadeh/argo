@@ -1,42 +1,43 @@
 import { randomUUID } from 'node:crypto'
 import { recordedClaudeCompactionChain } from '../../recordings/claude-cli.ts'
 
-const recordedBoundary = recordedClaudeCompactionChain.find(
-  (record) => 'subtype' in record && record.subtype === 'compact_boundary',
+function recordedRecord(matches: (record: Record<string, unknown>) => boolean, name: string) {
+  const record = recordedClaudeCompactionChain.find((entry) => matches(entry))
+  if (record === undefined) throw new Error(`The Claude compaction recording holds no ${name}.`)
+  return record
+}
+
+const recordedBoundary = recordedRecord(
+  (record) => record.subtype === 'compact_boundary',
+  'compact_boundary',
 )
-if (recordedBoundary === undefined)
-  throw new Error('The Claude recording holds no compact_boundary.')
+const recordedSummary = recordedRecord(
+  (record) => record.isCompactSummary === true,
+  'compaction summary',
+)
 
-type Compaction = { sessionId: string; cwd: string; logicalParentUuid: string | null }
-
-// The records real Claude writes on `/compact`: a boundary that starts a new chain, then the summary
-// the next prompt chains to, live or resumed (claude-cli/<version>/compaction-chain.json).
-export function compactionRecords({ sessionId, cwd, logicalParentUuid }: Compaction) {
-  const timestamp = new Date().toISOString()
+// The records real Claude writes on `/compact`, with the recording's fields: a boundary that starts
+// a new chain, then the summary the next prompt chains to, live or resumed (claude-cli/<version>/compaction-chain.json).
+export function compactionRecords(session: {
+  sessionId: string
+  cwd: string
+  logicalParentUuid: string | null
+}) {
+  const { sessionId, cwd, logicalParentUuid } = session
+  const ids = { cwd, sessionId, timestamp: new Date().toISOString() }
   const boundary = {
     ...recordedBoundary,
+    ...ids,
+    uuid: randomUUID(),
     parentUuid: null,
     logicalParentUuid,
-    uuid: randomUUID(),
-    timestamp,
-    cwd,
-    sessionId,
   }
   const summary = {
-    type: 'user',
-    sessionId,
-    cwd,
-    timestamp,
+    ...recordedSummary,
+    ...ids,
+    session_id: sessionId,
     uuid: randomUUID(),
     parentUuid: boundary.uuid,
-    isSidechain: false,
-    isCompactSummary: true,
-    isVisibleInTranscriptOnly: true,
-    message: {
-      role: 'user',
-      content:
-        'This session is being continued from a previous conversation that ran out of context.',
-    },
   }
   return { boundary, summary }
 }

@@ -1,7 +1,7 @@
 {
   "producer": "claude-cli",
   "version": "2.1.286",
-  "recordedAt": "2026-10-02",
+  "recordedAt": "2026-10-02T16:37:38.335Z",
   "payload": [
     {
       "type": "user",
@@ -203,14 +203,30 @@
       "slug": "eager-scribbling-toucan"
     },
     {
-      "type": "user",
-      "uuid": "120e54ee-b1ee-4011-8a61-b31cd5b46112",
       "parentUuid": "cb4b8220-702e-481d-8418-4f599a650758",
       "isSidechain": false,
-      "isCompactSummary": true,
+      "promptId": "8829818c-5a09-479e-8e73-43ebf0d89938",
+      "type": "user",
       "message": {
-        "role": "user"
-      }
+        "role": "user",
+        "content": "This session is being continued from a previous conversation that ran out of context."
+      },
+      "isVisibleInTranscriptOnly": true,
+      "isCompactSummary": true,
+      "uuid": "120e54ee-b1ee-4011-8a61-b31cd5b46112",
+      "timestamp": "2026-10-02T16:37:38.262Z",
+      "turnPosition": {
+        "promptIndex": 1,
+        "turnIndex": 1
+      },
+      "session_id": "9c80a9dc-d132-4554-bb4d-316a4e93d0f5",
+      "userType": "external",
+      "entrypoint": "cli",
+      "cwd": "/Users/x/compact",
+      "sessionId": "9c80a9dc-d132-4554-bb4d-316a4e93d0f5",
+      "version": "2.1.286",
+      "gitBranch": "main",
+      "slug": "eager-scribbling-toucan"
     },
     {
       "type": "user",
