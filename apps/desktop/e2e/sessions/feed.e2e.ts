@@ -27,6 +27,7 @@ import { proveRefusedStart } from './cases/refused-start.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveContract } from './cases/session-list-contract.case'
 import { provePackagedSessionListSelection } from './cases/session-list-interaction.case'
+import { proveSelectionSurvivesRestart } from './cases/session-list-restart.case'
 import { proveSessionListWindow } from './cases/session-list-window.case'
 import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
@@ -112,6 +113,10 @@ test.describe('session refresh progress', () => {
 
 test('session-list-selection', async ({ session }) => {
   await provePackagedSessionListSelection(session.page())
+})
+
+test('session-list-restart', async ({ session }) => {
+  await proveSelectionSurvivesRestart(session.page(), () => session.restart())
 })
 
 test('session-delegation-cards', async ({ session }) => {
