@@ -119,10 +119,13 @@ async function proveResume(
   )
   if (worktree === undefined) throw new Error(`No worktree was made for the ${harness} Session.`)
   expect(await head(worktree)).toBe(baseCommit)
+  const sessionUrl = page.url()
+  await openNewSessionByClick(page)
+  await reload(page)
   await git(project, ['worktree', 'remove', '--force', worktree])
 
-  // A reload opens the Session again, before any Send.
-  await reload(page)
+  // Remove the folder while the Session is closed, then open it before any Send.
+  await page.goto(sessionUrl)
   await expect.poll(() => shownToasts(page)).toContainEqual(expect.stringMatching(WORKTREE_GONE))
   const again = `Reply again from the removed ${harness} worktree.`
   await sendReplacingDraft(page, again)

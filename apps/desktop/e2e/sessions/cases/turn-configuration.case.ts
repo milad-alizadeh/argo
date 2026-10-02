@@ -18,9 +18,11 @@ export async function proveLiveCodexModelChoices(page) {
   await models.getByText('GPT-6-Astra', { exact: true }).click()
   await expect(effort).toHaveAttribute('max', '5')
   await effort.press('Home')
-  await expect(effort).toHaveAttribute('aria-valuetext', 'Low')
+  await expect(effort).toHaveAccessibleName('Effort Low')
+  await expect(effort).toHaveAttribute('aria-valuenow', '0')
   await effort.press('End')
-  await expect(effort).toHaveAttribute('aria-valuetext', 'Ultra')
+  await expect(effort).toHaveAccessibleName('Effort Ultra')
+  await expect(effort).toHaveAttribute('aria-valuenow', '5')
 
   await page.getByRole('tab', { name: 'Claude Code' }).click()
   await expect(
@@ -38,8 +40,8 @@ export async function proveLiveCodexModelChoices(page) {
   await expect(
     page.getByRole('radiogroup', { name: 'Model' }).getByRole('radio', { name: /GPT-6-Astra/ }),
   ).toBeChecked()
-  await expect(page.getByRole('slider', { name: 'Effort' })).toHaveAttribute(
-    'aria-valuetext',
-    'Ultra',
+  await expect(page.getByRole('slider', { name: 'Effort Ultra', exact: true })).toHaveAttribute(
+    'aria-valuenow',
+    '5',
   )
 }

@@ -124,7 +124,8 @@ async function chooseBudgetTurnConfiguration(page: Page, harness: Harness) {
   const effort = page.getByRole('slider', { name: 'Effort' })
   await effort.focus()
   await page.keyboard.press('Home')
-  await expect(effort).toHaveAttribute('aria-valuetext', 'Low')
+  await expect(effort).toHaveAccessibleName('Effort Low')
+  await expect(effort).toHaveAttribute('aria-valuenow', '0')
   await page.keyboard.press('Escape')
   await models.waitFor({ state: 'detached' })
 }

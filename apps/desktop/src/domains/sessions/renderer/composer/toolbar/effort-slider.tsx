@@ -54,8 +54,8 @@ export function EffortSlider({ choices, value, onChange }: TurnConfigurationCont
         {efforts.map((effort, index) => (
           <span
             key={effort.value}
-            id={value.effort === effort.value ? selectedEffortId : undefined}
-            className={`absolute whitespace-nowrap ${value.effort === effort.value ? 'font-semibold text-foreground' : ''}`}
+            id={index === effortIndex ? selectedEffortId : undefined}
+            className={`absolute whitespace-nowrap ${index === effortIndex ? 'font-semibold text-foreground' : ''}`}
             style={{
               left: `${(index / Math.max(1, efforts.length - 1)) * 100}%`,
               transform: labelShift(index, efforts.length - 1),
