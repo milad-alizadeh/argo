@@ -1,6 +1,6 @@
 // The disk state every packaged Session case launches the app against, and the mutations that
 // prove a re-read reaches the file system rather than a cache.
-import { appendFile, mkdir, realpath } from 'node:fs/promises'
+import { appendFile, mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { claudeConfigDirectory } from '../../../mocks/cli/claude/mock-claude-transcripts'
 import { writeCodexThreads } from '../../../mocks/sessions/mock-codex-thread-files'
@@ -89,6 +89,17 @@ export async function appendProse(transcripts: string, uuid: string, text: strin
         content: [{ type: 'text', text }],
       },
     })}\n`,
+  )
+}
+
+// Claude can rewrite a message while its Turn is still running: the row keeps its id but its prose
+// and height change (ADR-0033 rule 5).
+export async function streamProse(transcripts: string, text: string) {
+  const transcript = fixturePath(transcripts, 'prose')
+  const before = await readFile(transcript, 'utf8')
+  await writeFile(
+    transcript,
+    before.replace(/"text":\s*"(?:[^"\\]|\\.)*"/, `"text": ${JSON.stringify(text)}`),
   )
 }
 
