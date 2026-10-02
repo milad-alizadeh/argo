@@ -78,43 +78,27 @@ function quietWarnings() {
   return vi.spyOn(console, 'warn').mockImplementation(() => {})
 }
 
-test('an open idle thread shows idle after the first tick, as a listed Claude Session does', async () => {
+// A first tick after a hook of each kind, or none; only a hook that gives a status skips the read.
+async function firstTickAfterHook(event: 'SessionStart' | 'PermissionRequest' | null) {
   saved(RUNNING)
+  const status = event === 'PermissionRequest' ? 'permission' : null
+  if (event !== null) poll.hookEvent('codex', { event, nativeId: RUNNING, status, activity: null })
   await threads.open(RUNNING)
   threads.answer(RUNNING, 'completed')
   await tickAndWrite()
-  expect(threads.turnsReads).toEqual([RUNNING])
-  expect((await row(RUNNING)).status).toBe('idle')
+  return { reads: threads.turnsReads, status: (await row(RUNNING)).status }
+}
+
+test('an open idle thread shows idle after the first tick, as a listed Claude Session does', async () => {
+  expect(await firstTickAfterHook(null)).toEqual({ reads: [RUNNING], status: 'idle' })
 })
 
 test('a status a hook settled before the first sight is not read over', async () => {
-  saved(RUNNING)
-  poll.hookEvent('codex', {
-    event: 'PermissionRequest',
-    nativeId: RUNNING,
-    status: 'permission',
-    activity: null,
-  })
-  await threads.open(RUNNING)
-  threads.answer(RUNNING, 'completed')
-  await tickAndWrite()
-  expect(threads.turnsReads).toEqual([])
-  expect((await row(RUNNING)).status).toBe('permission')
+  expect(await firstTickAfterHook('PermissionRequest')).toEqual({ reads: [], status: 'permission' })
 })
 
 test('a hook that gives no status still leaves the first read', async () => {
-  saved(RUNNING)
-  poll.hookEvent('codex', {
-    event: 'SessionStart',
-    nativeId: RUNNING,
-    status: null,
-    activity: null,
-  })
-  await threads.open(RUNNING)
-  threads.answer(RUNNING, 'completed')
-  await tickAndWrite()
-  expect(threads.turnsReads).toEqual([RUNNING])
-  expect((await row(RUNNING)).status).toBe('idle')
+  expect(await firstTickAfterHook('SessionStart')).toEqual({ reads: [RUNNING], status: 'idle' })
 })
 
 test('an open running thread shows running after the first tick', async () => {
