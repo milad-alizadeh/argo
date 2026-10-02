@@ -84,9 +84,11 @@ is exempt by name because it reaches across domains on purpose to build test fix
 `*.test.ts`/`*.stories.tsx` files are exempt too, matching the same allowance the old
 `biome.jsonc` matrix made. Nothing reads the import graph for cycles.
 - **`tsconfig.web.json`'s `"types": ["bun-types/test"]` keeps Bun globals out of the renderer,
-  but not Node globals.** The project also includes `.storybook/**/*.ts`, whose package types load
-  `node` (for example `@storybook/builder-vite` imports `vite`'s types). Globals are shared by the
-  whole program, so `process.env.SOME_TOKEN` type-checks clean in renderer source (#3174). Until that is fixed, the runtime settings in the next item are the only guard.
+  but not Node globals.** Package types the project reaches (the main-process router type, the
+  agent SDK, `.storybook`) load `node`, and globals are shared by the whole program, so
+  `process.env.SOME_TOKEN` type-checks clean in renderer source. No tsconfig can fix that. Biome's
+  `noRestrictedGlobals` override in `biome.jsonc` bans `process`, `Buffer`, `require`, `__dirname`,
+  `__filename` and `global` in renderer source instead (#3174); tests are exempt.
 - **`contextIsolation: true` and `nodeIntegration: false` in
   `apps/desktop/src/platform/main/window/create-window.ts` are
   asserted by nothing.** Those two values make any Node reach from the renderer inert at

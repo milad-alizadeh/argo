@@ -188,6 +188,38 @@
   //             never add an entry to make a build pass.
   "overrides": [
     {
+      // #3174: tsconfig.web.json cannot keep Node globals out of the renderer, because package
+      // types it reaches (the main-process router type, the agent SDK) load `node`.
+      // Tests read source files, so they are exempt.
+      "includes": [
+        "apps/desktop/src/renderer/**",
+        "apps/desktop/src/platform/renderer/**",
+        "apps/desktop/src/domains/*/renderer/**",
+        "apps/desktop/src/harnesses/*/presentation/**",
+        "!**/*.test.ts",
+        "!**/*.test.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedGlobals": {
+              "level": "error",
+              "options": {
+                "deniedGlobals": {
+                  "process": "The renderer has no Node. Read settings through the preload bridge.",
+                  "Buffer": "The renderer has no Node. Use Uint8Array.",
+                  "require": "The renderer has no Node. Use an import.",
+                  "__dirname": "The renderer has no Node.",
+                  "__filename": "The renderer has no Node.",
+                  "global": "The renderer has no Node. Use globalThis."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "includes": [
         "apps/desktop/src/domains/projects/main/**/*.ts",
         "apps/desktop/src/domains/tickets/main/**/*.ts"
