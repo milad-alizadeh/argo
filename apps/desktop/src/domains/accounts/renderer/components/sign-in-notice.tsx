@@ -19,11 +19,11 @@ export function SignInNotice({ onConnect, onDismiss }: SignInNoticeProps) {
     >
       <div className="grid gap-(--spacing-shell-item)">
         <p>{t('notice.body')}</p>
-        <div className="flex flex-wrap gap-(--spacing-shell-item)">
-          <Button onClick={onConnect} size="sm">
+        <div className="flex flex-nowrap items-center gap-(--spacing-shell-item)">
+          <Button className="shrink-0" onClick={onConnect} size="sm">
             {t('notice.connect')}
           </Button>
-          <Button onClick={onDismiss} size="sm" variant="ghost">
+          <Button className="shrink-0" onClick={onDismiss} size="sm" variant="ghost">
             {t('notice.dismiss')}
           </Button>
         </div>
