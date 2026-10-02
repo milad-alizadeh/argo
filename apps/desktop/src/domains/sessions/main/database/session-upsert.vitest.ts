@@ -94,3 +94,25 @@ test('assigns a separate Argo ID to a fork native ID', () => {
     client.close()
   }
 })
+
+test('a scan that read an older activity time never moves the row back (#3165)', () => {
+  const { client, upsert } = database()
+  try {
+    const argoId = upsert({ harness: 'claude', nativeId: 'native-1', activityAt: 20 })
+    upsert({ harness: 'claude', nativeId: 'native-1', activityAt: 10 })
+    const activityAt = () =>
+      (
+        client.prepare('SELECT activity_at FROM session WHERE argo_id = ?').get(argoId) as {
+          activity_at: number | null
+        }
+      ).activity_at
+    assert.equal(activityAt(), 20)
+    // A scan with no activity time keeps the known one.
+    upsert({ harness: 'claude', nativeId: 'native-1', activityAt: null })
+    assert.equal(activityAt(), 20)
+    upsert({ harness: 'claude', nativeId: 'native-1', activityAt: 30 })
+    assert.equal(activityAt(), 30)
+  } finally {
+    client.close()
+  }
+})

@@ -9,6 +9,7 @@ import type { LiveActivity } from '@/domains/sessions/api/feed'
 import { WORKING_SESSION_STATUSES } from '@/domains/sessions/api/session-live-event'
 import type { Harness, HarnessSession } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
+import { laterActivityAt } from '../database'
 import { sessionHistoryIdentity } from '../session-history-identity'
 import type { SessionListChanges } from './session-list-changes'
 
@@ -64,10 +65,7 @@ function sessionColumns(update: SessionUpdate) {
       : { customTitle: update.customTitle, updatedAt: nextUpdatedAt(sessionTable.updatedAt) }),
     ...(activity === undefined ? {} : { activity }),
     ...(update.status === undefined ? {} : { status: update.status }),
-    // Activity only moves forward, so a late write never ages the row.
-    ...(update.activityAt === undefined
-      ? {}
-      : { activityAt: sql`max(coalesce(${sessionTable.activityAt}, 0), ${update.activityAt})` }),
+    ...(update.activityAt === undefined ? {} : { activityAt: laterActivityAt(update.activityAt) }),
   }
   return { columns, differs }
 }

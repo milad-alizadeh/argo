@@ -16,7 +16,13 @@ import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 import { prepare } from './fixtures/feed.fixture'
-import { chooseHarness, openSessionByClick, PERSISTED_ROW, TURN_CONFIGURATION } from './gestures'
+import {
+  chooseHarness,
+  openSessionByClick,
+  PERSISTED_ROW,
+  sendFromComposer,
+  TURN_CONFIGURATION,
+} from './gestures'
 import { sessionDetails } from './page-trpc'
 
 // Long enough for the Session List to re-read while the Turn still runs.
@@ -126,6 +132,32 @@ for (const harness of ['claude', 'codex'] as const)
       await expect(feed).toContainText(toolLabel)
       await expect(row).toContainText('Inspecting the results')
       await expect(feed).toContainText('Inspecting the results')
+    } finally {
+      await closeApplication(application)
+    }
+  })
+
+// A Session Argo drives has no external poll, so its live Turns alone move the row's time (#3165).
+for (const harness of ['claude', 'codex'] as const)
+  test(`the ${harness} Session row time moves when a later Turn completes`, async ({
+    root,
+    applicationUnderTest,
+  }) => {
+    const { application, page } = await launch(root, applicationUnderTest, {
+      [SESSION_MOCK_REPLY_DELAY_MS_ENV]: '500',
+    })
+    try {
+      const prompt = `Session row time for ${harness}`
+      const dot = await startSession(page, { harness, prompt })
+      const row = page.locator(PERSISTED_ROW).filter({ hasText: prompt })
+      const shownAt = async () =>
+        Date.parse((await row.locator('time').getAttribute('datetime')) ?? '')
+      await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/, { timeout: 15_000 })
+      const firstTurn = await shownAt()
+      await sendFromComposer(page, 'A second Turn')
+      await expect(dot).toHaveAttribute('data-variant', 'active')
+      await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/, { timeout: 15_000 })
+      await expect.poll(shownAt).toBeGreaterThan(firstTurn)
     } finally {
       await closeApplication(application)
     }
