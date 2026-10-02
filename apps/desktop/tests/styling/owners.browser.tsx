@@ -38,12 +38,12 @@ describe.each(['light', 'dark'] as const)('%s existing owners', (appearance) => 
 })
 
 describe.each(['light', 'dark'])('%s existing Badge', (appearance) => {
-  test('the real Badge preserves default and compact emphasis', () => {
+  test('the real Badge preserves native default and secondary emphasis', () => {
     document.documentElement.classList.toggle('dark', appearance === 'dark')
     const mounted = mountSpecimen(
       <div>
         <Badge>Default badge</Badge>
-        <Badge size="compact">Compact badge</Badge>
+        <Badge variant="secondary">Secondary badge</Badge>
       </div>,
     )
     cleanup = mounted.cleanup
@@ -53,10 +53,10 @@ describe.each(['light', 'dark'])('%s existing Badge', (appearance) => {
       weight: '500',
       tracking: 'normal',
     })
-    expect(metrics(page.getByText('Compact badge').element())).toEqual({
+    expect(metrics(page.getByText('Secondary badge').element())).toEqual({
       size: '12px',
       lineHeight: '16px',
-      weight: '400',
+      weight: '500',
       tracking: 'normal',
     })
   })

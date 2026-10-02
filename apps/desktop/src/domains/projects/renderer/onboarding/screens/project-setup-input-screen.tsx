@@ -86,9 +86,7 @@ function Questions({ command, snapshot }: InputScreenProps) {
                 <span className="flex items-center justify-between gap-3 font-medium">
                   {suggestion}
                   {suggestion === question.recommended ? (
-                    <Badge size="compact" variant="secondary">
-                      {t('setup.actor.questions.recommended')}
-                    </Badge>
+                    <Badge variant="secondary">{t('setup.actor.questions.recommended')}</Badge>
                   ) : null}
                 </span>
               </QuestionnaireChoice>

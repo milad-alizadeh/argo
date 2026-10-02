@@ -19,6 +19,24 @@
   ],
   "items": [
     {
+      "name": "badge",
+      "reviewedAt": "2026-10-02",
+      "url": "https://ui.shadcn.com/r/styles/base-nova/badge.json",
+      "registryTarget": "registry/base-nova/ui/badge.tsx",
+      "target": "src/platform/renderer/components/ui/badge.tsx",
+      "dependencies": ["cn"],
+      "registryDependencies": [],
+      "payloadSha256": "ccc20021cdcbf0fb23c0d4d28f1da4adde8e51ba59f4b11dd2722ed97a5ee3a4",
+      "cliSourceSha256": "d9fb280e266119c4b62a4c518e63152de27b094c68d3e5f8929d05bfb0c1bc6c",
+      "sourceSha256": "a04adde4711ba042ad92e3d018bee5e5dcbe13441e69d6c3c883944912b63182",
+      "generationTransforms": [
+        "Resolve registry/base-nova/ui/badge.tsx through the configured ui alias.",
+        "Keep the CLI cn import; configured Vite and Storybook aliases select the app merger.",
+        "Apply repository formatting and type-only imports without changing declarations or classes.",
+        "Badge has no registry dependencies, icons, use-client directive or same-folder imports requiring post-CLI normalization."
+      ]
+    },
+    {
       "name": "dialog",
       "url": "https://ui.shadcn.com/r/styles/base-nova/dialog.json",
       "registryTarget": "registry/base-nova/ui/dialog.tsx",

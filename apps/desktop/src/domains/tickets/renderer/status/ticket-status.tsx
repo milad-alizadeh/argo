@@ -2,6 +2,7 @@
 // The icon's shape carries the category, so a status is never its colour alone.
 import type { ReactNode } from 'react'
 import type { TicketPriority, TicketStatus } from '@/domains/tickets/api/ticket'
+import { indicatorToneRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { StatusGlyph } from './status-glyph'
 
@@ -10,19 +11,19 @@ const markIcon = 'size-(--size-icon-meta) shrink-0'
 type Mark = { render: () => ReactNode; tone: string }
 
 const CATEGORY_TONES: Record<TicketStatus['category'], string> = {
-  triage: 'text-warn',
-  backlog: 'text-faint',
-  unstarted: 'text-idle',
-  started: 'text-warn',
-  completed: 'text-ticket-done',
-  canceled: 'text-faint',
+  triage: indicatorToneRecipe.warning,
+  backlog: indicatorToneRecipe.neutral,
+  unstarted: indicatorToneRecipe.neutral,
+  started: indicatorToneRecipe.warning,
+  completed: indicatorToneRecipe.complete,
+  canceled: indicatorToneRecipe.neutral,
 }
 
 // Review is still an active workflow state, but its handoff is positive and should read as the
 // success-coloured stage beside the warning-coloured work-in-progress stage.
 function statusTone(status: TicketStatus) {
   return status.category === 'started' && status.name.toLocaleLowerCase() === 'in review'
-    ? 'text-success'
+    ? indicatorToneRecipe.success
     : CATEGORY_TONES[status.category]
 }
 
@@ -68,13 +69,16 @@ function startedShare(status: TicketStatus, statuses: readonly TicketStatus[]) {
 const PRIORITY_MARKS: Record<TicketPriority['level'], Mark> = {
   1: {
     render: () => <Icon name="octagon-alert" className={markIcon} />,
-    tone: 'text-danger',
+    tone: indicatorToneRecipe.danger,
   },
-  2: { render: () => <PriorityBars filled={3} />, tone: 'text-muted-foreground' },
-  3: { render: () => <PriorityBars filled={2} />, tone: 'text-muted-foreground' },
-  4: { render: () => <PriorityBars filled={1} />, tone: 'text-muted-foreground' },
+  2: { render: () => <PriorityBars filled={3} />, tone: indicatorToneRecipe.neutral },
+  3: { render: () => <PriorityBars filled={2} />, tone: indicatorToneRecipe.neutral },
+  4: { render: () => <PriorityBars filled={1} />, tone: indicatorToneRecipe.neutral },
 }
-const NO_PRIORITY_MARK: Mark = { render: () => <PriorityBars filled={null} />, tone: 'text-faint' }
+const NO_PRIORITY_MARK: Mark = {
+  render: () => <PriorityBars filled={null} />,
+  tone: indicatorToneRecipe.neutral,
+}
 
 export const NO_PRIORITY_LABEL = 'No priority'
 export const priorityName = (priority: TicketPriority | null): string =>

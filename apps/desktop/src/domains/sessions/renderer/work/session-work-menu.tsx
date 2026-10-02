@@ -2,6 +2,7 @@
 // opening its own list (#1582). The button is the whole permanent footprint: nothing is parked in
 // the inspector, so the Feed keeps its width until the reader asks for something.
 
+import { filledToneRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 import {
   DropdownMenu,
@@ -88,7 +89,7 @@ function Badge({ count, running }: { count: number; running: boolean }) {
       aria-hidden="true"
       className={cn(
         'absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 type-meta leading-none font-semibold tabular-nums ring-2 ring-background',
-        running ? 'bg-active text-background' : 'bg-muted-foreground text-background',
+        filledToneRecipe[running ? 'active' : 'neutral'],
       )}
     >
       {count}

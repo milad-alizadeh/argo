@@ -107,16 +107,10 @@ function RelationPopover({
             <Badge
               className="@3xl:hidden"
               render={<button type="button" />}
-              size="default"
               variant="destructive"
             />
           ) : (
-            <Badge
-              className="@3xl:hidden"
-              render={<button type="button" />}
-              size="default"
-              variant="secondary"
-            />
+            <Badge className="@3xl:hidden" render={<button type="button" />} variant="secondary" />
           )
         }
       >
@@ -189,7 +183,7 @@ export function TicketRelations({
       ) : null}
       {blockers === null ? (
         <>
-          <Badge className="@3xl:hidden" size="default" variant="secondary">
+          <Badge className="@3xl:hidden" variant="secondary">
             {t('detail.dependenciesUnavailable')}
           </Badge>
           <p className="hidden type-meta text-muted-foreground @3xl:block">

@@ -2,8 +2,9 @@ import { type MouseEvent, memo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isWorkingStatus } from '@/domains/sessions/api/session-live-event'
 import { harnessSchema } from '@/harnesses/harness'
+import { StatusBadge } from '@/platform/renderer/components/design-system/status-badge'
+import { indicatorToneRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import { Badge } from '@/platform/renderer/components/ui/badge'
 import { LiveActivityWords, useLiveActivityText } from '../feed'
 import { HarnessLogo } from '../harness'
 import { SessionTitle } from '../prompt'
@@ -28,11 +29,10 @@ const STATUS_VARIANTS = {
 } as const satisfies Record<Session['status'], SessionStatusVariant>
 
 const STATUS_MARK = {
-  active: 'bg-active shadow-state-glow animate-[status-light-blink_1.6s_ease-in-out_infinite]',
-  attention:
-    'bg-warn shadow-[0_0_5px_color-mix(in_srgb,var(--color-warn)_35%,transparent)] animate-[status-light-blink_1.6s_ease-in-out_infinite]',
-  failed: 'bg-danger',
-  idle: 'bg-idle',
+  active: `${indicatorToneRecipe.active} bg-current shadow-state-glow animate-[status-light-blink_1.6s_ease-in-out_infinite]`,
+  attention: `${indicatorToneRecipe.warning} bg-current shadow-[0_0_5px_color-mix(in_srgb,currentColor_35%,transparent)] animate-[status-light-blink_1.6s_ease-in-out_infinite]`,
+  failed: `${indicatorToneRecipe.danger} bg-current`,
+  idle: `${indicatorToneRecipe.neutral} bg-current`,
   unknown: 'bg-transparent shadow-state-outline',
 } satisfies Record<SessionStatusVariant, string>
 
@@ -274,9 +274,7 @@ export const SessionRow = memo(function SessionRow({
             </span>
           ) : null}
           {statusVariant === 'attention' ? (
-            <Badge size="compact" variant="warning">
-              {t('needsInput')}
-            </Badge>
+            <StatusBadge tone="warning">{t('needsInput')}</StatusBadge>
           ) : null}
         </span>
         <ActivityLine session={session} />

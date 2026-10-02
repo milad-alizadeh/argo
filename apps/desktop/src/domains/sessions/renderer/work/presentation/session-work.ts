@@ -2,6 +2,7 @@
 // and what it spent (#1582). A running row is measured against now, so the caller passes the
 // clock rather than this module reading one.
 import type { TFunction } from 'i18next'
+import { indicatorToneRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
 import type { SessionShellCommand, SessionSubagent, ShellState } from '../../types'
 import type { SubagentUsageFacts } from '../types'
 
@@ -19,7 +20,7 @@ export type WorkState = ShellState | 'done'
 
 // The semantic ground a state mark takes, the same set the Roster draws a Session's status in.
 export const WORK_STATE_MARKS: Record<WorkState, string> = {
-  running: 'bg-active shadow-state-glow',
+  running: `${indicatorToneRecipe.active} bg-current shadow-state-glow`,
   done: 'bg-idle',
   completed: 'bg-idle',
   failed: 'bg-danger',

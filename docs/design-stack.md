@@ -37,10 +37,18 @@ archive.
   `npx shadcn@latest add <name>`. Compose the registry shapes when the registry has no matching
   shape. Review mutable candidates in scratch before an update and preserve generated source
   between reviewed updates. Argo imposes this maintenance boundary; shadcn permits source edits.
-  The Button/Input/Dialog baseline is recorded in `apps/desktop/tests/styling/registry-baseline.json`.
+  The Button/Input/Dialog/Badge baseline is recorded in `apps/desktop/tests/styling/registry-baseline.json`.
   Other installed primitives retain the pending dispositions in the research catalog.
   A Biome restricted-import rule refuses a second component library. `components.json`
   fixes the primitive path under `ui/` (#1767).
+- **Badge and status paint** - Use registry Badge directly for its native variants, typography,
+  and 20px height. Keep its destructive tint and focus treatment. Use its `render` prop with
+  an actual button for an action or an anchor for navigation. The display-only `StatusBadge` in
+  `components/design-system/status-badge.tsx` supplies the Session attention treatment as a span.
+  It keeps native Badge typography and geometry. `components/design-system/tone-recipes.ts` owns
+  filled active/neutral count paint, subtle warning paint, and active/success/warning/danger/complete/neutral
+  indicator ink. Theme CSS supplies their paired surfaces and foregrounds, plus independent indicator
+  values. Session and Ticket modules keep state mappings, text, glyphs, motion, and count geometry.
 - **Isolated-state mechanism** — two of them, and they answer different questions. A **story**
   under a renderer facet in `apps/desktop/src/` holds one component in one state, and is
   what a reviewer clicks. The **shipped screen** is launched by the capture into each screen it

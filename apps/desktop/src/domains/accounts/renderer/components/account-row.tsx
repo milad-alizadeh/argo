@@ -101,9 +101,7 @@ export function AccountRow({ account, busy, onDisconnect, onReconnect }: Account
             {account.workspace}
           </span>
         ) : null}
-        <Badge size="compact" variant={variant}>
-          {t(`state.${account.state}`)}
-        </Badge>
+        <Badge variant={variant}>{t(`state.${account.state}`)}</Badge>
         <span className="flex-1" />
         {confirming ? null : (
           <Button data-focus-rescue onClick={() => setConfirming(true)} size="sm" variant="ghost">

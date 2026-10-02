@@ -18,6 +18,18 @@
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-success: var(--success);
+  --color-active-surface: var(--active-surface);
+  --color-active-foreground: var(--active-foreground);
+  --color-neutral-surface: var(--neutral-surface);
+  --color-neutral-foreground: var(--neutral-foreground);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-active-indicator: var(--active-indicator);
+  --color-success-indicator: var(--success-indicator);
+  --color-warning-indicator: var(--warning-indicator);
+  --color-danger-indicator: var(--danger-indicator);
+  --color-complete-indicator: var(--complete-indicator);
+  --color-neutral-indicator: var(--neutral-indicator);
   --color-diff-added: var(--diff-added);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
