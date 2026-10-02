@@ -131,16 +131,15 @@ async function proveResume(
 
 export async function proveSessionWorktree(
   page: Page,
-  project: string,
-  backend: SessionHarnessBackend,
+  { project, backend }: { project: string; backend: SessionHarnessBackend },
+  harness: Harness,
 ) {
   await git(project, ['commit', '--allow-empty', '--quiet', '-m', 'base'])
   await page.addInitScript(recordToasts)
   await openNewSessionByClick(page)
   // A new Project starts in its main checkout.
   await expect(worktreeSwitch(page)).toHaveAttribute('aria-checked', 'false')
-  for (const harness of ['claude', 'codex'] as const)
-    await proveResume(page, { project, backend }, harness)
+  await proveResume(page, { project, backend }, harness)
 
   // The switch is remembered for the Project; the start goes back to the current branch.
   await reload(page)

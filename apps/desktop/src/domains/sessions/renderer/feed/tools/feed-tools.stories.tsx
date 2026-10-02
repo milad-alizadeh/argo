@@ -427,6 +427,19 @@ export const GroupOpen = {
   ),
 }
 
+// Whether the body is still mounted when the trigger reports collapsed, read in the observer's
+// microtask so the check never races the end of the closing transition.
+function mountedAtCollapse(trigger: HTMLElement, body: HTMLElement) {
+  return new Promise<boolean>((resolve) => {
+    const observer = new MutationObserver(() => {
+      if (trigger.getAttribute('aria-expanded') !== 'false') return
+      observer.disconnect()
+      resolve(body.isConnected)
+    })
+    observer.observe(trigger, { attributes: true, attributeFilter: ['aria-expanded'] })
+  })
+}
+
 // A closed group builds no body, so a long Feed pays for titles alone; the body mounts on open,
 // stays through the closing transition, and leaves once it ends.
 export const ClosedGroupBuildsNoBody = {
@@ -449,9 +462,12 @@ export const ClosedGroupBuildsNoBody = {
     await expect(canvas.queryByText('Edited Composer.tsx')).toBeNull()
     await userEvent.click(group)
     const edit = await canvas.findByRole('button', { name: 'Edited Composer.tsx +3 −1' })
+    // A panel closed before it has grown has no height to animate, so Base UI unmounts it at once.
+    await waitFor(() => expect(edit).toBeVisible())
+    const bodyAtCollapse = mountedAtCollapse(group, edit)
     await userEvent.click(group)
     await expect(group).toHaveAttribute('aria-expanded', 'false')
-    await expect(edit).toBeInTheDocument()
+    await expect(await bodyAtCollapse).toBe(true)
     await waitFor(() => expect(canvas.queryByText('Edited Composer.tsx')).toBeNull())
   },
 }

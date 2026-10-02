@@ -64,9 +64,15 @@ test('session-shell', async ({ session }) => {
   await proveSessionShell(session.page())
 })
 
-test('session-worktree', async ({ session, backend }) => {
-  await proveSessionWorktree(session.page(), session.fixture.project, backend)
-})
+// One test per Harness: both legs and their five reloads ran 47-61s, against the 60s budget.
+for (const harness of ['claude', 'codex'] as const)
+  test(`session-worktree-${harness}`, async ({ session, backend }) => {
+    await proveSessionWorktree(
+      session.page(),
+      { project: session.fixture.project, backend },
+      harness,
+    )
+  })
 
 test('session-refused-start', async ({ session }) => {
   await proveRefusedStart(session.page(), session.fixture.project)
