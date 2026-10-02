@@ -13,7 +13,7 @@ import { useAvailableHarnesses } from '../harness'
 import { workInspectorReveal } from '../inspector'
 import type { Session, SessionEvidence, SessionExtras } from '../types'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work'
-import { sessionBranch } from './session-screen-branch'
+import { sessionLocation } from './session-screen-location'
 import { sessionHarness } from './session-screen-state'
 import { pickedSubagent, sessionScreenSubagents } from './session-screen-subagents'
 import { useSessionDetails } from './use-session-details'
@@ -159,7 +159,7 @@ export function useSessionScreenModel() {
     navigate,
     session,
     sessionLoaded,
-    branch: sessionBranch(session, worktreeState.options?.checkout ?? null),
+    location: sessionLocation(session, worktreeState.options?.checkout ?? null),
     evidence,
     setEvidence,
     harness,

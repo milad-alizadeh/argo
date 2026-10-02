@@ -24,7 +24,7 @@ export type RemovalContext = {
   isRunning: (sessionId: string) => boolean
 }
 
-type ArchivedWorktree = SessionWorktree & { sessionId: string; projectPath: string }
+type ArchivedWorktree = Omit<SessionWorktree, 'base'> & { sessionId: string; projectPath: string }
 
 function present(folder: string): Promise<boolean> {
   return stat(folder).then(

@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import { AttachmentTray } from './attachment-tray'
 import { WorktreeRow } from './worktree-row'
 import '../editor/composer-content.css'
@@ -13,14 +12,11 @@ function WorktreeRowStory({
   branch = 'main',
   initialNewWorktree = false,
   saveFailed = false,
-  queued = false,
   narrow = false,
 }: {
   branch?: string | null
   initialNewWorktree?: boolean
   saveFailed?: boolean
-  // Draws a Permission card under the row, as the tray holds it, to compare the two.
-  queued?: boolean
   // A fixed narrow column, so a long branch truncates at any viewport width.
   narrow?: boolean
 }) {
@@ -39,16 +35,6 @@ function WorktreeRowStory({
             onNewWorktreeChange={setNewWorktree}
             onFromChange={setFrom}
           />
-          {queued ? (
-            <PermissionPrompt
-              harness="claude"
-              onDecide={async () => true}
-              permission={{
-                id: 'permission-one',
-                description: 'Bash {"command":"bun test"}',
-              }}
-            />
-          ) : null}
         </AttachmentTray>
         <div className="relative z-10 h-24 rounded-xl border border-border bg-card" />
       </div>
@@ -81,16 +67,6 @@ export const LabelTogglesTheSwitch: Story = {
     await userEvent.click(canvas.getByText('Worktree'))
     await expect(canvas.getByRole('switch', { name: 'Worktree' })).toBeChecked()
     await expect(canvas.getByRole('button', { name: 'New worktree from main' })).toBeVisible()
-  },
-}
-
-// The row sits in the same tray as a queued Permission card, tucked behind the composer card.
-export const WithQueuedPermission: Story = {
-  args: { initialNewWorktree: true, queued: true },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByRole('heading', { name: 'Permission needed' })).toBeVisible()
-    await expect(canvas.getByRole('switch', { name: 'Worktree' })).toBeChecked()
   },
 }
 

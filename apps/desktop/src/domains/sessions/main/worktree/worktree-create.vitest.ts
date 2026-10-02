@@ -36,6 +36,8 @@ test('creates one worktree on its own branch and reuses it when the draft is sen
   const second = await createWorktree(input)
   expect(second).toEqual(first)
   expect(first.branch).toMatch(/^argo\/session-/)
+  // With no branch chosen, it starts from the main checkout's current branch.
+  expect(first.base).toBe('main')
   expect(
     (await run('git', ['-C', first.path, 'rev-parse', '--abbrev-ref', 'HEAD'])).stdout.trim(),
   ).toBe(first.branch)
@@ -63,6 +65,7 @@ test('starts at the chosen branch', async () => {
   await run('git', ['-C', repository, 'checkout', '--quiet', 'main'])
   const created = await createWorktree(input)
   expect(await head(created.path)).toBe(base)
+  expect(created.base).toBe('base')
 })
 
 test('refuses a branch that does not exist', async () => {

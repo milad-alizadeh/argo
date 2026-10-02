@@ -19,11 +19,14 @@ export const sessionInsertSchema = createInsertSchema(sessionTable, {
 export const sessionSelectSchema = createSelectSchema(sessionTable, {
   worktreePath: (schema) => schema.min(1),
   worktreeBranch: (schema) => schema.min(1),
+  worktreeBase: (schema) => schema.min(1),
 })
 
-// The linked worktree a Session runs in, read from its two worktree columns.
+// The linked worktree a Session runs in, read from its worktree columns. `base` is the local branch
+// Argo started it from; null from a detached commit or a worktree made outside Argo.
 export const sessionWorktreeSchema = z.strictObject({
   path: sessionSelectSchema.shape.worktreePath.unwrap(),
   branch: sessionSelectSchema.shape.worktreeBranch,
+  base: sessionSelectSchema.shape.worktreeBase,
 })
 export type SessionWorktree = z.infer<typeof sessionWorktreeSchema>

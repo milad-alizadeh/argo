@@ -74,7 +74,9 @@ async function ensureWorktreeOnDisk(input: {
   await run('git', arguments_, { timeout: 120_000 })
 }
 
-// The worktree made for a new Session draft, from the local branch `from`. A second Send of the draft reuses it.
+// The worktree made for a new Session draft, from the local branch `from`, else the main checkout's
+// current branch. `base` names that branch; null from a detached commit. A second Send of the draft
+// reuses the worktree.
 export async function createWorktree(input: {
   database: Database
   projectId: string
@@ -100,5 +102,5 @@ export async function createWorktree(input: {
     branch,
     start: () => startCommit(main, input.from),
   })
-  return { path: worktreePath, branch }
+  return { path: worktreePath, branch, base: input.from ?? (await readWorktreeBranch(main)) }
 }

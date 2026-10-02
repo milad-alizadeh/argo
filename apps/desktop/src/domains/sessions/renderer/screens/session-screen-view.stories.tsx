@@ -24,7 +24,7 @@ import type {
 import { SessionWorkButtons } from '../work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import type { SessionShellOutput } from '../work/types'
-import { sessionBranch } from './session-screen-branch'
+import { type SessionLocation, sessionLocation } from './session-screen-location'
 import { SessionScreenView } from './session-screen-view'
 import { SessionShell } from './session-shell'
 
@@ -258,7 +258,7 @@ function ReviewScreen({
   const feed = rows === null ? feedFor(selectedSessionId) : { ...feedFor(selectedSessionId), rows }
   if (session === undefined) return null
   const headerSession = sessionWithTitle({ ...session, worktree }, titleText)
-  const branch = sessionBranch(headerSession, checkout)
+  const location = sessionLocation(headerSession, checkout)
 
   return (
     <ReviewContent
@@ -274,7 +274,7 @@ function ReviewScreen({
       session={session}
       shellOutput={shellOutput}
       showPlan={showPlan}
-      branch={branch}
+      location={location}
     />
   )
 }
@@ -292,7 +292,7 @@ function ReviewContent({
   session,
   shellOutput,
   showPlan,
-  branch,
+  location,
 }: {
   composerRunning: boolean
   permissionPrompt: ReactNode
@@ -306,7 +306,7 @@ function ReviewContent({
   session: Session & SessionExtras
   shellOutput: SessionShellOutput
   showPlan: boolean
-  branch: string | null
+  location: SessionLocation | null
 }) {
   const delegation = session.subagents.find(({ id }) => id === picked?.id) ?? null
   const shell = session.shell?.find(({ id }) => id === picked?.id) ?? null
@@ -341,7 +341,7 @@ function ReviewContent({
         jumpToLatest={jumpToLatest}
         onJumpToLatestChange={onJumpToLatestChange}
         session={headerSession}
-        branch={branch}
+        location={location}
         inspector={
           <ReviewInspector delegation={delegation} shell={shell} shellOutput={shellOutput} />
         }
@@ -707,7 +707,9 @@ export const Open: Story = {
       worktree={{
         path: '/worktrees/ticket-1846-composer',
         branch: 'feature/composer-review',
+        base: 'main',
       }}
+      checkout={{ path: '/workspace/argo', branch: 'main' }}
     />
   ),
   play: async ({ canvasElement }) => {
@@ -720,8 +722,9 @@ export const Open: Story = {
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
     expectNoSessionIdInHeader(canvasElement)
-    await expect(canvas.getByText('Branch')).toBeVisible()
-    await expect(canvas.getByText('feature/composer-review')).toBeVisible()
+    await expect(canvas.getByText('/worktrees/ticket-1846-composer')).toBeVisible()
+    // Started from the main checkout's own branch, so the header names no base.
+    expect(canvas.queryByText('from')).toBeNull()
     await waitFor(() => expectHeaderActionsAtTrailingEdge(canvasElement), { timeout: 5000 })
     await expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement)
     await waitFor(() =>
@@ -755,6 +758,30 @@ export const Open: Story = {
     await expectDelegatedFeedSurvivesCollapse(canvas)
 
     await expectShellReopensWithOutput(canvasElement)
+  },
+}
+
+// The Worktree row belongs to a new-Session draft only: a started Session waiting on a Permission
+// shows the Permission card alone, and its header names its folder.
+export const StartedSessionHasNoWorktreeRow: Story = {
+  parameters: { route: PRODUCTION_ROUTE },
+  beforeEach: () =>
+    sessionSelectionHost(SESSION_ROWS, {
+      permission: {
+        id: 'permission-one',
+        sessionId: 'composer-review',
+        description: 'Bash {"command":"bun test"}',
+      },
+    }),
+  render: () => <ProductionSessionSelectionScreen />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(
+      () => expect(canvas.getByRole('heading', { name: 'Permission needed' })).toBeVisible(),
+      { timeout: 5000 },
+    )
+    expect(canvas.queryByRole('region', { name: 'Work location' })).toBeNull()
+    expect(canvas.queryByRole('switch', { name: 'Worktree' })).toBeNull()
   },
 }
 
@@ -864,7 +891,6 @@ export const FormattedHeaderTitle: Story = {
     await expect(header).toHaveTextContent('https://example.com/guide')
     await expect(header.querySelector('a')).toBeNull()
     expectNoSessionIdInHeader(canvasElement)
-    expect(canvasElement.querySelector('[data-component="SessionMetadata"]')).toBeNull()
   },
 }
 
@@ -1034,7 +1060,7 @@ export const SharedCheckout: Story = {
       canvas.getByRole('heading', { name: 'Add Markdown typing shortcuts' }),
     ).toBeVisible()
     expectNoSessionIdInHeader(canvasElement)
-    expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
+    await expect(canvas.getByText('/workspace/argo')).toBeVisible()
   },
 }
 
@@ -1045,6 +1071,7 @@ export const NarrowHeader: Story = {
         worktree={{
           path: '/worktrees/ticket-1846-composer',
           branch: 'feature/composer-review',
+          base: null,
         }}
       />
     </div>
@@ -1055,7 +1082,7 @@ export const NarrowHeader: Story = {
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
     expectNoSessionIdInHeader(canvasElement)
-    await expect(canvas.getByText('feature/composer-review')).toBeInTheDocument()
+    await expect(canvas.getByText('/worktrees/ticket-1846-composer')).toBeInTheDocument()
     await waitFor(() =>
       expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
         'data-session',
@@ -1067,43 +1094,46 @@ export const NarrowHeader: Story = {
   },
 }
 
-export const MainCheckoutBranch: Story = {
+export const MainCheckoutFolder: Story = {
   render: () => <ReviewScreen checkout={{ path: COMPOSER_REVIEW_FOLDER, branch: 'main' }} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     expectNoSessionIdInHeader(canvasElement)
-    await expect(canvas.getByText('Branch')).toBeVisible()
-    await expect(canvas.getByText('main')).toBeVisible()
+    await expect(canvas.getByText(COMPOSER_REVIEW_FOLDER)).toBeVisible()
+    expect(canvas.queryByText('from')).toBeNull()
   },
 }
 
-export const DetachedHead: Story = {
-  render: () => <ReviewScreen checkout={{ path: COMPOSER_REVIEW_FOLDER, branch: null }} />,
+export const WorktreeFromAnotherBranch: Story = {
+  render: () => (
+    <ReviewScreen
+      worktree={{
+        path: '/worktrees/ticket-1846-composer',
+        branch: 'argo/session-1846',
+        base: 'release/1.4',
+      }}
+      checkout={{ path: '/workspace/argo', branch: 'main' }}
+    />
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    expectNoSessionIdInHeader(canvasElement)
-    expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
+    await expect(canvas.getByText('/worktrees/ticket-1846-composer')).toBeVisible()
+    await expect(canvas.getByText('from')).toBeVisible()
+    await expect(canvas.getByText('release/1.4')).toBeVisible()
   },
 }
 
-export const FolderOutsideTheProject: Story = {
-  render: () => <ReviewScreen checkout={{ path: '/elsewhere', branch: 'main' }} />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    expectNoSessionIdInHeader(canvasElement)
-    expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
-  },
-}
-
+// A long folder and a long base both truncate; the header's controls stay in view.
 export const LongBranchName: Story = {
   render: () => (
     <div className="h-dvh w-[calc(var(--size-navigation-rail)+var(--size-shell-sidebar-min)+var(--size-shell-content-min))]">
       <ReviewScreen
         worktree={{
           path: '/worktrees/a-worktree-folder-much-longer-than-the-header-can-display',
-          branch:
-            'feature/a-branch-name-that-is-much-longer-than-the-header-can-display-or-the-session-title',
+          branch: 'argo/session-long',
+          base: 'feature/a-branch-name-that-is-much-longer-than-the-header-can-display-or-the-session-title',
         }}
+        checkout={{ path: '/workspace/argo', branch: 'main' }}
       />
     </div>
   ),

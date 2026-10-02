@@ -11,7 +11,11 @@ import { createSessionUpsert } from '../database'
 import { projectFolders, readWorktreeBranch } from '../worktree'
 
 // `worktree` is a linked worktree git lists, other than the folder the Project was added from.
-type SessionRoot = { projectId: string; path: string; worktree: SessionWorktree | null }
+type SessionRoot = {
+  projectId: string
+  path: string
+  worktree: Omit<SessionWorktree, 'base'> | null
+}
 
 function contains(root: string, candidate: string): boolean {
   const relative = path.relative(root, candidate)

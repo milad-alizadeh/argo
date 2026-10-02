@@ -11,7 +11,7 @@ import {
 
 const t = initTRPC.create()
 
-const heldWorktreeSchema = sessionWorktreeSchema.extend({
+const heldWorktreeSchema = sessionWorktreeSchema.omit({ base: true }).extend({
   sessionId: identifierSchema,
   // A count git could not read is null, and the archive dialog names it as unchecked.
   changedFiles: z.number().int().nonnegative().nullable(),

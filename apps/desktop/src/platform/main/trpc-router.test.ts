@@ -31,6 +31,7 @@ function testRouter(
       createWorktree: async () => ({
         path: '/tmp/argo-test-worktrees',
         branch: 'argo/session-test',
+        base: 'main',
       }),
       acceptsAttachments: () => true,
       chooseAttachmentFiles: async () => [],

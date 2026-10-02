@@ -171,7 +171,7 @@ async function leaveGoneWorktree(
   const { main } = await projectFolders(registered.path)
   database
     .update(sessionTable)
-    .set({ cwd: main, worktreePath: null, worktreeBranch: null })
+    .set({ cwd: main, worktreePath: null, worktreeBranch: null, worktreeBase: null })
     .where(eq(sessionTable.argoId, stored.sessionId))
     .run()
   return main

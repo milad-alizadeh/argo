@@ -50,7 +50,7 @@
   Facts read later from vendor history are vendor-sourced.
 
   A Session has **`0..1` worktree**: the `path` of the linked worktree it runs in and its
-  `branch`, which is null when the worktree is detached. Argo makes one for a new Session, from a
+  `branch`, which is null when the worktree is detached, and the `base` branch Argo started it from. Argo makes one for a new Session, from a
   local branch chosen in the composer. A Session that runs in a linked worktree made
   outside Argo has that worktree too, and the same rules apply to it. With no worktree, the
   Session runs in its `cwd`, which is the Project's main checkout for a new Session. Argo never

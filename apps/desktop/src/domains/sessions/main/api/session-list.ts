@@ -177,7 +177,8 @@ function sessionListRow(
 }
 
 function sessionWorktree(row: StoredSessionRow): SessionWorktree | null {
-  return row.worktreePath === null ? null : { path: row.worktreePath, branch: row.worktreeBranch }
+  const { worktreePath: path, worktreeBranch: branch, worktreeBase: base } = row
+  return path === null ? null : { path, branch, base }
 }
 
 // A Session with no link joins no row, so every link column is null.
@@ -202,6 +203,7 @@ const storedSessionColumns = {
   planProgress: sessionTable.planProgress,
   worktreePath: sessionTable.worktreePath,
   worktreeBranch: sessionTable.worktreeBranch,
+  worktreeBase: sessionTable.worktreeBase,
   ticket: {
     projectId: sessionTicketLink.projectId,
     key: sessionTicketLink.ticketKey,

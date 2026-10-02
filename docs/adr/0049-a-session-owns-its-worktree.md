@@ -35,6 +35,10 @@ The composer of a new Session shows a Worktree row in the tray above the editor:
   branches. Argo makes a new worktree on a new `argo/session-…` branch, from the branch you chose.
 - The dropdown always begins on the current branch of the main checkout. Argo does not remember
   the branch you chose.
+- After the first prompt, the row is gone and the switch and branch cannot change. The Session
+  header shows the folder of the Session. For a worktree, it also shows "from" and the base
+  branch, if the base is not the current branch of the main checkout. Argo stores the base with
+  the worktree.
 - A new worktree starts at a commit. Uncommitted changes in the main checkout stay there and do
   not go into the new worktree.
 

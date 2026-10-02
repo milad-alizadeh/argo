@@ -226,6 +226,7 @@ test('creates the owned worktree a new draft asks for before starting a Session'
   expect(submitted?.worktree).toEqual({
     path: submitted?.cwd,
     branch: expect.stringMatching(/^argo\/session-/),
+    base: 'main',
   })
   expect(
     (

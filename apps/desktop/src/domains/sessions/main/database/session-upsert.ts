@@ -38,6 +38,7 @@ export function createSessionUpsert(database: Database): SessionUpsert {
         projectId: validatedInput.projectId ?? null,
         worktreePath: validatedInput.worktreePath ?? null,
         worktreeBranch: validatedInput.worktreeBranch ?? null,
+        worktreeBase: validatedInput.worktreeBase ?? null,
         customTitle: validatedInput.customTitle ?? null,
         preview: validatedInput.preview ?? null,
         firstPrompt: validatedInput.firstPrompt ?? null,

@@ -17,6 +17,8 @@ export const sessionTable = sqliteTable(
     // the worktree is detached, and both are null in the main checkout.
     worktreePath: text('worktree_path'),
     worktreeBranch: text('worktree_branch'),
+    // The local branch the worktree started from; null when it started at a detached commit.
+    worktreeBase: text('worktree_base'),
     customTitle: text('custom_title'),
     preview: text('preview'),
     firstPrompt: text('first_prompt'),

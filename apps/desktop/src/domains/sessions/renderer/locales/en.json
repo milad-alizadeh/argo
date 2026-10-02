@@ -11,7 +11,7 @@
   },
   "newSession": "New Session",
   "identity": {
-    "branch": "Branch"
+    "from": "from"
   },
   "searchSessions": "Search Sessions",
   "subagent": "Subagent",

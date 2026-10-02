@@ -110,7 +110,7 @@ export function SessionScreenView() {
         composer={composerFor(model)}
         headerControls={<WorkButtons model={model} />}
         session={session}
-        branch={model.branch}
+        location={model.location}
         inspector={<Inspector model={model} />}
         inspectorBar={<InspectorBar model={model} />}
         defaultInspectorCollapsed={true}

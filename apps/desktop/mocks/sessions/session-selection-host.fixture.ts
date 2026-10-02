@@ -1,4 +1,5 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import type { Permission } from '@/domains/sessions/api/permissions'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import type { Session } from '@/domains/sessions/renderer/types'
 import {
@@ -170,6 +171,8 @@ export function sessionSelectionHost(
     heldDetails?: string[]
     feed?: FeedRead
     live?: readonly SessionLiveEvent[]
+    // A Permission its Session is waiting on; every other Session waits on none.
+    permission?: Permission
   } = {},
 ) {
   const before = window.argo
@@ -193,6 +196,13 @@ export function sessionSelectionHost(
     trpc: (async (request) =>
       projectReply(request) ??
       composerReply(request) ??
+      (request.path === 'sessionPermissionRead'
+        ? success(
+            options.permission?.sessionId === (request.input as { sessionId: string }).sessionId
+              ? options.permission
+              : null,
+          )
+        : null) ??
       // Screen stories open the shell inspector and read this tail. Production stays absent.
       (request.path === 'sessionShellOutput'
         ? {
