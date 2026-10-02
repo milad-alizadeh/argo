@@ -20,10 +20,10 @@ time or inode asks for a read. Activity reads run one at a time across every Ses
 vendor read can take a large transcript whole. A Session has at most one read queued or in flight,
 and a change during its read asks for one more after it. A read that fails keeps the stored status
 and line, and a read that could not answer yet asks again on the next tick. The first sight of a
-transcript records its stamp. It also asks for one read when no listing or hook gives a status
-yet, so an open Session that writes nothing shows its status at once, and Claude and Codex rows
-agree (#3144). Otherwise the stored status and line stand until the file changes. Argo starts
-no file watcher for Session history.
+transcript records its stamp. It asks for one read when no listing or hook gives a status yet, so
+an open Session that writes nothing shows its status at once (#3144). Codex uses that read to find
+children already named in the newest Turn. Otherwise the stored status and line stand until the
+file changes. Argo starts no file watcher for Session history.
 
 The activity line is the newest Turn's activity by the Feed's own rules, so every Harness's row
 draws it the same way. A status a read settles outranks the listed one. The tick compares its list
@@ -41,7 +41,15 @@ status to `unknown` until the poll settles one. A status hook event settles a sa
 Session's status the way a read does, so it outranks the listed one (#2976).
 
 An external Session's open Feed reads again when a hook event or the poll moves its row, as
-ADR-0047 describes. The poll stores no Subagents for an external Session.
+ADR-0047 describes. The poll also stores Subagent identity and state in SQLite. Claude reads child
+IDs through the Agent SDK with the Session's working directory. It repeats that lookup at most once
+every 30 seconds unless the directory changes. Codex reads delegation facts from the newest Turn
+when it first finds an open thread and when the rollout changes. The Session List and open workgroup
+read Subagent state and count from SQLite. Feed rows supply transcript detail and an inspector
+target. A child seen only in a Feed has unknown state until SQLite stores it. A saved Codex child
+row keeps its parent native ID, so it stays out of the Session List even when the parent row is
+absent. Older closed Codex threads whose child was never observed need a later history read to
+establish that relationship.
 
 The Session List is one `sessionList` query. Its input is a Project, a filter (`active`,
 `archived` or `all`), a search over the title each row shows, and an offset and limit. That title

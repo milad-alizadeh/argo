@@ -45,11 +45,18 @@ function subagentRows(sessionId: string, subagents: readonly StoredSubagent[]) {
 
 // Saves the Subagents delegation content names. Returns how many rows changed.
 export function saveSessionSubagents(
-  database: Pick<Database, 'insert'>,
+  database: Database,
   sessionId: string,
   content: readonly FeedContent[],
 ): number {
-  const subagents = subagentsOf(content)
+  return saveSessionSubagentFacts(database, sessionId, subagentsOf(content))
+}
+
+export function saveSessionSubagentFacts(
+  database: Database,
+  sessionId: string,
+  subagents: readonly StoredSubagent[],
+): number {
   if (subagents.length === 0) return 0
   const { changes } = database
     .insert(sessionSubagent)
@@ -63,6 +70,27 @@ export function saveSessionSubagents(
       },
       setWhere: sql`${sessionSubagent.state} is not excluded.state or coalesce(excluded.label, ${sessionSubagent.label}) is not ${sessionSubagent.label}`,
     })
+    .run()
+  return Number(changes)
+}
+
+export function saveDiscoveredSessionSubagents(
+  database: Database,
+  sessionId: string,
+  childIds: readonly string[],
+): number {
+  if (childIds.length === 0) return 0
+  const { changes } = database
+    .insert(sessionSubagent)
+    .values(
+      childIds.map((subagentId) => ({
+        sessionId,
+        subagentId,
+        label: null,
+        state: 'unknown' as const,
+      })),
+    )
+    .onConflictDoNothing()
     .run()
   return Number(changes)
 }

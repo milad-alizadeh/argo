@@ -1,7 +1,7 @@
 // Re-records the vendor history recordings from the installed claude and codex CLIs, under a
 // throwaway HOME. Run from apps/desktop: `bun run record:vendor-history`.
 import { execFileSync } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -13,6 +13,7 @@ import type {
   ThreadTurnsListResponse,
   WireMessage,
 } from '@/harnesses/codex/app-server'
+import { CODEX_SESSION_SOURCE_KINDS } from '@/harnesses/codex/app-server'
 import { readModelCatalog } from '@/harnesses/codex/catalog'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import {
@@ -36,12 +37,12 @@ import { loadRecording, type RecordingMetadata } from '../../mocks/recordings/re
 
 // Recorded paths read as this mock home, which a selected Project scopes out.
 const MOCK_HOME = '/Users/x'
-const CLAUDE_MODEL = 'sonnet'
-const CODEX_MODEL = 'gpt-5.6-luna'
+const CLAUDE_MODEL = 'haiku'
+const CODEX_MODEL = 'gpt-6-luna'
 const CODEX_EFFORT = 'low'
 const TURN_BUDGET_MS = 180_000
 // A user config with hooks of its own, which the status hook install must keep.
-const CODEX_USER_CONFIG = `model = "gpt-5.5"
+const CODEX_USER_CONFIG = `model = "gpt-6-luna"
 
 [[hooks.Stop]]
 [[hooks.Stop.hooks]]
@@ -72,6 +73,7 @@ const RECORDINGS = {
     name: 'codexRecording',
   },
 } as const
+const CODEX_SUBAGENT_RECORDING = 'thread-read-subagents.json'
 
 type Executables = Record<'claude' | 'codex', string>
 type Recorder = { root: string; home: string; executables: Executables }
@@ -83,7 +85,11 @@ function cliVersion(executable: string): string {
   return version
 }
 
-async function project(recorder: Recorder, name: string, files: Record<string, string> = {}) {
+async function project(
+  recorder: Pick<Recorder, 'root'>,
+  name: string,
+  files: Record<string, string> = {},
+) {
   const directory = path.join(recorder.root, name)
   await mkdir(directory, { recursive: true })
   execFileSync('git', ['init', '--quiet'], { cwd: directory })
@@ -99,7 +105,7 @@ type ClaudeTurn = { cwd: string; prompt: string; flags?: string[] }
 function claudeTurn(recorder: Recorder, { cwd, prompt, flags = [] }: ClaudeTurn) {
   const output = execFileSync(
     recorder.executables.claude,
-    ['-p', prompt, '--model', CLAUDE_MODEL, '--output-format', 'json', ...flags],
+    ['-p', prompt, '--model', CLAUDE_MODEL, '--effort', 'low', '--output-format', 'json', ...flags],
     { cwd, env: realHarnessEnvironment(recorder.home), encoding: 'utf8', timeout: TURN_BUDGET_MS },
   )
   const sessionId = (JSON.parse(output) as { session_id?: unknown }).session_id
@@ -271,6 +277,134 @@ async function recordCodex(
   }
 }
 
+type CodexSubagentCapture = {
+  thread: ThreadReadResponse['thread']
+  threadList: ThreadListResponse
+  childThread: ThreadReadResponse['thread']
+}
+
+type CodexSubagentRecorder = { root: string; home: string; executable: string }
+
+function startedSubagentId(turns: ThreadTurnsListResponse['data']): string | undefined {
+  const activity = turns
+    .flatMap(({ items }) => items)
+    .find(
+      (item): item is Extract<typeof item, { type: 'subAgentActivity' }> =>
+        item.type === 'subAgentActivity' && item.kind === 'started',
+    )
+  return activity?.agentThreadId
+}
+
+function runCodexSubagent(recorder: CodexSubagentRecorder, cwd: string) {
+  execFileSync(
+    recorder.executable,
+    [
+      'exec',
+      '--enable',
+      'multi_agent',
+      '--model',
+      CODEX_MODEL,
+      '--config',
+      'model_reasoning_effort="low"',
+      '--sandbox',
+      'read-only',
+      '--cd',
+      cwd,
+      '--json',
+      RECORDED_PROMPTS.codexSubagent,
+    ],
+    {
+      env: realHarnessEnvironment(recorder.home),
+      stdio: ['ignore', 'ignore', 'inherit'],
+      timeout: TURN_BUDGET_MS,
+    },
+  )
+}
+
+async function recordCodexSubagent(recorder: CodexSubagentRecorder): Promise<CodexSubagentCapture> {
+  await writeFile(
+    path.join(recorder.home, '.codex', 'config.toml'),
+    '[features]\nmulti_agent = true\n',
+  )
+  const cwd = await project(recorder, 'project-codex-subagent')
+  runCodexSubagent(recorder, cwd)
+  return readCodexSubagentCapture(recorder, cwd)
+}
+
+async function readCodexSubagentCapture(
+  recorder: CodexSubagentRecorder,
+  cwd: string,
+): Promise<CodexSubagentCapture> {
+  const client = await codexClientUnderHome(recorder.home, recorder.executable, cwd)
+  try {
+    const params = {
+      limit: 50,
+      sourceKinds: ['exec', ...CODEX_SESSION_SOURCE_KINDS] as (
+        | 'exec'
+        | (typeof CODEX_SESSION_SOURCE_KINDS)[number]
+      )[],
+    }
+    const threadList = await client.request(
+      'thread/list',
+      params,
+      (value): ThreadListResponse => value as ThreadListResponse,
+    )
+    const parent = threadList.data.find(
+      ({ cwd: threadCwd, parentThreadId }) => threadCwd === cwd && parentThreadId == null,
+    )
+    if (parent === undefined) throw new Error('Codex did not list the recorded parent Thread.')
+    const parentId = parent.id
+    const parentResponse = await client.request(
+      'thread/read',
+      { threadId: parentId, includeTurns: false },
+      (value) => value as ThreadReadResponse,
+    )
+    const parentTurns = await client.request(
+      'thread/turns/list',
+      { threadId: parentId, limit: 50, itemsView: 'full', sortDirection: 'asc' },
+      (value) => value as ThreadTurnsListResponse,
+    )
+    if (parentTurns.nextCursor !== null)
+      throw new Error('The Codex Subagent capture has more than 50 parent Turns.')
+    const childId =
+      threadList.data.find(({ parentThreadId }) => parentThreadId === parentId)?.id ??
+      startedSubagentId(parentTurns.data)
+    if (childId === undefined)
+      throw new Error('Codex did not spawn a child for its subagent prompt.')
+    const childResponse = await client.request(
+      'thread/read',
+      { threadId: childId, includeTurns: false },
+      (value) => value as ThreadReadResponse,
+    )
+    if (childResponse.thread.parentThreadId !== parentId) {
+      throw new Error('Codex child Thread did not retain its recorded parentThreadId.')
+    }
+    return {
+      thread: { ...parentResponse.thread, turns: parentTurns.data },
+      threadList,
+      childThread: childResponse.thread,
+    }
+  } finally {
+    client.shutdown()
+  }
+}
+
+async function writeCodexSubagentRecording(
+  capture: CodexSubagentCapture,
+  version: string,
+  writer: RecordingWriter,
+) {
+  const recording = {
+    producer: 'codex-app-server',
+    version,
+    recordedAt: new Date().toISOString(),
+    payload: capture,
+  } satisfies RecordingMetadata & { payload: CodexSubagentCapture }
+  const file = await recordingFile(recording, CODEX_SUBAGENT_RECORDING, recording)
+  await writeFile(file, sanitized(writer.recorder, recording, writer.resolvedRoot))
+  return file
+}
+
 // The config layers, read by a fresh app-server once the user config holds hooks; after the
 // threads, so no recorded Turn runs them.
 async function recordCodexConfig(recorder: Recorder): Promise<RecordedCodexCall> {
@@ -290,7 +424,11 @@ async function recordCodexConfig(recorder: Recorder): Promise<RecordedCodexCall>
 }
 
 // Every throwaway and personal path becomes the mock home; a user name left over is refused.
-function sanitized(recorder: Recorder, recording: unknown, resolvedRoot: string): string {
+function sanitized(
+  recorder: Pick<Recorder, 'root' | 'home'>,
+  recording: unknown,
+  resolvedRoot: string,
+): string {
   let text = JSON.stringify(recording, null, 2)
   for (const local of [resolvedRoot, recorder.root, os.homedir()]) {
     text = text.split(local).join(MOCK_HOME)
@@ -316,7 +454,49 @@ async function recordCodexModels(client: CodexAppServerClient): Promise<unknown>
   })
 }
 
-type RecordingWriter = { recorder: Recorder; resolvedRoot: string }
+type RecordingWriter = { recorder: Pick<Recorder, 'root' | 'home'>; resolvedRoot: string }
+
+async function recordCodexSubagentsOnly(root: string) {
+  const executable = findExecutableOnLoginShellPath('codex')
+  if (executable === null) throw new Error('Codex is not available on PATH.')
+  const home = path.join(root, 'home')
+  const sourceAuth = path.join(os.homedir(), '.codex', 'auth.json')
+  const destinationAuth = path.join(home, '.codex', 'auth.json')
+  try {
+    await mkdir(path.dirname(destinationAuth), { recursive: true })
+    await copyFile(sourceAuth, destinationAuth)
+  } catch {
+    throw new Error(`Codex authentication is unavailable: ${sourceAuth} is missing.`)
+  }
+  await mkdir(path.join(home, '.codex', 'sessions'), { recursive: true })
+  try {
+    execFileSync(executable, ['login', 'status'], {
+      env: realHarnessEnvironment(home),
+      stdio: 'pipe',
+    })
+  } catch (error) {
+    const output = error instanceof Error && 'stderr' in error ? String(error.stderr).trim() : ''
+    throw new Error(
+      `Codex authentication is unavailable. Sign in and try again.${output ? `\n${output}` : ''}`,
+    )
+  }
+  const recorder = { root, home, executable }
+  const capture = await recordCodexSubagent(recorder)
+  const metadata = {
+    producer: 'codex-app-server',
+    version: cliVersion(executable),
+    recordedAt: new Date().toISOString(),
+  }
+  const writer = { recorder, resolvedRoot: await realpath(root) }
+  const file = await writeCodexSubagentRecording(capture, metadata.version, writer)
+  execFileSync('bunx', ['biome', 'format', '--write', file], { stdio: 'inherit' })
+  execFileSync(process.execPath, ['tools/recordings/generate-recording-imports.mts'], {
+    stdio: 'inherit',
+  })
+  process.stdout.write(
+    'Recorded Codex parent and child Threads. Read the diff, then run `bun run typecheck` and the tests.\n',
+  )
+}
 
 async function recordingFile(metadata: RecordingMetadata, name: string, value: unknown) {
   const relative = `${metadata.producer}/${metadata.version}/${name}`
@@ -359,6 +539,10 @@ async function writeModels(writer: RecordingWriter, history: CodexRecording, mod
 async function main() {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-vendor-recording-'))
   try {
+    if (process.argv.includes('--codex-subagents-only')) {
+      await recordCodexSubagentsOnly(root)
+      return
+    }
     const executables = resolveRealSessionExecutables(findExecutableOnLoginShellPath)
     const home = await prepareRealSessionHome(root, os.homedir())
     verifyRealSessionAuthentication(executables, home)
@@ -367,10 +551,16 @@ async function main() {
     const writer = { recorder, resolvedRoot }
     const claude = await recordClaude(recorder)
     const codex = await recordCodex(recorder)
+    const codexSubagents = await recordCodexSubagent({
+      root,
+      home,
+      executable: executables.codex,
+    })
     const files = [
       await writeRecording(RECORDINGS.claude, claude, writer),
       await writeRecording(RECORDINGS.codex, codex.history, writer),
       await writeModels(writer, codex.history, codex.models),
+      await writeCodexSubagentRecording(codexSubagents, codex.history.version, writer),
     ]
     execFileSync('bunx', ['biome', 'format', '--write', ...files], {
       stdio: 'inherit',

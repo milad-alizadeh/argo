@@ -56,6 +56,7 @@ export function createAppMachine(registry: HarnessRegistry, dependencies: AppDep
         registry,
         journal: dependencies.sessionEventJournal,
         interactions: dependencies.sessionInteractionBroker,
+        changes: dependencies.sessionListChanges,
       }),
       sessionSync: sessionSyncSupervisorMachine,
       ticketSync: ticketSyncSupervisorMachine,

@@ -401,29 +401,51 @@ test('reports and drops a Codex image sent by fileId, keeping the rest of the pr
 
 test('reads each recorded Subagent activity as its own delegation event', async () => {
   const recorded = recordedCodexSubagents
-  const request = threadRequest({ thread: recorded.thread })
-  const delegation = (
-    id: string,
-    event: 'started' | 'messaged' | 'responded',
-    status: 'running' | 'completed' | 'interrupted',
-  ) => ({
+  const pages = mockTurnsRequest(recorded.thread.turns)
+  const request = (async (method: string, params: { threadId: string }, parse) =>
+    method === 'thread/read'
+      ? parse({ thread: recorded.childThread })
+      : pages(method as 'thread/turns/list', params as never, parse)) as CodexRequest
+  const items = recorded.thread.turns.flatMap(({ items }) => items)
+  const user = items.find((item) => item.type === 'userMessage')
+  const assistant = items.find((item) => item.type === 'agentMessage')
+  const activities = items.filter((item) => item.type === 'subAgentActivity')
+  if (
+    user?.type !== 'userMessage' ||
+    assistant?.type !== 'agentMessage' ||
+    activities[0]?.type !== 'subAgentActivity' ||
+    activities[1]?.type !== 'subAgentActivity'
+  ) {
+    throw new Error('Recorded Codex parent Thread is missing its subagent activity.')
+  }
+  const delegation = (activity: (typeof activities)[number]) => ({
     kind: 'delegation',
-    id,
-    event,
-    agentId: 'thread-child-review',
-    status,
-    name: 'spec_review',
+    id: activity.id,
+    event: activity.kind === 'started' ? 'started' : 'responded',
+    agentId: recorded.childThread.id,
+    status: activity.kind === 'started' ? 'running' : 'completed',
+    name: activity.agentPath?.split('/').at(-1),
+    nickname: recorded.childThread.agentNickname,
     prompt: null,
     model: null,
     summary: null,
   })
-  await expect(readCodexSessionHistory(request, 'thread-parent')).resolves.toEqual([
-    { kind: 'message', id: 'user-1', role: 'user', text: 'Review the branch' },
-    delegation('call_spawn_review', 'started', 'running'),
-    delegation('subagent-completed-review-1', 'responded', 'completed'),
-    delegation('call_message_review', 'messaged', 'running'),
-    delegation('call_interrupt_review', 'responded', 'interrupted'),
-    { kind: 'message', id: 'agent-1', role: 'assistant', text: 'The review is in.' },
+  await expect(readCodexSessionHistory(request, recorded.thread.id)).resolves.toEqual([
+    {
+      kind: 'message',
+      id: user.id,
+      role: 'user',
+      text: user.content?.map(({ text }) => text).join('') ?? '',
+    },
+    delegation(activities[0]),
+    delegation(activities[1]),
+    {
+      kind: 'message',
+      id: assistant.id,
+      role: 'assistant',
+      phase: assistant.phase,
+      text: assistant.text,
+    },
   ])
 })
 

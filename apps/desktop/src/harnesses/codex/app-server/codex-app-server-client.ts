@@ -12,18 +12,17 @@ import type { ThreadTurnsListParams } from './protocol-generated/v2/thread-turns
 
 // The base protocol uses the 0.147.0 schema; the thread/resume sandbox override was verified against 0.157.0.
 export type RequestID = string | number
-const CODEX_THREAD_SOURCE_KINDS = [
+export const CODEX_SESSION_SOURCE_KINDS = [
   'cli',
   'vscode',
-  'exec',
   'appServer',
   'subAgent',
   'subAgentReview',
   'subAgentCompact',
   'subAgentThreadSpawn',
   'subAgentOther',
-  'unknown',
 ] as const
+const CODEX_THREAD_SOURCE_KINDS = ['exec', ...CODEX_SESSION_SOURCE_KINDS, 'unknown'] as const
 type CodexThreadSourceKind = (typeof CODEX_THREAD_SOURCE_KINDS)[number]
 
 type RequestParams = {

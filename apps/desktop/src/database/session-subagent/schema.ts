@@ -1,9 +1,15 @@
 import { primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { sessionTable } from '@/database/session/schema'
 
-export const SESSION_SUBAGENT_STATES = ['running', 'completed', 'failed', 'interrupted'] as const
+export const SESSION_SUBAGENT_STATES = [
+  'unknown',
+  'running',
+  'completed',
+  'failed',
+  'interrupted',
+] as const
 
-// The Subagents a Session's history names, as the last sync read them.
+// Discovery can know a Subagent's identity before its history establishes a state.
 export const sessionSubagent = sqliteTable(
   'session_subagent',
   {

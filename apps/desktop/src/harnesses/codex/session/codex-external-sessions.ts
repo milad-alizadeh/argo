@@ -132,5 +132,9 @@ export function createCodexExternalSessions(
   const readActivity = (nativeId: string, changedAt: number) =>
     readNewestTurn(request, { nativeId, lockFile: lockFile(nativeId) }, changedAt)
 
-  return { listLive, readActivity, hooks: createCodexStatusHooks(request) }
+  return {
+    listLive,
+    readActivity,
+    hooks: createCodexStatusHooks(request),
+  }
 }

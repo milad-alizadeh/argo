@@ -147,6 +147,7 @@ function codexSource(): StatusSource {
         id: session.nativeId,
         cwd: project,
         updatedAt: Math.floor(session.activityAt / 1000),
+        parentThreadId: null,
         name: session.title,
         path: codexRollout(root, session),
         turns: [],
