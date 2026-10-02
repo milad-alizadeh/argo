@@ -26,23 +26,15 @@ export type SessionWorkspaceProps = {
   onFeedStalledChange?: (sessionId: string | null) => void
 }
 
-function ComposerFade({ onJumpToLatest }: { onJumpToLatest: (() => void) | null }) {
+function ComposerJumpToLatest({ onJumpToLatest }: { onJumpToLatest: (() => void) | null }) {
   const { t } = useTranslation('sessions')
+  if (onJumpToLatest === null) return null
   return (
-    <>
-      <div
-        aria-hidden="true"
-        data-component="SessionComposerFade"
-        className="pointer-events-none absolute inset-x-0 top-(--session-composer-fade-start) bottom-0 -z-10 bg-[image:var(--gradient-session-composer-fade)]"
-      />
-      {onJumpToLatest === null ? null : (
-        <FeedJumpToLatest
-          className="absolute bottom-[calc(100%+var(--spacing-shell-item))] left-1/2 -translate-x-1/2"
-          label={t('jumpToLatest')}
-          onClick={onJumpToLatest}
-        />
-      )}
-    </>
+    <FeedJumpToLatest
+      className="absolute bottom-[calc(100%+var(--spacing-shell-item))] left-1/2 -translate-x-1/2"
+      label={t('jumpToLatest')}
+      onClick={onJumpToLatest}
+    />
   )
 }
 
@@ -79,8 +71,6 @@ function ComposerSection({
       const inkTop = composerInkTop(scroll.firstElementChild) ?? sectionBounds.top
       const reach = sectionBounds.bottom - Math.max(inkTop, sectionBounds.top)
       body.style.setProperty('--session-composer-reach', `${reach}px`)
-      section.style.setProperty('--session-composer-fade-start', `${sectionBounds.height / 2}px`)
-      section.style.setProperty('--session-composer-fade-length', `${sectionBounds.height / 2}px`)
     }
     const resizes = new ResizeObserver(measure)
     resizes.observe(section)
@@ -111,7 +101,7 @@ function ComposerSection({
       ref={sectionRef}
       className="session-screen__composer absolute inset-x-0 bottom-0 z-20 isolate flex flex-col px-(--spacing-session-gutter)"
     >
-      <ComposerFade onJumpToLatest={onJumpToLatest} />
+      <ComposerJumpToLatest onJumpToLatest={onJumpToLatest} />
       <div
         ref={scrollRef}
         className="session-screen__composer-scroll flex min-h-0 flex-col"

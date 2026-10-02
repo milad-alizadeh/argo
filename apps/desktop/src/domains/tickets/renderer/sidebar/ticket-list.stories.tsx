@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { backlog, prototype, standalone, wayfinder } from '@/mocks/tickets/renderer-models'
+import { backlog, longBacklog, prototype, standalone, wayfinder } from '@/mocks/tickets/renderer-models'
 import { TicketList } from './ticket-list'
 
 const parent = wayfinder()
@@ -178,5 +178,61 @@ export const SavedRowsWithoutWrites: Story = {
     await expect(canvas.getByText('ada needs to sign in to Linear again')).toBeVisible()
     await expect(canvas.queryByRole('button', { name: /^(State|Status):/ })).toBeNull()
     await expect(canvas.queryByRole('button', { name: /^Priority:/ })).toBeNull()
+  },
+}
+
+async function expectScrollFades(scroll: HTMLElement, top: boolean, bottom: boolean) {
+  await waitFor(() => {
+    const fades = scroll.getAnimations().filter((animation) => animation instanceof CSSAnimation)
+    const topFade = fades.find((animation) => animation.animationName === 'scroll-fade-reveal-t')
+    const bottomFade = fades.find((animation) => animation.animationName === 'scroll-fade-reveal-b')
+    expect(topFade).toBeDefined()
+    expect(bottomFade).toBeDefined()
+    const topProgress = topFade?.effect?.getComputedTiming().progress ?? null
+    const bottomProgress = bottomFade?.effect?.getComputedTiming().progress ?? null
+    expect(topProgress !== null && topProgress > 0).toBe(top)
+    expect(bottomProgress !== null && bottomProgress < 1).toBe(bottom)
+  })
+}
+
+export const ScrollEdgesFollowTheReader: Story = {
+  args: { backlog: backlog({ tickets: longBacklog(80) }) },
+  decorators: [
+    (Story) => (
+      <div className="h-dvh w-100">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const scroll = canvasElement.querySelector<HTMLElement>('[data-slot="ticket-list-scroll"]')
+    if (scroll === null) throw new Error('The Ticket list has no scroll container.')
+    const first = await canvas.findByRole('button', { name: /^#100/ })
+    await expect(first).toBeVisible()
+    await expectScrollFades(scroll, false, true)
+
+    scroll.scrollTop = Math.floor((scroll.scrollHeight - scroll.clientHeight) / 2)
+    scroll.dispatchEvent(new Event('scroll'))
+    await expectScrollFades(scroll, true, true)
+
+    scroll.scrollTop = scroll.scrollHeight
+    await waitFor(() =>
+      expect(scroll.scrollTop + scroll.clientHeight).toBe(scroll.scrollHeight),
+    )
+    await expectScrollFades(scroll, true, false)
+    const last = await canvas.findByRole('button', { name: /^#179/ })
+    await userEvent.click(last)
+    await expect(args.onSelect).toHaveBeenCalledWith('#179')
+    const lastRow = last.closest('li')
+    if (lastRow === null) throw new Error('The last Ticket needs a list row.')
+    const previousControl = lastRow.querySelector<HTMLButtonElement>('[aria-label="State: Open"]')
+    if (previousControl === null) throw new Error('The Ticket status needs a keyboard control.')
+    await userEvent.keyboard('{Shift>}{Tab}{/Shift}')
+    await expect(previousControl).toHaveFocus()
+
+    scroll.scrollTop = 0
+    scroll.dispatchEvent(new Event('scroll'))
+    await expectScrollFades(scroll, false, true)
   },
 }

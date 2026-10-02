@@ -449,11 +449,9 @@ function expectFeedDoesNotOverlapComposer(canvasElement: HTMLElement) {
 
 function expectContextBarInset(canvasElement: HTMLElement) {
   const composer = within(canvasElement).getByLabelText('Session composer')
-  const workspace = within(canvasElement).getByLabelText('Session workspace')
   const card = composer.querySelector<HTMLElement>('[data-component="ComposerCard"]')
   const contextBar = composer.querySelector<HTMLElement>('[data-component="SessionContextBar"]')
-  const fade = workspace.querySelector<HTMLElement>('[data-component="SessionComposerFade"]')
-  if (card === null || contextBar === null || fade === null)
+  if (card === null || contextBar === null)
     throw new Error('The attached composer surfaces are absent.')
 
   const gutter = Number.parseFloat(
@@ -468,16 +466,9 @@ function expectContextBarInset(canvasElement: HTMLElement) {
     1,
   )
   expect(getComputedStyle(contextBar).boxShadow).toBe(getComputedStyle(card).boxShadow)
-  const composerBounds = composer.getBoundingClientRect()
-  const workspaceBounds = workspace.getBoundingClientRect()
-  const fadeBounds = fade.getBoundingClientRect()
-  expect(fadeBounds.top).toBeCloseTo(composerBounds.top + composerBounds.height / 2, 1)
-  expect(fadeBounds.bottom).toBeCloseTo(workspaceBounds.bottom, 1)
-  expect(fadeBounds.height).toBeCloseTo(composerBounds.height / 2, 1)
-  expect(getComputedStyle(fade).pointerEvents).toBe('none')
 }
 
-async function expectJumpToLatestInComposerFade(canvasElement: HTMLElement) {
+async function expectJumpToLatestAboveComposer(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
   const history = await canvas.findByLabelText(SESSION_HISTORY_LABEL)
   await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
@@ -922,18 +913,18 @@ export const WideSharedReadingColumn: Story = {
   },
 }
 
-export const JumpToLatestInExpandedComposerFade: Story = {
+export const JumpToLatestAboveExpandedComposer: Story = {
   render: () => <ReviewScreen rows={JUMP_TO_LATEST_ROWS} />,
   play: async ({ canvasElement }) => {
-    await expectJumpToLatestInComposerFade(canvasElement)
+    await expectJumpToLatestAboveComposer(canvasElement)
   },
 }
 
-export const JumpToLatestInNormalComposerFade: Story = {
+export const JumpToLatestAboveNormalComposer: Story = {
   parameters: { route: reviewRoute('shortcut-review') },
   render: () => <ReviewScreen rows={JUMP_TO_LATEST_ROWS} />,
   play: async ({ canvasElement }) => {
-    await expectJumpToLatestInComposerFade(canvasElement)
+    await expectJumpToLatestAboveComposer(canvasElement)
   },
 }
 
