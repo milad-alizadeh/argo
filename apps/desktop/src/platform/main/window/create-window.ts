@@ -9,6 +9,8 @@ export function createDesktopWindow(request: {
   rendererName: string
   developmentServerURL?: string
   title?: string
+  // The hash route the window opens on, such as `/projects/<id>/sessions/<id>`.
+  route?: string
   show: boolean
   additionalArguments?: string[]
   attach: (window: BrowserWindow, rendererURL: string) => void
@@ -42,8 +44,12 @@ export function createDesktopWindow(request: {
   const rendererURL = request.developmentServerURL ?? pathToFileURL(rendererPath).href
   request.attach(window, rendererURL)
 
-  if (request.developmentServerURL) void window.loadURL(request.developmentServerURL)
-  else void window.loadFile(rendererPath)
+  const hash = request.route ?? ''
+  if (request.developmentServerURL)
+    void window.loadURL(
+      hash === '' ? request.developmentServerURL : `${request.developmentServerURL}#${hash}`,
+    )
+  else void window.loadFile(rendererPath, { hash })
 
   window.webContents.once('did-finish-load', () => request.loaded(window))
   return window
