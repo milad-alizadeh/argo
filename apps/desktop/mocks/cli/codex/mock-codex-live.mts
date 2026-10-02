@@ -12,6 +12,7 @@ import { MOCK_START_REFUSED_FOLDER } from '../mock-cli.ts'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
 import { sendPlanUpdate } from './fixtures/mock-codex-plan.ts'
 import { createMockCodexSkillsAndConfig } from './fixtures/mock-codex-skills-config.ts'
+import { mockTurnsPage } from './mock-codex-turn-pages.ts'
 
 type Item = {
   id: string
@@ -44,13 +45,13 @@ function storedThreads(): Thread[] {
 const threads = storedThreads()
 const storedThread = (threadId: string) =>
   storedThreads().find((candidate) => candidate.id === threadId)
-// Another process's thread is stored on disk, so its newest Turn is read from there each time.
-function newestStoredTurn(threadId: string) {
-  const turn = storedThread(threadId)?.turns.at(-1)
-  if (turn === undefined) return []
-  const completedAt =
-    turn.status === 'inProgress' ? null : (turn.completedAt ?? Math.floor(Date.now() / 1000))
-  return [{ ...turn, completedAt }]
+// Another process's thread is stored on disk, so its Turns are read from there each time.
+function storedTurns(threadId: string) {
+  return (storedThread(threadId)?.turns ?? []).map((turn) => ({
+    ...turn,
+    completedAt:
+      turn.status === 'inProgress' ? null : (turn.completedAt ?? Math.floor(Date.now() / 1000)),
+  }))
 }
 // Writes one thread back and keeps what other processes wrote to the rest.
 function save(thread: Thread) {
@@ -322,10 +323,11 @@ function handle(message: Request) {
 // A request about one stored thread.
 function handleThread({ id, method, params = {} }: Request, thread: Thread) {
   if (method === 'thread/resume') return send({ id, result: { thread: { id: thread.id } } })
+  // History is paged from `thread/turns/list`; a metadata read carries no Turns.
   if (method === 'thread/read')
-    return send({ id, result: { thread: storedThread(thread.id) ?? thread } })
+    return send({ id, result: { thread: { ...(storedThread(thread.id) ?? thread), turns: [] } } })
   if (method === 'thread/turns/list')
-    return send({ id, result: { data: newestStoredTurn(thread.id), nextCursor: null } })
+    return send({ id, result: mockTurnsPage(storedTurns(thread.id), params) })
   if (method === 'turn/start') return startTurn(id, params, thread)
   if (method === 'turn/interrupt') {
     send({ id, result: {} })
