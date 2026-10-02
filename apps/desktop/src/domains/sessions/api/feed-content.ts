@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
+import { questionSchema } from './questions'
 
 // One step in a Subagent's life, as its adapter read it. `responded` alone carries an end state,
 // and every fact is absent where the harness does not give it (CONTEXT.md L3 · Subagent).
@@ -54,6 +55,8 @@ const toolPresentationSchema = z.strictObject({
   agentDescription: z.boolean().optional(),
   // A command's full text, which the Feed shows above its output.
   text: z.string().optional(),
+  // Set on a recorded question call, so the Feed draws the question itself instead of a tool row.
+  questions: z.array(questionSchema).min(1).optional(),
 })
 export type ToolPresentation = z.infer<typeof toolPresentationSchema>
 

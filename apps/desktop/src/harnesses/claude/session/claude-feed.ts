@@ -4,6 +4,7 @@ import type {
   MediaSource,
   ToolPresentation,
 } from '@/domains/sessions/api/feed-content'
+import { ASK_USER_QUESTION_TOOL, readAskedQuestions } from './claude-asked-questions'
 import { decodeClaudeText, type RejectClaudeShape } from './claude-feed-envelopes'
 
 type Message = Extract<SDKMessage, { type: 'user' | 'assistant' }>
@@ -62,12 +63,14 @@ function presentation(name: string, input: unknown): ToolPresentation {
   const [kind, verb, key] = TOOL_LABELS[name] ?? ['tool', name, '']
   const subject = typeof fields[key] === 'string' ? fields[key] : null
   const description = typeof fields.description === 'string' ? fields.description : null
+  const questions = name === ASK_USER_QUESTION_TOOL ? readAskedQuestions(input) : null
   const label = kind === 'skill' ? (subject ?? verb) : `${verb} ${subject ?? ''}`.trim()
   return {
     kind,
     label: description ?? label.split('\n')[0] ?? '',
     ...(description === null ? {} : { agentDescription: true }),
     ...(kind === 'command' && subject !== null ? { text: subject } : {}),
+    ...(questions === null ? {} : { questions }),
   }
 }
 

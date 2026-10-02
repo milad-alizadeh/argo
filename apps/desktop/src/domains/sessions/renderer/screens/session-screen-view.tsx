@@ -77,6 +77,7 @@ function composerFor(model: ReturnType<typeof useSessionScreenModel>) {
       harness={model.harness}
       selectedSessionId={model.selectedSessionId}
       sessionLoaded={model.sessionLoaded}
+      sent={model.sent}
       projectState={model.projectState}
       worktreeActions={model.worktreeActions}
       worktreeState={model.worktreeState}

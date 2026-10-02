@@ -3,10 +3,8 @@
 import { appendFile, mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { claudeConfigDirectory } from '../../../mocks/cli/claude/mock-claude-transcripts'
-import { mockCodexStateFile } from '../../../mocks/cli/codex/mock-codex-cli'
-import { recordedThread } from '../../../mocks/cli/codex/recorded-codex-threads'
-import { RECORDED_PROMPTS } from '../../../mocks/cli/recorded-prompts'
 import { hookEvent, postHook } from '../../../mocks/cli/status-hooks'
+import { writeCodexThreads } from '../../../mocks/sessions/mock-codex-thread-files'
 import {
   fixturePath,
   fixtureSessionId,
@@ -44,41 +42,6 @@ export const FIXTURES = [
 
 // The Sessions the reader archived before the case begins.
 export const ARCHIVED_FIXTURES = ['plannedWork']
-
-// One recorded Codex thread, renamed and placed for this run, in `thread/read`'s shape. The time
-// keeps it in the same place in the Session List as the Claude fixtures.
-function codexThread(request: { name: string; cwd: string; updatedAt: string; title: string }) {
-  return {
-    ...recordedThread(request.title),
-    id: fixtureSessionId(request.name),
-    cwd: request.cwd,
-    updatedAt: Math.floor(Date.parse(request.updatedAt) / 1000),
-    name: request.title,
-  }
-}
-
-export const CODEX_PARENT = 'codexParent'
-export const CODEX_FIXTURES = [CODEX_PARENT, 'codexChild'] as const
-
-// The Codex threads the mock app-server starts with.
-async function writeCodexThreads(root: string, codexTranscripts: string) {
-  const cwd = proofCwd(codexTranscripts, 'codex')
-  const threads = [
-    codexThread({
-      name: CODEX_PARENT,
-      cwd,
-      updatedAt: '2026-01-10T08:00:05.000Z',
-      title: RECORDED_PROMPTS.codexCommand,
-    }),
-    codexThread({
-      name: CODEX_FIXTURES[1],
-      cwd,
-      updatedAt: '2026-01-10T08:30:05.000Z',
-      title: RECORDED_PROMPTS.codexReply,
-    }),
-  ]
-  await writeFile(mockCodexStateFile(root), JSON.stringify(threads))
-}
 
 // One more turn on a Session already measured, written the way the Harness writes one: appended to
 // the file it belongs to.
