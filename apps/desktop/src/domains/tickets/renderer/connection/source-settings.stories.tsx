@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { useState } from 'react'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ticketError } from '@/domains/tickets/api/errors'
 import { connection } from '@/mocks/tickets/renderer-models'
-import { SourceSettings } from './source-settings'
+import { SourceSettings, type SourceSettingsProps } from './source-settings'
 
 const meta = {
   title: 'Features/Tickets/Connection/Source Settings',
@@ -67,8 +68,64 @@ export const Loading: Story = {
 export const LoadFailed: Story = {
   args: { connection: null, error: ticketError('not-connected', 'request-1') },
   play: async ({ canvasElement }) => {
-    await expect(
-      within(canvasElement).getByText('This Project has no connected Ticket source.'),
-    ).toBeInTheDocument()
+    await expect(within(canvasElement).getByRole('alert')).toHaveTextContent(
+      'This Project has no connected Ticket source.',
+    )
+  },
+}
+
+export const Disconnecting: Story = {
+  args: { connection: connection('github'), disconnecting: true },
+  play: async ({ args, canvasElement }) => {
+    const button = within(canvasElement).getByRole('button', { name: 'Disconnect repository' })
+    await expect(button).toBeDisabled()
+    await userEvent.click(button, { pointerEventsCheck: 0 })
+    await expect(args.onDisconnect).not.toHaveBeenCalled()
+  },
+}
+
+export const DisconnectFailure: Story = {
+  args: {
+    connection: connection('github'),
+    error: ticketError('storage-not-written', 'notice-source'),
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('alert')).toHaveTextContent(
+      'Argo could not save the connected Ticket source.',
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Disconnect repository' }))
+    await expect(args.onDisconnect).toHaveBeenCalledOnce()
+  },
+}
+
+function RecoverSource(props: SourceSettingsProps) {
+  const [recovered, setRecovered] = useState(false)
+  return (
+    <SourceSettings
+      {...props}
+      connection={recovered ? connection('github') : null}
+      error={recovered ? null : props.error}
+      onConnect={() => {
+        props.onConnect()
+        setRecovered(true)
+      }}
+    />
+  )
+}
+
+export const Recovery: Story = {
+  args: { connection: null, error: ticketError('not-connected', 'notice-source') },
+  render: (args) => <RecoverSource {...args} />,
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('alert')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Connect a Ticket source' }))
+    await expect(args.onConnect).toHaveBeenCalledOnce()
+    await expect(canvas.queryByRole('alert')).toBeNull()
+    await expect(canvas.getByText('octocat/hello-world')).toBeVisible()
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Disconnect repository' })).toHaveFocus(),
+    )
   },
 }

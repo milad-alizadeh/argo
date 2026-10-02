@@ -143,6 +143,24 @@
       "dependencies": ["cn"],
       "payloadSha256": "bbad1bba130ac9750a61844eeb8f043e8a710846e07689fa85398b80a46c2741",
       "sourceSha256": "10612b2f3e8b9072a8339dacd0ee737bf81fd99c033da04210e103eaec367ca6"
+    },
+    {
+      "name": "alert",
+      "reviewedAt": "2026-10-02",
+      "url": "https://ui.shadcn.com/r/styles/base-nova/alert.json",
+      "registryTarget": "registry/base-nova/ui/alert.tsx",
+      "target": "src/platform/renderer/components/ui/alert.tsx",
+      "dependencies": ["cn"],
+      "registryDependencies": [],
+      "payloadSha256": "0799cfc29a481568f6e9b48e96518a446032350dec576bfe31b7f67b4b262028",
+      "cliSourceSha256": "cfbca450df71b3571701d659c1b7eb9e27d3d92efb7afdf5c292c685f95e3949",
+      "sourceSha256": "541b89914bc4a5d8e533a80d19ef952ad8dabe71e6812c2a37315aef9d69c6b8",
+      "generationTransforms": [
+        "Resolve the registry ui target through the configured alias.",
+        "Keep the CLI cn import; configured Vite and Storybook aliases select the app merger.",
+        "Apply repository quote, comma, import ordering and type-only React import formatting without changing declarations or class strings.",
+        "Alert has no registry dependencies, icons, use-client directive or same-folder imports requiring post-CLI normalization."
+      ]
     }
   ]
 }

@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Icon } from '@/platform/renderer/components/icon/icon'
-import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
+import { Notice } from '@/platform/renderer/components/design-system/notice'
 import { Button } from '@/platform/renderer/components/ui/button'
 
 export type SignInNoticeProps = { onConnect: () => void; onDismiss: () => void }
@@ -10,14 +9,15 @@ export type SignInNoticeProps = { onConnect: () => void; onDismiss: () => void }
 export function SignInNotice({ onConnect, onDismiss }: SignInNoticeProps) {
   const { t } = useTranslation('accounts')
   return (
-    <Alert
+    <Notice
       aria-label={t('notice.label')}
-      className="mx-(--spacing-shell-item) mb-(--spacing-shell-item) min-w-0 w-auto shrink-0 bg-muted/40"
+      className="mx-(--spacing-shell-item) mb-(--spacing-shell-item) min-w-0 w-auto shrink-0"
+      heading={t('notice.title')}
+      icon="info"
       role="region"
+      tone="neutral"
     >
-      <Icon name="info" />
-      <AlertTitle>{t('notice.title')}</AlertTitle>
-      <AlertDescription className="grid gap-(--spacing-shell-item)">
+      <div className="grid gap-(--spacing-shell-item)">
         <p>{t('notice.body')}</p>
         <div className="flex flex-wrap gap-(--spacing-shell-item)">
           <Button onClick={onConnect} size="sm">
@@ -27,7 +27,7 @@ export function SignInNotice({ onConnect, onDismiss }: SignInNoticeProps) {
             {t('notice.dismiss')}
           </Button>
         </div>
-      </AlertDescription>
-    </Alert>
+      </div>
+    </Notice>
   )
 }

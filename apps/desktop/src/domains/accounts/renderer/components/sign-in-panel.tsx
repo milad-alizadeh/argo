@@ -5,10 +5,9 @@ import type {
   AccountConnected,
   Provider,
 } from '@/domains/accounts/contract/contract'
+import { ContractFailureAlert } from '@/platform/renderer/components/contract-failure-alert'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
-import { useContractText } from '@/platform/renderer/i18n/contract-text'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
 import { providerPresentation } from '@/providers/presentation-registry'
 import type { SignIn } from '../hooks'
@@ -33,6 +32,9 @@ function ConnectedLine({ login, outcome }: SignedIn) {
   )
 }
 
+const DEVICE_CODE_RECIPE =
+  'font-mono text-[length:var(--typography-title-size)] leading-(--typography-title-line-height) font-medium tracking-widest'
+
 type StepProps = { challenge: AccountChallenge; onOpen: () => void; onCancel: () => void }
 
 // A device code is typed on the provider's page; browser consent needs only the person's consent.
@@ -47,7 +49,7 @@ function WaitingStep({ challenge, onOpen, onCancel }: StepProps) {
         {challenge.kind === 'device-code' ? (
           <output
             aria-label={t('signIn.codeLabel', { provider: name })}
-            className="type-title font-mono tracking-widest"
+            className={DEVICE_CODE_RECIPE}
           >
             {challenge.userCode}
           </output>
@@ -96,7 +98,6 @@ function ConnectButtons({ providers, phase, provider, start }: SignInPanelProps)
 export function SignInPanel(props: SignInPanelProps) {
   const { phase, challenge, connected, error, openProvider, cancel } = props
   const { t } = useTranslation('accounts')
-  const contractText = useContractText()
   const panel = useRef<HTMLElement>(null)
   // Each step replaces the control that started it.
   useFocusRescue(panel, phase)
@@ -106,12 +107,7 @@ export function SignInPanel(props: SignInPanelProps) {
       className="grid gap-(--spacing-shell-gutter)"
       ref={panel}
     >
-      {error ? (
-        <Alert className="border-destructive/50 bg-destructive/10" variant="destructive">
-          <Icon name="triangle-alert" />
-          <AlertDescription>{contractText(error)}</AlertDescription>
-        </Alert>
-      ) : null}
+      {error ? <ContractFailureAlert error={error} /> : null}
       {phase === 'connected' && connected ? <ConnectedLine {...connected} /> : null}
       {phase === 'waiting' && challenge ? (
         <WaitingStep challenge={challenge} onCancel={cancel} onOpen={openProvider} />
