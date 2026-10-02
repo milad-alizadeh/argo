@@ -15,15 +15,17 @@ import { mockClaudeAcpFolder, mockClaudeAcpReply } from './mock-claude-acp-trans
 const MOCK_CLAUDE_ACP = path.join(process.cwd(), 'mocks', 'cli', 'claude-acp', 'mock-claude-acp.ts')
 const ALIAS_HOOKS = path.join(process.cwd(), 'mocks', 'cli', 'mock-cli-alias-hooks.mts')
 
+export type MockClaudeAcpOptions = {
+  capabilities?: AgentCapabilities
+  listing?: ListSessionsResponse
+  permissionOptions?: PermissionOption[]
+}
+
 // An executable `claude-agent-acp` the app can spawn: this node, running the mock beside this file.
 export async function writeMockClaudeAcp(
   root: string,
   transcripts: string,
-  options: {
-    capabilities?: AgentCapabilities
-    listing?: ListSessionsResponse
-    permissionOptions?: PermissionOption[]
-  } = {},
+  options: MockClaudeAcpOptions = {},
 ) {
   const executable = path.join(root, 'claude-agent-acp')
   const configuration = path.join(root, 'mock-acp-options.json')
