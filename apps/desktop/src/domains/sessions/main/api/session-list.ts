@@ -177,8 +177,8 @@ function linkedTicket({ projectId, key, createdAt, ...content }: StoredSessionRo
     : { projectId, key, createdAt, ...content }
 }
 
-// The name a row shows, strongest first, down to the Session ID.
-const shownName = sql<string>`coalesce(${sessionTable.customTitle}, ${ticketContent.title}, ${sessionTable.preview}, ${sessionTable.firstPrompt}, ${sessionTable.argoId})`
+// The name a row shows, strongest first, down to the Session ID; an empty preview names nothing.
+const shownName = sql<string>`coalesce(${sessionTable.customTitle}, ${ticketContent.title}, nullif(${sessionTable.preview}, ''), ${sessionTable.firstPrompt}, ${sessionTable.argoId})`
 
 const storedSessionColumns = {
   passed: passedSessionColumns,
