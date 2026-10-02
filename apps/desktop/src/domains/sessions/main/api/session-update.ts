@@ -168,7 +168,7 @@ export type SessionUpdateProcedureContext = SessionUpdateContext & {
 }
 
 // Renames one saved Session or archives several, and returns the updated IDs. A title goes to the
-// Harness first; an unknown ID is skipped.
+// Harness first; an unknown ID is skipped. An archive's worktrees go later, by their own procedure.
 export function sessionUpdateProcedure(context: SessionUpdateProcedureContext) {
   return t.procedure
     .input(sessionUpdateInputSchema)

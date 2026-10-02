@@ -16,7 +16,7 @@ const first: SessionStartInput = {
   commandId: '00000000-0000-4000-8000-000000000001',
   harness: 'claude',
   projectId: '00000000-0000-4000-8000-000000000099',
-  workspaceId: '00000000-0000-4000-8000-000000000098',
+  worktree: null,
   cwd: '/repo',
   prompt: 'first',
   attachments: [],

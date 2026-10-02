@@ -426,3 +426,36 @@ export const AReopenedSessionTakesItsCurrentDetails: Story = {
 }
 
 const RENAMED_SESSION_ROWS = SESSION_ROWS.map((row) => ({ ...row }))
+
+const GONE_WORKTREE = '/workspace/argo-worktrees/gone'
+const GONE_WORKTREE_ROWS = SESSION_ROWS.map((row, index) =>
+  index === 1
+    ? {
+        ...row,
+        cwd: GONE_WORKTREE,
+        worktree: { path: GONE_WORKTREE, branch: 'argo/session-gone', base: 'main' },
+      }
+    : { ...row },
+)
+
+// Opening a Session whose worktree folder is gone moves it to the main checkout and says so before
+// any Send, for Claude and Codex Sessions alike.
+export const OpeningASessionWhoseWorktreeIsGone: Story = {
+  beforeEach: () =>
+    sessionSelectionHost(GONE_WORKTREE_ROWS, {
+      goneWorktrees: { sessionIds: ['codex-second'], mainCheckout: '/workspace/argo' },
+    }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await canvas.findByRole('heading', { level: 1, name: 'First Claude Session' })
+    await userEvent.click(canvas.getByRole('button', { name: /Second Codex Session/ }))
+    await canvas.findByRole('heading', { level: 1, name: 'Second Codex Session' })
+    await expect(
+      await within(document.body).findByText(
+        `The worktree ${GONE_WORKTREE} is gone, so this Session now works in the main checkout.`,
+      ),
+    ).toBeVisible()
+    await waitFor(() => expect(canvas.queryByText(GONE_WORKTREE)).toBeNull())
+    await expect(canvas.getByText('/workspace/argo')).toBeVisible()
+  },
+}

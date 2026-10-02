@@ -1,0 +1,110 @@
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { AttachmentTray } from './attachment-tray'
+import { WorktreeRow } from './worktree-row'
+import '../editor/composer-content.css'
+
+const LONG_BRANCH =
+  'argo/#3132-replace-the-work-location-menu-with-a-worktree-switch-and-a-from-branch-picker'
+
+function WorktreeRowStory({
+  branch = 'main',
+  initialNewWorktree = false,
+  saveFailed = false,
+  narrow = false,
+}: {
+  branch?: string | null
+  initialNewWorktree?: boolean
+  saveFailed?: boolean
+  // A fixed narrow column, so a long branch truncates at any viewport width.
+  narrow?: boolean
+}) {
+  const [newWorktree, setNewWorktree] = useState(initialNewWorktree)
+  const [from, setFrom] = useState<string | null>(null)
+  const branches = [...new Set([branch ?? 'main', 'main', 'release/1.4', 'design-tokens'])]
+  return (
+    <div className="flex min-h-dvh items-end p-8">
+      <div className={`mx-auto w-full ${narrow ? 'max-w-96' : 'max-w-(--size-session-column)'}`}>
+        <AttachmentTray>
+          <WorktreeRow
+            options={{ checkout: { path: '/Users/milad/Developer/argo', branch }, branches }}
+            newWorktree={newWorktree}
+            from={from}
+            saveFailed={saveFailed}
+            setNewWorktree={setNewWorktree}
+            chooseFrom={setFrom}
+          />
+        </AttachmentTray>
+        <div className="relative z-10 h-24 rounded-xl border border-border bg-card" />
+      </div>
+    </div>
+  )
+}
+
+const meta = {
+  title: 'Sessions/Composer/Worktree Row',
+  component: WorktreeRowStory,
+} satisfies Meta<typeof WorktreeRowStory>
+
+export default meta
+type Story = StoryObj<typeof WorktreeRowStory>
+
+const page = () => within(document.body)
+
+export const SwitchOff: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('switch', { name: 'Worktree' })).not.toBeChecked()
+    await expect(canvas.getByText('main')).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: /New worktree from/ })).toBeNull()
+  },
+}
+
+export const LabelTogglesTheSwitch: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByText('Worktree'))
+    await expect(canvas.getByRole('switch', { name: 'Worktree' })).toBeChecked()
+    await expect(canvas.getByRole('button', { name: 'New worktree from main' })).toBeVisible()
+  },
+}
+
+export const SwitchOnWithBranchChosen: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('switch', { name: 'Worktree' }))
+    await expect(canvas.getByRole('switch', { name: 'Worktree' })).toBeChecked()
+    await userEvent.click(canvas.getByRole('button', { name: 'New worktree from main' }))
+    const list = await page().findByRole('listbox')
+    await expect(within(list).getByRole('option', { name: 'main' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    )
+    await userEvent.type(page().getByPlaceholderText('Search branches'), 'rel')
+    await userEvent.click(within(list).getByRole('option', { name: 'release/1.4' }))
+    await waitFor(() => expect(page().queryByRole('listbox')).toBeNull())
+    await expect(
+      canvas.getByRole('button', { name: 'New worktree from release/1.4' }),
+    ).toBeVisible()
+  },
+}
+
+export const LongBranchName: Story = {
+  args: { branch: LONG_BRANCH, narrow: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const name = canvas.getByText(LONG_BRANCH)
+    await expect(name.scrollWidth).toBeGreaterThan(name.clientWidth)
+    await expect(canvasElement.scrollWidth).toBeLessThanOrEqual(canvasElement.clientWidth)
+  },
+}
+
+export const SwitchNotRemembered: Story = {
+  args: { saveFailed: true },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('status')).toHaveTextContent(
+      'Could not remember the Worktree switch for this Project.',
+    )
+  },
+}

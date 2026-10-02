@@ -168,7 +168,6 @@ describe('the Claude ACP live channel', () => {
           nativeId: identity.nativeId,
           cwd: root,
           projectId: 'project-1',
-          workspaceId: 'workspace-1',
         },
       },
       undefined,

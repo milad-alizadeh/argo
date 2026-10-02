@@ -10,7 +10,7 @@
     where two rungs share a boundary, and it is deliberate rather than an oversight. Argo can
     **set** Plan but cannot **read it back** — a CLI reports the shared boundary either way, so an
     observed Session renders `Read Only`, and Plan appears only where Argo set it.
-  - **Code** — writes and runs inside the **Workspace**, and asks to leave it.
+  - **Code** — writes and runs inside the Session's **Checkout**, and asks to leave it.
   - **Auto** — no boundary, asks nothing.
 
   A CLI value with no exact rung renders as the **nearest rung marked `≈`**, nearest being judged
