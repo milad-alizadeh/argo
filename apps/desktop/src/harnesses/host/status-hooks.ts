@@ -1,6 +1,8 @@
 // The status hooks Argo installs in a Harness's user-level config, in the `hooks` table shape both
 // Harnesses share: each event names a list of matcher groups. The adapter supplies the storage, the
 // group shape and its tool names; the install, the removal and the reading are the same for all.
+import { existsSync } from 'node:fs'
+import path from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 import { z } from 'zod'
 import { commandActivityLabel, type LiveActivity } from '@/domains/sessions/api/feed-activity'
@@ -63,7 +65,39 @@ async function change(
   if (changes.size > 0) await write(changes)
 }
 
-// Appends Argo's group to each event the adapter names that lacks it.
+// What `change` writes for an event: undefined when nothing moved, null when no group is left.
+const settle = (before: unknown[], after: unknown[]) => {
+  if (isDeepStrictEqual(before, after)) return undefined
+  return after.length === 0 ? null : after
+}
+
+// Drops the trailing groups `removable` names. A Harness may key hook trust by group position
+// (#3066), so a group before a kept one stays put.
+function trimTail(groups: unknown[], removable: (group: unknown) => boolean): unknown[] {
+  let end = groups.length
+  while (end > 0 && removable(groups[end - 1])) end -= 1
+  return groups.slice(0, end)
+}
+
+const commandGroupSchema = z.object({ hooks: z.tuple([z.looseObject({ command: z.string() })]) })
+const SOCKET_COMMAND =
+  /^curl -s -m 1 --unix-socket '((?:[^']|'\\'')*)' --data-binary @- http:\/\/localhost\/h\/[a-z]+ \|\| true$/
+
+// An Argo group of any launch whose app data folder is gone, so no Argo will listen on it again.
+function isOrphanGroup(harness: Harness, hooks: ExternalSessionHooks, group: unknown): boolean {
+  const command = commandGroupSchema.safeParse(group).data?.hooks[0].command ?? ''
+  const socket = SOCKET_COMMAND.exec(command)?.[1]?.replaceAll(`'\\''`, "'")
+  if (socket === undefined) return false
+  const argo = isDeepStrictEqual(group, hooks.group(hookCommand(harness, socket)))
+  return argo && !existsSync(path.dirname(socket))
+}
+
+// The command Argo wrote before #3022, which posted every payload to a TCP port other dev servers use.
+const portCommand = (harness: Harness, event: StatusHookEvent) =>
+  `curl -s -m 1 --data-binary @- http://127.0.0.1:4321/h/${harness}/${event} || true`
+
+// Puts Argo's group in each event the adapter names that lacks it: in the first orphan's place,
+// else at the end. Trailing orphans go, and so does every port group, since it leaks payloads.
 export function installStatusHooks(
   harness: Harness,
   hooks: ExternalSessionHooks,
@@ -71,8 +105,24 @@ export function installStatusHooks(
 ): Promise<void> {
   const group = hooks.group(hookCommand(harness, socketPath))
   return change(hooks, (event, groups) => {
-    if (!hooks.events.includes(event)) return undefined
-    return groups.some((each) => isDeepStrictEqual(each, group)) ? undefined : [...groups, group]
+    const port = hooks.group(portCommand(harness, event))
+    const isPort = (each: unknown) => isDeepStrictEqual(each, port)
+    const own = (each: unknown) => isDeepStrictEqual(each, group)
+    const orphan = (each: unknown) =>
+      !own(each) && (isPort(each) || isOrphanGroup(harness, hooks, each))
+    const next = [...groups]
+    if (hooks.events.includes(event) && !next.some(own)) {
+      const slot = next.findIndex(orphan)
+      if (slot === -1) next.push(group)
+      else next[slot] = group
+    }
+    return settle(
+      groups,
+      trimTail(
+        next.filter((each) => !isPort(each)),
+        orphan,
+      ),
+    )
   })
 }
 
@@ -83,11 +133,12 @@ export function removeStatusHooks(
   socketPath: string,
 ): Promise<void> {
   const group = hooks.group(hookCommand(harness, socketPath))
-  return change(hooks, (_event, groups) => {
-    const kept = groups.filter((each) => !isDeepStrictEqual(each, group))
-    if (kept.length === groups.length) return undefined
-    return kept.length === 0 ? null : kept
-  })
+  return change(hooks, (_event, groups) =>
+    settle(
+      groups,
+      groups.filter((each) => !isDeepStrictEqual(each, group)),
+    ),
+  )
 }
 
 const payloadSchema = z.looseObject({
