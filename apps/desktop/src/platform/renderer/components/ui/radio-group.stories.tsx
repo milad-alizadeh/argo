@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { RadioGroup, RadioGroupItem } from './radio-group'
 
-const meta = { title: 'Foundations/Primitives/Radio Group', component: RadioGroup } satisfies Meta<typeof RadioGroup>
+const meta = { title: 'Design System/Primitives/Radio Group', component: RadioGroup } satisfies Meta<typeof RadioGroup>
 export default meta
 type Story = StoryObj<typeof meta>
 

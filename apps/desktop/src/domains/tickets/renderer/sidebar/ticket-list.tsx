@@ -73,38 +73,38 @@ export function TicketList({
   const { folded, toggle } = useFolds()
   const rows = unfoldedRows(backlogRows(backlog.tickets), folded)
   const header = (
-        <AppPageHeader>
-          <PageHeading>{t('backlog.label')}</PageHeading>
-          <div className="ml-auto flex items-center gap-(--spacing-shell-item)">
-            {backlog.sync.refreshing ? (
-              <p className="type-meta text-faint">
-                {t('backlog.refreshing', { provider: providerPresentation(backlog.provider).name })}
-              </p>
-            ) : null}
-            <p aria-live="polite" className="type-meta text-muted-foreground">
-              {tally(t, backlog)}
-            </p>
-          </div>
-        </AppPageHeader>
+    <AppPageHeader>
+      <PageHeading>{t('backlog.label')}</PageHeading>
+      <div className="ml-auto flex items-center gap-(--spacing-shell-item)">
+        {backlog.sync.refreshing ? (
+          <p className="type-meta text-muted-foreground">
+            {t('backlog.refreshing', { provider: providerPresentation(backlog.provider).name })}
+          </p>
+        ) : null}
+        <p aria-live="polite" className="type-meta text-muted-foreground">
+          {tally(t, backlog)}
+        </p>
+      </div>
+    </AppPageHeader>
   )
   const content = (
     <>
-        {backlog.sync.problem ? <ProblemBanner {...backlog.sync.problem} /> : null}
-        {backlog.tickets.length === 0 ? (
-          <NoTickets provider={backlog.provider} query={backlog.query} />
-        ) : null}
-        {backlog.tickets.length > 0 ? (
-          <TicketVirtualList
-            backlog={backlog}
-            folded={folded}
-            now={now}
-            onSelect={onSelect}
-            onToggle={toggle}
-            placement={placement}
-            rows={rows}
-            selectedKey={selectedKey}
-          />
-        ) : null}
+      {backlog.sync.problem ? <ProblemBanner {...backlog.sync.problem} /> : null}
+      {backlog.tickets.length === 0 ? (
+        <NoTickets provider={backlog.provider} query={backlog.query} />
+      ) : null}
+      {backlog.tickets.length > 0 ? (
+        <TicketVirtualList
+          backlog={backlog}
+          folded={folded}
+          now={now}
+          onSelect={onSelect}
+          onToggle={toggle}
+          placement={placement}
+          rows={rows}
+          selectedKey={selectedKey}
+        />
+      ) : null}
     </>
   )
   return (

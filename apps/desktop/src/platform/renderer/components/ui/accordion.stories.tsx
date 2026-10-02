@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './accordion'
 
-const meta = { title: 'Foundations/Primitives/Accordion', component: Accordion } satisfies Meta<typeof Accordion>
+const meta = { title: 'Design System/Primitives/Accordion', component: Accordion } satisfies Meta<typeof Accordion>
 export default meta
 type Story = StoryObj<typeof meta>
 

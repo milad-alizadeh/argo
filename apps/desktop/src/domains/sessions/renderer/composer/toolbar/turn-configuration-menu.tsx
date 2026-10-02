@@ -205,7 +205,7 @@ function ModelOptions({ choices, value, onChange }: TurnConfigurationControlProp
                 <span className={composerRichOptionRecipe.label}>{model.label}</span>
                 {model.detail ? (
                   <span
-                    className={`${composerRichOptionRecipe.detail} ${active ? 'text-background/80' : 'text-muted-foreground'}`}
+                    className={`${composerRichOptionRecipe.detail} ${active ? 'text-accent-foreground' : 'text-muted-foreground'}`}
                   >
                     {model.detail}
                   </span>

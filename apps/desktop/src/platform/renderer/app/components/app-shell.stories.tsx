@@ -77,10 +77,12 @@ async function collapseAndRestore(canvasElement: HTMLElement) {
 async function keyboardResize(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
   const separator = canvas.getByRole('separator')
+  const initialValue = separator.getAttribute('aria-valuenow')
   separator.focus()
   await userEvent.keyboard('{ArrowRight}{ArrowRight}{ArrowLeft}')
   await expect(separator).toHaveFocus()
   await expect(separator).toHaveAttribute('aria-orientation', 'vertical')
+  await expect(separator.getAttribute('aria-valuenow')).not.toBe(initialValue)
 }
 
 async function cornerPopup(canvasElement: HTMLElement) {
@@ -115,7 +117,7 @@ export const Collapsed: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
-    await expect(canvas.getByRole('button', { name: 'Open sidebar' })).toHaveFocus()
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Open sidebar' })).toHaveFocus())
   },
 }
 export const CollapseRestore: Story = {
@@ -123,22 +125,10 @@ export const CollapseRestore: Story = {
 }
 export const KeyboardResized: Story = { play: ({ canvasElement }) => keyboardResize(canvasElement) }
 export const Narrow: Story = {
-  decorators: [
-    (Story) => (
-      <div className="h-full w-[860px]">
-        <Story />
-      </div>
-    ),
-  ],
+  globals: { viewport: { value: 'narrow', isRotated: false } },
   play: ({ canvasElement }) => collapseAndRestore(canvasElement),
 }
 export const WideCornerPopup: Story = {
-  decorators: [
-    (Story) => (
-      <div className="h-full w-[1280px]">
-        <Story />
-      </div>
-    ),
-  ],
+  globals: { viewport: { value: 'desktop', isRotated: false } },
   play: ({ canvasElement }) => cornerPopup(canvasElement),
 }

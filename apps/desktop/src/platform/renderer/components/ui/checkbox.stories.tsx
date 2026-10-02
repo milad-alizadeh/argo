@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { Checkbox } from './checkbox'
 
-const meta = { title: 'Foundations/Primitives/Checkbox', component: Checkbox } satisfies Meta<typeof Checkbox>
+const meta = { title: 'Design System/Primitives/Checkbox', component: Checkbox } satisfies Meta<typeof Checkbox>
 export default meta
 type Story = StoryObj<typeof meta>
 

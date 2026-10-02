@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { Textarea } from './textarea'
 
-const meta = { title: 'Foundations/Primitives/Textarea', component: Textarea } satisfies Meta<typeof Textarea>
+const meta = { title: 'Design System/Primitives/Textarea', component: Textarea } satisfies Meta<typeof Textarea>
 export default meta
 type Story = StoryObj<typeof meta>
 

@@ -131,6 +131,35 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof TicketsScreenStory>
 
+export const PaneLayout: Story = {
+  args: {
+    view: ticketsView({
+      tickets: backlog().tickets.map((ticket) => ({
+        ...ticket,
+        title: `${ticket.title}: Preserve navigation across project workspaces and long repository paths`,
+      })),
+    }),
+  },
+  globals: { viewport: { value: 'desktop', isRotated: false } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('region', { name: 'Backlog' })).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
+    const opener = canvas.getByRole('button', { name: 'Open sidebar' })
+    await waitFor(() => expect(opener).toHaveFocus())
+    await userEvent.click(opener)
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Collapse sidebar' })).toHaveFocus(),
+    )
+    await userEvent.click(
+      within(canvas.getByRole('region', { name: 'Backlog' })).getByRole('button', {
+        name: /^#607/,
+      }),
+    )
+    await expect(await canvas.findByRole('article', { name: 'Ticket #607' })).toBeVisible()
+  },
+}
+
 async function readsTheBacklog(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
   const list = within(canvas.getByRole('region', { name: 'Backlog' }))

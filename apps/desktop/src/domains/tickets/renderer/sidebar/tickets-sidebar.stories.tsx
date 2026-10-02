@@ -12,7 +12,7 @@ const meta = {
   decorators: [
     (Story) => (
       <MemoryRouter>
-        <div className="h-dvh w-64">
+        <div className="panel-sidebar panel-sidebar-start panel-sidebar-end h-dvh w-64">
           <Story />
         </div>
       </MemoryRouter>

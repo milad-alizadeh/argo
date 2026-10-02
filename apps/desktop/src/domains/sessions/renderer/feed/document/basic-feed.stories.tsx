@@ -858,10 +858,11 @@ export const DisclosureAtLatestStaysVisible: Story = {
     const group = canvas.getByRole('button', { name: 'Ran a command, edited a file' })
     await userEvent.click(group)
     const call = await canvas.findByRole('button', { name: 'Ran a command' })
+    await waitFor(() => expect(call).toBeVisible())
     await expect(group).toBeVisible()
     await userEvent.click(call)
     await waitFor(() => expect(call).toHaveAttribute('aria-expanded', 'true'))
-    await expect(call).toBeVisible()
+    await waitFor(() => expect(call).toBeVisible())
   },
 }
 

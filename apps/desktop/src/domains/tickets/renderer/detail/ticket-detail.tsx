@@ -3,7 +3,7 @@ import type { Provider } from '@/domains/accounts/contract/contract'
 import type { Session } from '@/domains/sessions/renderer'
 import { FeedMarkdown } from '@/domains/sessions/renderer'
 import type { Ticket } from '@/domains/tickets/api/ticket'
-import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
+import { AppPageHeader, AppPageSurface } from '@/platform/renderer/app/components/app-shell'
 import { PageHeading } from '@/platform/renderer/components/page-heading'
 import { providerPresentation } from '@/providers/presentation-registry'
 import { TicketDetailEmpty } from './ticket-detail-empty'
@@ -90,10 +90,9 @@ export function TicketDetail(props: TicketDetailProps) {
   return (
     <article
       aria-label={t('detail.articleLabel', { key: ticket.key })}
-      className="flex min-h-0 flex-1 flex-col overflow-hidden"
+      className="flex min-h-0 flex-1 flex-col"
     >
-      <TicketDetailPageHeader onBack={onBack} />
-      <div className="panel-content">
+      <AppPageSurface header={<TicketDetailPageHeader onBack={onBack} />}>
         <div
           data-component="TicketDetailScroll"
           className="@container min-h-0 flex-1 overflow-y-auto"
@@ -126,7 +125,7 @@ export function TicketDetail(props: TicketDetailProps) {
             />
           </div>
         </div>
-      </div>
+      </AppPageSurface>
     </article>
   )
 }

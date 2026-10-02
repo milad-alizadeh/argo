@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { Slider } from './slider'
 
-const meta = { title: 'Foundations/Primitives/Slider', component: Slider } satisfies Meta<typeof Slider>
+const meta = { title: 'Design System/Primitives/Slider', component: Slider } satisfies Meta<typeof Slider>
 export default meta
 type Story = StoryObj<typeof meta>
 

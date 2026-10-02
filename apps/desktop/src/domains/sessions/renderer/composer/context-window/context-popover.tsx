@@ -89,7 +89,7 @@ function LabelledContextTrigger({ percentage }: ContextTriggerProps) {
         />
       }
     >
-      <Icon name="context-stack" />
+      <Icon className="text-muted-foreground" name="context-stack" />
       <span>{t('composer.context')}</span>
     </PopoverTrigger>
   )
@@ -109,7 +109,7 @@ function ContextPopoverTrigger({
         <Button aria-label={t('composer.contextWindow.details')} size="icon-sm" variant="ghost" />
       }
     >
-      <Icon name="info" />
+      <Icon className="text-muted-foreground" name="info" />
     </PopoverTrigger>
   )
 }

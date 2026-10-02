@@ -35,7 +35,7 @@ function ContextMeter({
                 type="button"
               >
                 <span
-                  className={`absolute inset-y-0 left-0 rounded-full ${contextAlert ? 'bg-gradient-to-r from-white to-red-500' : 'bg-gradient-to-r from-neutral-300 via-neutral-500 to-neutral-900'}`}
+                  className={`absolute inset-y-0 left-0 rounded-full ${contextAlert ? 'bg-destructive' : 'bg-foreground/70'}`}
                   style={{ width: `${percentage}%` }}
                 />
                 <span
@@ -102,7 +102,7 @@ export function SessionContextBar({
 
   return (
     <div
-      className="@container relative z-0 flex min-h-(--size-session-context-bar) min-w-0 select-none items-center gap-2 rounded-b-xl border bg-card px-3 pt-4 pb-2 shadow-(--shadow-surface) @[56rem]:gap-3 @[56rem]:px-4"
+      className="@container relative z-0 flex min-h-(--size-session-context-bar) min-w-0 select-none items-center gap-2 rounded-b-xl border border-border bg-card text-card-foreground shadow-(--shadow-inset-pane) px-3 pt-4 pb-2 @[56rem]:gap-3 @[56rem]:px-4"
       data-component="SessionContextBar"
     >
       {harness === null ? null : (

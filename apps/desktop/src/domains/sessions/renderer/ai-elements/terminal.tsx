@@ -1,10 +1,11 @@
 import Ansi from 'ansi-to-react'
-import React, { type HTMLAttributes, useCallback, useContext, useMemo, useState } from 'react'
+import React, { type HTMLAttributes, useContext, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { cn } from '@/platform/renderer/lib/utils'
 import './terminal.css'
+import { useCopyFeedback } from './code-block-copy-button'
 
 type TerminalContextValue = {
   autoScroll: boolean
@@ -49,22 +50,20 @@ function TerminalTitle({
 export function TerminalCopyButton() {
   const { t } = useTranslation()
   const { output } = useContext(TerminalContext)
-  const [copied, setCopied] = useState(false)
-  const copy = useCallback(async () => {
-    await navigator.clipboard.writeText(output)
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 2000)
-  }, [output])
+  const { announcement, iconName, copy } = useCopyFeedback()
   return (
     <Button
       type="button"
-      size="icon"
+      size="icon-sm"
       variant="ghost"
       aria-label={t('terminal.copy')}
-      className="size-7 shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground"
-      onClick={copy}
+      className="shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+      onClick={() => void copy(output)}
     >
-      <Icon name={copied ? 'confirmed' : 'copy'} size="control" />
+      <Icon name={iconName} size="control" />
+      <span aria-live="polite" className="sr-only">
+        {announcement}
+      </span>
     </Button>
   )
 }

@@ -11,7 +11,7 @@ export function SearchField(props: ComponentProps<typeof InputGroupInput>) {
   return (
     <InputGroup className={searchGroupClassName}>
       <InputGroupAddon>
-        <Icon name="search" />
+        <Icon className="text-muted-foreground" name="search" />
       </InputGroupAddon>
       <InputGroupInput {...props} />
     </InputGroup>
@@ -23,10 +23,10 @@ export function CommandSearchField({
   ...props
 }: ComponentProps<typeof CommandPrimitive.Input>) {
   return (
-    <div className="mx-1">
+    <div className="p-1">
       <InputGroup className={searchGroupClassName}>
         <InputGroupAddon>
-          <Icon name="search" />
+          <Icon className="text-muted-foreground" name="search" />
         </InputGroupAddon>
         <CommandPrimitive.Input
           data-slot="input-group-control"

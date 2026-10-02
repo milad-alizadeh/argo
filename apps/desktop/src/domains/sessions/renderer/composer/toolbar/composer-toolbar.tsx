@@ -25,7 +25,7 @@ function AddContextButton({ onOpen }: { onOpen: () => void }) {
       type="button"
       variant="ghost"
     >
-      <Icon name="add" />
+      <Icon className="text-muted-foreground" name="add" />
     </InputGroupButton>
   )
 }

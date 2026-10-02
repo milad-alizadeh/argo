@@ -5,7 +5,7 @@ import { Alert, AlertAction, AlertDescription, AlertTitle } from '../ui/alert'
 import { Button } from '../ui/button'
 
 const meta = {
-  title: 'Foundations/Primitives/Alert',
+  title: 'Design System/Primitives/Alert',
   component: Alert,
   decorators: [
     (Story) => (

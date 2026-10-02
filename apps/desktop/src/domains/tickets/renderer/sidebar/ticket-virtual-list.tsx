@@ -65,7 +65,9 @@ function NextPage({ loading }: { loading: boolean }) {
   const { t } = useTranslation('tickets')
   return (
     <div className="flex justify-center py-(--spacing-shell-item)">
-      {loading ? <Loader aria-label={t('backlog.loadingMore')} className="text-faint" /> : null}
+      {loading ? (
+        <Loader aria-label={t('backlog.loadingMore')} className="text-muted-foreground" />
+      ) : null}
     </div>
   )
 }

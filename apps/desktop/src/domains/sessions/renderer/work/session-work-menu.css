@@ -1,0 +1,7 @@
+.session-work-count {
+  --size-session-work-count: 12px;
+  --typography-session-work-count-size: 10px;
+  height: var(--size-session-work-count);
+  min-width: var(--size-session-work-count);
+  font-size: var(--typography-session-work-count-size);
+}

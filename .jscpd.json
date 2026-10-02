@@ -14,7 +14,6 @@
     "**/*.stories.tsx",
     "prototypes/**",
     "**/skills/**/templates/**",
-    "apps/desktop/mocks/recordings/*/*/**",
-    "apps/desktop/tests/styling/fixtures/pristine-dialog.tsx"
+    "apps/desktop/mocks/recordings/*/*/**"
   ]
 }

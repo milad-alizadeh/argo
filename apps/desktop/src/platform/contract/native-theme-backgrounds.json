@@ -3,16 +3,16 @@
     "light": "#ffffff",
     "dark": "#0a0a0a"
   },
-  "catppuccin": {
-    "light": "#eef2f9",
-    "dark": "#191928"
+  "supabase": {
+    "light": "#fcfcfc",
+    "dark": "#121212"
   },
-  "ocean-breeze": {
-    "light": "#f3f9ff",
-    "dark": "#0f182b"
+  "linear": {
+    "light": "#fbfbfb",
+    "dark": "#101011"
   },
-  "northern-lights": {
-    "light": "#f8f8f8",
-    "dark": "#1b1d22"
+  "amber-minimal": {
+    "light": "#ffffff",
+    "dark": "#161616"
   }
 }

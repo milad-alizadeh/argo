@@ -9,7 +9,7 @@ test('keeps complete app recipes and colors in either order', () => {
   expect(cn('type-body', 'text-muted-foreground')).toBe('type-body text-muted-foreground')
   expect(cn('type-title', 'text-foreground')).toBe('type-title text-foreground')
   expect(cn('type-control', 'text-primary-foreground')).toBe('type-control text-primary-foreground')
-  expect(cn('type-meta', 'text-faint')).toBe('type-meta text-faint')
+  expect(cn('type-meta', 'text-muted-foreground')).toBe('type-meta text-muted-foreground')
 })
 
 test('a complete app recipe replaces all inherited metric classes together', () => {

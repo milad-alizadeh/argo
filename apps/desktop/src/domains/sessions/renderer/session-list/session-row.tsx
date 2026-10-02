@@ -53,7 +53,7 @@ function ActivityLine({ session }: { session: Session }) {
     running: session.status === 'running',
   })
   return (
-    <span className="mt-0.5 block min-h-lh truncate type-meta text-faint">
+    <span className="mt-0.5 block min-h-lh truncate type-meta text-muted-foreground">
       {line === null ? null : <LiveActivityWords line={line} />}
     </span>
   )
@@ -62,9 +62,10 @@ function ActivityLine({ session }: { session: Session }) {
 // A row that already carries a ground keeps it under the pointer: hover answers "this one is
 // reachable", and a selected row has nothing left to say (#2273).
 function rowHighlightOf(checked: boolean, selected: boolean, archived: boolean): string {
-  if (checked || selected) return 'bg-selected text-foreground'
+  if (checked || selected)
+    return 'bg-sidebar-accent text-sidebar-accent-foreground [&_.type-meta]:text-inherit'
   if (archived) return 'border border-border/70 bg-muted/50 text-muted-foreground hover:bg-muted'
-  return 'hover:bg-muted'
+  return 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:[&_.type-meta]:text-inherit'
 }
 
 // How long ago a settled Session last changed; a working one shows no time.
@@ -161,7 +162,7 @@ function SessionMetadata({ now, session }: { now: number; session: RowSession })
   const plan = session.plan ?? null
   // The line keeps its height when empty, so a row does not shrink as its age hides.
   return (
-    <span className="mt-1 flex min-h-lh items-center gap-2 type-meta text-faint [&_svg]:size-(--size-icon-metadata)">
+    <span className="mt-1 flex min-h-lh items-center gap-2 type-meta text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
       {minutes === null || session.updatedAt === null ? null : (
         <SessionAge minutes={minutes} updatedAt={session.updatedAt} />
       )}
@@ -256,7 +257,7 @@ export const SessionRow = memo(function SessionRow({
       {checked ? <span className="sr-only">{t('bulkSelect.selected')}</span> : null}
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
-          <span className="block min-w-0 truncate type-body font-medium text-foreground">
+          <span className="block min-w-0 truncate type-body font-medium">
             <SessionTitle session={session} />
           </span>
           {archived ? (

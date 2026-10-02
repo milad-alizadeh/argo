@@ -8,7 +8,7 @@ export function CodeLanguageIcon({ language }: { language: CodeLanguage | null }
     case 'typescript':
     case 'tsx':
       return (
-        <span className="grid size-5 place-items-center rounded-sm bg-language-typescript type-meta font-bold tracking-tighter text-language-typescript-ink">
+        <span className="grid size-5 place-items-center rounded-sm bg-language-typescript type-meta font-bold tracking-tighter text-white">
           {t('codeLanguage.typescript')}
         </span>
       )

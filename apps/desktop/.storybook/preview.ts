@@ -15,6 +15,7 @@ import {
   DEFAULT_THEME,
   THEMES,
 } from '../src/platform/contract/appearance'
+import appLocale from '../src/platform/renderer/shell/locales/app.json'
 import { applyAppearance } from '../src/platform/renderer/use-appearance'
 import { host } from './storybook-host'
 
@@ -83,12 +84,7 @@ const preview: Preview = {
       toolbar: {
         title: 'Theme',
         icon: 'circlehollow',
-        items: [
-          { value: 'default', title: 'Default' },
-          { value: 'catppuccin', title: 'Catppuccin' },
-          { value: 'ocean-breeze', title: 'Ocean Breeze' },
-          { value: 'northern-lights', title: 'Northern Lights' },
-        ],
+        items: THEMES.map((theme) => ({ value: theme, title: appLocale.appearance.themes[theme] })),
       },
     },
     theme: {

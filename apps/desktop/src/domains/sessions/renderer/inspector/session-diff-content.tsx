@@ -128,9 +128,7 @@ function DiffHeader({
           >
             <Icon name={iconName} size="control" />
           </Button>
-          {copyLabel === undefined ? null : (
-            <CodeBlockCopyButton aria-label={copyLabel} className="size-7" />
-          )}
+          {copyLabel === undefined ? null : <CodeBlockCopyButton aria-label={copyLabel} />}
         </>
       }
     />

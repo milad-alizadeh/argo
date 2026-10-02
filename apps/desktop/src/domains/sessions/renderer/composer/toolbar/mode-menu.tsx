@@ -26,7 +26,11 @@ export function ModeMenu({ choices, value, onChange }: TurnConfigurationControlP
         })}
       >
         <ComposerMenuValue
-          icon={current === undefined ? null : <Icon name={current.icon} />}
+          icon={
+            current === undefined ? null : (
+              <Icon className="text-muted-foreground" name={current.icon} />
+            )
+          }
           label={current?.label}
         />
       </ComposerMenuTrigger>

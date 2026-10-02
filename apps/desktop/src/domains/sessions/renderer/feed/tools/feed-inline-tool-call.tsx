@@ -34,7 +34,7 @@ export function FeedInlineToolCall({ call, live }: { call: ToolCall | ToolRow; l
             <span className="text-destructive">{t('tools.failed')}</span>
           )}
           {callRunning(call, live) && <StatusIcon status={call.status} />}
-          <CodeBlockCopyButton aria-label={t('tools.copyRun')} className="size-7" />
+          <CodeBlockCopyButton aria-label={t('tools.copyRun')} />
         </>
       }
     />

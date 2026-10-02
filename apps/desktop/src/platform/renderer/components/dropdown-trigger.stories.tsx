@@ -16,6 +16,7 @@ function TriggerStory({
   longTitle = false,
   controlled = false,
   onTriggerClick,
+  appearance = 'menu',
 }: {
   searchable: boolean
   iconOnly: boolean
@@ -23,6 +24,7 @@ function TriggerStory({
   longTitle?: boolean
   controlled?: boolean
   onTriggerClick?: () => void
+  appearance?: 'menu' | 'project' | 'workspace'
 }) {
   const [open, setOpen] = useState(false)
   let label = searchable ? 'New worktree' : 'Projects'
@@ -35,7 +37,7 @@ function TriggerStory({
     iconOnly,
     label,
     disabled,
-    appearance: 'menu' as const,
+    appearance,
     onClick: onTriggerClick,
   }
   return (
@@ -140,11 +142,13 @@ export const LongTitle: Story = {
     })
     await expect(trigger).toHaveAccessibleName('The Atlas of Forgotten Maps and Marginalia')
     await userEvent.click(trigger)
-    await expect(
-      await within(document.body).findByRole('menuitem', {
-        name: 'The Atlas of Forgotten Maps and Marginalia',
-      }),
-    ).toBeVisible()
+    await waitFor(() =>
+      expect(
+        within(document.body).getByRole('menuitem', {
+          name: 'The Atlas of Forgotten Maps and Marginalia',
+        }),
+      ).toBeVisible(),
+    )
   },
 }
 
@@ -158,6 +162,9 @@ export const ControlledSearchMergesClick: Story = {
       expect(within(document.body).getByLabelText('Search worktrees')).toBeVisible(),
     )
     await expect(args.onTriggerClick).toHaveBeenCalledTimes(1)
+    await userEvent.type(within(document.body).getByLabelText('Search worktrees'), 'main')
+    await expect(within(document.body).getByRole('option', { name: 'main' })).toBeVisible()
+    await expect(within(document.body).queryByRole('option', { name: 'linked-feature' })).toBeNull()
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(trigger).toHaveFocus())
     await expect(within(document.body).queryByLabelText('Search worktrees')).toBeNull()
@@ -222,5 +229,18 @@ export const IconSearch: Story = {
     await waitFor(() =>
       expect(within(document.body).getByPlaceholderText('Search worktrees')).toBeVisible(),
     )
+  },
+}
+
+export const WorkspaceMenu: Story = {
+  args: { searchable: false, iconOnly: false, appearance: 'workspace' },
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole('button', { name: 'Choose project' })
+    await userEvent.click(trigger)
+    await waitFor(() =>
+      expect(within(document.body).getByRole('menuitem', { name: 'Argo' })).toBeVisible(),
+    )
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(trigger).toHaveFocus())
   },
 }

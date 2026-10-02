@@ -3,7 +3,7 @@ import { expect, within } from 'storybook/test'
 import { Loader } from './loader'
 
 const meta = {
-  title: 'Foundations/Primitives/Loader',
+  title: 'Design System/Primitives/Loader',
   component: Loader,
   parameters: { layout: 'centered' },
   args: { 'aria-label': 'Loading' },

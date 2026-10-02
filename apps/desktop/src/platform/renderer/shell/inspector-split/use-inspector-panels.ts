@@ -53,35 +53,10 @@ function useRestoreWorkspaceOnResize({
 // CSS size tokens, read at render so a token change moves the split.
 export type InspectorSizes = { inspector: string; inspectorMin: string; workspaceMin: string }
 
-function useInspectorReadiness({
-  defaultCollapsed,
-  element,
-  state,
-}: {
-  defaultCollapsed: boolean
-  element: RefObject<HTMLElement | null>
-  state: InspectorState
-}) {
-  const [isInspectorReady, setIsInspectorReady] = useState(!defaultCollapsed)
-  const synchronizeReady = useCallback(() => {
-    const width = element.current?.getBoundingClientRect().width ?? 0
-    setIsInspectorReady(width > 0)
-  }, [element])
-  useLayoutEffect(() => {
-    if (state === 'collapsed' || element.current === null) return
-    const observer = new ResizeObserver(synchronizeReady)
-    observer.observe(element.current)
-    synchronizeReady()
-    return () => observer.disconnect()
-  }, [element, state, synchronizeReady])
-  return { isInspectorReady, synchronizeReady, setIsInspectorReady }
-}
-
 function useOpenInspector({
   dismissedReveal,
   inspectorPanel,
   reveal,
-  setIsInspectorReady,
   sizes,
   splitElement,
   stateRef,
@@ -93,7 +68,6 @@ function useOpenInspector({
   dismissedReveal: RefObject<unknown>
   inspectorPanel: ReturnType<typeof usePanelRef>
   reveal: unknown
-  setIsInspectorReady: (ready: boolean) => void
   sizes: InspectorSizes
   splitElement: RefObject<HTMLDivElement | null>
   stateRef: RefObject<InspectorState>
@@ -108,7 +82,6 @@ function useOpenInspector({
     const shouldExpand = availableWidth < minimumSplitWidth
     constrainedExpansion.current = shouldExpand
     expandedWidth.current = availableWidth
-    setIsInspectorReady(true)
     if (shouldExpand) workspacePanel.current?.collapse()
     inspectorPanel.current?.expand()
     inspectorPanel.current?.resize(readCssSize(sizes.inspector))
@@ -134,7 +107,6 @@ function useInspectorToggles({
   inspectorPanel,
   open,
   reveal,
-  setIsInspectorReady,
   splitElement,
   state,
   updateState,
@@ -147,7 +119,6 @@ function useInspectorToggles({
   inspectorPanel: ReturnType<typeof usePanelRef>
   open: () => void
   reveal: unknown
-  setIsInspectorReady: (ready: boolean) => void
   splitElement: RefObject<HTMLDivElement | null>
   state: InspectorState
   updateState: (state: InspectorState) => void
@@ -161,13 +132,12 @@ function useInspectorToggles({
         constrainedExpansion.current = false
       }
       dismissedReveal.current = reveal
-      setIsInspectorReady(false)
       inspectorPanel.current?.collapse()
       updateState('collapsed')
     },
     toggleExpanded: () => {
       const expanded = state === 'expanded'
-      constrainedExpansion.current = !expanded
+      constrainedExpansion.current = false
       expandedWidth.current = splitElement.current?.getBoundingClientRect().width ?? 0
       workspacePanel.current?.[expanded ? 'expand' : 'collapse']()
       updateState(expanded ? 'open' : 'expanded')
@@ -177,29 +147,21 @@ function useInspectorToggles({
 
 function useSynchronizeCollapsed({
   inspectorPanel,
-  setIsInspectorReady,
-  synchronizeReady,
-  stateRef,
   updateState,
   workspacePanel,
 }: {
   inspectorPanel: ReturnType<typeof usePanelRef>
-  setIsInspectorReady: (ready: boolean) => void
-  synchronizeReady: () => void
-  stateRef: RefObject<InspectorState>
   updateState: (state: InspectorState) => void
   workspacePanel: ReturnType<typeof usePanelRef>
 }) {
   return useCallback(() => {
-    if (inspectorPanel.current?.isCollapsed()) {
-      if (stateRef.current !== 'collapsed') return
-      setIsInspectorReady(false)
+    if (!inspectorPanel.current || !workspacePanel.current) return
+    if (inspectorPanel.current.isCollapsed()) {
       updateState('collapsed')
     } else {
-      synchronizeReady()
       updateState(workspacePanel.current?.isCollapsed() ? 'expanded' : 'open')
     }
-  }, [inspectorPanel, setIsInspectorReady, stateRef, synchronizeReady, updateState, workspacePanel])
+  }, [inspectorPanel, updateState, workspacePanel])
 }
 
 function useInspectorPanelState(sizes: InspectorSizes, defaultCollapsed: boolean) {
@@ -212,18 +174,16 @@ function useInspectorPanelState(sizes: InspectorSizes, defaultCollapsed: boolean
   const constrainedExpansionRef = useRef(false)
   const expandedWidthRef = useRef(0)
   const dismissedRevealRef = useRef<unknown>(null)
-  const readiness = useInspectorReadiness({ defaultCollapsed, element: inspectorElement, state })
-  const updateState = (next: InspectorState) => {
+  const updateState = useCallback((next: InspectorState) => {
     stateRef.current = next
     setState(next)
-  }
+  }, [])
   return {
     constrainedExpansionRef,
     dismissedRevealRef,
     expandedWidthRef,
     inspectorElement,
     inspectorPanel,
-    readiness,
     splitElement,
     state,
     stateRef,
@@ -245,7 +205,6 @@ function useInspectorPanelControls({
     dismissedRevealRef,
     expandedWidthRef,
     inspectorPanel,
-    readiness: { isInspectorReady, setIsInspectorReady, synchronizeReady },
     splitElement,
     state,
     stateRef,
@@ -271,7 +230,6 @@ function useInspectorPanelControls({
     ...shared,
     dismissedReveal: dismissedRevealRef,
     reveal,
-    setIsInspectorReady,
     sizes,
   })
   const toggles = useInspectorToggles({
@@ -280,18 +238,14 @@ function useInspectorPanelControls({
     expandWorkspace: () => workspacePanel.current?.expand(),
     open,
     reveal,
-    setIsInspectorReady,
     state,
   })
   const synchronizeCollapsed = useSynchronizeCollapsed({
     inspectorPanel,
-    setIsInspectorReady,
-    stateRef,
-    synchronizeReady,
     updateState,
     workspacePanel,
   })
-  return { isInspectorReady, synchronizeCollapsed, ...toggles }
+  return { synchronizeCollapsed, ...toggles }
 }
 
 export function useInspectorPanels(

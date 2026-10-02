@@ -110,9 +110,8 @@ state or behavior, inheriting the selected globals.
 
 Render realistic product or component UI. In `play`, operate visible controls and assert
 product-owned outcomes or accessible semantics; use explicit callback spies for presentational
-interactions. Keep simulation controls and test observations in private fixtures. A `play`
-function is the TDD seam for rendered UI; browser contracts in `tests/styling/` prove classes
-and computed measurements.
+interactions. Keep simulation controls and test observations in private fixtures.
+Inspect appearance changes directly in live Storybook with temporary captures when needed.
 
 Every story runs a required axe scan. A story only for looking at takes the `view-only` tag
 instead of an empty `play`. Fix a finding, usually with a shared token; disable an axe rule only for

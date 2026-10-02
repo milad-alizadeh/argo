@@ -3,8 +3,6 @@ import type { ThemeRegistration } from 'shiki/core'
 type CodePalette = {
   background: string
   foreground: string
-  gutterForeground?: string
-  lineHighlight: string
   comment: string
   definition: string
   keyword: string
@@ -12,14 +10,11 @@ type CodePalette = {
   string: string
   type: string
   variable: string
-  selection: string
 }
 
-const XCODE_LIGHT: CodePalette = {
-  background: 'var(--code-xcode-background)',
-  foreground: 'var(--code-xcode-foreground)',
-  gutterForeground: 'var(--code-xcode-gutter-foreground)',
-  lineHighlight: 'var(--code-xcode-line-highlight)',
+const XCODE_PALETTE: CodePalette = {
+  background: 'var(--card)',
+  foreground: 'var(--card-foreground)',
   comment: 'var(--code-xcode-comment)',
   definition: 'var(--code-xcode-definition)',
   keyword: 'var(--code-xcode-keyword)',
@@ -27,26 +22,11 @@ const XCODE_LIGHT: CodePalette = {
   string: 'var(--code-xcode-string)',
   type: 'var(--code-xcode-type)',
   variable: 'var(--code-xcode-variable)',
-  selection: 'var(--code-xcode-selection)',
-}
-
-const XCODE_DARK: CodePalette = {
-  background: 'var(--code-xcode-background)',
-  foreground: 'var(--code-xcode-foreground)',
-  lineHighlight: 'var(--code-xcode-line-highlight)',
-  comment: 'var(--code-xcode-comment)',
-  definition: 'var(--code-xcode-definition)',
-  keyword: 'var(--code-xcode-keyword)',
-  name: 'var(--code-xcode-name)',
-  string: 'var(--code-xcode-string)',
-  type: 'var(--code-xcode-type)',
-  variable: 'var(--code-xcode-variable)',
-  selection: 'var(--code-xcode-selection)',
 }
 
 export const xcodeCodeThemes: ThemeRegistration[] = [
-  xcodeTheme('xcode-light', 'light', XCODE_LIGHT),
-  xcodeTheme('xcode-dark', 'dark', XCODE_DARK),
+  xcodeTheme('xcode-light', 'light', XCODE_PALETTE),
+  xcodeTheme('xcode-dark', 'dark', XCODE_PALETTE),
 ]
 
 function xcodeTheme(name: string, type: 'dark' | 'light', palette: CodePalette): ThemeRegistration {

@@ -28,7 +28,7 @@ type SessionShellProps = Omit<SessionWorkspaceProps, 'header'> & {
 }
 
 // The Feed's inline-code look, so a path or branch reads as a ref.
-const REF_CHIP = 'min-w-0 truncate rounded-md bg-muted px-1 font-mono'
+const REF_CHIP = 'min-w-0 truncate rounded-md bg-muted px-1 font-mono text-foreground'
 
 // The folder is cut at its start, so its end, which names the worktree, stays in view.
 function SessionLocationMetadata({ location }: { location: SessionLocation }) {
@@ -36,7 +36,7 @@ function SessionLocationMetadata({ location }: { location: SessionLocation }) {
   return (
     <p
       data-component="SessionLocationMetadata"
-      className="flex w-full min-w-0 items-center gap-(--spacing-shell-tight) type-meta text-muted-foreground"
+      className="flex w-full min-w-0 items-center gap-(--spacing-shell-tight) type-navigation text-muted-foreground"
     >
       <Icon name="branch" className="size-(--size-icon-inline) shrink-0" />
       <code className={`${REF_CHIP} min-w-24 text-left [direction:rtl]`} title={location.path}>
@@ -65,12 +65,14 @@ function SessionIdentity({
   return (
     <div
       data-component="SessionIdentity"
-      className="flex min-w-0 flex-1 flex-col items-start justify-center gap-(--spacing-shell-tight)"
+      className="flex min-w-0 flex-1 items-center overflow-hidden"
     >
-      <h1 className="w-full truncate type-heading">
-        <SessionTitle session={session} />
-      </h1>
-      {location !== null ? <SessionLocationMetadata location={location} /> : null}
+      <div className="flex min-w-(--size-session-workspace-min) flex-1 flex-col items-start justify-center gap-(--spacing-shell-tight)">
+        <h1 className="w-full truncate type-heading">
+          <SessionTitle session={session} />
+        </h1>
+        {location !== null ? <SessionLocationMetadata location={location} /> : null}
+      </div>
     </div>
   )
 }
@@ -79,7 +81,7 @@ function SessionHeaderControls({ children }: { children: ReactNode }) {
   return (
     <div
       data-component="SessionHeaderControls"
-      className="no-drag-region ml-auto flex shrink-0 items-center gap-1"
+      className="no-drag-region ml-(--spacing-shell-item) flex shrink-0 items-center gap-(--spacing-shell-item)"
     >
       {children}
     </div>
@@ -97,10 +99,7 @@ export function SessionShell({
   ...workspaceProps
 }: SessionShellProps) {
   return (
-    <main
-      data-component="SessionShell"
-      className="session-screen__shell panel-frame relative overflow-hidden"
-    >
+    <main data-component="SessionShell" className="panel-stack relative">
       <InspectorSplit
         bar={inspectorBar}
         defaultCollapsed={defaultInspectorCollapsed}
@@ -108,20 +107,16 @@ export function SessionShell({
         noun="Session"
         reveal={inspectorReveal}
         sizes={SESSION_SPLIT}
-        workspace={
-          <SessionWorkspace
-            {...workspaceProps}
-            header={
-              <AppPageHeader>
-                <SessionIdentity location={location} session={session} />
-                <SessionHeaderControls>
-                  {headerControls}
-                  <InspectorHeaderControls />
-                </SessionHeaderControls>
-              </AppPageHeader>
-            }
-          />
+        header={
+          <AppPageHeader>
+            <SessionIdentity location={location} session={session} />
+            <SessionHeaderControls>
+              {headerControls}
+              <InspectorHeaderControls />
+            </SessionHeaderControls>
+          </AppPageHeader>
         }
+        workspace={<SessionWorkspace {...workspaceProps} header={null} />}
       />
     </main>
   )

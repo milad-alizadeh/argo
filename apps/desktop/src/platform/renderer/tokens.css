@@ -51,8 +51,6 @@
     var(--size-session-context-bar) +
     var(--spacing-shell-item)
   );
-  --blur-session-composer: 12px;
-  --color-session-composer: color-mix(in oklab, var(--card) 82%, transparent);
   --size-attachment-thumbnail: 56px;
   --size-attachment-card: 64px;
   --size-attachment-tray: 72px;
@@ -91,20 +89,15 @@
      in the Session's own column. */
   --size-subagent-dot: 4px;
   --size-plan-bar: 4px;
-  /* The two marks a state dot is drawn with. The running dot glows in its own ink, and a state
-     Argo cannot place is an outline in the disabled ink: both are reached by name so neither
-     restates a colour the block above already holds. */
+  /* State marks reuse their ink for glow and native muted ink for unknown outlines. */
   --shadow-state-glow: 0 0 6px color-mix(in srgb, currentColor 50%, transparent);
-  --shadow-state-outline: inset 0 0 0 1px var(--color-off);
+  --shadow-state-outline: inset 0 0 0 1px var(--muted-foreground);
 }
 
-/* The light appearance of the inks above. `useAppearance` puts `.dark` on the root element, so a
-   root without it is light. Text inks read the shadcn foregrounds, so a row title and a pane
-   title are one ink. The state, Plan and PR hues are the design's exact values in both
-   appearances; only the Plan track, a white wash that vanishes on white, is restated. */
+/* Shared shell geometry stays independent of theme colors. */
 @theme inline {
   --font-heading: var(--font-sans);
-  --size-chrome-bar: 52px;
+  --size-chrome-bar: 64px;
   --size-navigation-rail: 64px;
   --inset-navigation-rail-item-top: calc(
     (var(--size-chrome-bar) - var(--size-navigation-control)) /
@@ -115,7 +108,6 @@
   --size-shell-sidebar-max: 460px;
   --size-shell-content-min: 400px;
   --size-navigation-item: 36px;
-  --size-navigation-control: 28px;
   --size-icon-control: 16px;
   --size-icon-meta: var(--size-icon-control);
   --size-icon-inline: var(--size-icon-control);
@@ -126,6 +118,7 @@
   --size-icon-progress: 20px;
   --size-control: 32px;
   --size-ticket-age-visible: 240px;
+  --size-ticket-work-path-marker: 6px;
   --size-session-inspector: 400px;
   --size-session-inspector-min: 400px;
   --size-session-workspace-min: 360px;
@@ -137,6 +130,7 @@
   --spacing-shell-section: 24px;
   --spacing-shell-region: 32px;
   --shadow-surface: 0 10px 32px -16px rgb(0 0 0 / 0.3);
+  --shadow-inset-pane: 0 2px 12px -4px rgb(0 0 0 / 0.18);
   --shadow-control: 0 2px 6px -3px rgb(0 0 0 / 0.16);
   --duration-control: 150ms;
   --duration-layout: 300ms;
@@ -177,15 +171,11 @@
   --position-concierge-highlight-x: 35%;
   --position-concierge-highlight-y: 30%;
   --gradient-concierge-highlight-fade: 35%;
-  --color-traffic-light-close: #ff5f57;
-  --color-traffic-light-minimize: #febc2e;
-  --color-traffic-light-zoom: #28c840;
 }
 
 @theme {
   /* -700, not -600: white ink on -600 clears 3:1 (an icon) but not 4.5:1 (this is text). */
   --color-language-typescript: var(--color-sky-700);
-  --color-language-typescript-ink: var(--color-white);
   --color-language-go: var(--color-cyan-600);
   --color-language-ruby: var(--color-red-600);
   /* Terminal output's ANSI hues, dark enough to read on the light ground. */
@@ -199,10 +189,6 @@
 
 :root {
   /* Xcode's published syntax palette; editor and rendered code reuse these inks on Argo surfaces. */
-  --code-xcode-background: #fff;
-  --code-xcode-foreground: #3d3d3d;
-  --code-xcode-gutter-foreground: #afafaf;
-  --code-xcode-line-highlight: #d5e6ff69;
   --code-xcode-comment: #707f8d;
   --code-xcode-definition: #327a9e;
   --code-xcode-keyword: #aa0d91;
@@ -210,13 +196,8 @@
   --code-xcode-string: #d23423;
   --code-xcode-type: #522bb2;
   --code-xcode-variable: #23575c;
-  --code-xcode-selection: #bbdfff;
-  --code-xcode-link: #0e0eff;
-  --code-xcode-caret: var(--code-xcode-foreground);
   --radius: 0.625rem;
-  /* A provider label's tint: how far its border and its fill lean toward the label's own colour.
-     Fixed in both appearances, unlike --ticket-label-lean below, which leans the text. */
-  --ticket-label-border-mix: 45%;
+  /* A provider label mixes its tint into an opaque native surface. */
   --ticket-label-fill-mix: 18%;
   /* A key column: GitHub's `#607`, and Linear's longer `ENG-1234`, set in --typography-body-size. */
   --size-ticket-key: 52px;
@@ -228,22 +209,13 @@
   --size-ticket-workspace-min: 400px;
   --size-scrollbar: 8px;
   --spacing-scrollbar-inset: 2px;
-  --shadow-panel-body:
-    0 0 4px color-mix(in oklab, var(--color-black) 2%, transparent),
-    0 0 24px -6px color-mix(in oklab, var(--color-black) 8%, transparent);
 }
 
 .dark {
-  --color-session-composer: color-mix(in oklab, var(--color-surface-raised) 86%, transparent);
-  --shadow-panel-body:
-    0 0 24px rgb(255 255 255 / 0.035), 0 0 48px -4px rgb(255 255 255 / 0.025),
-    0 0 40px -8px rgb(0 0 0 / 0.14);
+  --shadow-inset-pane: 0 2px 12px -4px rgb(0 0 0 / 0.55);
   --shadow-surface:
     0 0 0 1px rgb(255 255 255 / 0.025), 0 0 24px -6px rgb(255 255 255 / 0.035),
     0 6px 24px -10px rgb(0 0 0 / 0.35);
-  --code-xcode-background: #292a30;
-  --code-xcode-foreground: #cecfd0;
-  --code-xcode-line-highlight: #ffffff0f;
   --code-xcode-comment: #7f8c98;
   --code-xcode-definition: #6bdfff;
   --code-xcode-keyword: #ffb3d1;
@@ -251,9 +223,6 @@
   --code-xcode-string: #ff8170;
   --code-xcode-type: #dabaff;
   --code-xcode-variable: #acf2e4;
-  --code-xcode-selection: #727377;
-  --code-xcode-link: var(--code-xcode-string);
-  --code-xcode-caret: #fff;
   --color-language-go: var(--color-cyan-400);
   --color-language-ruby: var(--color-red-400);
   --color-terminal-red: var(--color-red-400);

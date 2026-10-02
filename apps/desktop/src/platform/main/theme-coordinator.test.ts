@@ -33,6 +33,12 @@ async function saved(value: string) {
   await writeFile(path.join(root, 'portable-v1/appearance.json'), value)
 }
 
+async function readDefaultDarkPreferences() {
+  const coordinator = await createThemeCoordinator(root, native)
+  expect(coordinator.read()).toMatchObject({ theme: 'default', appearance: 'dark', dark: true })
+  return coordinator
+}
+
 test('missing preferences default to Default and follow System', async () => {
   native.systemDark = true
   const coordinator = await createThemeCoordinator(root, native)
@@ -49,13 +55,12 @@ test('missing preferences default to Default and follow System', async () => {
 
 test('existing appearance preference remains valid and other fields survive writes', async () => {
   await saved(JSON.stringify({ appearance: 'dark', portableClient: { name: 'other' } }))
-  const coordinator = await createThemeCoordinator(root, native)
-  expect(coordinator.read()).toMatchObject({ theme: 'default', appearance: 'dark', dark: true })
-  await coordinator.mutate({ theme: 'catppuccin', appearance: 'light' })
+  const coordinator = await readDefaultDarkPreferences()
+  await coordinator.mutate({ theme: 'supabase', appearance: 'light' })
   expect(
     JSON.parse(await readFile(path.join(root, 'portable-v1/appearance.json'), 'utf8')),
   ).toEqual({
-    theme: 'catppuccin',
+    theme: 'supabase',
     appearance: 'light',
     portableClient: { name: 'other' },
   })
@@ -110,8 +115,7 @@ test.each(['unknown', 'neutral', 'graphite', 'forest', null, 7])(
     await saved(document)
     const report = spyOn(console, 'error').mockImplementation(() => {})
     try {
-      const coordinator = await createThemeCoordinator(root, native)
-      expect(coordinator.read()).toMatchObject({ theme: 'default', appearance: 'dark', dark: true })
+      const coordinator = await readDefaultDarkPreferences()
       expect(report).toHaveBeenCalledTimes(1)
       expect(await readFile(path.join(root, 'portable-v1/appearance.json'), 'utf8')).toBe(document)
       coordinator.dispose()
@@ -121,12 +125,37 @@ test.each(['unknown', 'neutral', 'graphite', 'forest', null, 7])(
   },
 )
 
+test.each(['catppuccin', 'ocean-breeze', 'northern-lights'])(
+  'retired saved theme %s resolves to Default and preserves Mode and other fields',
+  async (theme) => {
+    await saved(JSON.stringify({ theme, appearance: 'dark', portableClient: { name: 'other' } }))
+    const report = spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      const coordinator = await readDefaultDarkPreferences()
+      expect(report).not.toHaveBeenCalled()
+      expect((await coordinator.mutate({ theme: 'default', appearance: 'dark' })).ok).toBe(true)
+      expect(
+        JSON.parse(await readFile(path.join(root, 'portable-v1/appearance.json'), 'utf8')),
+      ).toEqual({
+        theme: 'default',
+        appearance: 'dark',
+        portableClient: { name: 'other' },
+      })
+      expect((await coordinator.mutate({ theme, appearance: 'light' })).ok).toBe(false)
+      expect(report).toHaveBeenCalledTimes(1)
+      coordinator.dispose()
+    } finally {
+      report.mockRestore()
+    }
+  },
+)
+
 test('System updates preserve the accepted Theme, and Theme changes preserve Mode', async () => {
   const coordinator = await createThemeCoordinator(root, native)
-  await coordinator.mutate({ theme: 'catppuccin', appearance: 'system' })
+  await coordinator.mutate({ theme: 'supabase', appearance: 'system' })
   native.changeSystem(true)
   expect(coordinator.read()).toMatchObject({
-    theme: 'catppuccin',
+    theme: 'supabase',
     appearance: 'system',
     dark: true,
   })
@@ -167,7 +196,7 @@ test('a failed write never changes accepted or native preference', async () => {
   const coordinator = await createThemeCoordinator(root, native)
   await writeFile(path.join(root, 'portable-v1'), 'blocks the directory')
   const initial = coordinator.read()
-  expect(await coordinator.mutate({ theme: 'catppuccin', appearance: 'dark' })).toEqual({
+  expect(await coordinator.mutate({ theme: 'supabase', appearance: 'dark' })).toEqual({
     ok: false,
     reason: 'storage',
     state: initial,
@@ -188,16 +217,16 @@ test('serialized changes notify every listener for same-Mode Theme changes', asy
     revisions.push(state.revision)
   })
   await Promise.all([
-    coordinator.mutate({ theme: 'catppuccin', appearance: 'light' }),
+    coordinator.mutate({ theme: 'supabase', appearance: 'light' }),
     coordinator.mutate({ theme: 'default', appearance: 'light' }),
   ])
-  expect(first).toEqual(['catppuccin', 'default'])
+  expect(first).toEqual(['supabase', 'default'])
   expect(second).toEqual(first)
   expect(revisions).toEqual([1, 2])
   unsubscribe()
   native.changeSystem(true)
   expect(coordinator.read().dark).toBe(false)
-  await coordinator.mutate({ theme: 'catppuccin', appearance: 'system' })
+  await coordinator.mutate({ theme: 'supabase', appearance: 'system' })
   expect(coordinator.read().dark).toBe(true)
   expect(first).toHaveLength(2)
   expect(second).toHaveLength(3)

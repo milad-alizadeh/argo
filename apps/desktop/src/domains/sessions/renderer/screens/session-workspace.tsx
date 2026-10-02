@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from '
 import { useTranslation } from 'react-i18next'
 
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
+import { AppPageSurface } from '@/platform/renderer/app/components/app-shell'
 import { BasicFeed, FeedJumpToLatest } from '../feed'
 import type { SessionError, SessionEvidence, SessionFeed, SessionPosture } from '../types'
 
@@ -99,7 +100,7 @@ function ComposerSection({
     <section
       aria-label={t('composerRegionLabel')}
       ref={sectionRef}
-      className="session-screen__composer absolute inset-x-0 bottom-0 z-20 isolate flex flex-col px-(--spacing-session-gutter)"
+      className="session-screen__composer absolute inset-x-0 bottom-0 z-20 isolate flex flex-col"
     >
       <ComposerJumpToLatest onJumpToLatest={onJumpToLatest} />
       <div
@@ -146,9 +147,11 @@ export function SessionWorkspace({
   const { t } = useTranslation('sessions')
 
   return (
-    <section aria-label={t('workspaceLabel')} className="panel-frame @container relative">
-      {header ?? null}
-      <div className="panel-content relative">
+    <section
+      aria-label={t('workspaceLabel')}
+      className="session-screen__workspace panel-stack relative"
+    >
+      <AppPageSurface header={header ?? null}>
         {/* A layout wrapper only: `BasicFeed` is its own labelled landmark, so this stays a plain `div` to
           avoid a second "Session Feed" region with the same name. */}
         <div className="session-screen__feed min-h-0 flex-1 overflow-hidden">
@@ -173,7 +176,7 @@ export function SessionWorkspace({
           composer={composer}
           onJumpToLatest={externalJumpToLatest ?? jumpToLatest?.action ?? null}
         />
-      </div>
+      </AppPageSurface>
     </section>
   )
 }

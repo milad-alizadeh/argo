@@ -12,18 +12,9 @@
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --selected: var(--accent);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --status-success: oklch(0.48 0.16 145);
-  --warning-subtle: oklch(0.96 0.05 95);
-  --warning-foreground: oklch(0.43 0.09 80);
-  --status-warning: oklch(0.42 0.12 78);
-  --danger-indicator: var(--status-danger);
-  --status-danger: oklch(0.52 0.19 27);
-  --status-neutral: oklch(0.48 0.01 260);
-  --diff-added: var(--color-emerald-700);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -40,17 +31,6 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --plan: var(--color-blue-700);
-  --plan-doing: var(--color-blue-600);
-  --plan-still: var(--color-blue-400);
-  --plan-track: color-mix(in srgb, var(--color-black) 10%, transparent);
-  --pr-open: var(--color-green-700);
-  --pr-merged: var(--color-purple-700);
-  --pr-closed: var(--color-red-700);
-  --pr-draft: var(--color-neutral-600);
-  --ticket-done: var(--color-indigo-700);
-  --scrollbar-thumb: color-mix(in srgb, var(--color-black) 18%, transparent);
-  --scrollbar-thumb-hover: color-mix(in srgb, var(--color-black) 30%, transparent);
 }
 
 :root[data-theme="default"].dark,
@@ -67,18 +47,9 @@
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --selected: var(--accent);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --status-success: oklch(0.8 0.15 145);
-  --warning-subtle: oklch(0.3 0.055 85);
-  --warning-foreground: oklch(0.88 0.14 90);
-  --status-warning: oklch(0.82 0.15 80);
-  --danger-indicator: oklch(0.74 0.2 25);
-  --status-danger: oklch(0.72 0.18 27);
-  --status-neutral: oklch(0.82 0.01 260);
-  --diff-added: var(--color-emerald-400);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
@@ -95,15 +66,4 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
-  --plan: var(--color-blue-400);
-  --plan-doing: var(--color-blue-300);
-  --plan-still: var(--color-blue-700);
-  --plan-track: color-mix(in srgb, var(--color-white) 13%, transparent);
-  --pr-open: var(--color-green-400);
-  --pr-merged: var(--color-purple-400);
-  --pr-closed: var(--color-red-400);
-  --pr-draft: var(--color-neutral-400);
-  --ticket-done: var(--color-indigo-400);
-  --scrollbar-thumb: color-mix(in srgb, var(--color-white) 16%, transparent);
-  --scrollbar-thumb-hover: color-mix(in srgb, var(--color-white) 28%, transparent);
 }

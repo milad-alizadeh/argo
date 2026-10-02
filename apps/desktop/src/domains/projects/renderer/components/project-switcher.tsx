@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { REGISTER_PROJECT_COMMAND } from '@/platform/contract/commands'
@@ -13,13 +13,27 @@ import {
   DropdownMenuSeparator,
 } from '@/platform/renderer/components/ui/dropdown-menu'
 import { useCommands } from '@/platform/renderer/shell/hooks/use-commands'
-import { useProjects } from '../hooks'
+import { type ProjectActions, type ProjectsState, useProjects } from '../hooks'
 import { ProjectSettingsDialog } from './project-settings-dialog'
 
 export function ProjectSwitcher() {
-  const { t } = useTranslation('projects')
   const [projectState, actions] = useProjects()
   const navigate = useNavigate()
+  return (
+    <ProjectSwitcherControls projectState={projectState} actions={actions} navigate={navigate} />
+  )
+}
+
+const ProjectSwitcherControls = memo(function ProjectSwitcherControls({
+  projectState,
+  actions,
+  navigate,
+}: {
+  projectState: ProjectsState
+  actions: ProjectActions
+  navigate: ReturnType<typeof useNavigate>
+}) {
+  const { t } = useTranslation('projects')
   useCommands((command) => {
     if (command === REGISTER_PROJECT_COMMAND) actions.open()
   })
@@ -75,4 +89,4 @@ export function ProjectSwitcher() {
       ) : null}
     </>
   )
-}
+})

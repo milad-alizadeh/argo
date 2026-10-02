@@ -64,7 +64,9 @@ function SessionListFrame({ children, route }: { children: ReactNode; route: str
           path: '/projects/:projectId/sessions/:sessionId?',
           element: (
             <>
-              <div className="h-dvh w-80">{children}</div>
+              <div className="panel-sidebar panel-sidebar-start panel-sidebar-end h-dvh w-80">
+                {children}
+              </div>
               <OpenSessionFeed />
             </>
           ),

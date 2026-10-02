@@ -77,7 +77,7 @@ function SessionListFilterMenu({
           disabled={sync.refreshing}
           onClick={sync.refresh}
         >
-          <Icon name="retry" />
+          <Icon className="text-muted-foreground" name="retry" />
           {t('refreshSessions')}
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -103,7 +103,7 @@ export function SessionListHeader({
   const sync = useSessionSync()
   return (
     <>
-      <header className="flex h-(--size-chrome-bar) sidebar-gutter shrink-0 items-center">
+      <header className="sidebar-header">
         <SidebarSearch
           label={t('searchSessions')}
           onChange={setSearch}
@@ -120,7 +120,7 @@ export function SessionListHeader({
             size="icon-sm"
             variant="ghost"
           >
-            <Icon name="add" />
+            <Icon className="text-muted-foreground" name="add" />
           </Button>
         </div>
       </header>

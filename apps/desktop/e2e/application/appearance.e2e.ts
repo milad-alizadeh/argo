@@ -52,14 +52,14 @@ async function selectPreferences(application: ElectronApplication) {
   ).toBe(nativeThemeBackgrounds.default.light)
   await page.getByRole('button', { name: 'Settings', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Appearance', exact: true })
-  await dialog.getByRole('radio', { name: 'Catppuccin', exact: true }).click()
-  await expect(dialog.getByRole('radio', { name: 'Catppuccin', exact: true })).toBeChecked()
+  await dialog.getByRole('radio', { name: 'Supabase', exact: true }).click()
+  await expect(dialog.getByRole('radio', { name: 'Supabase', exact: true })).toBeChecked()
   await dialog.getByRole('radio', { name: 'Dark', exact: true }).click()
   await expect(dialog.getByRole('radio', { name: 'Dark', exact: true })).toBeChecked()
   await expect
     .poll(() => page.evaluate(() => window.argo.getAppearance()))
     .toMatchObject({
-      theme: 'catppuccin',
+      theme: 'supabase',
       appearance: 'dark',
       dark: true,
     })
@@ -87,9 +87,9 @@ async function synchronizeWindows(application: ElectronApplication) {
     void second.loadURL(first.webContents.getURL())
   }, preload)
   const second = await nextWindow
-  await second.waitForFunction(() => document.documentElement.dataset.theme === 'catppuccin')
+  await second.waitForFunction(() => document.documentElement.dataset.theme === 'supabase')
   expect(await second.evaluate(() => window.argo.getAppearance())).toMatchObject({
-    theme: 'catppuccin',
+    theme: 'supabase',
     appearance: 'dark',
     dark: true,
   })
@@ -112,18 +112,16 @@ async function synchronizeWindows(application: ElectronApplication) {
 
 async function systemAndRejection(application: ElectronApplication) {
   const page = await application.firstWindow()
-  await page.evaluate(() =>
-    window.argo.setAppearance({ theme: 'catppuccin', appearance: 'system' }),
-  )
+  await page.evaluate(() => window.argo.setAppearance({ theme: 'supabase', appearance: 'system' }))
   const systemDark = await application.evaluate(
     ({ nativeTheme }) => nativeTheme.shouldUseDarkColors,
   )
   expect(await page.evaluate(() => window.argo.getAppearance())).toMatchObject({
-    theme: 'catppuccin',
+    theme: 'supabase',
     appearance: 'system',
     dark: systemDark,
   })
-  await page.evaluate(() => window.argo.setAppearance({ theme: 'catppuccin', appearance: 'light' }))
+  await page.evaluate(() => window.argo.setAppearance({ theme: 'supabase', appearance: 'light' }))
   const before = await page.evaluate(() => window.argo.getAppearance())
   const rejection = await page.evaluate(async () => {
     try {
@@ -143,7 +141,7 @@ async function systemAndRejection(application: ElectronApplication) {
       revision: 9999,
     })
   })
-  expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe('catppuccin')
+  expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe('supabase')
 }
 
 test.describe('saved preference', () => {
@@ -160,7 +158,7 @@ test.describe('saved preference', () => {
       application = await launch(themeFixture)
       const reopened = await ready(application)
       expect(await reopened.evaluate(() => window.argo.getAppearance())).toMatchObject({
-        theme: 'catppuccin',
+        theme: 'supabase',
         appearance: 'light',
         dark: false,
       })
@@ -169,7 +167,7 @@ test.describe('saved preference', () => {
           await readFile(path.join(themeFixture.userData, 'portable-v1/appearance.json'), 'utf8'),
         ),
       ).toEqual({
-        theme: 'catppuccin',
+        theme: 'supabase',
         appearance: 'light',
         foreignField: 'keep',
       })

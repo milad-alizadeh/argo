@@ -2,7 +2,9 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import type { Ticket, TicketLink, TicketState } from '@/domains/tickets/api/ticket'
+import { statusToneRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
+import { SectionTitle } from '@/platform/renderer/components/section-title'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import {
   Popover,
@@ -67,20 +69,27 @@ function Links({ links, listed, onSelect }: { links: readonly TicketLink[] } & N
 function RelationList({
   icon,
   label,
+  metadata,
   links,
   navigation,
 }: {
-  icon: ReactNode
+  icon: IconName
   label: string
+  metadata: ReactNode
   links: readonly TicketLink[]
   navigation: Navigation
 }) {
   return (
-    <div className="hidden min-w-0 grid-cols-[minmax(0,1fr)] gap-(--spacing-shell-tight) @3xl:grid">
-      <h4 className="flex items-center gap-(--spacing-shell-tight) type-meta text-muted-foreground">
-        {icon}
+    <div className="hidden min-w-0 grid-cols-[minmax(0,1fr)] gap-(--spacing-shell-item) @3xl:grid">
+      <SectionTitle
+        as="h4"
+        icon={icon}
+        iconClassName={icon === 'blocked' ? 'text-status-danger' : undefined}
+        metadata={metadata}
+        className="text-muted-foreground"
+      >
         {label}
-      </h4>
+      </SectionTitle>
       <Links links={links} {...navigation} />
     </div>
   )
@@ -105,12 +114,12 @@ function RelationPopover({
         render={
           destructive ? (
             <Badge
-              className="@3xl:hidden"
+              className={`@3xl:hidden ${statusToneRecipe.danger}`}
               render={<button type="button" />}
               variant="destructive"
             />
           ) : (
-            <Badge className="@3xl:hidden" render={<button type="button" />} variant="secondary" />
+            <Badge className="@3xl:hidden" render={<button type="button" />} variant="outline" />
           )
         }
       >
@@ -138,13 +147,12 @@ export function TicketRelations({
   ...navigation
 }: TicketRelationsProps) {
   const { t } = useTranslation('tickets')
-  const childrenLabel = t('detail.childrenCount', {
+  const childrenProgress = t('detail.childrenProgress', {
     closed: closedChildren(ticket),
     count: ticket.children.length,
   })
   const childrenCompact = t('detail.childrenCompact', { count: ticket.children.length })
   const blockers = ticket.blockedBy
-  const blockersLabel = t('detail.blockedByCount', { count: blockers?.length ?? 0 })
   const blockersCompact = t('detail.blockedByCompact', { count: blockers?.length ?? 0 })
   return (
     <>
@@ -157,8 +165,9 @@ export function TicketRelations({
             navigation={navigation}
           />
           <RelationList
-            icon={<Icon name="ticket-children" className={stateIcon} />}
-            label={childrenLabel}
+            icon="ticket-children"
+            label={t('detail.childrenTitle')}
+            metadata={childrenProgress}
             links={ticket.children}
             navigation={navigation}
           />
@@ -174,8 +183,9 @@ export function TicketRelations({
             destructive
           />
           <RelationList
-            icon={<Icon name="blocked" className={blockedIcon} />}
-            label={blockersLabel}
+            icon="blocked"
+            label={t('detail.blockedByTitle')}
+            metadata={blockers.length}
             links={blockers}
             navigation={navigation}
           />
@@ -183,7 +193,7 @@ export function TicketRelations({
       ) : null}
       {blockers === null ? (
         <>
-          <Badge className="@3xl:hidden" variant="secondary">
+          <Badge className="@3xl:hidden" variant="outline">
             {t('detail.dependenciesUnavailable')}
           </Badge>
           <p className="hidden type-meta text-muted-foreground @3xl:block">

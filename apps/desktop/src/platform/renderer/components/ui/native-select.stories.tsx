@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { NativeSelect, NativeSelectOption } from './native-select'
 
-const meta = { title: 'Foundations/Primitives/Native Select', component: NativeSelect } satisfies Meta<typeof NativeSelect>
+const meta = { title: 'Design System/Primitives/Native Select', component: NativeSelect } satisfies Meta<typeof NativeSelect>
 export default meta
 type Story = StoryObj<typeof meta>
 

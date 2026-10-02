@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs'
 
-const meta = { title: 'Foundations/Primitives/Tabs', component: Tabs } satisfies Meta<typeof Tabs>
+const meta = { title: 'Design System/Primitives/Tabs', component: Tabs } satisfies Meta<typeof Tabs>
 export default meta
 type Story = StoryObj<typeof meta>
 

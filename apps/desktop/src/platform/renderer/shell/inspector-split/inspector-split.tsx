@@ -6,9 +6,12 @@ import {
   useLayoutEffect,
   useRef,
 } from 'react'
+import { AppPageHeader, useInAppShell } from '../../app/components/app-shell'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../components/ui/resizable'
-import { readCssSize } from '../../lib/read-css-size'
+import { readCssSize, resolveCssLength } from '../../lib/read-css-size'
+import { useFocusModality } from '../../lib/use-focus-modality'
 import { cn } from '../../lib/utils'
+import { PaneHeaderActiveContext } from '../components/pane-header-context'
 import { InspectorToggles } from './inspector-toggles'
 import { type InspectorSizes, useInspectorPanels } from './use-inspector-panels'
 
@@ -17,6 +20,8 @@ export type InspectorSplitProps = {
   noun: string
   workspace: ReactNode
   inspector: ReactNode
+  // The middle pane owns this header, which resizes and collapses with its body.
+  header?: ReactNode
   // What the inspector's top bar holds on the left, beside the toggles.
   bar?: ReactNode
   sizes: InspectorSizes
@@ -28,10 +33,27 @@ export type InspectorSplitProps = {
 
 const InspectorHeaderControlsContext = createContext<ReactNode>(null)
 
+function inspectorDefaultSize(
+  sizes: InspectorSizes,
+  override: string | undefined,
+): number | string {
+  if (override === undefined) return readCssSize(sizes.inspector)
+  // The library's explicit percentage strings are ratios, while CSS lengths resolve to pixels.
+  const value = override.trim()
+  return /^(?:\d+(?:\.\d+)?|\.\d+)%?$/u.test(value) ? value : resolveCssLength(value)
+}
+
 // The page that owns an inspector chooses where its controls belong. It normally places this in
 // its own header, so the toggle consumes layout space instead of floating over another control.
 export function InspectorHeaderControls() {
   return useContext(InspectorHeaderControlsContext)
+}
+
+function usePanelScrollTabStop(region: RefObject<HTMLElement | null>, hidden: boolean) {
+  useLayoutEffect(() => {
+    const scrollParent = region.current?.parentElement
+    if (scrollParent) scrollParent.tabIndex = hidden ? -1 : 0
+  }, [hidden, region])
 }
 
 function InspectorPanel({
@@ -55,43 +77,44 @@ function InspectorPanel({
   defaultCollapsed: boolean
   defaultInspectorSize: string | undefined
 }) {
-  // react-resizable-panels draws its own `overflow: auto` wrapper one level above `<aside>`, and
-  // gives that wrapper no way to take a prop, so the scrollable element's tab stop is set here by
-  // hand once the wrapper exists (#2623: `scrollable-region-focusable`).
-  useLayoutEffect(() => {
-    const scrollParent = panels.inspectorElement.current?.parentElement
-    if (scrollParent) scrollParent.tabIndex = 0
-  }, [panels.inspectorElement])
+  // The vendor scroll wrapper needs an explicit Tab stop only while its pane is open (#2623).
+  usePanelScrollTabStop(panels.inspectorElement, panels.state === 'collapsed')
   return (
     <ResizablePanel
       id={`${id}-inspector`}
+      inert={panels.state === 'collapsed'}
       collapsible
       collapsedSize={0}
-      defaultSize={defaultCollapsed ? 0 : (defaultInspectorSize ?? readCssSize(sizes.inspector))}
+      defaultSize={defaultCollapsed ? 0 : inspectorDefaultSize(sizes, defaultInspectorSize)}
       groupResizeBehavior="preserve-pixel-size"
       minSize={readCssSize(sizes.inspectorMin)}
       panelRef={panels.inspectorPanel}
+      style={{ overflow: 'visible' }}
     >
       <aside
         aria-label={`${noun} inspector`}
         inert={panels.state === 'collapsed'}
         ref={panels.inspectorElement}
-        className={cn(
-          'panel-frame transition-opacity duration-(--duration-layout) ease-(--ease-emphasized)',
-          panels.state === 'collapsed' && 'pointer-events-none opacity-0',
-          panels.state !== 'expanded' && 'panel-inner-start',
-          panels.state !== 'collapsed' && !panels.isInspectorReady && 'invisible',
-        )}
+        data-hidden={panels.state === 'collapsed'}
+        className="panel-stack panel-visibility @container"
       >
-        <header className="panel-window-chrome panel-gutter gap-(--spacing-shell-tight)">
+        <AppPageHeader
+          data-component="InspectorHeader"
+          sidebarControls={panels.state === 'expanded'}
+        >
           <div className="no-drag-region flex min-w-0 flex-1 items-center">{bar}</div>
-          {controls ? (
-            <div className="no-drag-region flex shrink-0 items-center gap-(--spacing-shell-tight)">
-              {controls}
-            </div>
-          ) : null}
-        </header>
-        <div className="panel-body">{inspector}</div>
+          <div className="no-drag-region flex shrink-0 items-center gap-(--spacing-shell-tight)">
+            {controls}
+          </div>
+        </AppPageHeader>
+        <div
+          className="panel-sidebar panel-sidebar-end"
+          data-sidebar-joined={panels.state === 'expanded'}
+        >
+          <div className="panel-stack" style={{ minWidth: readCssSize(sizes.inspectorMin) }}>
+            {inspector}
+          </div>
+        </div>
       </aside>
     </ResizablePanel>
   )
@@ -140,6 +163,7 @@ function InspectorSplitPanels({
   onToggle,
   toggleSlotRef,
   workspace,
+  header,
 }: {
   bar: ReactNode
   defaultCollapsed: boolean
@@ -152,39 +176,47 @@ function InspectorSplitPanels({
   onToggle: () => void
   toggleSlotRef: RefObject<HTMLDivElement | null>
   workspace: ReactNode
+  header: ReactNode
 }) {
   const workspaceRegionRef = useRef<HTMLDivElement>(null)
-  useLayoutEffect(() => {
-    workspaceRegionRef.current?.parentElement?.setAttribute('tabindex', '0')
-  }, [])
+  usePanelScrollTabStop(workspaceRegionRef, panels.state === 'expanded')
   return (
     <div
       data-component="InspectorSplit"
       data-state={panels.state}
-      className="h-full min-h-0"
+      className="min-h-0 flex-1"
       ref={panels.splitElement}
     >
       <ResizablePanelGroup
         orientation="horizontal"
-        className="panel-motion h-full"
+        className="panel-motion h-full overflow-visible!"
         onLayoutChanged={panels.synchronizeCollapsed}
       >
         <ResizablePanel
-          className={panels.state === 'collapsed' ? undefined : 'panel-inner-end'}
           id={`${id}-workspace`}
-          tabIndex={0}
+          inert={panels.state === 'expanded'}
+          tabIndex={panels.state === 'expanded' ? -1 : 0}
           panelRef={panels.workspacePanel}
           collapsible
           collapsedSize={0}
           minSize={readCssSize(sizes.workspaceMin)}
+          style={{ overflow: 'visible' }}
         >
-          <div ref={workspaceRegionRef} className="h-full min-h-0">
-            {workspace}
+          <div
+            ref={workspaceRegionRef}
+            inert={panels.state === 'expanded'}
+            data-hidden={panels.state === 'expanded'}
+            className="panel-stack panel-visibility @container"
+          >
+            <PaneHeaderActiveContext value={panels.state !== 'expanded'}>
+              {header}
+              {workspace}
+            </PaneHeaderActiveContext>
           </div>
         </ResizablePanel>
         <ResizableHandle
           className={
-            panels.state === 'open' ? 'panel-divider bg-transparent' : 'w-0 bg-transparent'
+            panels.state === 'open' ? 'panel-divider w-0 bg-transparent' : 'w-0 bg-transparent'
           }
         />
         <InspectorPanel
@@ -212,36 +244,68 @@ function InspectorSplitPanels({
   )
 }
 
+function useInspectorToggleFocus({
+  state,
+  collapsedToggleRef,
+  inspectorToggleRef,
+}: {
+  state: 'open' | 'collapsed' | 'expanded'
+  collapsedToggleRef: RefObject<HTMLDivElement | null>
+  inspectorToggleRef: RefObject<HTMLDivElement | null>
+}) {
+  const shouldRestoreToggleFocus = useRef(false)
+  const requestFocus = () => {
+    shouldRestoreToggleFocus.current =
+      document.activeElement instanceof HTMLElement &&
+      (collapsedToggleRef.current?.contains(document.activeElement) === true ||
+        inspectorToggleRef.current?.contains(document.activeElement) === true)
+  }
+  useLayoutEffect(() => {
+    if (!shouldRestoreToggleFocus.current) return
+    const target = state === 'collapsed' ? collapsedToggleRef.current : inspectorToggleRef.current
+    let frame: number
+    const focusWhenVisible = () => {
+      const button = target?.querySelector<HTMLElement>('[data-inspector-toggle]')
+      if (button && getComputedStyle(button).visibility !== 'visible') {
+        frame = requestAnimationFrame(focusWhenVisible)
+        return
+      }
+      button?.focus()
+      shouldRestoreToggleFocus.current = false
+    }
+    frame = requestAnimationFrame(focusWhenVisible)
+    return () => cancelAnimationFrame(frame)
+  }, [collapsedToggleRef, inspectorToggleRef, state])
+  return requestFocus
+}
+
 // A workspace beside a resizable inspector that collapses to nothing or expands over the workspace.
 export function InspectorSplit(props: InspectorSplitProps) {
+  useFocusModality()
   const {
     noun,
     workspace,
     inspector,
+    header,
     bar,
     sizes,
     defaultInspectorSize,
     reveal,
     defaultCollapsed = false,
   } = props
+  const inAppShell = useInAppShell()
   const panels = useInspectorPanels(sizes, reveal, defaultCollapsed)
   const collapsedToggleRef = useRef<HTMLDivElement>(null)
   const inspectorToggleRef = useRef<HTMLDivElement>(null)
-  const shouldRestoreToggleFocus = useRef(false)
+  const requestToggleFocus = useInspectorToggleFocus({
+    state: panels.state,
+    collapsedToggleRef,
+    inspectorToggleRef,
+  })
   const toggle = () => {
-    shouldRestoreToggleFocus.current =
-      document.activeElement instanceof HTMLElement &&
-      (collapsedToggleRef.current?.contains(document.activeElement) === true ||
-        inspectorToggleRef.current?.contains(document.activeElement) === true)
+    requestToggleFocus()
     panels.toggle()
   }
-  useLayoutEffect(() => {
-    if (!shouldRestoreToggleFocus.current) return
-    const target =
-      panels.state === 'collapsed' ? collapsedToggleRef.current : inspectorToggleRef.current
-    target?.querySelector<HTMLElement>('button')?.focus()
-    shouldRestoreToggleFocus.current = false
-  }, [panels.state])
   const collapsedControls = (
     <InspectorToggleSlot
       noun={noun}
@@ -254,19 +318,23 @@ export function InspectorSplit(props: InspectorSplitProps) {
   )
   return (
     <InspectorHeaderControlsContext.Provider value={collapsedControls}>
-      <InspectorSplitPanels
-        bar={bar}
-        defaultCollapsed={defaultCollapsed}
-        defaultInspectorSize={defaultInspectorSize}
-        id={noun.toLowerCase()}
-        inspector={inspector}
-        noun={noun}
-        panels={panels}
-        sizes={sizes}
-        onToggle={toggle}
-        toggleSlotRef={inspectorToggleRef}
-        workspace={workspace}
-      />
+      <div className={cn('panel-stack', !inAppShell && 'panel-shell-layout relative')}>
+        {!inAppShell && <div aria-hidden className="panel-shell-backing" />}
+        <InspectorSplitPanels
+          bar={bar}
+          defaultCollapsed={defaultCollapsed}
+          defaultInspectorSize={defaultInspectorSize}
+          id={noun.toLowerCase()}
+          inspector={inspector}
+          noun={noun}
+          panels={panels}
+          sizes={sizes}
+          onToggle={toggle}
+          toggleSlotRef={inspectorToggleRef}
+          workspace={workspace}
+          header={header}
+        />
+      </div>
     </InspectorHeaderControlsContext.Provider>
   )
 }

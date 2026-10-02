@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { Progress, ProgressLabel, ProgressTrack, ProgressValue } from './progress'
 
-const meta = { title: 'Foundations/Primitives/Progress' } satisfies Meta
+const meta = { title: 'Design System/Primitives/Progress' } satisfies Meta
 export default meta
 type Story = StoryObj<typeof meta>
 

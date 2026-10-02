@@ -18,9 +18,11 @@ function useVisibleInspector() {
   useLayoutEffect(() => {
     const element = inspector.current
     if (element === null) return
-    const synchronizeActive = () => setActive(element.getBoundingClientRect().width > 0)
+    const pane = element.closest('[data-panel]') ?? element
+    const synchronizeActive = () =>
+      setActive(pane.getBoundingClientRect().width > 0 && element.closest('[inert]') === null)
     const observer = new ResizeObserver(synchronizeActive)
-    observer.observe(element)
+    observer.observe(pane)
     synchronizeActive()
     return () => observer.disconnect()
   }, [])

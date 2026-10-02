@@ -2,9 +2,10 @@
 @import "../tokens.css";
 @import "./theme-bindings.css";
 @import "./themes/default.css";
-@import "./themes/catppuccin.css";
-@import "./themes/ocean-breeze.css";
-@import "./themes/northern-lights.css";
+@import "./themes/supabase.css";
+@import "./themes/linear.css";
+@import "./themes/amber-minimal.css";
+@import "./status-colors.css";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "./typography.css";

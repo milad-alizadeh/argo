@@ -37,21 +37,17 @@ export function TicketsSidebarContent({
   // Dismissing the notice removes the control that dismissed it.
   useFocusRescue(sidebar, notice === null)
   return (
-    <aside
-      aria-label={t('sidebar.label')}
-      className="flex h-full min-h-0 flex-col bg-sidebar"
-      ref={sidebar}
-    >
+    <aside aria-label={t('sidebar.label')} className="flex h-full min-h-0 flex-col" ref={sidebar}>
       <TicketsSidebarHeader connection={connection} />
       <div className="min-h-0 flex-1 overflow-y-auto">
         <nav aria-label={t('sidebar.views')} className="sidebar-gutter py-(--spacing-shell-item)">
           <div
             aria-current="page"
-            className="flex items-center gap-(--spacing-shell-item) rounded-row bg-muted px-(--spacing-shell-item) py-(--spacing-shell-icon) type-body"
+            className="flex items-center gap-(--spacing-shell-item) rounded-row bg-sidebar-accent text-sidebar-accent-foreground px-(--spacing-shell-item) py-(--spacing-shell-icon) type-body"
           >
             <span className="flex-1">{t('sidebar.allOpen')}</span>
             {openCount === null ? null : (
-              <span className="font-mono type-meta text-faint">{openCount}</span>
+              <span className="font-mono type-meta text-inherit">{openCount}</span>
             )}
           </div>
         </nav>

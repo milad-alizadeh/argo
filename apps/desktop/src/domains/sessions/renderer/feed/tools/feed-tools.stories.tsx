@@ -150,17 +150,34 @@ export const CommandWithDescriptionLabel = {
     />
   ),
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-    const canvas = within(canvasElement)
-    const group = canvas.getByRole('button', { name: 'Ran a command' })
-    await expect(group).toHaveAttribute('aria-expanded', 'false')
-    await expect(canvas.queryByRole('code')).toBeNull()
-    await expect(
-      canvas.queryByText('Listing changed files and scanning them for leftovers'),
-    ).toBeNull()
-    await userEvent.click(group)
-    await canvas.findByText('Listing changed files and scanning them for leftovers')
-    const codeBlock = await canvas.findByRole('code')
-    await expect(codeBlock).toHaveTextContent('RTK_DISABLED=1')
+    const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
+    const writeText = fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    })
+
+    try {
+      const canvas = within(canvasElement)
+      const group = canvas.getByRole('button', { name: 'Ran a command' })
+      await expect(group).toHaveAttribute('aria-expanded', 'false')
+      await expect(canvas.queryByRole('code')).toBeNull()
+      await expect(
+        canvas.queryByText('Listing changed files and scanning them for leftovers'),
+      ).toBeNull()
+      await userEvent.click(group)
+      await canvas.findByText('Listing changed files and scanning them for leftovers')
+      const codeBlock = await canvas.findByRole('code')
+      await expect(codeBlock).toHaveTextContent('RTK_DISABLED=1')
+      await userEvent.click(canvas.getByRole('button', { name: 'Copy command and result' }))
+      await expect(writeText).toHaveBeenCalledWith(
+        'RTK_DISABLED=1 git diff --name-only 5911f4e89~1 HEAD -- apps/desktop/src/harnesses/claude\n3 pass',
+      )
+      await expect(await canvas.findByText('Copied to clipboard')).toBeInTheDocument()
+    } finally {
+      if (originalClipboard) Object.defineProperty(navigator, 'clipboard', originalClipboard)
+      else Reflect.deleteProperty(navigator, 'clipboard')
+    }
   },
 }
 

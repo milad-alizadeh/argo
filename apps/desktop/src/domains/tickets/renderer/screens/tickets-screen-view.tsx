@@ -14,7 +14,7 @@ function Loading({ label }: { label: string }) {
   return (
     <div aria-label={label} className="flex h-full min-h-0 flex-col" role="status">
       <span className="sr-only">{label}</span>
-      <div className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-(--spacing-shell-inset)">
+      <div className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border px-(--spacing-shell-inset)">
         <Skeleton className="h-4 w-40" />
       </div>
       <div className="grid max-w-md gap-(--spacing-shell-gutter) p-(--spacing-shell-inset)">

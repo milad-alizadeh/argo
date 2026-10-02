@@ -1,0 +1,16 @@
+.ticket-work-path__marker {
+  position: absolute;
+  top: calc(
+    var(--ticket-work-path-marker-inset, 0px) +
+    (var(--typography-meta-line-height) - var(--size-ticket-work-path-marker)) /
+    2
+  );
+  left: calc(-1 * var(--spacing-shell-inset));
+  width: var(--size-ticket-work-path-marker);
+  height: var(--size-ticket-work-path-marker);
+  border-radius: 50%;
+}
+
+.ticket-work-path__rail {
+  left: calc((var(--size-ticket-work-path-marker) - var(--size-border)) / 2);
+}

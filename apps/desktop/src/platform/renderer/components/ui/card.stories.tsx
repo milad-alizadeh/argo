@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card'
 
-const meta = { title: 'Foundations/Primitives/Card', component: Card } satisfies Meta<typeof Card>
+const meta = { title: 'Design System/Primitives/Card', component: Card } satisfies Meta<typeof Card>
 export default meta
 type Story = StoryObj<typeof meta>
 

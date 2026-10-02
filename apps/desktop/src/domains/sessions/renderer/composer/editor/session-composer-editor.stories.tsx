@@ -42,6 +42,7 @@ Formatting is preserved while you edit.`
 
 const CODEX_REFERENCE_DRAFT =
   'Run `bun run quality` before @argo-plugin reviews it. See [notes](https://example.com/notes).'
+const LONG_TICKET_KEY = `ENG-${'REFERENCE-'.repeat(12)}42`
 
 let setComposerOpen: (open: boolean) => void
 let landDraft: (afterCommit?: () => void) => void
@@ -113,6 +114,62 @@ function CodexComposerStory({ onSend }: { onSend: ComposerFormProps['onSend'] })
       harness={{ harness: 'codex' }}
       onSend={onSend}
       sessionId="codex-session"
+      tickets={STORY_TICKETS}
+    />
+  )
+}
+
+function LongTicketReferenceStory({ onSend }: { onSend: ComposerFormProps['onSend'] }) {
+  return (
+    <ComposerForm
+      initialEditing={{
+        prompt: LONG_TICKET_KEY,
+        tickets: [
+          {
+            id: 'long-ticket',
+            provider: 'linear',
+            key: LONG_TICKET_KEY,
+            title: 'Long provider key',
+            status: 'Open',
+            terminal: false,
+            blocked: null,
+          },
+        ],
+      }}
+      onSend={onSend}
+      sessionId="long-ticket-reference"
+      tickets={[
+        {
+          provider: 'linear',
+          key: LONG_TICKET_KEY,
+          title: 'Long provider key',
+          status: 'Open',
+          terminal: false,
+          blocked: null,
+        },
+      ]}
+    />
+  )
+}
+
+function TicketReferenceStory({ onSend }: { onSend: ComposerFormProps['onSend'] }) {
+  return (
+    <ComposerForm
+      initialEditing={{
+        tickets: [
+          {
+            id: 'ticket-reference',
+            provider: 'linear',
+            key: 'ENG-42',
+            title: 'Keep the Composer draft in sync',
+            status: 'In Progress',
+            terminal: false,
+            blocked: true,
+          },
+        ],
+      }}
+      onSend={onSend}
+      sessionId="ticket-reference"
       tickets={STORY_TICKETS}
     />
   )
@@ -448,6 +505,40 @@ export const AtTicketQueryShowsTicketsForCodex: Story = {
       within(picker).getByRole('button', { name: /ENG-42.*Keep the Composer/ }),
     ).toBeVisible()
     await expect(canvas.queryByRole('option')).toBeNull()
+  },
+}
+
+export const TicketReferenceUsesKeyboardLinkNavigation: Story = {
+  render: (args) => <TicketReferenceStory onSend={args.onSend} />,
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+    const originalUrl = window.location.href
+
+    try {
+      await userEvent.click(composer)
+      await userEvent.type(composer, 'ENG-42')
+      const ticket = await canvas.findByRole('link', { name: 'ENG-42' })
+      ticket.focus()
+      await expect(ticket).toHaveFocus()
+
+      window.history.replaceState(null, '', '#/projects/story-project/sessions/current')
+      await userEvent.keyboard('{Enter}')
+
+      await expect(window.location.hash).toBe('#/projects/story-project/tickets/ENG-42')
+      await expect(args.onSend).not.toHaveBeenCalled()
+    } finally {
+      window.history.replaceState(null, '', originalUrl)
+    }
+  },
+}
+
+export const LongTicketReference: Story = {
+  render: (args) => <LongTicketReferenceStory onSend={args.onSend} />,
+  play: async ({ canvasElement }) => {
+    const reference = canvasElement.querySelector<HTMLElement>('[data-ticket-key]')
+    await expect(reference).toHaveAttribute('data-ticket-key', LONG_TICKET_KEY)
+    await expect(reference).toHaveAttribute('role', 'link')
   },
 }
 

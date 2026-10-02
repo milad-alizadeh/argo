@@ -9,6 +9,7 @@
   flex: 1 1 auto;
   overflow-y: auto;
   overscroll-behavior: contain;
+  padding-inline: var(--spacing-session-gutter);
 }
 
 .session-screen__composer-scroll > * {
@@ -16,14 +17,10 @@
   flex: none;
 }
 
-.session-screen__feed:has(+ .session-screen__composer) .feed__viewport {
-  --session-feed-composer-clearance: calc(var(--session-composer-reach, 0px) + var(--spacing-snug));
-  padding-bottom: var(--session-feed-composer-clearance);
-  scroll-padding-bottom: var(--session-feed-composer-clearance);
+.session-screen__feed:has(+ .session-screen__composer) {
+  padding-bottom: var(--session-composer-reach, 0px);
 }
-
-.session-screen__composer
-  :is([data-component="ComposerCard"], [data-component="SessionContextBar"]) {
-  background-color: var(--card);
-  --tw-shadow: 0 0 transparent;
+.session-screen__workspace {
+  --size-content-minimum: var(--size-session-workspace-min);
+  --spacing-session-gutter: var(--spacing-shell-section);
 }

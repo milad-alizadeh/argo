@@ -42,7 +42,7 @@ answers only the motion query and restores it when the story ends.
 
 Stories inherit the required accessibility check and the Theme and Mode toolbar controls.
 They add no appearance copies or forced globals. Plays assert behavior and semantics;
-layout measurements belong to live review or the existing styling browser contracts.
+layout and appearance review happens directly in live Storybook.
 Portrait and landscape stories remain open for review at narrow and wide viewport sizes.
 
 ## Reviewed checkpoint

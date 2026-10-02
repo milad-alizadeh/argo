@@ -38,7 +38,7 @@ export function SessionContextActions({
           disabled={!canCompact || isCompacting}
           onClick={() => void onCompact?.()}
         >
-          <Icon name="compact" />
+          <Icon className="text-muted-foreground" name="compact" />
           {t('composer.compactShort')}
         </DropdownMenuItem>
         <DropdownMenuItem
@@ -46,7 +46,7 @@ export function SessionContextActions({
           disabled={!canHandoff || isHandingOff}
           onClick={() => void onHandoff?.()}
         >
-          <Icon name="handoff" />
+          <Icon className="text-muted-foreground" name="handoff" />
           {t('handoff.title')}
         </DropdownMenuItem>
       </DropdownMenuContent>

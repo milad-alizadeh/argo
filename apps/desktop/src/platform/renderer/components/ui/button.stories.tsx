@@ -6,7 +6,7 @@ import { Button } from './button'
 const longControlLabel = 'Save the complete configuration for the selected project'
 
 const meta = {
-  title: 'Foundations/Primitives/Button',
+  title: 'Design System/Primitives/Button',
   component: Button,
   parameters: { layout: 'padded' },
 } satisfies Meta<typeof Button>

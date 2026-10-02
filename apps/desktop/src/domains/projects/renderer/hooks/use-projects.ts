@@ -50,21 +50,15 @@ const EMPTY: ProjectsState = { status: 'empty', ...IDLE }
 
 function useProjectListing() {
   const query = useQuery(trpc.projectList.queryOptions())
-  return {
-    ...query,
-    data: query.data ? ({ ...EMPTY, projects: query.data } satisfies ProjectsState) : undefined,
-  }
+  const data = useMemo(
+    () => (query.data ? ({ ...EMPTY, projects: query.data } satisfies ProjectsState) : undefined),
+    [query.data],
+  )
+  return { ...query, data }
 }
 
-export function useProjects(): [ProjectsState, ProjectActions] {
-  const navigate = useNavigate()
-  const { projectId } = useParams()
+function useProjectMutations() {
   const queryClient = useQueryClient()
-  const projects = useProjectListing()
-  const projectOpen = useQuery({
-    ...trpc.projectOpen.queryOptions(projectId ?? ''),
-    enabled: projectId !== undefined,
-  })
   // The reads a Project change moves; Session reads follow main's change signal instead.
   const onSuccess = () =>
     Promise.all(
@@ -73,8 +67,28 @@ export function useProjects(): [ProjectsState, ProjectActions] {
       ),
     )
   const mutationOptions = { onSuccess, onError: () => {} }
-  const register = useMutation({ ...trpc.projectRegister.mutationOptions(), ...mutationOptions })
-  const relocate = useMutation({ ...trpc.projectRelocate.mutationOptions(), ...mutationOptions })
+  const { mutate: registerProject, isPending: registrationPending } = useMutation({
+    ...trpc.projectRegister.mutationOptions(),
+    ...mutationOptions,
+  })
+  const { mutate: relocateProject, isPending: relocationPending } = useMutation({
+    ...trpc.projectRelocate.mutationOptions(),
+    ...mutationOptions,
+  })
+
+  return { registerProject, relocateProject, registrationPending, relocationPending }
+}
+
+export function useProjects(): [ProjectsState, ProjectActions] {
+  const navigate = useNavigate()
+  const { projectId } = useParams()
+  const projects = useProjectListing()
+  const projectOpen = useQuery({
+    ...trpc.projectOpen.queryOptions(projectId ?? ''),
+    enabled: projectId !== undefined,
+  })
+  const { registerProject, relocateProject, registrationPending, relocationPending } =
+    useProjectMutations()
 
   const queryProjects = projects.data ?? LOADING
   const project =
@@ -90,7 +104,7 @@ export function useProjects(): [ProjectsState, ProjectActions] {
         ...base,
         project: null,
         status: (base.status === 'loading' ? 'loading' : 'empty') as ProjectsStatus,
-        busy: register.isPending || relocate.isPending,
+        busy: registrationPending || relocationPending,
       }
     if (openErrorCode && project) {
       return { ...base, project, status: 'refused' as const, code: openErrorCode, busy: false }
@@ -99,22 +113,29 @@ export function useProjects(): [ProjectsState, ProjectActions] {
       ...base,
       project,
       status: 'selected' as const,
-      busy: register.isPending || relocate.isPending,
+      busy: registrationPending || relocationPending,
     }
-  }, [openErrorCode, project, queryProjects, register.isPending, relocate.isPending])
+  }, [openErrorCode, project, queryProjects, registrationPending, relocationPending])
   const open = useCallback(() => {
-    if (register.isPending || relocate.isPending) return
+    if (registrationPending || relocationPending) return
     if (projectState.status === 'refused' && projectState.project) {
-      relocate.mutate(projectState.project.id)
+      relocateProject(projectState.project.id)
       return
     }
-    register.mutate(undefined, {
+    registerProject(undefined, {
       onSuccess: (projects) => {
         const registered = projects.at(-1)
         if (registered) navigate(`/projects/${registered.id}/sessions`)
       },
     })
-  }, [navigate, projectState, register, relocate])
+  }, [
+    navigate,
+    projectState,
+    registerProject,
+    relocateProject,
+    registrationPending,
+    relocationPending,
+  ])
 
   return [projectState, useMemo(() => ({ open }), [open])]
 }

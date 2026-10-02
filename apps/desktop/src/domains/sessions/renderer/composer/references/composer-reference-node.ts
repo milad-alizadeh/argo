@@ -2,15 +2,15 @@ import type { EditorConfig, NodeKey, SerializedTextNode } from 'lexical'
 import { TextNode } from 'lexical'
 import type { Harness } from '@/harnesses/harness'
 import { composerReferenceIcon } from './composer-reference-icon'
+import { inlineContextSlots } from './inline-context-recipe'
 import {
   referenceBySource,
   referenceHarnessLabel,
   referenceSupportsHarness,
 } from './session-reference'
 
-const SUPPORTED_CLASS =
-  'composer-inline-context cursor-text !font-semibold text-foreground type-body'
-const UNSUPPORTED_CLASS = 'composer-inline-context cursor-text text-muted-foreground type-body'
+const SUPPORTED_CLASS = `${inlineContextSlots.root} cursor-text text-foreground`
+const UNSUPPORTED_CLASS = `${inlineContextSlots.root} cursor-text text-muted-foreground`
 
 export class ComposerReferenceNode extends TextNode {
   __harness: Harness | null
@@ -45,7 +45,11 @@ export class ComposerReferenceNode extends TextNode {
     element.className = unsupported ? UNSUPPORTED_CLASS : SUPPORTED_CLASS
     element.dataset.reference = text
     element.dataset.contextLabel = reference?.label ?? text
-    if (reference) element.prepend(composerReferenceIcon(element.ownerDocument, reference.kind))
+    if (reference) {
+      const icon = composerReferenceIcon(element.ownerDocument, reference.kind)
+      icon.classList.add(inlineContextSlots.icon, 'text-muted-foreground')
+      element.prepend(icon)
+    }
     if (unsupported) {
       element.dataset.unsupported = 'true'
       const fact = element.ownerDocument.createElement('span')

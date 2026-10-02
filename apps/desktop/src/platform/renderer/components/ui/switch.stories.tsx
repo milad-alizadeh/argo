@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { Switch } from './switch'
 
-const meta = { title: 'Foundations/Primitives/Switch', component: Switch } satisfies Meta<typeof Switch>
+const meta = { title: 'Design System/Primitives/Switch', component: Switch } satisfies Meta<typeof Switch>
 export default meta
 type Story = StoryObj<typeof meta>
 

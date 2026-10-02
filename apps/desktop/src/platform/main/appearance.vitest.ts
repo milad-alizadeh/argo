@@ -90,7 +90,7 @@ function fixture(show = true, minimized = false) {
 }
 
 function update(revision = 1, dark = true) {
-  harness.state = { theme: 'catppuccin', appearance: 'system', dark, revision }
+  harness.state = { theme: 'supabase', appearance: 'system', dark, revision }
   for (const listener of harness.listeners) listener(harness.state)
 }
 

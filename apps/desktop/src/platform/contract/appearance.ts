@@ -1,9 +1,10 @@
 import { z } from 'zod'
 
-export const THEMES = ['default', 'catppuccin', 'ocean-breeze', 'northern-lights'] as const
+export const THEMES = ['default', 'supabase', 'linear', 'amber-minimal'] as const
 export const APPEARANCES = ['system', 'light', 'dark'] as const
 export const DEFAULT_THEME = 'default'
 export const DEFAULT_APPEARANCE = 'system'
+const retiredThemes = ['catppuccin', 'ocean-breeze', 'northern-lights'] as const
 export const APPEARANCE_READ_CHANNEL = 'argo:appearance:read'
 export const APPEARANCE_SET_CHANNEL = 'argo:appearance:set'
 export const APPEARANCE_READY_CHANNEL = 'argo:appearance:ready'
@@ -22,7 +23,10 @@ export type AppearancePreference = z.infer<typeof appearancePreferenceSchema>
 // Existing portable appearance documents can omit the new theme field.
 export const appearanceDocumentSchema = z
   .object({
-    theme: themeSchema.default(DEFAULT_THEME),
+    theme: z.preprocess(
+      (value) => (retiredThemes.some((theme) => theme === value) ? DEFAULT_THEME : value),
+      themeSchema.default(DEFAULT_THEME),
+    ),
     appearance: appearanceSchema,
   })
   .passthrough()

@@ -61,7 +61,7 @@ export function AppearanceDialog({
             />
           }
         >
-          <Icon name="close" />
+          <Icon className="text-muted-foreground" name="close" />
         </DialogClose>
         <FieldSet disabled={pending}>
           <FieldLegend>{t('appearance.theme')}</FieldLegend>
@@ -106,7 +106,7 @@ export function AppearanceDialog({
           </RadioGroup>
         </FieldSet>
         {rejected && (
-          <p role="alert" className="text-sm text-destructive">
+          <p role="alert" className="text-sm text-status-danger">
             {t('appearance.rejected')}
           </p>
         )}

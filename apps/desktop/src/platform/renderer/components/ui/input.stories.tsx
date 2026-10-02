@@ -6,7 +6,7 @@ import { Input } from './input'
 const longInputValue = '/workspace/projects/an-example-with-a-long-directory-name/settings.json'
 
 const meta = {
-  title: 'Foundations/Primitives/Input',
+  title: 'Design System/Primitives/Input',
   component: Input,
   parameters: { layout: 'padded' },
 } satisfies Meta<typeof Input>

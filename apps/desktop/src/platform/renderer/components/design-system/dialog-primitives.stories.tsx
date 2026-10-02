@@ -41,7 +41,7 @@ import {
 } from '../ui/sheet'
 
 const meta = {
-  title: 'Foundations/Primitives/Dialog',
+  title: 'Design System/Primitives/Dialog',
   parameters: { layout: 'centered' },
 } satisfies Meta
 

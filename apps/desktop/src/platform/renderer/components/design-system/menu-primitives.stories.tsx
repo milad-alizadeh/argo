@@ -80,7 +80,7 @@ function DropdownSpecimen({ onAction }: SpecimenProps) {
 }
 
 const meta = {
-  title: 'Foundations/Primitives/Menu',
+  title: 'Design System/Primitives/Menu',
   component: DropdownSpecimen,
   args: { onAction: fn() },
 } satisfies Meta<typeof DropdownSpecimen>

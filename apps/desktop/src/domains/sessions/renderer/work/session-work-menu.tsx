@@ -15,17 +15,18 @@ import {
 } from '@/platform/renderer/components/ui/dropdown-menu'
 import { cn } from '@/platform/renderer/lib/utils'
 import type { WorkEntry } from './session-work-entries'
+import './session-work-menu.css'
 
 const workRichOptionRecipe = {
   row: 'items-start gap-2 py-1.5',
   mark: 'mt-(--spacing-dot-inset) size-(--size-state-dot) shrink-0 rounded-full',
   content: 'min-w-0 flex-1',
-  label: 'block whitespace-normal wrap-anywhere text-foreground',
+  label: 'block whitespace-normal wrap-anywhere text-inherit',
   detail: 'block whitespace-normal wrap-anywhere type-meta text-muted-foreground',
 } as const
 
 const workCountIndicatorRecipe =
-  'pointer-events-none absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 type-meta leading-none font-semibold tabular-nums ring-2 ring-background'
+  'session-work-count pointer-events-none absolute -top-0.5 -right-0.5 z-20 flex items-center justify-center rounded-full px-0.5 leading-none font-semibold tabular-nums ring-1 ring-background'
 
 function WorkMenuTrigger({
   icon,
@@ -39,10 +40,10 @@ function WorkMenuTrigger({
   running: boolean
 }) {
   return (
-    <span className="relative shrink-0">
+    <span className="relative isolate inline-flex shrink-0 overflow-visible">
       <MenuDropdownTrigger
         aria-label={`${label} · ${count}`}
-        className="size-(--size-control) text-muted-foreground hover:bg-accent hover:text-foreground data-[popup-open]:bg-accent data-[popup-open]:text-foreground"
+        className="text-muted-foreground hover:bg-accent hover:text-accent-foreground data-[popup-open]:bg-accent data-[popup-open]:text-accent-foreground"
         icon={icon}
         iconOnly
         label={label}
@@ -64,7 +65,10 @@ function Row({
   return (
     <DropdownMenuItem
       aria-current={selected}
-      className={cn(workRichOptionRecipe.row, selected ? 'bg-accent' : null)}
+      className={cn(
+        workRichOptionRecipe.row,
+        selected ? 'bg-accent text-accent-foreground [&_.type-meta]:text-inherit' : null,
+      )}
       onClick={onSelect}
     >
       <span aria-hidden="true" className={cn(workRichOptionRecipe.mark, entry.mark)} />

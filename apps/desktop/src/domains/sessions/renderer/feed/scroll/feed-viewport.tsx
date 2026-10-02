@@ -53,7 +53,7 @@ export function FeedViewport({
   return (
     <section
       aria-label={historyLabel}
-      className="feed__viewport scroll-fade"
+      className="feed__viewport scroll-fade-y"
       data-reading-revision={settled.reading.revision}
       data-session={settled.reading.sessionId}
       ref={setScrollableViewport}

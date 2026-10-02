@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { sessionShellCommand } from '@/mocks/sessions/session-rows'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import { SessionShellInspector } from './session-shell-inspector'
@@ -49,10 +49,25 @@ export const Running: Story = {
   args: { command: WATCH, output: 'watching for changes\nrebuilt in 240ms\n' },
   render: (args) => <InspectorStory args={args} />,
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByText('npm run watch')).toBeVisible()
-    await expect(canvas.getByText('Running · 4m 30s')).toBeVisible()
-    await expect(canvas.getByText(/rebuilt in 240ms/)).toBeVisible()
+    const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
+    const writeText = fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    })
+
+    try {
+      const canvas = within(canvasElement)
+      await expect(canvas.getByText('npm run watch')).toBeVisible()
+      await expect(canvas.getByText('Running · 4m 30s')).toBeVisible()
+      await expect(canvas.getByText(/rebuilt in 240ms/)).toBeVisible()
+      await userEvent.click(canvas.getByRole('button', { name: 'Copy terminal output' }))
+      await expect(writeText).toHaveBeenCalledWith('watching for changes\nrebuilt in 240ms\n')
+      await expect(await canvas.findByText('Copied to clipboard')).toBeInTheDocument()
+    } finally {
+      if (originalClipboard) Object.defineProperty(navigator, 'clipboard', originalClipboard)
+      else Reflect.deleteProperty(navigator, 'clipboard')
+    }
   },
 }
 

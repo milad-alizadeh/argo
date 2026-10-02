@@ -21,11 +21,11 @@ export type WorkState = ShellState | 'done' | 'unknown'
 // The semantic ground a state mark takes, the same set the Roster draws a Session's status in.
 export const WORK_STATE_MARKS: Record<WorkState, string> = {
   running: `${indicatorToneRecipe.success} bg-current shadow-state-glow`,
-  done: 'bg-status-neutral',
-  completed: 'bg-status-neutral',
+  done: 'bg-muted-foreground',
+  completed: 'bg-muted-foreground',
   failed: 'bg-status-danger',
   interrupted: 'bg-status-warning',
-  unknown: 'bg-status-neutral',
+  unknown: 'bg-muted-foreground',
 }
 
 export function subagentWorkState(subagent: SessionSubagent): WorkState {

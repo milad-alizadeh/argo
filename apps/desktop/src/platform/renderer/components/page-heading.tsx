@@ -37,7 +37,10 @@ export function PageHeading(props: PageHeadingProps) {
   if (props.as === 'a') {
     const { as: _as, children, className, icon, ...linkProps } = props
     return (
-      <a className={cn(pageHeadingClass, className)} {...linkProps}>
+      <a
+        className={cn(pageHeadingClass, '[&_[data-slot=icon]]:text-muted-foreground', className)}
+        {...linkProps}
+      >
         <PageHeadingContent icon={icon}>{children}</PageHeadingContent>
       </a>
     )

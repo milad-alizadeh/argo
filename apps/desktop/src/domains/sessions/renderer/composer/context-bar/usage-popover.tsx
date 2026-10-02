@@ -29,7 +29,7 @@ export function UsagePopover({ harness }: { harness: Harness }) {
           />
         }
       >
-        <Icon name="usage-meter" />
+        <Icon className="text-muted-foreground" name="usage-meter" />
         <span className="inline-flex items-center gap-1">
           {t('composer.allowance.label')}{' '}
           <span className="tabular-nums text-muted-foreground">{primaryPercentage}%</span>

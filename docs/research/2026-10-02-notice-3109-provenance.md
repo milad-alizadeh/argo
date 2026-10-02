@@ -18,7 +18,6 @@ The configured UI alias places it at `src/platform/renderer/components/ui/alert.
 The CLI preserves the selected `cn` import. Repository formatting sorts imports and exports,
 uses single quotes and trailing commas, and changes the React import to type-only.
 Alert needs no icon, RSC, or same-folder import transform. No support file is written.
-These identities and transforms are also recorded in `tests/styling/registry-baseline.json`.
 
 The candidate review found two local additions: `min-w-0` on AlertTitle and AlertDescription.
 Restore those slots to the selected native source. Keep shrinking and wrapping in Notice's

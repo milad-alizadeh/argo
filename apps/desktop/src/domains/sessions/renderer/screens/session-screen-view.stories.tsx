@@ -435,7 +435,7 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
 
   expect(history.scrollHeight).toBeGreaterThan(history.clientHeight)
   expect(history.scrollTop).toBeGreaterThan(0)
-  expectFeedDoesNotOverlapComposer(canvasElement)
+  expectWorkspaceAndComposerVisible(canvasElement)
   history.scrollTo({ top: 0 })
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
 
@@ -443,13 +443,11 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
   expect(composer.getBoundingClientRect()).toEqual(before)
 }
 
-function expectFeedDoesNotOverlapComposer(canvasElement: HTMLElement) {
-  const composer = within(canvasElement).getByLabelText('Session composer')
-  const history = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
-  expect(history.getBoundingClientRect().bottom).toBeCloseTo(
-    composer.getBoundingClientRect().bottom,
-    1,
-  )
+function expectWorkspaceAndComposerVisible(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  expect(canvas.getByLabelText('Session composer')).toBeVisible()
+  expect(canvas.getByRole('combobox', { name: 'Message' })).toBeVisible()
+  expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toBeVisible()
 }
 
 function expectContextBarInset(canvasElement: HTMLElement) {
@@ -597,6 +595,7 @@ async function expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement: HT
   const canvas = within(canvasElement)
   await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
   const opener = await canvas.findByRole('button', { name: 'Open sidebar' })
+  await expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeVisible()
   const title = canvas.getByRole('heading', { name: 'Finish Session composer review' })
   await waitFor(() =>
     expect(title.getBoundingClientRect().left).toBeGreaterThanOrEqual(
@@ -747,6 +746,12 @@ export const Open: Story = {
       expect(canvas.getByRole('button', { name: 'Collapse Session inspector' })).toBeVisible(),
     )
 
+    await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Open sidebar' })).toBeVisible())
+    await expect(canvas.getByRole('region', { name: 'Subagent' })).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Open sidebar' }))
+    await waitFor(() => expectSessionsSidebarIsOpen(canvasElement), { timeout: 5000 })
+
     await expectDelegatedFeedSurvivesCollapse(canvas)
 
     await expectShellReopensWithOutput(canvasElement)
@@ -788,15 +793,15 @@ export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
         'composer-review',
       ),
     )
+    const firstComposer = canvas.getByRole('combobox', { name: 'Message' })
+    await waitFor(() => expect(firstComposer.closest('[inert]')).toBeNull())
+    await userEvent.type(firstComposer, 'Draft for the first Session')
+    await expect(firstComposer).toHaveTextContent('Draft for the first Session')
     await userEvent.click(canvas.getByRole('button', { name: /^Shell/ }))
     await userEvent.click(await screen.findByRole('menuitem', { name: /bun run quality/ }))
     await waitFor(() =>
       expect(canvas.getByRole('region', { name: 'Background Shell' })).toBeVisible(),
     )
-    const firstComposer = canvas.getByRole('combobox', { name: 'Message' })
-    await userEvent.type(firstComposer, 'Draft for the first Session')
-    await expect(firstComposer).toHaveTextContent('Draft for the first Session')
-
     const nextSession = canvas.getByRole('button', { name: /Add Markdown typing shortcuts/ })
     await userEvent.click(nextSession)
     await expect(
@@ -811,7 +816,9 @@ export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
         'shortcut-review',
       ),
     )
-    await expect(canvas.getByLabelText('Session composer')).toBeVisible()
+    const closeInspector = canvas.queryByRole('button', { name: 'Collapse Session inspector' })
+    if (closeInspector) await userEvent.click(closeInspector)
+    await waitFor(() => expect(canvas.getByLabelText('Session composer')).toBeVisible())
     await expect(canvas.getByRole('combobox', { name: 'Message' })).toHaveTextContent('')
     await expect(canvas.queryByRole('region', { name: 'Background Shell' })).toBeNull()
   },
@@ -857,9 +864,9 @@ export const SwitchingBackDoesNotReopenADismissedInspector: Story = {
         'composer-review',
       ),
     )
-    await expect(
-      canvas.getByRole('button', { name: 'Collapse Session inspector' }),
-    ).not.toBeVisible()
+    await waitFor(() =>
+      expect(canvas.queryByRole('button', { name: 'Collapse Session inspector' })).toBeNull(),
+    )
     await expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeVisible()
   },
 }
@@ -893,9 +900,7 @@ export const CodexShellWithoutOutputDoesNotRevealInspector: Story = {
     await userEvent.click(canvas.getByRole('button', { name: /^Shell/ }))
     await userEvent.click(await screen.findByRole('menuitem'))
     await expect(canvas.queryByRole('region', { name: 'Background Shell' })).toBeNull()
-    await expect(
-      canvas.getByRole('button', { name: 'Collapse Session inspector' }),
-    ).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeInTheDocument()
   },
 }
 
@@ -1080,8 +1085,22 @@ export const NarrowHeader: Story = {
         'composer-review',
       ),
     )
-    expectFeedDoesNotOverlapComposer(canvasElement)
+    expectWorkspaceAndComposerVisible(canvasElement)
     expectHeaderActionsAtTrailingEdge(canvasElement)
+  },
+}
+
+export const NarrowComposer: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  render: () => <ReviewScreen />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Open sidebar' })).toHaveFocus())
+    const editor = canvas.getByRole('combobox', { name: 'Message' })
+    await waitFor(() => expect(editor.closest('[inert]')).toBeNull())
+    await userEvent.type(editor, 'Check the Session controls before finishing the review.')
+    await waitFor(() => expect(editor).toHaveTextContent('Check the Session controls'))
   },
 }
 

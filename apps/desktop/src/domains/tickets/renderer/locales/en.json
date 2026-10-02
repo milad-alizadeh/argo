@@ -71,9 +71,10 @@
     "blockedByCompact_other": "{{count}} blockers",
     "dependenciesUnavailable": "Dependencies unavailable",
     "noDescription": "No description.",
-    "blockedByCount": "Blocked by · {{count}}",
     "linkedSessionsCount": "Linked Sessions · {{count}}",
-    "childrenCount": "Children · {{closed}} of {{count}} closed",
+    "childrenTitle": "Children",
+    "childrenProgress": "{{closed}} of {{count}} closed",
+    "blockedByTitle": "Blocked by",
     "openInProvider": "Open {{key}} in {{provider}}",
     "articleLabel": "Ticket {{key}}"
   },

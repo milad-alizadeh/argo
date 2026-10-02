@@ -13,7 +13,7 @@ import { applyAppearance, useTheme } from '../../use-appearance'
 import { AppearanceDialog } from './appearance-dialog'
 
 const navigationControl =
-  'no-drag-region grid size-(--size-navigation-control) place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-selected hover:text-foreground aria-[current=page]:bg-selected aria-[current=page]:text-foreground'
+  'no-drag-region grid size-(--size-navigation-control) place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground'
 
 const navigationIcons: Record<Destination, IconName> = {
   Sessions: 'messages-square',
@@ -36,12 +36,24 @@ function destinationFromPathname(pathname: string, projectPath: string): Destina
   )
 }
 
-export const AppNavigationRail = memo(function AppNavigationRail() {
-  const { t } = useTranslation('app')
+export function AppNavigationRail() {
   const location = useLocation()
   const navigate = useNavigate()
   const projectPath = location.pathname.match(/^\/projects\/[^/]+(?=\/|$)/)?.[0] ?? ''
   const destination = destinationFromPathname(location.pathname, projectPath)
+  return <NavigationRail destination={destination} navigate={navigate} projectPath={projectPath} />
+}
+
+const NavigationRail = memo(function NavigationRail({
+  destination,
+  navigate,
+  projectPath,
+}: {
+  destination: Destination
+  navigate: ReturnType<typeof useNavigate>
+  projectPath: string
+}) {
+  const { t } = useTranslation('app')
   const settingsLabel = t('rail.settings')
   const [appearanceOpen, setAppearanceOpen] = useState(false)
   const appearanceState = useTheme()
@@ -69,7 +81,7 @@ export const AppNavigationRail = memo(function AppNavigationRail() {
                   }}
                 >
                   <Icon
-                    className="size-(--size-navigation-icon)"
+                    className={`size-(--size-navigation-icon) ${active ? 'text-accent-foreground' : 'text-muted-foreground'}`}
                     name={iconName}
                     weight={active ? 'fill' : 'regular'}
                   />
@@ -89,7 +101,10 @@ export const AppNavigationRail = memo(function AppNavigationRail() {
               onClick={() => setAppearanceOpen(true)}
               className={navigationControl}
             >
-              <Icon className="size-(--size-navigation-icon)" name="settings" />
+              <Icon
+                className="size-(--size-navigation-icon) text-muted-foreground"
+                name="settings"
+              />
             </TooltipTrigger>
             <TooltipContent side="right" className="type-meta">
               {settingsLabel}

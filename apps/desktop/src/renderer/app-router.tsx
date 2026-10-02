@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useMemo } from 'react'
 import {
   createHashRouter,
   Outlet,
@@ -29,6 +29,11 @@ import { queryClient, trpc } from '@/platform/renderer/trpc-client'
 type AppRouteHandle = {
   sidebar: ReactNode
 }
+
+const projectHeader = <ProjectSwitcher />
+const developmentFooter = (
+  <DevelopmentIdentityBar identity={window.argo?.development ?? null} ticket={null} />
+)
 
 const sidebarByPage = {
   atlas: <AtlasSidebar />,
@@ -61,7 +66,7 @@ export function AppRouteLayout() {
       isAppRouteHandle(match.handle) ? match.handle.sidebar : currentSidebar,
     null,
   )
-  const section = matches.find((match) => isAppRouteHandle(match.handle))
+  const outlet = useMemo(() => <Outlet />, [])
 
   if (projectState.status === 'empty') return <EmptyProjectScreen />
   // Saved Sessions remain readable without a Harness. Other surfaces keep the sign-in gate.
@@ -75,13 +80,8 @@ export function AppRouteLayout() {
     return <NoHarnessReadyScreen harnesses={readiness.data} />
   }
   return (
-    <AppShell
-      footer={<DevelopmentIdentityBar identity={window.argo?.development ?? null} ticket={null} />}
-      leftHeader={<ProjectSwitcher />}
-      sidebar={sidebar}
-    >
-      {/* Keyed by section, not path: a section switch draws a fresh screen, a Session switch keeps it. */}
-      <Outlet key={section?.pathname ?? location.pathname} />
+    <AppShell footer={developmentFooter} leftHeader={projectHeader} sidebar={sidebar}>
+      {outlet}
     </AppShell>
   )
 }

@@ -56,7 +56,7 @@
   outline: none;
 }
 
-.feed__viewport:focus-visible {
+:root:not([data-focus-modality="pointer"]) .feed__viewport:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: -2px;
 }
@@ -102,7 +102,7 @@
 
 .feed-row__label {
   display: block;
-  color: var(--color-quiet);
+  color: var(--muted-foreground);
   font: var(--typography-meta-size) var(--font-mono);
 }
 
@@ -111,7 +111,7 @@
   padding: var(--spacing-tight);
   border-radius: var(--radius-sm);
   background: var(--color-muted);
-  color: var(--color-ink);
+  color: var(--foreground);
   font: var(--typography-code-size) / var(--typography-code-line-height) var(--font-mono);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -125,22 +125,10 @@
   align-items: center;
 }
 
-/* A background work block's state inks, leaned toward the ink so each holds contrast in both
-   appearances, and the one motion that says the work is still running. */
-[data-slot="feed-delegation"] {
-  --feed-work-ink-active: color-mix(in oklab, var(--color-active) 62%, var(--foreground));
-}
-
 /* Live text takes the settled rows' muted ink, so a running line sits in the same column of grey.
    The glint leans to the ground, so it is a light band in light and a dark one in dark. */
 .feed-work-shimmer {
-  --feed-work-ink: var(--muted-foreground);
-  --feed-work-glint: color-mix(in oklab, var(--muted-foreground) 6%, var(--background));
-}
-
-[data-slot="feed-delegation"] {
-  --feed-work-ink-danger: color-mix(in oklab, var(--color-danger) 78%, var(--foreground));
-  --feed-work-ink-warn: color-mix(in oklab, var(--color-warn) 66%, var(--foreground));
+  --feed-work-glint: color-mix(in oklab, var(--muted-foreground) 6%, var(--card));
 }
 
 @keyframes feed-work-shimmer {
@@ -155,9 +143,9 @@
 .feed-work-shimmer {
   background-image: linear-gradient(
     90deg,
-    var(--feed-work-ink) 36%,
+    var(--muted-foreground) 36%,
     var(--feed-work-glint) 50%,
-    var(--feed-work-ink) 64%
+    var(--muted-foreground) 64%
   );
   background-size: 300% 100%;
   background-clip: text;
@@ -169,6 +157,6 @@
   .feed-work-shimmer {
     animation: none;
     background: none;
-    color: var(--feed-work-ink);
+    color: var(--muted-foreground);
   }
 }

@@ -1,8 +1,7 @@
+import { realpathSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
-import tailwindcss from '@tailwindcss/vite'
-import react from '@vitejs/plugin-react'
 import { playwright } from '@vitest/browser-playwright'
 import { defineConfig } from 'vitest/config'
 import { desktopAlias } from './vite-alias'
@@ -39,37 +38,20 @@ const nodeProject = {
   test: { name: 'node', environment: 'node' as const, include: ['src/**/*.vitest.ts'] },
 }
 
-const stylingProject = {
-  extends: true as const,
-  plugins: [react(), tailwindcss()],
-  optimizeDeps: {
-    entries: ['tests/styling/*.browser.tsx'],
-  },
-  resolve: {
-    alias: [
-      ...desktopAlias(directory),
-      { find: /^cn$/, replacement: path.join(directory, 'src/platform/renderer/lib/utils.ts') },
-    ],
-  },
-  test: {
-    name: 'styling',
-    include: ['tests/styling/*.browser.tsx'],
-    setupFiles: ['tests/styling/browser-fixture.tsx'],
-    browser: {
-      enabled: true,
-      headless: true,
-      provider: playwright({}),
-      instances: [{ browser: 'chromium' as const }],
+export default defineConfig({
+  server: {
+    fs: {
+      allow: [
+        path.resolve(directory, '..', '..'),
+        realpathSync(path.resolve(directory, '..', '..', 'node_modules')),
+      ],
     },
   },
-}
-
-export default defineConfig({
   optimizeDeps: {
     include: ['@storybook/react-dom-shim', 'react/jsx-dev-runtime'],
   },
   test: {
-    projects: [nodeProject, storybookProject, stylingProject],
+    projects: [nodeProject, storybookProject],
     coverage: {
       provider: 'v8',
       reporter: ['lcov', 'text'],

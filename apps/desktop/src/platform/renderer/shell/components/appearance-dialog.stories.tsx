@@ -13,7 +13,9 @@ function AppearanceStory({ reject = false }: { reject?: boolean }) {
   const state = useTheme()
   return (
     <>
-      <Button onClick={() => setOpen(true)}>{t('rail.settings')}</Button>
+      <Button variant="ghost" onClick={() => setOpen(true)}>
+        {t('rail.settings')}
+      </Button>
       <AppearanceDialog
         state={state}
         open={open}
@@ -51,7 +53,7 @@ export const Selection: Story = {
     await expect(initialMode).toHaveAccessibleName(
       { system: 'System', light: 'Light', dark: 'Dark' }[appearance],
     )
-    for (const theme of ['Default', 'Catppuccin', 'Ocean Breeze', 'Northern Lights']) {
+    for (const theme of ['Default', 'Supabase', 'Linear', 'Amber Minimal']) {
       await userEvent.click(popup.getByRole('radio', { name: theme }))
       await expect(popup.getByRole('radio', { name: theme })).toBeChecked()
       await expect(initialMode).toBeChecked()
@@ -64,7 +66,7 @@ export const Selection: Story = {
     await userEvent.keyboard('{ArrowDown}')
     await expect(popup.getByRole('radio', { name: 'Dark' })).toBeChecked()
     await userEvent.click(popup.getByRole('radio', { name: 'System' }))
-    await expect(popup.getByRole('radio', { name: 'Northern Lights' })).toBeChecked()
+    await expect(popup.getByRole('radio', { name: 'Amber Minimal' })).toBeChecked()
   },
 }
 
@@ -92,9 +94,9 @@ export const RejectedSelection: Story = {
     const popup = within(body.getByRole('dialog', { name: 'Appearance' }))
     const themes = within(popup.getByRole('radiogroup', { name: 'Theme' }))
     const initial = themes.getByRole('radio', { checked: true })
-    const catppuccin = themes.getByRole('radio', { name: 'Catppuccin' })
+    const supabase = themes.getByRole('radio', { name: 'Supabase' })
     const alternative =
-      initial === catppuccin ? themes.getByRole('radio', { name: 'Default' }) : catppuccin
+      initial === supabase ? themes.getByRole('radio', { name: 'Default' }) : supabase
     await userEvent.click(alternative)
     await expect(popup.getByRole('alert')).toHaveTextContent('Your change could not be saved.')
     await expect(initial).toBeChecked()

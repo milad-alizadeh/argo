@@ -10,7 +10,7 @@ export function composerMenuPopupRecipe(className?: string) {
 
 export const composerRichOptionRecipe = {
   row: 'items-start rounded-md py-1.5 pr-8 pl-2',
-  icon: 'mt-0.5 size-3.5',
+  icon: 'mt-0.5 size-3.5 text-muted-foreground',
   content: 'grid min-w-0 gap-0.5',
   label: 'type-heading',
   detail: 'type-meta',

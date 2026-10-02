@@ -70,7 +70,7 @@ function CommandStory({
   )
 }
 const meta = {
-  title: 'Foundations/Primitives/Command',
+  title: 'Design System/Primitives/Command',
   component: CommandStory,
   args: { onSelect: fn() },
 } satisfies Meta<typeof CommandStory>

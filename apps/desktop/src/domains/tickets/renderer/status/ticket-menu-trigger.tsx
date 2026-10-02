@@ -11,7 +11,7 @@ export function ticketMenuTrigger(named: boolean, metadata: boolean) {
       <Badge
         className="relative z-10 @3xl:bg-transparent @3xl:text-muted-foreground"
         render={<button type="button" />}
-        variant="secondary"
+        variant="outline"
       />
     )
   return (

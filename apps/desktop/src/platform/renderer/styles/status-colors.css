@@ -1,0 +1,18 @@
+/* Product status facts stay independent of the imported action palettes. */
+:root {
+  --status-success: oklch(0.48 0.16 145);
+  --warning-subtle: oklch(0.96 0.05 95);
+  --warning-foreground: oklch(0.43 0.09 80);
+  --status-warning: oklch(0.42 0.12 78);
+  --status-danger: oklch(0.52 0.19 27);
+  --diff-added: var(--color-emerald-700);
+}
+
+:root.dark {
+  --status-success: oklch(0.8 0.15 145);
+  --warning-subtle: oklch(0.3 0.055 85);
+  --warning-foreground: oklch(0.88 0.14 90);
+  --status-warning: oklch(0.82 0.15 80);
+  --status-danger: oklch(0.72 0.18 27);
+  --diff-added: var(--color-emerald-400);
+}

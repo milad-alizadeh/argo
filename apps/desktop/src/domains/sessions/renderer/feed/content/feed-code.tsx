@@ -24,7 +24,6 @@ export function FeedCode({ source, language }: { source: string; language?: stri
         rightSlot={
           <CodeBlockCopyButton
             aria-label={detectedLanguage ? `Copy ${detectedLanguage.label} code` : 'Copy code'}
-            className="size-7"
           />
         }
       />

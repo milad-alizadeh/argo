@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from './breadcrumb'
 
-const meta = { title: 'Foundations/Primitives/Breadcrumb', component: Breadcrumb } satisfies Meta<typeof Breadcrumb>
+const meta = { title: 'Design System/Primitives/Breadcrumb', component: Breadcrumb } satisfies Meta<typeof Breadcrumb>
 export default meta
 type Story = StoryObj<typeof meta>
 

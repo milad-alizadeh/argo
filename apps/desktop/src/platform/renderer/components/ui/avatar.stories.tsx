@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount } from './avatar'
 
-const meta = { title: 'Foundations/Primitives/Avatar', component: Avatar } satisfies Meta<typeof Avatar>
+const meta = { title: 'Design System/Primitives/Avatar', component: Avatar } satisfies Meta<typeof Avatar>
 export default meta
 type Story = StoryObj<typeof meta>
 

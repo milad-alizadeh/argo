@@ -28,7 +28,7 @@ export function ComposerAttachments() {
               })}
               onClick={() => dispatch({ type: 'attachment.removed', id: attachment.id })}
             >
-              <Icon name="close" />
+              <Icon className="text-muted-foreground" name="close" />
             </AttachmentAction>
           </AttachmentActions>
         </AttachmentChip>
