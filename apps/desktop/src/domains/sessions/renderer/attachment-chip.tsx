@@ -27,10 +27,12 @@ export function parseFilename(path: string): {
 export function AttachmentChip({
   path,
   failed = false,
+  variant = 'composer',
   children,
 }: {
   path: string
   failed?: boolean
+  variant?: 'composer' | 'prompt'
   children?: ReactNode
 }) {
   const { t } = useTranslation('sessions')
@@ -38,7 +40,7 @@ export function AttachmentChip({
   const { name, title, extension } = parseFilename(path)
   return (
     <Attachment
-      className="w-(--size-composer-attachment-chip-max)!"
+      className={variant === 'prompt' ? 'w-28!' : 'w-(--size-composer-attachment-chip-max)!'}
       orientation="vertical"
       size="default"
       state={failed ? 'error' : 'done'}

@@ -48,6 +48,7 @@ const meta = {
     running: false,
     posture: null,
     onJumpToLatestChange: fn(),
+    onStalledChange: fn(),
     onOpenEvidence: () => {},
     selectedSessionId: 'prose',
   },

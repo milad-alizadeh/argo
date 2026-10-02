@@ -56,7 +56,7 @@ export function FeedPrompt({
       {files.length === 0 ? null : (
         <div className="flex flex-wrap justify-end gap-(--spacing-tight)">
           {keyedAttachments(files).map(({ source, key }) => (
-            <AttachmentChip key={key} path={source} />
+            <AttachmentChip key={key} path={source} variant="prompt" />
           ))}
         </div>
       )}
