@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import type { Harness } from '@/harnesses/harness'
 import { HARNESS_PRESENTATIONS } from '@/harnesses/presentation-registry'
 import { contextZone } from './context-zone'
@@ -39,25 +39,13 @@ export function ContextDetails({
           ) : null}
         </div>
         {capacityReported ? (
-          <>
-            <div className="relative h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className="absolute inset-y-0 left-0 bg-foreground/70"
-                style={{ width: `${percentage}%` }}
-              />
-              <div className="absolute inset-y-0 w-px bg-card" style={{ left: '20%' }} />
-            </div>
-            <div className="flex justify-between type-body text-muted-foreground">
-              <span>
-                {t('composer.contextWindow.workingTarget', {
-                  count: Math.round(capacityTokens / 5_000) * 1000,
-                })}
-              </span>
-              <span>
-                {t('composer.contextWindow.current', { count: Math.round(usedTokens / 1000) })}
-              </span>
-            </div>
-          </>
+          <div className="relative h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="absolute inset-y-0 left-0 bg-foreground/70"
+              style={{ width: `${percentage}%` }}
+            />
+            <div className="absolute inset-y-0 w-px bg-card" style={{ left: '20%' }} />
+          </div>
         ) : (
           <p className="type-prose text-muted-foreground">
             {t('composer.contextWindow.unreported')}
@@ -80,12 +68,42 @@ export function ContextDetails({
               {t('composer.contextWindow.dumbZoneDescription')}
             </p>
           </div>
-        </div>
-        {capacityReported ? (
-          <p className="type-prose text-muted-foreground">
+          <p className="col-span-2 text-muted-foreground">
             {t('composer.contextWindow.description')}
           </p>
-        ) : null}
+          <p className="col-span-2 text-muted-foreground">
+            <Trans
+              ns="sessions"
+              i18nKey="composer.contextWindow.attribution"
+              values={{
+                matt: t('composer.contextWindow.mattPocock'),
+                dex: t('composer.contextWindow.dexHorthy'),
+              }}
+              components={{
+                matt: (
+                  <a
+                    className="underline underline-offset-2"
+                    href="https://www.youtube.com/watch?v=-QFHIoCo-Ko&t=192s"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t('composer.contextWindow.mattPocock')}
+                  </a>
+                ),
+                dex: (
+                  <a
+                    className="underline underline-offset-2"
+                    href="https://www.youtube.com/watch?v=rmvDxxNubIg&t=355s"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t('composer.contextWindow.dexHorthy')}
+                  </a>
+                ),
+              }}
+            />
+          </p>
+        </div>
       </div>
       {HarnessDetails ? <HarnessDetails capacityTokens={capacityTokens} /> : null}
     </>
