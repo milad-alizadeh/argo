@@ -74,13 +74,14 @@ export function saveSessionSubagentFacts(
   return Number(changes)
 }
 
+// Saves the Subagents discovery found under a Session. Returns the IDs it had not saved before.
 export function saveDiscoveredSessionSubagents(
   database: Database,
   sessionId: string,
   childIds: readonly string[],
-): number {
-  if (childIds.length === 0) return 0
-  const { changes } = database
+): string[] {
+  if (childIds.length === 0) return []
+  return database
     .insert(sessionSubagent)
     .values(
       childIds.map((subagentId) => ({
@@ -91,8 +92,9 @@ export function saveDiscoveredSessionSubagents(
       })),
     )
     .onConflictDoNothing()
-    .run()
-  return Number(changes)
+    .returning({ subagentId: sessionSubagent.subagentId })
+    .all()
+    .map((row) => row.subagentId)
 }
 
 export function storedSessionSubagents(

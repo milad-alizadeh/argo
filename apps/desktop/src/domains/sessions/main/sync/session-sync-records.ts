@@ -3,6 +3,7 @@ import { and, eq, inArray } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
+import { sessionSubagent } from '@/database/session-subagent/schema'
 import { workspace } from '@/database/workspace/schema'
 import type { SessionSubagentLink, SessionSummary } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
@@ -34,6 +35,16 @@ export function knownSessionIds(database: Database, harness: Harness): string[] 
     .where(eq(sessionTable.harness, harness))
     .all()
     .map((row) => row.nativeId)
+}
+
+export function knownSubagentIds(database: Database, harness: Harness): string[] {
+  return database
+    .selectDistinct({ subagentId: sessionSubagent.subagentId })
+    .from(sessionSubagent)
+    .innerJoin(sessionTable, eq(sessionTable.argoId, sessionSubagent.sessionId))
+    .where(eq(sessionTable.harness, harness))
+    .all()
+    .map((row) => row.subagentId)
 }
 
 function sessionRoots(database: Database): SessionRoot[] {
@@ -74,6 +85,15 @@ export function matchSessionsToProjects(
   return records.map((record) => withProjectMatch(roots, record))
 }
 
+function sessionRows(database: Database, harness: Harness, nativeIds: readonly string[]) {
+  if (nativeIds.length === 0) return []
+  return database
+    .select({ argoId: sessionTable.argoId, nativeId: sessionTable.nativeId })
+    .from(sessionTable)
+    .where(and(eq(sessionTable.harness, harness), inArray(sessionTable.nativeId, [...nativeIds])))
+    .all()
+}
+
 export function saveSessionBatch(
   database: Database,
   {
@@ -97,31 +117,21 @@ export function saveSessionBatch(
         children.push(nativeId)
         childrenByParent.set(parentNativeId, children)
       }
-      // A Session saved before discovery knew it was a subagent leaves the roster.
-      const childNativeIds = subagents.map(({ nativeId }) => nativeId)
-      for (const { argoId } of database
-        .delete(sessionTable)
-        .where(
-          and(eq(sessionTable.harness, harness), inArray(sessionTable.nativeId, childNativeIds)),
+      const linkedNativeIds: string[] = []
+      for (const { nativeId, argoId } of sessionRows(database, harness, [
+        ...childrenByParent.keys(),
+      ])) {
+        const linked = saveDiscoveredSessionSubagents(
+          database,
+          argoId,
+          childrenByParent.get(nativeId) ?? [],
         )
-        .returning({ argoId: sessionTable.argoId })
-        .all())
+        if (linked.length > 0) sessionIds.push(argoId)
+        linkedNativeIds.push(...linked)
+      }
+      // A saved Session newly linked as a subagent leaves the list, so its detail read changes too.
+      for (const { argoId } of sessionRows(database, harness, linkedNativeIds))
         sessionIds.push(argoId)
-      const parentRows = database
-        .select({ argoId: sessionTable.argoId, nativeId: sessionTable.nativeId })
-        .from(sessionTable)
-        .where(
-          and(
-            eq(sessionTable.harness, harness),
-            inArray(sessionTable.nativeId, [...childrenByParent.keys()]),
-          ),
-        )
-        .all()
-      for (const { nativeId, argoId } of parentRows)
-        if (
-          saveDiscoveredSessionSubagents(database, argoId, childrenByParent.get(nativeId) ?? []) > 0
-        )
-          sessionIds.push(argoId)
     }
     database.$client.exec('COMMIT')
     return sessionIds

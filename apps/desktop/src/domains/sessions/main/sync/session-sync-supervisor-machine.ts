@@ -25,7 +25,12 @@ import {
   sessionSyncStatusSchema,
 } from '../session-sync-status'
 import { sessionSyncMachine } from './session-sync-machine'
-import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
+import {
+  knownSessionIds,
+  knownSubagentIds,
+  matchSessionsToProjects,
+  saveSessionBatch,
+} from './session-sync-records'
 
 type RegisteredHarnesses = Partial<
   Record<
@@ -137,6 +142,7 @@ const sessionSyncActor = fromCallback<
       input: {
         harness,
         knownNativeIds: knownSessionIds(database, harness),
+        knownSubagentNativeIds: knownSubagentIds(database, harness),
         listSessionSummaries,
       },
     },

@@ -13,6 +13,7 @@ import {
 import { sessionSyncMachine } from './session-sync-machine'
 import {
   knownSessionIds,
+  knownSubagentIds,
   matchSessionsToProjects,
   saveSessionBatch as writeSessionBatch,
 } from './session-sync-records'
@@ -171,7 +172,11 @@ test('keeps the first committed batch when the second batch fails', async () => 
       actors: {
         fetch: fromPromise<
           SessionSummaryListResult,
-          { knownNativeIds: string[]; listSessionSummaries: SessionSummaryList }
+          {
+            knownNativeIds: string[]
+            knownSubagentNativeIds: string[]
+            listSessionSummaries: SessionSummaryList
+          }
         >(async () => ({ records, skipped: 0 })),
         save: fromPromise(async ({ input }) => {
           if (input.records[0]?.nativeId === 'native-50') {
@@ -186,6 +191,7 @@ test('keeps the first committed batch when the second batch fails', async () => 
       input: {
         harness: 'claude',
         knownNativeIds: [],
+        knownSubagentNativeIds: [],
         listSessionSummaries: async () => ({ records: [], skipped: 0 }),
       },
     },
@@ -241,7 +247,7 @@ test('keeps a live-saved Model and Effort when a later scan finds older ones', (
   }
 })
 
-test('takes a saved Session out of the roster once discovery finds it is a subagent', () => {
+test('links a saved Session once discovery finds it is a subagent, and keeps its row (#3084)', () => {
   const { client, database } = createDatabase()
   try {
     const [, childId] = saveSessionBatch(database, 'codex', [
@@ -249,21 +255,23 @@ test('takes a saved Session out of the roster once discovery finds it is a subag
       { nativeId: 'child' },
     ])
     saveSessionBatch(database, 'claude', [{ nativeId: 'child' }])
-    const [parentId, ...changed] = writeSessionBatch(database, {
-      harness: 'codex',
+    const batch = {
+      harness: 'codex' as const,
       records: [{ nativeId: 'parent' }],
       subagents: [
         { nativeId: 'child', parentNativeId: 'parent' },
         { nativeId: 'orphan-child', parentNativeId: 'unsaved-parent' },
       ],
-    })
+    }
+    const [parentId, ...changed] = writeSessionBatch(database, batch)
     assert.deepEqual(
       client
-        .prepare('SELECT harness, native_id FROM session ORDER BY harness')
+        .prepare('SELECT harness, native_id FROM session ORDER BY harness, native_id')
         .all()
         .map((row) => Object.assign({}, row)),
       [
         { harness: 'claude', native_id: 'child' },
+        { harness: 'codex', native_id: 'child' },
         { harness: 'codex', native_id: 'parent' },
       ],
     )
@@ -274,7 +282,10 @@ test('takes a saved Session out of the roster once discovery finds it is a subag
         .map((row) => Object.assign({}, row)),
       [{ session_id: parentId, subagent_id: 'child' }],
     )
-    assert.deepEqual(changed, [childId, parentId])
+    assert.deepEqual(changed, [parentId, childId])
+    assert.deepEqual(writeSessionBatch(database, batch), [parentId])
+    assert.deepEqual(knownSubagentIds(database, 'codex'), ['child'])
+    assert.deepEqual(knownSubagentIds(database, 'claude'), [])
   } finally {
     client.close()
   }

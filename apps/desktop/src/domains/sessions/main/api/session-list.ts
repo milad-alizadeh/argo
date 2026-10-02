@@ -226,6 +226,16 @@ function linkedTicketId(database: Database, source: LinkedTicketSource | null): 
   return sql`(${found})`
 }
 
+const parentSession = alias(sessionTable, 'parent_session')
+// A Session another Session of its Harness lists as a Subagent is that Session's child, not a row.
+function notListedAsSubagent(database: Database): SQL {
+  const children = database
+    .select({ harness: parentSession.harness, nativeId: sessionSubagent.subagentId })
+    .from(sessionSubagent)
+    .innerJoin(parentSession, eq(parentSession.argoId, sessionSubagent.sessionId))
+  return sql`(${sessionTable.harness}, ${sessionTable.nativeId}) not in ${children}`
+}
+
 // The stored Sessions `where` selects, with their linked Ticket, archive mark and match count.
 function storedSessionQuery(
   database: Database,
@@ -238,7 +248,7 @@ function storedSessionQuery(
     .leftJoin(sessionTicketLink, eq(sessionTicketLink.sessionId, sessionTable.argoId))
     .leftJoin(ticketContent, eq(ticketContent.ticketId, linkedTicketId(database, source)))
     .leftJoin(sessionArchive, eq(sessionArchive.sessionId, sessionTable.argoId))
-    .where(where)
+    .where(and(where, notListedAsSubagent(database)))
 }
 
 type StoredSessionRow = ReturnType<ReturnType<typeof storedSessionQuery>['all']>[number]

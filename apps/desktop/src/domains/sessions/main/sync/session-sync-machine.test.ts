@@ -13,10 +13,19 @@ const twoBatchRecords = Array.from({ length: SESSION_SYNC_BATCH_SIZE + 1 }, (_va
   customTitle: null,
 }))
 const listSessionSummaries: SessionSummaryList = async () => ({ records: [], skipped: 0 })
-const input = { harness: 'claude' as const, knownNativeIds: [], listSessionSummaries }
+const input = {
+  harness: 'claude' as const,
+  knownNativeIds: [],
+  knownSubagentNativeIds: [],
+  listSessionSummaries,
+}
 const fetchTwoBatchRecords = fromPromise<
   SessionSummaryListResult,
-  { knownNativeIds: string[]; listSessionSummaries: SessionSummaryList }
+  {
+    knownNativeIds: string[]
+    knownSubagentNativeIds: string[]
+    listSessionSummaries: SessionSummaryList
+  }
 >(async () => ({
   records: twoBatchRecords,
   skipped: 0,
@@ -143,7 +152,11 @@ test('fails after three fetch attempts', async () => {
       actors: {
         fetch: fromPromise<
           SessionSummaryListResult,
-          { knownNativeIds: string[]; listSessionSummaries: SessionSummaryList }
+          {
+            knownNativeIds: string[]
+            knownSubagentNativeIds: string[]
+            listSessionSummaries: SessionSummaryList
+          }
         >(async () => {
           attempts += 1
           throw new Error('Claude is unavailable.')

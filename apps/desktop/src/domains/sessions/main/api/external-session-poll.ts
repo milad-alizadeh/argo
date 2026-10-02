@@ -296,7 +296,8 @@ export class ExternalSessionPoll {
       tracked.subagentsRejected = rejected
       tracked.subagentsFailed = false
       if (
-        saveDiscoveredSessionSubagents(this.#context.database, sessionId, [...new Set(valid)]) > 0
+        saveDiscoveredSessionSubagents(this.#context.database, sessionId, [...new Set(valid)])
+          .length > 0
       )
         this.#context.changes.changed([sessionId])
     } catch (error) {

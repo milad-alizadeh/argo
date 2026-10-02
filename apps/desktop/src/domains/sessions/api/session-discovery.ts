@@ -13,6 +13,8 @@ export type SessionSummaryListResult = {
 export type SessionSummaryListInput = {
   // Stored Sessions the listing may omit, read one by one after it.
   knownNativeIds: readonly string[]
+  // Subagents stored under a Session, whose parent the listing need not look up again; none if absent.
+  knownSubagentNativeIds?: readonly string[]
 }
 
 export type SessionSummaryList = (

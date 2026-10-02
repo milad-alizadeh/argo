@@ -1,9 +1,9 @@
 {
   "producer": "codex-app-server",
   "version": "0.157.0",
-  "recordedAt": "2026-10-01",
+  "recordedAt": "2026-10-02T04:27:01Z",
   "payload": {
-    "$comment": "codex-cli 0.157.0 app-server answers for threads another process ran, recorded 2026-10-01 by the #2940 status spike: thread/read {includeTurns:false}, then thread/turns/list {limit:1} in the summary and full views. readNotLoaded: thread/read {includeTurns:false} for a thread whose writer lock is held but which has no rollout file yet, recorded 2026-10-01 for #3004. subagents: one thread/list {useStateDbOnly:true} item and its thread/read {includeTurns:false} per subAgent source (guardian review, thread_spawn), recorded 2026-10-02 from a Codex Desktop 0.159.2 home; the list leaves parentThreadId null, the read fills it.",
+    "$comment": "codex-cli 0.157.0 app-server answers for threads another process ran, recorded 2026-10-01 by the #2940 status spike: thread/read {includeTurns:false}, then thread/turns/list {limit:1} in the summary and full views. readNotLoaded: thread/read {includeTurns:false} for a thread whose writer lock is held but which has no rollout file yet, recorded 2026-10-01 for #3004. subagents: one thread/list {useStateDbOnly:true} item per subAgent source (guardian review, thread_spawn) and the guardian thread/read {includeTurns:false}, answered by the codex-cli 0.157.0 app-server at 2026-10-02T04:27:01Z (recordedAt) for threads Codex Desktop 0.159.2 and 0.147.0 wrote (each thread's cliVersion); the list leaves parentThreadId null, the read fills it. thread-read-subagents.json holds the spawned child's read.",
     "completed": {
       "read": {
         "thread": {
@@ -531,58 +531,6 @@
           "name": null,
           "daybreakEnabled": null,
           "turns": []
-        },
-        "read": {
-          "thread": {
-            "id": "01a0b56c-4e9f-73b2-b7b5-8d4688cba0ff",
-            "environments": null,
-            "extra": null,
-            "sessionId": "01a0b56c-4e9f-73b2-b7b5-8d4688cba0ff",
-            "forkedFromId": "01a0b56a-f594-7310-94b1-8f8830048372",
-            "parentThreadId": "01a0b56a-f594-7310-94b1-8f8830048372",
-            "preview": "Remove the word \"Called\" and Replace with \"Ran\" instead in codex feed",
-            "ephemeral": false,
-            "section": null,
-            "sectionEnteredAt": null,
-            "projectId": null,
-            "historyMode": "paginated",
-            "modelProvider": "openai",
-            "model": "gpt-5.6-terra",
-            "reasoningEffort": "medium",
-            "createdAt": 1789750169,
-            "updatedAt": 1789750309,
-            "recencyAt": 1789750285,
-            "status": {
-              "type": "notLoaded"
-            },
-            "path": "/Users/example/.codex/sessions/2026/09/18/rollout-2026-09-18T17-49-29-01a0b56c-4e9f-73b2-b7b5-8d4688cba0ff.jsonl",
-            "cwd": "/Users/example/project",
-            "cliVersion": "0.147.0",
-            "originator": "argo",
-            "source": {
-              "subAgent": {
-                "thread_spawn": {
-                  "parent_thread_id": "01a0b56a-f594-7310-94b1-8f8830048372",
-                  "depth": 1,
-                  "agent_path": "/root/standards_review",
-                  "agent_nickname": "Mill",
-                  "agent_role": null
-                }
-              }
-            },
-            "canAcceptDirectInput": null,
-            "threadSource": "subagent",
-            "agentNickname": "Mill",
-            "agentRole": null,
-            "gitInfo": {
-              "sha": "1061765b15dbcf7ae1c780b5e589f0c105418f40",
-              "branch": "main",
-              "originUrl": "https://github.com/example/project.git"
-            },
-            "name": null,
-            "daybreakEnabled": null,
-            "turns": []
-          }
         }
       }
     }

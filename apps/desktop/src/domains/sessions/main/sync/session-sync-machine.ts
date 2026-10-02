@@ -13,11 +13,13 @@ export const sessionSyncMachine = setup({
     input: {} as {
       harness: Harness
       knownNativeIds: string[]
+      knownSubagentNativeIds: string[]
       listSessionSummaries: SessionSummaryList
     },
     context: {} as {
       harness: Harness
       knownNativeIds: string[]
+      knownSubagentNativeIds: string[]
       listSessionSummaries: SessionSummaryList
       records: SessionSummary[]
       subagents: SessionSubagentLink[]
@@ -55,11 +57,13 @@ export const sessionSyncMachine = setup({
       SessionSummaryListResult,
       {
         knownNativeIds: string[]
+        knownSubagentNativeIds: string[]
         listSessionSummaries: SessionSummaryList
       }
     >(({ input }) =>
       input.listSessionSummaries({
         knownNativeIds: input.knownNativeIds,
+        knownSubagentNativeIds: input.knownSubagentNativeIds,
       }),
     ),
     save: fromPromise<
@@ -122,6 +126,7 @@ export const sessionSyncMachine = setup({
   context: ({ input }) => ({
     harness: input.harness,
     knownNativeIds: input.knownNativeIds,
+    knownSubagentNativeIds: input.knownSubagentNativeIds,
     listSessionSummaries: input.listSessionSummaries,
     records: [],
     subagents: [],
@@ -148,6 +153,7 @@ export const sessionSyncMachine = setup({
         src: 'fetch',
         input: ({ context }) => ({
           knownNativeIds: context.knownNativeIds,
+          knownSubagentNativeIds: context.knownSubagentNativeIds,
           listSessionSummaries: context.listSessionSummaries,
         }),
         onDone: [
