@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { isLiveStatusRow } from '@/domains/sessions/api/feed'
 import type { SessionFeedRow } from '../../types'
 export type Settled = {
   reading: {
@@ -10,7 +11,7 @@ export type Settled = {
 
 // A Turn status row follows its prompt and is no reply (#3161).
 export function awaitingAssistantReply(rows: readonly SessionFeedRow[]) {
-  const latest = rows.findLast((row) => !(row.shape === 'event' && row.event === 'liveStatus'))
+  const latest = rows.findLast((row) => !isLiveStatusRow(row))
   return latest?.shape === 'prose' && latest.role === 'user'
 }
 

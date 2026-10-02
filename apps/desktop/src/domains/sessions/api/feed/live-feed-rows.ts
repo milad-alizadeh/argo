@@ -3,7 +3,7 @@ import type { FeedContent, MediaSource } from '../feed-content'
 import type { SessionLiveEvent } from '../session-live-event'
 import type { BackgroundState } from './background-task-record'
 import { checkedDataImageUrl, dataImageUrl, fileImageUrl } from './feed-images'
-import type { SessionFeedRow } from './feed-rows'
+import { isLiveStatusRow, type SessionFeedRow } from './feed-rows'
 import { fileChangeRows } from './file-change-rows'
 import { derivedId } from './fingerprint'
 
@@ -522,10 +522,6 @@ function liveFeedRows(
   return promptsBeforeTheirStatus(rows)
 }
 
-function isStatusRow({ row }: LiveRow): boolean {
-  return row.shape === 'event' && row.event === 'liveStatus'
-}
-
 function isPromptRow({ row }: LiveRow): boolean {
   return row.shape === 'prose' && row.role === 'user'
 }
@@ -545,9 +541,9 @@ function promptsBeforeTheirStatus(rows: readonly LiveRow[]): LiveRow[] {
     while (start > 0 && ordered[start - 1]?.commandId === commandId) start -= 1
     const commandRows = ordered.splice(start)
     ordered.push(
-      ...commandRows.filter((row) => !isStatusRow(row)),
+      ...commandRows.filter(({ row }) => !isLiveStatusRow(row)),
       live,
-      ...commandRows.filter(isStatusRow),
+      ...commandRows.filter(({ row }) => isLiveStatusRow(row)),
     )
   }
   return ordered

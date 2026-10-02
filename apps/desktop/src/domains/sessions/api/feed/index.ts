@@ -10,7 +10,12 @@ export {
 } from './feed-reading'
 export { feedReadingRows } from './feed-reading-rows'
 export { FeedRowProjector, feedEntryRows, projectFeedRowEntries } from './feed-row-entries'
-export { type LiveActivity, liveActivitySchema, type SessionFeedRow } from './feed-rows'
+export {
+  isLiveStatusRow,
+  type LiveActivity,
+  liveActivitySchema,
+  type SessionFeedRow,
+} from './feed-rows'
 export {
   type FeedSubagent,
   feedSubagents,
