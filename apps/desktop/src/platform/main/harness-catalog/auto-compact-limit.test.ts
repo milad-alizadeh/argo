@@ -30,6 +30,12 @@ test('reads and writes the limit through the Harness that declares it', async ()
   await expect(caller.read({ harness: 'codex' })).resolves.toBe(120_000)
 })
 
+test('keeps an absent configured limit absent', async () => {
+  const caller = callerFor(() => ({ read: async () => null, write: async () => null }))
+  await expect(caller.read({ harness: 'codex' })).resolves.toBeNull()
+  await expect(caller.write({ harness: 'codex', limit: 120_000 })).resolves.toBeNull()
+})
+
 test('refuses a Harness without an auto-compact limit', async () => {
   const caller = callerFor(() => undefined)
   await expect(caller.read({ harness: 'claude' })).rejects.toThrow(

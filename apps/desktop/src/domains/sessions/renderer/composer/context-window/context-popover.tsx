@@ -141,9 +141,7 @@ export function ContextPopover({
       <PopoverContent align="end" side="top" className="w-(--size-session-popover) gap-3 p-4">
         <PopoverHeader className="gap-1">
           <PopoverTitle>{t('composer.contextWindow.title')}</PopoverTitle>
-          <PopoverDescription className="type-prose">
-            {t('composer.contextWindow.explanation')}
-          </PopoverDescription>
+          <PopoverDescription>{t('composer.contextWindow.explanation')}</PopoverDescription>
         </PopoverHeader>
         <ContextDetails
           capacityTokens={capacityTokens}

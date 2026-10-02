@@ -5,15 +5,8 @@ import { useCodexAutoCompactLimit } from './use-codex-auto-compact-limit'
 
 // The threshold lives in the person's own `config.toml`, custom per machine and never committed (#1904).
 export function CodexAutoCompact({ capacityTokens }: { capacityTokens: number | null }) {
-  const { t } = useTranslation('sessions')
-  const { limit, unreadable, write } = useCodexAutoCompactLimit()
-  if (unreadable) {
-    return (
-      <p className="border-t pt-3 type-body text-muted-foreground">
-        {t('composer.contextWindow.autoCompactUnreadable')}
-      </p>
-    )
-  }
+  const { limit, write } = useCodexAutoCompactLimit()
+  if (limit === null) return null
   return (
     <AutoCompactControl capacityTokens={capacityTokens} threshold={limit} setThreshold={write} />
   )

@@ -93,9 +93,8 @@
     "contextWindow": {
       "title": "Context window",
       "details": "Context details",
-      "explanation": "Context is the information the AI reads for its next reply. It includes instructions, tools, files, and conversation.",
+      "explanation": "Instructions, tools, files, and conversation the AI reads for its next reply.",
       "autoCompact": "Auto-compact",
-      "autoCompactUnreadable": "The auto-compact limit in this Harness config could not be read.",
       "threshold": "Threshold",
       "thresholdLabel": "Auto-compact threshold",
       "thresholdTokens": "Auto-compact threshold tokens",
@@ -104,14 +103,12 @@
       "capacity": "/ {{count}}k tokens",
       "used": "{{percentage}}% used · {{zone}}",
       "unreported": "This session did not report its context window.",
-      "description": "More context means more details compete for attention. The AI can miss instructions or repeat mistakes. Before the next task, compact (summarize) or start a new session with the key facts.",
+      "description": "<dex>{{dex}}</dex> treats 20% as a guide. Compact before the next task.",
       "smartZoneRange": "Smart Zone · Below 20%",
-      "smartZoneDescription": "Less information helps the AI focus on your task. Keep only the instructions and files that it needs.",
+      "smartZoneDescription": "Focused context helps the AI follow instructions.",
       "dumbZoneRange": "Dumb Zone · 20%+",
-      "dumbZoneDescription": "Extra history can distract the AI from your task, even when space remains. Remove details that it no longer needs.",
-      "mattPocock": "Matt Pocock",
+      "dumbZoneDescription": "Extra history can distract the AI, even with space left.",
       "dexHorthy": "Dex Horthy",
-      "attribution": "Argo uses 20% as a guide, not a fixed limit. <matt>{{matt}}</matt> explains these zones and credits <dex>{{dex}}</dex>.",
       "loadedContext": "Loaded context"
     },
     "turnConfiguration": {

@@ -1,13 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { trpc } from '@/platform/renderer/trpc-client'
-import { DEFAULT_AUTO_COMPACT_LIMIT } from '../auto-compact-limit'
 
 const target = { harness: 'codex' } as const
 
 // The main process reads and writes the limit in the person's own `config.toml`; the renderer keeps no copy.
 export function useCodexAutoCompactLimit(): {
-  limit: number
-  unreadable: boolean
+  limit: number | null
   write: (limit: number) => void
 } {
   const queryClient = useQueryClient()
@@ -18,8 +16,7 @@ export function useCodexAutoCompactLimit(): {
       queryClient.setQueryData(trpc.harnessAutoCompactLimitRead.queryKey(target), limit),
   })
   return {
-    limit: read.data ?? DEFAULT_AUTO_COMPACT_LIMIT,
-    unreadable: read.isError,
+    limit: read.isError ? null : (read.data ?? null),
     write: (limit) => write.mutate({ ...target, limit }),
   }
 }

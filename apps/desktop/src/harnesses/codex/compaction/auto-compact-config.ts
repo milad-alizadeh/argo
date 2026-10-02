@@ -1,7 +1,7 @@
 // The limit lives in the person's own Codex config; the app-server reads and writes it for Argo.
 import { z } from 'zod'
 import type { CodexRequest, ConfigWriteResponse } from '../app-server'
-import { autoCompactLimitSchema, DEFAULT_AUTO_COMPACT_LIMIT } from '../auto-compact-limit'
+import { autoCompactLimitSchema } from '../auto-compact-limit'
 
 const KEY = 'model_auto_compact_token_limit'
 
@@ -14,15 +14,15 @@ const configWriteSchema = z.object({
   status: z.enum(['ok', 'okOverridden']),
 }) satisfies z.ZodType<Pick<ConfigWriteResponse, 'status'>>
 
-function configuredLimit(response: unknown): number {
+function configuredLimit(response: unknown): number | null {
   const value = configReadSchema.parse(response).config[KEY]
-  if (value === null || value === undefined) return DEFAULT_AUTO_COMPACT_LIMIT
+  if (value === null || value === undefined) return null
   const parsed = autoCompactLimitSchema.safeParse(value)
   if (parsed.success) return parsed.data
   throw new Error(`${KEY} = ${value} in the Codex config is outside the range Argo can show.`)
 }
 
-export function readAutoCompactLimit(request: CodexRequest): Promise<number> {
+export function readAutoCompactLimit(request: CodexRequest): Promise<number | null> {
   return request('config/read', {}, configuredLimit)
 }
 
@@ -30,7 +30,7 @@ export function readAutoCompactLimit(request: CodexRequest): Promise<number> {
 export async function writeAutoCompactLimit(
   request: CodexRequest,
   chosen: number,
-): Promise<number> {
+): Promise<number | null> {
   const limit = autoCompactLimitSchema.parse(chosen)
   const written = await request(
     'config/value/write',

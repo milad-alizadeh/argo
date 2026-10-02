@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import {
+  makeStorybookAutoCompactLimitAbsent,
   makeStorybookAutoCompactLimitUnreadable,
   resetStorybookAutoCompactLimit,
   writtenAutoCompactLimits,
@@ -43,20 +44,30 @@ export const AutoCompactWritesToTheHarnessConfig: Story = {
   },
 }
 
-export const AutoCompactReportsAnUnreadableConfig: Story = {
-  beforeEach: makeStorybookAutoCompactLimitUnreadable,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: 'Context details' }))
+async function expectContextWithoutAutoCompact(canvasElement: HTMLElement) {
+  const trigger = within(canvasElement).getByRole('button', { name: 'Context details' })
+  await userEvent.click(trigger)
+  const body = within(document.body)
+  await waitFor(() => expect(body.getByText('74% used · Dumb Zone')).toBeVisible())
+  await expect(body.getByText('Smart Zone · Below 20%')).toBeVisible()
+  await expect(body.getByRole('link', { name: 'Dex Horthy' })).toBeVisible()
+  await expect(body.queryByText('Auto-compact')).toBeNull()
+  await expect(
+    body.queryByText('The auto-compact limit in this Harness config could not be read.'),
+  ).toBeNull()
+  await expect(body.queryByRole('slider', { name: 'Auto-compact threshold' })).toBeNull()
+  await expect(body.queryByRole('spinbutton', { name: 'Auto-compact threshold tokens' })).toBeNull()
+  expect(writtenAutoCompactLimits).toEqual([])
+}
 
-    const body = within(document.body)
-    const failure = await body.findByText(
-      'The auto-compact limit in this Harness config could not be read.',
-    )
-    await waitFor(() => expect(failure).toBeVisible())
-    await expect(body.queryByRole('slider', { name: 'Auto-compact threshold' })).toBeNull()
-    expect(writtenAutoCompactLimits).toEqual([])
-  },
+export const ContextWithUnreadableAutoCompactConfig: Story = {
+  beforeEach: makeStorybookAutoCompactLimitUnreadable,
+  play: async ({ canvasElement }) => expectContextWithoutAutoCompact(canvasElement),
+}
+
+export const ContextWithoutAutoCompactLimit: Story = {
+  beforeEach: makeStorybookAutoCompactLimitAbsent,
+  play: async ({ canvasElement }) => expectContextWithoutAutoCompact(canvasElement),
 }
 
 export const ExplainsContextZones: Story = {
@@ -70,16 +81,14 @@ export const ExplainsContextZones: Story = {
     await expect(body.getByText('Smart Zone · Below 20%')).toBeVisible()
     await expect(body.getByText('Dumb Zone · 20%+')).toBeVisible()
     await expect(body.queryByText(/Working target|Current ·/)).toBeNull()
-    await expect(body.getByText(/Before the next task, compact/)).toBeVisible()
-    for (const [name, href] of [
-      ['Matt Pocock', 'https://www.youtube.com/watch?v=-QFHIoCo-Ko&t=192s'],
-      ['Dex Horthy', 'https://www.youtube.com/watch?v=rmvDxxNubIg&t=355s'],
-    ]) {
-      const link = body.getByRole('link', { name })
-      await expect(link).toHaveAttribute('href', href)
-      await expect(link).toHaveAttribute('target', '_blank')
-      await expect(link).toHaveAttribute('rel', 'noopener noreferrer')
-    }
+    await expect(body.getByText(/treats 20% as a guide/)).toHaveTextContent(
+      'Dex Horthy treats 20% as a guide. Compact before the next task.',
+    )
+    const link = body.getByRole('link', { name: 'Dex Horthy' })
+    await expect(link).toHaveAttribute('href', 'https://www.youtube.com/watch?v=rmvDxxNubIg&t=355s')
+    await expect(link).toHaveAttribute('target', '_blank')
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    await expect(body.queryByRole('link', { name: 'Matt Pocock' })).toBeNull()
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(body.queryByText('Smart Zone · Below 20%')).toBeNull())
     await expect(trigger).toHaveFocus()
