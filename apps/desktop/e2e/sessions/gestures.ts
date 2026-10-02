@@ -41,7 +41,7 @@ type CreatedRow = { id: string; label: string; matchingRows: number }
 
 // A Session route sits under its Project: `#/projects/<id>/sessions/<route>`, and keeps the
 // Session List filter's query (`?status=all`) after it.
-async function waitForRoute(page: Page, route: string) {
+export async function waitForRoute(page: Page, route: string) {
   await page.waitForFunction((tail) => {
     const routed = window.location.hash.split('?')[0]
     return /^#\/projects\/[^/]+\/sessions\//.test(routed) && routed.endsWith(tail)

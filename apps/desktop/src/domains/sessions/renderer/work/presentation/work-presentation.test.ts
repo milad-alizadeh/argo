@@ -97,14 +97,15 @@ test.each([
     },
     t,
   )
+  if (!roster) throw new Error('The Roster has no Subagent entry.')
 
   expect({
     title: feed.title,
     state: feed.state,
     facts: feed.facts,
   }).toEqual({
-    title: roster?.title,
-    state: roster?.state,
-    facts: roster?.facts,
+    title: roster.title,
+    state: roster.state,
+    facts: roster.facts,
   })
 })

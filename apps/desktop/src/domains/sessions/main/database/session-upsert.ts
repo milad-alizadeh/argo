@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm'
+import { type SQL, sql } from 'drizzle-orm'
 import type { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
@@ -22,6 +22,17 @@ function definedMetadata(input: SessionUpsertInput): Partial<SessionUpsertMetada
 function reportedOnlyWhileEmpty(input: SessionUpsertInput) {
   const reported = input.turnConfiguration ? JSON.stringify(input.turnConfiguration) : null
   return { turnConfiguration: sql`coalesce(${sessionTable.turnConfiguration}, ${reported})` }
+}
+
+// The later of the stored activity time and a new one, so a late write never ages the row.
+export function laterActivityAt(activityAt: number | null): SQL<number | null> {
+  const stored = sessionTable.activityAt
+  return sql`coalesce(max(${stored}, ${activityAt}), ${stored}, ${activityAt})`
+}
+
+// A scan that read Harness history before a later live write never moves the row back in time.
+function activityOnlyForward({ activityAt }: SessionUpsertInput) {
+  return activityAt === undefined ? {} : { activityAt: laterActivityAt(activityAt) }
 }
 
 export function createSessionUpsert(database: Database): SessionUpsert {
@@ -53,6 +64,7 @@ export function createSessionUpsert(database: Database): SessionUpsert {
         set: {
           ...metadata,
           ...reportedOnlyWhileEmpty(validatedInput),
+          ...activityOnlyForward(validatedInput),
           harness: validatedInput.harness,
           updatedAt: sql`MAX(CAST(unixepoch('subsec') * 1000 AS INTEGER), ${sessionTable.updatedAt} + 1)`,
         },

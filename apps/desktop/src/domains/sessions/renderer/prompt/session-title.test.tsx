@@ -7,8 +7,7 @@ describe('formatting a Session title', () => {
   test('renders prompt links as plain title text', () => {
     const markup = renderToStaticMarkup(
       createElement(SessionTitle, {
-        session: { harness: 'claude' },
-        text: 'Read [the guide](https://example.com/guide) first.',
+        session: { harness: 'claude', name: 'Read [the guide](https://example.com/guide) first.' },
       }),
     )
 

@@ -195,6 +195,26 @@ test('a busy Session stays running past the quiet limit, since every listing is 
   expect((await rowOf(BUSY)).status).toBe('running')
 })
 
+// The sync saves rows during the run, before or after the first tick; neither order leaves one unknown (#3168).
+test('a Session saved during the run that the listing does not name shows idle after the next tick', async () => {
+  saved(IDLE)
+  agents.answer([])
+  await tickAndWrite()
+  saved(BUSY)
+  await tickAndWrite()
+  expect((await rowOf(IDLE)).status).toBe('idle')
+  expect((await rowOf(BUSY)).status).toBe('idle')
+})
+
+test('a Session Argo runs keeps its stored status through the tick that closes rows saved during the run', async () => {
+  saved(BUSY, { status: 'running' })
+  liveActors[BUSY] = liveSession('Sending', 'running', null)
+  agents.answer([])
+  await tickAndWrite()
+  delete liveActors[BUSY]
+  expect((await rowOf(BUSY)).status).toBe('running')
+})
+
 test('a listed Session with no row is discovered', async () => {
   agents.answer(agents.recorded())
   await tickAndWrite()

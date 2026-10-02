@@ -1,5 +1,5 @@
 import { stat } from 'node:fs/promises'
-import { and, eq, lte, ne, notInArray, type SQL, sql } from 'drizzle-orm'
+import { and, eq, gt, inArray, lte, ne, notInArray, type SQL, sql } from 'drizzle-orm'
 import { sessionTable } from '@/database/session/schema'
 import { projectFeedRowEntries } from '@/domains/sessions/api/feed'
 import { type Harness, type HarnessSession, harnessSessionKey } from '@/harnesses/harness'
@@ -117,8 +117,10 @@ const newTracked = (
 export class ExternalSessionPoll {
   readonly #context: ExternalSessionPollContext
   readonly #external: ReadonlyMap<Harness, ExternalSessions>
-  // The newest row before this run; an upsert keeps a row's rowid, and a new row gets a higher one.
-  readonly #lastEarlierRow: number
+  // Each Harness's newest row its listings have checked; an upsert keeps a row's rowid, and a new
+  // row gets a higher one.
+  // The watermark assumes rowids are never reused or renumbered.
+  readonly #checkedThrough = new Map<Harness, number>()
   // Each Harness's live Sessions at its last tick; absent before its first.
   readonly #live = new Map<Harness, Map<string, TrackedSession>>()
   // Sessions hooked before their Harness's first listing, which that listing takes over.
@@ -144,9 +146,6 @@ export class ExternalSessionPoll {
   constructor(context: ExternalSessionPollContext) {
     this.#context = context
     this.#external = new Map(context.harnesses.map(({ harness, external }) => [harness, external]))
-    this.#lastEarlierRow =
-      context.database.select({ rowid: sql<number | null>`max(rowid)` }).from(sessionTable).get()
-        ?.rowid ?? 0
   }
 
   start(): void {
@@ -237,6 +236,8 @@ export class ExternalSessionPoll {
   }
 
   async #tickHarness(harness: Harness, external: ExternalSessions): Promise<void> {
+    // A row saved after the listing may be a Session it missed, so the next listing closes it.
+    const newestRow = this.#newestRow()
     const list = await external.listLive()
     if (this.#stopped) return
     this.#reportRejected(harness, list.rejected)
@@ -261,7 +262,7 @@ export class ExternalSessionPoll {
     for (const [nativeId, tracked] of previous ?? [])
       if (!current.has(nativeId))
         this.#leave({ harness, nativeId }, tracked, external.readActivity !== undefined)
-    if (previous === undefined) this.#closeAll(harness, current)
+    this.#closeSaved(harness, current, newestRow)
   }
 
   async #indexSubagents(
@@ -489,18 +490,45 @@ export class ExternalSessionPoll {
     return this.#live.get(session.harness)?.get(session.nativeId)
   }
 
-  // The first tick closes every Session an earlier run saved and it does not find live, in one
-  // write. A live channel's own status outranks the stored one, so a Session Argo runs needs none.
-  #closeAll(harness: Harness, live: ReadonlyMap<string, TrackedSession>): void {
-    const conditions: SQL[] = [eq(sessionTable.harness, harness), ne(sessionTable.status, 'idle')]
+  #newestRow(): number {
+    return (
+      this.#context.database
+        .select({ rowid: sql<number | null>`max(rowid)` })
+        .from(sessionTable)
+        .get()?.rowid ?? 0
+    )
+  }
+
+  // Each listing closes, once, every row saved before it and since the last that it does not find
+  // live (#3168); a Session Argo runs is skipped, since its live channel owns its status.
+  #closeSaved(
+    harness: Harness,
+    live: ReadonlyMap<string, TrackedSession>,
+    newestRow: number,
+  ): void {
+    const checkedRow = this.#checkedThrough.get(harness) ?? 0
+    if (newestRow <= checkedRow) return
+    this.#checkedThrough.set(harness, newestRow)
+    const conditions: SQL[] = [
+      eq(sessionTable.harness, harness),
+      ne(sessionTable.status, 'idle'),
+      gt(sql`rowid`, checkedRow),
+      lte(sql`rowid`, newestRow),
+    ]
     if (live.size > 0) conditions.push(notInArray(sessionTable.nativeId, [...live.keys()]))
-    conditions.push(lte(sql`rowid`, this.#lastEarlierRow))
-    const closed = this.#context.database
+    const toClose = this.#context.database
+      .select({ id: sessionTable.argoId })
+      .from(sessionTable)
+      .where(and(...conditions))
+      .all()
+      .map(({ id }) => id)
+      .filter((id) => !this.#context.hasLiveChannel(id))
+    if (toClose.length === 0) return
+    this.#context.database
       .update(sessionTable)
       .set({ status: 'idle' })
-      .where(and(...conditions))
-      .returning({ id: sessionTable.argoId })
-      .all()
-    if (closed.length > 0) this.#context.changes.changed(closed.map(({ id }) => id))
+      .where(inArray(sessionTable.argoId, toClose))
+      .run()
+    this.#context.changes.changed(toClose)
   }
 }

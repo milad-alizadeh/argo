@@ -290,10 +290,14 @@ test('the first tick closes every Session an earlier run saved that it does not 
   expect((await row(OTHER)).status).toBe('idle')
 })
 
-test('a Session saved after startup keeps unknown through the first tick', async () => {
+// The sync saves rows during the run, before or after the first tick; neither order leaves one unknown (#3168).
+test('a Session saved during the run that no process has open shows idle after the next tick', async () => {
+  saved(RUNNING)
+  await tickAndWrite()
   saved(OTHER)
   await tickAndWrite()
-  expect((await row(OTHER)).status).toBe('unknown')
+  expect((await row(RUNNING)).status).toBe('idle')
+  expect((await row(OTHER)).status).toBe('idle')
 })
 
 test('a new Session with no row is discovered once, and its status lands once the row exists', async () => {
