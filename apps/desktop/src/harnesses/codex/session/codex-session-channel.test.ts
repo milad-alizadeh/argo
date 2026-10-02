@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
 import type { LiveSessionChannelEvent } from '@/harnesses/registration'
 import { recordedCodexNotifications as recorded } from '@/mocks/recordings/codex-app-server'
-import { mockCodexChannel, mockStartInput } from '../../../../mocks/cli/codex/mock-codex-channel'
+import {
+  mockCodexChannel,
+  mockLiveEvents,
+  mockStartInput,
+} from '../../../../mocks/cli/codex/mock-codex-channel'
 import type { CodexRequest, WireMessage } from '../app-server/codex-app-server-client'
 import type { openCodexSessionChannel } from './codex-session-channel'
 
@@ -502,13 +507,19 @@ test('unknown Codex item shapes are reported and counted', async () => {
   ])
 })
 
-test('Codex thread status reaches the Session status without repeats (ADR-0024)', async () => {
+// A channel over an app-server that starts `thread-1` and answers every Turn with `turn-1`.
+async function openOneTurnChannel() {
   const request = (async (method: string, _params: unknown, parse: (value: unknown) => unknown) =>
     parse(
       method === 'thread/start' ? { thread: { id: 'thread-1' } } : { turn: { id: 'turn-1' } },
     )) as CodexRequest
-  const { channel, events, notify } = mockCodexChannel(request)
+  const opened = mockCodexChannel(request)
   await new Promise((resolve) => setImmediate(resolve))
+  return opened
+}
+
+test('Codex thread status reaches the Session status without repeats (ADR-0024)', async () => {
+  const { channel, events, notify } = await openOneTurnChannel()
   const thread = (status: Record<string, unknown>, threadId = 'thread-1') =>
     notify({ method: 'thread/status/changed', params: { threadId, status } })
   thread({ type: 'active', activeFlags: [] })
@@ -530,4 +541,22 @@ test('Codex thread status reaches the Session status without repeats (ADR-0024)'
     ['running', 'permission', 'asking', 'running', 'idle', 'stopped', 'unknown'],
   )
   channel.close()
+})
+
+// A Codex Turn draws prompt, Running, reply, Idle, the order a Claude Turn draws (#3161).
+test('a completed Codex Turn draws Running before the reply and Idle after it', async () => {
+  const { channel, events, notify } = await openOneTurnChannel()
+  sampleMessages(notify)
+  notify({
+    method: 'turn/completed',
+    params: { threadId: 'thread-1', turn: { id: 'turn-1', status: 'completed' } },
+  })
+  channel.close()
+  assert.deepEqual(
+    projectLiveFeedRows([], mockLiveEvents(events)).flatMap((row) => {
+      if (row.shape === 'event' && row.event === 'liveStatus') return [row.text]
+      return row.shape === 'prose' ? [row.role] : []
+    }),
+    ['user', 'running', 'assistant', 'idle'],
+  )
 })

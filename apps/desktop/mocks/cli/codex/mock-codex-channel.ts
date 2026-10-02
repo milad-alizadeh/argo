@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
 import type {
   CodexRequest,
@@ -56,4 +57,19 @@ export function mockCodexChannel(
     },
     subscribed: () => listener !== undefined,
   }
+}
+
+// The channel's Feed bodies as the live events a Session records, numbered in emit order.
+export function mockLiveEvents(events: readonly LiveSessionChannelEvent[]): SessionLiveEvent[] {
+  return events.flatMap((event, index): SessionLiveEvent[] =>
+    event.type === 'feed'
+      ? [
+          {
+            ...event.body,
+            sessionId: '00000000-0000-4000-8000-000000000001',
+            sequence: index + 1,
+          } as SessionLiveEvent,
+        ]
+      : [],
+  )
 }

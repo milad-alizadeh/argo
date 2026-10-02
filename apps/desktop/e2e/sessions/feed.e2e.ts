@@ -5,6 +5,8 @@
 // one it gets, rather than living in a second curated file (#e2e-real-cheap-models).
 import { rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import type { Page } from 'playwright-core'
+import type { Harness } from '@/harnesses/harness'
 import { RECORDED_PROMPTS } from '../../mocks/cli/recorded-prompts'
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
@@ -37,6 +39,7 @@ import { openSessionByClick } from './gestures'
 import { sessionSyncHoldFile } from './packaged-session-harness'
 import { sessionDetails, sessionRows } from './page-trpc'
 import { assertVendorFeedCorpus, readRealVendorCorpus } from './real-harness/vendor-feed-corpus'
+import type { SessionHarnessBackend } from './session-harness-backend'
 import { expect, test } from './session-proof-run'
 
 test.describe('with no Project selected', () => {
@@ -197,22 +200,55 @@ test.describe('with the real Claude SDK history', () => {
   })
 })
 
+// A new Session's reply, finished once the Session List reads it idle.
+async function replyUntilIdle(
+  page: Page,
+  backend: SessionHarnessBackend,
+  reply: { harness: Harness; prompt: string },
+) {
+  const sessionId = await proveSessionCreatedByClick(page, backend, reply)
+  await expect
+    .poll(async () => (await sessionRows(page)).find((row) => row.id === sessionId)?.status)
+    .toBe('idle')
+}
+
 // Hook and lifecycle frames update a Session but draw no Feed row, for each Harness alike (#3003).
 test('session-feed-hides-lifecycle-events', async ({ session, backend }) => {
   const page = session.page()
   for (const harness of ['claude', 'codex'] as const) {
-    const sessionId = await proveSessionCreatedByClick(page, backend, {
+    await replyUntilIdle(page, backend, {
       harness,
       prompt: `Reply once for the ${harness} lifecycle proof.`,
     })
-    await expect
-      .poll(async () => (await sessionRows(page)).find((row) => row.id === sessionId)?.status)
-      .toBe('idle')
     const feed = page.locator(ACTIVE_FEED)
     await expect(feed.locator('[data-feed-row]').first()).toBeVisible()
     await expect(feed.getByText('Unsupported item')).toHaveCount(0)
     await expect(feed.getByText('Status updated')).toHaveCount(0)
   }
+})
+
+// After a reply, each Harness draws its prompt, status and reply rows in the same order (#3161).
+test('session-feed-status-parity', async ({ session, backend }) => {
+  const page = session.page()
+  const drawn: Record<string, string[]> = {}
+  for (const harness of ['claude', 'codex'] as const) {
+    await replyUntilIdle(page, backend, {
+      harness,
+      prompt: `Reply once for the ${harness} status parity proof.`,
+    })
+    const feed = page.locator(ACTIVE_FEED)
+    await expect(feed.getByText(/^Session status\s*Idle$/)).toBeVisible()
+    drawn[harness] = await feed.locator('[data-feed-row]').evaluateAll((rows) =>
+      rows.flatMap((row) => {
+        const role = row.getAttribute('data-role')
+        if (role !== null) return [role]
+        const text = row.textContent ?? ''
+        return text.startsWith('Session status') ? [text] : []
+      }),
+    )
+  }
+  expect(drawn.claude).toEqual(['user', 'Session statusRunning', 'assistant', 'Session statusIdle'])
+  expect(drawn.codex).toEqual(drawn.claude)
 })
 
 // A skip that reads only the worker's backend decides before the case launches anything.

@@ -440,7 +440,12 @@ export function rowKey(row: SessionFeedRow): string {
 }
 
 export type IndexedRows = { rows: SessionFeedRow[]; index: Map<string, number> }
-type LiveRow = { key: string; row: SessionFeedRow; sequence: number }
+type LiveRow = {
+  key: string
+  row: SessionFeedRow
+  sequence: number
+  turnId: string | null
+}
 type ProjectionState = {
   questionCalls: ReadonlySet<string>
   tools: Map<string, Extract<FeedContent, { kind: 'tool' }>>
@@ -511,9 +516,38 @@ function liveFeedRows(
       key,
       row,
       sequence: event.sequence,
+      turnId: event.turnId,
     }))
   }
-  return rows
+  return promptsBeforeTurnStatus(rows)
+}
+
+function isStatusRow({ row }: LiveRow): boolean {
+  return row.shape === 'event' && row.event === 'liveStatus'
+}
+
+function isPromptRow({ row }: LiveRow): boolean {
+  return row.shape === 'prose' && row.role === 'user'
+}
+
+// A Turn's status rows follow its prompt, whichever its Harness reports first (#3161).
+function promptsBeforeTurnStatus(rows: readonly LiveRow[]): LiveRow[] {
+  const ordered: LiveRow[] = []
+  for (const live of rows) {
+    if (live.turnId === null || !isPromptRow(live)) {
+      ordered.push(live)
+      continue
+    }
+    let start = ordered.length
+    while (start > 0) {
+      const previous = ordered[start - 1]
+      if (previous === undefined || previous.turnId !== live.turnId || isPromptRow(previous)) break
+      start -= 1
+    }
+    const turn = ordered.splice(start)
+    ordered.push(...turn.filter((row) => !isStatusRow(row)), live, ...turn.filter(isStatusRow))
+  }
+  return ordered
 }
 
 // Live events in order, the tool calls their Questions stand for, and the last settled sequence.

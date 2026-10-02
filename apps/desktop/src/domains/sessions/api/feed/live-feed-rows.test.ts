@@ -29,12 +29,35 @@ function status(sequence: number, value: 'running' | 'idle'): SessionLiveEvent {
   }
 }
 
-test('updates one Codex Turn status row by vendor identity', () => {
-  const running = { ...status(1, 'running'), vendorEventId: 'turn-1' }
-  const idle = { ...status(2, 'idle'), vendorEventId: 'turn-1' }
+test('updates one status row by vendor identity', () => {
+  const running = { ...status(1, 'running'), vendorEventId: 'item-1' }
+  const idle = { ...status(2, 'idle'), vendorEventId: 'item-1' }
   expect(projectLiveFeedRows([], [running, idle])).toMatchObject([
-    { id: 'status:turn-1', text: 'idle' },
+    { id: 'status:item-1', text: 'idle' },
   ])
+})
+
+test('draws a Turn prompt before the Turn status its Harness reported first', () => {
+  const prompt: FeedContent = { id: 'prompt-1', kind: 'message', role: 'user', text: 'Go' }
+  const reply: FeedContent = { id: 'reply-1', kind: 'message', role: 'assistant', text: 'Done' }
+  const drawn = (events: SessionLiveEvent[]) =>
+    projectLiveFeedRows([], events).map((row) =>
+      'role' in row ? row.role : 'text' in row && row.text,
+    )
+  const promptFirst = [
+    content(1, prompt),
+    status(2, 'running'),
+    content(3, reply),
+    status(4, 'idle'),
+  ]
+  const statusFirst = [
+    status(1, 'running'),
+    content(2, prompt),
+    content(3, reply),
+    status(4, 'idle'),
+  ]
+  expect(drawn(statusFirst)).toEqual(['user', 'running', 'assistant', 'idle'])
+  expect(drawn(statusFirst)).toEqual(drawn(promptFirst))
 })
 
 function question(
