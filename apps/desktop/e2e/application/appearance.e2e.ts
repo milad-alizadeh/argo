@@ -1,11 +1,10 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { ElectronApplication } from 'playwright-core'
+import nativeThemeBackgrounds from '@/platform/contract/native-theme-backgrounds.json'
 import { closeApplication } from '../application-under-test'
 import { test as base, expect } from '../packaged-proof'
 import { launch, prepare } from '../projects/fixtures/project.fixture'
-
-const defaultNativeBackgrounds = { light: '#fafafa', dark: '#09090b' } as const
 
 const test = base.extend<{
   appearanceDocument: string | undefined
@@ -50,7 +49,7 @@ async function selectPreferences(application: ElectronApplication) {
     await application.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows()[0]?.getBackgroundColor().toLowerCase(),
     ),
-  ).toBe(defaultNativeBackgrounds.light)
+  ).toBe(nativeThemeBackgrounds.default.light)
   await page.getByRole('button', { name: 'Settings', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Appearance', exact: true })
   await dialog.getByRole('radio', { name: 'Catppuccin', exact: true }).click()
@@ -108,7 +107,7 @@ async function synchronizeWindows(application: ElectronApplication) {
         BrowserWindow.getAllWindows().map((window) => window.getBackgroundColor().toLowerCase()),
       ),
     )
-    .toEqual([defaultNativeBackgrounds.dark, defaultNativeBackgrounds.dark])
+    .toEqual([nativeThemeBackgrounds.default.dark, nativeThemeBackgrounds.default.dark])
 }
 
 async function systemAndRejection(application: ElectronApplication) {

@@ -2,6 +2,8 @@ import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { AccountState, AccountSummary } from '@/domains/accounts/contract/contract'
+import { StatusBadge } from '@/platform/renderer/components/design-system/status-badge'
+import { dangerActionRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
@@ -10,11 +12,11 @@ import { providerPresentation } from '@/providers/presentation-registry'
 // How each Account state draws: its badge, and the note saying why, which a connected Account has
 // no need of.
 const STATE_PRESENTATION = {
-  connected: { variant: 'secondary', note: null },
-  expired: { variant: 'destructive', note: 'note.expired' },
-  revoked: { variant: 'destructive', note: 'note.revoked' },
-  unreadable: { variant: 'destructive', note: 'note.unreadable' },
-} as const satisfies Record<AccountState, { variant: string; note: string | null }>
+  connected: { tone: null, note: null },
+  expired: { tone: 'danger', note: 'note.expired' },
+  revoked: { tone: 'danger', note: 'note.revoked' },
+  unreadable: { tone: 'danger', note: 'note.unreadable' },
+} as const satisfies Record<AccountState, { tone: 'danger' | null; note: string | null }>
 
 export type AccountRowProps = {
   account: AccountSummary
@@ -61,7 +63,13 @@ function ConfirmDisconnect({ account, onDisconnect, onKeep, busy }: ConfirmProps
           : t(`confirm.${provider}`, { login, count: connections.length })}
       </p>
       <div className="flex gap-(--spacing-shell-item)">
-        <Button disabled={busy} onClick={onDisconnect} size="sm" variant="destructive">
+        <Button
+          className={dangerActionRecipe}
+          disabled={busy}
+          onClick={onDisconnect}
+          size="sm"
+          variant="ghost"
+        >
           {t('confirm.disconnect')}
         </Button>
         <Button data-focus-rescue disabled={busy} onClick={onKeep} size="sm" variant="ghost">
@@ -86,7 +94,8 @@ export function AccountRow({ account, busy, onDisconnect, onReconnect }: Account
   // Asking lands on Keep, the harmless answer, and answering lands back on Disconnect….
   useFocusRescue(row, confirming)
   const { name } = providerPresentation(account.provider)
-  const { variant, note } = STATE_PRESENTATION[account.state]
+  const { tone, note } = STATE_PRESENTATION[account.state]
+  const stateLabel = t(`state.${account.state}`)
   const reason = note ? t(note, { provider: name }) : null
   return (
     <li
@@ -101,7 +110,11 @@ export function AccountRow({ account, busy, onDisconnect, onReconnect }: Account
             {account.workspace}
           </span>
         ) : null}
-        <Badge variant={variant}>{t(`state.${account.state}`)}</Badge>
+        {tone === null ? (
+          <Badge variant="secondary">{stateLabel}</Badge>
+        ) : (
+          <StatusBadge tone={tone}>{stateLabel}</StatusBadge>
+        )}
         <span className="flex-1" />
         {confirming ? null : (
           <Button data-focus-rescue onClick={() => setConfirming(true)} size="sm" variant="ghost">

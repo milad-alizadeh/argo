@@ -73,7 +73,7 @@ export const Accounts: Story = {
     await userEvent.click(within(row).getByRole('button', { name: 'Disconnect' }))
     await expect(args.onDisconnect).toHaveBeenCalledWith('github:583231')
     const revokedRow = canvas.getByRole('listitem', { name: 'GitHub Account hubot' })
-    await expect(revokedRow).toHaveTextContent('Access revoked')
+    await expect(within(revokedRow).getByText('Access revoked')).toBeVisible()
     await expect(revokedRow).toHaveTextContent('No Project reads Tickets through this Account.')
     await userEvent.click(within(revokedRow).getByRole('button', { name: 'Reconnect' }))
     await expect(args.signIn.start).toHaveBeenCalledWith('github')
