@@ -35,7 +35,7 @@ import { proveSessionWorktree } from './cases/worktree.case'
 import { ACTIVE_FEED } from './feed-selectors'
 import { appendProse } from './fixtures/feed.fixture'
 import { writeWindowFillerSessions } from './fixtures/session-list-window.fixture'
-import { openSessionByClick } from './gestures'
+import { openSessionByClick, sendFromComposer } from './gestures'
 import { sessionSyncHoldFile } from './packaged-session-harness'
 import { sessionDetails, sessionRows } from './page-trpc'
 import { assertVendorFeedCorpus, readRealVendorCorpus } from './real-harness/vendor-feed-corpus'
@@ -227,7 +227,34 @@ test('session-feed-hides-lifecycle-events', async ({ session, backend }) => {
   }
 })
 
-// After a reply, each Harness draws its prompt, status and reply rows in the same order (#3161).
+type FeedLabelRecorder = { feedLabelObserver?: MutationObserver; feedLabelSamples?: string[][] }
+
+// Records the Feed's row labels on every DOM change, so a short-lived misorder is caught too.
+async function recordFeedLabels(page: Page) {
+  await page.locator(ACTIVE_FEED).evaluate((feed) => {
+    const labels = () =>
+      [...feed.querySelectorAll('[data-feed-row]')].flatMap((row) => {
+        const role = row.getAttribute('data-role')
+        if (role !== null) return [role]
+        const parts = [...row.querySelectorAll('[data-slot="feed-event"] > span')]
+        const [label, status] = parts.map((part) => part.textContent)
+        return label === 'Session status' && status !== undefined ? [status] : []
+      })
+    const samples = [labels()]
+    const recorder = window as unknown as FeedLabelRecorder
+    recorder.feedLabelObserver?.disconnect()
+    recorder.feedLabelObserver = new MutationObserver(() => samples.push(labels()))
+    recorder.feedLabelObserver.observe(feed, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    })
+    recorder.feedLabelSamples = samples
+  })
+  return () => page.evaluate(() => (window as unknown as FeedLabelRecorder).feedLabelSamples ?? [])
+}
+
+// Both Harnesses draw each Turn as prompt, Running, reply, Idle, and never a status first (#3161).
 test('session-feed-status-parity', async ({ session, backend }) => {
   const page = session.page()
   const drawn: Partial<Record<Harness, string[]>> = {}
@@ -238,17 +265,18 @@ test('session-feed-status-parity', async ({ session, backend }) => {
     })
     const feed = page.locator(ACTIVE_FEED)
     await expect(feed.getByText(/^Session status\s*Idle$/)).toBeVisible()
-    drawn[harness] = await feed.locator('[data-feed-row]').evaluateAll((rows) =>
-      rows.flatMap((row) => {
-        const role = row.getAttribute('data-role')
-        if (role !== null) return [role]
-        const parts = [...row.querySelectorAll('[data-slot="feed-event"] > span')]
-        const [label, status] = parts.map((part) => part.textContent)
-        return label === 'Session status' && status !== undefined ? [status] : []
-      }),
+    const readLabels = await recordFeedLabels(page)
+    await sendFromComposer(page, `Reply again for the ${harness} status parity proof.`)
+    await expect(feed.getByText(/^Session status\s*Idle$/)).toHaveCount(2)
+    const samples = await readLabels()
+    const statusBeforePrompt = samples.filter((labels) =>
+      labels.some((label, index) => label === 'Running' && labels[index - 1] !== 'user'),
     )
+    expect(statusBeforePrompt).toEqual([])
+    drawn[harness] = samples.at(-1)
   }
-  expect(drawn.claude).toEqual(['user', 'Running', 'assistant', 'Idle'])
+  const turn = ['user', 'Running', 'assistant', 'Idle']
+  expect(drawn.claude).toEqual([...turn, ...turn])
   expect(drawn.codex).toEqual(drawn.claude)
 })
 

@@ -445,6 +445,7 @@ type LiveRow = {
   row: SessionFeedRow
   sequence: number
   commandId: string | null
+  vendorEventId: string | null
 }
 type ProjectionState = {
   questionCalls: ReadonlySet<string>
@@ -517,36 +518,44 @@ function liveFeedRows(
       row,
       sequence: event.sequence,
       commandId: event.commandId,
+      vendorEventId: event.vendorEventId,
     }))
   }
   return promptsBeforeTheirStatus(rows)
 }
 
-function isPromptRow({ row }: LiveRow): boolean {
-  return row.shape === 'prose' && row.role === 'user'
-}
-
-// A command's status rows follow its first prompt, whichever its Harness reports first (#3161).
+// A command's status rows wait for its first other event, its prompt, and follow that event's rows (#3161).
 function promptsBeforeTheirStatus(rows: readonly LiveRow[]): LiveRow[] {
   const ordered: LiveRow[] = []
-  const prompted = new Set<string>()
+  const held = new Map<string, LiveRow[]>()
+  const opened = new Set<string>()
+  let opening: { commandId: string; first: LiveRow } | null = null
   for (const live of rows) {
-    const { commandId } = live
-    if (commandId === null || !isPromptRow(live) || prompted.has(commandId)) {
-      ordered.push(live)
-      continue
+    if (opening !== null && !sameEvent(opening.first, live)) {
+      ordered.push(...(held.get(opening.commandId) ?? []))
+      opening = null
     }
-    prompted.add(commandId)
-    let start = ordered.length
-    while (start > 0 && ordered[start - 1]?.commandId === commandId) start -= 1
-    const commandRows = ordered.splice(start)
-    ordered.push(
-      ...commandRows.filter(({ row }) => !isLiveStatusRow(row)),
-      live,
-      ...commandRows.filter(({ row }) => isLiveStatusRow(row)),
-    )
+    const { commandId } = live
+    if (commandId === null || opened.has(commandId)) ordered.push(live)
+    else if (isLiveStatusRow(live.row)) held.set(commandId, [...(held.get(commandId) ?? []), live])
+    else {
+      opened.add(commandId)
+      ordered.push(live)
+      opening = { commandId, first: live }
+    }
   }
+  if (opening !== null) ordered.push(...(held.get(opening.commandId) ?? []))
   return ordered
+}
+
+// Rows one vendor event drew, such as a prompt's skill references and its text.
+function sameEvent(first: LiveRow, next: LiveRow): boolean {
+  return (
+    first.vendorEventId !== null &&
+    next.vendorEventId === first.vendorEventId &&
+    next.commandId === first.commandId &&
+    !isLiveStatusRow(next.row)
+  )
 }
 
 // Live events in order, the tool calls their Questions stand for, and the last settled sequence.
