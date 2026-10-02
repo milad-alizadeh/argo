@@ -1,6 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { backlog, longBacklog, prototype, standalone, wayfinder } from '@/mocks/tickets/renderer-models'
+import {
+  backlog,
+  longBacklog,
+  prototype,
+  standalone,
+  wayfinder,
+} from '@/mocks/tickets/renderer-models'
 import { TicketList } from './ticket-list'
 
 const parent = wayfinder()

@@ -86,7 +86,6 @@
         "mermaid": "12.0.0",
         "msw": "^2",
         "playwright-core": "1.63.0",
-        "postcss": "8.5.28",
         "react": "19.2.1",
         "react-dom": "19.2.1",
         "react-i18next": "^17.0.13",

@@ -134,6 +134,38 @@ function expectNewSessionIconAligned(canvas: ReturnType<typeof within>, row: HTM
   )
 }
 
+async function renameDiscoveredSession(canvas: ReturnType<typeof within>) {
+  const row = await canvas.findByRole('button', { name: /Read the Session transcript/ })
+  await userEvent.pointer({ keys: '[MouseRight]', target: row })
+  const rename = await within(document.body).findByRole('menuitem', { name: 'Rename' })
+  await userEvent.click(rename)
+  const dialog = within(document.body).getByRole('dialog', { name: 'Rename Session' })
+  const input = within(dialog).getByRole('textbox', { name: 'Name' })
+  await expect(input).toHaveValue('Read the Session transcript')
+  await userEvent.clear(input)
+  await userEvent.keyboard('{Enter}')
+  await expect(within(dialog).getByRole('alert')).toHaveTextContent(
+    'Enter a name for this Session.',
+  )
+  await expect(input).toHaveAttribute('aria-invalid', 'true')
+  await expect(input).toHaveAttribute('aria-describedby', 'session-name-error')
+  await expect(host.updates).toHaveLength(0)
+  await userEvent.type(input, '  Keep the Session list stable\n')
+  await userEvent.keyboard('{Enter}')
+  await expect(
+    await canvas.findByRole('button', { name: /Keep the Session list stable/ }),
+  ).toBeInTheDocument()
+  await waitFor(() =>
+    expect(canvas.getByRole('button', { name: /Keep the Session list stable/ })).toHaveFocus(),
+  )
+  await expect(host.updates).toEqual([
+    { sessionIds: ['prose'], title: '  Keep the Session list stable' },
+  ])
+  await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
+    `${SESSIONS_ROUTE}/second-session`,
+  )
+}
+
 export const Discovered: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -160,34 +192,7 @@ export const Discovered: Story = {
     await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
       `${SESSIONS_ROUTE}/second-session`,
     )
-    await userEvent.pointer({ keys: '[MouseRight]', target: row })
-    const rename = await within(document.body).findByRole('menuitem', { name: 'Rename' })
-    await userEvent.click(rename)
-    const dialog = within(document.body).getByRole('dialog', { name: 'Rename Session' })
-    const input = within(dialog).getByRole('textbox', { name: 'Name' })
-    await expect(input).toHaveValue('Read the Session transcript')
-    await userEvent.clear(input)
-    await userEvent.keyboard('{Enter}')
-    await expect(within(dialog).getByRole('alert')).toHaveTextContent(
-      'Enter a name for this Session.',
-    )
-    await expect(input).toHaveAttribute('aria-invalid', 'true')
-    await expect(input).toHaveAttribute('aria-describedby', 'session-name-error')
-    await expect(host.updates).toHaveLength(0)
-    await userEvent.type(input, '  Keep the Session list stable\n')
-    await userEvent.keyboard('{Enter}')
-    await expect(
-      await canvas.findByRole('button', { name: /Keep the Session list stable/ }),
-    ).toBeInTheDocument()
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: /Keep the Session list stable/ })).toHaveFocus(),
-    )
-    await expect(host.updates).toEqual([
-      { sessionIds: ['prose'], title: '  Keep the Session list stable' },
-    ])
-    await expect(canvas.getByLabelText('Session route')).toHaveTextContent(
-      `${SESSIONS_ROUTE}/second-session`,
-    )
+    await renameDiscoveredSession(canvas)
     await expect(
       canvas.getAllByRole('button').filter((button) => button.dataset.sessionId),
     ).toHaveLength(2)

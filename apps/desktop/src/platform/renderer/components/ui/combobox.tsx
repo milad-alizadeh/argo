@@ -1,10 +1,9 @@
-import * as React from 'react'
 import { Combobox as ComboboxPrimitive } from '@base-ui/react'
+import { CaretDownIcon, CheckIcon, XIcon } from '@phosphor-icons/react'
 import { cn } from 'cn'
-
+import * as React from 'react'
 import { Button } from './button'
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from './input-group'
-import { CaretDownIcon, XIcon, CheckIcon } from '@phosphor-icons/react'
 
 const Combobox = ComboboxPrimitive.Root
 
@@ -44,10 +43,12 @@ function ComboboxInput({
   disabled = false,
   showTrigger = true,
   showClear = false,
+  triggerProps,
   ...props
 }: ComboboxPrimitive.Input.Props & {
   showTrigger?: boolean
   showClear?: boolean
+  triggerProps?: Pick<ComboboxPrimitive.Trigger.Props, 'aria-label' | 'tabIndex'>
 }) {
   return (
     <InputGroup className={cn('w-auto', className)}>
@@ -55,6 +56,7 @@ function ComboboxInput({
       <InputGroupAddon align="inline-end">
         {showTrigger && (
           <InputGroupButton
+            {...triggerProps}
             size="icon-xs"
             variant="ghost"
             render={<ComboboxTrigger />}
@@ -246,18 +248,18 @@ function useComboboxAnchor() {
 
 export {
   Combobox,
-  ComboboxInput,
-  ComboboxContent,
-  ComboboxList,
-  ComboboxItem,
-  ComboboxGroup,
-  ComboboxLabel,
-  ComboboxCollection,
-  ComboboxEmpty,
-  ComboboxSeparator,
-  ComboboxChips,
   ComboboxChip,
+  ComboboxChips,
   ComboboxChipsInput,
+  ComboboxCollection,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxGroup,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxLabel,
+  ComboboxList,
+  ComboboxSeparator,
   ComboboxTrigger,
   ComboboxValue,
   useComboboxAnchor,

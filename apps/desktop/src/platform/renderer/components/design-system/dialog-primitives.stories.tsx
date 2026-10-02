@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { Button } from '@/platform/renderer/components/ui/button'
 import {
-  AlertDialog as RegistryAlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
@@ -11,31 +9,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/platform/renderer/components/ui/alert-dialog'
+  AlertDialog as RegistryAlertDialog,
+} from '../ui/alert-dialog'
+import { Button } from '../ui/button'
 import {
-  Card as RegistryCard,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/platform/renderer/components/ui/card'
+  Card as RegistryCard,
+} from '../ui/card'
 import {
-  Dialog as RegistryDialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/platform/renderer/components/ui/dialog'
+  Dialog as RegistryDialog,
+} from '../ui/dialog'
 import {
-  Drawer as RegistryDrawer,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from '@/platform/renderer/components/ui/drawer'
+  Drawer as RegistryDrawer,
+} from '../ui/drawer'
 import {
   Sheet as RegistrySheet,
   SheetContent,
@@ -44,7 +44,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@/platform/renderer/components/ui/sheet'
+} from '../ui/sheet'
 
 const meta = {
   title: 'Design System/Primitives/Dialogs',

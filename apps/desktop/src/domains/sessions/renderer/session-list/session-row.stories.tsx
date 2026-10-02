@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { SessionRow } from './session-row'
-import type { Session, SessionId } from '../types'
 import { sessionRow } from '@/mocks/sessions/session-rows'
+import type { Session, SessionId } from '../types'
+import { SessionRow } from './session-row'
 
 export const SESSION_STATUS_NAMES: Record<Session['status'], string> = {
   running: 'Working Session',
@@ -15,7 +15,11 @@ export const SESSION_STATUS_NAMES: Record<Session['status'], string> = {
   idle: 'Idle Session',
 }
 
-export function SessionToneSamples({ onSelect = () => {} }: { onSelect?: (id: SessionId) => void }) {
+export function SessionToneSamples({
+  onSelect = () => {},
+}: {
+  onSelect?: (id: SessionId) => void
+}) {
   return (
     <div className="w-80">
       {(Object.entries(SESSION_STATUS_NAMES) as [Session['status'], string][]).map(

@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { SearchableDropdownTrigger } from '@/platform/renderer/components/dropdown-trigger'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Command,
@@ -9,7 +10,6 @@ import {
   CommandItem,
   CommandList,
 } from '@/platform/renderer/components/ui/command'
-import { SearchableDropdownTrigger } from '@/platform/renderer/components/ui/dropdown-trigger'
 import { Popover, PopoverContent, PopoverTitle } from '@/platform/renderer/components/ui/popover'
 import { Switch } from '@/platform/renderer/components/ui/switch'
 import type { WorktreeOptionsActions, WorktreeOptionsState } from './use-worktree-options'
@@ -34,7 +34,6 @@ function FromChoices({
   return (
     <Command>
       <CommandInput
-        appearance="inline"
         aria-label={t('composer.worktree.search')}
         placeholder={t('composer.worktree.search')}
       />
@@ -96,7 +95,6 @@ function FromMenu({
         icon="worktree"
         label={label}
         type="button"
-        variant="ghost"
       />
       <PopoverContent
         align="start"

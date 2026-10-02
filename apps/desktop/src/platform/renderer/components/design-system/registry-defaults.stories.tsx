@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MagnifyingGlassIcon } from '@phosphor-icons/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import * as React from 'react'
 import { expect, userEvent, within } from 'storybook/test'
-import { Icon } from '@/platform/renderer/components/icon/icon'
-import { Button } from '@/platform/renderer/components/ui/button'
-import { Input } from '@/platform/renderer/components/ui/input'
+import { Icon } from '../icon/icon'
+import { Button } from '../ui/button'
+import { Input } from '../ui/input'
 
 export const longControlLabel = 'Save the complete configuration for the selected project'
 export const longInputValue =

@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import * as React from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { Button } from '../../components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover'
 import { AppPageHeader, AppShell } from './app-shell'
-import { Button } from '@/platform/renderer/components/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
 
 const sidebarRows = Array.from({ length: 40 }, (_, index) => `Sidebar row ${index + 1}`)
 
@@ -39,11 +39,16 @@ export function AppShellStoryComposition({ children }: { children?: React.ReactN
             <span>Workspace controls</span>
           </AppPageHeader>
           <div className="panel-content">
-            <section className="flex min-h-0 flex-1 flex-col overflow-auto p-3" aria-label="Pane content">
+            <section
+              className="flex min-h-0 flex-1 flex-col overflow-auto p-3"
+              aria-label="Pane content"
+            >
               <h1 className="type-heading">Workspace content</h1>
               <div className="mt-auto self-end">
                 <Popover>
-                  <PopoverTrigger render={<Button variant="outline" />}>Corner popup</PopoverTrigger>
+                  <PopoverTrigger render={<Button variant="outline" />}>
+                    Corner popup
+                  </PopoverTrigger>
                   <PopoverContent aria-label="Corner details">
                     <p>Popup outside the rounded pane</p>
                   </PopoverContent>
@@ -64,7 +69,9 @@ async function collapseAndRestore(canvasElement: HTMLElement) {
   await waitFor(() => expect(opener).toBeVisible())
   await waitFor(() => expect(opener).toHaveFocus())
   await userEvent.click(opener)
-  await waitFor(() => expect(canvas.getByRole('button', { name: 'Collapse sidebar' })).toHaveFocus())
+  await waitFor(() =>
+    expect(canvas.getByRole('button', { name: 'Collapse sidebar' })).toHaveFocus(),
+  )
 }
 
 async function keyboardResize(canvasElement: HTMLElement) {

@@ -6,8 +6,8 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { octocat } from '@/mocks/tickets/renderer-models'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { QUERY_KEYS } from '@/platform/renderer/lib/query-client'
-import { AccountsDialog } from './accounts-dialog'
 import { useAccountsDialog } from '../state'
+import { AccountsDialog } from './accounts-dialog'
 
 function AccountsDialogControls() {
   const { setOpen } = useAccountsDialog()

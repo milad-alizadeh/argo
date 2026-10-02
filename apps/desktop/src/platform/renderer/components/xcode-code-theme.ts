@@ -44,8 +44,6 @@ const XCODE_DARK: CodePalette = {
   selection: 'var(--code-xcode-selection)',
 }
 
-export const xcodeCodePalette = { light: XCODE_LIGHT, dark: XCODE_DARK } as const
-
 export const xcodeCodeThemes: ThemeRegistration[] = [
   xcodeTheme('xcode-light', 'light', XCODE_LIGHT),
   xcodeTheme('xcode-dark', 'dark', XCODE_DARK),

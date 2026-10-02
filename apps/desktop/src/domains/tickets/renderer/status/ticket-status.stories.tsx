@@ -2,11 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import * as React from 'react'
 import { expect, within } from 'storybook/test'
 import type { TicketPriority, TicketStatus } from '@/domains/tickets/api/ticket'
-import {
-  PriorityIcon,
-  StatusIcon,
-  StatusMark,
-} from './ticket-status'
+import { PriorityIcon, StatusIcon, StatusMark } from './ticket-status'
 
 const CATEGORY_STATUS: Record<TicketStatus['category'], TicketStatus> = {
   triage: { id: 'triage', category: 'triage', name: 'Triage' },
@@ -53,7 +49,12 @@ export function TicketStatusSamples() {
         ))}
       </ul>
       <span className="flex items-center gap-2 text-xs">
-        <StatusIcon current={2} status={CATEGORY_STATUS.started} statuses={STATUS_SAMPLES} total={4} />
+        <StatusIcon
+          current={2}
+          status={CATEGORY_STATUS.started}
+          statuses={STATUS_SAMPLES}
+          total={4}
+        />
         2 of 4 children complete
       </span>
     </div>

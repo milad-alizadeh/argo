@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import * as React from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { ComposerForm } from '@/domains/sessions/renderer/composer/layout/composer-form'
-import { SessionShell } from './session-shell'
 import { AppShellStoryComposition } from '@/platform/renderer/app/components/app-shell.stories'
+import { ComposerForm } from '../composer/layout/composer-form'
+import { SessionShell } from './session-shell'
 
 export function AnchoredWorkspace() {
   const [queryClient] = React.useState(() => new QueryClient())

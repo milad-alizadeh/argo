@@ -1,12 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import * as React from 'react'
-import { StatusBadge } from '@/platform/renderer/components/design-system/status-badge'
-import {
-  indicatorToneRecipe,
-  statusToneRecipe,
-} from '@/platform/renderer/components/design-system/tone-recipes'
-import { Badge } from '@/platform/renderer/components/ui/badge'
 import { expect, userEvent, within } from 'storybook/test'
+import { Badge } from '../ui/badge'
+import { StatusBadge } from './status-badge'
+import { indicatorToneRecipe, statusToneRecipe } from './tone-recipes'
 
 export const NATIVE_BADGE_VARIANTS = [
   'default',

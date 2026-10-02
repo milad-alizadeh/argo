@@ -1,6 +1,6 @@
-import * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from 'cn'
+import * as React from 'react'
 
 import { Button } from './button'
 import { Input } from './input'
@@ -138,7 +138,7 @@ export {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
-  InputGroupText,
   InputGroupInput,
+  InputGroupText,
   InputGroupTextarea,
 }
