@@ -5,9 +5,9 @@ import { composerDraftSelectSchema } from '@/database/composer-draft/validation'
 import type { Database } from '@/database/database'
 import { provider } from '@/domains/accounts/contract/contract'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
+import { worktreeRequestSchema } from '@/domains/sessions/api/worktree-request'
 import { harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
-import { worktreeChoiceSchema } from '../worktree'
 
 const draftTicketContextSchema = z.strictObject({
   id: z.string().min(1),
@@ -28,7 +28,7 @@ export const draftTurnConfigurationSchema = z.strictObject({
 const projectTargetSchema = z.strictObject({
   type: z.literal('project'),
   projectId: identifierSchema,
-  worktree: worktreeChoiceSchema,
+  worktree: worktreeRequestSchema,
   harness: harnessSchema,
 })
 const sessionTargetSchema = z.strictObject({
@@ -73,7 +73,7 @@ function valueFromRow(stored: unknown): ComposerDraftValue {
       : projectTargetSchema.parse({
           type: 'project',
           projectId: row.projectId,
-          worktree: row.worktreeChoice,
+          worktree: parseJson(row.worktreeJson ?? 'null', worktreeRequestSchema),
           harness: row.harness,
         })
   return composerDraftValueSchema.parse({
@@ -109,13 +109,13 @@ function storedTarget(target: ComposerDraftValue['target']) {
     ? {
         projectId: target.projectId,
         sessionId: null,
-        worktreeChoice: target.worktree,
+        worktreeJson: JSON.stringify(target.worktree),
         harness: target.harness,
       }
     : {
         projectId: null,
         sessionId: target.sessionId,
-        worktreeChoice: null,
+        worktreeJson: null,
         harness: null,
       }
 }

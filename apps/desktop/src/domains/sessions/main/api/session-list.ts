@@ -62,11 +62,10 @@ const passedSessionColumns = Object.fromEntries(
   Object.keys(passed).map((column) => [column, sessionColumns[column as keyof typeof passed]]),
 ) as Pick<typeof sessionColumns, keyof typeof passed>
 
-// The linked worktree a Session runs in; null runs it in the Project's main checkout.
+// The worktree Argo made for the Session; null when it has none.
 const sessionWorktreeSchema = z.strictObject({
   path: z.string().min(1),
-  branch: z.string().min(1).nullable(),
-  owned: z.boolean(),
+  branch: z.string().min(1),
 })
 
 export const sessionListRowSchema = z.strictObject({
@@ -180,9 +179,8 @@ function sessionListRow(
 }
 
 function sessionWorktree(row: StoredSessionRow) {
-  const { worktreePath: path, worktreeBranch: branch, worktreeOwned: owned } = row
-  if (path === null || owned === null) return null
-  return { path, branch, owned }
+  const { worktreePath: path, worktreeBranch: branch } = row
+  return path === null || branch === null ? null : { path, branch }
 }
 
 // A Session with no link joins no row, so every link column is null.
@@ -207,7 +205,6 @@ const storedSessionColumns = {
   planProgress: sessionTable.planProgress,
   worktreePath: sessionTable.worktreePath,
   worktreeBranch: sessionTable.worktreeBranch,
-  worktreeOwned: sessionTable.worktreeOwned,
   ticket: {
     projectId: sessionTicketLink.projectId,
     key: sessionTicketLink.ticketKey,

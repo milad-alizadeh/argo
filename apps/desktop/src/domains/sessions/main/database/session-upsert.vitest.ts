@@ -18,7 +18,6 @@ test('keeps one Argo ID and preserves known metadata on a sparse upsert', () => 
       projectId: 'project-1',
       worktreePath: '/work/argo',
       worktreeBranch: 'argo/session-1',
-      worktreeOwned: true,
       customTitle: 'Release notes',
       preview: 'A preview',
       firstPrompt: 'first',
@@ -41,14 +40,13 @@ test('keeps one Argo ID and preserves known metadata on a sparse upsert', () => 
     assert.ok(repeatedTimes.updated_at > originalTimes.updated_at)
     const row = client
       .prepare(
-        'SELECT project_id, worktree_path, worktree_branch, worktree_owned, custom_title, preview, first_prompt, cwd, activity_at FROM session WHERE argo_id = ?',
+        'SELECT project_id, worktree_path, worktree_branch, custom_title, preview, first_prompt, cwd, activity_at FROM session WHERE argo_id = ?',
       )
       .get(first)
     assert.deepEqual(Object.assign({}, row), {
       project_id: 'project-1',
       worktree_path: '/work/argo',
       worktree_branch: 'argo/session-1',
-      worktree_owned: 1,
       custom_title: 'Release notes',
       preview: 'A preview',
       first_prompt: 'first',

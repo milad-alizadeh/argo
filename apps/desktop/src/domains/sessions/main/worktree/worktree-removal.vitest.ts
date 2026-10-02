@@ -7,6 +7,7 @@ import { expect, test } from 'vitest'
 import { sessionTable } from '@/database/session/schema'
 import { registeredRepoFixture } from '@/mocks/projects/registered-repo.fixture'
 import { addLinkedWorktree } from '@/mocks/projects/worktree-repo.fixture'
+import { PROVIDER_REGISTRY } from '@/providers/registry'
 import { createOwnedWorktree } from './worktree-create-owned'
 import { removeOwnedWorktrees, worktreesWithWork } from './worktree-removal'
 
@@ -20,7 +21,9 @@ async function ownedSession() {
     database,
     projectId: 'project-1',
     draftId: 'draft-1',
+    from: null,
     worktreeRoot,
+    providers: PROVIDER_REGISTRY,
   })
   database
     .insert(sessionTable)
@@ -32,7 +35,6 @@ async function ownedSession() {
       cwd: worktree.path,
       worktreePath: worktree.path,
       worktreeBranch: worktree.branch,
-      worktreeOwned: true,
     })
     .run()
   const remove = (removal: 'clean' | 'all', running = false) =>
@@ -122,7 +124,8 @@ test('a worktree stays while its Session has a Turn in progress, even after Remo
   expect(await present(worktree.path)).toBe(true)
 })
 
-test('an imported worktree and the main checkout are never removed', async () => {
+// A Session in a worktree Argo did not make keeps it as its cwd only, with no Session worktree.
+test('a worktree Argo did not make and the main checkout are never removed', async () => {
   const { repository, database } = await ownedSession()
   const imported = await addLinkedWorktree(repository)
   database
@@ -134,9 +137,6 @@ test('an imported worktree and the main checkout are never removed', async () =>
         nativeId: 'native-imported',
         projectId: 'project-1',
         cwd: imported,
-        worktreePath: imported,
-        worktreeBranch: 'feature',
-        worktreeOwned: false,
       },
       {
         argoId: 'session-main',

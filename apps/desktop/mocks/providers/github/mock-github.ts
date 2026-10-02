@@ -22,6 +22,8 @@ export type MockIssue = {
   children?: number[]
   blockedBy?: number[]
   pullRequest?: boolean
+  // A pull request's head branch; `pull-<number>` when absent.
+  branch?: string
 }
 
 export type MockRepository = {
@@ -73,6 +75,7 @@ const ROUTES = [
   'GET /user/repos',
   'GET /repos/:owner/:repo',
   'GET /repos/:owner/:repo/issues',
+  'GET /repos/:owner/:repo/pulls',
   'GET /repos/:owner/:repo/issues/:number',
   'GET /repos/:owner/:repo/issues/:number/sub_issues',
   'GET /repos/:owner/:repo/issues/:number/dependencies/blocked_by',

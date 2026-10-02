@@ -11,8 +11,8 @@ export const composerDraft = sqliteTable(
     id: text().primaryKey(),
     projectId: text('project_id').references(() => project.id, { onDelete: 'cascade' }),
     sessionId: text('session_id').references(() => sessionTable.argoId, { onDelete: 'cascade' }),
-    // A new-Session draft's folder: 'new', 'main', or an existing worktree's path.
-    worktreeChoice: text('worktree_choice'),
+    // A new-Session draft's folder as JSON: the main checkout, or a new worktree and its start.
+    worktreeJson: text('worktree_json'),
     harness: text({ enum: HARNESSES }),
     prompt: text().notNull().default(''),
     attachmentsJson: text('attachments_json').notNull().default('[]'),
@@ -32,7 +32,7 @@ export const composerDraft = sqliteTable(
     ),
     check(
       'composer_draft_new_session_fields',
-      sql`(${table.projectId} IS NULL AND ${table.worktreeChoice} IS NULL AND ${table.harness} IS NULL) OR (${table.projectId} IS NOT NULL AND ${table.worktreeChoice} IS NOT NULL AND ${table.harness} IS NOT NULL)`,
+      sql`(${table.projectId} IS NULL AND ${table.worktreeJson} IS NULL AND ${table.harness} IS NULL) OR (${table.projectId} IS NOT NULL AND ${table.worktreeJson} IS NOT NULL AND ${table.harness} IS NOT NULL)`,
     ),
     check('composer_draft_revision', sql`${table.revision} >= 0`),
   ],

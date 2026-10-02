@@ -10,7 +10,7 @@ import { harnessLabel } from '@/harnesses/presentation-registry'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { trpc } from '@/platform/renderer/trpc-client'
-import type { CatalogFailure, WorktreeChoiceActions, WorktreeChoiceState } from '../composer'
+import type { CatalogFailure, WorktreeOptionsActions, WorktreeOptionsState } from '../composer'
 import {
   ComposerForm,
   type ComposerFormProps,
@@ -41,8 +41,8 @@ type SessionScreenDetailsProps = {
   // Whether the selected Session's details have been read, so its composer can open on them.
   sessionLoaded: boolean
   projectState: ProjectsState
-  worktreeState: WorktreeChoiceState
-  worktreeActions: WorktreeChoiceActions
+  worktreeState: WorktreeOptionsState
+  worktreeActions: WorktreeOptionsActions
   // A new Session's pending id from its saved prompt, and the Session route that draws it.
   onStartingSession: (pendingId: string | null, sessionId?: string) => void
 }
@@ -99,39 +99,27 @@ function sessionComposerConfiguration(input: {
 
 function worktreeControl(
   identity: ReturnType<typeof composerIdentityOf>,
-  worktrees: WorktreeChoiceState,
-  actions: WorktreeChoiceActions,
+  worktree: WorktreeOptionsState,
+  actions: WorktreeOptionsActions,
 ) {
   if (identity.kind !== 'draft') return null
   return {
-    worktrees: worktrees.worktrees,
-    choice: worktrees.choice,
-    saveFailed: worktrees.saveFailed,
-    onSelect: actions.selectWorktree,
+    ...worktree,
+    onNewWorktreeChange: actions.setNewWorktree,
+    onFromChange: actions.chooseFrom,
   }
 }
 
-// False while choices load; a removed worktree is no longer listed, so the listed choice stands.
-function restoreListedChoice(
-  saved: string,
-  worktreeState: Pick<WorktreeChoiceState, 'choice' | 'worktrees'>,
-  select: (choice: string) => void,
+// Restores a saved draft's switch; its start is never restored. False while the options load.
+function restoreSwitch(
+  saved: { type: 'main' | 'new' },
+  worktree: Pick<WorktreeOptionsState, 'options' | 'newWorktree'>,
+  setNewWorktree: (newWorktree: boolean) => void,
 ): boolean {
-  const current = worktreeState.choice
-  if (current === null) return false
-  const listed =
-    saved === 'new' ||
-    saved === 'main' ||
-    worktreeState.worktrees.some((candidate) => !candidate.main && candidate.path === saved)
-  if (listed && saved !== current) select(saved)
+  if (worktree.options === null) return false
+  const newWorktree = saved.type === 'new'
+  if (newWorktree !== worktree.newWorktree) setNewWorktree(newWorktree)
   return true
-}
-
-// The folder a new Session's commands would run in, once its choice is listed.
-function chosenFolder(worktreeState: WorktreeChoiceState): string | null {
-  const { choice, worktrees } = worktreeState
-  if (choice === 'main') return worktrees.find((candidate) => candidate.main)?.path ?? null
-  return worktrees.find((candidate) => !candidate.main && candidate.path === choice)?.path ?? null
 }
 
 // The saved Harness to switch to, or null to keep the current one. One that cannot start a Session
@@ -150,8 +138,8 @@ function useSessionComposerDraft(input: {
   identity: ComposerIdentity
   harness: HarnessControl
   projectState: ProjectsState
-  worktreeState: WorktreeChoiceState
-  worktreeActions: WorktreeChoiceActions
+  worktreeState: WorktreeOptionsState
+  worktreeActions: WorktreeOptionsActions
   choices: Parameters<typeof useDurableComposerDraft>[0]['choices']
   opening: TurnConfiguration | null
 }) {
@@ -161,7 +149,7 @@ function useSessionComposerDraft(input: {
     identity,
     harness,
     projectId: projectState.project?.id ?? null,
-    worktrees: worktreeState,
+    worktree: worktreeState,
   })
   const [restoredProjectId, setRestoredProjectId] = useState<string | null>(null)
   const availableHarnesses = useAvailableHarnesses()
@@ -184,8 +172,7 @@ function useSessionComposerDraft(input: {
       harness.onChange?.(remembered)
       return
     }
-    const listed = { choice: worktreeState.choice, worktrees: worktreeState.worktrees }
-    if (!restoreListedChoice(loadedTarget.worktree, listed, worktreeActions.selectWorktree)) return
+    if (!restoreSwitch(loadedTarget.worktree, worktreeState, worktreeActions.setNewWorktree)) return
     setRestoredProjectId(projectId)
   }, [
     availableHarnesses,
@@ -195,8 +182,7 @@ function useSessionComposerDraft(input: {
     projectId,
     restoredProjectId,
     worktreeActions,
-    worktreeState.choice,
-    worktreeState.worktrees,
+    worktreeState,
   ])
   return { draft, targetRestored }
 }
@@ -239,7 +225,7 @@ function useSessionComposerSend(input: {
       add({ title: t('composer.worktreeGone', { path: result.worktreeGone }), type: 'info' })
     if (input.identity.kind === 'draft' && input.projectId !== null) {
       void queryClient.invalidateQueries({
-        queryKey: trpc.worktreeList.queryKey({ projectId: input.projectId }),
+        queryKey: trpc.worktreeOptions.queryKey({ projectId: input.projectId }),
       })
       // The named Session draws the prompt until its own Feed shows it, whatever the Harness.
       input.onStartingSession(pendingId, result.sessionId)
@@ -460,7 +446,10 @@ function SessionComposer({
     ),
     plan: composerPlan(session),
     projectId,
-    commandCwd: identity.kind === 'session' ? (session?.cwd ?? null) : chosenFolder(worktreeState),
+    commandCwd:
+      identity.kind === 'session'
+        ? (session?.cwd ?? null)
+        : (worktreeState.options?.checkout.path ?? null),
     liveSessionId: identity.kind === 'session' ? identity.sessionId : null,
     onSend,
     isRunning,

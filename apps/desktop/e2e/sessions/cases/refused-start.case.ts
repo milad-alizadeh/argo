@@ -1,22 +1,26 @@
 // A Harness that cannot start refuses the Send with its reason and keeps the draft, for every Harness.
+import { rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Page } from 'playwright-core'
-import { MOCK_START_REFUSED_FOLDER } from '@/mocks/cli/mock-cli'
+import { MOCK_START_REFUSED_FILE } from '@/mocks/cli/mock-cli'
 import { chooseHarness, openNewSessionByClick } from '../gestures'
-import { chooseWorkLocation, git, reload, sendRefused } from './removed-work-location.case'
+import { reload, sendRefused } from './removed-work-location.case'
 
 const START_FAILED = /could not start, so the Turn was not sent/
 
 export async function proveRefusedStart(page: Page, project: string) {
-  await git(project, ['commit', '--allow-empty', '--quiet', '-m', 'base'])
-  const worktree = path.join(path.dirname(project), MOCK_START_REFUSED_FOLDER)
-  await git(project, ['worktree', 'add', '--quiet', '-b', 'refused', worktree])
-  for (const harness of ['claude', 'codex'] as const) {
-    // A reload clears the other Harness's toast, so the reason below names this one.
-    await reload(page)
-    await openNewSessionByClick(page)
-    await chooseHarness(page, harness)
-    await chooseWorkLocation(page, MOCK_START_REFUSED_FOLDER)
-    await sendRefused(page, `Start ${harness} where it cannot run.`, START_FAILED)
+  // A new Session starts in the main checkout while the Worktree switch is off.
+  const marker = path.join(project, MOCK_START_REFUSED_FILE)
+  await writeFile(marker, '')
+  try {
+    for (const harness of ['claude', 'codex'] as const) {
+      // A reload clears the other Harness's toast, so the reason below names this one.
+      await reload(page)
+      await openNewSessionByClick(page)
+      await chooseHarness(page, harness)
+      await sendRefused(page, `Start ${harness} where it cannot run.`, START_FAILED)
+    }
+  } finally {
+    await rm(marker, { force: true })
   }
 }

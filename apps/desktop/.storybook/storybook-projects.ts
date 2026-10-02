@@ -3,16 +3,21 @@ import type { RouterOutputs } from '../src/platform/renderer/trpc-client'
 type ProjectListReply = RouterOutputs['projectList']
 type ProjectOpenReply = RouterOutputs['projectOpen']
 type ProjectRelocateReply = RouterOutputs['projectRelocate']
-type WorktreeReply = RouterOutputs['worktreeList']
-type WorktreeChooseReply = RouterOutputs['worktreeChoose']
+type WorktreeOptionsReply = RouterOutputs['worktreeOptions']
+type WorktreeSwitchReply = RouterOutputs['worktreeSwitch']
+type WorktreePullRequestsReply = RouterOutputs['worktreePullRequests']
 
 type StorybookProjectProcedures = {
   projectOpen: (request: { projectId: string }) => Promise<ProjectOpenReply>
   projectList: () => Promise<ProjectListReply>
   projectRegister: () => Promise<ProjectListReply>
   projectRelocate: (request: { projectId: string }) => Promise<ProjectRelocateReply>
-  worktreeList: (request: { projectId: string }) => Promise<WorktreeReply>
-  worktreeChoose: (request: { projectId: string; choice: string }) => Promise<WorktreeChooseReply>
+  worktreeOptions: (request: { projectId: string }) => Promise<WorktreeOptionsReply>
+  worktreeSwitch: (request: {
+    projectId: string
+    newWorktree: boolean
+  }) => Promise<WorktreeSwitchReply>
+  worktreePullRequests: (request: { projectId: string }) => Promise<WorktreePullRequestsReply>
 }
 
 const primaryProject = { id: 'storybook-project', name: 'argo', path: '/storybook/argo' }
@@ -23,14 +28,13 @@ const secondaryProject = {
 }
 const projects = [primaryProject, secondaryProject]
 
-const worktrees = [{ path: '/storybook/argo', main: true, name: 'argo', branch: 'main' }]
-
-function worktreesListed() {
+function worktreeOptions() {
   return {
-    type: 'worktree.listed' as const,
+    type: 'worktree.options' as const,
     requestId: 'storybook-worktrees',
-    choice: 'new',
-    worktrees,
+    newWorktree: false,
+    checkout: { path: primaryProject.path, branch: 'main' },
+    branches: ['main'],
   }
 }
 
@@ -39,6 +43,7 @@ export const storybookProjectProcedures: StorybookProjectProcedures = {
   projectOpen: () => Promise.resolve(primaryProject),
   projectRegister: () => Promise.resolve(projects),
   projectRelocate: () => Promise.resolve(secondaryProject),
-  worktreeList: () => Promise.resolve(worktreesListed()),
-  worktreeChoose: ({ choice }) => Promise.resolve({ choice }),
+  worktreeOptions: () => Promise.resolve(worktreeOptions()),
+  worktreeSwitch: ({ newWorktree }) => Promise.resolve({ newWorktree }),
+  worktreePullRequests: () => Promise.resolve({ type: 'listed', pullRequests: [] }),
 }

@@ -80,7 +80,7 @@
     "sendUncertain": "Argo could not confirm whether the Turn was sent. Your draft is still saved.",
     "worktreeGone": "The worktree {{path}} is gone, so this Session now works in the main checkout.",
     "sendRejected": {
-      "folder-missing": "The work location folder no longer exists, so the Turn was not sent. Choose another work location. Your draft is still saved.",
+      "folder-missing": "The Session's folder no longer exists, so the Turn was not sent. Your draft is still saved.",
       "worktree-create-failed": "Argo could not create a worktree, so the Turn was not sent. Your draft is still saved.",
       "harness-start-failed": "{{harness}} could not start, so the Turn was not sent. Check that {{harness}} runs in a terminal. Your draft is still saved."
     },
@@ -131,14 +131,24 @@
       "model": "Model"
     },
     "worktree": {
-      "choose": "Choose work location",
-      "chooseLabel": "Work location: {{worktree}}",
       "label": "Work location",
-      "newWorktree": "New worktree",
-      "existingWorktrees": "Existing worktrees",
-      "search": "Search worktrees",
-      "noMatches": "No worktrees found",
-      "saveFailed": "Could not use this work location. Choose another."
+      "switch": "Worktree",
+      "from": "From",
+      "fromLabel": "New worktree from {{start}}",
+      "detached": "Current commit",
+      "search": "Search branches and pull requests",
+      "noMatches": "No branches or pull requests found",
+      "branches": "Branches",
+      "pullRequests": "Pull requests",
+      "pullRequestsLoading": "Loading pull requests…",
+      "noPullRequests": "No open pull requests",
+      "pullRequestsUnavailable": {
+        "no-remote": "No GitHub remote, so only branches are listed.",
+        "no-account": "Connect a GitHub Account to list pull requests.",
+        "not-visible": "Your GitHub Account cannot see this repository's pull requests.",
+        "unreachable": "GitHub could not be reached, so only branches are listed."
+      },
+      "saveFailed": "Could not remember the Worktree switch for this Project."
     },
     "references": {
       "label": "References",

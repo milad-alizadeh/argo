@@ -77,7 +77,7 @@ test('a Session keeps its Project after its own worktree folder is gone', async 
   try {
     client
       .prepare(
-        "INSERT INTO session (argo_id, harness, native_id, project_id, worktree_path, worktree_branch, worktree_owned) VALUES ('session-1', 'codex', ?, 'project-1', '/elsewhere/gone', 'argo/gone', 1)",
+        "INSERT INTO session (argo_id, harness, native_id, project_id, worktree_path, worktree_branch) VALUES ('session-1', 'codex', ?, 'project-1', '/elsewhere/gone', 'argo/gone')",
       )
       .run(ID)
     const [record] = await matchSessionsToProjects(database, [

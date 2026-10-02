@@ -1,6 +1,6 @@
 import type { SessionFeedReaders } from '../feed'
 import { type SessionSyncStatusSource, sessionSyncStatusProcedure } from '../session-sync-status'
-import type { WorktreeChoiceContext } from '../worktree'
+import type { WorktreeOptionsContext } from '../worktree'
 import { composerDraftCreateProcedure } from './composer-draft-create'
 import { composerDraftReadProcedure } from './composer-draft-read'
 import { composerDraftSaveProcedure } from './composer-draft-save'
@@ -34,7 +34,7 @@ export type SessionApiContext = SessionProcedureContext &
   SessionListContext &
   SessionRefreshContext &
   SessionUpdateProcedureContext &
-  WorktreeChoiceContext &
+  WorktreeOptionsContext &
   ComposerCommandContext & {
     sessionSync: SessionSyncStatusSource
     // Shared with the app-level watcher that keeps working Sessions' Feeds open.

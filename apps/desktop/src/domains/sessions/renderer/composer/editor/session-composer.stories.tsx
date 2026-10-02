@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
+import type { WorktreeStart } from '@/domains/sessions/api/worktree-request'
 import type { Harness } from '@/harnesses/harness'
 import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '@/mocks/sessions/harness-catalog.fixture'
 import type { SessionPlan } from '../../types'
 import { ComposerForm } from '../layout/composer-form'
-import type { WorktreeSummary } from '../toolbar/use-worktree-choices'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 
 const CLAUDE_TURN_CONFIGURATION = (() => {
@@ -21,23 +21,19 @@ const plan: SessionPlan = {
   entries: [{ content: 'Choose the base layout', position: 0, status: 'in_progress' as const }],
 }
 
-const WORKTREE_CANDIDATES: [WorktreeSummary, WorktreeSummary] = [
-  { path: '/Users/milad/Developer/argo', main: true, name: 'argo', branch: 'main' },
-  {
-    path: '/Users/milad/Developer/linked-feature',
-    main: false,
-    name: 'linked-feature',
-    branch: 'feature/linked',
-  },
-]
+const WORKTREE_OPTIONS = {
+  checkout: { path: '/Users/milad/Developer/argo', branch: 'main' },
+  branches: ['main', 'feature/linked'],
+}
 
 // Every control the composer can show at once, for visual/manual review rather than a behaviour
-// assertion: plan, harness, turn turnConfiguration and the worktree picker together.
+// assertion: plan, harness, turn turnConfiguration and the Worktree row together.
 function EverythingComposerStory() {
   const [sessionId] = useState('session-one')
   const [harness, setHarness] = useState<Harness>('claude')
   const [turnConfiguration, setTurnConfiguration] = useState(CLAUDE_TURN_CONFIGURATION.opening)
-  const [choice, setChoice] = useState('new')
+  const [newWorktree, setNewWorktree] = useState(true)
+  const [from, setFrom] = useState<WorktreeStart | null>(null)
 
   return (
     <ComposerForm
@@ -53,10 +49,13 @@ function EverythingComposerStory() {
         onChange: setTurnConfiguration,
       }}
       worktree={{
-        choice,
+        options: WORKTREE_OPTIONS,
+        newWorktree,
+        from,
+        pullRequests: { type: 'listed', pullRequests: [] },
         saveFailed: false,
-        worktrees: WORKTREE_CANDIDATES,
-        onSelect: setChoice,
+        onNewWorktreeChange: setNewWorktree,
+        onFromChange: setFrom,
       }}
     />
   )

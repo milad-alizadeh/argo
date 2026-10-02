@@ -9,10 +9,10 @@
   Session list can also show all known Sessions, including those with no Project (ADR-0015
   amendment). The **only entity in the L1 triangle that Argo owns rather than observes**
   (Account is owned too, but sits outside it). Argo keeps no registry of the Project's
-  checkouts; git lists the main checkout and each linked worktree when a draft asks. A new-Session
-  draft names a **new worktree**, the **main checkout**, or an existing linked worktree, and the
-  Project remembers the last choice, defaulting to a new worktree. A worktree another Session
-  owns is not offered. See L2 · Session for the worktree a Session owns and when Argo removes it.
+  checkouts. A new-Session draft runs in the **main checkout**, or in a **new worktree** started
+  from a local branch or an open pull request. The Project remembers the Worktree switch, which
+  starts off; the start is not remembered. See L2 · Session for the worktree a Session owns and
+  when Argo removes it.
 
 - **Account** — one authenticated identity with a provider: **one OAuth grant, one token in the
   OS keychain**, keyed by the **provider's own stable id** for it (login/workspace name is a

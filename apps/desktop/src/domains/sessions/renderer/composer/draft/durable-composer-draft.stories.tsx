@@ -17,6 +17,7 @@ import { useDurableComposerDraft } from './use-durable-composer-draft'
 
 type DraftValue = RouterOutputs['composerDraftCreate']
 type DraftTarget = RouterInputs['composerDraftCreate']['target']
+type ProjectWorktree = Extract<DraftTarget, { type: 'project' }>['worktree']
 type Server = {
   drafts: Map<string, DraftValue>
   trpc: typeof window.argo.trpc
@@ -88,7 +89,7 @@ function savedProjectDraft(harness: Harness): DraftValue {
     target: {
       type: 'project',
       projectId: 'project-1',
-      worktree: 'main',
+      worktree: { type: 'main' },
       harness,
     },
   }
@@ -325,7 +326,7 @@ function DraftOwnerControls({
       {project ? (
         <>
           <button onClick={onWorktree} type="button">
-            Linked worktree
+            New worktree
           </button>
           <button onClick={onHarness} type="button">
             Harness Codex
@@ -478,7 +479,7 @@ function useRestoreProjectDraftStory(input: {
   restoredProjectId: string | null
   loadedTarget: DraftTarget | null | undefined
   harness: Harness
-  setWorktree: (worktree: string) => void
+  setWorktree: (worktree: ProjectWorktree) => void
   setHarness: (harness: Harness) => void
   setRestoredProjectId: (projectId: string) => void
 }) {
@@ -525,7 +526,7 @@ function DurableDraftScreen({
   onReloadScreen: () => void
 }) {
   const [sessionId, setSessionId] = useState('session-a')
-  const [worktree, setWorktree] = useState('main')
+  const [worktree, setWorktree] = useState<ProjectWorktree>({ type: 'main' })
   const [harness, setHarness] = useState<Harness>('claude')
   const [composerVersion, setComposerVersion] = useState(0)
   const [restoredProjectId, setRestoredProjectId] = useState<string | null>(null)
@@ -560,7 +561,7 @@ function DurableDraftScreen({
           onSession={setSessionId}
           onReload={() => setComposerVersion((version) => version + 1)}
           onScreenReload={onReloadScreen}
-          onWorktree={() => setWorktree('/repo-linked')}
+          onWorktree={() => setWorktree({ type: 'new', from: null })}
           onHarness={() => setHarness('codex')}
         />
         <DraftTimingControls server={server} />
@@ -1045,9 +1046,9 @@ export const ProjectTargetChangesWithoutTextPersistForSend: Story = {
     const canvas = within(canvasElement)
     const editor = await canvas.findByLabelText('Message')
     await expect(editor).toHaveTextContent('Plan this change.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Linked worktree' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'New worktree' }))
     const store = canvas.getByLabelText('Stored drafts')
-    await waitFor(() => expect(store).toHaveTextContent('"worktree":"/repo-linked"'))
+    await waitFor(() => expect(store).toHaveTextContent('"worktree":{"type":"new","from":null}'))
     await expect(store).toHaveTextContent('"harness":"claude"')
     await userEvent.click(canvas.getByRole('button', { name: 'Harness Codex' }))
     await waitFor(() => expect(store).toHaveTextContent('"revision":2'))
@@ -1055,7 +1056,7 @@ export const ProjectTargetChangesWithoutTextPersistForSend: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Reload screen' }))
     await waitFor(() =>
       expect(canvas.getByLabelText('Current target')).toHaveTextContent(
-        '"worktree":"/repo-linked"',
+        '"worktree":{"type":"new","from":null}',
       ),
     )
     await expect(canvas.getByLabelText('Current target')).toHaveTextContent('"harness":"codex"')
@@ -1063,7 +1064,7 @@ export const ProjectTargetChangesWithoutTextPersistForSend: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
     await waitFor(() =>
       expect(canvas.getByLabelText('Submitted target')).toHaveTextContent(
-        '"worktree":"/repo-linked"',
+        '"worktree":{"type":"new","from":null}',
       ),
     )
     await expect(canvas.getByLabelText('Submitted target')).toHaveTextContent('"harness":"codex"')

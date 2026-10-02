@@ -8,11 +8,12 @@ import { sessionTable } from '@/database/session/schema'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
 import { pendingSessionId } from '@/domains/sessions/api/pending-session'
 import type { SessionSubmitRejection } from '@/domains/sessions/api/session-submit-rejection'
+import type { WorktreeStart } from '@/domains/sessions/api/worktree-request'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
 import { deleteComposerDraft, draftTurnConfigurationSchema, readComposerDraft } from '../database'
 import { type LiveSessionSupervisorActor, SessionSubmitRejectedError } from '../live'
-import { offeredFolders, projectFolders, readWorktreeBranch } from '../worktree'
+import { projectFolders } from '../worktree'
 
 const t = initTRPC.create()
 const commandSchema = z.strictObject({
@@ -21,12 +22,11 @@ const commandSchema = z.strictObject({
   attachments: z.array(sessionAttachmentInputSchema),
   turnConfiguration: draftTurnConfigurationSchema,
 })
-// The linked worktree a new Session runs in; null runs it in the Project's main checkout.
+// The worktree Argo made for a new Session; null runs it in the Project's main checkout.
 const sessionWorktreeSchema = z
   .strictObject({
     path: z.string().min(1),
-    branch: z.string().min(1).nullable(),
-    owned: z.boolean(),
+    branch: z.string().min(1),
   })
   .nullable()
 const sessionStartInputSchema = commandSchema.extend({
@@ -66,6 +66,7 @@ export type SessionProcedureContext = {
   createOwnedWorktree: (
     projectId: string,
     draftId: string,
+    from: WorktreeStart | null,
   ) => Promise<{ path: string; branch: string }>
   acceptsAttachments: (harness: Harness) => boolean
 }
@@ -121,21 +122,22 @@ function rejected(code: 'BAD_REQUEST' | 'PRECONDITION_FAILED', message: string):
 
 type ProjectTarget = Extract<DraftRequest['draft']['target'], { type: 'project' }>
 
-// The folder a new Session runs in, by the draft's choice: a new owned worktree, the main
-// checkout, or a linked worktree of the Project.
+// The folder a new Session runs in: a new worktree Argo makes for it, or the main checkout.
 async function chosenFolder(
   context: SessionProcedureContext,
   target: ProjectTarget,
   draftId: string,
 ): Promise<Pick<SessionStartInput, 'worktree' | 'cwd'>> {
-  if (target.worktree === 'new') {
-    const created = await context.createOwnedWorktree(target.projectId, draftId).catch(() => {
-      throw rejected(
-        'PRECONDITION_FAILED',
-        'worktree-create-failed' satisfies SessionSubmitRejection,
-      )
-    })
-    return { worktree: { ...created, owned: true }, cwd: created.path }
+  if (target.worktree.type === 'new') {
+    const created = await context
+      .createOwnedWorktree(target.projectId, draftId, target.worktree.from)
+      .catch(() => {
+        throw rejected(
+          'PRECONDITION_FAILED',
+          'worktree-create-failed' satisfies SessionSubmitRejection,
+        )
+      })
+    return { worktree: created, cwd: created.path }
   }
   const registered = context.database
     .select({ path: project.path })
@@ -143,12 +145,7 @@ async function chosenFolder(
     .where(eq(project.id, target.projectId))
     .get()
   if (registered === undefined) throw rejected('BAD_REQUEST', 'missing-project')
-  const folders = await offeredFolders(context.database, registered.path)
-  if (target.worktree === 'main') return { worktree: null, cwd: folders.main }
-  if (!folders.linked.includes(target.worktree))
-    throw rejected('PRECONDITION_FAILED', 'folder-missing' satisfies SessionSubmitRejection)
-  const branch = await readWorktreeBranch(target.worktree)
-  return { worktree: { path: target.worktree, branch, owned: false }, cwd: target.worktree }
+  return { worktree: null, cwd: (await projectFolders(registered.path)).main }
 }
 
 async function prepareProjectDraft(input: DraftRequest): Promise<SessionStartInput | null> {
@@ -180,7 +177,7 @@ async function leaveGoneWorktree(
   const { main } = await projectFolders(registered.path)
   database
     .update(sessionTable)
-    .set({ cwd: main, worktreePath: null, worktreeBranch: null, worktreeOwned: null })
+    .set({ cwd: main, worktreePath: null, worktreeBranch: null })
     .where(eq(sessionTable.argoId, stored.sessionId))
     .run()
   return main

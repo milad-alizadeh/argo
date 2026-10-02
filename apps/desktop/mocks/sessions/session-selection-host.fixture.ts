@@ -26,13 +26,18 @@ function projectReply(request: StorybookTrpcRequest): StorybookTrpcResponse | nu
       return success([project])
     case 'projectOpen':
       return success(project)
-    case 'worktreeList':
+    case 'worktreeOptions':
       return success({
-        type: 'worktree.listed',
+        type: 'worktree.options',
         requestId: '00000000-0000-4000-8000-000000000001',
-        choice: 'new',
-        worktrees: [],
+        newWorktree: false,
+        checkout: { path: project.path, branch: 'main' },
+        branches: ['main'],
       })
+    case 'worktreeSwitch':
+      return success({ newWorktree: (request.input as { newWorktree: boolean }).newWorktree })
+    case 'worktreePullRequests':
+      return success({ type: 'listed', pullRequests: [] })
     default:
       return null
   }

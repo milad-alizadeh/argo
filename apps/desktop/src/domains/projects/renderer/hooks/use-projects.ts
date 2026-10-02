@@ -68,7 +68,7 @@ export function useProjects(): [ProjectsState, ProjectActions] {
   // The reads a Project change moves; Session reads follow main's change signal instead.
   const onSuccess = () =>
     Promise.all(
-      [trpc.projectList, trpc.projectOpen, trpc.worktreeList].map((procedure) =>
+      [trpc.projectList, trpc.projectOpen, trpc.worktreeOptions].map((procedure) =>
         queryClient.invalidateQueries({ queryKey: procedure.pathKey() }),
       ),
     )

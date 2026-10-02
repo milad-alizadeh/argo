@@ -16,17 +16,46 @@ Claude Code already has a worktree rule that people who use both tools know:
 
 ## Decision
 
-There is no Workspace entity. A Session has a Project and `0..1` worktree: `path`, `branch` and
-`owned`. A Session with no worktree runs in the Project's main checkout. Git is the only list of
-a Project's checkouts.
+There is no Workspace entity. A Session has a Project and `0..1` worktree: a `path` and a
+`branch`. Every Session worktree is one that Argo made for that Session. A Session with no
+worktree runs in its `cwd`, which is the Project's main checkout for a new Session. Git is the
+only list of a Project's checkouts.
 
-- A new-Session draft names a new worktree, the main checkout, or an existing linked worktree.
-  The Project remembers the last choice, and the default is a new worktree.
-- A worktree Argo created for a Session is **owned**. No other draft is offered it.
-- A linked worktree made outside Argo is **imported** (`owned = false`). Two Sessions may share
-  it. Argo never removes an imported worktree or the main checkout.
+The composer of a new Session shows a Worktree row in the tray above the editor:
 
-Argo follows Claude Code's cleanup rule for an owned worktree when its Session is archived:
+- The row has a switch labeled "Worktree". The Project remembers the switch. A new Project starts
+  with the switch off.
+- If the switch is off, the row shows the branch of the main checkout as plain text. The Session
+  runs in the main checkout.
+- If the switch is on, the row shows a "From" dropdown that you can search. It lists the local
+  branches, then the open pull requests of the Project's GitHub repository. Argo makes a new
+  worktree on a new `argo/session-…` branch, from the start you chose.
+- The start always begins on the current branch of the main checkout. Argo does not remember it.
+- For a pull request, Argo fetches `refs/pull/<number>/head` from the GitHub remote and starts
+  the worktree at that commit. Argo reads the pull requests through the GitHub provider, as the
+  Account of the Project's Ticket Connection, or else as the first connected GitHub Account.
+- If the Project has no GitHub remote, no connected Account, or no access to GitHub, the dropdown
+  lists branches only, with one line that says why.
+- A new worktree starts at a commit. Uncommitted changes in the main checkout stay there and do
+  not go into the new worktree.
+
+There is no choice of an existing linked worktree. To continue the work of a worktree that you
+made yourself, start a new worktree from its branch.
+
+Prior art:
+
+- Claude Code Desktop has one worktree checkbox per Session:
+  <https://code.claude.com/docs/en/desktop#work-in-parallel-with-sessions>.
+- Paseo has an Isolation control with a "Starting ref":
+  <https://github.com/getpaseo/paseo/blob/b5b43edd65cc1253493b13cca3941dd390df6ef3/packages/app/src/screens/new-workspace-screen.tsx>.
+  Its picker lists branches and pull requests together:
+  <https://github.com/getpaseo/paseo/blob/b5b43edd65cc1253493b13cca3941dd390df6ef3/packages/app/src/screens/new-workspace-picker-item.ts>.
+- Codex asks for a base branch after you choose Worktree:
+  <https://learn.chatgpt.com/docs/environments/git-worktrees>.
+- Conductor starts a workspace from a branch or a pull request:
+  <https://www.conductor.build/docs/concepts/workflow>.
+
+Argo follows Claude Code's cleanup rule for a Session worktree when its Session is archived:
 
 1. A clean worktree is removed, with its branch. Clean means no changed files and no commits that
    no other branch or remote holds.
@@ -38,15 +67,19 @@ Argo follows Claude Code's cleanup rule for an owned worktree when its Session i
 5. When a Session's worktree folder is gone at open or resume, the Session continues in the main
    checkout, the person is told, and the worktree is cleared.
 
-There is no launch sweep, no setting, no snapshot, no restore and no cap. Claude and Codex
-Sessions follow the same rule.
+Argo never removes the main checkout or any folder that is not a Session worktree. There is no
+launch sweep, no setting, no snapshot, no restore and no cap. Claude and Codex Sessions follow the
+same rule.
 
 A Preview still attaches at the tree node, as ADR-0010 set out.
 
 ## Consequences
 
-- The migration drops the Workspace table and keeps each Session's folder: a Session that pointed
-  at a linked Workspace keeps that path as its worktree, owned when Argo had created it.
+- The migration drops the Workspace table and keeps each Session's folder. A Session in a
+  worktree that Argo made keeps it as its worktree. A Session in a linked worktree made outside
+  Argo keeps that folder as its `cwd` and has no worktree, so archive never removes it.
+- The migration turns the Project's last choice into the switch. The switch is on only when the
+  last choice was a new worktree.
 - A worktree that a person keeps after archive stays on disk until they remove it.
 - A resumed Session whose worktree is gone runs from the main checkout. A Harness that finds its
   history by folder may start that resume without the earlier context.

@@ -1,10 +1,10 @@
 // Archiving a Session removes the worktree Argo made for it, as Claude Code does on exit: a clean
 // one goes at once, and one that holds work, or whose state git could not read, goes only when the
-// person chose Remove. The main checkout and imported worktrees are never read.
+// person chose Remove. Every Session worktree is one Argo made; the main checkout is never read.
 import { execFile } from 'node:child_process'
 import { stat } from 'node:fs/promises'
 import { promisify } from 'node:util'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, isNotNull } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
@@ -40,7 +40,7 @@ function ownedWorktrees(database: Database, sessionIds: readonly string[]): Owne
     })
     .from(sessionTable)
     .innerJoin(project, eq(project.id, sessionTable.projectId))
-    .where(and(inArray(sessionTable.argoId, [...sessionIds]), eq(sessionTable.worktreeOwned, true)))
+    .where(and(inArray(sessionTable.argoId, [...sessionIds]), isNotNull(sessionTable.worktreePath)))
     .all()
     .flatMap((row) => (row.path === null ? [] : [{ ...row, path: row.path }]))
 }

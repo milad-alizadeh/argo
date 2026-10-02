@@ -2,9 +2,10 @@ import { initTRPC } from '@trpc/server'
 import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
 import {
-  type WorktreeChoiceContext,
-  worktreeChooseProcedure,
-  worktreeListProcedure,
+  type WorktreeOptionsContext,
+  worktreeOptionsProcedure,
+  worktreePullRequestsProcedure,
+  worktreeSwitchProcedure,
   worktreesWithWork,
 } from '../worktree'
 
@@ -19,8 +20,8 @@ const heldWorktreeSchema = z.strictObject({
   ownCommits: z.number().int().nonnegative().nullable(),
 })
 
-// The owned worktrees an archive would ask about: each holds work, or its state is unknown.
-function sessionWorktreeWorkProcedure(context: WorktreeChoiceContext) {
+// The Session worktrees an archive would ask about: each holds work, or its state is unknown.
+function sessionWorktreeWorkProcedure(context: WorktreeOptionsContext) {
   return t.procedure
     .input(z.strictObject({ sessionIds: z.array(identifierSchema).min(1) }))
     .output(z.strictObject({ worktrees: z.array(heldWorktreeSchema) }))
@@ -31,10 +32,11 @@ function sessionWorktreeWorkProcedure(context: WorktreeChoiceContext) {
     }))
 }
 
-export function sessionWorktreeProcedures(context: WorktreeChoiceContext) {
+export function sessionWorktreeProcedures(context: WorktreeOptionsContext) {
   return {
-    worktreeList: worktreeListProcedure(context),
-    worktreeChoose: worktreeChooseProcedure(context),
+    worktreeOptions: worktreeOptionsProcedure(context),
+    worktreeSwitch: worktreeSwitchProcedure(context),
+    worktreePullRequests: worktreePullRequestsProcedure(context),
     sessionWorktreeWork: sessionWorktreeWorkProcedure(context),
   }
 }

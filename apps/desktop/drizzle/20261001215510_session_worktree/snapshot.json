@@ -87,12 +87,12 @@
       "table": "project"
     },
     {
-      "type": "text",
+      "type": "integer",
       "notNull": true,
       "autoincrement": false,
-      "default": "'new'",
+      "default": "false",
       "generated": null,
-      "name": "last_worktree_choice",
+      "name": "new_worktree",
       "entityType": "columns",
       "table": "project"
     },
@@ -173,16 +173,6 @@
       "default": null,
       "generated": null,
       "name": "worktree_branch",
-      "entityType": "columns",
-      "table": "session"
-    },
-    {
-      "type": "integer",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "worktree_owned",
       "entityType": "columns",
       "table": "session"
     },
@@ -442,7 +432,7 @@
       "autoincrement": false,
       "default": null,
       "generated": null,
-      "name": "worktree_choice",
+      "name": "worktree_json",
       "entityType": "columns",
       "table": "composer_draft"
     },
@@ -1610,7 +1600,7 @@
       "table": "project"
     },
     {
-      "value": "(\"worktree_path\" IS NULL) = (\"worktree_owned\" IS NULL)",
+      "value": "(\"worktree_path\" IS NULL) = (\"worktree_branch\" IS NULL)",
       "name": "session_worktree",
       "entityType": "checks",
       "table": "session"
@@ -1622,7 +1612,7 @@
       "table": "composer_draft"
     },
     {
-      "value": "(\"project_id\" IS NULL AND \"worktree_choice\" IS NULL AND \"harness\" IS NULL) OR (\"project_id\" IS NOT NULL AND \"worktree_choice\" IS NOT NULL AND \"harness\" IS NOT NULL)",
+      "value": "(\"project_id\" IS NULL AND \"worktree_json\" IS NULL AND \"harness\" IS NULL) OR (\"project_id\" IS NOT NULL AND \"worktree_json\" IS NOT NULL AND \"harness\" IS NOT NULL)",
       "name": "composer_draft_new_session_fields",
       "entityType": "checks",
       "table": "composer_draft"

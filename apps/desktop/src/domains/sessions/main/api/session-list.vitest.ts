@@ -128,7 +128,6 @@ test('projects each Session’s worktree, and null for one in the main checkout'
       nativeId: 'linked-session',
       worktreePath: '/worktrees/one',
       worktreeBranch: 'argo/session-one',
-      worktreeOwned: true,
       createdAt: 20,
     })
     insertSession(database, {
@@ -142,7 +141,7 @@ test('projects each Session’s worktree, and null for one in the main checkout'
 
     assert.deepEqual(
       result.rows.map(({ worktree }) => worktree),
-      [{ path: '/worktrees/one', branch: 'argo/session-one', owned: true }, null],
+      [{ path: '/worktrees/one', branch: 'argo/session-one' }, null],
     )
   } finally {
     database.$client.close()

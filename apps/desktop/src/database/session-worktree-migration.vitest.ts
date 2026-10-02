@@ -23,8 +23,9 @@ async function databaseBeforeMove() {
   const userData = path.join(root, 'user-data')
   const client = openDatabase(userData, { migrationsFolder: earlier }).$client
   client.exec(`
-    INSERT INTO project (id, path, common_directory, last_workspace_choice)
-      VALUES ('project-1', '/repo', '/repo/.git', 'workspace-imported');
+    INSERT INTO project (id, path, common_directory, last_workspace_choice) VALUES
+      ('project-1', '/repo', '/repo/.git', 'workspace-imported'),
+      ('project-2', '/other', '/other/.git', 'new');
     INSERT INTO workspace (id, project_id, kind, display_name, path) VALUES
       ('workspace-main', 'project-1', 'main', 'Main checkout', '/repo'),
       ('workspace-imported', 'project-1', 'imported', 'feature', '/feature'),
@@ -32,6 +33,7 @@ async function databaseBeforeMove() {
     INSERT INTO session (argo_id, harness, native_id, project_id, workspace_id, cwd) VALUES
       ('session-main', 'claude', 'native-main', 'project-1', 'workspace-main', '/repo'),
       ('session-imported', 'codex', 'native-imported', 'project-1', 'workspace-imported', '/feature'),
+      ('session-imported-unread', 'codex', 'native-imported-unread', 'project-1', 'workspace-imported', NULL),
       ('session-managed', 'claude', 'native-managed', 'project-1', 'workspace-managed', '/worktrees/abc');
     INSERT INTO session_archive (session_id) VALUES ('session-managed');
     INSERT INTO session_subagent (session_id, subagent_id, state) VALUES ('session-main', 'agent-1', 'completed');
@@ -45,37 +47,31 @@ async function databaseBeforeMove() {
   return userData
 }
 
-test('moves each Session folder onto the Session and keeps every row that names a Session', async () => {
+test('keeps each Session folder, makes only an Argo worktree a Session worktree, and keeps every row that names a Session', async () => {
   const userData = await databaseBeforeMove()
   const client = openDatabase(userData, { migrationsFolder: databaseMigrationsFolder() }).$client
   try {
     expect(
       client
         .prepare(
-          'SELECT argo_id, cwd, worktree_path, worktree_branch, worktree_owned FROM session ORDER BY argo_id',
+          'SELECT argo_id, cwd, worktree_path, worktree_branch FROM session ORDER BY argo_id',
         )
         .all(),
     ).toEqual([
+      // An imported worktree is no Session worktree: the Session keeps the folder as its cwd.
+      { argo_id: 'session-imported', cwd: '/feature', worktree_path: null, worktree_branch: null },
       {
-        argo_id: 'session-imported',
+        argo_id: 'session-imported-unread',
         cwd: '/feature',
-        worktree_path: '/feature',
-        worktree_branch: null,
-        worktree_owned: 0,
-      },
-      {
-        argo_id: 'session-main',
-        cwd: '/repo',
         worktree_path: null,
         worktree_branch: null,
-        worktree_owned: null,
       },
+      { argo_id: 'session-main', cwd: '/repo', worktree_path: null, worktree_branch: null },
       {
         argo_id: 'session-managed',
         cwd: '/worktrees/abc',
         worktree_path: '/worktrees/abc',
         worktree_branch: 'argo/session-abc',
-        worktree_owned: 1,
       },
     ])
     expect(client.prepare('SELECT session_id FROM session_archive').all()).toEqual([
@@ -88,13 +84,14 @@ test('moves each Session folder onto the Session and keeps every row that names 
       { session_id: 'session-imported' },
     ])
     expect(
-      client.prepare('SELECT id, worktree_choice FROM composer_draft ORDER BY id').all(),
+      client.prepare('SELECT id, worktree_json FROM composer_draft ORDER BY id').all(),
     ).toEqual([
-      { id: 'draft-project', worktree_choice: 'new' },
-      { id: 'draft-session', worktree_choice: null },
+      { id: 'draft-project', worktree_json: '{"type":"new","from":null}' },
+      { id: 'draft-session', worktree_json: null },
     ])
-    expect(client.prepare('SELECT last_worktree_choice FROM project').all()).toEqual([
-      { last_worktree_choice: '/feature' },
+    expect(client.prepare('SELECT id, new_worktree FROM project ORDER BY id').all()).toEqual([
+      { id: 'project-1', new_worktree: 0 },
+      { id: 'project-2', new_worktree: 1 },
     ])
     expect(client.prepare("SELECT name FROM sqlite_master WHERE name = 'workspace'").all()).toEqual(
       [],

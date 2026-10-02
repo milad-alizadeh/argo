@@ -730,7 +730,6 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
                       nativeId: record.nativeId,
                       worktreePath: worktree?.path ?? null,
                       worktreeBranch: worktree?.branch ?? null,
-                      worktreeOwned: worktree?.owned ?? null,
                     }),
                   )
                 }),

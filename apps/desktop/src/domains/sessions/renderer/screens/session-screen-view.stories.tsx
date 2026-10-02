@@ -229,7 +229,7 @@ function ReviewScreen({
   permissionPrompt = null,
   titleText,
   worktree = null,
-  worktrees = [],
+  checkout = null,
 }: {
   rows?: SessionFeed['rows'] | null
   shellOutput?: SessionShellOutput
@@ -238,7 +238,7 @@ function ReviewScreen({
   permissionPrompt?: ReactNode
   titleText?: string
   worktree?: Session['worktree']
-  worktrees?: readonly { path: string; branch: string | null }[]
+  checkout?: { path: string; branch: string | null } | null
 }) {
   const selectedSessionId = useParams().sessionId ?? 'composer-review'
   const [jumpToLatest, setJumpToLatest] = useState<{
@@ -258,7 +258,7 @@ function ReviewScreen({
   const feed = rows === null ? feedFor(selectedSessionId) : { ...feedFor(selectedSessionId), rows }
   if (session === undefined) return null
   const headerSession = sessionWithTitle({ ...session, worktree }, titleText)
-  const branch = sessionBranch(headerSession, worktrees)
+  const branch = sessionBranch(headerSession, checkout)
 
   return (
     <ReviewContent
@@ -707,7 +707,6 @@ export const Open: Story = {
       worktree={{
         path: '/worktrees/ticket-1846-composer',
         branch: 'feature/composer-review',
-        owned: true,
       }}
     />
   ),
@@ -1043,7 +1042,6 @@ export const NarrowHeader: Story = {
         worktree={{
           path: '/worktrees/ticket-1846-composer',
           branch: 'feature/composer-review',
-          owned: true,
         }}
       />
     </div>
@@ -1067,7 +1065,7 @@ export const NarrowHeader: Story = {
 }
 
 export const MainCheckoutBranch: Story = {
-  render: () => <ReviewScreen worktrees={[{ path: COMPOSER_REVIEW_FOLDER, branch: 'main' }]} />,
+  render: () => <ReviewScreen checkout={{ path: COMPOSER_REVIEW_FOLDER, branch: 'main' }} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     expectNoSessionIdInHeader(canvasElement)
@@ -1077,12 +1075,7 @@ export const MainCheckoutBranch: Story = {
 }
 
 export const DetachedHead: Story = {
-  render: () => (
-    <ReviewScreen
-      worktree={{ path: '/storybook/detached', branch: null, owned: false }}
-      worktrees={[{ path: '/storybook/detached', branch: null }]}
-    />
-  ),
+  render: () => <ReviewScreen checkout={{ path: COMPOSER_REVIEW_FOLDER, branch: null }} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     expectNoSessionIdInHeader(canvasElement)
@@ -1091,21 +1084,7 @@ export const DetachedHead: Story = {
 }
 
 export const FolderOutsideTheProject: Story = {
-  render: () => <ReviewScreen worktrees={[{ path: '/elsewhere', branch: 'main' }]} />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    expectNoSessionIdInHeader(canvasElement)
-    expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
-  },
-}
-
-export const ImportedWorktreeNoLongerListed: Story = {
-  render: () => (
-    <ReviewScreen
-      worktree={{ path: '/storybook/removed', branch: null, owned: false }}
-      worktrees={[{ path: '/storybook/argo', branch: 'main' }]}
-    />
-  ),
+  render: () => <ReviewScreen checkout={{ path: '/elsewhere', branch: 'main' }} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     expectNoSessionIdInHeader(canvasElement)
@@ -1121,7 +1100,6 @@ export const LongBranchName: Story = {
           path: '/worktrees/a-worktree-folder-much-longer-than-the-header-can-display',
           branch:
             'feature/a-branch-name-that-is-much-longer-than-the-header-can-display-or-the-session-title',
-          owned: true,
         }}
       />
     </div>
