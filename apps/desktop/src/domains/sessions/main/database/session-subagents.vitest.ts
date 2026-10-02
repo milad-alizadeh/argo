@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, test } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import type { Database } from '@/database/database'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { insertProject, migratedDatabase } from '@/mocks/database/migrated-database'
@@ -71,9 +71,58 @@ test('a later ID scan adds children without downgrading known states', () => {
   })
   const parent = argoId('parent')
   saveSessionSubagents(database, parent, [delegation('agent-a', 'completed', 'Review')])
-  expect(saveDiscoveredSessionSubagents(database, parent, ['agent-a', 'agent-b'])).toBe(1)
+  expect(
+    saveDiscoveredSessionSubagents(database, 'claude', [
+      { nativeId: 'agent-a', parentSessionId: parent },
+      { nativeId: 'agent-b', parentSessionId: parent },
+    ]),
+  ).toEqual([{ nativeId: 'agent-b', parentSessionId: parent }])
   expect(storedSessionSubagents(database, [parent]).get(parent)).toEqual([
     { id: 'agent-a', label: 'Review', state: 'completed' },
     { id: 'agent-b', label: null, state: 'unknown' },
   ])
+})
+
+test('keeps a Subagent under the first parent saved for it, and fills only a missing parent', () => {
+  saveSessionBatch(database, {
+    harness: 'claude',
+    records: [
+      { nativeId: 'first', projectId: 'project-1', cwd: '/repo', activityAt: 10 },
+      { nativeId: 'second', projectId: 'project-1', cwd: '/repo', activityAt: 10 },
+    ],
+  })
+  const [first, second] = [argoId('first'), argoId('second')]
+  saveSessionSubagents(database, first, [delegation('agent-a', 'running', 'Survey')])
+  saveDiscoveredSessionSubagents(database, 'claude', [
+    { nativeId: 'agent-b', parentSessionId: null },
+  ])
+
+  saveSessionSubagents(database, second, [
+    delegation('agent-a', 'completed', null),
+    delegation('agent-b', 'running', null),
+  ])
+
+  expect(storedSessionSubagents(database, [first, second])).toEqual(
+    new Map([
+      [first, [{ id: 'agent-a', label: 'Survey', state: 'completed' }]],
+      [second, [{ id: 'agent-b', label: null, state: 'running' }]],
+    ]),
+  )
+})
+
+test('reports Subagents of a Session that is not saved, and saves none of them', () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  try {
+    expect(
+      saveSessionSubagents(database, 'unsaved-session', [delegation('agent-a', 'running', null)]),
+    ).toBe(0)
+    expect(warn).toHaveBeenCalledWith(
+      'Skipped 1 Subagent(s) of Session unsaved-session, which is not saved.',
+    )
+    expect(
+      database.$client.prepare('SELECT count(*) AS count FROM session_subagent').get(),
+    ).toEqual({ count: 0 })
+  } finally {
+    warn.mockRestore()
+  }
 })

@@ -49,6 +49,7 @@ describe('the Claude ACP registration', () => {
     )
     const listing = await createAcpRegistrations()['claude-acp'].listSessionSummaries({
       knownNativeIds: [valid.sessionId],
+      knownSubagentNativeIds: [],
     })
     expect(listing.skipped).toBe(2)
     expect(listing.records).toHaveLength(1)
@@ -61,6 +62,7 @@ describe('the Claude ACP registration', () => {
     await expect(
       createAcpRegistrations()['claude-acp'].listSessionSummaries({
         knownNativeIds: ['missing-saved'],
+        knownSubagentNativeIds: [],
       }),
     ).rejects.toThrow('repeated a cursor')
   })
@@ -74,6 +76,7 @@ describe('the Claude ACP recorded discovery', () => {
     expect(
       await createAcpRegistrations()['claude-acp'].listSessionSummaries({
         knownNativeIds: ['11111111-2222-4333-8444-555555555555'],
+        knownSubagentNativeIds: [],
       }),
     ).toEqual({
       skipped: 0,
@@ -93,7 +96,12 @@ describe('the Claude ACP recorded discovery', () => {
       capabilities: { loadSession: true },
     })
     const registration = createAcpRegistrations()['claude-acp']
-    expect(await registration.listSessionSummaries({ knownNativeIds: ['saved'] })).toEqual({
+    expect(
+      await registration.listSessionSummaries({
+        knownNativeIds: ['saved'],
+        knownSubagentNativeIds: [],
+      }),
+    ).toEqual({
       records: [],
       skipped: 0,
     })
@@ -122,10 +130,13 @@ describe('the Claude ACP saved discovery', () => {
     const registration = createAcpRegistrations()['claude-acp']
     const listing = await registration.listSessionSummaries({
       knownNativeIds: [first.sessionId, second.sessionId],
+      knownSubagentNativeIds: [],
     })
     expect(listing.skipped).toBe(0)
     expect(listing.records).toHaveLength(2)
-    expect(await registration.listSessionSummaries({ knownNativeIds: [] })).toEqual({
+    expect(
+      await registration.listSessionSummaries({ knownNativeIds: [], knownSubagentNativeIds: [] }),
+    ).toEqual({
       records: [],
       skipped: 0,
     })

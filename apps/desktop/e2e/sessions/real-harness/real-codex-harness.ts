@@ -35,7 +35,9 @@ async function openCodexVendorReader(
   const listSessions = createCodexSessionSummaryList(client.request)
   return {
     sessionIds: async () =>
-      (await listSessions({ knownNativeIds: [] })).records.map((record) => record.nativeId),
+      (await listSessions({ knownNativeIds: [], knownSubagentNativeIds: [] })).records.map(
+        (record) => record.nativeId,
+      ),
     records: async (threadId) => {
       const { thread } = await client.request(
         'thread/read',
