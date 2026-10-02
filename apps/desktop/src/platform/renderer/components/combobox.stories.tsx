@@ -109,7 +109,9 @@ export const Invalid: Story = {
 export const LongOptionNarrow: Story = {
   args: { narrow: true },
   play: async ({ canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole('combobox'))
+    const input = within(canvasElement).getByRole('combobox')
+    await userEvent.click(input)
+    await userEvent.type(input, 'long-branch')
     await expect(
       await within(document.body).findByRole('option', { name: options[1] }),
     ).toBeVisible()

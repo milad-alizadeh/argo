@@ -153,7 +153,7 @@ export const LabelSearch: Story = {
     await expect(trigger).toHaveTextContent('New worktree')
     await userEvent.click(trigger)
     const search = await within(document.body).findByLabelText('Search worktrees')
-    await expect(search).toBeVisible()
+    await waitFor(() => expect(search).toBeVisible())
     await expect(search).toHaveAccessibleName('Search worktrees')
     await userEvent.type(search, 'main')
     await expect(within(document.body).getByRole('option', { name: 'main' })).toBeVisible()
