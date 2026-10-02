@@ -61,7 +61,7 @@ const SESSION_ROWS = [
       }),
     ],
     shell: [sessionShellCommand({ id: 'quality', command: 'bun run quality' })],
-    contextTokens: 54_000,
+    contextUsage: { usedTokens: 54_000, windowTokens: null },
   }),
   sessionRow({
     id: 'shortcut-review',
@@ -72,7 +72,7 @@ const SESSION_ROWS = [
     cwd: '/workspace/argo',
     updatedAt: '2026-09-13T15:28:00Z',
     shell: [sessionShellCommand({ id: 'codex-command', command: 'bun run typecheck' })],
-    contextTokens: 21_000,
+    contextUsage: { usedTokens: 21_000, windowTokens: null },
   }),
   sessionRow({
     id: 'feed-review',
@@ -86,7 +86,7 @@ const SESSION_ROWS = [
       kind: 'read',
       open: false,
     },
-    contextTokens: 18_000,
+    contextUsage: { usedTokens: 18_000, windowTokens: null },
   }),
 ] satisfies (Session & SessionExtras)[]
 

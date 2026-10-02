@@ -13,6 +13,7 @@ export function dispatchCodexNotification(
     reasoningSummaryDelta: (params: Params) => void
     commandOutputDelta: (params: Params) => void
     planUpdated: (params: Params) => void
+    tokenUsageUpdated: (params: Params) => void
     itemNotification: (params: Params, phase: 'started' | 'completed') => void
     skillsChanged: () => void
   },
@@ -39,6 +40,9 @@ export function dispatchCodexNotification(
       return undefined
     case 'turn/plan/updated':
       handlers.planUpdated(params)
+      return undefined
+    case 'thread/tokenUsage/updated':
+      handlers.tokenUsageUpdated(params)
       return undefined
     case 'item/completed':
       handlers.itemNotification(params, 'completed')

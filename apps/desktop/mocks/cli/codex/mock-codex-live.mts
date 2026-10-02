@@ -11,6 +11,7 @@ import { recordedCodexModels } from '../../recordings/codex-app-server.ts'
 import { MOCK_START_REFUSED_FILE } from '../mock-cli.ts'
 import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
 import { sendPlanUpdate } from './fixtures/mock-codex-plan.ts'
+import { sendTokenUsage } from './fixtures/mock-codex-responses.ts'
 import { createMockCodexSkillsAndConfig } from './fixtures/mock-codex-skills-config.ts'
 import { mockTurnsPage } from './mock-codex-turn-pages.ts'
 
@@ -92,6 +93,7 @@ function finish(active: ActiveTurn, status: 'completed' | 'interrupted' | 'faile
     })
   }
   save(thread)
+  sendTokenUsage(send, thread.id, turn.id)
   send({
     method: 'turn/completed',
     params: { threadId: thread.id, turn: { id: turn.id, status, error: null } },
@@ -124,6 +126,7 @@ function finishAdversarially(
   })
   turn.status = plan.outcome === 'failure' ? 'failed' : 'completed'
   save(thread)
+  sendTokenUsage(send, thread.id, turn.id)
   send({
     method: 'turn/completed',
     params: { threadId: thread.id, turn: { id: turn.id, status: turn.status, error: null } },

@@ -104,3 +104,39 @@ test('refreshes selected details when the live channel fails', async () => {
   // The row keeps the configuration the channel last held.
   expect(seen.at(-1)).toEqual({ posture: null, effort: 'deep' })
 })
+
+test('shows the context usage a live Turn reported when it ended, and keeps it once closed', async () => {
+  const { root, supervisor, client, notify } = await supervisorFor(recordingCodexRequest().request)
+  const database = databaseFrom(client)
+  const { details, stopWatching } = sessionListCaller({ database, supervisor })
+  try {
+    const { sessionId } = await start(supervisor, first)
+    const child = liveSessionActorFor(supervisor, sessionId)
+    if (child === undefined) throw new Error('The started Session has no live actor.')
+    await waitFor(child, (snapshot) => snapshot.context.feedSerial >= 1)
+    notify({
+      method: 'thread/tokenUsage/updated',
+      params: {
+        threadId: 'native-1',
+        turnId: 'turn-2',
+        tokenUsage: {
+          last: { totalTokens: 48_000 },
+          total: { totalTokens: 90_000 },
+          modelContextWindow: 256_000,
+        },
+      },
+    })
+    expect((await details({ sessionId }))?.contextUsage).toBeNull()
+    completeCodexTurn(notify, 'turn-2')
+    const reported = { usedTokens: 48_000, windowTokens: 256_000 }
+    await vi.waitFor(async () => expect((await details({ sessionId }))?.contextUsage).toEqual(reported))
+    root.send({ type: 'Shutdown' })
+    const stored = sessionListCaller({ database })
+    expect((await stored.details({ sessionId }))?.contextUsage).toEqual(reported)
+    stored.stopWatching()
+  } finally {
+    stopWatching()
+    root.send({ type: 'Shutdown' })
+    client.close()
+  }
+})

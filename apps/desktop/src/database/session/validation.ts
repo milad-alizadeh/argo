@@ -11,6 +11,7 @@ const serverOwnedSessionFields = {
   status: true,
   activity: true,
   planProgress: true,
+  contextUsage: true,
 } as const
 export const sessionInsertSchema = createInsertSchema(sessionTable, {
   turnConfiguration: reportedTurnConfigurationSchema.nullable().optional(),

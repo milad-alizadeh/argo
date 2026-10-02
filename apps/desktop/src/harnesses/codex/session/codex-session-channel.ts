@@ -1,3 +1,4 @@
+import type { ContextUsage } from '@/domains/sessions/api/context-usage'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import { type QuestionAnswer, validQuestionAnswers } from '@/domains/sessions/api/questions'
@@ -34,6 +35,7 @@ import {
   questionResponse,
   readCodexInteraction,
 } from './codex-session-interactions'
+import { readCodexContextUsage } from './codex-context-usage'
 import { dispatchCodexNotification } from './codex-session-notifications'
 import { APPROVAL_TIMEOUT_MS, inputItems } from './codex-session-protocol'
 import { followCodexSkillCommands } from './codex-skill-commands'
@@ -77,6 +79,8 @@ class CodexSessionChannel implements LiveSessionChannel {
   private rejected = 0
   private skills: ReturnType<typeof followCodexSkillCommands> | null = null
   private lastStatus: string | null = null
+  // The active Turn's newest token usage, reported when the Turn ends.
+  private contextUsage: ContextUsage | null = null
 
   constructor(
     input: SessionLiveInput,
@@ -175,6 +179,13 @@ class CodexSessionChannel implements LiveSessionChannel {
     if (plan === null) return this.reject('turn/plan/updated')
     if (plan.threadId === this.nativeId && this.active?.turnId === plan.turnId)
       this.emitItemContent(plan.content, plan.content.id, plan.turnId)
+  }
+
+  private tokenUsageUpdated(params: Record<string, unknown>) {
+    const reading = readCodexContextUsage(params)
+    if (reading === null) return this.reject('thread/tokenUsage/updated')
+    if (reading.threadId === this.nativeId && this.active?.turnId === reading.turnId)
+      this.contextUsage = reading.usage
   }
 
   private threadStatusChanged(params: Record<string, unknown>) {
@@ -366,6 +377,7 @@ class CodexSessionChannel implements LiveSessionChannel {
       reasoningSummaryDelta: (params) => this.reasoningSummaryDelta(params),
       commandOutputDelta: (params) => this.commandOutputDelta(params),
       planUpdated: (params) => this.planUpdated(params),
+      tokenUsageUpdated: (params) => this.tokenUsageUpdated(params),
       itemNotification: (params, phase) => this.itemNotification(params, phase),
       skillsChanged: () => this.skills?.changed(),
     })
@@ -397,6 +409,8 @@ class CodexSessionChannel implements LiveSessionChannel {
         return this.reject('turn/completed')
     }
     const { commandId, turnId } = this.active
+    if (this.contextUsage !== null) this.emit({ type: 'context.usage', usage: this.contextUsage })
+    this.contextUsage = null
     this.emitFeed({
       type: 'status',
       status,

@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { project } from '@/database/project/schema'
 import { timestampColumns } from '@/database/timestamp-columns'
+import type { ContextUsage } from '@/domains/sessions/api/context-usage'
 import type { PlanProgress } from '@/domains/sessions/api/feed-content'
 import type { ReportedTurnConfiguration } from '@/domains/sessions/api/reported-turn-configuration'
 import { SESSION_STATUSES } from '@/domains/sessions/api/session-live-event'
@@ -36,6 +37,8 @@ export const sessionTable = sqliteTable(
     }).$type<ReportedTurnConfiguration>(),
     // The newest Plan's steps done and in total; null until the Feed holds a Plan.
     planProgress: text('plan_progress', { mode: 'json' }).$type<PlanProgress>(),
+    // The context window use after the newest Turn of a live channel; null until one reports it.
+    contextUsage: text('context_usage', { mode: 'json' }).$type<ContextUsage>(),
     ...timestampColumns(),
   },
   (table) => [

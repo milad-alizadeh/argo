@@ -456,9 +456,8 @@ function SessionComposer({
       worktree: worktreeState,
       actions: worktreeActions,
     }),
-    // #2968 fills context usage.
-    contextTokens: session?.contextTokens,
-    contextWindowTokens: session?.contextWindowTokens,
+    contextTokens: session?.contextUsage?.usedTokens,
+    contextWindowTokens: session?.contextUsage?.windowTokens,
     disabled: questionPending || catalogBlocked || (draft?.loadFailed === true && !draft.hasDraft),
     harness,
     plan: composerPlan(session),

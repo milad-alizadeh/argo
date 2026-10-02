@@ -30,6 +30,7 @@ import { ticketTable } from '@/database/ticket/schema'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { ticketContent } from '@/database/ticket-content/schema'
 import { ticketContentSelectSchema } from '@/database/ticket-content/validation'
+import { contextUsageSchema } from '@/domains/sessions/api/context-usage'
 import { type LiveActivity, liveActivitySchema } from '@/domains/sessions/api/feed'
 import { planProgressSchema } from '@/domains/sessions/api/feed-content'
 import { reportedTurnConfigurationSchema } from '@/domains/sessions/api/reported-turn-configuration'
@@ -82,6 +83,7 @@ export const sessionListRowSchema = z.strictObject({
   archived: z.boolean(),
   turnConfiguration: reportedTurnConfigurationSchema,
   planProgress: planProgressSchema.nullable(),
+  contextUsage: contextUsageSchema.nullable(),
 })
 
 const sessionListSchema = z.strictObject({
@@ -144,6 +146,7 @@ function liveProjection(context: Pick<SessionListContext, 'supervisor'>, session
     status: snapshot.context.status ?? status,
     activity: snapshot.context.activity?.activity ?? null,
     turnConfiguration: snapshot.context.turnConfiguration,
+    contextUsage: snapshot.context.contextUsage,
   }
 }
 
@@ -175,6 +178,8 @@ function sessionListRow(
         mode: null,
       },
     planProgress: storedValue(planProgressSchema, row.planProgress, 'Plan progress'),
+    contextUsage:
+      live?.contextUsage ?? storedValue(contextUsageSchema, row.contextUsage, 'context usage'),
   }
 }
 
@@ -200,6 +205,7 @@ const storedSessionColumns = {
   updatedAt: sessionTable.updatedAt,
   turnConfiguration: sessionTable.turnConfiguration,
   planProgress: sessionTable.planProgress,
+  contextUsage: sessionTable.contextUsage,
   worktreePath: sessionTable.worktreePath,
   worktreeBranch: sessionTable.worktreeBranch,
   worktreeBase: sessionTable.worktreeBase,
@@ -367,7 +373,8 @@ export function sessionListChangedProcedure(context: SessionListContext) {
   )
 }
 
-// Announces each live status change and saves the channel's Turn configuration and Turn-end time.
+// Announces each live status change and saves the channel's Turn configuration, context usage and
+// Turn-end time.
 export function watchSessionList(
   context: Pick<SessionListContext, 'database' | 'supervisor' | 'changes'>,
 ): () => void {
@@ -383,6 +390,7 @@ export function watchSessionList(
     if (live !== null || turnEnded)
       updateSession(context, sessionId, {
         ...(live !== null && { turnConfiguration: live.turnConfiguration }),
+        ...(live?.contextUsage && { contextUsage: live.contextUsage }),
         ...(turnEnded && { activityAt: Date.now() }),
       })
     context.changes.changed([sessionId])
