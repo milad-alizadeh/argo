@@ -88,7 +88,7 @@ type SessionHostOptions = {
   // The recorded history every Feed of the story reads.
   feed?: FeedRead
   live?: readonly SessionLiveEvent[]
-  // What each archived Session's owned worktree holds; none by default, so archive asks nothing.
+  // What each archived Session's worktree holds; none by default, so archive asks nothing.
   worktreeWork?: () => Promise<RouterOutputs['sessionWorktreeWork']>
 }
 

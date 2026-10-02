@@ -13,7 +13,7 @@ import {
   type LiveSessionSupervisorActor,
   SessionSubmitRejectedError,
 } from '@/domains/sessions/main/live'
-import { createOwnedWorktree } from '@/domains/sessions/main/worktree'
+import { createWorktree } from '@/domains/sessions/main/worktree'
 import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { initFixtureRepo } from '@/mocks/projects/worktree-repo.fixture'
 import { type AppRouterDependencies, createAppRouter } from './trpc-router'
@@ -60,9 +60,9 @@ function caller(send: LiveSessionSupervisorActor['send'] = () => {}) {
     sessions: {
       database,
       supervisor: { send } as LiveSessionSupervisorActor,
-      createOwnedWorktree: (projectId: string, draftId: string, from: string | null) =>
+      createWorktree: (projectId: string, draftId: string, from: string | null) =>
         exclusive(() =>
-          createOwnedWorktree({
+          createWorktree({
             database,
             projectId,
             draftId,

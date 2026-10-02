@@ -1,13 +1,16 @@
-// Archiving a Session removes the worktree Argo made for it, as Claude Code does on exit: a clean
-// one goes at once, and one that holds work, or whose state git could not read, goes only when the
-// person chose Remove. Every Session worktree is one Argo made; the main checkout is never read.
+// Archiving a Session removes its worktree, as Claude Code does on exit: a clean one goes at once,
+// and one that holds work, or whose state git could not read, goes only when the person chose
+// Remove. A worktree another unarchived Session runs in stays; the main checkout is never read.
 import { execFile } from 'node:child_process'
 import { stat } from 'node:fs/promises'
 import { promisify } from 'node:util'
-import { and, eq, inArray, isNotNull } from 'drizzle-orm'
+import { and, eq, inArray, isNotNull, isNull, notExists, notInArray } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/sqlite-core'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
+import type { SessionWorktree } from '@/database/session/validation'
+import { sessionArchive } from '@/database/session-archive/schema'
 import { isClean, readWorktreeWork, type WorktreeWork } from './worktree-work'
 
 const run = promisify(execFile)
@@ -21,7 +24,7 @@ export type RemovalContext = {
   isRunning: (sessionId: string) => boolean
 }
 
-type OwnedWorktree = { sessionId: string; path: string; branch: string | null; projectPath: string }
+type ArchivedWorktree = SessionWorktree & { sessionId: string; projectPath: string }
 
 function present(folder: string): Promise<boolean> {
   return stat(folder).then(
@@ -30,7 +33,21 @@ function present(folder: string): Promise<boolean> {
   )
 }
 
-function ownedWorktrees(database: Database, sessionIds: readonly string[]): OwnedWorktree[] {
+const other = alias(sessionTable, 'other_session')
+
+// The worktrees of these Sessions that no Session outside them still runs in unarchived.
+function archivedWorktrees(database: Database, sessionIds: readonly string[]): ArchivedWorktree[] {
+  const stillUsed = database
+    .select({ id: other.argoId })
+    .from(other)
+    .leftJoin(sessionArchive, eq(sessionArchive.sessionId, other.argoId))
+    .where(
+      and(
+        eq(other.worktreePath, sessionTable.worktreePath),
+        notInArray(other.argoId, [...sessionIds]),
+        isNull(sessionArchive.sessionId),
+      ),
+    )
   return database
     .select({
       sessionId: sessionTable.argoId,
@@ -40,20 +57,26 @@ function ownedWorktrees(database: Database, sessionIds: readonly string[]): Owne
     })
     .from(sessionTable)
     .innerJoin(project, eq(project.id, sessionTable.projectId))
-    .where(and(inArray(sessionTable.argoId, [...sessionIds]), isNotNull(sessionTable.worktreePath)))
+    .where(
+      and(
+        inArray(sessionTable.argoId, [...sessionIds]),
+        isNotNull(sessionTable.worktreePath),
+        notExists(stillUsed),
+      ),
+    )
     .all()
     .flatMap((row) => (row.path === null ? [] : [{ ...row, path: row.path }]))
 }
 
-type HeldWorktree = OwnedWorktree & { work: WorktreeWork }
+type HeldWorktree = ArchivedWorktree & { work: WorktreeWork }
 
-// The owned worktrees of these Sessions that hold work, or whose state git could not read.
+// The worktrees of these Sessions that hold work, or whose state git could not read.
 export async function worktreesWithWork(
   database: Database,
   sessionIds: readonly string[],
 ): Promise<HeldWorktree[]> {
   const found = await Promise.all(
-    ownedWorktrees(database, sessionIds).map(async (worktree): Promise<HeldWorktree[]> => {
+    archivedWorktrees(database, sessionIds).map(async (worktree): Promise<HeldWorktree[]> => {
       if (!(await present(worktree.path))) return []
       const work = await readWorktreeWork(worktree.path, worktree.branch)
       return isClean(work) ? [] : [{ ...worktree, work }]
@@ -64,7 +87,7 @@ export async function worktreesWithWork(
 
 async function removeOne(
   context: RemovalContext,
-  worktree: OwnedWorktree,
+  worktree: ArchivedWorktree,
   removal: WorktreeRemoval,
 ): Promise<RemovalOutcome> {
   if (context.isRunning(worktree.sessionId)) return 'running'
@@ -86,12 +109,12 @@ async function removeOne(
 }
 
 // The Session keeps its worktree record; a resume finds the folder gone and moves to the main checkout.
-export async function removeOwnedWorktrees(
+export async function removeSessionWorktrees(
   context: RemovalContext,
   input: { sessionIds: readonly string[]; removal: WorktreeRemoval },
 ): Promise<{ sessionId: string; outcome: RemovalOutcome }[]> {
   const outcomes: { sessionId: string; outcome: RemovalOutcome }[] = []
-  for (const worktree of ownedWorktrees(context.database, input.sessionIds))
+  for (const worktree of archivedWorktrees(context.database, input.sessionIds))
     outcomes.push({
       sessionId: worktree.sessionId,
       outcome: await removeOne(context, worktree, input.removal),

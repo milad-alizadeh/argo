@@ -5,6 +5,7 @@ import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
+import { type SessionWorktree, sessionWorktreeSchema } from '@/database/session/validation'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
 import { pendingSessionId } from '@/domains/sessions/api/pending-session'
 import type { SessionSubmitRejection } from '@/domains/sessions/api/session-submit-rejection'
@@ -21,17 +22,11 @@ const commandSchema = z.strictObject({
   attachments: z.array(sessionAttachmentInputSchema),
   turnConfiguration: draftTurnConfigurationSchema,
 })
-// The worktree Argo made for a new Session; null runs it in the Project's main checkout.
-const sessionWorktreeSchema = z
-  .strictObject({
-    path: z.string().min(1),
-    branch: z.string().min(1),
-  })
-  .nullable()
 const sessionStartInputSchema = commandSchema.extend({
   harness: harnessSchema,
   projectId: identifierSchema,
-  worktree: sessionWorktreeSchema,
+  // Null runs the Session in the Project's main checkout.
+  worktree: sessionWorktreeSchema.nullable(),
   cwd: z.string().min(1),
 })
 const sessionResumeSchema = z.strictObject({
@@ -62,11 +57,11 @@ type SessionSubmitInput = z.infer<typeof inputSchema>
 export type SessionProcedureContext = {
   database: Database
   supervisor: LiveSessionSupervisorActor
-  createOwnedWorktree: (
+  createWorktree: (
     projectId: string,
     draftId: string,
     from: string | null,
-  ) => Promise<{ path: string; branch: string }>
+  ) => Promise<SessionWorktree>
   acceptsAttachments: (harness: Harness) => boolean
 }
 type DraftRequest = {
@@ -121,7 +116,7 @@ function rejected(code: 'BAD_REQUEST' | 'PRECONDITION_FAILED', message: string):
 
 type ProjectTarget = Extract<DraftRequest['draft']['target'], { type: 'project' }>
 
-// The folder a new Session runs in: a new worktree Argo makes for it, or the main checkout.
+// The folder a new Session runs in: a new worktree made for it, or the main checkout.
 async function chosenFolder(
   context: SessionProcedureContext,
   target: ProjectTarget,
@@ -129,7 +124,7 @@ async function chosenFolder(
 ): Promise<Pick<SessionStartInput, 'worktree' | 'cwd'>> {
   if (target.worktree.type === 'new') {
     const created = await context
-      .createOwnedWorktree(target.projectId, draftId, target.worktree.from)
+      .createWorktree(target.projectId, draftId, target.worktree.from)
       .catch(() => {
         throw rejected(
           'PRECONDITION_FAILED',

@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { projectSelectSchema } from '@/database/project/validation'
+import type { SessionWorktree } from '@/database/session/validation'
 import { gitCommonDirectory } from '@/platform/main/git-worktrees'
 import { readWorktreeBranch } from './worktree-branch'
 import { projectFolders } from './worktree-options'
@@ -73,14 +74,14 @@ async function ensureWorktreeOnDisk(input: {
   await run('git', arguments_, { timeout: 120_000 })
 }
 
-// The worktree Argo makes for a new Session draft, from the local branch `from`. A second Send of the draft reuses it.
-export async function createOwnedWorktree(input: {
+// The worktree made for a new Session draft, from the local branch `from`. A second Send of the draft reuses it.
+export async function createWorktree(input: {
   database: Database
   projectId: string
   draftId: string
   from: string | null
   worktreeRoot: string
-}): Promise<{ path: string; branch: string }> {
+}): Promise<SessionWorktree & { branch: string }> {
   const registered = projectSelectSchema.safeParse(
     input.database
       .select({ id: project.id, path: project.path, commonDirectory: project.commonDirectory })

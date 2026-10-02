@@ -28,7 +28,7 @@ function testRouter(
     ...sessionRouterDependencies({} as never, {
       supervisor: sessionActor,
       refreshSessionSync,
-      createOwnedWorktree: async () => ({
+      createWorktree: async () => ({
         path: '/tmp/argo-test-worktrees',
         branch: 'argo/session-test',
       }),

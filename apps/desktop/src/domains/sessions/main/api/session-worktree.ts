@@ -1,5 +1,6 @@
 import { initTRPC } from '@trpc/server'
 import { z } from 'zod'
+import { sessionWorktreeSchema } from '@/database/session/validation'
 import { identifierSchema } from '@/shared/validation'
 import {
   type WorktreeOptionsContext,
@@ -10,10 +11,8 @@ import {
 
 const t = initTRPC.create()
 
-const heldWorktreeSchema = z.strictObject({
+const heldWorktreeSchema = sessionWorktreeSchema.extend({
   sessionId: identifierSchema,
-  path: z.string().min(1),
-  branch: z.string().min(1).nullable(),
   // A count git could not read is null, and the archive dialog names it as unchecked.
   changedFiles: z.number().int().nonnegative().nullable(),
   ownCommits: z.number().int().nonnegative().nullable(),

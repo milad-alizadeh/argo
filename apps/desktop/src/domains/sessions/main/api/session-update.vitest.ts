@@ -213,7 +213,7 @@ test('archiving moves known Sessions to the archived filter and back, skipping a
   }
 })
 
-test('an archive the person confirmed with Remove asks to remove every owned worktree', async () => {
+test('an archive the person confirmed with Remove asks to remove every Session worktree', async () => {
   const { database, update, removalRequests } = callerWithOneSession()
   try {
     await update({ sessionIds: [IDS[0]], archived: true, worktrees: 'all' })

@@ -1600,7 +1600,7 @@
       "table": "project"
     },
     {
-      "value": "(\"worktree_path\" IS NULL) = (\"worktree_branch\" IS NULL)",
+      "value": "\"worktree_branch\" IS NULL OR \"worktree_path\" IS NOT NULL",
       "name": "session_worktree",
       "entityType": "checks",
       "table": "session"

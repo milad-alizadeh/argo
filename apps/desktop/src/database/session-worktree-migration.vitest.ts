@@ -47,7 +47,7 @@ async function databaseBeforeMove() {
   return userData
 }
 
-test('keeps each Session folder, makes only an Argo worktree a Session worktree, and keeps every row that names a Session', async () => {
+test('keeps each Session folder, makes every linked worktree a Session worktree, and keeps every row that names a Session', async () => {
   const userData = await databaseBeforeMove()
   const client = openDatabase(userData, { migrationsFolder: databaseMigrationsFolder() }).$client
   try {
@@ -58,12 +58,17 @@ test('keeps each Session folder, makes only an Argo worktree a Session worktree,
         )
         .all(),
     ).toEqual([
-      // An imported worktree is no Session worktree: the Session keeps the folder as its cwd.
-      { argo_id: 'session-imported', cwd: '/feature', worktree_path: null, worktree_branch: null },
+      // An imported worktree is a Session worktree too; the next scan reads its branch from git.
+      {
+        argo_id: 'session-imported',
+        cwd: '/feature',
+        worktree_path: '/feature',
+        worktree_branch: null,
+      },
       {
         argo_id: 'session-imported-unread',
         cwd: '/feature',
-        worktree_path: null,
+        worktree_path: '/feature',
         worktree_branch: null,
       },
       { argo_id: 'session-main', cwd: '/repo', worktree_path: null, worktree_branch: null },

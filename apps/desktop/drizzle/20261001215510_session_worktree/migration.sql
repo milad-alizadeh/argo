@@ -1,6 +1,6 @@
 -- Moves each Workspace's folder onto the Sessions and drafts that named it, then drops the table.
--- Only a worktree Argo made stays a Session worktree. A Session in an imported worktree keeps that
--- folder as its `cwd` and has no worktree, so archiving it never removes the folder.
+-- Every linked worktree, made by Argo or not, becomes the Session's worktree. An imported one's branch
+-- is unknown here, so it stays null until the next Session scan reads it from git.
 -- Migrations run inside one transaction, where `PRAGMA foreign_keys=OFF` does nothing, so dropping
 -- `session` cascades into its child tables. Their rows are kept aside and put back after.
 ALTER TABLE `project` ADD `new_worktree` integer DEFAULT false NOT NULL;--> statement-breakpoint
@@ -41,12 +41,12 @@ CREATE TABLE `__new_session` (
 	`created_at` integer DEFAULT (CAST(unixepoch('subsec') * 1000 AS INTEGER)) NOT NULL,
 	`updated_at` integer DEFAULT (CAST(unixepoch('subsec') * 1000 AS INTEGER)) NOT NULL,
 	CONSTRAINT `fk_session_project_id_project_id_fk` FOREIGN KEY (`project_id`) REFERENCES `project`(`id`) ON DELETE SET NULL,
-	CONSTRAINT "session_worktree" CHECK(("worktree_path" IS NULL) = ("worktree_branch" IS NULL))
+	CONSTRAINT "session_worktree" CHECK("worktree_branch" IS NULL OR "worktree_path" IS NOT NULL)
 );
 --> statement-breakpoint
 INSERT INTO `__new_session`(`argo_id`, `harness`, `native_id`, `project_id`, `worktree_path`, `worktree_branch`, `custom_title`, `preview`, `first_prompt`, `cwd`, `activity_at`, `sort_order`, `activity`, `status`, `turn_configuration`, `plan_progress`, `created_at`, `updated_at`)
 	SELECT `session`.`argo_id`, `session`.`harness`, `session`.`native_id`, `session`.`project_id`,
-		CASE WHEN `workspace`.`kind` = 'managed' THEN `workspace`.`path` END,
+		CASE WHEN `workspace`.`kind` IN ('managed', 'imported') THEN `workspace`.`path` END,
 		CASE WHEN `workspace`.`kind` = 'managed' THEN 'argo/' || `workspace`.`display_name` END,
 		`session`.`custom_title`, `session`.`preview`, `session`.`first_prompt`,
 		CASE WHEN `workspace`.`kind` = 'imported' THEN coalesce(`session`.`cwd`, `workspace`.`path`) ELSE `session`.`cwd` END, `session`.`activity_at`, `session`.`sort_order`, `session`.`activity`, `session`.`status`, `session`.`turn_configuration`, `session`.`plan_progress`, `session`.`created_at`, `session`.`updated_at`

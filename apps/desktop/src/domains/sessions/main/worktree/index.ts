@@ -1,4 +1,5 @@
-export { createOwnedWorktree } from './worktree-create-owned'
+export { readWorktreeBranch } from './worktree-branch'
+export { createWorktree } from './worktree-create'
 export {
   projectFolders,
   type WorktreeOptionsContext,
@@ -6,7 +7,7 @@ export {
   worktreeSwitchProcedure,
 } from './worktree-options'
 export {
-  removeOwnedWorktrees,
+  removeSessionWorktrees,
   type WorktreeRemoval,
   worktreesWithWork,
 } from './worktree-removal'

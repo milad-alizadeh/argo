@@ -4,7 +4,7 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { expect, test } from 'vitest'
 import { registeredRepoFixture } from '@/mocks/projects/registered-repo.fixture'
-import { createOwnedWorktree } from './worktree-create-owned'
+import { createWorktree } from './worktree-create'
 
 const run = promisify(execFile)
 const IDENTITY = ['-c', 'user.email=argo@example.test', '-c', 'user.name=Argo']
@@ -32,8 +32,8 @@ async function head(folder: string): Promise<string> {
 
 test('creates one worktree on its own branch and reuses it when the draft is sent again', async () => {
   const { input } = await draftInput()
-  const first = await createOwnedWorktree(input)
-  const second = await createOwnedWorktree(input)
+  const first = await createWorktree(input)
+  const second = await createWorktree(input)
   expect(second).toEqual(first)
   expect(first.branch).toMatch(/^argo\/session-/)
   expect(
@@ -43,15 +43,15 @@ test('creates one worktree on its own branch and reuses it when the draft is sen
 
 test('refuses to reuse a worktree folder that has moved to another branch', async () => {
   const { input } = await draftInput()
-  const created = await createOwnedWorktree(input)
+  const created = await createWorktree(input)
   await run('git', ['-C', created.path, 'checkout', '--quiet', '-b', 'moved-on'])
-  await expect(createOwnedWorktree(input)).rejects.toThrow('worktree-path-conflict')
+  await expect(createWorktree(input)).rejects.toThrow('worktree-path-conflict')
 })
 
 test('starts at the main checkout commit and leaves its uncommitted changes behind', async () => {
   const { input, repository } = await draftInput()
   await writeFile(path.join(repository, 'draft.txt'), 'not committed')
-  const created = await createOwnedWorktree(input)
+  const created = await createWorktree(input)
   expect(await head(created.path)).toBe(await head(repository))
   await expect(access(path.join(created.path, 'draft.txt'))).rejects.toThrow()
 })
@@ -61,11 +61,11 @@ test('starts at the chosen branch', async () => {
   await run('git', ['-C', repository, 'checkout', '--quiet', '-b', 'base'])
   const base = await commit(repository, 'on base')
   await run('git', ['-C', repository, 'checkout', '--quiet', 'main'])
-  const created = await createOwnedWorktree(input)
+  const created = await createWorktree(input)
   expect(await head(created.path)).toBe(base)
 })
 
 test('refuses a branch that does not exist', async () => {
   const { input } = await draftInput('missing')
-  await expect(createOwnedWorktree(input)).rejects.toThrow()
+  await expect(createWorktree(input)).rejects.toThrow()
 })

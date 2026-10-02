@@ -38,7 +38,7 @@ import {
   SessionInteractionBroker,
 } from '@/domains/sessions/main/live'
 import type { SessionSyncSupervisorActor } from '@/domains/sessions/main/sync'
-import { createOwnedWorktree, removeOwnedWorktrees } from '@/domains/sessions/main/worktree'
+import { createWorktree, removeSessionWorktrees } from '@/domains/sessions/main/worktree'
 import {
   failInterruptedTicketSearches,
   markInterruptedTicketScans,
@@ -238,9 +238,9 @@ function routerForWindow(options: {
     },
     sessions: {
       database,
-      createOwnedWorktree: (projectId, draftId, from) =>
+      createWorktree: (projectId, draftId, from) =>
         exclusive(() =>
-          createOwnedWorktree({
+          createWorktree({
             database,
             projectId,
             draftId,
@@ -248,7 +248,7 @@ function routerForWindow(options: {
             worktreeRoot: path.join(app.getPath('userData'), 'worktrees'),
           }),
         ),
-      removeOwnedWorktrees: (input) => queueWorktreeRemoval(database, actors, input),
+      removeSessionWorktrees: (input) => queueWorktreeRemoval(database, actors, input),
       exclusive,
       rename: ({ harness, nativeId, title }) => {
         const rename = registry[harness].rename
@@ -407,16 +407,16 @@ function turnRunningCheck(actors: WindowActors) {
 }
 
 // One removal at a time, so two archives never race over the same worktree.
-const ownedWorktreeChanges = createWriteQueue()
+const worktreeRemovals = createWriteQueue()
 
 function queueWorktreeRemoval(
   database: Database,
   actors: WindowActors,
-  input: Parameters<typeof removeOwnedWorktrees>[1],
+  input: Parameters<typeof removeSessionWorktrees>[1],
 ): void {
-  void ownedWorktreeChanges(() =>
-    removeOwnedWorktrees({ database, isRunning: turnRunningCheck(actors) }, input),
-  ).catch((error) => console.error('Owned worktree removal failed.', error))
+  void worktreeRemovals(() =>
+    removeSessionWorktrees({ database, isRunning: turnRunningCheck(actors) }, input),
+  ).catch((error) => console.error('Session worktree removal failed.', error))
 }
 
 // The Session services the app runs once, not per window: one set of Feed readers, the Session

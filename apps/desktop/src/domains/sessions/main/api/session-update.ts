@@ -159,7 +159,7 @@ const sessionUpdateInputSchema = z
       .pipe(z.string().min(1))
       .optional(),
     archived: z.boolean().optional(),
-    // Which owned worktrees an archive removes: only clean ones, or every one the person chose to.
+    // Which Session worktrees an archive removes: only clean ones, or every one the person chose to.
     worktrees: z.enum(['clean', 'all']).optional(),
   })
   .refine((input) => input.title === undefined || input.sessionIds.length === 1, {
@@ -168,8 +168,8 @@ const sessionUpdateInputSchema = z
 
 export type SessionUpdateProcedureContext = SessionUpdateContext & {
   rename: (request: { harness: Harness; nativeId: string; title: string }) => Promise<void>
-  // Runs after an archive, which is what lets an owned worktree go.
-  removeOwnedWorktrees: (input: { sessionIds: string[]; removal: WorktreeRemoval }) => void
+  // Runs after an archive, which is what lets a Session worktree go.
+  removeSessionWorktrees: (input: { sessionIds: string[]; removal: WorktreeRemoval }) => void
 }
 
 // Renames one saved Session or archives several, and returns the updated IDs. A title goes to the
@@ -188,7 +188,7 @@ export function sessionUpdateProcedure(context: SessionUpdateProcedureContext) {
         updateSession(context, sessionId, { customTitle: input.title, archived: input.archived }),
       )
       if (input.archived === true && sessionIds.length > 0)
-        context.removeOwnedWorktrees({ sessionIds, removal: input.worktrees ?? 'clean' })
+        context.removeSessionWorktrees({ sessionIds, removal: input.worktrees ?? 'clean' })
       return { sessionIds }
     })
 }

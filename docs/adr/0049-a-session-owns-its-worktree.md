@@ -16,10 +16,12 @@ Claude Code already has a worktree rule that people who use both tools know:
 
 ## Decision
 
-There is no Workspace entity. A Session has a Project and `0..1` worktree: a `path` and a
-`branch`. Every Session worktree is one that Argo made for that Session. A Session with no
-worktree runs in its `cwd`, which is the Project's main checkout for a new Session. Git is the
-only list of a Project's checkouts.
+There is no Workspace entity. A Session has a Project and `0..1` worktree: the `path` of the
+linked worktree it runs in, and its `branch`, which is null when the worktree is detached. It does
+not matter who made the worktree. A Session that Argo starts in a new worktree and a Session found
+in a linked worktree made outside Argo have the same worktree record and follow the same rules. A
+Session with no worktree runs in its `cwd`, which is the Project's main checkout for a new Session.
+Git is the only list of a Project's checkouts.
 
 The composer of a new Session shows a Worktree row in the tray above the editor:
 
@@ -60,7 +62,8 @@ Argo follows Claude Code's cleanup rule for a Session worktree when its Session 
 5. When a Session's worktree folder is gone at open or resume, the Session continues in the main
    checkout, the person is told, and the worktree is cleared.
 
-Argo never removes the main checkout or any folder that is not a Session worktree. There is no
+Argo never removes the main checkout, the folder the Project was added from, any folder that is
+not a Session worktree, or a worktree that another unarchived Session runs in. There is no
 launch sweep, no setting, no snapshot, no restore and no cap. Claude and Codex Sessions follow the
 same rule.
 
@@ -68,9 +71,11 @@ A Preview still attaches at the tree node, as ADR-0010 set out.
 
 ## Consequences
 
-- The migration drops the Workspace table and keeps each Session's folder. A Session in a
-  worktree that Argo made keeps it as its worktree. A Session in a linked worktree made outside
-  Argo keeps that folder as its `cwd` and has no worktree, so archive never removes it.
+- The migration drops the Workspace table and keeps each Session's folder. A Session in any
+  linked worktree, made by Argo or not, gets it as its worktree. The branch of a worktree made
+  outside Argo is null until the next Session scan reads it from git.
+- Archiving a Session in a worktree made outside Argo can remove that worktree and its branch
+  when it is clean, as for any other Session worktree.
 - The migration turns the Project's last choice into the switch. The switch is on only when the
   last choice was a new worktree.
 - A worktree that a person keeps after archive stays on disk until they remove it.

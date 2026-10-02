@@ -44,14 +44,52 @@ test('matches cwd to its registered Project root and keeps sparse metadata', asy
   }
 })
 
-test('matches a Session in a linked worktree outside the Project folder to that Project', async () => {
+test('gives a Session in a linked worktree its Project and that worktree, whoever made it', async () => {
   const { project } = await worktreeRepoFixture({ after: (cleanup) => onTestFinished(cleanup) })
   const linked = await addLinkedWorktree(project)
   const database = migratedDatabase()
   try {
     insertProject(database, 'project-git', project)
+    const records = await matchSessionsToProjects(database, [
+      { nativeId: ID, cwd: path.join(linked, 'src') },
+      { nativeId: 'in-main', cwd: project },
+    ])
+    assert.deepEqual(
+      records.map(({ projectId, worktreePath, worktreeBranch }) => ({
+        projectId,
+        worktreePath,
+        worktreeBranch,
+      })),
+      [
+        { projectId: 'project-git', worktreePath: linked, worktreeBranch: 'feature' },
+        { projectId: 'project-git', worktreePath: undefined, worktreeBranch: undefined },
+      ],
+    )
+    saveSessionBatch(database, 'claude', records)
+    assert.deepEqual(
+      database.$client
+        .prepare('SELECT worktree_path, worktree_branch FROM session ORDER BY native_id')
+        .all()
+        .map((row) => Object.assign({}, row)),
+      [
+        { worktree_path: linked, worktree_branch: 'feature' },
+        { worktree_path: null, worktree_branch: null },
+      ],
+    )
+  } finally {
+    database.$client.close()
+  }
+})
+
+test('a linked worktree the Project was added from is no Session worktree', async () => {
+  const { project } = await worktreeRepoFixture({ after: (cleanup) => onTestFinished(cleanup) })
+  const linked = await addLinkedWorktree(project)
+  const database = migratedDatabase()
+  try {
+    insertProject(database, 'project-linked', linked)
     const [record] = await matchSessionsToProjects(database, [{ nativeId: ID, cwd: linked }])
-    assert.equal(record?.projectId, 'project-git')
+    assert.equal(record?.projectId, 'project-linked')
+    assert.equal(record?.worktreePath, undefined)
   } finally {
     database.$client.close()
   }

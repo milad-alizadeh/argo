@@ -7,9 +7,10 @@ import { sessionTable } from '@/database/session/schema'
 import type { SessionSummary } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
 import { createSessionUpsert } from '../database'
-import { projectFolders } from '../worktree'
+import { projectFolders, readWorktreeBranch } from '../worktree'
 
-type SessionRoot = { projectId: string; path: string }
+// `worktree` marks a linked worktree git lists, other than the folder the Project was added from.
+type SessionRoot = { projectId: string; path: string; worktree: boolean }
 
 function contains(root: string, candidate: string): boolean {
   const relative = path.relative(root, candidate)
@@ -42,10 +43,16 @@ async function sessionRoots(database: Database): Promise<SessionRoot[]> {
         main: candidate.path,
         linked: [],
       }))
-      return [candidate.path, folders.main, ...folders.linked].map((root) => ({
-        projectId: candidate.id,
-        path: root,
-      }))
+      const own = await realpath(candidate.path).catch(() => candidate.path)
+      return [
+        { projectId: candidate.id, path: candidate.path, worktree: false },
+        { projectId: candidate.id, path: folders.main, worktree: false },
+        ...folders.linked.map((linked) => ({
+          projectId: candidate.id,
+          path: linked,
+          worktree: linked !== own,
+        })),
+      ]
     }),
   )
   // A Session's own worktree keeps its Project after the folder is gone, so a resume can move it.
@@ -56,13 +63,15 @@ async function sessionRoots(database: Database): Promise<SessionRoot[]> {
     .all()
     .flatMap((row) =>
       row.projectId !== null && row.path !== null
-        ? [{ projectId: row.projectId, path: row.path }]
+        ? [{ projectId: row.projectId, path: row.path, worktree: false }]
         : [],
     )
   return [...perProject.flat(), ...worktrees]
 }
 
 // Git lists real paths, so a cwd under a symlink such as macOS's /var matches by its real path too.
+// A Session in a linked worktree gets that worktree, whoever made it; any other match keeps the
+// stored worktree, so a removed one stays until a resume moves the Session to the main checkout.
 async function withProjectMatch(
   roots: readonly SessionRoot[],
   record: SessionSummary,
@@ -70,7 +79,13 @@ async function withProjectMatch(
   if (record.cwd == null) return record
   const cwd = record.cwd
   const root = matchRoot(roots, cwd) ?? matchRoot(roots, await realpath(cwd).catch(() => cwd))
-  return { ...record, projectId: root?.projectId ?? null }
+  const matched = { ...record, projectId: root?.projectId ?? null }
+  if (root === null || !root.worktree) return matched
+  return {
+    ...matched,
+    worktreePath: root.path,
+    worktreeBranch: await readWorktreeBranch(root.path),
+  }
 }
 
 export async function matchSessionsToProjects(

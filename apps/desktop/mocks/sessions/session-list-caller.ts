@@ -71,7 +71,8 @@ export function sessionListCaller({
   const mock = mockSupervisor(sessions)
   const changes = new SessionListChanges()
   const renames: RenameRequest[] = []
-  const removalRequests: Parameters<SessionUpdateProcedureContext['removeOwnedWorktrees']>[0][] = []
+  const removalRequests: Parameters<SessionUpdateProcedureContext['removeSessionWorktrees']>[0][] =
+    []
   const context = {
     database,
     supervisor: supervisor ?? (mock.supervisor as never),
@@ -81,7 +82,7 @@ export function sessionListCaller({
       renames.push(request)
       await rename(request)
     },
-    removeOwnedWorktrees: (input: (typeof removalRequests)[number]) => {
+    removeSessionWorktrees: (input: (typeof removalRequests)[number]) => {
       removalRequests.push(input)
     },
   }

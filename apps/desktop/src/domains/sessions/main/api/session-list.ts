@@ -17,7 +17,11 @@ import { createSelectSchema } from 'drizzle-orm/zod'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
-import { sessionSelectSchema } from '@/database/session/validation'
+import {
+  type SessionWorktree,
+  sessionSelectSchema,
+  sessionWorktreeSchema,
+} from '@/database/session/validation'
 import { sessionArchive } from '@/database/session-archive/schema'
 import { sessionSubagent } from '@/database/session-subagent/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
@@ -61,12 +65,6 @@ const sessionColumns = getTableColumns(sessionTable)
 const passedSessionColumns = Object.fromEntries(
   Object.keys(passed).map((column) => [column, sessionColumns[column as keyof typeof passed]]),
 ) as Pick<typeof sessionColumns, keyof typeof passed>
-
-// The worktree Argo made for the Session; null when it has none.
-const sessionWorktreeSchema = z.strictObject({
-  path: z.string().min(1),
-  branch: z.string().min(1),
-})
 
 export const sessionListRowSchema = z.strictObject({
   ...storedSessionSchema.shape,
@@ -178,9 +176,8 @@ function sessionListRow(
   }
 }
 
-function sessionWorktree(row: StoredSessionRow) {
-  const { worktreePath: path, worktreeBranch: branch } = row
-  return path === null || branch === null ? null : { path, branch }
+function sessionWorktree(row: StoredSessionRow): SessionWorktree | null {
+  return row.worktreePath === null ? null : { path: row.worktreePath, branch: row.worktreeBranch }
 }
 
 // A Session with no link joins no row, so every link column is null.

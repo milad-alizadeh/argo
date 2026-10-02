@@ -7,16 +7,16 @@ import { expect, test } from 'vitest'
 import { sessionTable } from '@/database/session/schema'
 import { registeredRepoFixture } from '@/mocks/projects/registered-repo.fixture'
 import { addLinkedWorktree } from '@/mocks/projects/worktree-repo.fixture'
-import { createOwnedWorktree } from './worktree-create-owned'
-import { removeOwnedWorktrees, worktreesWithWork } from './worktree-removal'
+import { createWorktree } from './worktree-create'
+import { removeSessionWorktrees, worktreesWithWork } from './worktree-removal'
 
 const run = promisify(execFile)
 const commitAs = ['-c', 'user.email=argo@example.test', '-c', 'user.name=Argo']
 
-// One Session that owns a fresh worktree of a real repository.
-async function ownedSession() {
+// One Session in a fresh worktree of a real repository.
+async function worktreeSession() {
   const { repository, database, worktreeRoot } = await registeredRepoFixture()
-  const worktree = await createOwnedWorktree({
+  const worktree = await createWorktree({
     database,
     projectId: 'project-1',
     draftId: 'draft-1',
@@ -36,7 +36,7 @@ async function ownedSession() {
     })
     .run()
   const remove = (removal: 'clean' | 'all', running = false) =>
-    removeOwnedWorktrees(
+    removeSessionWorktrees(
       { database, isRunning: () => running },
       { sessionIds: ['session-1'], removal },
     )
@@ -69,14 +69,14 @@ async function branchExists(repository: string, branch: string): Promise<boolean
 }
 
 test('a clean worktree goes on archive, with its branch', async () => {
-  const { database, remove, expectGone } = await ownedSession()
+  const { database, remove, expectGone } = await worktreeSession()
   expect(await worktreesWithWork(database, ['session-1'])).toEqual([])
   expect(await remove('clean')).toEqual([{ sessionId: 'session-1', outcome: 'removed' }])
   await expectGone()
 })
 
 test('a worktree with changed files is kept unless the person chose Remove', async () => {
-  const { database, worktree, remove, expectGone } = await ownedSession()
+  const { database, worktree, remove, expectGone } = await worktreeSession()
   await writeFile(path.join(worktree.path, 'notes.md'), 'unsaved thought\n')
   expect(await worktreesWithWork(database, ['session-1'])).toMatchObject([
     { sessionId: 'session-1', work: { changedFiles: 1, ownCommits: 0 } },
@@ -88,7 +88,7 @@ test('a worktree with changed files is kept unless the person chose Remove', asy
 })
 
 test('a worktree with commits on no other branch is kept unless the person chose Remove', async () => {
-  const { database, worktree, remove } = await ownedSession()
+  const { database, worktree, remove } = await worktreeSession()
   await run('git', [
     '-C',
     worktree.path,
@@ -107,7 +107,7 @@ test('a worktree with commits on no other branch is kept unless the person chose
 })
 
 test('a worktree git cannot read is kept and reported as unchecked', async () => {
-  const { database, worktree, remove } = await ownedSession()
+  const { database, worktree, remove } = await worktreeSession()
   await writeFile(path.join(worktree.path, '.git'), 'not a gitdir\n')
   expect(await worktreesWithWork(database, ['session-1'])).toMatchObject([
     { work: { changedFiles: null, ownCommits: null } },
@@ -117,42 +117,73 @@ test('a worktree git cannot read is kept and reported as unchecked', async () =>
 })
 
 test('a worktree stays while its Session has a Turn in progress, even after Remove', async () => {
-  const { worktree, remove } = await ownedSession()
+  const { worktree, remove } = await worktreeSession()
   expect(await remove('all', true)).toEqual([{ sessionId: 'session-1', outcome: 'running' }])
   expect(await present(worktree.path)).toBe(true)
 })
 
-// A Session in a worktree Argo did not make keeps it as its cwd only, with no Session worktree.
-test('a worktree Argo did not make and the main checkout are never removed', async () => {
-  const { repository, database } = await ownedSession()
-  const imported = await addLinkedWorktree(repository)
+// A worktree made outside Argo follows the same rule as one Argo made.
+test('a clean worktree made outside Argo goes on archive too, with its branch', async () => {
+  const { repository, database } = await worktreeSession()
+  const outside = await addLinkedWorktree(repository, 'outside')
   database
     .insert(sessionTable)
-    .values([
-      {
-        argoId: 'session-imported',
-        harness: 'claude',
-        nativeId: 'native-imported',
-        projectId: 'project-1',
-        cwd: imported,
-      },
-      {
-        argoId: 'session-main',
-        harness: 'codex',
-        nativeId: 'native-main',
-        projectId: 'project-1',
-        cwd: repository,
-      },
-    ])
+    .values({
+      argoId: 'session-outside',
+      harness: 'claude',
+      nativeId: 'native-outside',
+      projectId: 'project-1',
+      cwd: outside,
+      worktreePath: outside,
+      worktreeBranch: 'outside',
+    })
     .run()
-  const sessionIds = ['session-imported', 'session-main']
-  expect(await worktreesWithWork(database, sessionIds)).toEqual([])
   expect(
-    await removeOwnedWorktrees(
+    await removeSessionWorktrees(
       { database, isRunning: () => false },
-      { sessionIds, removal: 'all' },
+      { sessionIds: ['session-outside'], removal: 'clean' },
+    ),
+  ).toEqual([{ sessionId: 'session-outside', outcome: 'removed' }])
+  expect(await present(outside)).toBe(false)
+  expect(await branchExists(repository, 'outside')).toBe(false)
+})
+
+test('a worktree another unarchived Session runs in stays', async () => {
+  const { database, worktree, remove } = await worktreeSession()
+  database
+    .insert(sessionTable)
+    .values({
+      argoId: 'session-2',
+      harness: 'claude',
+      nativeId: 'native-2',
+      projectId: 'project-1',
+      cwd: worktree.path,
+      worktreePath: worktree.path,
+      worktreeBranch: worktree.branch,
+    })
+    .run()
+  expect(await remove('all')).toEqual([])
+  expect(await present(worktree.path)).toBe(true)
+})
+
+test('the main checkout is never removed', async () => {
+  const { repository, database } = await worktreeSession()
+  database
+    .insert(sessionTable)
+    .values({
+      argoId: 'session-main',
+      harness: 'codex',
+      nativeId: 'native-main',
+      projectId: 'project-1',
+      cwd: repository,
+    })
+    .run()
+  expect(await worktreesWithWork(database, ['session-main'])).toEqual([])
+  expect(
+    await removeSessionWorktrees(
+      { database, isRunning: () => false },
+      { sessionIds: ['session-main'], removal: 'all' },
     ),
   ).toEqual([])
-  expect(await present(imported)).toBe(true)
   expect(await present(repository)).toBe(true)
 })

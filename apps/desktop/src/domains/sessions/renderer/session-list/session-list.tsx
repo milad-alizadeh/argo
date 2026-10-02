@@ -116,7 +116,7 @@ async function archiveSessions(
     })
 }
 
-// The owned worktrees an archive would ask about, or null when main could not say.
+// The Session worktrees an archive would ask about, or null when main could not say.
 async function heldWorktrees(sessionIds: SessionId[]): Promise<HeldWorktree[] | null> {
   try {
     return (await trpcClient.sessionWorktreeWork.query({ sessionIds })).worktrees
@@ -125,7 +125,7 @@ async function heldWorktrees(sessionIds: SessionId[]): Promise<HeldWorktree[] | 
   }
 }
 
-// An archive removes clean owned worktrees at once and asks first about any that hold work, or
+// An archive removes clean Session worktrees at once and asks first about any that hold work, or
 // that Argo could not check, as Claude Code does: https://code.claude.com/docs/en/worktrees
 function useSessionArchive(toasts: Toasts) {
   const [question, setQuestion] = useState<ArchiveQuestion | null>(null)
