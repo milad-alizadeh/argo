@@ -1,13 +1,18 @@
 import type { Page } from 'playwright-core'
 
+// One element whose aria-label a test records into `window[key]`. With `missing`, a frame without
+// the element records "(missing)", so a control that vanishes counts as a change.
+export type LabelWatch = { selector: string; key: string; missing: boolean }
+
 // Records each aria-label an open Session commits on one element, so a label shown for one frame
 // still counts. It watches the document node, so it also runs as an init script before the root
-// exists. The labels land on `window[key]`.
-export function watchLabels({ selector, key }: { selector: string; key: string }) {
+// exists.
+export function watchLabels({ selector, key, missing }: LabelWatch) {
   const labels: string[] = []
   const record = () => {
     if (/\/sessions\/new(\?|$)/.test(location.hash)) return
-    const label = document.querySelector(selector)?.getAttribute('aria-label')
+    const element = document.querySelector(selector)
+    const label = element ? element.getAttribute('aria-label') : missing && '(missing)'
     if (label && labels.at(-1) !== label) labels.push(label)
   }
   record()

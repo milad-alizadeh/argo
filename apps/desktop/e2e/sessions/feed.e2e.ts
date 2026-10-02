@@ -19,7 +19,11 @@ import { proveComposerMemory } from './cases/composer-memory.case'
 import { proveSessionCreatedByClick } from './cases/create.case'
 import { proveDelegationCards } from './cases/delegation-card.case'
 import { proveSessionDiagram } from './cases/diagram.case'
-import { proveFooterKeepsHarness } from './cases/footer-harness.case'
+import {
+  proveFirstSendKeepsLabel,
+  TURN_CHIP_WATCH,
+  USAGE_WATCH,
+} from './cases/first-send-labels.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
 import { proveNewSessionSkipsUninstalledHarness } from './cases/new-session-harness.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
@@ -33,7 +37,6 @@ import { proveSelectionSurvivesRestart } from './cases/session-list-restart.case
 import { proveSessionListWindow } from './cases/session-list-window.case'
 import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
-import { proveTurnChipKeepsConfiguration } from './cases/turn-chip.case'
 import { proveLiveCodexModelChoices } from './cases/turn-configuration.case'
 import { proveSessionWorktree } from './cases/worktree.case'
 import { ACTIVE_FEED } from './feed-selectors'
@@ -382,11 +385,13 @@ test.describe('with a Harness that holds its start', () => {
     })
 
     test(`session-${harness}-footer-keeps-harness`, async ({ session, backend }) => {
-      await proveFooterKeepsHarness(session.page(), backend, harness)
+      // After this window's Send, the footer names the sent Harness at once (#3179).
+      const watch = { ...USAGE_WATCH, missing: true }
+      await proveFirstSendKeepsLabel(session.page(), backend, { harness, watch })
     })
 
     test(`session-${harness}-turn-chip-keeps-configuration`, async ({ session, backend }) => {
-      await proveTurnChipKeepsConfiguration(session.page(), backend, harness)
+      await proveFirstSendKeepsLabel(session.page(), backend, { harness, watch: TURN_CHIP_WATCH })
     })
   }
 })
