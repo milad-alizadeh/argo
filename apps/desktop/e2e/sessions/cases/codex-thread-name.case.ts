@@ -5,7 +5,7 @@ import type { Page } from 'playwright-core'
 import { mockCodexStateFile } from '../../../mocks/cli/codex/mock-codex-cli'
 import { RECORDED_PROMPTS } from '../../../mocks/cli/recorded-prompts'
 import { fixtureSessionId } from '../../../mocks/sessions/mock-transcript-files'
-import { CODEX_PARENT } from '../fixtures/feed.fixture'
+import { CODEX_PARENT } from '../../../mocks/sessions/mock-codex-thread-files'
 import { refreshSessions } from '../gestures'
 import { sessionRows } from '../page-trpc'
 
