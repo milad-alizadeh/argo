@@ -13,13 +13,6 @@ import {
 } from '../ui/alert-dialog'
 import { Button } from '../ui/button'
 import {
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Card as RegistryCard,
-} from '../ui/card'
-import {
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -48,7 +41,7 @@ import {
 } from '../ui/sheet'
 
 const meta = {
-  title: 'Design System/Primitives/Dialogs',
+  title: 'Foundations/Primitives/Dialog',
   parameters: { layout: 'centered' },
 } satisfies Meta
 
@@ -159,19 +152,6 @@ export const Dialog: Story = {
 export const AlertDialog: Story = {
   render: () => <Overlay kind="alert" />,
   play: ({ canvasElement }) => openEscapeAndReturn(canvasElement, 'alert', 'alertdialog'),
-}
-
-export const Card: Story = {
-  render: () => (
-    <RegistryCard className="w-80">
-      <CardHeader>
-        <CardTitle>Registry card title</CardTitle>
-        <CardDescription>Registry card description.</CardDescription>
-      </CardHeader>
-      <CardContent>Registry card content.</CardContent>
-    </RegistryCard>
-  ),
-  tags: ['view-only'],
 }
 
 export const Sheet: Story = {

@@ -56,7 +56,7 @@ function ComboboxStory({
   )
 }
 const meta = {
-  title: 'Design System/Primitives/Combobox',
+  title: 'Foundations/Primitives/Combobox',
   component: ComboboxStory,
 } satisfies Meta<typeof ComboboxStory>
 export default meta

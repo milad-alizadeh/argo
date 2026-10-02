@@ -4,7 +4,7 @@ import { Icon } from './icon'
 import { ICONS, type IconName } from './icon-registry'
 
 const meta = {
-  title: 'Design System/Primitives/Icon',
+  title: 'Foundations/Primitives/Icon',
   component: Icon,
   parameters: { layout: 'padded' },
   args: { name: 'search' },

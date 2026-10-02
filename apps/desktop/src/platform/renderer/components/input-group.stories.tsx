@@ -32,7 +32,7 @@ function InputGroupStory({
   )
 }
 const meta = {
-  title: 'Design System/Primitives/Input Group',
+  title: 'Foundations/Primitives/Input Group',
   component: InputGroupStory,
 } satisfies Meta<typeof InputGroupStory>
 export default meta

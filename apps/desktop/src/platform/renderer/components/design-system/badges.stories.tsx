@@ -82,7 +82,7 @@ export function AppToneTreatments() {
 }
 
 const meta = {
-  title: 'Design System/Primitives/Badges',
+  title: 'Foundations/Primitives/Badge',
   excludeStories: ['NATIVE_BADGE_VARIANTS', 'NativeBadges', 'AppToneTreatments'],
   parameters: { layout: 'padded' },
 } satisfies Meta

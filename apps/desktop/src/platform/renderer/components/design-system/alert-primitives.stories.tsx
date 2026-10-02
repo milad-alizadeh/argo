@@ -5,7 +5,7 @@ import { Alert, AlertAction, AlertDescription, AlertTitle } from '../ui/alert'
 import { Button } from '../ui/button'
 
 const meta = {
-  title: 'Design System/Primitives/Alert',
+  title: 'Foundations/Primitives/Alert',
   component: Alert,
   decorators: [
     (Story) => (
@@ -14,7 +14,9 @@ const meta = {
       </div>
     ),
   ],
-  args: { variant: 'default' },
+  args: {
+    variant: 'default',
+  },
 } satisfies Meta<typeof Alert>
 export default meta
 type Story = StoryObj<typeof meta>
