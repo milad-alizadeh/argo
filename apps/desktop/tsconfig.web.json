@@ -35,6 +35,13 @@
     "src/renderer/**/*.ts",
     "src/renderer/**/*.tsx",
     "tests/**/*.ts",
+    "mocks/sessions/session-story-host.ts",
+    "mocks/sessions/session-selection-host.fixture.ts",
+    "mocks/tickets/renderer-models.ts",
+    "mocks/platform/story-preload.ts",
+    "mocks/sessions/session-rows.ts",
+    "mocks/tickets/scenario.test.ts",
+    "mocks/platform/trpc-transport.test.ts",
     ".storybook/**/*.ts"
   ],
   "exclude": [
