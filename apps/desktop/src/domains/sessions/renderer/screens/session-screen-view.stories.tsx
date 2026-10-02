@@ -930,7 +930,7 @@ export const NewSessionDoesNotStall: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'New Session' }))
     await expect(canvas.getByLabelText('Session composer')).toBeVisible()
     await new Promise((resolve) => window.setTimeout(resolve, 100))
-    await expect(canvasElement.querySelector('[data-state="stalled"]')).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'Retry' })).toBeNull()
   },
 }
 

@@ -1905,7 +1905,7 @@ export const SlowFirstReadRestartsTheBound: Story = {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Keep this pending prompt visible.', {}, { timeout: 3000 })).toBeVisible()
     await new Promise((resolve) => window.setTimeout(resolve, 1000))
-    await expect(canvasElement.querySelector('[data-state="stalled"]')).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'Retry' })).toBeNull()
     await waitFor(() => expect(canvas.getByText('No reply yet')).toBeVisible(), { timeout: 5000 })
   },
 }
