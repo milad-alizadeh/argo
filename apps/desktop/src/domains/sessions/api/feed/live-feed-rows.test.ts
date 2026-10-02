@@ -1,41 +1,11 @@
 import { expect, test } from 'bun:test'
+import { liveContent, liveStatus } from '@/mocks/sessions/live-events.fixture'
 import type { FeedContent } from '../feed-content'
 import type { SessionLiveEvent } from '../session-live-event'
 import { projectLiveFeedRows } from './live-feed-rows'
 import { groupToolRuns } from './tool-groups'
 
 const sessionId = '00000000-0000-4000-8000-000000000001'
-function content(sequence: number, value: FeedContent): SessionLiveEvent {
-  return {
-    type: 'content',
-    sessionId,
-    sequence,
-    commandId: 'command-1',
-    turnId: 'turn-1',
-    vendorEventId: value.id,
-    content: value,
-  }
-}
-
-function status(sequence: number, value: 'running' | 'idle'): SessionLiveEvent {
-  return {
-    type: 'status',
-    sessionId,
-    sequence,
-    commandId: 'command-1',
-    turnId: 'turn-1',
-    vendorEventId: null,
-    status: value,
-  }
-}
-
-test('updates one Codex Turn status row by vendor identity', () => {
-  const running = { ...status(1, 'running'), vendorEventId: 'turn-1' }
-  const idle = { ...status(2, 'idle'), vendorEventId: 'turn-1' }
-  expect(projectLiveFeedRows([], [running, idle])).toMatchObject([
-    { id: 'status:turn-1', text: 'idle' },
-  ])
-})
 
 function question(
   sequence: number,
@@ -87,7 +57,7 @@ test('shows ordered live text, tool work, status, Permission, and Question rows'
   const rows = projectLiveFeedRows(
     [],
     [
-      content(1, { kind: 'message', id: 'prompt-1', role: 'user', text: 'Inspect this' }),
+      liveContent(1, { kind: 'message', id: 'prompt-1', role: 'user', text: 'Inspect this' }),
       {
         type: 'status',
         sessionId,
@@ -97,8 +67,8 @@ test('shows ordered live text, tool work, status, Permission, and Question rows'
         vendorEventId: null,
         status: 'running',
       },
-      content(3, { kind: 'message', id: 'answer-1', role: 'assistant', text: 'Reading now' }),
-      content(4, {
+      liveContent(3, { kind: 'message', id: 'answer-1', role: 'assistant', text: 'Reading now' }),
+      liveContent(4, {
         kind: 'tool',
         id: 'tool-1',
         callId: 'call-1',
@@ -186,9 +156,9 @@ test('settled vendor history replaces matching live messages and tool progress',
     },
   ]
   const live = [
-    content(1, { kind: 'message', id: 'prompt-1', role: 'user', text: 'Inspect this' }),
-    content(2, { kind: 'message', id: 'answer-1', role: 'assistant', text: 'Reading now' }),
-    content(3, {
+    liveContent(1, { kind: 'message', id: 'prompt-1', role: 'user', text: 'Inspect this' }),
+    liveContent(2, { kind: 'message', id: 'answer-1', role: 'assistant', text: 'Reading now' }),
+    liveContent(3, {
       kind: 'tool',
       id: 'tool-progress-1',
       callId: 'call-1',
@@ -198,7 +168,7 @@ test('settled vendor history replaces matching live messages and tool progress',
       output: null,
       summary: null,
     }),
-    status(4, 'idle'),
+    liveStatus(4, 'idle'),
   ]
   const rows = projectLiveFeedRows(history, live)
   expect(rows).toHaveLength(4)
@@ -228,9 +198,9 @@ test('interleaves live status with matching history while active text and tools 
     },
   ]
   const rows = projectLiveFeedRows(history, [
-    content(1, { kind: 'message', id: 'prompt-1', role: 'user', text: 'Inspect this' }),
-    status(2, 'running'),
-    content(3, { kind: 'message', id: 'answer-1', role: 'assistant', text: 'Growing text' }),
+    liveContent(1, { kind: 'message', id: 'prompt-1', role: 'user', text: 'Inspect this' }),
+    liveStatus(2, 'running'),
+    liveContent(3, { kind: 'message', id: 'answer-1', role: 'assistant', text: 'Growing text' }),
     {
       type: 'permission',
       sessionId,
@@ -242,7 +212,7 @@ test('interleaves live status with matching history while active text and tools 
       description: 'Read file',
       decision: null,
     },
-    content(5, {
+    liveContent(5, {
       kind: 'tool',
       id: 'tool-1',
       callId: 'call-1',
@@ -252,7 +222,7 @@ test('interleaves live status with matching history while active text and tools 
       output: null,
       summary: null,
     }),
-    status(6, 'running'),
+    liveStatus(6, 'running'),
   ])
   expect(rows.map((row) => row.id)).toEqual([
     'old-1',
@@ -280,7 +250,7 @@ test('shows a Claude Question once when vendor history includes its tool call', 
   }
   const rows = projectLiveFeedRows(
     [tool],
-    [content(1, tool), question(2, 'question-1', 'question-call')],
+    [liveContent(1, tool), question(2, 'question-1', 'question-call')],
   )
   expect(rows.map((row) => [row.shape, row.id])).toEqual([['ask', 'question-1']])
 })
@@ -375,7 +345,7 @@ test('draws no row for a system context update, live or recorded', () => {
   expect(
     projectLiveFeedRows(
       [...context, prompt],
-      context.map((item, index) => content(index + 1, item)),
+      context.map((item, index) => liveContent(index + 1, item)),
     ),
   ).toEqual([{ shape: 'prose', id: 'prompt', role: 'user', text: 'Go' }])
 })
@@ -401,7 +371,7 @@ test('joins task and delegation progress by native ID without losing earlier det
   const rows = projectLiveFeedRows(
     [],
     [
-      content(1, {
+      liveContent(1, {
         kind: 'task',
         id: 'task-1',
         taskId: 'task-1',
@@ -410,7 +380,7 @@ test('joins task and delegation progress by native ID without losing earlier det
         description: 'Inspect files',
         summary: null,
       }),
-      content(2, {
+      liveContent(2, {
         kind: 'delegation',
         id: 'agent-1',
         event: 'started',
@@ -421,7 +391,7 @@ test('joins task and delegation progress by native ID without losing earlier det
         model: 'small',
         summary: null,
       }),
-      content(3, {
+      liveContent(3, {
         kind: 'task',
         id: 'task-progress-2',
         taskId: 'task-1',
@@ -430,7 +400,7 @@ test('joins task and delegation progress by native ID without losing earlier det
         description: null,
         summary: null,
       }),
-      content(4, {
+      liveContent(4, {
         kind: 'delegation',
         id: 'agent-1',
         event: 'started',

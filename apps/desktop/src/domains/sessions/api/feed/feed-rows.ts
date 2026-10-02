@@ -174,3 +174,8 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
   }),
 ])
 export type SessionFeedRow = z.infer<typeof sessionFeedRowSchema>
+
+// A Turn status row reports the Session's state and carries no prompt or reply.
+export function isLiveStatusRow(row: SessionFeedRow): boolean {
+  return row.shape === 'event' && row.event === 'liveStatus'
+}
