@@ -35,7 +35,8 @@
     "forge.config.ts",
     "scripts/**/*.mts",
     "tools/**/*.mts",
-    "mocks/**/*.ts"
+    "mocks/**/*.ts",
+    "mocks/**/*.mts"
   ],
   "exclude": [
     "src/renderer",
@@ -46,7 +47,7 @@
     "src/harnesses/harness-presentation.ts",
     "src/harnesses/presentation-registry.ts",
     "src/harnesses/*/presentation",
-    // Browser-side story hosts: tsconfig.web.json checks them through the stories that import them.
+    // Mocks that import renderer code: tsconfig.web.json includes and checks them.
     "mocks/sessions/session-story-host.ts",
     "mocks/sessions/session-selection-host.fixture.ts",
     "mocks/tickets/renderer-models.ts",

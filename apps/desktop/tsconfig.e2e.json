@@ -19,5 +19,5 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": ["e2e/**/*.ts", "mocks/**/*.ts"]
+  "include": ["e2e/**/*.ts"]
 }
