@@ -30,5 +30,5 @@ test('a seed plans each terminal behavior and the queued Permission', () => {
 
 test('turn numbering repeats after the seed plan ends', () => {
   const turns = adversarialTurnsForSeed('repeatable')
-  expect(adversarialTurn('repeatable', turns.length)).toEqual(turns[0])
+  expect(adversarialTurn('repeatable', turns.length)).toEqual(adversarialTurn('repeatable', 0))
 })

@@ -13,7 +13,10 @@ test('answers stored history with the recorded app-server responses', async () =
     const listed = recordedCall('thread/list')
     assert.deepEqual(await client.request('thread/list', {}, identity), listed.result)
     const read = recordedCall('thread/read')
-    assert.deepEqual(await client.request('thread/read', read.params, identity), read.result)
+    assert.deepEqual(
+      await client.request('thread/read', { ...read.params, includeTurns: false }, identity),
+      read.result,
+    )
     // The mock pages a thread as Codex did; only its cursors are its own.
     for (const thread of recordedThreads()) {
       const recordedPages = recordedCalls('thread/turns/list').filter(
@@ -22,7 +25,12 @@ test('answers stored history with the recorded app-server responses', async () =
       const pages: unknown[] = []
       let cursor: string | null = null
       do {
-        const params = { threadId: thread.id, limit: 1, itemsView: 'full', sortDirection: 'asc' }
+        const params = {
+          threadId: thread.id,
+          limit: 1,
+          itemsView: 'full' as const,
+          sortDirection: 'asc' as const,
+        }
         const page = (await client.request(
           'thread/turns/list',
           { ...params, cursor },
@@ -79,7 +87,7 @@ test('refuses a thread neither recorded nor started', async () => {
   const client = clientBackedByMock(await mockCodexExecutable())
   try {
     await assert.rejects(
-      client.request('thread/read', { threadId: 'missing-thread' }, identity),
+      client.request('thread/read', { threadId: 'missing-thread', includeTurns: false }, identity),
       /not found/,
     )
   } finally {

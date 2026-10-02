@@ -85,7 +85,11 @@ function appendTranscript(data: string | Uint8Array) {
   appendFileSync(transcript, data)
 }
 let parentUuid: string | null = null
-function record(type: 'user' | 'assistant', message: Record<string, unknown>, uuid = randomUUID()) {
+function record(
+  type: 'user' | 'assistant',
+  message: Record<string, unknown>,
+  uuid: string = randomUUID(),
+) {
   const record = {
     type,
     sessionId,

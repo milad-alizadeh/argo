@@ -72,7 +72,7 @@ async function sessionTexts(run: { configDirectory: string }) {
 }
 
 function send(child: ReturnType<typeof spawn>, prompt: string) {
-  child.stdin.write(`${ESCAPE}[200~${prompt}${ESCAPE}[201~\r`)
+  child.stdin?.write(`${ESCAPE}[200~${prompt}${ESCAPE}[201~\r`)
 }
 
 async function waitFor(read: () => Promise<boolean>) {

@@ -19,6 +19,7 @@ import {
   ndJsonStream,
   PROTOCOL_VERSION,
   RequestError,
+  type RequestPermissionResponse,
   type SessionConfigOption,
   type SessionUpdate,
 } from '@agentclientprotocol/sdk'
@@ -243,7 +244,7 @@ const connection = agent({ name: 'mock-claude-agent-acp' })
     })
     if (text === 'Request ACP permission') {
       const answer = await client
-        .request(
+        .request<RequestPermissionResponse>(
           methods.client.session.requestPermission,
           {
             sessionId: params.sessionId,
