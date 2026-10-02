@@ -28,6 +28,7 @@ import { type HarnessControl, useAvailableHarnesses } from '../harness'
 import { SessionTitle } from '../prompt'
 import type { ComposerPlan, Session, SessionExtras } from '../types'
 import { draftTarget } from './session-draft-target'
+import type { SentConfiguration } from './session-screen-state'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
 import { useTellWorktreeGone } from './use-gone-worktree'
 import { useSessionControls } from './use-session-controls'
@@ -45,8 +46,14 @@ type SessionScreenDetailsProps = {
   projectState: ProjectsState
   worktreeState: WorktreeOptionsState
   worktreeActions: WorktreeOptionsActions
+  // What this window's Send started the selected Session with, until its details load.
+  sent: SentConfiguration | null
   // A new Session's pending id from its saved prompt, and the Session route that draws it.
-  onStartingSession: (pendingId: string | null, sessionId?: string) => void
+  onStartingSession: (
+    pendingId: string | null,
+    sessionId?: string,
+    sent?: SentConfiguration,
+  ) => void
 }
 
 type SessionsTranslator = ReturnType<typeof useTranslation<'sessions'>>['t']
@@ -87,15 +94,18 @@ function sessionComposerConfiguration(input: {
   sessionLoaded: boolean
   catalogResult: CatalogReadResult | undefined
   catalogFailed: boolean
+  sent: SentConfiguration | null
 }) {
   const catalog = input.catalogResult?.info ?? null
   const catalogFailure = catalogFailureOf(input.catalogResult, input.catalogFailed)
   const identity = composerIdentityOf(input.selectedSessionId, input.projectId)
   const choices = catalog?.availability === 'available' ? catalog : null
-  const initialTurnConfiguration =
+  const loadedConfiguration =
     choices === null || (identity.kind === 'session' && !input.sessionLoaded)
       ? null
       : turnConfigurationFor(choices, { identity, session: input.session })
+  // A new Session's chip keeps what its Send used until the details load (#3179).
+  const initialTurnConfiguration = loadedConfiguration ?? input.sent?.turnConfiguration ?? null
   return { catalogFailure, choices, initialTurnConfiguration, identity }
 }
 
@@ -206,6 +216,7 @@ function useSessionComposerDraft(input: {
 function useSessionComposerSend(input: {
   draft: ReturnType<typeof useDurableComposerDraft>
   identity: ComposerIdentity
+  harness: HarnessControl | null
   projectId: string | null
   onFailure: (failure: DraftSubmitFailure) => void
   onStartingSession: SessionScreenDetailsProps['onStartingSession']
@@ -242,7 +253,12 @@ function useSessionComposerSend(input: {
         queryKey: trpc.worktreeOptions.queryKey({ projectId: input.projectId }),
       })
       // The named Session draws the prompt until its own Feed shows it, whatever the Harness.
-      input.onStartingSession(pendingId, result.sessionId)
+      const harness = input.harness?.harness
+      const sent =
+        harness === undefined || turnConfiguration === null
+          ? undefined
+          : { harness, turnConfiguration }
+      input.onStartingSession(pendingId, result.sessionId, sent)
       navigate(`/projects/${input.projectId}/sessions/${result.sessionId}`, { replace: true })
     }
     return 'accepted'
@@ -303,6 +319,7 @@ export function SessionComposerArea({
   projectState,
   worktreeState,
   worktreeActions,
+  sent,
   onStartingSession,
 }: SessionScreenDetailsProps) {
   const { catalogQuery, refreshCatalog } = useCatalogRead(harness)
@@ -315,6 +332,7 @@ export function SessionComposerArea({
       sessionLoaded,
       catalogResult: catalogQuery.data,
       catalogFailed: catalogQuery.isError,
+      sent,
     })
   const composerKey = composerIdentityKey(identity)
   const { draft, targetRestored } = useSessionComposerDraft({
@@ -422,6 +440,7 @@ function SessionComposer({
   const onSend = useSessionComposerSend({
     draft,
     identity,
+    harness,
     projectId: identity.kind === 'draft' ? identity.projectId : null,
     onFailure: reportSendFailure,
     onStartingSession,
