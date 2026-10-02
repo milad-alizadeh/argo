@@ -22,10 +22,12 @@ const configs = [...(await generator.getBuildConfigs()), ...(await generator.get
 const BUILD_SLOT_PORTS = [47_591, 47_592]
 
 function listen(port: number): Promise<Server | undefined> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const server = createServer()
-    server.once('error', () => resolve(undefined))
-    server.listen({ port, host: '127.0.0.1', exclusive: true }, () => resolve(server))
+    server.once('error', (error: NodeJS.ErrnoException) =>
+      error.code === 'EADDRINUSE' ? resolve(undefined) : reject(error),
+    )
+    server.listen({ port, host: '127.0.0.1' }, () => resolve(server))
   })
 }
 

@@ -314,8 +314,8 @@ The test crosses the packaged renderer, preload, and main process with isolated 
 It does not import Swift data.
 
 The e2e commands build the Vite output with `bun run build:vite:cached` and launch it with the
-Electron in `node_modules`. They do not package the app. CI packages arm64 and sets `ARGO_E2E_PACKAGED=1`, so
-the same cases launch a copy of the packaged app. To run that mode locally, run `bun run build`,
+Electron in `node_modules`. They do not package the app. CI packages arm64 and sets
+`ARGO_E2E_PACKAGED=1`, so the same cases launch a copy of the packaged app. To run that mode locally, run `bun run build`,
 then `ARGO_E2E_PACKAGED=1 bunx playwright test`. No command here runs the app you have installed.
 
 | Command | What it produces |
