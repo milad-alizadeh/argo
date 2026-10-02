@@ -2,7 +2,7 @@
 
 Vendor facts remain external: Tickets live in a project-management provider, Delivery truth in a
 code host, and Session history behind vendor interfaces. Argo owns the **glue** — the Project and
-Account registries, each Project's Workspace registry, local Session IDs and pins, and the
+Account registries, each Session's worktree, local Session IDs and pins, and the
   user-authored drafts, and user-asserted links no external signal carries.
 
 - **Argo-owned per-machine state** lives in one SQLite database under `userData`. Durable tables

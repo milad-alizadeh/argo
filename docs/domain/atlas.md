@@ -2,7 +2,7 @@
 
 The Atlas draws the active Project as a place (#1140). The domain had no word for a file as a
 unit of analysis, none for a folder, none for a measure and none for the record itself — the only
-**File** it defines is a live editable path in a Workspace, which cannot carry a measure. These
+**File** it defines is a live editable path in a Checkout, which cannot carry a measure. These
 are those words. Everything MEASURED here is DERIVED: the repository is the only source (#655),
 nothing is authored, and the Session record is not an input. The one exception is the written
 layer below, which is read beside the numbers and never counted (#1159).

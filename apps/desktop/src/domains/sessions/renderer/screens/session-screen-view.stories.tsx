@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes, useParams } from 'react-router'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { pendingSessionId } from '@/domains/sessions/api/pending-session'
+import { FALLBACK_DEFAULT_BRANCH } from '@/domains/sessions/api/worktree-request'
 import { sessionRow, sessionShellCommand, sessionSubagent } from '@/mocks/sessions/session-rows'
 import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fixture'
 import { installSessionHost } from '@/mocks/sessions/session-story-host'
@@ -24,9 +25,11 @@ import type {
 import { SessionWorkButtons } from '../work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import type { SessionShellOutput } from '../work/types'
+import { type SessionLocation, sessionLocation } from './session-screen-location'
 import { SessionScreenView } from './session-screen-view'
-import { type ListedWorkspace, sessionWorkspaceIdentity } from './session-screen-workspace'
 import { SessionShell } from './session-shell'
+
+const COMPOSER_REVIEW_FOLDER = '/workspace/argo/.claude/worktrees/ticket-1846-composer'
 
 const SESSION_ROWS = [
   sessionRow({
@@ -34,7 +37,7 @@ const SESSION_ROWS = [
     posture: null,
     name: 'Finish Session composer review',
     status: 'running',
-    cwd: '/workspace/argo/.claude/worktrees/ticket-1846-composer',
+    cwd: COMPOSER_REVIEW_FOLDER,
     updatedAt: '2026-09-13T15:50:00Z',
     activity: {
       label: 'Ran bun run quality',
@@ -226,8 +229,8 @@ function ReviewScreen({
   composerRunning = false,
   permissionPrompt = null,
   titleText,
-  workspaceId = null,
-  workspaces = [],
+  worktree = null,
+  defaultBranch = FALLBACK_DEFAULT_BRANCH,
 }: {
   rows?: SessionFeed['rows'] | null
   shellOutput?: SessionShellOutput
@@ -235,8 +238,8 @@ function ReviewScreen({
   composerRunning?: boolean
   permissionPrompt?: ReactNode
   titleText?: string
-  workspaceId?: string | null
-  workspaces?: readonly ListedWorkspace[]
+  worktree?: Session['worktree']
+  defaultBranch?: string
 }) {
   const selectedSessionId = useParams().sessionId ?? 'composer-review'
   const [jumpToLatest, setJumpToLatest] = useState<{
@@ -255,8 +258,8 @@ function ReviewScreen({
   const session = SESSION_ROWS.find(({ id }) => id === selectedSessionId)
   const feed = rows === null ? feedFor(selectedSessionId) : { ...feedFor(selectedSessionId), rows }
   if (session === undefined) return null
-  const headerSession = sessionWithTitle({ ...session, workspaceId }, titleText)
-  const workspaceIdentity = sessionWorkspaceIdentity(headerSession, workspaces)
+  const headerSession = sessionWithTitle({ ...session, worktree }, titleText)
+  const location = sessionLocation(headerSession, defaultBranch)
 
   return (
     <ReviewContent
@@ -272,7 +275,7 @@ function ReviewScreen({
       session={session}
       shellOutput={shellOutput}
       showPlan={showPlan}
-      workspaceIdentity={workspaceIdentity}
+      location={location}
     />
   )
 }
@@ -290,7 +293,7 @@ function ReviewContent({
   session,
   shellOutput,
   showPlan,
-  workspaceIdentity,
+  location,
 }: {
   composerRunning: boolean
   permissionPrompt: ReactNode
@@ -304,7 +307,7 @@ function ReviewContent({
   session: Session & SessionExtras
   shellOutput: SessionShellOutput
   showPlan: boolean
-  workspaceIdentity: ReturnType<typeof sessionWorkspaceIdentity>
+  location: SessionLocation | null
 }) {
   const delegation = session.subagents.find(({ id }) => id === picked?.id) ?? null
   const shell = session.shell?.find(({ id }) => id === picked?.id) ?? null
@@ -339,7 +342,7 @@ function ReviewContent({
         jumpToLatest={jumpToLatest}
         onJumpToLatestChange={onJumpToLatestChange}
         session={headerSession}
-        workspaceIdentity={workspaceIdentity}
+        location={location}
         inspector={
           <ReviewInspector delegation={delegation} shell={shell} shellOutput={shellOutput} />
         }
@@ -682,25 +685,21 @@ async function expectDelegatedFeedSurvivesCollapse(canvas: ReturnType<typeof wit
   )
 }
 
-function expectNoSessionIdOrWorkspaceInHeader(canvasElement: HTMLElement) {
+function expectNoSessionIdInHeader(canvasElement: HTMLElement) {
   const header = canvasElement.querySelector<HTMLElement>('[data-component="AppMainHeader"]')
   if (header === null) throw new Error('The Session header is absent.')
   const content = within(header)
   expect(content.queryByText('Session ID')).toBeNull()
-  expect(content.queryByText('Workspace')).toBeNull()
 }
 
 export const Open: Story = {
   render: () => (
     <ReviewScreen
-      workspaceId="workspace-feature"
-      workspaces={[
-        {
-          id: 'workspace-feature',
-          displayName: 'ticket-1846-composer',
-          facts: { branch: 'feature/composer-review' },
-        },
-      ]}
+      worktree={{
+        path: '/worktrees/ticket-1846-composer',
+        branch: 'feature/composer-review',
+        base: 'main',
+      }}
     />
   ),
   play: async ({ canvasElement }) => {
@@ -712,9 +711,10 @@ export const Open: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
-    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
-    await expect(canvas.getByText('Branch')).toBeVisible()
-    await expect(canvas.getByText('feature/composer-review')).toBeVisible()
+    expectNoSessionIdInHeader(canvasElement)
+    await expect(canvas.getByText('/worktrees/ticket-1846-composer')).toBeVisible()
+    // Started from the Project's default branch, so the header names no base.
+    expect(canvas.queryByText('from')).toBeNull()
     await waitFor(() => expectHeaderActionsAtTrailingEdge(canvasElement), { timeout: 5000 })
     await expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement)
     await waitFor(() =>
@@ -740,11 +740,37 @@ export const Open: Story = {
     await waitFor(() =>
       expect(canvas.getByRole('region', { name: 'Subagent' })).toBeInTheDocument(),
     )
-    await expect(canvas.getByRole('button', { name: 'Collapse Session inspector' })).toBeVisible()
+    // The inspector slides open, so its button is in the tree before it is visible.
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Collapse Session inspector' })).toBeVisible(),
+    )
 
     await expectDelegatedFeedSurvivesCollapse(canvas)
 
     await expectShellReopensWithOutput(canvasElement)
+  },
+}
+
+// A started Session waiting on a Permission shows the Permission card and no Worktree row.
+export const StartedSessionHasNoWorktreeRow: Story = {
+  parameters: { route: PRODUCTION_ROUTE },
+  beforeEach: () =>
+    sessionSelectionHost(SESSION_ROWS, {
+      permission: {
+        id: 'permission-one',
+        sessionId: 'composer-review',
+        description: 'Bash {"command":"bun test"}',
+      },
+    }),
+  render: () => <ProductionSessionSelectionScreen />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(
+      () => expect(canvas.getByRole('heading', { name: 'Permission needed' })).toBeVisible(),
+      { timeout: 5000 },
+    )
+    expect(canvas.queryByRole('region', { name: 'Work location' })).toBeNull()
+    expect(canvas.queryByRole('switch', { name: 'Worktree' })).toBeNull()
   },
 }
 
@@ -853,8 +879,7 @@ export const FormattedHeaderTitle: Story = {
     await expect(header).not.toHaveTextContent('[$implement]')
     await expect(header).toHaveTextContent('https://example.com/guide')
     await expect(header.querySelector('a')).toBeNull()
-    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
-    expect(canvasElement.querySelector('[data-component="SessionMetadata"]')).toBeNull()
+    expectNoSessionIdInHeader(canvasElement)
   },
 }
 
@@ -1023,8 +1048,8 @@ export const SharedCheckout: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Add Markdown typing shortcuts' }),
     ).toBeVisible()
-    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
-    expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
+    expectNoSessionIdInHeader(canvasElement)
+    await expect(canvas.getByText('/workspace/argo')).toBeVisible()
   },
 }
 
@@ -1032,14 +1057,11 @@ export const NarrowHeader: Story = {
   render: () => (
     <div className="h-dvh w-[calc(var(--size-navigation-rail)+var(--size-shell-sidebar-min)+var(--size-shell-content-min))]">
       <ReviewScreen
-        workspaceId="workspace-feature"
-        workspaces={[
-          {
-            id: 'workspace-feature',
-            displayName: 'ticket-1846-composer',
-            facts: { branch: 'feature/composer-review' },
-          },
-        ]}
+        worktree={{
+          path: '/worktrees/ticket-1846-composer',
+          branch: 'feature/composer-review',
+          base: null,
+        }}
       />
     </div>
   ),
@@ -1048,8 +1070,8 @@ export const NarrowHeader: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
-    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
-    await expect(canvas.getByText('feature/composer-review')).toBeInTheDocument()
+    expectNoSessionIdInHeader(canvasElement)
+    await expect(canvas.getByText('/worktrees/ticket-1846-composer')).toBeInTheDocument()
     await waitFor(() =>
       expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
         'data-session',
@@ -1061,86 +1083,67 @@ export const NarrowHeader: Story = {
   },
 }
 
-export const WorkspaceMainBranch: Story = {
+export const MainCheckoutFolder: Story = {
+  render: () => <ReviewScreen />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    expectNoSessionIdInHeader(canvasElement)
+    await expect(canvas.getByText(COMPOSER_REVIEW_FOLDER)).toBeVisible()
+    expect(canvas.queryByText('from')).toBeNull()
+  },
+}
+
+export const WorktreeFromAnotherBranch: Story = {
   render: () => (
     <ReviewScreen
-      workspaceId="workspace-main"
-      workspaces={[{ id: 'workspace-main', displayName: 'Argo', facts: { branch: 'main' } }]}
+      worktree={{
+        path: '/worktrees/ticket-1846-composer',
+        branch: 'argo/session-1846',
+        base: 'release/1.4',
+      }}
     />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
-    await expect(canvas.getByText('Branch')).toBeVisible()
+    await expect(canvas.getByText('/worktrees/ticket-1846-composer')).toBeVisible()
+    await expect(canvas.getByText('from')).toBeVisible()
+    await expect(canvas.getByText('release/1.4')).toBeVisible()
+  },
+}
+
+// The default branch decides, not the main checkout's branch: `main` is named in a `trunk` Project.
+export const WorktreeFromMainInATrunkProject: Story = {
+  render: () => (
+    <ReviewScreen
+      worktree={{ path: '/worktrees/ticket-3140', branch: 'argo/session-3140', base: 'main' }}
+      defaultBranch="trunk"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('/worktrees/ticket-3140')).toBeVisible()
+    await expect(canvas.getByText('from')).toBeVisible()
     await expect(canvas.getByText('main')).toBeVisible()
   },
 }
 
-export const WorkspaceDetachedHead: Story = {
-  render: () => (
-    <ReviewScreen
-      workspaceId="workspace-detached"
-      workspaces={[
-        { id: 'workspace-detached', displayName: 'Detached checkout', facts: { branch: null } },
-      ]}
-    />
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
-    expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
-  },
-}
-
-export const LegacySessionWithoutWorkspace: Story = {
-  render: () => (
-    <ReviewScreen
-      workspaces={[{ id: 'workspace-main', displayName: 'Argo', facts: { branch: 'main' } }]}
-    />
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
-    expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
-  },
-}
-
-export const RemovedWorkspace: Story = {
-  render: () => (
-    <ReviewScreen
-      workspaceId="workspace-removed"
-      workspaces={[{ id: 'workspace-main', displayName: 'Argo', facts: { branch: 'main' } }]}
-    />
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
-    expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
-  },
-}
-
-export const LongWorkspaceAndBranchNames: Story = {
+// A long folder and a long base both truncate; the header's controls stay in view.
+export const LongBranchName: Story = {
   render: () => (
     <div className="h-dvh w-[calc(var(--size-navigation-rail)+var(--size-shell-sidebar-min)+var(--size-shell-content-min))]">
       <ReviewScreen
-        workspaceId="workspace-long"
-        workspaces={[
-          {
-            id: 'workspace-long',
-            displayName: 'A workspace name that is much longer than the header can display',
-            facts: {
-              branch:
-                'feature/a-branch-name-that-is-much-longer-than-the-header-can-display-or-the-session-title',
-            },
-          },
-        ]}
+        worktree={{
+          path: '/worktrees/a-worktree-folder-much-longer-than-the-header-can-display',
+          branch: 'argo/session-long',
+          base: 'feature/a-branch-name-that-is-much-longer-than-the-header-can-display-or-the-session-title',
+        }}
       />
     </div>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const viewport = canvasElement.getBoundingClientRect()
-    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
+    expectNoSessionIdInHeader(canvasElement)
     await expect(
       canvas.getByText(
         'feature/a-branch-name-that-is-much-longer-than-the-header-can-display-or-the-session-title',

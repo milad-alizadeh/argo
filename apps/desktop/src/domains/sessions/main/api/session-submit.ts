@@ -1,17 +1,18 @@
-import { stat } from 'node:fs/promises'
 import { initTRPC, TRPCError } from '@trpc/server'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
+import { type SessionWorktree, sessionWorktreeSchema } from '@/database/session/validation'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
 import { pendingSessionId } from '@/domains/sessions/api/pending-session'
 import type { SessionSubmitRejection } from '@/domains/sessions/api/session-submit-rejection'
-import { resolveWorkspacePath } from '@/domains/workspaces/main'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
 import { deleteComposerDraft, draftTurnConfigurationSchema, readComposerDraft } from '../database'
 import { type LiveSessionSupervisorActor, SessionSubmitRejectedError } from '../live'
+import { folderPresent, mainCheckout } from '../worktree'
+import { type GoneWorktreeContext, leaveGoneWorktree } from './session-gone-worktree'
 
 const t = initTRPC.create()
 const commandSchema = z.strictObject({
@@ -23,14 +24,14 @@ const commandSchema = z.strictObject({
 const sessionStartInputSchema = commandSchema.extend({
   harness: harnessSchema,
   projectId: identifierSchema,
-  workspaceId: identifierSchema,
+  // Null runs the Session in the Project's main checkout.
+  worktree: sessionWorktreeSchema.nullable(),
   cwd: z.string().min(1),
 })
 const sessionResumeSchema = z.strictObject({
   harness: harnessSchema,
   nativeId: identifierSchema,
   projectId: identifierSchema.nullable(),
-  workspaceId: identifierSchema.nullable(),
   cwd: z.string().min(1),
 })
 const sessionSendInputSchema = commandSchema.extend({
@@ -42,32 +43,36 @@ const inputSchema = z.strictObject({
   expectedRevision: z.number().int().nonnegative(),
   commandId: identifierSchema,
 })
-const outputSchema = z.strictObject({ sessionId: identifierSchema })
+// `worktreeGone` names the worktree folder a resumed Session lost; it continued in the main checkout.
+const outputSchema = z.strictObject({
+  sessionId: identifierSchema,
+  worktreeGone: z.string().min(1).nullable(),
+})
 
 export type SessionStartInput = z.infer<typeof sessionStartInputSchema>
 export type SessionSendInput = z.infer<typeof sessionSendInputSchema>
 export type SessionLiveInput = SessionStartInput | SessionSendInput
 type SessionSubmitInput = z.infer<typeof inputSchema>
-export type SessionProcedureContext = {
+export type SessionProcedureContext = GoneWorktreeContext & {
   database: Database
   supervisor: LiveSessionSupervisorActor
-  ensureManagedWorkspace: (
+  createWorktree: (
     projectId: string,
     draftId: string,
-  ) => Promise<{ id: string; path: string }>
+    from: string | null,
+  ) => Promise<SessionWorktree>
   acceptsAttachments: (harness: Harness) => boolean
 }
-type SupervisorDraftRequest = {
+type Draft = NonNullable<ReturnType<typeof readComposerDraft>>
+type DraftTarget<Type extends Draft['target']['type']> = Extract<Draft['target'], { type: Type }>
+type DraftRequest<Type extends Draft['target']['type']> = {
   context: SessionProcedureContext
-  draft: NonNullable<ReturnType<typeof readComposerDraft>>
+  draft: Draft
+  target: DraftTarget<Type>
   command: ReturnType<typeof commandForDraft>
-  reply: { resolve: (value: { sessionId: string }) => void; reject: (error: Error) => void }
 }
 
-function commandForDraft(
-  draft: NonNullable<ReturnType<typeof readComposerDraft>>,
-  input: SessionSubmitInput,
-) {
+function commandForDraft(draft: Draft, input: SessionSubmitInput) {
   return {
     commandId: input.commandId,
     prompt: draft.prompt,
@@ -88,110 +93,135 @@ function rejectUnsupportedAttachments(
   })
 }
 
-function isDirectory(folder: string): Promise<boolean> {
-  return stat(folder).then(
-    (found) => found.isDirectory(),
-    () => false,
-  )
+// A Harness given a missing folder fails in its own way, or not at all, so every one stops here.
+async function rejectMissingFolder(folder: string): Promise<void> {
+  if (!(await folderPresent(folder)))
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message: 'folder-missing' satisfies SessionSubmitRejection,
+    })
 }
 
-async function prepareProjectDraft(
-  input: Omit<SupervisorDraftRequest, 'reply'>,
-): Promise<SessionStartInput | null> {
-  const { context, draft, command } = input
-  if (draft.target.type !== 'project') return null
-  const target = draft.target
-  rejectUnsupportedAttachments(context, target.harness, draft.attachments)
-  const created =
-    target.workspaceId === null
-      ? await context.ensureManagedWorkspace(target.projectId, draft.id).catch(() => {
+// The folder a new Session runs in: a new worktree made for it, or the main checkout.
+async function chosenFolder(
+  context: SessionProcedureContext,
+  target: DraftTarget<'project'>,
+  draftId: string,
+): Promise<Pick<SessionStartInput, 'worktree' | 'cwd'>> {
+  switch (target.worktree.type) {
+    case 'new': {
+      const created = await context
+        .createWorktree(target.projectId, draftId, target.worktree.from)
+        .catch(() => {
           throw new TRPCError({
             code: 'PRECONDITION_FAILED',
             message: 'worktree-create-failed' satisfies SessionSubmitRejection,
           })
         })
-      : null
-  const workspaceId = created?.id ?? target.workspaceId
-  const cwd =
-    created?.path ??
-    (workspaceId === null
-      ? null
-      : resolveWorkspacePath(context.database, { projectId: target.projectId, workspaceId }))
-  if (workspaceId === null || cwd === null)
-    throw new TRPCError({ code: 'BAD_REQUEST', message: 'workspace-not-in-project' })
-  // A Harness given a missing folder fails in its own way, or not at all, so every one stops here.
-  if (!(await isDirectory(cwd)))
-    throw new TRPCError({
-      code: 'PRECONDITION_FAILED',
-      message: 'workspace-missing' satisfies SessionSubmitRejection,
-    })
-  return {
-    ...command,
-    harness: target.harness,
-    projectId: target.projectId,
-    workspaceId,
-    cwd,
+      return { worktree: created, cwd: created.path }
+    }
+    case 'main': {
+      const main = await mainCheckout(context.database, target.projectId)
+      if (main === null) throw new TRPCError({ code: 'BAD_REQUEST', message: 'missing-project' })
+      return { worktree: null, cwd: main }
+    }
   }
 }
 
-function sendSessionDraft(input: SupervisorDraftRequest) {
-  const { context, draft, command, reply } = input
-  if (draft.target.type !== 'session') return
+async function prepareStart(input: DraftRequest<'project'>): Promise<SessionStartInput> {
+  const { context, draft, target, command } = input
+  rejectUnsupportedAttachments(context, target.harness, draft.attachments)
+  const folder = await chosenFolder(context, target, draft.id)
+  await rejectMissingFolder(folder.cwd)
+  return { ...command, harness: target.harness, projectId: target.projectId, ...folder }
+}
+
+// The worktree folder a Send found gone and left, or null; a gone one with nowhere to go refuses.
+async function leftWorktree(
+  context: SessionProcedureContext,
+  sessionId: string,
+): Promise<string | null> {
+  const left = await leaveGoneWorktree(context, sessionId)
+  switch (left.type) {
+    case 'kept':
+      return null
+    case 'moved':
+      return left.gone
+    case 'stranded':
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: 'folder-missing' satisfies SessionSubmitRejection,
+      })
+  }
+}
+
+type PreparedSend = { input: SessionSendInput; worktreeGone: string | null }
+
+async function prepareSend(input: DraftRequest<'session'>): Promise<PreparedSend> {
+  const { context, draft, target, command } = input
+  const sessionId = target.sessionId
+  // Opening the Session usually left a gone worktree already; a Send still checks.
+  const worktreeGone = await leftWorktree(context, sessionId)
   const stored = context.database
     .select({
       harness: sessionTable.harness,
       nativeId: sessionTable.nativeId,
       projectId: sessionTable.projectId,
-      workspaceId: sessionTable.workspaceId,
       cwd: sessionTable.cwd,
+      worktreePath: sessionTable.worktreePath,
     })
     .from(sessionTable)
-    .where(eq(sessionTable.argoId, draft.target.sessionId))
+    .where(eq(sessionTable.argoId, sessionId))
     .get()
   if (stored === undefined) throw new TRPCError({ code: 'NOT_FOUND', message: 'missing-session' })
   const harness = harnessSchema.parse(stored.harness)
   rejectUnsupportedAttachments(context, harness, draft.attachments)
-  const cwd =
-    stored.cwd ??
-    (stored.projectId !== null && stored.workspaceId !== null
-      ? resolveWorkspacePath(context.database, {
-          projectId: stored.projectId,
-          workspaceId: stored.workspaceId,
-        })
-      : null)
+  const cwd = stored.cwd ?? stored.worktreePath
   if (cwd === null)
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'missing-session-working-directory' })
-  context.supervisor.send({
-    type: 'Send',
-    intentId: pendingSessionId(draft),
-    input: { ...command, sessionId: draft.target.sessionId, resume: { ...stored, harness, cwd } },
-    reply,
-  })
+  await rejectMissingFolder(cwd)
+  const resume = { harness, nativeId: stored.nativeId, projectId: stored.projectId, cwd }
+  return { input: { ...command, sessionId, resume }, worktreeGone }
 }
 
 async function sendToSupervisor(
   context: SessionProcedureContext,
   input: SessionSubmitInput,
-): Promise<{ sessionId: string }> {
+): Promise<z.infer<typeof outputSchema>> {
   const draft = readComposerDraft(context.database, input.draftId)
   if (draft === null) throw new TRPCError({ code: 'NOT_FOUND', message: 'missing-draft' })
   if (draft.revision !== input.expectedRevision) {
     throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'stale-draft' })
   }
   const command = commandForDraft(draft, input)
-  const request = { context, draft, command }
-  const startInput = draft.target.type === 'project' ? await prepareProjectDraft(request) : null
-  return new Promise((resolve, reject) => {
-    const reply = { resolve, reject }
-    if (startInput !== null) {
-      context.supervisor.send({
-        type: 'Start',
-        pendingId: pendingSessionId(draft),
-        input: startInput,
-        reply,
-      })
-    } else sendSessionDraft({ ...request, reply })
-  })
+  const pendingId = pendingSessionId(draft)
+  const { target } = draft
+  switch (target.type) {
+    case 'project': {
+      const startInput = await prepareStart({ context, draft, target, command })
+      const accepted = await new Promise<{ sessionId: string }>((resolve, reject) =>
+        context.supervisor.send({
+          type: 'Start',
+          pendingId,
+          input: startInput,
+          reply: { resolve, reject },
+        }),
+      )
+      return { sessionId: accepted.sessionId, worktreeGone: null }
+    }
+    case 'session': {
+      const prepared = await prepareSend({ context, draft, target, command })
+      const accepted = await new Promise<{ sessionId: string }>((resolve, reject) =>
+        context.supervisor.send({
+          type: 'Send',
+          intentId: pendingId,
+          input: prepared.input,
+          reply: { resolve, reject },
+        }),
+      )
+      return { sessionId: accepted.sessionId, worktreeGone: prepared.worktreeGone }
+    }
+  }
 }
 
 export function sessionSubmitProcedure(context: SessionProcedureContext) {

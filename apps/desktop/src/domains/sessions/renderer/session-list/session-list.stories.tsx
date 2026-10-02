@@ -822,7 +822,17 @@ export const ArchivedRowsCanBeOpened: Story = {
   },
 }
 
+// Closes the Undo toast of an archive, which ends its Undo window.
+async function closeArchivedToast(count = 1) {
+  const name = `Archived ${count} Session${count === 1 ? '' : 's'}`
+  const toast = await within(document.body).findByRole('dialog', { name })
+  // The close control joins the accessibility tree once the toasts expand under the pointer.
+  await userEvent.hover(toast)
+  await userEvent.click(await within(toast).findByRole('button', { name: 'Close toast' }))
+}
+
 // Archiving lives on the row's context menu, with no bulk action bar footer (#2194 follow-up).
+// The clean worktree goes only once the Undo window closes.
 export const ArchiveFromContextMenu: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -831,6 +841,111 @@ export const ArchiveFromContextMenu: Story = {
     const archive = await within(document.body).findByRole('menuitem', { name: 'Archive' })
     await userEvent.click(archive)
     await expect(host.updates).toEqual([{ sessionIds: ['prose'], archived: true }])
+    await expect(host.removals).toEqual([])
+    await closeArchivedToast()
+    await waitFor(() =>
+      expect(host.removals).toEqual([{ sessionIds: ['prose'], removal: 'clean' }]),
+    )
+  },
+}
+
+const heldWork = {
+  sessionId: 'prose',
+  path: '/workspace/argo-worktrees/prose',
+  branch: 'argo/prose',
+  changedFiles: 2,
+  ownCommits: 1,
+}
+
+async function archiveFirstRow(canvasElement: HTMLElement) {
+  const row = await within(canvasElement).findByRole('button', {
+    name: /Read the Session transcript/,
+  })
+  await userEvent.pointer({ keys: '[MouseRight]', target: row })
+  await userEvent.click(await within(document.body).findByRole('menuitem', { name: 'Archive' }))
+  return within(document.body).findByRole('alertdialog')
+}
+
+// A worktree that holds work asks first; Keep archives and leaves the worktree.
+export const ArchiveAsksBeforeRemovingWork: Story = {
+  beforeEach: () => showing(listed, { worktreeWork: async () => ({ worktrees: [heldWork] }) }),
+  play: async ({ canvasElement }) => {
+    const dialog = await archiveFirstRow(canvasElement)
+    await waitFor(() => expect(within(dialog).getByText('argo/prose')).toBeVisible())
+    await expect(host.updates).toEqual([])
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Keep' }))
+    await waitFor(() => expect(host.updates).toEqual([{ sessionIds: ['prose'], archived: true }]))
+    await closeArchivedToast()
+    await waitFor(() =>
+      expect(host.removals).toEqual([{ sessionIds: ['prose'], removal: 'clean' }]),
+    )
+  },
+}
+
+// Remove archives and asks main to remove the worktree even though it holds work.
+export const ArchiveRemovesWorkWhenAsked: Story = {
+  beforeEach: () => showing(listed, { worktreeWork: async () => ({ worktrees: [heldWork] }) }),
+  play: async ({ canvasElement }) => {
+    const dialog = await archiveFirstRow(canvasElement)
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Remove' }))
+    await waitFor(() => expect(host.updates).toEqual([{ sessionIds: ['prose'], archived: true }]))
+    await closeArchivedToast()
+    await waitFor(() => expect(host.removals).toEqual([{ sessionIds: ['prose'], removal: 'all' }]))
+  },
+}
+
+// A removal main refused is told, not left silent.
+export const ArchiveTellsARefusedRemoval: Story = {
+  beforeEach: () =>
+    showing(listed, {
+      worktreeWork: async () => ({ worktrees: [heldWork] }),
+      removeWorktrees: async () => ({
+        worktrees: [
+          { sessionId: 'prose', path: heldWork.path, branch: heldWork.branch, outcome: 'refused' },
+        ],
+      }),
+    }),
+  play: async ({ canvasElement }) => {
+    const dialog = await archiveFirstRow(canvasElement)
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Remove' }))
+    await closeArchivedToast()
+    await waitFor(() =>
+      expect(
+        within(document.body).getByText(
+          'Argo could not remove the worktree /workspace/argo-worktrees/prose.',
+        ),
+      ).toBeVisible(),
+    )
+  },
+}
+
+// Cancel archives nothing; a state Argo could not read names each worktree it could not check.
+export const ArchiveAsksWhenWorkIsUnchecked: Story = {
+  beforeEach: () =>
+    showing(
+      [
+        {
+          ...session,
+          worktree: { path: heldWork.path, branch: heldWork.branch, base: 'main' },
+        },
+        secondSession,
+      ],
+      {
+        worktreeWork: async () => {
+          throw new Error('git could not be read')
+        },
+      },
+    ),
+  play: async ({ canvasElement }) => {
+    const dialog = await archiveFirstRow(canvasElement)
+    await waitFor(() =>
+      expect(within(dialog).getByText(/Argo could not check the worktrees/)).toBeVisible(),
+    )
+    await expect(within(dialog).getByText('argo/prose')).toBeVisible()
+    await expect(within(dialog).getByText(/changed files not checked/)).toBeVisible()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => expect(within(document.body).queryByRole('alertdialog')).toBeNull())
+    await expect(host.updates).toEqual([])
   },
 }
 
@@ -862,6 +977,14 @@ export const BulkArchiveAndUndoUpdateEachSession: Story = {
       { sessionIds: ['prose', 'second-session'], archived: false },
     ])
     await expect(host.reads.length).toBeGreaterThan(reads)
+    // Undo kept the worktrees, so the window closing removes none.
+    await closeArchivedToast(2)
+    await waitFor(() =>
+      expect(
+        within(document.body).queryByRole('dialog', { name: 'Archived 2 Sessions' }),
+      ).toBeNull(),
+    )
+    await expect(host.removals).toEqual([])
   },
 }
 

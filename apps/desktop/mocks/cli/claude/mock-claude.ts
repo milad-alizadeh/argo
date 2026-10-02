@@ -2,12 +2,12 @@
 // flags Argo launches with and writes each Turn it is sent where the real CLI writes transcripts.
 
 import { randomUUID } from 'node:crypto'
-import { appendFileSync, mkdirSync, readFileSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
 import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversarial-turns.ts'
-import { MOCK_START_REFUSED_FOLDER } from '../mock-cli.ts'
+import { MOCK_START_REFUSED_FILE } from '../mock-cli.ts'
 import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { MOCK_CLAUDE_AGENTS_ENV } from './mock-claude-agents.ts'
 import { MOCK_CLAUDE_HELP, MOCK_CLAUDE_VERSION } from './mock-claude-cli.ts'
@@ -58,7 +58,7 @@ if (arguments_.includes('--help')) {
 const [transcriptRoot] = arguments_
 const agentSdk = arguments_.includes('stream-json')
 const transcripts = agentSdk ? process.env[MOCK_CLAUDE_TRANSCRIPTS_ENV] : transcriptRoot
-if (agentSdk && path.basename(process.cwd()) === MOCK_START_REFUSED_FOLDER) {
+if (agentSdk && existsSync(path.join(process.cwd(), MOCK_START_REFUSED_FILE))) {
   process.stderr.write('Mock Claude cannot start here.\n')
   process.exit(1)
 }

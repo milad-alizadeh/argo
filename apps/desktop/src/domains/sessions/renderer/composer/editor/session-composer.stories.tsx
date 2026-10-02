@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import type { WorkspaceSummary } from '@/domains/workspaces/renderer'
+import { expect, within } from 'storybook/test'
 import type { Harness } from '@/harnesses/harness'
 import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '@/mocks/sessions/harness-catalog.fixture'
@@ -21,31 +21,19 @@ const plan: SessionPlan = {
   entries: [{ content: 'Choose the base layout', position: 0, status: 'in_progress' as const }],
 }
 
-const WORKSPACE_CANDIDATES: [WorkspaceSummary, WorkspaceSummary] = [
-  {
-    id: 'workspace-main',
-    kind: 'main',
-    displayName: 'argo',
-    path: '/Users/milad/Developer/argo',
-    facts: { branch: 'main', headSha: 'abc1234', dirty: false },
-  },
-  {
-    id: 'workspace-imported',
-    kind: 'imported',
-    displayName: 'linked-feature',
-    path: '/Users/milad/Developer/argo-linked',
-    facts: { branch: 'feature/linked', headSha: 'def5678', dirty: true },
-  },
-]
+const WORKTREE_OPTIONS = {
+  checkout: { path: '/Users/milad/Developer/argo', branch: 'main' },
+  branches: ['main', 'feature/linked'],
+}
 
 // Every control the composer can show at once, for visual/manual review rather than a behaviour
-// assertion: plan, harness, turn turnConfiguration and the Workspace picker together.
+// assertion: plan, harness, turn turnConfiguration and the Worktree row together.
 function EverythingComposerStory() {
   const [sessionId] = useState('session-one')
   const [harness, setHarness] = useState<Harness>('claude')
   const [turnConfiguration, setTurnConfiguration] = useState(CLAUDE_TURN_CONFIGURATION.opening)
-  const [selectedId, setSelectedId] = useState('new')
-  const selected = WORKSPACE_CANDIDATES.find((candidate) => candidate.id === selectedId) ?? null
+  const [newWorktree, setNewWorktree] = useState(true)
+  const [from, setFrom] = useState<string | null>(null)
 
   return (
     <ComposerForm
@@ -60,12 +48,13 @@ function EverythingComposerStory() {
         value: turnConfiguration,
         onChange: setTurnConfiguration,
       }}
-      workspace={{
-        choice: selectedId,
+      worktree={{
+        options: WORKTREE_OPTIONS,
+        newWorktree,
+        from,
         saveFailed: false,
-        workspace: selected,
-        workspaces: WORKSPACE_CANDIDATES,
-        onSelect: setSelectedId,
+        setNewWorktree,
+        chooseFrom: setFrom,
       }}
     />
   )
@@ -87,6 +76,30 @@ export default meta
 type Story = StoryObj<typeof EverythingComposerStory>
 
 // A single visual reference showing every composer control together: plan, harness, turn turnConfiguration
-// and the Workspace picker. Manual/visual review, not a behaviour assertion (each control already
+// and the worktree picker. Manual/visual review, not a behaviour assertion (each control already
 // has its own dedicated story above).
 export const Everything: Story = { tags: ['view-only'] }
+
+// A permission card owns the tray, so a Worktree row passed beside it is not drawn.
+export const PermissionHidesWorktreeRow: Story = {
+  render: () => (
+    <ComposerForm
+      onSend={async () => true}
+      permissionPrompt={<p>Permission card</p>}
+      sessionId="session-one"
+      worktree={{
+        options: WORKTREE_OPTIONS,
+        newWorktree: false,
+        from: null,
+        saveFailed: false,
+        setNewWorktree: () => undefined,
+        chooseFrom: () => undefined,
+      }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Permission card')).toBeVisible()
+    await expect(canvas.queryByRole('switch', { name: 'Worktree' })).toBeNull()
+  },
+}

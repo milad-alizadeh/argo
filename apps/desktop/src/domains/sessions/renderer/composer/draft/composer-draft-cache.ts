@@ -3,8 +3,8 @@ import { type RouterOutputs, trpc } from '@/platform/renderer/trpc-client'
 
 type DraftValue = RouterOutputs['composerDraftCreate']
 
-// A read keys by target, and a new-Session target changes with its workspace, so the last draft
-// value is also kept by owner. It sits under the read's path, so clearing the reads clears it.
+// A read keys by target, and a new-Session target changes with its worktree choice, so the last
+// draft value is also kept by owner. It sits under the read's path, so clearing the reads clears it.
 const OWNER_QUERY_KEY = [...trpc.composerDraftRead.pathKey(), { type: 'owner' }]
 
 function ownerQueryKey(owner: string) {

@@ -78,7 +78,6 @@ export const Open: Story = {
       header.getBoundingClientRect().left + gutter,
     )
     expect(within(header).queryByText('Session ID')).toBeNull()
-    expect(within(header).queryByText('Workspace')).toBeNull()
   },
 }
 

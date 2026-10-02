@@ -119,14 +119,16 @@ test('pages many archived Sessions apart from the active ones', async () => {
   }
 })
 
-test('projects each Session’s stored Workspace, and null for one outside any Workspace', async () => {
+test('projects each Session’s worktree, and null for one in the main checkout', async () => {
   const { database, list } = sessionListCaller()
   try {
     insertSession(database, {
       id: IDS[0],
       harness: 'claude',
       nativeId: 'linked-session',
-      workspaceId: 'workspace-1',
+      worktreePath: '/worktrees/one',
+      worktreeBranch: 'argo/session-one',
+      worktreeBase: 'main',
       createdAt: 20,
     })
     insertSession(database, {
@@ -139,8 +141,8 @@ test('projects each Session’s stored Workspace, and null for one outside any W
     const result = await list({ projectId: 'project-1' })
 
     assert.deepEqual(
-      result.rows.map(({ workspaceId }) => workspaceId),
-      ['workspace-1', null],
+      result.rows.map(({ worktree }) => worktree),
+      [{ path: '/worktrees/one', branch: 'argo/session-one', base: 'main' }, null],
     )
   } finally {
     database.$client.close()
@@ -293,6 +295,28 @@ test('lists only one Ticket’s Sessions, most recently linked first, past the f
       [IDS[1], IDS[0]],
     )
     assert.equal(linked.total, 2)
+  } finally {
+    database.$client.close()
+  }
+})
+
+test('names a Session saved with an empty preview by its first prompt (#3077)', async () => {
+  const { database, list } = sessionListCaller()
+  try {
+    insertSession(database, {
+      id: IDS[0],
+      harness: 'codex',
+      nativeId: 'native-1',
+      preview: '',
+      firstPrompt: 'First prompt',
+    })
+
+    const result = await list({ projectId: 'project-1' })
+
+    assert.deepEqual(
+      result.rows.map(({ name }) => name),
+      ['First prompt'],
+    )
   } finally {
     database.$client.close()
   }

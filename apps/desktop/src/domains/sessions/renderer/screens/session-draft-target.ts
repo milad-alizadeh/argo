@@ -1,29 +1,24 @@
-import type { WorkspaceState } from '@/domains/workspaces/renderer'
 import type { RouterInputs } from '@/platform/renderer/trpc-client'
-import type { ComposerIdentity } from '../composer'
+import type { ComposerIdentity, WorktreeOptionsState } from '../composer'
 import type { HarnessControl } from '../harness'
 
 export function draftTarget({
   identity,
   harness,
   projectId,
-  workspace,
+  worktree,
 }: {
   identity: ComposerIdentity
   harness: HarnessControl
   projectId: string | null
-  workspace: WorkspaceState
+  worktree: Pick<WorktreeOptionsState, 'options' | 'newWorktree' | 'from'>
 }): RouterInputs['composerDraftCreate']['target'] | null {
   if (identity.kind === 'session') return { type: 'session', sessionId: identity.sessionId }
-  if (projectId === null || workspace.choice === null) return null
-  let workspaceId: string | null
-  if (workspace.choice === 'new') workspaceId = null
-  else if (workspace.workspace?.id === workspace.choice) workspaceId = workspace.choice
-  else return null
+  if (projectId === null || worktree.options === null) return null
   return {
     type: 'project',
     projectId,
-    workspaceId,
+    worktree: worktree.newWorktree ? { type: 'new', from: worktree.from } : { type: 'main' },
     harness: harness.harness,
   }
 }

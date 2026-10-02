@@ -313,9 +313,9 @@ The Project-opening contract and its packaged test are recorded in
 The test crosses the packaged renderer, preload, and main process with isolated storage.
 It does not import Swift data.
 
-The e2e commands build the Vite output with `bun run build:vite` and launch it with the Electron in
-`node_modules`. They do not package the app. CI packages arm64 and sets `ARGO_E2E_PACKAGED=1`, so
-the same cases launch a copy of the packaged app. To run that mode locally, run `bun run build`,
+The e2e commands build the Vite output with `bun run build:vite:cached` and launch it with the
+Electron in `node_modules`. They do not package the app. CI packages arm64 and sets
+`ARGO_E2E_PACKAGED=1`, so the same cases launch a copy of the packaged app. To run that mode locally, run `bun run build`,
 then `ARGO_E2E_PACKAGED=1 bunx playwright test`. No command here runs the app you have installed.
 
 | Command | What it produces |
@@ -323,8 +323,8 @@ then `ARGO_E2E_PACKAGED=1 bunx playwright test`. No command here runs the app yo
 | `bun run test:e2e` | Every flow under `e2e/`, one Playwright project per flow: `projects`, `sessions`, `tickets`. `bun run turbo run test:e2e --filter=@argo/desktop` caches the run. |
 | `bun run test:e2e -- --project=sessions` | One flow alone. A file path such as `e2e/sessions/journeys.e2e.ts` narrows it further. |
 | `ARGO_E2E_REAL=1 bun run test:e2e -- --project=real-sessions` | The Session journeys against the locally signed-in Claude and Codex CLIs, under an isolated home directory. CI never sets `ARGO_E2E_REAL`. |
-| `bun run capture:desktop` | After `bun run build:vite`, one PNG per screen, in `out/desktop-captures`. |
-| `bun run measure:desktop` | After `bun run build:vite`, startup and idle evidence, printed as JSON. The evidence comes from the Vite build. Set `ARGO_E2E_PACKAGED=1` after `bun run build` to measure the packaged app. |
+| `bun run capture:desktop` | After `bun run build:vite:cached`, one PNG per screen, in `out/desktop-captures`. |
+| `bun run measure:desktop` | After `bun run build:vite:cached`, startup and idle evidence, printed as JSON. The evidence comes from the Vite build. Set `ARGO_E2E_PACKAGED=1` after `bun run build` to measure the packaged app. |
 
 Test assets sit outside `src/`. `e2e/<flow>/` holds `*.e2e.ts` files, their `cases/*.case.ts` and
 `fixtures/*.fixture.ts`. `mocks/` holds the mock CLIs, mock providers and their transcripts.

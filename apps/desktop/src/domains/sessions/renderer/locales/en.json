@@ -11,7 +11,7 @@
   },
   "newSession": "New Session",
   "identity": {
-    "branch": "Branch"
+    "from": "from"
   },
   "searchSessions": "Search Sessions",
   "subagent": "Subagent",
@@ -78,8 +78,9 @@
     "retry": "Retry",
     "sendFailed": "The Turn could not be sent. Your draft is still saved.",
     "sendUncertain": "Argo could not confirm whether the Turn was sent. Your draft is still saved.",
+    "worktreeGone": "The worktree {{path}} is gone, so this Session now works in the main checkout.",
     "sendRejected": {
-      "workspace-missing": "The work location folder no longer exists, so the Turn was not sent. Choose another work location. Your draft is still saved.",
+      "folder-missing": "The Session's folder no longer exists, so the Turn was not sent. Your draft is still saved.",
       "worktree-create-failed": "Argo could not create a worktree, so the Turn was not sent. Your draft is still saved.",
       "harness-start-failed": "{{harness}} could not start, so the Turn was not sent. Check that {{harness}} runs in a terminal. Your draft is still saved."
     },
@@ -129,15 +130,15 @@
       "refreshModels": "Refresh models",
       "model": "Model"
     },
-    "workspace": {
-      "choose": "Choose work location",
-      "chooseLabel": "Work location: {{workspace}}",
+    "worktree": {
       "label": "Work location",
-      "newWorktree": "New worktree",
-      "existingWorktrees": "Existing worktrees",
-      "search": "Search worktrees",
-      "noMatches": "No worktrees found",
-      "saveFailed": "Could not use this work location. Choose another."
+      "switch": "Worktree",
+      "start": "Start the new worktree from",
+      "fromLabel": "New worktree from {{start}}",
+      "detached": "Current commit",
+      "search": "Search branches",
+      "noMatches": "No branches found",
+      "saveFailed": "Could not remember the Worktree switch for this Project."
     },
     "references": {
       "label": "References",
@@ -240,6 +241,24 @@
     "restored_other": "Restored {{count}} Sessions",
     "partialFailure": "Argo could not archive every selected Session.",
     "failure": "Argo could not archive the selected Sessions."
+  },
+  "archiveWorktree": {
+    "title_one": "This worktree holds work",
+    "title_other": "These worktrees hold work",
+    "description": "Archiving removes a clean worktree. Keep leaves the folder and its branch. Remove deletes both, and the work listed here.",
+    "unchecked": "Argo could not check the worktrees, so it cannot say what Remove would delete. Keep leaves each folder and its branch. Remove deletes both.",
+    "changedFiles_one": "{{count}} changed file",
+    "changedFiles_other": "{{count}} changed files",
+    "changedFilesUnchecked": "changed files not checked",
+    "ownCommits_one": "{{count}} commit on no other branch",
+    "ownCommits_other": "{{count}} commits on no other branch",
+    "ownCommitsUnchecked": "commits not checked",
+    "cancel": "Cancel",
+    "keep": "Keep",
+    "remove": "Remove",
+    "running": "The worktree {{path}} stays, because a Turn is running in it.",
+    "refused": "Argo could not remove the worktree {{path}}.",
+    "removeFailed": "Argo could not remove the worktrees of the archived Sessions."
   },
   "contextMenu": {
     "actions": "{{title}} actions",
