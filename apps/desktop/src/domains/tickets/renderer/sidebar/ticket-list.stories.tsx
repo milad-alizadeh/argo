@@ -187,6 +187,24 @@ export const SavedRowsWithoutWrites: Story = {
   },
 }
 
+export const LoadingMore: Story = {
+  args: {
+    backlog: backlog({ tickets: [standalone()], hasMore: true, loadingMore: true }),
+  },
+  decorators: [
+    (Story) => (
+      <div className="h-dvh w-100">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByRole('status', { name: 'Reading more Tickets' }),
+    ).toBeVisible()
+  },
+}
+
 async function reachTicketListEnd(scroll: HTMLElement) {
   await waitFor(async () => {
     scroll.scrollTop = scroll.scrollHeight
