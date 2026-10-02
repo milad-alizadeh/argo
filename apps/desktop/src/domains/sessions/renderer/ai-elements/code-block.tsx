@@ -136,27 +136,3 @@ export function CodeBlock({ children, className, code, language, line, ...props 
     </CodeBlockContext.Provider>
   )
 }
-
-export function CodeBlockHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn(
-        'type-meta flex items-center justify-between border-b bg-muted/80 px-3 py-2 text-muted-foreground',
-        className,
-      )}
-      {...props}
-    />
-  )
-}
-
-export function CodeBlockTitle({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('flex items-center gap-2', className)} {...props} />
-}
-
-export function CodeBlockFilename({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
-  return <span className={cn('type-code', className)} {...props} />
-}
-
-export function CodeBlockActions({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('-my-1 -mr-1 flex items-center gap-2', className)} {...props} />
-}

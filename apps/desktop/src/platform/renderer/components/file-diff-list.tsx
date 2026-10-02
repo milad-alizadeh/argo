@@ -1,6 +1,7 @@
 import { type ReactNode, useState } from 'react'
 import { cn } from '../lib/utils'
 import { diffLines } from './file-diff-lines'
+import { FileHeader } from './file-header'
 import { Icon } from './icon/icon'
 
 export type FileDiff = { diff: string; path: string }
@@ -54,7 +55,7 @@ function FileDiffSection({
   return (
     <section aria-label={file.path}>
       <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar" title={file.path}>
-        <label className="flex w-full cursor-pointer items-center gap-4 px-4 py-3 text-left has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-inset">
+        <label className="flex w-full cursor-pointer text-left has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-inset">
           <input
             aria-label={markViewedLabel(file.path)}
             checked={viewed}
@@ -62,21 +63,24 @@ function FileDiffSection({
             onChange={(event) => setViewed(event.target.checked)}
             type="checkbox"
           />
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-left type-body font-semibold [direction:rtl] [unicode-bidi:plaintext]">
-              {file.path}
-            </span>
-          </span>
-          <span className="flex shrink-0 items-center gap-2 type-label font-medium">
-            {viewedLabel}
-            <span
-              aria-hidden="true"
-              className="grid size-4 place-items-center rounded-sm border border-input data-[checked=true]:border-primary data-[checked=true]:bg-primary data-[checked=true]:text-primary-foreground"
-              data-checked={viewed}
-            >
-              {viewed ? <Icon name="confirmed" className="size-3.5" /> : null}
-            </span>
-          </span>
+          <FileHeader
+            className="w-full border-0 bg-transparent px-4 py-3"
+            heading={file.path}
+            titleClassName="truncate text-left [direction:rtl] [unicode-bidi:plaintext]"
+            rightSlotClassName="my-0 mr-0 flex shrink-0 items-center gap-2 type-label font-medium"
+            rightSlot={
+              <>
+                <span>{viewedLabel}</span>
+                <span
+                  aria-hidden="true"
+                  className="grid size-4 place-items-center rounded-sm border border-input data-[checked=true]:border-primary data-[checked=true]:bg-primary data-[checked=true]:text-primary-foreground"
+                  data-checked={viewed}
+                >
+                  {viewed ? <Icon name="confirmed" className="size-3.5" /> : null}
+                </span>
+              </>
+            }
+          />
         </label>
       </header>
       {viewed ? null : (renderDiff?.(file) ?? <PlainFileDiff file={file} lines={lines} />)}

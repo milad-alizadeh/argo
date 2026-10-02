@@ -1,13 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { displayedToolLabel } from '@/domains/sessions/api/feed'
-import {
-  CodeBlock,
-  CodeBlockActions,
-  CodeBlockCopyButton,
-  CodeBlockFilename,
-  CodeBlockHeader,
-  CodeBlockTitle,
-} from '../../ai-elements'
+import { FileHeader } from '@/platform/renderer/components/file-header'
+import { CodeBlock, CodeBlockCopyButton } from '../../ai-elements'
 import { codeLanguageLabel, detectCodeLanguage } from '../content/code-language'
 import { CodeLanguageIcon } from '../content/code-language-icon'
 import { FeedMarkdown } from '../content/feed-markdown'
@@ -26,19 +20,24 @@ export function FeedInlineToolCall({ call, live }: { call: ToolCall | ToolRow; l
   const language = detectCodeLanguage(call.text ?? '', call.kind === 'command' ? 'bash' : undefined)
   const languageLabel = codeLanguageLabel(language)
   const header = (
-    <CodeBlockHeader className="bg-muted type-meta">
-      <CodeBlockTitle>
+    <FileHeader
+      className="bg-muted type-meta"
+      leadingIcon={
         <span aria-hidden="true">
           <CodeLanguageIcon language={language} />
         </span>
-        <CodeBlockFilename>{languageLabel}</CodeBlockFilename>
-      </CodeBlockTitle>
-      <CodeBlockActions>
-        {call.status === 'failed' && <span className="text-destructive">{t('tools.failed')}</span>}
-        {callRunning(call, live) && <StatusIcon status={call.status} />}
-        <CodeBlockCopyButton aria-label={t('tools.copyRun')} className="size-7" />
-      </CodeBlockActions>
-    </CodeBlockHeader>
+      }
+      heading={languageLabel}
+      rightSlot={
+        <>
+          {call.status === 'failed' && (
+            <span className="text-destructive">{t('tools.failed')}</span>
+          )}
+          {callRunning(call, live) && <StatusIcon status={call.status} />}
+          <CodeBlockCopyButton aria-label={t('tools.copyRun')} className="size-7" />
+        </>
+      }
+    />
   )
   // A call whose input carries no text and whose result came back empty (a running call, or a
   // tool that returned nothing) has no code to show; an empty highlighted block read as a bug.

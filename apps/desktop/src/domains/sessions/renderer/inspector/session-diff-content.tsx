@@ -1,16 +1,10 @@
 import type { RefObject } from 'react'
 import type { BundledLanguage } from 'shiki/langs'
 import { diffLineDecoration, diffLines } from '@/platform/renderer/components/file-diff-lines'
+import { FileHeader } from '@/platform/renderer/components/file-header'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
-import {
-  CodeBlock,
-  CodeBlockActions,
-  CodeBlockCopyButton,
-  CodeBlockFilename,
-  CodeBlockHeader,
-  CodeBlockTitle,
-} from '../ai-elements'
+import { CodeBlock, CodeBlockCopyButton } from '../ai-elements'
 
 type ViewButtonReference = RefObject<HTMLButtonElement | null>
 type Text = { copy: string; toggle: string }
@@ -117,28 +111,28 @@ function DiffHeader({
   viewButtonReference: ViewButtonReference
 }) {
   const iconName = copyLabel === undefined ? 'diff-view' : 'file-text'
+  // Isolated so a path's leading slash stays at its start while the start truncates.
   return (
-    <CodeBlockHeader className="shrink-0 bg-sidebar px-4 py-3">
-      <CodeBlockTitle className="min-w-0">
-        <CodeBlockFilename className="block truncate text-left [direction:rtl] type-body font-semibold">
-          {/* Isolated so a path's leading slash stays at its start while the start truncates. */}
-          <bdi dir="ltr">{path}</bdi>
-        </CodeBlockFilename>
-      </CodeBlockTitle>
-      <CodeBlockActions>
-        <Button
-          size="icon"
-          variant="ghost"
-          aria-label={label}
-          onClick={onClick}
-          ref={viewButtonReference}
-        >
-          <Icon name={iconName} size="control" />
-        </Button>
-        {copyLabel === undefined ? null : (
-          <CodeBlockCopyButton aria-label={copyLabel} className="size-7" />
-        )}
-      </CodeBlockActions>
-    </CodeBlockHeader>
+    <FileHeader
+      className="shrink-0 bg-sidebar px-4 py-3"
+      titleClassName="truncate text-left [direction:rtl]"
+      heading={<bdi dir="ltr">{path}</bdi>}
+      rightSlot={
+        <>
+          <Button
+            size="icon"
+            variant="ghost"
+            aria-label={label}
+            onClick={onClick}
+            ref={viewButtonReference}
+          >
+            <Icon name={iconName} size="control" />
+          </Button>
+          {copyLabel === undefined ? null : (
+            <CodeBlockCopyButton aria-label={copyLabel} className="size-7" />
+          )}
+        </>
+      }
+    />
   )
 }

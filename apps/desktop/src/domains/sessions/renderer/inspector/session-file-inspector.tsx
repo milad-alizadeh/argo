@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { FileHeader } from '@/platform/renderer/components/file-header'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { CodeBlock } from '../ai-elements'
 import { detectCodeLanguageFromPath, FeedMarkdown } from '../feed/content'
@@ -56,9 +57,11 @@ export function SessionFileInspector({
   return (
     <section className="flex min-h-0 flex-1 flex-col" aria-label={t('file.inspector')}>
       <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar px-4 py-3">
-        <span className="block truncate text-left [direction:rtl] type-body font-semibold">
-          {evidence.path}
-        </span>
+        <FileHeader
+          className="border-0 bg-transparent px-0 py-0"
+          heading={evidence.path}
+          titleClassName="truncate text-left [direction:rtl]"
+        />
       </header>
       <div className="min-h-0 flex-1 overflow-auto p-4">
         <FileBody path={evidence.path} sessionId={sessionId} />

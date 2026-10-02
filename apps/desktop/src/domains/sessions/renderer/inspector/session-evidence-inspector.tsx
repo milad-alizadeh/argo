@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { FileHeader } from '@/platform/renderer/components/file-header'
 import { CodeBlock } from '../ai-elements'
 import { detectCodeLanguageFromPath, FeedMermaid } from '../feed/content'
 import { patchFiles } from '../model'
@@ -13,9 +14,11 @@ import { SessionSkillInspector } from './skill'
 // A long path truncates at its start, so the filename at the end stays visible.
 function InspectorTitle({ title }: { title: string }) {
   return (
-    <span className="block truncate text-left [direction:rtl] type-body font-semibold">
-      {title}
-    </span>
+    <FileHeader
+      className="border-0 bg-transparent px-0 py-0"
+      heading={title}
+      titleClassName="truncate text-left [direction:rtl]"
+    />
   )
 }
 
