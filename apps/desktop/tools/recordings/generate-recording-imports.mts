@@ -23,6 +23,7 @@ const producers = [
     prefix: 'CLAUDE',
     files: {
       'agents.json': 'recordedClaudeAgents',
+      'compaction-chain.json': 'recordedClaudeCompactionChain',
       'lifecycle-frames.json': 'recordedClaudeLifecycleFrames',
       'session-history-claude.ts': 'recordedClaudeHistory',
       'supported-commands.json': 'recordedClaudeCommands',
