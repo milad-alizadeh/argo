@@ -25,6 +25,9 @@ parse transcript or rollout files stands. Argo installs status hooks in each Har
 config at launch, with no switch. They post to a Unix socket in Argo's app data folder, and a status
 they set outranks the listed one; the poll stays on (#2976). This reverses ADR-0041's removal of a user-level hook, for status only; compaction still
 comes from vendor events, as below. As in ADR-0041, an acceptance run installs nothing.
+An install moves no group, because Codex keys hook trust by position. It takes the place of an
+Argo group whose app data folder is gone, drops such groups only at the end of a list, drops the
+older port-form group (#3088, #3066).
 
 ## Amendment · main-owned root Feed reading (#2824) · 2026-09-28
 
