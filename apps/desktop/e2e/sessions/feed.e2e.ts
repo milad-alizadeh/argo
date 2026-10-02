@@ -8,6 +8,8 @@ import path from 'node:path'
 import type { Page } from 'playwright-core'
 import type { Harness } from '@/harnesses/harness'
 import { RECORDED_PROMPTS } from '../../mocks/cli/recorded-prompts'
+import { hookEvent, postHook } from '../../mocks/cli/status-hooks'
+import { fixtureSessionId } from '../../mocks/sessions/mock-transcript-files'
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
 import { proveClaudeAcpHistory } from './cases/claude-acp-history.case'
@@ -25,6 +27,7 @@ import {
   USAGE_WATCH,
 } from './cases/first-send-labels.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
+import { proveLiveFeed } from './cases/live-feed.case'
 import { proveNewSessionSkipsUninstalledHarness } from './cases/new-session-harness.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
 import { provePromptBeforeNaming } from './cases/pending-prompt.case'
@@ -41,7 +44,7 @@ import { proveSubagentFeed } from './cases/subagent-feed.case'
 import { proveLiveCodexModelChoices } from './cases/turn-configuration.case'
 import { proveSessionWorktree } from './cases/worktree.case'
 import { ACTIVE_FEED } from './feed-selectors'
-import { appendProse } from './fixtures/feed.fixture'
+import { appendProse, streamProse } from './fixtures/feed.fixture'
 import { writeWindowFillerSessions } from './fixtures/session-list-window.fixture'
 import { openSessionByClick, sendFromComposer } from './gestures'
 import { sessionSyncHoldFile } from './packaged-session-harness'
@@ -138,6 +141,28 @@ test('session-delegation-cards', async ({ session }) => {
 
 test('session-subagent-feed', async ({ session }) => {
   await proveSubagentFeed(session.page())
+})
+
+// A Claude running outside Argo posts its Stop hook once it has written the transcript; that is
+// what makes the open Feed read the file again.
+async function reportProseStop(userData: string) {
+  const payload = hookEvent('claude', 'Stop', fixtureSessionId('prose')).payload
+  const status = await postHook(path.join(userData, 'hooks.sock'), 'claude', payload)
+  if (status !== 204) throw new Error(`The Stop hook was answered with ${status}.`)
+}
+
+test('session-feed-reader-anchor', async ({ session }) => {
+  const { claudeTranscripts, userData } = session.fixture
+  await proveLiveFeed(session.page(), {
+    append: async (uuid, text) => {
+      await appendProse(claudeTranscripts, uuid, text)
+      await reportProseStop(userData)
+    },
+    stream: async (text) => {
+      await streamProse(claudeTranscripts, text)
+      await reportProseStop(userData)
+    },
+  })
 })
 
 test('session-feed-formatted', async ({ session }) => {
