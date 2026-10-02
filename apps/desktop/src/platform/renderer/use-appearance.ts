@@ -1,9 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import {
-  type AppearanceState,
-  appearanceStateSchema,
-  themeKey,
-} from '@/platform/contract/appearance'
+import { type AppearanceState, appearanceStateSchema } from '@/platform/contract/appearance'
 
 let accepted: AppearanceState
 let readinessRequested = false
@@ -55,10 +51,6 @@ export function acknowledgeRendererAppearance(): Promise<void> {
 
 export function useTheme() {
   return useSyncExternalStore(subscribe, () => accepted)
-}
-
-export function useThemeKey() {
-  return themeKey(useTheme())
 }
 
 export function useDarkAppearance() {

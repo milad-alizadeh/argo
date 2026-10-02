@@ -11,7 +11,6 @@ export const APPEARANCE_CHANGED_CHANNEL = 'argo:appearance:changed'
 
 const themeSchema = z.enum(THEMES)
 const appearanceSchema = z.enum(APPEARANCES)
-export type Theme = z.infer<typeof themeSchema>
 export type Appearance = z.infer<typeof appearanceSchema>
 
 export const appearancePreferenceSchema = z.strictObject({
@@ -39,7 +38,6 @@ export const appearanceReadyResultSchema = z.strictObject({
   ready: z.boolean(),
   state: appearanceStateSchema,
 })
-export type AppearanceReadyResult = z.infer<typeof appearanceReadyResultSchema>
 
 export const appearanceMutationSchema = z.discriminatedUnion('ok', [
   z.strictObject({ ok: z.literal(true), state: appearanceStateSchema }),
@@ -50,7 +48,3 @@ export const appearanceMutationSchema = z.discriminatedUnion('ok', [
   }),
 ])
 export type AppearanceMutation = z.infer<typeof appearanceMutationSchema>
-
-export function themeKey(state: Pick<AppearanceState, 'theme' | 'dark'>): string {
-  return `${state.theme}:${state.dark ? 'dark' : 'light'}`
-}
