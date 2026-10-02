@@ -49,6 +49,8 @@ type StatusSource = {
   ) => Promise<Record<string, string>>
   // Keeps the Session in the live listing, as the process running it does, so no tick drops it.
   holdLive: (root: string, session: ExternalSession) => Promise<void>
+  // Makes the listing succeed and name no Session, as when nothing is open elsewhere.
+  listNone: (root: string) => Promise<void>
   // Safe to repeat: a poll that has not seen the Session yet sees it on a later call.
   openTurn: (root: string, session: ExternalSession) => Promise<void>
   closeTurn: (root: string, session: ExternalSession) => Promise<void>
@@ -100,6 +102,7 @@ function claudeSource(): StatusSource {
     },
     // With no answer, `claude agents --json` fails, and a failed listing leaves every row as it is.
     holdLive: async () => {},
+    listNone: (root) => writeFile(claudeAgents(root), '[]'),
     async openTurn(root, session) {
       await writeTurn(root, session)
       await answer(root, session, 'busy')
@@ -157,6 +160,8 @@ function codexSource(): StatusSource {
       return { CODEX_HOME: codexHome(root) }
     },
     holdLive,
+    // No process holds a thread's writer lock.
+    listNone: async () => {},
     async openTurn(root, session) {
       await holdLive(root, session)
       await writeTurn(root, session, 'inProgress')
@@ -210,7 +215,6 @@ for (const createSource of [claudeSource, codexSource]) {
       const dot = rowTitled(page, OLDER).locator('[data-slot="session-status"]')
       await expect(rowTitled(page, NEWER)).toHaveCount(1, { timeout: 30_000 })
       await expect(rows.first()).toContainText(NEWER)
-      await expect(dot).toHaveAttribute('data-variant', 'unknown')
 
       // The poll runs every 2 s.
       await expect(async () => {
@@ -227,6 +231,27 @@ for (const createSource of [claudeSource, codexSource]) {
         String(await rowTitled(page, OLDER).getAttribute('data-session-id')),
       )
       await expect(page.locator(ACTIVE_FEED)).toContainText(TURN_PROMPT)
+    } finally {
+      await closeApplication(application)
+      await source.stop()
+    }
+  })
+}
+
+// On fresh app data the sync saves every row during the run; one open nowhere settles (#3168).
+for (const createSource of [claudeSource, codexSource]) {
+  test(`a ${createSource().harness} Session found during the run and open nowhere shows idle`, async ({
+    root,
+    applicationUnderTest,
+  }) => {
+    const source = createSource()
+    const { application, page } = await launch(root, applicationUnderTest, source)
+    try {
+      await source.listNone(root)
+      for (const title of [OLDER, NEWER])
+        await expect(
+          rowTitled(page, title).locator('[data-slot="session-status"]'),
+        ).toHaveAttribute('data-variant', /^(idle|unread)$/, { timeout: 30_000 })
     } finally {
       await closeApplication(application)
       await source.stop()
