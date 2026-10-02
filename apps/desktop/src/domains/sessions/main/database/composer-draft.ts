@@ -65,6 +65,23 @@ function parseJson<Value>(source: string, schema: z.ZodType<Value>): Value {
   return schema.parse(JSON.parse(source))
 }
 
+type WorktreeRequest = z.infer<typeof worktreeRequestSchema>
+type StoredDraft = z.infer<typeof composerDraftSelectSchema>
+
+function worktreeFromRow(row: StoredDraft): WorktreeRequest | null {
+  if (row.worktree === null) return null
+  return worktreeRequestSchema.parse(
+    row.worktree === 'new' ? { type: 'new', from: row.worktreeFromBranch } : { type: 'main' },
+  )
+}
+
+function worktreeColumns(worktree: WorktreeRequest | null) {
+  return {
+    worktree: worktree?.type ?? null,
+    worktreeFromBranch: worktree?.type === 'new' ? worktree.from : null,
+  }
+}
+
 function valueFromRow(stored: unknown): ComposerDraftValue {
   const row = composerDraftSelectSchema.parse(stored)
   const target =
@@ -73,7 +90,7 @@ function valueFromRow(stored: unknown): ComposerDraftValue {
       : projectTargetSchema.parse({
           type: 'project',
           projectId: row.projectId,
-          worktree: parseJson(row.worktreeJson ?? 'null', worktreeRequestSchema),
+          worktree: worktreeFromRow(row),
           harness: row.harness,
         })
   return composerDraftValueSchema.parse({
@@ -109,13 +126,13 @@ function storedTarget(target: ComposerDraftValue['target']) {
     ? {
         projectId: target.projectId,
         sessionId: null,
-        worktreeJson: JSON.stringify(target.worktree),
+        ...worktreeColumns(target.worktree),
         harness: target.harness,
       }
     : {
         projectId: null,
         sessionId: target.sessionId,
-        worktreeJson: null,
+        ...worktreeColumns(null),
         harness: null,
       }
 }

@@ -432,7 +432,17 @@
       "autoincrement": false,
       "default": null,
       "generated": null,
-      "name": "worktree_json",
+      "name": "worktree",
+      "entityType": "columns",
+      "table": "composer_draft"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "worktree_from_branch",
       "entityType": "columns",
       "table": "composer_draft"
     },
@@ -1612,8 +1622,26 @@
       "table": "composer_draft"
     },
     {
-      "value": "(\"project_id\" IS NULL AND \"worktree_json\" IS NULL AND \"harness\" IS NULL) OR (\"project_id\" IS NOT NULL AND \"worktree_json\" IS NOT NULL AND \"harness\" IS NOT NULL)",
+      "value": "(\"project_id\" IS NULL AND \"worktree\" IS NULL AND \"harness\" IS NULL) OR (\"project_id\" IS NOT NULL AND \"worktree\" IS NOT NULL AND \"harness\" IS NOT NULL)",
       "name": "composer_draft_new_session_fields",
+      "entityType": "checks",
+      "table": "composer_draft"
+    },
+    {
+      "value": "\"worktree\" IN ('main', 'new')",
+      "name": "composer_draft_worktree",
+      "entityType": "checks",
+      "table": "composer_draft"
+    },
+    {
+      "value": "\"worktree_from_branch\" IS NULL OR \"worktree\" = 'new'",
+      "name": "composer_draft_worktree_from",
+      "entityType": "checks",
+      "table": "composer_draft"
+    },
+    {
+      "value": "\"worktree_from_branch\" IS NULL OR (length(\"worktree_from_branch\") > 0 AND substr(\"worktree_from_branch\", 1, 1) != '-')",
+      "name": "composer_draft_worktree_from_branch",
       "entityType": "checks",
       "table": "composer_draft"
     },

@@ -491,7 +491,8 @@ test('round-trips every Session draft content field through SQLite', async () =>
   expect(database.select().from(composerDraft).get()).toMatchObject({
     projectId: null,
     sessionId: 'session-1',
-    worktreeJson: null,
+    worktree: null,
+    worktreeFromBranch: null,
     harness: null,
   })
 })

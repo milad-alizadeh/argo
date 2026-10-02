@@ -13,9 +13,9 @@ ALTER TABLE `project` DROP COLUMN `last_workspace_choice`;--> statement-breakpoi
 CREATE TEMP TABLE `__keep_composer_draft` AS
 	SELECT `composer_draft`.*, CASE
 		WHEN `composer_draft`.`project_id` IS NULL THEN NULL
-		WHEN `workspace`.`kind` IN ('main', 'imported') THEN '{"type":"main"}'
-		ELSE '{"type":"new","from":null}'
-	END AS `worktree_json`
+		WHEN `workspace`.`kind` IN ('main', 'imported') THEN 'main'
+		ELSE 'new'
+	END AS `worktree`
 	FROM `composer_draft`
 	LEFT JOIN `workspace` ON `workspace`.`id` = `composer_draft`.`workspace_id`;--> statement-breakpoint
 CREATE TEMP TABLE `__keep_session_archive` AS SELECT * FROM `session_archive`;--> statement-breakpoint
@@ -61,7 +61,8 @@ CREATE TABLE `composer_draft` (
 	`id` text PRIMARY KEY,
 	`project_id` text,
 	`session_id` text,
-	`worktree_json` text,
+	`worktree` text,
+	`worktree_from_branch` text,
 	`harness` text,
 	`prompt` text DEFAULT '' NOT NULL,
 	`attachments_json` text DEFAULT '[]' NOT NULL,
@@ -75,12 +76,15 @@ CREATE TABLE `composer_draft` (
 	CONSTRAINT `fk_composer_draft_project_id_project_id_fk` FOREIGN KEY (`project_id`) REFERENCES `project`(`id`) ON DELETE CASCADE,
 	CONSTRAINT `fk_composer_draft_session_id_session_argo_id_fk` FOREIGN KEY (`session_id`) REFERENCES `session`(`argo_id`) ON DELETE CASCADE,
 	CONSTRAINT "composer_draft_target" CHECK(("project_id" IS NOT NULL) != ("session_id" IS NOT NULL)),
-	CONSTRAINT "composer_draft_new_session_fields" CHECK(("project_id" IS NULL AND "worktree_json" IS NULL AND "harness" IS NULL) OR ("project_id" IS NOT NULL AND "worktree_json" IS NOT NULL AND "harness" IS NOT NULL)),
+	CONSTRAINT "composer_draft_new_session_fields" CHECK(("project_id" IS NULL AND "worktree" IS NULL AND "harness" IS NULL) OR ("project_id" IS NOT NULL AND "worktree" IS NOT NULL AND "harness" IS NOT NULL)),
+	CONSTRAINT "composer_draft_worktree" CHECK("worktree" IN ('main', 'new')),
+	CONSTRAINT "composer_draft_worktree_from" CHECK("worktree_from_branch" IS NULL OR "worktree" = 'new'),
+	CONSTRAINT "composer_draft_worktree_from_branch" CHECK("worktree_from_branch" IS NULL OR (length("worktree_from_branch") > 0 AND substr("worktree_from_branch", 1, 1) != '-')),
 	CONSTRAINT "composer_draft_revision" CHECK("revision" >= 0)
 );
 --> statement-breakpoint
-INSERT INTO `composer_draft`(`id`, `project_id`, `session_id`, `worktree_json`, `harness`, `prompt`, `attachments_json`, `ticket_context_json`, `model`, `effort`, `mode`, `revision`, `created_at`, `updated_at`)
-	SELECT `id`, `project_id`, `session_id`, `worktree_json`, `harness`, `prompt`, `attachments_json`, `ticket_context_json`, `model`, `effort`, `mode`, `revision`, `created_at`, `updated_at` FROM `__keep_composer_draft`;--> statement-breakpoint
+INSERT INTO `composer_draft`(`id`, `project_id`, `session_id`, `worktree`, `harness`, `prompt`, `attachments_json`, `ticket_context_json`, `model`, `effort`, `mode`, `revision`, `created_at`, `updated_at`)
+	SELECT `id`, `project_id`, `session_id`, `worktree`, `harness`, `prompt`, `attachments_json`, `ticket_context_json`, `model`, `effort`, `mode`, `revision`, `created_at`, `updated_at` FROM `__keep_composer_draft`;--> statement-breakpoint
 CREATE UNIQUE INDEX `composer_draft_project` ON `composer_draft` (`project_id`);--> statement-breakpoint
 CREATE UNIQUE INDEX `composer_draft_session` ON `composer_draft` (`session_id`);--> statement-breakpoint
 INSERT OR IGNORE INTO `session_archive` SELECT * FROM `__keep_session_archive`;--> statement-breakpoint

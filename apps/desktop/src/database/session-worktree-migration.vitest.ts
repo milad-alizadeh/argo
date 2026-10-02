@@ -89,10 +89,20 @@ test('keeps each Session folder, makes every linked worktree a Session worktree,
       { session_id: 'session-imported' },
     ])
     expect(
-      client.prepare('SELECT id, worktree_json FROM composer_draft ORDER BY id').all(),
+      client
+        .prepare('SELECT id, worktree, worktree_from_branch FROM composer_draft ORDER BY id')
+        .all(),
     ).toEqual([
-      { id: 'draft-project', worktree_json: '{"type":"new","from":null}' },
-      { id: 'draft-session', worktree_json: null },
+      {
+        id: 'draft-project',
+        worktree: 'new',
+        worktree_from_branch: null,
+      },
+      {
+        id: 'draft-session',
+        worktree: null,
+        worktree_from_branch: null,
+      },
     ])
     expect(client.prepare('SELECT id, new_worktree FROM project ORDER BY id').all()).toEqual([
       { id: 'project-1', new_worktree: 0 },
