@@ -90,7 +90,10 @@ type CompactMetadata = {
 
 // A compaction whose kept messages lie before the tail; the SDK joins them to the chain only when
 // it holds every one of them.
-function cutPreservedMessages(entries: readonly SessionStoreEntry[], held: ReadonlyMap<string | undefined, unknown>) {
+function cutPreservedMessages(
+  entries: readonly SessionStoreEntry[],
+  held: ReadonlyMap<string | undefined, unknown>,
+) {
   return entries.some((entry) => {
     const { preservedSegment, preservedMessages } = ((
       entry as { compactMetadata?: CompactMetadata }

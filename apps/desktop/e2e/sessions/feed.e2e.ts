@@ -190,9 +190,14 @@ test.describe('with a long Session for each Harness', () => {
       external.codex = await writeLongCodexThread(session.root)
     })
     for (const harness of ['claude', 'codex'] as const) {
-      await proveSmoothScroll(session.page(), started[harness], `Argo ${harness}`, testInfo)
+      const page = session.page()
+      await proveSmoothScroll(
+        page,
+        { sessionId: started[harness], label: `Argo ${harness}` },
+        testInfo,
+      )
       const outside = await listedSession(external[harness])
-      await proveSmoothScroll(session.page(), outside, `outside ${harness}`, testInfo)
+      await proveSmoothScroll(page, { sessionId: outside, label: `outside ${harness}` }, testInfo)
     }
   })
 })

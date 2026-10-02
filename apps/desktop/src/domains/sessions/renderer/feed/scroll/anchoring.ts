@@ -50,11 +50,6 @@ export function useAnchoredVirtualizer({
     committedFirstRowId.current = firstRowId
   }, [firstRowId])
   const prepending = firstRowId !== committedFirstRowId.current
-  // TanStack anchors from the offset of the last scroll event; a wheel step since then would be
-  // undone, so a prepend takes the viewport's own offset first.
-  const instance = useRef<ReactVirtualizer<HTMLElement, Element> | null>(null)
-  if (prepending && instance.current !== null && viewport !== null)
-    instance.current.scrollOffset = viewport.scrollTop
   // A new key function makes the virtualizer measure every row again, so it changes with the rows.
   const getItemKey = useCallback((index: number) => feedRowAt(rows, index).id, [rows])
   const virtualizer = useVirtualizer({
@@ -79,7 +74,6 @@ export function useAnchoredVirtualizer({
     scrollPaddingStart: paddingStart,
     scrollEndThreshold: TAIL_THRESHOLD_PX,
   })
-  instance.current = virtualizer
   // TanStack Virtual takes this only as an instance assignment. Insertion effects run after
   // commit but before row refs measure, so restored heights cannot move the viewport first; once
   // positioned, rows measured above the reader move it again by their change.

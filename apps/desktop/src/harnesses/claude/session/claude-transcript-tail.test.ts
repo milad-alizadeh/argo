@@ -121,7 +121,7 @@ test('a transcript rewritten in place to a larger size is read again, not append
 
   const reread = await tails.read(file, transcriptTailBytes(0))
   expect(reread.entries.at(-1)?.uuid).toBe(other.lastUuid)
-  expect(reread.entries.filter(({ uuid }) => !other.text.includes(uuid))).toEqual([])
+  expect(reread.entries.filter(({ uuid }) => !other.text.includes(String(uuid)))).toEqual([])
 })
 
 test('the tail decodes to the newest rows of the whole history, and says it is cut off', async () => {
