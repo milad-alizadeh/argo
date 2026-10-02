@@ -32,7 +32,7 @@ function TriggerStory({
           <SearchableDropdownTrigger {...trigger} />
           <PopoverContent className="w-(--size-session-menu) max-w-(--size-session-menu-max-width) gap-0 p-0">
             <PopoverTitle className="sr-only">Worktrees</PopoverTitle>
-            <Command defaultValue="New worktree">
+            <Command defaultValue="New worktree" label="Search worktrees">
               <CommandSearchField aria-label="Search worktrees" placeholder="Search worktrees" />
               <CommandList className="max-h-56">
                 <CommandGroup>
@@ -152,10 +152,9 @@ export const LabelSearch: Story = {
     const trigger = within(canvasElement).getByRole('button', { name: 'Choose worktree' })
     await expect(trigger).toHaveTextContent('New worktree')
     await userEvent.click(trigger)
-    await waitFor(() =>
-      expect(within(document.body).getByPlaceholderText('Search worktrees')).toBeVisible(),
-    )
-    const search = within(document.body).getByRole('combobox', { name: 'Search worktrees' })
+    const search = await within(document.body).findByLabelText('Search worktrees')
+    await expect(search).toBeVisible()
+    await expect(search).toHaveAccessibleName('Search worktrees')
     await userEvent.type(search, 'main')
     await expect(within(document.body).getByRole('option', { name: 'main' })).toBeVisible()
     await userEvent.keyboard('{Escape}')

@@ -110,7 +110,7 @@ export const ImageAttachmentShowsAPreview: Story = {
 
     await attachViaMenu(canvas)
     await canvas.findByText('notes')
-    await expect(canvas.getByAltText('')).toHaveAttribute(
+    await expect(canvas.getByRole('img', { name: 'screenshot.png' })).toHaveAttribute(
       'src',
       'argo-attachment://local/repo/screenshot.png',
     )
@@ -216,8 +216,7 @@ export const DragAndDropAttaches: Story = {
       }),
     )
 
-    await expect(await canvas.findByText('diagram')).toBeVisible()
-    await expect(canvas.getByAltText('')).toHaveAttribute(
+    await expect(await canvas.findByRole('img', { name: 'diagram.jpg' })).toHaveAttribute(
       'src',
       'argo-attachment://local/dropped/diagram.jpg',
     )

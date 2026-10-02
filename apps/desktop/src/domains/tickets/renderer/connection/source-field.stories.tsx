@@ -113,9 +113,13 @@ export const Invalid: Story = {
 export const LongOptionNarrow: Story = {
   args: { narrow: true },
   play: async ({ canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Show repositories' }))
-    await expect(
-      await within(document.body).findByRole('option', { name: scopes[2]?.label }),
-    ).toBeVisible()
+    const canvas = within(canvasElement)
+    const page = within(document.body)
+    const input = canvas.getByRole('combobox', { name: 'Repository' })
+    await userEvent.click(canvas.getByRole('button', { name: 'Show repositories' }))
+    const listbox = await page.findByRole('listbox', { name: 'Repository' })
+    await userEvent.type(input, 'a-very-long-repository-name-to-check-narrow-popup')
+    const option = await within(listbox).findByRole('option', { name: scopes[2]?.label })
+    await expect(option).toBeVisible()
   },
 }

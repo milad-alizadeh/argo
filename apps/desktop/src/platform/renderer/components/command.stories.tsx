@@ -28,7 +28,7 @@ function CommandStory({
   const [choice, setChoice] = useState(selected ? 'main' : '')
   return (
     <div className={narrow ? 'w-48 p-4' : 'w-80 p-4'}>
-      <Command defaultValue={selected ? 'main' : undefined}>
+      <Command defaultValue={selected ? 'main' : undefined} label="Search commands">
         <CommandInput
           aria-label="Search commands"
           placeholder="Search commands"
@@ -79,7 +79,8 @@ type Story = StoryObj<typeof meta>
 export const Raw: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    const input = canvas.getByRole('combobox', { name: 'Search commands' })
+    const input = canvas.getByLabelText('Search commands')
+    await expect(input).toHaveAccessibleName('Search commands')
     await userEvent.type(input, 'missing')
     await expect(canvas.getByText('No commands found.')).toBeVisible()
     await userEvent.clear(input)
