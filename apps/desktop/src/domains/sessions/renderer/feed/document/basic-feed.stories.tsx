@@ -846,11 +846,11 @@ export const DisclosureAtLatestKeepsItsControlStill: Story = {
     const groupTop = group.getBoundingClientRect().top
     await userEvent.click(group)
     const call = await canvas.findByRole('button', { name: 'Ran a command' })
-    await expect(group.getBoundingClientRect().top).toBeCloseTo(groupTop, 0)
+    await waitFor(() => expect(group.getBoundingClientRect().top).toBeCloseTo(groupTop, 0))
     const callTop = call.getBoundingClientRect().top
     await userEvent.click(call)
     await waitFor(() => expect(call).toHaveAttribute('aria-expanded', 'true'))
-    await expect(call.getBoundingClientRect().top).toBeCloseTo(callTop, 0)
+    await waitFor(() => expect(call.getBoundingClientRect().top).toBeCloseTo(callTop, 0))
   },
 }
 
