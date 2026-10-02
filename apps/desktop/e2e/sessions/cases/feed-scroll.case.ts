@@ -65,69 +65,100 @@ export async function growCodexThread(root: string, threadId: string) {
   await writeFile(file, JSON.stringify(threads))
 }
 
-// Records every frame until stopped: the gap between frames, and how the rows wholly in view moved
-// since the frame before. Rows that stay in view must move together and in the scroll's direction.
-function startFrameRecorder(page: Page, selector: string, direction: 'start' | 'end') {
-  return page.evaluate(
-    ({ selector, direction }) => {
-      const viewport = document.querySelector<HTMLElement>(selector)
-      if (viewport === null) throw new Error('No active Feed viewport.')
-      const record = { deltas: [] as number[], jumps: [] as string[], gaps: 0, stopped: false }
-      const rows = () => {
-        const bounds = viewport.getBoundingClientRect()
-        const tops = new Map<string, number>()
-        let covered = 0
-        for (const row of viewport.querySelectorAll<HTMLElement>('[data-feed-row]')) {
-          const { top, bottom } = row.getBoundingClientRect()
-          covered += Math.max(0, Math.min(bottom, bounds.bottom) - Math.max(top, bounds.top))
-          if (top >= bounds.top && bottom <= bounds.bottom) tops.set(row.dataset.feedRow ?? '', top)
-        }
-        return { tops, blank: bounds.height - covered > bounds.height / 2 }
+type FeedScrollWindow = {
+  feedScrollSample: () => { blank: boolean; jump: string | null }
+  feedScrollRecord: { deltas: number[]; jumps: string[]; gaps: number; stopped: boolean }
+}
+
+// Installs a sample of the rows wholly in view: whether the viewport is mostly blank, and how they
+// moved since the sample before. Rows that stay in view must move by the wheel alone.
+function installRowSampler(page: Page, selector: string) {
+  return page.evaluate((selector) => {
+    const viewport = document.querySelector<HTMLElement>(selector)
+    if (viewport === null) throw new Error('No active Feed viewport.')
+    const rows = () => {
+      const bounds = viewport.getBoundingClientRect()
+      const tops = new Map<string, number>()
+      let covered = 0
+      for (const row of viewport.querySelectorAll<HTMLElement>('[data-feed-row]')) {
+        const { top, bottom } = row.getBoundingClientRect()
+        covered += Math.max(0, Math.min(bottom, bounds.bottom) - Math.max(top, bounds.top))
+        if (top >= bounds.top && bottom <= bounds.bottom) tops.set(row.dataset.feedRow ?? '', top)
       }
-      // Rows scroll toward the end of the Feed when the reader scrolls to its start.
-      const sign = direction === 'start' ? 1 : -1
-      const judge = (before: Map<string, number>, after: Map<string, number>) => {
-        const moves = [...after].flatMap(([id, top]) => {
-          const was = before.get(id)
-          return was === undefined ? [] : [{ id, move: top - was }]
-        })
-        const [first] = moves
-        if (first === undefined) return null
-        const apart = moves.find(({ move }) => Math.abs(move - first.move) > 1)
-        if (apart !== undefined)
-          return `${apart.id} moved ${Math.round(apart.move - first.move)}px apart`
-        return first.move * sign < -1 ? `rows moved ${Math.round(first.move)}px backwards` : null
+      // At either end the scroll stops short of what the wheel asked.
+      const { scrollTop, scrollHeight, clientHeight } = viewport
+      const pinned = scrollTop <= 0 || scrollTop >= scrollHeight - clientHeight - 1
+      return { tops, blank: bounds.height - covered > bounds.height / 2, scrollTop, pinned }
+    }
+    // Pixels the wheel asked for that rows have not moved yet; a scroll may spread them over frames.
+    let wheeled = 0
+    viewport.addEventListener('wheel', (event) => (wheeled -= event.deltaY), { passive: true })
+    const spend = (moved: number) => {
+      wheeled = wheeled > 0 ? Math.max(0, wheeled - moved) : Math.min(0, wheeled - moved)
+    }
+    // Rows in view move together, and only as far as the wheel asked; past it, content moved them.
+    const judge = (before: ReturnType<typeof rows>, after: ReturnType<typeof rows>) => {
+      const moves = [...after.tops].flatMap(([id, top]) => {
+        const was = before.tops.get(id)
+        return was === undefined ? [] : [{ id, move: top - was }]
+      })
+      const [first] = moves
+      // A scroll past every row in view leaves none to judge by; it spent what the scroll moved.
+      if (first === undefined) {
+        spend(before.scrollTop - after.scrollTop)
+        return null
       }
-      let previous = rows()
-      let last = performance.now()
-      // Rows are read in a task posted from the frame, which runs after it paints: inside the
-      // frame callback, rows the scroll just mounted still stand at their estimated height.
-      const painted = new MessageChannel()
-      painted.port1.onmessage = () => {
-        const current = rows()
-        if (current.blank) record.gaps += 1
-        const jump = judge(previous.tops, current.tops)
-        if (jump !== null) record.jumps.push(jump)
-        previous = current
-      }
-      const tick = (now: number) => {
-        if (record.stopped) return
-        record.deltas.push(now - last)
-        last = now
-        painted.port2.postMessage(null)
-        requestAnimationFrame(tick)
-      }
+      const apart = moves.find(({ move }) => Math.abs(move - first.move) > 1)
+      if (apart !== undefined)
+        return `${apart.id} moved ${Math.round(apart.move - first.move)}px apart`
+      const asked = wheeled
+      const past = first.move * Math.sign(asked) < -1 || Math.abs(first.move) > Math.abs(asked) + 1
+      if (after.pinned) wheeled = 0
+      else spend(first.move)
+      return past
+        ? `${first.id} moved ${Math.round(first.move)}px, ${Math.round(asked)}px wheeled`
+        : null
+    }
+    let previous = rows()
+    ;(window as unknown as FeedScrollWindow).feedScrollSample = () => {
+      const current = rows()
+      const jump = judge(previous, current)
+      previous = current
+      return { blank: current.blank, jump }
+    }
+  }, selector)
+}
+
+// Records every frame until stopped: the gap between frames, and the row sample after it paints.
+async function startFrameRecorder(page: Page, selector: string) {
+  await installRowSampler(page, selector)
+  await page.evaluate(() => {
+    const probe = window as unknown as FeedScrollWindow
+    const record = { deltas: [] as number[], jumps: [] as string[], gaps: 0, stopped: false }
+    let last = performance.now()
+    // Rows are read in a task posted from the frame, which runs after it paints: inside the
+    // frame callback, rows the scroll just mounted still stand at their estimated height.
+    const painted = new MessageChannel()
+    painted.port1.onmessage = () => {
+      const { blank, jump } = probe.feedScrollSample()
+      if (blank) record.gaps += 1
+      if (jump !== null) record.jumps.push(jump)
+    }
+    const tick = (now: number) => {
+      if (record.stopped) return
+      record.deltas.push(now - last)
+      last = now
+      painted.port2.postMessage(null)
       requestAnimationFrame(tick)
-      ;(window as unknown as { feedScrollRecord: typeof record }).feedScrollRecord = record
-    },
-    { selector, direction },
-  )
+    }
+    requestAnimationFrame(tick)
+    probe.feedScrollRecord = record
+  })
 }
 
 async function stopFrameRecorder(page: Page): Promise<ScrollMeasure> {
   const { deltas, jumps, gaps } = await page.evaluate(() => {
-    const record = (window as unknown as { feedScrollRecord: { stopped: boolean } })
-      .feedScrollRecord as { stopped: boolean; deltas: number[]; jumps: string[]; gaps: number }
+    const record = (window as unknown as FeedScrollWindow).feedScrollRecord
     record.stopped = true
     return record
   })
@@ -187,10 +218,10 @@ export async function proveSmoothScroll(
   const box = await viewport.boundingBox()
   if (box === null) throw new Error('The Feed viewport has no box.')
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-  await startFrameRecorder(page, selector, 'start')
+  await startFrameRecorder(page, selector)
   await wheelToStart(page, sessionId, selector)
   const up = await stopFrameRecorder(page)
-  await startFrameRecorder(page, selector, 'end')
+  await startFrameRecorder(page, selector)
   await flingToEnd(page, selector)
   const down = await stopFrameRecorder(page)
   for (const [pass, measure] of [

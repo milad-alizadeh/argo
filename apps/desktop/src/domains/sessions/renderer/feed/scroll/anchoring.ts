@@ -79,9 +79,20 @@ export function useAnchoredVirtualizer({
   // positioned, rows measured above the reader move it again by their change.
   useInsertionEffect(() => {
     virtualizer.shouldAdjustScrollPositionOnItemSizeChange =
-      initialScrollPosition === null || positioned ? undefined : () => false
+      initialScrollPosition === null || positioned ? rowAboveReader : () => false
   }, [initialScrollPosition, positioned, virtualizer])
   return virtualizer
+}
+
+// TanStack's own rule, without its skip while scrolling up: a row above the reader that sizes late,
+// such as a diagram drawn after mount, otherwise pushes the rows in view down by its growth.
+function rowAboveReader(
+  item: VirtualItem,
+  _delta: number,
+  instance: Virtualizer<HTMLElement, Element>,
+) {
+  const fold = (instance.scrollOffset ?? 0) + instance.scrollAdjustments
+  return instance.itemSizeCache.has(item.key) ? item.end <= fold : item.start < fold
 }
 
 // A composer growing under a Feed at its tail grows the viewport's end padding, which shrinks its

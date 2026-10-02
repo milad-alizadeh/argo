@@ -1,5 +1,5 @@
 // Recorded Claude histories of a chosen size: each Turn is a prompt, a Bash call with output, and a
-// long reply, so every size carries the same mix of rows.
+// long reply, with a diagram in every tenth, so every size carries the same mix of rows.
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
@@ -11,8 +11,14 @@ const LOREM =
   'Reviewed the call site, weighed the alternative shape, and kept the one that names the ' +
   'behaviour rather than the mechanism. '
 
+// A diagram draws after its row mounts, so it grows a row the Feed has already measured.
+const DIAGRAM_EVERY = 10
+
 function longProse(index: number): string {
-  return `Turn ${index}: ${LOREM.repeat(24)}`
+  const prose = `Turn ${index}: ${LOREM.repeat(24)}`
+  if (index % DIAGRAM_EVERY !== 0) return prose
+  const diagram = `flowchart TD\n  Prompt${index} --> Read --> Edit --> Test\n  Test --> Reply${index}`
+  return `${prose}\n\n\`\`\`mermaid\n${diagram}\n\`\`\``
 }
 
 function toolOutput(index: number): string {

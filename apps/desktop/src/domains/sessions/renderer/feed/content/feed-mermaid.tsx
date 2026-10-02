@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
@@ -23,6 +23,31 @@ export async function drawDiagram(id: string, source: string, dark: boolean) {
   })
   if (!(await mermaid.parse(source, { suppressErrors: true }))) return null
   return (await mermaid.render(id, source)).svg
+}
+
+// Diagrams already drawn, so a row scrolled back into view draws at its final height at once.
+const DRAWN_DIAGRAMS = 64
+const drawnDiagrams = new Map<string, { id: string; svg: string | null }>()
+
+function drawnDiagram(id: string, source: string, dark: boolean): string | null | undefined {
+  const drawn = drawnDiagrams.get(`${dark}:${source}`)
+  // Mermaid scopes the SVG's styles to its element id, which differs per mount.
+  return drawn?.svg ? drawn.svg.replaceAll(drawn.id, id) : drawn?.svg
+}
+
+function drawingOf(svg: string | null | undefined): Drawing {
+  if (svg === undefined) return 'pending'
+  return svg === null ? 'failed' : 'drawn'
+}
+
+async function drawCachedDiagram(id: string, source: string, dark: boolean) {
+  const svg = await drawDiagram(id, source, dark)
+  const key = `${dark}:${source}`
+  drawnDiagrams.delete(key)
+  drawnDiagrams.set(key, { id, svg })
+  for (const old of drawnDiagrams.keys())
+    if (drawnDiagrams.size > DRAWN_DIAGRAMS) drawnDiagrams.delete(old)
+  return svg
 }
 
 // The approved honest state for a fence Mermaid could not draw: the source stays readable and the
@@ -61,10 +86,16 @@ export function FeedMermaid({
   // `useId` answers `_r_1_`-shaped ids, and Mermaid uses the id as a CSS selector.
   const diagramId = `mermaid-${useId().replace(/[^\w-]/g, '')}`
   const dark = useDarkAppearance()
-  const [drawing, setDrawing] = useState<Drawing>('pending')
-  useEffect(() => {
+  const [drawing, setDrawing] = useState(() => drawingOf(drawnDiagram(diagramId, source, dark)))
+  useLayoutEffect(() => {
+    const cached = drawnDiagram(diagramId, source, dark)
+    if (cached !== undefined) {
+      if (cached !== null && frame.current) frame.current.innerHTML = cached
+      setDrawing(drawingOf(cached))
+      return
+    }
     let current = true
-    drawDiagram(diagramId, source, dark).then(
+    drawCachedDiagram(diagramId, source, dark).then(
       (svg) => {
         if (!current) return
         if (svg && frame.current) frame.current.innerHTML = svg
