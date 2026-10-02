@@ -219,7 +219,6 @@ function VirtualFeed({
     onScrollPositionChange,
     onMeasurementsChange,
   )
-  useReaderScrollWins(viewport, virtualizer)
   const promptIndex = useFeedPrompt({
     positioned: !tailFollow.awaitingInitialPosition,
     rows,
@@ -236,6 +235,7 @@ function VirtualFeed({
     virtualizer,
     viewport,
   })
+  useReaderScrollWins(viewport, virtualizer)
 
   return (
     <div className="feed__scroller">

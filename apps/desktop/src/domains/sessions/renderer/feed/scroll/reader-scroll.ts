@@ -3,9 +3,8 @@ import { useEffect } from 'react'
 
 const SCROLL_KEYS = new Set(['ArrowDown', 'ArrowUp', 'End', 'Home', 'PageDown', 'PageUp', ' '])
 
-// TanStack re-aims a `scrollToIndex` for up to five seconds each time its target row moves, even
-// after the reader scrolled away, so a row resizing above the target took the reader back to it
-// (#2960). The reader's own gesture replaces that scroll with the place they are at.
+// TanStack re-aims a `scrollToIndex` for up to five seconds whenever its target row moves, even
+// after the reader scrolled away. The reader's own gesture replaces that scroll with their place.
 export function useReaderScrollWins(
   viewport: HTMLElement | null,
   virtualizer: ReactVirtualizer<HTMLElement, Element>,

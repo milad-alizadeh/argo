@@ -264,14 +264,27 @@ function drawnRows(canvasElement: HTMLElement) {
   return [...canvasElement.querySelectorAll<HTMLElement>('[data-feed-row]')]
 }
 
+function twoFrames() {
+  return new Promise<void>((resolve) =>
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+  )
+}
+
 async function waitForScrollToSettle(history: HTMLElement) {
   await waitFor(async () => {
     const position = history.scrollTop
     const height = history.scrollHeight
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-    )
+    await twoFrames()
     expect(history.scrollTop).toBeCloseTo(position, 1)
+    expect(history.scrollHeight).toBe(height)
+  })
+}
+
+// Rows measured, while a smooth scroll may still be moving.
+async function waitForHeightToSettle(history: HTMLElement) {
+  await waitFor(async () => {
+    const height = history.scrollHeight
+    await twoFrames()
     expect(history.scrollHeight).toBe(height)
   })
 }
@@ -1729,16 +1742,6 @@ function ShrinkAbovePromptHarness() {
 }
 
 // The rows have measured; the prompt may still be rising.
-async function waitForHeightToSettle(history: HTMLElement) {
-  await waitFor(async () => {
-    const height = history.scrollHeight
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-    )
-    expect(history.scrollHeight).toBe(height)
-  })
-}
-
 function distanceFromTail(history: HTMLElement) {
   return history.scrollHeight - history.clientHeight - history.scrollTop
 }
