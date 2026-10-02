@@ -40,6 +40,7 @@ export function listedSession({
   cwd: _cwd,
   posture: _posture,
   turnConfiguration: _turnConfiguration,
+  contextUsage: _contextUsage,
   ...listed
 }: SessionDetails & SessionExtras): Session & SessionExtras {
   return listed

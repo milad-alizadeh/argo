@@ -593,7 +593,7 @@ for (const harness of ['claude', 'codex'] as const)
       const [row] = (await list({ projectId: 'project-1' })).rows
       const read = await details({ sessionId: IDS[0] })
       if (row === undefined || read === null) throw new Error('The Session was not read.')
-      const { projectId, cwd, posture, turnConfiguration, ...shared } = read
+      const { projectId, cwd, posture, turnConfiguration, contextUsage, ...shared } = read
 
       assert.deepEqual(Object.keys(row).sort(), [
         'activity',
@@ -610,12 +610,13 @@ for (const harness of ['claude', 'codex'] as const)
       ])
       assert.deepEqual(shared, row)
       assert.deepEqual(
-        { projectId, cwd, posture, turnConfiguration },
+        { projectId, cwd, posture, turnConfiguration, contextUsage },
         {
           projectId: 'project-1',
           cwd: '/work/one',
           posture: null,
           turnConfiguration: { model: 'opus', effort: 'low', mode: null },
+          contextUsage: null,
         },
       )
     } finally {

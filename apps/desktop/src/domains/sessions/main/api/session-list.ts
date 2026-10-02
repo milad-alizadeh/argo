@@ -18,7 +18,6 @@ import { ticketTable } from '@/database/ticket/schema'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { ticketContent } from '@/database/ticket-content/schema'
 import { ticketContentSelectSchema } from '@/database/ticket-content/validation'
-import { contextUsageSchema } from '@/domains/sessions/api/context-usage'
 import { type LiveActivity, liveActivitySchema } from '@/domains/sessions/api/feed'
 import { planProgressSchema } from '@/domains/sessions/api/feed-content'
 import { sessionListInputSchema } from '@/domains/sessions/api/session-list-input'
@@ -62,7 +61,6 @@ export const sessionListRowSchema = z.strictObject({
   ticket: sessionTicketSchema.nullable(),
   archived: z.boolean(),
   planProgress: planProgressSchema.nullable(),
-  contextUsage: contextUsageSchema.nullable(),
 })
 
 type SessionListRow = z.infer<typeof sessionListRowSchema>
@@ -152,8 +150,6 @@ function sessionListRow(
     ticket: linkedTicket(row.ticket),
     archived: row.archived,
     planProgress: storedValue(planProgressSchema, row.planProgress, 'Plan progress'),
-    contextUsage:
-      live?.contextUsage ?? storedValue(contextUsageSchema, row.contextUsage, 'context usage'),
   }
 }
 
@@ -178,7 +174,6 @@ const storedSessionColumns = {
   status: sessionTable.status,
   updatedAt: sessionTable.updatedAt,
   planProgress: sessionTable.planProgress,
-  contextUsage: sessionTable.contextUsage,
   worktreePath: sessionTable.worktreePath,
   worktreeBranch: sessionTable.worktreeBranch,
   worktreeBase: sessionTable.worktreeBase,

@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { sessionTable } from '@/database/session/schema'
 import { sessionSelectSchema } from '@/database/session/validation'
+import { contextUsageSchema } from '@/domains/sessions/api/context-usage'
 import { reportedTurnConfigurationSchema } from '@/domains/sessions/api/reported-turn-configuration'
 import { identifierSchema } from '@/shared/validation'
 import {
@@ -20,6 +21,7 @@ export const sessionDetailsSchema = sessionListRowSchema.extend({
   cwd: sessionSelectSchema.shape.cwd,
   posture: z.literal('live').nullable(),
   turnConfiguration: reportedTurnConfigurationSchema,
+  contextUsage: contextUsageSchema.nullable(),
 })
 
 async function readSessionDetails(
@@ -33,6 +35,7 @@ async function readSessionDetails(
       projectId: sessionTable.projectId,
       cwd: sessionTable.cwd,
       turnConfiguration: sessionTable.turnConfiguration,
+      contextUsage: sessionTable.contextUsage,
     })
     .from(sessionTable)
     .where(eq(sessionTable.argoId, sessionId))
@@ -51,6 +54,8 @@ async function readSessionDetails(
         stored.turnConfiguration,
         'turn configuration',
       ) ?? { model: null, effort: null, mode: null },
+    contextUsage:
+      live?.contextUsage ?? storedValue(contextUsageSchema, stored.contextUsage, 'context usage'),
   }
 }
 
