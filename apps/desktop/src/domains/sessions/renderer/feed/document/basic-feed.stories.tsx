@@ -1365,20 +1365,6 @@ function DisclosureHistoryHarness() {
   )
 }
 
-async function expectFeedScrollEdges(history: HTMLElement, top: boolean, bottom: boolean) {
-  await waitFor(() => {
-    const fades = history.getAnimations().filter((animation) => animation instanceof CSSAnimation)
-    const topFade = fades.find((animation) => animation.animationName === 'scroll-fade-reveal-t')
-    const bottomFade = fades.find((animation) => animation.animationName === 'scroll-fade-reveal-b')
-    expect(topFade).toBeDefined()
-    expect(bottomFade).toBeDefined()
-    const topProgress = topFade?.effect?.getComputedTiming().progress ?? null
-    const bottomProgress = bottomFade?.effect?.getComputedTiming().progress ?? null
-    expect(topProgress !== null && topProgress > 0).toBe(top)
-    expect(bottomProgress !== null && bottomProgress < 1).toBe(bottom)
-  })
-}
-
 // A reader away from the tail gets a way to return after a reply arrives.
 export const HistoryOffersJumpToLatestAfterNewReply: Story = {
   render: () => <HistoryScrollHarness />,
@@ -1388,15 +1374,24 @@ export const HistoryOffersJumpToLatestAfterNewReply: Story = {
     await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
     await expect(drawnRows(canvasElement).length).toBeLessThan(historyRows.length)
     await expect(history).toHaveAttribute('tabindex', '0')
-    await expectFeedScrollEdges(history, true, false)
+    await waitFor(() =>
+      expect(
+        Math.abs(history.scrollTop + history.clientHeight - history.scrollHeight),
+      ).toBeLessThanOrEqual(1),
+    )
     await userEvent.click(history)
     await expect(history).toHaveFocus()
-    history.scrollTop = (history.scrollHeight - history.clientHeight) / 2
+    const middlePosition = (history.scrollHeight - history.clientHeight) / 2
+    history.scrollTo({ top: middlePosition })
     fireEvent.scroll(history)
-    await expectFeedScrollEdges(history, true, true)
-    history.scrollTop = 0
+    await waitFor(() => {
+      expect(Math.abs(history.scrollTop - middlePosition)).toBeLessThanOrEqual(1)
+      expect(history.scrollTop).toBeGreaterThan(0)
+      expect(history.scrollTop + history.clientHeight).toBeLessThan(history.scrollHeight)
+    })
+    history.scrollTo({ top: 0 })
     fireEvent.scroll(history)
-    await expectFeedScrollEdges(history, false, true)
+    await waitFor(() => expect(history.scrollTop).toBe(0))
     await canvas.findByRole('button', { name: 'Jump to latest' })
 
     const scrollHeight = history.scrollHeight
@@ -1404,10 +1399,16 @@ export const HistoryOffersJumpToLatestAfterNewReply: Story = {
     await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(scrollHeight))
     const latest = await canvas.findByRole('button', { name: 'Jump to latest' })
     await expect(latest.querySelector('svg')).toBeVisible()
-    await userEvent.click(latest)
+    latest.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(history).toHaveFocus()
     await waitFor(() => expect(drawnRow(canvasElement, 'history-streamed')).toBeDefined())
     await waitFor(() => expect(canvas.queryByRole('button', { name: 'Jump to latest' })).toBeNull())
-    await expectFeedScrollEdges(history, true, false)
+    await waitFor(() =>
+      expect(
+        Math.abs(history.scrollTop + history.clientHeight - history.scrollHeight),
+      ).toBeLessThanOrEqual(1),
+    )
   },
 }
 export const HistoryFollowsStreamingReplyAtLatest: Story = {

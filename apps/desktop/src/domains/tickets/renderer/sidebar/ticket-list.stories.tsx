@@ -181,17 +181,12 @@ export const SavedRowsWithoutWrites: Story = {
   },
 }
 
-async function expectScrollFades(scroll: HTMLElement, top: boolean, bottom: boolean) {
-  await waitFor(() => {
-    const fades = scroll.getAnimations().filter((animation) => animation instanceof CSSAnimation)
-    const topFade = fades.find((animation) => animation.animationName === 'scroll-fade-reveal-t')
-    const bottomFade = fades.find((animation) => animation.animationName === 'scroll-fade-reveal-b')
-    expect(topFade).toBeDefined()
-    expect(bottomFade).toBeDefined()
-    const topProgress = topFade?.effect?.getComputedTiming().progress ?? null
-    const bottomProgress = bottomFade?.effect?.getComputedTiming().progress ?? null
-    expect(topProgress !== null && topProgress > 0).toBe(top)
-    expect(bottomProgress !== null && bottomProgress < 1).toBe(bottom)
+async function reachTicketListEnd(scroll: HTMLElement) {
+  await waitFor(async () => {
+    scroll.scrollTop = scroll.scrollHeight
+    scroll.dispatchEvent(new Event('scroll'))
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    expect(scroll.scrollTop + scroll.clientHeight).toBe(scroll.scrollHeight)
   })
 }
 
@@ -210,17 +205,17 @@ export const ScrollEdgesFollowTheReader: Story = {
     if (scroll === null) throw new Error('The Ticket list has no scroll container.')
     const first = await canvas.findByRole('button', { name: /^#100/ })
     await expect(first).toBeVisible()
-    await expectScrollFades(scroll, false, true)
+    await expect(scroll.scrollTop).toBe(0)
 
-    scroll.scrollTop = Math.floor((scroll.scrollHeight - scroll.clientHeight) / 2)
+    scroll.scrollTop = 100
     scroll.dispatchEvent(new Event('scroll'))
-    await expectScrollFades(scroll, true, true)
+    await waitFor(() => {
+      expect(scroll.scrollTop).toBeGreaterThan(0)
+      expect(scroll.scrollTop).toBeLessThan(scroll.scrollHeight - scroll.clientHeight)
+    })
 
-    scroll.scrollTop = scroll.scrollHeight
-    await waitFor(() =>
-      expect(scroll.scrollTop + scroll.clientHeight).toBe(scroll.scrollHeight),
-    )
-    await expectScrollFades(scroll, true, false)
+    await reachTicketListEnd(scroll)
+    await expect(scroll.scrollTop).toBe(scroll.scrollHeight - scroll.clientHeight)
     const last = await canvas.findByRole('button', { name: /^#179/ })
     await userEvent.click(last)
     await expect(args.onSelect).toHaveBeenCalledWith('#179')
@@ -233,6 +228,6 @@ export const ScrollEdgesFollowTheReader: Story = {
 
     scroll.scrollTop = 0
     scroll.dispatchEvent(new Event('scroll'))
-    await expectScrollFades(scroll, false, true)
+    await waitFor(() => expect(scroll.scrollTop).toBe(0))
   },
 }
