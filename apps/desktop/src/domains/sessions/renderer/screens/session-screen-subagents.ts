@@ -8,9 +8,11 @@ export function sessionScreenSubagents(
   indexed: readonly SessionSubagent[],
 ): SessionSubagent[] {
   const subagents = new Map<string, SessionSubagent>(
-    feedSubagents.map((subagent) => [subagent.id, { ...subagent, startedAt: null, endedAt: null }]),
+    feedSubagents.map((subagent) => [
+      subagent.id,
+      { ...subagent, state: 'unknown' as const, startedAt: null, endedAt: null },
+    ]),
   )
-  // The index was read at the last sync; the Feed's state is at least as new.
   for (const subagent of indexed) {
     const current = subagents.get(subagent.id)
     // Only the Feed knows a nickname; the index never records one.
@@ -19,7 +21,7 @@ export function sessionScreenSubagents(
       ...subagent,
       ...(nickname === undefined ? {} : { nickname }),
       label: subagent.label ?? current?.label ?? null,
-      state: current?.state ?? subagent.state,
+      state: subagent.state,
     })
   }
   return [...subagents.values()]
@@ -33,5 +35,5 @@ export function pickedSubagent(
   const listed = subagents.find((subagent) => subagent.id === work.subagentId)
   if (listed !== undefined) return listed
   if (work.opened === undefined || work.opened.id !== work.subagentId) return null
-  return { ...work.opened, startedAt: null, endedAt: null }
+  return { ...work.opened, state: 'unknown', startedAt: null, endedAt: null }
 }

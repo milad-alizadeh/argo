@@ -113,7 +113,7 @@ test('reads a Claude reply the mock CLI wrote through the Agent SDK reader', () 
     }
   }))
 
-// The mock app-server keeps the Turn in the thread it answers `thread/read` with.
+// The mock app-server keeps the Turn in the thread it pages with `thread/turns/list`.
 test('reads a Codex prompt the mock app-server took into its thread', () =>
   started(async ({ backend, run }) => {
     const reply = { harness: 'codex' as const, prompt: 'Carry on.' }

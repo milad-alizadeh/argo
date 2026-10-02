@@ -11,14 +11,14 @@ test('uses a Subagent from the Feed as an inspector target when the Session inde
     {
       id: AGENT_ID,
       label: 'Explore the harness',
-      state: 'running',
+      state: 'unknown',
       startedAt: null,
       endedAt: null,
     },
   ])
 })
 
-test('keeps indexed facts for a child already in the Session index, with the Feed state', () => {
+test('keeps indexed state for a child already in the Session index', () => {
   const indexedChild = sessionSubagent({
     id: AGENT_ID,
     label: 'Indexed name',
@@ -26,7 +26,7 @@ test('keeps indexed facts for a child already in the Session index, with the Fee
   })
   expect(
     sessionScreenSubagents([{ id: AGENT_ID, label: 'Feed name', state: 'failed' }], [indexedChild]),
-  ).toEqual([{ ...indexedChild, state: 'failed' }])
+  ).toEqual([indexedChild])
 })
 
 test('keeps the Feed name when the Session index stored none', () => {
@@ -48,6 +48,7 @@ test('opens a Subagent the Session never listed with what its Feed row said', ()
   } as const
   expect(pickedSubagent([], { subagentId: AGENT_ID, opened })).toEqual({
     ...opened,
+    state: 'unknown',
     startedAt: null,
     endedAt: null,
   })

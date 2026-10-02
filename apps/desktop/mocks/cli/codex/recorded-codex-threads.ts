@@ -13,6 +13,7 @@ import type {
 } from '@/harnesses/codex/app-server'
 import { recordedCodexHistory as recorded } from '../../recordings/codex-app-server'
 import type { RecordingMetadata } from '../../recordings/recording'
+import { mockTurnsRequest } from './mock-codex-turn-pages'
 
 export type RecordedCodexCall =
   | { method: 'thread/list'; params: ThreadListParams; result: ThreadListResponse }
@@ -54,17 +55,24 @@ export function recordedCall<Method extends RecordedCodexCall['method']>(
   return call
 }
 
-// The thread whose first prompt is `preview`, as `thread/read` answered it with its turns.
+// Every recorded thread, its metadata read joined with the Turns its `thread/turns/list` pages hold.
+export function recordedThreads(): RecordedThread[] {
+  return recordedCalls('thread/read').map(({ result: { thread } }) => ({
+    ...thread,
+    turns: recordedCalls('thread/turns/list')
+      .filter((call) => call.params.threadId === thread.id)
+      .flatMap((call) => call.result.data),
+  }))
+}
+
+// The thread whose first prompt is `preview`, with its Turns.
 export function recordedThread(preview: string): RecordedThread {
-  const thread = recordedCalls('thread/read')
-    .map((call) => call.result.thread)
-    .find((candidate) => candidate.preview === preview)
+  const thread = recordedThreads().find((candidate) => candidate.preview === preview)
   if (thread === undefined) throw new Error(`No recorded Codex thread opens with ${preview}.`)
   return thread
 }
 
-// A request that answers every call with this thread's `thread/read`, as the app-server would.
-export function threadReadRequest(thread: RecordedThread): CodexRequest {
-  return (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
-    parse({ thread })) as CodexRequest
+// A request that reads this thread as the app-server would: metadata, and Turns page by page.
+export function recordedThreadRequest(thread: RecordedThread): CodexRequest {
+  return mockTurnsRequest(thread.turns, thread)
 }

@@ -1,4 +1,4 @@
-// A Session running outside Argo shows the status its Harness reports on the Session List, with no Refresh.
+// A Session run outside Argo shows its status on the Session List and its Turns in its Feed.
 import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { _electron as electron, type Page } from 'playwright-core'
@@ -18,14 +18,17 @@ import { MOCK_CODEX_USER_HOOKS_FILE } from '../../mocks/cli/codex/fixtures/mock-
 import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { holdCodexWriterLock } from '../../mocks/cli/codex/mock-codex-external-threads'
 import { hookEvent, postHook } from '../../mocks/cli/status-hooks'
+import { newFixturePath } from '../../mocks/sessions/mock-transcript-files'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
+import { ACTIVE_FEED } from './feed-selectors'
 import { prepare } from './fixtures/feed.fixture'
-import { PERSISTED_ROW } from './gestures'
+import { openSessionByClick, PERSISTED_ROW } from './gestures'
 
 const OLDER = 'Older terminal Session'
 const NEWER = 'Newer terminal Session'
+const TURN_PROMPT = 'Keep going'
 const EARLIER = Date.parse('2026-09-01T09:00:00.000Z')
 const LATER = Date.parse('2026-09-02T09:00:00.000Z')
 
@@ -41,6 +44,8 @@ type StatusSource = {
     project: string,
     sessions: ExternalSession[],
   ) => Promise<Record<string, string>>
+  // Keeps the Session in the live listing, as the process running it does, so no tick drops it.
+  holdLive: (root: string, session: ExternalSession) => Promise<void>
   // Safe to repeat: a poll that has not seen the Session yet sees it on a later call.
   openTurn: (root: string, session: ExternalSession) => Promise<void>
   closeTurn: (root: string, session: ExternalSession) => Promise<void>
@@ -50,14 +55,33 @@ type StatusSource = {
 const claudeAgents = (root: string) => path.join(root, 'claude-agents.json')
 const claudeConfig = (root: string) => path.join(root, 'claude-config')
 
-// `claude agents --json` lists the Session busy, then idle.
+// `claude agents --json` lists the Session busy, then idle; the transcript holds the Turn's prompt.
 function claudeSource(): StatusSource {
+  let cwd = ''
   const answer = (root: string, session: ExternalSession, status: 'busy' | 'idle') =>
     writeFile(claudeAgents(root), JSON.stringify([recordedClaudeAgent(session.nativeId, status)]))
+  async function writeTurn(root: string, session: ExternalSession) {
+    const file = await newFixturePath(
+      path.join(claudeConfig(root), 'projects'),
+      session.nativeId,
+      cwd,
+    )
+    const prompt = {
+      type: 'user',
+      cwd,
+      sessionId: session.nativeId,
+      timestamp: new Date(session.activityAt).toISOString(),
+      uuid: 'terminal-prompt',
+      parentUuid: null,
+      message: { role: 'user', content: [{ type: 'text', text: TURN_PROMPT }] },
+    }
+    await writeFile(file, `${JSON.stringify(prompt)}\n`)
+  }
   return {
     harness: 'claude',
     hooksFile: (root) => claudeSettingsFile({ CLAUDE_CONFIG_DIR: claudeConfig(root) }, root),
     async seed(root, project, sessions) {
+      cwd = project
       const records = sessions.map((session) => ({
         sessionId: session.nativeId,
         summary: session.title,
@@ -71,7 +95,12 @@ function claudeSource(): StatusSource {
         [MOCK_CLAUDE_AGENTS_ENV]: claudeAgents(root),
       }
     },
-    openTurn: (root, session) => answer(root, session, 'busy'),
+    // With no answer, `claude agents --json` fails, and a failed listing leaves every row as it is.
+    holdLive: async () => {},
+    async openTurn(root, session) {
+      await writeTurn(root, session)
+      await answer(root, session, 'busy')
+    },
     closeTurn: (root, session) => answer(root, session, 'idle'),
     stop: async () => {},
   }
@@ -86,6 +115,9 @@ const codexRollout = (root: string, session: ExternalSession) =>
 // newest Turn from the stored thread.
 function codexSource(): StatusSource {
   let release: (() => Promise<void>) | null = null
+  async function holdLive(root: string, session: ExternalSession) {
+    release ??= await holdCodexWriterLock(codexHome(root), session.nativeId)
+  }
   async function writeTurn(root: string, session: ExternalSession, status: string) {
     const threads = JSON.parse(await readFile(codexState(root), 'utf8'))
     const thread = threads.find((candidate) => candidate.id === session.nativeId)
@@ -97,7 +129,7 @@ function codexSource(): StatusSource {
           {
             id: 'terminal-prompt',
             type: 'userMessage',
-            content: [{ type: 'text', text: 'Keep going' }],
+            content: [{ type: 'text', text: TURN_PROMPT }],
           },
         ],
       },
@@ -115,6 +147,7 @@ function codexSource(): StatusSource {
         id: session.nativeId,
         cwd: project,
         updatedAt: Math.floor(session.activityAt / 1000),
+        parentThreadId: null,
         name: session.title,
         path: codexRollout(root, session),
         turns: [],
@@ -122,8 +155,9 @@ function codexSource(): StatusSource {
       await writeFile(codexState(root), JSON.stringify(threads))
       return { CODEX_HOME: codexHome(root) }
     },
+    holdLive,
     async openTurn(root, session) {
-      release ??= await holdCodexWriterLock(codexHome(root), session.nativeId)
+      await holdLive(root, session)
       await writeTurn(root, session, 'inProgress')
     },
     closeTurn: (root, session) => writeTurn(root, session, 'completed'),
@@ -164,7 +198,7 @@ const rowTitled = (page: Page, title: string) =>
   page.locator(PERSISTED_ROW).filter({ hasText: title })
 
 for (const createSource of [claudeSource, codexSource]) {
-  test(`a ${createSource().harness} Session running elsewhere keeps its Session List row in place and shows its turn`, async ({
+  test(`a ${createSource().harness} Session running elsewhere keeps its Session List row in place and shows its Turn in its Feed`, async ({
     root,
     applicationUnderTest,
   }) => {
@@ -177,7 +211,7 @@ for (const createSource of [claudeSource, codexSource]) {
       await expect(rows.first()).toContainText(NEWER)
       await expect(dot).toHaveAttribute('data-variant', 'unknown')
 
-      // The poll runs every 2 s, and a Codex rollout first seen only records its size.
+      // The poll runs every 2 s.
       await expect(async () => {
         await source.openTurn(root, older)
         await expect(dot).toHaveAttribute('data-variant', 'active', { timeout: 3_000 })
@@ -186,6 +220,12 @@ for (const createSource of [claudeSource, codexSource]) {
 
       await source.closeTurn(root, older)
       await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/, { timeout: 10_000 })
+
+      await openSessionByClick(
+        page,
+        String(await rowTitled(page, OLDER).getAttribute('data-session-id')),
+      )
+      await expect(page.locator(ACTIVE_FEED)).toContainText(TURN_PROMPT)
     } finally {
       await closeApplication(application)
       await source.stop()
@@ -214,6 +254,7 @@ for (const createSource of [claudeSource, codexSource]) {
     try {
       const dot = rowTitled(page, OLDER).locator('[data-slot="session-status"]')
       await expect(rowTitled(page, NEWER)).toHaveCount(1, { timeout: 30_000 })
+      await source.holdLive(root, older)
       await hooksInstalled(root, source, socketPath)
       const post = (event: string) =>
         postHook(

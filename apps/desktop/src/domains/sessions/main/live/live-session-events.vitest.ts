@@ -1,5 +1,9 @@
 import { expect, test, vi } from 'vitest'
+import { sessionTable } from '@/database/session/schema'
+import { sessionSubagent } from '@/database/session-subagent/schema'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
+import { migratedDatabase } from '@/mocks/database/migrated-database'
+import { SessionListChanges } from '../api'
 import { recordLiveSessionEvents, watchIdleSession } from './live-session-supervisor-machine'
 import { SessionEventJournal } from './session-event-journal'
 
@@ -103,6 +107,56 @@ test('delivers Feed events in order after a delayed Argo Session identity', () =
   })
   stop()
   expect(session.listeners()).toBe(0)
+})
+
+test('announces each changed live child to the roster once', async () => {
+  const database = migratedDatabase()
+  database
+    .insert(sessionTable)
+    .values({ argoId: sessionId, harness: 'codex', nativeId: 'parent' })
+    .run()
+  const changes = new SessionListChanges()
+  const announced: string[][] = []
+  const unsubscribe = changes.subscribe((ids) => announced.push([...ids]))
+  const session = liveSession()
+  const stop = recordLiveSessionEvents(session.actor, undefined, { database, changes })
+  const delegation = (status: 'running' | 'completed'): SessionLiveEventBody => ({
+    type: 'content',
+    commandId: null,
+    turnId: null,
+    vendorEventId: 'call-1',
+    content: {
+      id: 'call-1',
+      kind: 'delegation',
+      agentId: 'child',
+      event: status === 'running' ? 'started' : 'responded',
+      status,
+      name: 'Review',
+      prompt: null,
+      model: null,
+      summary: null,
+    },
+  })
+  try {
+    session.feed(delegation('running'))
+    expect(announced).toEqual([])
+    session.identify(sessionId)
+    await Promise.resolve()
+    expect(announced).toEqual([[sessionId]])
+    session.feed(delegation('running'))
+    await Promise.resolve()
+    expect(announced).toEqual([[sessionId]])
+    session.feed(delegation('completed'))
+    await Promise.resolve()
+    expect(announced).toEqual([[sessionId], [sessionId]])
+    expect(database.select().from(sessionSubagent).all()).toMatchObject([
+      { sessionId, subagentId: 'child', state: 'completed' },
+    ])
+  } finally {
+    stop()
+    unsubscribe()
+    database.$client.close()
+  }
 })
 
 test('bounds staged events across Sessions by count and bytes', () => {

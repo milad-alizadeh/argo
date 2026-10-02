@@ -54,7 +54,12 @@ export function TurnConfigurationMenu({
     />
   )
   return (
-    <Popover>
+    <Popover
+      // Every open reads again after an unexplained failure; a person asked, so no bound applies.
+      onOpenChange={(open) => {
+        if (open && catalogFailure?.reason === 'unavailable') refreshCatalog?.()
+      }}
+    >
       <PopoverTrigger
         render={
           <InputGroupButton

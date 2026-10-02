@@ -16,7 +16,7 @@ export type SessionWork =
   | { kind: 'shell'; command: SessionShellCommand }
 
 // A Subagent settles as `done`; a shell command keeps its own end state.
-export type WorkState = ShellState | 'done'
+export type WorkState = ShellState | 'done' | 'unknown'
 
 // The semantic ground a state mark takes, the same set the Roster draws a Session's status in.
 export const WORK_STATE_MARKS: Record<WorkState, string> = {
@@ -25,6 +25,7 @@ export const WORK_STATE_MARKS: Record<WorkState, string> = {
   completed: 'bg-status-neutral',
   failed: 'bg-status-danger',
   interrupted: 'bg-status-warning',
+  unknown: 'bg-status-neutral',
 }
 
 export function subagentWorkState(subagent: SessionSubagent): WorkState {

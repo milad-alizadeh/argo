@@ -137,6 +137,6 @@ export async function readCodexHarnessInfo(request: CodexRequest): Promise<Harne
     return codexHarnessInfo({ data, nextCursor: null })
   } catch (error) {
     if (error instanceof z.ZodError) return invalidCatalogResponse('codex', error)
-    return unavailable('codex')
+    throw error
   }
 }

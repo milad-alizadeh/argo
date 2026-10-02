@@ -4,14 +4,23 @@ import type { ThreadReadResponse } from '@/harnesses/codex/app-server'
 import { createCodexAppServerClient } from '@/harnesses/codex/app-server/codex-app-server-client'
 import { createCodexSessionSummaryList } from '@/harnesses/codex/session/codex-session-discovery'
 import { readCodexSessionHistory } from '@/harnesses/codex/session/codex-session-history'
+import { codexTurnPages } from '@/harnesses/codex/session/codex-turn-pages'
 import type { VendorHistoryReader } from './vendor-reply'
 
 type CodexThread = ThreadReadResponse['thread']
 
 // The real `codex app-server`, run under the throwaway HOME through Argo's own client.
-export async function codexClientUnderHome(home: string, executable: string) {
+export async function codexClientUnderHome(
+  home: string,
+  executable: string,
+  workingDirectory = process.cwd(),
+) {
   const wrapper = path.join(path.dirname(home), 'codex-vendor-reader')
-  await writeFile(wrapper, `#!/bin/sh\nexport HOME='${home}'\nexec '${executable}' "$@"\n`)
+  const shellQuote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`
+  await writeFile(
+    wrapper,
+    `#!/bin/sh\nexport HOME=${shellQuote(home)}\ncd ${shellQuote(workingDirectory)}\nexec ${shellQuote(executable)} "$@"\n`,
+  )
   await chmod(wrapper, 0o755)
   return createCodexAppServerClient({
     resolveExecutable: async () => ({ executable: wrapper, version: '' }),
@@ -27,14 +36,21 @@ async function openCodexVendorReader(
   return {
     sessionIds: async () =>
       (await listSessions({ knownNativeIds: [] })).records.map((record) => record.nativeId),
-    records: async (threadId) =>
-      (
-        await client.request(
-          'thread/read',
-          { threadId, includeTurns: true },
-          (value) => value as ThreadReadResponse,
-        )
-      ).thread,
+    records: async (threadId) => {
+      const { thread } = await client.request(
+        'thread/read',
+        { threadId, includeTurns: false },
+        (value) => value as ThreadReadResponse,
+      )
+      const pages = codexTurnPages(client.request, {
+        threadId,
+        itemsView: 'full',
+        sortDirection: 'asc',
+      })
+      const turns: CodexThread['turns'] = []
+      for await (const page of pages) turns.push(...(page as CodexThread['turns']))
+      return { ...thread, turns }
+    },
     content: (threadId) => readCodexSessionHistory(client.request, threadId),
     close: () => client.shutdown(),
   }

@@ -2,10 +2,12 @@ import type { z } from 'zod'
 import type { sessionInsertSchema } from '@/database/session/validation'
 
 export type SessionSummary = Omit<z.infer<typeof sessionInsertSchema>, 'harness'>
+export type SessionSubagentLink = { nativeId: string; parentNativeId: string }
 
 export type SessionSummaryListResult = {
   records: SessionSummary[]
   skipped: number
+  subagents?: SessionSubagentLink[]
 }
 
 export type SessionSummaryListInput = {

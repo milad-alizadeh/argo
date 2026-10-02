@@ -1,7 +1,8 @@
 // The stored history the mock app-server answers with: the real CLI's recorded answers, plus the
 // threads this process started. No rollout file or state store is read.
 import type { ThreadReadResponse } from '@/harnesses/codex/app-server'
-import { recordedCall, recordedCalls } from './recorded-codex-threads.ts'
+import { mockTurnsPage } from './mock-codex-turn-pages.ts'
+import { recordedCall, recordedThreads } from './recorded-codex-threads.ts'
 
 type Request = { id?: unknown; method?: string; params?: Record<string, unknown> }
 type Send = (message: Record<string, unknown>) => void
@@ -9,10 +10,10 @@ type StoredThread = ThreadReadResponse['thread']
 
 // A recorded thread, its first Turn and that Turn's prompt: the shapes a started thread copies.
 function recordedTemplates() {
-  const thread = recordedCall('thread/read').result.thread
-  const turn = thread.turns[0]
+  const [thread] = recordedThreads()
+  const turn = thread?.turns[0]
   const prompt = turn?.items.find((item) => item.type === 'userMessage')
-  if (turn === undefined || prompt === undefined)
+  if (thread === undefined || turn === undefined || prompt === undefined)
     throw new Error('The recorded Codex thread has no prompted Turn to copy.')
   return { thread, turn, prompt }
 }
@@ -20,9 +21,10 @@ const templates = recordedTemplates()
 
 const started = new Map<string, StoredThread>()
 
-function recordedAnswer(method: 'thread/read' | 'thread/turns/list', threadId: unknown) {
-  return recordedCalls(method).find((call) => call.params.threadId === threadId)?.result
-}
+const recorded = recordedThreads()
+const storedThread = (threadId: unknown) =>
+  (typeof threadId === 'string' ? started.get(threadId) : undefined) ??
+  recorded.find((thread) => thread.id === threadId)
 
 const now = () => Math.floor(Date.now() / 1000)
 
@@ -85,18 +87,15 @@ function listThreads() {
   return { ...listed, data }
 }
 
+// History is paged from `thread/turns/list`; a metadata read carries no Turns.
 function readThread(threadId: unknown) {
-  const thread = typeof threadId === 'string' ? started.get(threadId) : undefined
-  if (thread !== undefined) return { thread }
-  return recordedAnswer('thread/read', threadId)
+  const thread = storedThread(threadId)
+  return thread === undefined ? undefined : { thread: { ...thread, turns: [] } }
 }
 
-// A poll asks for `limit` newest Turns; a Feed read asks for all of them.
-function listTurns(threadId: unknown, limit: unknown) {
-  const thread = typeof threadId === 'string' ? started.get(threadId) : undefined
-  const newest = typeof limit === 'number' ? thread?.turns.slice(-limit) : thread?.turns
-  if (newest !== undefined) return { data: newest, nextCursor: null }
-  return recordedAnswer('thread/turns/list', threadId)
+function listTurns(params: Record<string, unknown> = {}) {
+  const thread = storedThread(params.threadId)
+  return thread === undefined ? undefined : mockTurnsPage(thread.turns, params)
 }
 
 function answer(message: Request, send: Send, result: unknown) {
@@ -117,7 +116,7 @@ export function answerStoredHistory(message: Request, send: Send): boolean {
       answer(message, send, readThread(message.params?.threadId))
       return true
     case 'thread/turns/list':
-      answer(message, send, listTurns(message.params?.threadId, message.params?.limit))
+      answer(message, send, listTurns(message.params))
       return true
     case 'thread/loaded/list':
       send({ id: message.id, result: { data: [] } })

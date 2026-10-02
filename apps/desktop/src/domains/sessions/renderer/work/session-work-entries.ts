@@ -16,7 +16,7 @@ export type WorkEntry = {
   title: string
   // Raw command text is read as code; a derived label, Subagent or Shell, is prose.
   monospace: boolean
-  running: boolean
+  status: SessionSubagent['state'] | SessionShellCommand['state']
   mark: string
   state: string
   facts: string
@@ -45,7 +45,7 @@ export function delegationEntries(
       id: delegation.id,
       ...presentation,
       monospace: false,
-      running: state === 'running',
+      status: delegation.state,
       mark: WORK_STATE_MARKS[state],
     }
   })
@@ -60,7 +60,7 @@ export function shellEntries(
     id: command.id,
     ...workPresentation({ kind: 'shell', ...command, now }, t),
     monospace: command.label === null,
-    running: command.state === 'running',
+    status: command.state,
     mark: WORK_STATE_MARKS[command.state],
   }))
 }

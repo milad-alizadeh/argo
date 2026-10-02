@@ -22,18 +22,15 @@ xcuserdata/
 # Regenerate: cd apps/macOS && xcode-build-server config -scheme Argo -project Argo.xcodeproj
 apps/macOS/buildServer.json
 
-# Installed skill copies are throwaway outputs of `npx skills add`. skills-lock.json is
-# committed, and `npx skills@latest add milad-alizadeh/argo --agent claude-code codex --yes`
-# reinstalls from it (packages/argo-skills/README.md).
+# Installed skills (.agents/skills/, .claude/skills/) are committed so every worktree has them;
+# skills-lock.json records them (packages/argo-skills/README.md).
 # Shared project config (settings.json, output-styles) is real source — allowlisted;
 # settings.local.json stays personal and ignored.
-.agents/
 .claude/*
 !.claude/settings.json
 !.claude/output-styles/
-# Agent skills: one directory per harness the install writes to.
-.claude/skills/
-.agents/skills/
+!.claude/skills/
+# Skills for harnesses this repo does not install for.
 .cursor/skills/
 .codex/skills/
 .rtk/.rtk
