@@ -154,6 +154,24 @@ async function transcriptRecords(transcripts: string, sessionId: string) {
     .filter((record) => typeof record.uuid === 'string')
 }
 
+type MockClaudeRun = { executable: string; configDirectory: string; transcripts: string }
+
+// A mock Claude writing under a throwaway config folder, removed after `run`.
+async function withMockClaude(run: (mock: MockClaudeRun) => Promise<void>) {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-compaction-'))
+  const configDirectory = path.join(root, 'claude-config')
+  const transcripts = path.join(configDirectory, 'projects')
+  try {
+    await run({
+      executable: await writeMockClaude(root, transcripts),
+      configDirectory,
+      transcripts,
+    })
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+}
+
 test('the recorded Claude chains the prompts after a compaction to its boundary, live and resumed', () => {
   const boundary = boundaryOf(RECORDED)
   assert.equal(boundary.parentUuid, null)
@@ -163,12 +181,8 @@ test('the recorded Claude chains the prompts after a compaction to its boundary,
     assert.equal(ancestry(RECORDED, promptUuid(RECORDED, prompt)).at(-1), boundary.uuid)
 })
 
-test('a mock Claude compaction chains like the recording, live and after a resume', async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-compaction-'))
-  const configDirectory = path.join(root, 'claude-config')
-  const transcripts = path.join(configDirectory, 'projects')
-  try {
-    const executable = await writeMockClaude(root, transcripts)
+test('a mock Claude compaction chains like the recording, live and after a resume', () =>
+  withMockClaude(async ({ executable, configDirectory, transcripts }) => {
     const sessionId = await converse(executable, [
       'Before compaction',
       '/compact',
@@ -193,17 +207,10 @@ test('a mock Claude compaction chains like the recording, live and after a resum
     assert.equal(boundary.logicalParentUuid, replyBeforeCompact?.uuid)
     for (const prompt of ['After compaction', 'After resume'])
       assert.equal(ancestry(records, promptUuid(records, prompt)).at(-1), boundary.uuid)
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
+  }))
 
-test('a mock Claude resumed straight after a compaction chains its prompt to the boundary', async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-compaction-'))
-  const configDirectory = path.join(root, 'claude-config')
-  const transcripts = path.join(configDirectory, 'projects')
-  try {
-    const executable = await writeMockClaude(root, transcripts)
+test('a mock Claude resumed straight after a compaction chains its prompt to the boundary', () =>
+  withMockClaude(async ({ executable, configDirectory, transcripts }) => {
     const sessionId = await converse(executable, ['Before compaction', '/compact'])
     await converse(executable, ['After resume'], sessionId)
     assert.deepEqual(await shownTexts(configDirectory, sessionId), [
@@ -216,7 +223,4 @@ test('a mock Claude resumed straight after a compaction chains its prompt to the
       ancestry(records, promptUuid(records, 'After resume')).at(-1),
       boundaryOf(records).uuid,
     )
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
+  }))
