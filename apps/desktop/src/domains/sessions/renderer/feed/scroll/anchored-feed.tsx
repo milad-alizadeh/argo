@@ -13,6 +13,7 @@ import {
 } from './anchoring'
 import { type FeedRowComponent, FeedViewport } from './feed-viewport'
 import { useFeedPrompt, usePromptHold } from './prompt-pin'
+import { useReaderScrollWins } from './reader-scroll'
 import type { Reveal } from './reveal'
 import { useFeedTailFollow, useJumpToLatest } from './tail-follow'
 
@@ -218,6 +219,7 @@ function VirtualFeed({
     onScrollPositionChange,
     onMeasurementsChange,
   )
+  useReaderScrollWins(viewport, virtualizer)
   const promptIndex = useFeedPrompt({
     positioned: !tailFollow.awaitingInitialPosition,
     rows,

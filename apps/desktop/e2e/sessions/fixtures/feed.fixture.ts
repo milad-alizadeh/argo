@@ -1,11 +1,12 @@
 // The disk state every packaged Session case launches the app against, and the mutations that
 // prove a re-read reaches the file system rather than a cache.
-import { appendFile, mkdir, realpath, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { claudeConfigDirectory } from '../../../mocks/cli/claude/mock-claude-transcripts'
 import { mockCodexStateFile } from '../../../mocks/cli/codex/mock-codex-cli'
 import { recordedThread } from '../../../mocks/cli/codex/recorded-codex-threads'
 import { RECORDED_PROMPTS } from '../../../mocks/cli/recorded-prompts'
+import { hookEvent, postHook } from '../../../mocks/cli/status-hooks'
 import {
   fixturePath,
   fixtureSessionId,
@@ -127,6 +128,25 @@ export async function appendProse(transcripts: string, uuid: string, text: strin
       },
     })}\n`,
   )
+}
+
+// Claude can rewrite a message while its Turn is still running: the row keeps its id but its prose
+// and height change (ADR-0033 rule 5).
+export async function streamProse(transcripts: string, text: string) {
+  const transcript = fixturePath(transcripts, 'prose')
+  const before = await readFile(transcript, 'utf8')
+  await writeFile(
+    transcript,
+    before.replace(/"text":\s*"(?:[^"\\]|\\.)*"/, `"text": ${JSON.stringify(text)}`),
+  )
+}
+
+// A Claude running outside Argo posts its Stop hook once it has written the transcript; that is
+// what makes the open Feed read the file again.
+export async function reportProseStop(userData: string) {
+  const payload = hookEvent('claude', 'Stop', fixtureSessionId('prose')).payload
+  const status = await postHook(path.join(userData, 'hooks.sock'), 'claude', payload)
+  if (status !== 204) throw new Error(`The Stop hook was answered with ${status}.`)
 }
 
 // The Session List shows only for a selected Project (#2307), so only the empty-window case leaves it unset.

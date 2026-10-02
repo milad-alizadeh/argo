@@ -1671,6 +1671,101 @@ export const SentPromptRisesToTop: Story = {
   },
 }
 
+// The row just above the prompt starts long, so shortening it moves the prompt up.
+const LONG_EARLIER_TEXT = 'An earlier answer the reader has already read. '.repeat(40)
+const earlierRowId = historyRows.at(-1)?.id ?? ''
+// Few rows, so the earlier row stays in the overscan above a reader at the tail.
+const longReplyRows = Array.from({ length: 4 }, (_unused, index) => ({
+  shape: 'prose' as const,
+  id: `long-reply-${index}`,
+  role: 'assistant' as const,
+  text: `Reply part ${index + 1}: together these parts are longer than the viewport. `.repeat(30),
+}))
+
+function withEarlierText(text: string): SessionFeed {
+  return {
+    ...historyFeed,
+    revision: `history-replied-${text.length}`,
+    rows: [
+      ...historyRows.map((row) => (row.id === earlierRowId ? { ...row, text } : row)),
+      { shape: 'prose', id: 'history-prompt', role: 'user', text: SENT_PROMPT },
+      ...longReplyRows,
+    ],
+  }
+}
+
+function ShrinkAbovePromptHarness() {
+  const [current, setCurrent] = useState<SessionFeed>({
+    ...historyFeed,
+    rows: historyRows.map((row) =>
+      row.id === earlierRowId ? { ...row, text: LONG_EARLIER_TEXT } : row,
+    ),
+  })
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={() => setCurrent(withEarlierText(LONG_EARLIER_TEXT))}>
+        Send prompt and receive a long reply
+      </button>
+      <button type="button" onClick={() => setCurrent(withEarlierText('A short earlier answer.'))}>
+        Shorten an earlier row
+      </button>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          answeringQuestionId={null}
+          failure={null}
+          feed={current}
+          running={false}
+          posture={null}
+          onAnswerQuestion={() => {}}
+          onOpenEvidence={() => {}}
+          onRetryFeed={() => {}}
+          questionFailure={() => null}
+          selectedSessionId="history"
+        />
+      </div>
+    </div>
+  )
+}
+
+// The rows have measured; the prompt may still be rising.
+async function waitForHeightToSettle(history: HTMLElement) {
+  await waitFor(async () => {
+    const height = history.scrollHeight
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    )
+    expect(history.scrollHeight).toBe(height)
+  })
+}
+
+function distanceFromTail(history: HTMLElement) {
+  return history.scrollHeight - history.clientHeight - history.scrollTop
+}
+
+// A reader who wheels to the tail while a sent prompt is still rising keeps the tail when a row
+// above the prompt then shrinks; the prompt's scroll does not take the Feed back (#2960).
+export const ReaderAtTailKeepsItWhenARowAboveShrinks: Story = {
+  render: () => <ShrinkAbovePromptHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const history = await canvas.findByLabelText('Session history')
+    await waitFor(() => expect(drawnRow(canvasElement, earlierRowId)).toBeDefined())
+    fireEvent.click(canvas.getByRole('button', { name: 'Send prompt and receive a long reply' }))
+    await waitFor(() => expect(drawnRow(canvasElement, 'long-reply-3')).toBeDefined())
+    await waitForHeightToSettle(history)
+    fireEvent.wheel(history, { deltaY: history.scrollHeight })
+    history.scrollTop = history.scrollHeight
+    await waitForScrollToSettle(history)
+    await expect(distanceFromTail(history)).toBeLessThanOrEqual(1)
+
+    fireEvent.click(canvas.getByRole('button', { name: 'Shorten an earlier row' }))
+    await canvas.findByText('A short earlier answer.')
+    await waitForScrollToSettle(history)
+    await expect(distanceFromTail(history)).toBeLessThanOrEqual(1)
+  },
+}
+
 export const HistoryKeepsItsAnchorWhenEarlierRowsArrive: Story = {
   render: () => <HistoryPrependHarness />,
   play: async ({ canvasElement }) => {

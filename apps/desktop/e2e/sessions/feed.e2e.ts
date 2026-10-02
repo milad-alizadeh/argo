@@ -21,6 +21,7 @@ import { proveDelegationCards } from './cases/delegation-card.case'
 import { proveSessionDiagram } from './cases/diagram.case'
 import { proveFooterKeepsHarness } from './cases/footer-harness.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
+import { proveLiveFeed } from './cases/live-feed.case'
 import { proveNewSessionSkipsUninstalledHarness } from './cases/new-session-harness.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
 import { provePromptBeforeNaming } from './cases/pending-prompt.case'
@@ -36,7 +37,7 @@ import { proveSubagentFeed } from './cases/subagent-feed.case'
 import { proveLiveCodexModelChoices } from './cases/turn-configuration.case'
 import { proveSessionWorktree } from './cases/worktree.case'
 import { ACTIVE_FEED } from './feed-selectors'
-import { appendProse } from './fixtures/feed.fixture'
+import { appendProse, reportProseStop, streamProse } from './fixtures/feed.fixture'
 import { writeWindowFillerSessions } from './fixtures/session-list-window.fixture'
 import { openSessionByClick, sendFromComposer } from './gestures'
 import { sessionSyncHoldFile } from './packaged-session-harness'
@@ -133,6 +134,20 @@ test('session-delegation-cards', async ({ session }) => {
 
 test('session-subagent-feed', async ({ session }) => {
   await proveSubagentFeed(session.page())
+})
+
+test('session-feed-reader-anchor', async ({ session }) => {
+  const { claudeTranscripts, userData } = session.fixture
+  await proveLiveFeed(session.page(), {
+    append: async (uuid, text) => {
+      await appendProse(claudeTranscripts, uuid, text)
+      await reportProseStop(userData)
+    },
+    stream: async (text) => {
+      await streamProse(claudeTranscripts, text)
+      await reportProseStop(userData)
+    },
+  })
 })
 
 test('session-feed-formatted', async ({ session }) => {
