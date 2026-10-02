@@ -1,9 +1,10 @@
 // The window reopens on the Sessions route it last showed, so a restart keeps the selected Session.
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import type { BrowserWindow } from 'electron'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
-import { project } from '@/database/project/schema'
+import { sessionTable } from '@/database/session/schema'
+import { listProjects } from '@/domains/projects/main/api'
 import {
   createWriteQueue,
   portablePath,
@@ -11,15 +12,24 @@ import {
   writeDocument,
 } from '../storage/portable-file'
 
-// A saved Session or the Session List alone, never an unsaved draft's `optimistic:` id.
-const SESSIONS_ROUTE = /^\/projects\/([^/?#]+)\/sessions(?:\/[^/?#:]+)?(?:\?[^#]*)?$/
+// The Session List, a Session, or `new`: a reopened draft is harmless, since SQLite keeps it.
+const SESSIONS_ROUTE = /^\/projects\/([^/?#]+)\/sessions(?:\/([^/?#]+))?(\?[^#]*)?$/
 const routeDocumentSchema = z.object({ route: z.string().regex(SESSIONS_ROUTE) })
 
 function routePath(userData: string): string {
   return portablePath(userData, 'window-route.json')
 }
 
-// The saved route, or undefined when it is missing, malformed or names a Project no longer listed.
+function sessionInProject(database: Database, sessionId: string, projectId: string): boolean {
+  const stored = database
+    .select({ argoId: sessionTable.argoId })
+    .from(sessionTable)
+    .where(and(eq(sessionTable.argoId, sessionId), eq(sessionTable.projectId, projectId)))
+    .get()
+  return stored !== undefined
+}
+
+// The saved route, its Session List when the Session left that Project, or undefined.
 export async function readWindowRoute(
   userData: string,
   database: Database,
@@ -31,15 +41,18 @@ export async function readWindowRoute(
     console.warn('Ignored an unrecognised saved window route.')
     return undefined
   }
-  const projectId = SESSIONS_ROUTE.exec(parsed.data.route)?.[1]
-  if (projectId === undefined) return undefined
-  const listed = database.select({ id: project.id }).from(project).where(eq(project.id, projectId))
-  return listed.get() === undefined ? undefined : parsed.data.route
+  const [route, projectId, sessionId, query = ''] = SESSIONS_ROUTE.exec(parsed.data.route) ?? []
+  if (route === undefined || projectId === undefined) return undefined
+  if (!listProjects(database).some((item) => item.id === projectId)) return undefined
+  if (sessionId === undefined || sessionId === 'new') return route
+  if (sessionInProject(database, sessionId, projectId)) return route
+  return `/projects/${projectId}/sessions${query}`
 }
 
 export function rememberWindowRoute(window: BrowserWindow, userData: string): void {
   const queue = createWriteQueue()
   window.webContents.on('did-navigate-in-page', (_event, url, isMainFrame) => {
+    // The route lives in the hash until #2972 moves the window to path routing.
     const route = new URL(url).hash.slice(1)
     if (isMainFrame && SESSIONS_ROUTE.test(route))
       void queue(() => writeDocument(routePath(userData), { route }))
