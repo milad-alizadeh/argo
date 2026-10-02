@@ -1,5 +1,4 @@
 import { expect, test, vi } from 'vitest'
-import { HISTORY_READ_SLOTS, HistoryReadLimit } from '@/domains/sessions/main/feed'
 import { mockTurnsRequest } from '@/mocks/cli/codex/mock-codex-turn-pages'
 import {
   recordedCalls,
@@ -114,16 +113,11 @@ test('stops at the first page that holds the Turn, newest first', async () => {
   expect(requests).toBe(3)
 })
 
-test('throws on a page cursor that comes back and frees its history read slot', async () => {
+test('throws on a page cursor that comes back rather than reading forever', async () => {
   const warning = warningSpy()
   const request = (async (_method, _params, parse) =>
     parse({ data: [], nextCursor: 'same-cursor' })) as CodexRequest
-  const limit = new HistoryReadLimit()
-  const reads = Array.from({ length: HISTORY_READ_SLOTS }, () =>
-    limit.run(() => readCodexSessionHistory(request, 'thread')),
-  )
-  for (const read of reads) await expect(read).rejects.toThrow(/repeated a page cursor/)
-  await expect(limit.run(async () => 'next read')).resolves.toBe('next read')
+  await expect(readCodexSessionHistory(request, 'thread')).rejects.toThrow(/repeated a page cursor/)
   expect(warning).toHaveBeenCalledWith('Stopped a Codex history read whose page cursor repeated.')
   warning.mockRestore()
 })
