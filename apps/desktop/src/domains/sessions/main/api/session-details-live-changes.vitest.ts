@@ -129,7 +129,9 @@ test('shows the context usage a live Turn reported when it ended, and keeps it o
     expect((await details({ sessionId }))?.contextUsage).toBeNull()
     completeCodexTurn(notify, 'turn-2')
     const reported = { usedTokens: 48_000, windowTokens: 256_000 }
-    await vi.waitFor(async () => expect((await details({ sessionId }))?.contextUsage).toEqual(reported))
+    await vi.waitFor(async () =>
+      expect((await details({ sessionId }))?.contextUsage).toEqual(reported),
+    )
     root.send({ type: 'Shutdown' })
     const stored = sessionListCaller({ database })
     expect((await stored.details({ sessionId }))?.contextUsage).toEqual(reported)

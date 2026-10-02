@@ -259,7 +259,7 @@ class ClaudeSessionChannel implements LiveSessionChannel {
     void this.reportContextUsage()
   }
 
-  // Claude's own `/context` reading after the Turn, from the last response's usage.
+  // Claude's own `/context` reading after the Turn; `summary` skips its per-category token counts.
   private async reportContextUsage() {
     if (this.session === null) return
     try {

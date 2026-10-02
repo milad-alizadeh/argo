@@ -373,8 +373,8 @@ export function sessionListChangedProcedure(context: SessionListContext) {
   )
 }
 
-// Announces each live status change and saves the channel's Turn configuration, context usage and
-// Turn-end time.
+// Announces each live status change and saves the channel's Turn configuration, newest context
+// usage and Turn-end time.
 export function watchSessionList(
   context: Pick<SessionListContext, 'database' | 'supervisor' | 'changes'>,
 ): () => void {

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
-import type { SDKControlGetContextUsageResponse } from '@anthropic-ai/claude-agent-sdk'
 import { readFileSync, watch } from 'node:fs'
+import type { SDKControlGetContextUsageResponse } from '@anthropic-ai/claude-agent-sdk'
 import {
   SESSION_MOCK_START_HOLD_FILE_ENV,
   waitWhileHoldFileExists,
@@ -55,7 +55,7 @@ const MODELS = [
   },
 ]
 
-// What `/context` reads after every Turn.
+// The mock's answer to a `get_context_usage` control request.
 function contextUsageResponse(): SDKControlGetContextUsageResponse {
   const { usedTokens, windowTokens } = MOCK_CONTEXT_USAGE.claude
   return {
@@ -138,19 +138,10 @@ export function startMockClaudeSdkStream(
   const handleLine = (line: string) => {
     const input = JSON.parse(line)
     const initializationId = controlRequestId(input, 'initialize')
-    if (initializationId !== null) {
-      process.stdout.write(
-        `${JSON.stringify({ type: 'control_response', response: { subtype: 'success', request_id: initializationId, response: { models: MODELS, commands: mockCommands() } } })}\n`,
-      )
-      return
-    }
+    if (initializationId !== null)
+      return respond(initializationId, { models: MODELS, commands: mockCommands() })
     const contextUsageId = controlRequestId(input, 'get_context_usage')
-    if (contextUsageId !== null) {
-      process.stdout.write(
-        `${JSON.stringify({ type: 'control_response', response: { subtype: 'success', request_id: contextUsageId, response: contextUsageResponse() } })}\n`,
-      )
-      return
-    }
+    if (contextUsageId !== null) return respond(contextUsageId, contextUsageResponse())
     const permissionId = permissionResponseId(input)
     if (permissionId !== null) {
       pendingPermissions.get(permissionId)?.()
@@ -307,11 +298,13 @@ function writeInitialization(sessionId: string) {
   )
 }
 
-export function initializationRequestId(input: unknown): string | null {
-  return controlRequestId(input, 'initialize')
+function respond(requestId: string, response: unknown) {
+  process.stdout.write(
+    `${JSON.stringify({ type: 'control_response', response: { subtype: 'success', request_id: requestId, response } })}\n`,
+  )
 }
 
-function controlRequestId(input: unknown, subtype: string): string | null {
+export function controlRequestId(input: unknown, subtype: string): string | null {
   if (typeof input !== 'object' || input === null || !('type' in input)) return null
   if (input.type !== 'control_request' || !('request_id' in input) || !('request' in input))
     return null

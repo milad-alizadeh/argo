@@ -40,7 +40,10 @@ function reportedColumns({ turnConfiguration, planProgress, contextUsage }: Sess
       planProgress: { completed: planProgress.completed, total: planProgress.total },
     }),
     ...(contextUsage && {
-      contextUsage: { usedTokens: contextUsage.usedTokens, windowTokens: contextUsage.windowTokens },
+      contextUsage: {
+        usedTokens: contextUsage.usedTokens,
+        windowTokens: contextUsage.windowTokens,
+      },
     }),
   }
 }

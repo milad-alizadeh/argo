@@ -20,6 +20,7 @@ import type {
   ThreadReadResponse,
   WireMessage,
 } from '../app-server'
+import { readCodexContextUsage } from './codex-context-usage'
 import {
   type CodexCollabFacts,
   type CodexMessageFacts,
@@ -35,7 +36,6 @@ import {
   questionResponse,
   readCodexInteraction,
 } from './codex-session-interactions'
-import { readCodexContextUsage } from './codex-context-usage'
 import { dispatchCodexNotification } from './codex-session-notifications'
 import { APPROVAL_TIMEOUT_MS, inputItems } from './codex-session-protocol'
 import { followCodexSkillCommands } from './codex-skill-commands'

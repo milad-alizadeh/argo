@@ -63,7 +63,11 @@ function sessionIsUnavailable(actor: LiveSessionActor): boolean {
 // refreshes selected details.
 function liveDetailsOf(actor: LiveSessionActor): string {
   const { turnConfiguration, contextUsage } = actor.getSnapshot().context
-  return JSON.stringify([sessionIsUnavailable(actor), turnConfiguration, contextUsage])
+  return JSON.stringify([
+    sessionIsUnavailable(actor),
+    turnConfiguration,
+    contextUsage,
+  ])
 }
 
 export function liveSessionActorFor(supervisor: LiveSessionSupervisorActor, sessionId: string) {

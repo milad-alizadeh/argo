@@ -10,7 +10,9 @@ import type { SessionHarnessBackend } from '../session-harness-backend'
 const CONTEXT_BAR = '[data-component="SessionContextBar"]'
 
 // The tokens, window and share the popover states; a real CLI reports its own numbers.
-function expectedUsage(backend: SessionHarnessBackend, harness: 'claude' | 'codex') {
+type ReportingHarness = Extract<Harness, 'claude' | 'codex'>
+
+function expectedUsage(backend: SessionHarnessBackend, harness: ReportingHarness) {
   if (backend.name !== 'mock') return { tokens: /\d+k \/ \d+k tokens/, share: /\d+% used/ }
   const { usedTokens, windowTokens } = MOCK_CONTEXT_USAGE[harness]
   const percentage = Math.round((usedTokens / windowTokens) * 100)
@@ -23,12 +25,15 @@ function expectedUsage(backend: SessionHarnessBackend, harness: 'claude' | 'code
 export async function proveContextUsage(
   page: Page,
   backend: SessionHarnessBackend,
-  harness: Extract<Harness, 'claude' | 'codex'>,
+  harness: ReportingHarness,
 ) {
   const prompt = `Report the ${harness} context usage.`
   await createSessionByClick(page, { harness, prompt })
   await backend.waitForReply(page, { harness, prompt })
-  const trigger = page.locator(CONTEXT_BAR).getByRole('button', { name: /^Context / }).first()
+  const trigger = page
+    .locator(CONTEXT_BAR)
+    .getByRole('button', { name: /^Context / })
+    .first()
   await expect(trigger).not.toHaveAccessibleName(/total not reported/)
   await trigger.click()
   const details = page.getByRole('dialog', { name: 'Context window' })

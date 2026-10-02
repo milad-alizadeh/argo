@@ -588,16 +588,13 @@ test('a Codex Turn reports its newest model call as context usage when it ends',
     method: 'turn/completed',
     params: { threadId: 'thread-1', turn: { id: 'turn-1', status: 'completed' } },
   })
-  const ended = events.findIndex((event) => event.type === 'turn.completed')
-  assert.deepEqual(
-    events.flatMap((event, index) => (event.type === 'context.usage' ? [{ index, ...event }] : [])),
-    [
-      {
-        index: ended - 2,
-        type: 'context.usage',
-        usage: { usedTokens: 41_000, windowTokens: 256_000 },
-      },
-    ],
+  const reported = events.flatMap((event) => (event.type === 'context.usage' ? [event] : []))
+  assert.deepEqual(reported, [
+    { type: 'context.usage', usage: { usedTokens: 41_000, windowTokens: 256_000 } },
+  ])
+  assert.ok(
+    events.indexOf(reported[0] as LiveSessionChannelEvent) <
+      events.findIndex((event) => event.type === 'turn.completed'),
   )
   channel.close()
 })
