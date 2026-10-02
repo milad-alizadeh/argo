@@ -59,6 +59,16 @@ function toolContentRow(content: Extract<FeedContent, { kind: 'tool' }>): Sessio
   }
 }
 
+// A recorded question call draws as its question, answered once the call has the Harness's reply.
+function askedQuestionRows(
+  content: Extract<FeedContent, { kind: 'tool' }>,
+): SessionFeedRow[] | null {
+  const questions = content.presentation?.questions
+  if (questions === undefined) return null
+  const answer = textOutput(content)
+  return [{ shape: 'ask', id: content.callId, questions, answer, unsupported: null }]
+}
+
 function commandContentRow(content: Extract<FeedContent, { kind: 'command' }>): SessionFeedRow {
   const title = commandActivityLabel(content.command)
   const output = [content.output, content.stderr].filter((part): part is string => part !== null)
@@ -380,7 +390,7 @@ function contentRow(
 function contentRows(content: FeedContent): SessionFeedRow[] {
   switch (content.kind) {
     case 'tool':
-      return [toolContentRow(content), ...toolOutputRows(content)]
+      return askedQuestionRows(content) ?? [toolContentRow(content), ...toolOutputRows(content)]
     case 'fileChange':
       return fileChangeRows(content, workStatus(content.status))
     default: {

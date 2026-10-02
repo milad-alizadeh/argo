@@ -29,6 +29,7 @@ import { proveNewSessionSkipsUninstalledHarness } from './cases/new-session-harn
 import { proveNoProjectWindow } from './cases/no-project.case'
 import { provePromptBeforeNaming } from './cases/pending-prompt.case'
 import { provePromptLatency } from './cases/prompt-latency.case'
+import { proveSessionQuestion } from './cases/question.case'
 import { proveRefusedStart } from './cases/refused-start.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveContract } from './cases/session-list-contract.case'
@@ -336,6 +337,10 @@ test.describe('with real Session transcript corpora', () => {
     })
     await assertVendorFeedCorpus(corpus)
   })
+})
+
+test('session-question', async ({ session }) => {
+  await proveSessionQuestion(session.page())
 })
 
 test('session-codex-resume', async ({ session, backend }) => {

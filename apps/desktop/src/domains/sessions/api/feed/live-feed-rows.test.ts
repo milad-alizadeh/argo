@@ -238,6 +238,7 @@ test('interleaves live status with matching history while active text and tools 
 })
 
 test('shows a Claude Question once when vendor history includes its tool call', () => {
+  const questions = [{ question: 'Which ink?', header: null, multiSelect: false, options: [] }]
   const tool: FeedContent = {
     kind: 'tool',
     id: 'question-tool',
@@ -248,11 +249,36 @@ test('shows a Claude Question once when vendor history includes its tool call', 
     output: null,
     summary: null,
   }
-  const rows = projectLiveFeedRows(
-    [tool],
-    [liveContent(1, tool), question(2, 'question-1', 'question-call')],
-  )
-  expect(rows.map((row) => [row.shape, row.id])).toEqual([['ask', 'question-1']])
+  const asked: FeedContent = { ...tool, presentation: { kind: 'tool', label: '', questions } }
+  for (const call of [tool, asked]) {
+    const rows = projectLiveFeedRows(
+      [call],
+      [liveContent(1, call), question(2, 'question-1', 'question-call')],
+    )
+    expect(rows.map((row) => [row.shape, row.id])).toEqual([['ask', 'question-1']])
+  }
+})
+
+test('draws a stored question call as a question row, answered once it has a reply', () => {
+  const questions = [
+    { question: 'Which ink?', header: 'Ink', multiSelect: false, options: [] as never[] },
+  ]
+  const tool: FeedContent = {
+    kind: 'tool',
+    id: 'ask',
+    callId: 'ask-call',
+    name: 'ask',
+    status: 'running',
+    input: null,
+    output: null,
+    summary: null,
+    presentation: { kind: 'tool', label: 'ask', questions },
+  }
+  expect(projectLiveFeedRows([tool], [])).toEqual([
+    { shape: 'ask', id: 'ask-call', questions, answer: null, unsupported: null },
+  ])
+  const answered = { ...tool, status: 'completed', output: [{ kind: 'text', text: 'Black' }] }
+  expect(projectLiveFeedRows([answered as FeedContent], [])).toMatchObject([{ answer: 'Black' }])
 })
 
 const catalogHistory: FeedContent[] = [
