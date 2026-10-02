@@ -5,13 +5,6 @@ import { SignInNotice } from './sign-in-notice'
 const meta = {
   title: 'Features/Accounts/Sign In Notice',
   component: SignInNotice,
-  decorators: [
-    (Story) => (
-      <div className="w-64">
-        <Story />
-      </div>
-    ),
-  ],
   args: { onConnect: fn(), onDismiss: fn() },
 } satisfies Meta<typeof SignInNotice>
 export default meta
@@ -27,4 +20,8 @@ export const Actions: Story = {
     await userEvent.click(within(region).getByRole('button', { name: 'Dismiss' }))
     await expect(args.onDismiss).toHaveBeenCalledOnce()
   },
+}
+
+export const Narrow: Story = {
+  globals: { viewport: { value: 'compact', isRotated: false } },
 }
