@@ -2,7 +2,6 @@ import { realpath } from 'node:fs/promises'
 import path from 'node:path'
 import { and, eq, inArray, isNotNull } from 'drizzle-orm'
 import type { Database } from '@/database/database'
-import { parentlessSubagent } from '@/database/parentless-subagent/schema'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import type { SessionWorktree } from '@/database/session/validation'
@@ -41,22 +40,14 @@ export function knownSessionIds(database: Database, harness: Harness): string[] 
     .map((row) => row.nativeId)
 }
 
-// Subagents stored under a parent or as parentless, so discovery need not look their parent up.
+// Subagents already saved, under a parent or none, so discovery need not look their parent up.
 export function knownSubagentIds(database: Database, harness: Harness): string[] {
-  const linked = database
-    .selectDistinct({ subagentId: sessionSubagent.subagentId })
+  return database
+    .select({ nativeId: sessionSubagent.nativeId })
     .from(sessionSubagent)
-    .innerJoin(sessionTable, eq(sessionTable.argoId, sessionSubagent.sessionId))
-    .where(eq(sessionTable.harness, harness))
-    .all()
-    .map((row) => row.subagentId)
-  const parentless = database
-    .select({ nativeId: parentlessSubagent.nativeId })
-    .from(parentlessSubagent)
-    .where(eq(parentlessSubagent.harness, harness))
+    .where(eq(sessionSubagent.harness, harness))
     .all()
     .map((row) => row.nativeId)
-  return [...linked, ...parentless]
 }
 
 // Each Project's own folder, its main checkout and every linked worktree git lists for it. Read once
@@ -125,52 +116,36 @@ function sessionRows(database: Database, harness: Harness, nativeIds: readonly s
     .all()
 }
 
-function saveParentlessSubagents(
-  database: Database,
-  harness: Harness,
-  nativeIds: readonly string[],
-): string[] {
-  if (nativeIds.length === 0) return []
-  return database
-    .insert(parentlessSubagent)
-    .values(nativeIds.map((nativeId) => ({ harness, nativeId })))
-    .onConflictDoNothing()
-    .returning({ nativeId: parentlessSubagent.nativeId })
-    .all()
-    .map((row) => row.nativeId)
-}
-
-// Saves each Subagent under its parent, or as parentless. Returns the Sessions whose reads changed.
+// Saves each Subagent under its saved parent, or under none. Returns the Sessions whose reads changed.
 function saveSubagents(
   database: Database,
   harness: Harness,
   subagents: readonly SessionSubagentLink[],
 ): string[] {
-  const changed: string[] = []
-  const parentless: string[] = []
-  const childrenByParent = new Map<string, string[]>()
-  for (const { nativeId, parentNativeId } of subagents) {
-    if (parentNativeId === null) {
-      parentless.push(nativeId)
-      continue
-    }
-    const children = childrenByParent.get(parentNativeId) ?? []
-    children.push(nativeId)
-    childrenByParent.set(parentNativeId, children)
-  }
-  const hidden = saveParentlessSubagents(database, harness, parentless)
-  for (const { nativeId, argoId } of sessionRows(database, harness, [...childrenByParent.keys()])) {
-    const linked = saveDiscoveredSessionSubagents(
-      database,
-      argoId,
-      childrenByParent.get(nativeId) ?? [],
-    )
-    if (linked.length > 0) changed.push(argoId)
-    hidden.push(...linked)
-  }
+  const parentNativeIds = subagents.flatMap(({ parentNativeId }) =>
+    parentNativeId === null ? [] : [parentNativeId],
+  )
+  const parentIds = new Map(
+    sessionRows(database, harness, parentNativeIds).map((row) => [row.nativeId, row.argoId]),
+  )
+  const saved = saveDiscoveredSessionSubagents(
+    database,
+    harness,
+    subagents.map(({ nativeId, parentNativeId }) => ({
+      nativeId,
+      parentSessionId: parentNativeId === null ? null : (parentIds.get(parentNativeId) ?? null),
+    })),
+  )
+  const parents = saved.flatMap(({ parentSessionId }) =>
+    parentSessionId === null ? [] : [parentSessionId],
+  )
   // A saved Session newly found to be a subagent leaves the list, so its detail read changes too.
-  for (const { argoId } of sessionRows(database, harness, hidden)) changed.push(argoId)
-  return changed
+  const children = sessionRows(
+    database,
+    harness,
+    saved.map(({ nativeId }) => nativeId),
+  ).map(({ argoId }) => argoId)
+  return [...new Set([...parents, ...children])]
 }
 
 export function saveSessionBatch(

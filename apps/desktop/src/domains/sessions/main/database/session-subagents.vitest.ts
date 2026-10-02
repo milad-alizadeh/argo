@@ -71,9 +71,12 @@ test('a later ID scan adds children without downgrading known states', () => {
   })
   const parent = argoId('parent')
   saveSessionSubagents(database, parent, [delegation('agent-a', 'completed', 'Review')])
-  expect(saveDiscoveredSessionSubagents(database, parent, ['agent-a', 'agent-b'])).toEqual([
-    'agent-b',
-  ])
+  expect(
+    saveDiscoveredSessionSubagents(database, 'claude', [
+      { nativeId: 'agent-a', parentSessionId: parent },
+      { nativeId: 'agent-b', parentSessionId: parent },
+    ]),
+  ).toEqual([{ nativeId: 'agent-b', parentSessionId: parent }])
   expect(storedSessionSubagents(database, [parent]).get(parent)).toEqual([
     { id: 'agent-a', label: 'Review', state: 'completed' },
     { id: 'agent-b', label: null, state: 'unknown' },

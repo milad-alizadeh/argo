@@ -461,7 +461,9 @@ test('keeps a saved Session another Session of its Harness lists as a Subagent o
     insertSession(database, { id: IDS[0], harness: 'codex', nativeId: 'parent', createdAt: 30 })
     insertSession(database, { id: IDS[1], harness: 'codex', nativeId: 'child', createdAt: 20 })
     insertSession(database, { id: IDS[2], harness: 'claude', nativeId: 'child', createdAt: 10 })
-    saveDiscoveredSessionSubagents(database, IDS[0], ['child'])
+    saveDiscoveredSessionSubagents(database, 'codex', [
+      { nativeId: 'child', parentSessionId: IDS[0] },
+    ])
 
     const listed = await list({ projectId: 'project-1' })
 
@@ -473,7 +475,7 @@ test('keeps a saved Session another Session of its Harness lists as a Subagent o
   }
 })
 
-test('keeps a saved Session discovery found to be a subagent with no parent out of the list and detail reads (#3084)', async () => {
+test('keeps a saved Session discovery found to be a subagent out of the list and detail reads, with no saved parent (#3084)', async () => {
   const { database, list, details } = sessionListCaller()
   try {
     insertSession(database, { id: IDS[0], harness: 'codex', nativeId: 'parentless', createdAt: 20 })
@@ -483,10 +485,19 @@ test('keeps a saved Session discovery found to be a subagent with no parent out 
       nativeId: 'parentless',
       createdAt: 10,
     })
+    insertSession(database, {
+      id: IDS[2],
+      harness: 'codex',
+      nativeId: 'waiting-child',
+      createdAt: 5,
+    })
     saveSessionBatch(database, {
       harness: 'codex',
       records: [],
-      subagents: [{ nativeId: 'parentless', parentNativeId: null }],
+      subagents: [
+        { nativeId: 'parentless', parentNativeId: null },
+        { nativeId: 'waiting-child', parentNativeId: 'unsaved-parent' },
+      ],
     })
 
     assert.deepEqual(
@@ -494,6 +505,7 @@ test('keeps a saved Session discovery found to be a subagent with no parent out 
       [IDS[1]],
     )
     assert.equal(await details({ sessionId: IDS[0] }), null)
+    assert.equal(await details({ sessionId: IDS[2] }), null)
   } finally {
     database.$client.close()
   }

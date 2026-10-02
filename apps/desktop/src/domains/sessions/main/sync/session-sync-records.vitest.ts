@@ -354,17 +354,34 @@ test('links a saved Session once discovery finds it is a subagent, and keeps its
         { harness: 'codex', native_id: 'parent' },
       ],
     )
-    assert.deepEqual(
+    const subagentRows = () =>
       client
-        .prepare('SELECT session_id, subagent_id FROM session_subagent')
+        .prepare(
+          'SELECT harness, native_id, parent_session_id FROM session_subagent ORDER BY rowid',
+        )
         .all()
-        .map((row) => Object.assign({}, row)),
-      [{ session_id: parentId, subagent_id: 'child' }],
-    )
+        .map((row) => Object.assign({}, row))
+    // A child whose parent is not saved yet is still a Subagent, with no parent.
+    assert.deepEqual(subagentRows(), [
+      { harness: 'codex', native_id: 'child', parent_session_id: parentId },
+      { harness: 'codex', native_id: 'orphan-child', parent_session_id: null },
+    ])
     assert.deepEqual(changed, [parentId, childId])
     assert.deepEqual(writeSessionBatch(database, batch), [parentId])
-    assert.deepEqual(knownSubagentIds(database, 'codex'), ['child'])
+    assert.deepEqual(knownSubagentIds(database, 'codex'), ['child', 'orphan-child'])
     assert.deepEqual(knownSubagentIds(database, 'claude'), [])
+
+    // Once its parent is saved, the child takes it.
+    const [laterParentId, ...laterChanged] = writeSessionBatch(database, {
+      ...batch,
+      records: [{ nativeId: 'unsaved-parent' }],
+    })
+    assert.deepEqual(laterChanged, [laterParentId])
+    assert.deepEqual(subagentRows()[1], {
+      harness: 'codex',
+      native_id: 'orphan-child',
+      parent_session_id: laterParentId,
+    })
   } finally {
     client.close()
   }
