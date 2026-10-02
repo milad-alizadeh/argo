@@ -212,8 +212,11 @@ export async function proveGitHubStatusUncertain(run: Run) {
     await lastStatus(run, 'Open').waitFor()
   })
   await test.step('blocked-until-reconciled', async () => {
-    await closeAsCompleted(run)
-    await notification(run.page).getByText(UNRECONCILED).waitFor()
+    // A failed backlog read shows the same toast, sometimes before the write has settled.
+    await expect(async () => {
+      await closeAsCompleted(run)
+      await notification(run.page).getByText(UNRECONCILED).waitFor({ timeout: 2_000 })
+    }).toPass({ timeout: 30_000 })
     assert.equal(
       run.fixture.github.requests.filter(
         (request) => request === 'PATCH /repos/octocat/hello-world/issues/273',
