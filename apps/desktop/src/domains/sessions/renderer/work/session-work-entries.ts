@@ -16,24 +16,10 @@ export type WorkEntry = {
   title: string
   // Raw command text is read as code; a derived label, Subagent or Shell, is prose.
   monospace: boolean
-  group: 'running' | 'unknown' | 'finished'
+  status: SessionSubagent['state'] | SessionShellCommand['state']
   mark: string
   state: string
   facts: string
-}
-
-function workGroup(state: ReturnType<typeof subagentWorkState>): WorkEntry['group'] {
-  switch (state) {
-    case 'running':
-      return 'running'
-    case 'unknown':
-      return 'unknown'
-    case 'done':
-    case 'completed':
-    case 'failed':
-    case 'interrupted':
-      return 'finished'
-  }
 }
 
 export function delegationEntries(
@@ -59,7 +45,7 @@ export function delegationEntries(
       id: delegation.id,
       ...presentation,
       monospace: false,
-      group: workGroup(state),
+      status: delegation.state,
       mark: WORK_STATE_MARKS[state],
     }
   })
@@ -74,7 +60,7 @@ export function shellEntries(
     id: command.id,
     ...workPresentation({ kind: 'shell', ...command, now }, t),
     monospace: command.label === null,
-    group: command.state === 'running' ? 'running' : 'finished',
+    status: command.state,
     mark: WORK_STATE_MARKS[command.state],
   }))
 }

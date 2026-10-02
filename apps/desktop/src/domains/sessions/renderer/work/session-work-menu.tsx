@@ -110,9 +110,12 @@ export function SessionWorkMenu({
   selectedId: string | null
 }) {
   if (entries.length === 0) return null
-  const running = entries.filter((entry) => entry.group === 'running')
-  const unknown = entries.filter((entry) => entry.group === 'unknown')
-  const finished = entries.filter((entry) => entry.group === 'finished')
+  const running = entries.filter((entry) => entry.status === 'running')
+  const unknown = entries.filter((entry) => entry.status === 'unknown')
+  const finished = entries.filter(
+    (entry) =>
+      entry.status === 'completed' || entry.status === 'failed' || entry.status === 'interrupted',
+  )
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
