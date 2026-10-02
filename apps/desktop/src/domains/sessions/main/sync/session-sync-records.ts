@@ -4,13 +4,14 @@ import { and, eq, isNotNull } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
+import type { SessionWorktree } from '@/database/session/validation'
 import type { SessionSummary } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
 import { createSessionUpsert } from '../database'
 import { projectFolders, readWorktreeBranch } from '../worktree'
 
-// `worktree` marks a linked worktree git lists, other than the folder the Project was added from.
-type SessionRoot = { projectId: string; path: string; worktree: boolean }
+// `worktree` is a linked worktree git lists, other than the folder the Project was added from.
+type SessionRoot = { projectId: string; path: string; worktree: SessionWorktree | null }
 
 function contains(root: string, candidate: string): boolean {
   const relative = path.relative(root, candidate)
@@ -44,14 +45,18 @@ async function sessionRoots(database: Database): Promise<SessionRoot[]> {
         linked: [],
       }))
       const own = await realpath(candidate.path).catch(() => candidate.path)
-      return [
-        { projectId: candidate.id, path: candidate.path, worktree: false },
-        { projectId: candidate.id, path: folders.main, worktree: false },
-        ...folders.linked.map((linked) => ({
+      const linked = await Promise.all(
+        folders.linked.map(async (folder) => ({
           projectId: candidate.id,
-          path: linked,
-          worktree: linked !== own,
+          path: folder,
+          worktree:
+            folder === own ? null : { path: folder, branch: await readWorktreeBranch(folder) },
         })),
+      )
+      return [
+        { projectId: candidate.id, path: candidate.path, worktree: null },
+        { projectId: candidate.id, path: folders.main, worktree: null },
+        ...linked,
       ]
     }),
   )
@@ -63,7 +68,7 @@ async function sessionRoots(database: Database): Promise<SessionRoot[]> {
     .all()
     .flatMap((row) =>
       row.projectId !== null && row.path !== null
-        ? [{ projectId: row.projectId, path: row.path, worktree: false }]
+        ? [{ projectId: row.projectId, path: row.path, worktree: null }]
         : [],
     )
   return [...perProject.flat(), ...worktrees]
@@ -80,12 +85,8 @@ async function withProjectMatch(
   const cwd = record.cwd
   const root = matchRoot(roots, cwd) ?? matchRoot(roots, await realpath(cwd).catch(() => cwd))
   const matched = { ...record, projectId: root?.projectId ?? null }
-  if (root === null || !root.worktree) return matched
-  return {
-    ...matched,
-    worktreePath: root.path,
-    worktreeBranch: await readWorktreeBranch(root.path),
-  }
+  if (root?.worktree == null) return matched
+  return { ...matched, worktreePath: root.worktree.path, worktreeBranch: root.worktree.branch }
 }
 
 export async function matchSessionsToProjects(
