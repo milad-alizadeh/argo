@@ -142,13 +142,20 @@ export async function createPackagedSessionHarness(request: {
     return opened
   }
 
+  // Forgets the app before closing it, so a close that throws is not retried on the dead app.
+  const close = async () => {
+    const closing = application
+    application = undefined
+    await closeApplication(closing)
+  }
+
   return {
     root,
     fixture,
     launch: open,
     restart: async (beforeOpen?: () => Promise<void>) => {
       await closing()
-      await closeApplication(application)
+      await close()
       await beforeOpen?.()
       return open()
     },
@@ -157,7 +164,7 @@ export async function createPackagedSessionHarness(request: {
       if (page === undefined) throw new Error('The packaged app did not launch.')
       return page
     },
-    close: () => closeApplication(application),
+    close,
     isPackaged: () => application?.evaluate(({ app }) => app.isPackaged),
     recentConsole: () => recentConsole,
   }
