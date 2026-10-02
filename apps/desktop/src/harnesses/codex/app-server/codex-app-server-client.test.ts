@@ -3,13 +3,13 @@ import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { executableVersion } from '@/harnesses/cli/executable-version'
 import { MOCK_CODEX_VERSION } from '@/mocks/cli/codex/mock-codex-cli'
 import { recordedCodexModels } from '@/mocks/recordings/codex-app-server'
 import {
   type CodexChannel,
   CodexUnavailableError,
   createCodexAppServerClient,
+  resolveCodexExecutable,
   type WireMessage,
 } from './codex-app-server-client'
 
@@ -81,7 +81,7 @@ createInterface({ input: process.stdin }).on('line', (line) => {
   await writeVersion(MOCK_CODEX_VERSION)
   const lineCount = async (file: string) => (await readFile(file, 'utf8')).trim().split('\n').length
   const client = createCodexAppServerClient({
-    resolveExecutable: async () => ({ executable, version: await executableVersion(executable) }),
+    resolveExecutable: (signal) => resolveCodexExecutable(signal, executable),
   })
   return {
     client,
@@ -118,6 +118,20 @@ test('checks the executable version once across concurrent requests', async () =
       Array.from({ length: 20 }, () => codex.client.request('thread/list', {}, (value) => value)),
     )
     assert.equal(await codex.versionChecks(), 1)
+    assert.equal(await codex.serverStarts(), 1)
+  } finally {
+    await codex.dispose()
+  }
+})
+
+test('keeps the app-server when the executable file is rewritten at the same version', async () => {
+  const codex = await countingCodex()
+  try {
+    await codex.client.request('thread/list', {}, (value) => value)
+    await codex.writeVersion(MOCK_CODEX_VERSION)
+    await codex.client.request('thread/list', {}, (value) => value)
+    await codex.client.request('thread/list', {}, (value) => value)
+    assert.equal(await codex.versionChecks(), 2)
     assert.equal(await codex.serverStarts(), 1)
   } finally {
     await codex.dispose()

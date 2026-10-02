@@ -368,9 +368,9 @@ export function openCodexChannel(
 type CodexExecutable = {
   executable: string
   version: string
+  // A fingerprint taken before `--version`, so a change in between is seen on the next request.
+  file?: string | null
 }
-
-type CodexIdentity = CodexExecutable & { file: string | null }
 
 export type CodexAppServerClientOptions = {
   resolveExecutable?: (signal: AbortSignal) => Promise<CodexExecutable | null>
@@ -412,16 +412,19 @@ function openProcess(executable: string): CodexChannel {
   })
 }
 
-async function resolveCodexExecutable(signal: AbortSignal): Promise<CodexExecutable | null> {
-  const executable =
-    process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('codex')
+export async function resolveCodexExecutable(
+  signal: AbortSignal,
+  executable = process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('codex'),
+): Promise<CodexExecutable | null> {
   // An empty override pins a machine with no Codex, as the sign-in override does.
   if (!executable) return null
+  const file = await fileFingerprint(executable)
   const version = await executableVersion(executable)
   if (signal.aborted) throw signal.reason
   return {
     executable,
     version,
+    file,
   }
 }
 
@@ -487,7 +490,7 @@ class CodexAppServerClientInstance implements CodexAppServerClient {
   private closed = false
   private connecting: Promise<CodexChannel> | null = null
   private generation = 0
-  private identity: CodexIdentity | null = null
+  private identity: CodexExecutable | null = null
   private retryCount = 0
   private retryTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -575,32 +578,33 @@ class CodexAppServerClientInstance implements CodexAppServerClient {
       this.closeChannel()
       throw new CodexUnavailableError()
     }
-    const identity = { ...resolved, file: await fileFingerprint(resolved.executable) }
-    this.assertActive(currentGeneration)
-    if (this.matchesCurrent(identity)) return this.channel as CodexChannel
+    // A rewritten file with the same version keeps the channel and its live turns.
+    if (this.matchesCurrent(resolved)) {
+      this.identity = resolved
+      return this.channel as CodexChannel
+    }
     this.closeChannel()
-    return this.openResolved(identity, currentGeneration)
+    return this.openResolved(resolved, currentGeneration)
   }
 
   // Skips the path lookup and `--version` while the live channel's executable file is unchanged (#3137).
   private async unchangedChannel(): Promise<CodexChannel | null> {
     const { channel, identity } = this
-    if (channel === null || identity === null || identity.file === null) return null
+    if (channel === null || identity?.file == null) return null
     const file = await fileFingerprint(identity.executable)
     return file === identity.file && this.channel === channel ? channel : null
   }
 
-  private matchesCurrent(resolved: CodexIdentity) {
+  private matchesCurrent(resolved: CodexExecutable) {
     return (
       this.channel !== null &&
       this.identity?.executable === resolved.executable &&
-      this.identity.version === resolved.version &&
-      this.identity.file === resolved.file
+      this.identity.version === resolved.version
     )
   }
 
   private async openResolved(
-    resolved: CodexIdentity,
+    resolved: CodexExecutable,
     currentGeneration: number,
   ): Promise<CodexChannel> {
     let opened: CodexChannel | null = null
