@@ -1,6 +1,6 @@
 import type { ComponentPropsWithRef } from 'react'
-import { Badge } from '@/platform/renderer/components/ui/badge'
-import { cn } from '@/platform/renderer/lib/utils'
+import { cn } from '../../lib/utils'
+import { Badge } from '../ui/badge'
 import { subtleToneRecipe } from './tone-recipes'
 
 type StatusBadgeProps = Omit<
