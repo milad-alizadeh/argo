@@ -48,7 +48,7 @@ function countEntry(running: boolean): WorkEntry {
     id: running ? 'running-work' : 'finished-work',
     title: running ? 'Review interface' : 'Review complete',
     monospace: false,
-    running,
+    status: running ? 'running' : 'completed',
     mark: 'bg-current',
     state: running ? 'Running' : 'Done',
     facts: '',
