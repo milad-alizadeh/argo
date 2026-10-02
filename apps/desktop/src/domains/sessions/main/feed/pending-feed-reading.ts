@@ -44,6 +44,7 @@ export function pendingFeedReading(database: Database, sessionId: string): FeedR
     pendingPermissionId: null,
     liveStatus: null,
     entries,
+    hasOlder: false,
     subagents: [],
   })
 }

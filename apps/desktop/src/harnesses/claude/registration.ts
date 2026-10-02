@@ -29,8 +29,7 @@ export function createClaudeRegistration(): HarnessRegistration<'claude'> {
     checkReadiness: createSystemClaudeReadiness(signInExecutable),
     signIn: createClaudeSignInDriver(signInExecutable),
     readCatalog: () => readClaudeHarnessInfo(executable),
-    readHistory: ({ nativeId, subagentId, cwd }) =>
-      readClaudeSessionHistory(nativeId, cwd, subagentId),
+    readHistory: readClaudeSessionHistory,
     externalSessions: createClaudeExternalSessions(
       executable,
       claudeSettingsFile(process.env, os.homedir()),

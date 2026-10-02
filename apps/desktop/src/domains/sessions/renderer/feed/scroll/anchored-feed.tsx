@@ -1,4 +1,4 @@
-import type { VirtualItem, Virtualizer } from '@tanstack/virtual-core'
+import type { VirtualItem } from '@tanstack/virtual-core'
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { SessionFeedRow } from '../../types'
 import type { Settled } from '../document/use-settled-feed'
@@ -29,6 +29,7 @@ type AnchoredFeedProps = {
   reveals: ReadonlyMap<string, Reveal>
   streamingRowId: string | null
   historyLabel: string
+  loadOlder?: (() => void) | undefined
 }
 
 function MeasureFeedRows({
@@ -92,39 +93,32 @@ export function AnchoredFeed(props: AnchoredFeedProps) {
   return <VirtualFeed {...props} initialMeasurementsCache={measurements} />
 }
 
-function visibleRowAnchor(viewport: HTMLElement, rows: readonly SessionFeedRow[]) {
-  const view = viewport.getBoundingClientRect()
-  for (const element of viewport.querySelectorAll<HTMLElement>('[data-index]')) {
-    const bounds = element.getBoundingClientRect()
-    if (bounds.bottom <= view.top || bounds.top >= view.bottom) continue
-    const row = rows[Number(element.dataset.index)]
-    if (row !== undefined) return { id: row.id, offset: bounds.top - view.top }
-  }
-  return null
-}
-
-function currentRowAnchor(
-  viewport: HTMLElement,
-  rows: readonly SessionFeedRow[],
-  virtualizer: Virtualizer<HTMLElement, Element>,
-) {
-  const mounted = visibleRowAnchor(viewport, rows)
-  if (mounted !== null) return mounted
-  const measured = virtualizer.getVirtualItemForOffset(viewport.scrollTop)
-  if (measured === undefined) return null
-  const row = rows[measured.index]
-  return row === undefined ? null : { id: row.id, offset: measured.start - viewport.scrollTop }
-}
-
-function scrollToAnchor(
-  virtualizer: Virtualizer<HTMLElement, Element>,
-  rows: readonly SessionFeedRow[],
-  id: string,
-) {
-  const index = rows.findIndex((row) => row.id === id)
-  if (index < 0) return false
-  virtualizer.scrollToIndex(index, { align: 'start' })
-  return true
+// Within a screen of the first row, the page before it is asked for once; the rows it adds come in
+// above the visible ones, which the prepend anchor holds still.
+function useOlderPageNearStart({
+  firstRowId,
+  loadOlder,
+  positioned,
+  viewport,
+}: {
+  firstRowId: string | undefined
+  loadOlder: (() => void) | undefined
+  positioned: boolean
+  viewport: HTMLElement | null
+}) {
+  useLayoutEffect(() => {
+    if (viewport === null || loadOlder === undefined || !positioned || firstRowId === undefined)
+      return
+    let asked = false
+    const ask = () => {
+      if (asked || viewport.scrollTop > viewport.clientHeight) return
+      asked = true
+      loadOlder()
+    }
+    ask()
+    viewport.addEventListener('scroll', ask, { passive: true })
+    return () => viewport.removeEventListener('scroll', ask)
+  }, [firstRowId, loadOlder, positioned, viewport])
 }
 
 // TanStack chat pattern: https://tanstack.com/virtual/latest/docs/chat.
@@ -141,6 +135,7 @@ function VirtualFeed({
   reveals,
   streamingRowId,
   historyLabel,
+  loadOlder,
 }: AnchoredFeedProps) {
   const { attachViewport, paddingStart, viewport } = useFeedViewport()
   const tailFollow = useFeedTailFollow(settled.reading.sessionId, { active, viewport })
@@ -149,61 +144,19 @@ function VirtualFeed({
     following,
     initialMeasurementsCache,
     initialScrollPosition,
+    positioned: !tailFollow.awaitingInitialPosition,
     rows,
     viewport,
     paddingStart,
     onChange: tailFollow.onChange,
   })
   useTailThroughViewportResize(viewport, following)
-  const visibleAnchor = useRef<{ id: string; offset: number } | null>(null)
-  const pendingAnchor = useRef<{ id: string; offset: number } | null>(null)
-  const committedRows = useRef(rows)
-  // A first snapshot can land under live-only rows; the reader keeps their row.
-  useLayoutEffect(() => {
-    const firstId = committedRows.current[0]?.id
-    const addedBefore = firstId === undefined ? 0 : rows.findIndex((row) => row.id === firstId)
-    const preserved = visibleAnchor.current
-    if (viewport !== null && addedBefore > 0 && preserved !== null) {
-      if (scrollToAnchor(virtualizer, rows, preserved.id)) pendingAnchor.current = preserved
-    }
-    committedRows.current = rows
-  }, [rows, viewport, virtualizer])
-  useLayoutEffect(() => {
-    const anchor = pendingAnchor.current
-    if (anchor === null || viewport === null) return
-    const index = rows.findIndex((row) => row.id === anchor.id)
-    const element = viewport.querySelector<HTMLElement>(`[data-index="${index}"]`)
-    if (element === null) return
-    const offset = element.getBoundingClientRect().top - viewport.getBoundingClientRect().top
-    if (Math.abs(offset - anchor.offset) > 0.5)
-      virtualizer.scrollToOffset(viewport.scrollTop + offset - anchor.offset)
-    pendingAnchor.current = null
+  useOlderPageNearStart({
+    firstRowId: rows[0]?.id,
+    loadOlder,
+    positioned: !tailFollow.awaitingInitialPosition,
+    viewport,
   })
-  useLayoutEffect(() => {
-    if (viewport === null) return
-    const anchor = visibleRowAnchor(viewport, rows)
-    if (anchor !== null) visibleAnchor.current = anchor
-  })
-  useLayoutEffect(() => {
-    if (viewport === null) return
-    let frame: number | null = null
-    const rememberAnchor = () => {
-      const anchor = currentRowAnchor(viewport, rows, virtualizer)
-      // Keep this scroll even if a prepend cancels the next frame.
-      if (anchor !== null) visibleAnchor.current = anchor
-      if (frame !== null) cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(() => {
-        const settledAnchor = visibleRowAnchor(viewport, rows)
-        if (settledAnchor !== null) visibleAnchor.current = settledAnchor
-        frame = null
-      })
-    }
-    viewport.addEventListener('scroll', rememberAnchor, { passive: true })
-    return () => {
-      viewport.removeEventListener('scroll', rememberAnchor)
-      if (frame !== null) cancelAnimationFrame(frame)
-    }
-  }, [rows, viewport, virtualizer])
   useInitialFeedPosition({
     initialScrollPosition,
     onPositioned: tailFollow.markInitiallyPositioned,

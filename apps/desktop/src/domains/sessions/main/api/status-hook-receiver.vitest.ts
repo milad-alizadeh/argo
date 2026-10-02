@@ -55,7 +55,7 @@ let liveActors: Record<string, unknown>
 let discovered: string[]
 let poll: ExternalSessionPoll
 let feeds: SessionFeedReaders
-let readHistory: ReturnType<typeof vi.fn<() => Promise<[]>>>
+let readHistory: ReturnType<typeof vi.fn<() => Promise<{ content: []; complete: true }>>>
 let receiver: StatusHookReceiver
 let folder: string
 let socketPath: string
@@ -68,7 +68,7 @@ beforeEach(() => {
   caller = sessionListCaller({ sessions: liveActors })
   discovered = []
   const hasLiveChannel = (sessionId: string) => Object.hasOwn(liveActors, sessionId)
-  readHistory = vi.fn(async () => [] as [])
+  readHistory = vi.fn(async () => ({ content: [] as [], complete: true as const }))
   feeds = new SessionFeedReaders({
     database: caller.database,
     journal: new SessionEventJournal(),

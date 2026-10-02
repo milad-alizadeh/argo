@@ -8,7 +8,8 @@ import { fingerprint } from './fingerprint'
 
 const FEED_READ_STATES = ['loading', 'ready', 'failed'] as const
 
-// One complete Feed as main last read it: every row in order, and how its latest read went.
+// One Feed as main last read it: its rows in order from the oldest the reader has paged back to,
+// and how its latest read went.
 const feedReadingSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('session.feed.reading'),
@@ -24,10 +25,15 @@ const feedReadingSchema = z.strictObject({
   // The latest status the live channel reported; null when it reported none.
   liveStatus: sessionLiveStatusSchema.nullable(),
   entries: z.array(feedRowEntrySchema),
+  // Older rows exist before the first entry; the reader asks for them a page at a time.
+  hasOlder: z.boolean(),
   // The Subagents this Feed's rows name; empty for a Subagent's own Feed.
   subagents: z.array(feedSubagentSchema),
 })
 export type FeedReading = z.infer<typeof feedReadingSchema>
+
+// The rows a Feed first publishes, and the rows each older page adds before them.
+export const FEED_PAGE_ROWS = 200
 const feedEnvelopeSchema = feedReadingSchema.omit({ entries: true })
 
 export function feedReading(
@@ -42,6 +48,7 @@ export function feedReading(
       body.error?.code ?? null,
       body.pendingPermissionId,
       body.liveStatus,
+      body.hasOlder,
       body.entries.map(({ id, revision }) => [id, revision]),
     ]),
   )
@@ -61,11 +68,12 @@ export function feedReading(
 
 type FeedEntry = FeedReading['entries'][number]
 
-// A reading told as a change to the one before it: the earlier reading's first `kept` entries,
-// then `tail`. A streamed reply then sends its own rows, not the whole Feed.
+// A reading told as a change to the one before it: `head`, then the earlier reading's first `kept`
+// entries, then `tail`. A streamed reply then sends its own rows, and an older page only its own.
 const feedReadingChangeSchema = feedReadingSchema.omit({ type: true, entries: true }).extend({
   type: z.literal('session.feed.reading-change'),
   baseRevision: z.string().min(1),
+  head: feedReadingSchema.shape.entries,
   kept: z.number().int().nonnegative(),
   tail: feedReadingSchema.shape.entries,
 })
@@ -78,17 +86,25 @@ function sameEntry(left: FeedEntry | undefined, right: FeedEntry | undefined): b
   return left?.id === right?.id && left?.revision === right?.revision
 }
 
+// Rows put before the earlier reading's first row are the head; the rest is matched from there.
 export function feedReadingChange(previous: FeedReading, next: FeedReading): FeedReadingChange {
+  const first = previous.entries[0]
+  const found = first === undefined ? -1 : next.entries.findIndex(({ id }) => id === first.id)
+  const start = found > 0 && sameEntry(first, next.entries[found]) ? found : 0
   let kept = 0
-  while (kept < next.entries.length && sameEntry(previous.entries[kept], next.entries[kept]))
+  while (
+    start + kept < next.entries.length &&
+    sameEntry(previous.entries[kept], next.entries[start + kept])
+  )
     kept += 1
   const { entries, ...envelope } = next
   return {
     ...envelope,
     type: 'session.feed.reading-change',
     baseRevision: previous.revision,
+    head: entries.slice(0, start),
     kept,
-    tail: entries.slice(kept),
+    tail: entries.slice(start + kept),
   }
 }
 
@@ -103,11 +119,11 @@ export function applyFeedReadingChange(
       return message
     case 'session.feed.reading-change': {
       if (previous?.revision !== message.baseRevision) return null
-      const { baseRevision: _baseRevision, kept, tail, ...envelope } = message
+      const { baseRevision: _baseRevision, head, kept, tail, ...envelope } = message
       return {
         ...envelope,
         type: 'session.feed.reading',
-        entries: [...previous.entries.slice(0, kept), ...tail],
+        entries: [...head, ...previous.entries.slice(0, kept), ...tail],
       }
     }
   }

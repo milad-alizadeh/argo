@@ -5,6 +5,7 @@ import { sessionTable } from '@/database/session/schema'
 import type { SessionFeedRow } from '@/domains/sessions/api/feed'
 import {
   emptyLiveEventBuffer,
+  FEED_PAGE_ROWS,
   type FeedChain,
   type FeedReading,
   FeedRowProjector,
@@ -23,7 +24,11 @@ import {
 } from '@/domains/sessions/api/feed-content'
 import type { SessionError } from '@/domains/sessions/api/session-error'
 import { sessionError } from '@/domains/sessions/api/session-error'
-import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
+import {
+  MAX_HISTORY_EXTENT,
+  type SessionHistoryTail,
+  type SessionHistoryTarget,
+} from '@/domains/sessions/api/session-history'
 import {
   SESSION_LIVE_REPLAY_BYTE_LIMIT,
   type SessionLiveEvent,
@@ -44,15 +49,17 @@ export type SessionFeedReaderContext = {
   readHistory: (
     harness: Harness,
     target: SessionHistoryTarget,
-    signal: AbortSignal,
-  ) => Promise<FeedContent[]>
+    read: { signal: AbortSignal; extent: number },
+  ) => Promise<SessionHistoryTail>
   // Carries each reading's activity to the Session List, and any write that moved the history.
   changes: SessionListChanges
 }
 
 type StoredHistory = ReturnType<typeof sessionHistoryIdentity>
 
-type Observer = (reading: FeedReading) => void
+type FeedEntry = FeedReading['entries'][number]
+// Each published reading, and every row loaded for it, inside the page the reading carries or not.
+type Observer = (reading: FeedReading, loaded: readonly FeedEntry[]) => void
 type ReadState = FeedReading['state']
 
 const encoder = new TextEncoder()
@@ -60,6 +67,13 @@ const encoder = new TextEncoder()
 // Streamed text publishes at most once a window; any other event publishes at once.
 export const FEED_TEXT_COALESCE_MS = 100
 const SUBAGENT_FEED_REFRESH_MS = 2_000
+
+// A tail cut off by the read starts with the first Turn wholly inside it, so its rows never change
+// when a wider read adds the rest of that Turn.
+function fromFirstTurn(content: FeedContent[]): FeedContent[] {
+  const first = content.findIndex((item) => item.kind === 'message' && item.role === 'user')
+  return first === -1 ? [] : content.slice(first)
+}
 
 // Assistant text and reasoning arrive as snapshot after snapshot of the same row.
 function isStreamedText(event: SessionLiveEvent): boolean {
@@ -143,6 +157,14 @@ class FeedReader {
   // Where the last read found the history, so a write that moved nothing reads nothing again.
   #readKey: string | null = null
   #history: FeedContent[] = []
+  // How wide the last history read was, and whether it reached the Session's first message.
+  #extent = 0
+  #complete = true
+  // The first row of the page published, and how many rows the reader wants before it; a null
+  // anchor stands after the newest row.
+  #anchor: string | null = null
+  #owed = FEED_PAGE_ROWS
+  #loaded: FeedEntry[] = []
   #events: LiveEventBuffer = emptyLiveEventBuffer()
   #completion: SessionFeedRow[] = []
   #state: ReadState = 'loading'
@@ -167,7 +189,9 @@ class FeedReader {
     if (this.#parent === null) this.#attachLive()
     else {
       this.#subagentRefresh = setInterval(() => this.refresh(), SUBAGENT_FEED_REFRESH_MS)
-      this.#stops.push(this.#parent.observe((reading) => this.#receiveParent(reading)))
+      this.#stops.push(
+        this.#parent.observe((reading, loaded) => this.#receiveParent(reading, loaded)),
+      )
     }
     const { sessionId } = this.#chain
     // This reader's own activity write moves nothing in the key.
@@ -181,7 +205,7 @@ class FeedReader {
 
   observe(observer: Observer): () => void {
     this.#observers.add(observer)
-    if (this.#reading !== null) observer(this.#reading)
+    if (this.#reading !== null) observer(this.#reading, this.#loaded)
     return () => this.#observers.delete(observer)
   }
 
@@ -194,6 +218,35 @@ class FeedReader {
     this.#readKey = this.#key()
     if (this.#inFlight) this.#followUp = true
     else this.#startRead()
+  }
+
+  // Puts the page before the published one into the Feed, reading further back when the rows
+  // loaded run out. False when the Feed already starts at the Session's first row.
+  loadOlder(): boolean {
+    if (this.#reading?.hasOlder !== true) return false
+    this.#anchor = this.#reading.entries[0]?.id ?? null
+    this.#owed = FEED_PAGE_ROWS
+    if (this.#covers(this.#loaded)) this.#publish()
+    else this.refresh()
+    return true
+  }
+
+  // Where the published page starts in `entries`; an anchor gone from them falls back to the
+  // newest page.
+  #pageStart(entries: readonly FeedEntry[]): number {
+    const anchored =
+      this.#anchor === null ? entries.length : entries.findIndex(({ id }) => id === this.#anchor)
+    if (anchored === -1) return Math.max(0, entries.length - FEED_PAGE_ROWS)
+    return Math.max(0, anchored - this.#owed)
+  }
+
+  // Whether `entries` hold every row the published page wants; a cut-off read that lost the
+  // anchor reads further back for it.
+  #covers(entries: readonly FeedEntry[]): boolean {
+    if (this.#complete) return true
+    const anchored =
+      this.#anchor === null ? entries.length : entries.findIndex(({ id }) => id === this.#anchor)
+    return anchored >= this.#owed
   }
 
   // Where the history lives; with no live channel, also the row's activity and status, which a hook
@@ -216,9 +269,10 @@ class FeedReader {
     this.#followUp = false
     if (this.#state !== 'ready') this.#settle('loading', this.#error)
     void this.#readHistory().then(
-      (content) =>
+      ({ content, complete }) =>
         this.#endRead(() => {
           this.#history = content
+          this.#complete = complete
           this.#settle('ready', null)
         }),
       (error: unknown) => this.#endRead(() => this.#settle('failed', readFailure(error))),
@@ -261,9 +315,26 @@ class FeedReader {
     return { nativeId: stored.nativeId, subagentId: this.#chain.subagentId, cwd: stored.cwd }
   }
 
-  async #readHistory(): Promise<FeedContent[]> {
+  // The narrowest read that holds the page the Feed wants, widened one step at a time.
+  async #readHistory(): Promise<SessionHistoryTail> {
     const stored = sessionHistoryIdentity(this.#context.database, this.#chain.sessionId)
-    return this.#context.readHistory(stored.harness, this.#target(stored), this.#abort.signal)
+    const target = this.#target(stored)
+    for (; this.#extent < MAX_HISTORY_EXTENT; this.#extent += 1) {
+      const read = await this.#context.readHistory(stored.harness, target, {
+        signal: this.#abort.signal,
+        extent: this.#extent,
+      })
+      if (read.complete) return read
+      const content = fromFirstTurn(read.content)
+      const { entries } = this.#projector.project({
+        history: content,
+        live: this.#events.events,
+        end: this.#completion,
+      })
+      this.#complete = false
+      if (this.#stopped || this.#covers(entries)) return { content, complete: false }
+    }
+    throw new Error(`The history of Session ${this.#chain.sessionId} never read complete.`)
   }
 
   #retain(event: SessionLiveEvent, live: boolean): void {
@@ -286,7 +357,7 @@ class FeedReader {
   }
 
   // A new response from the parent means the Subagent's own transcript has settled too.
-  #receiveParent(reading: FeedReading): void {
+  #receiveParent(reading: FeedReading, loaded: readonly FeedEntry[]): void {
     const subagentId = this.#chain.subagentId
     if (subagentId === null) return
     const subagent = reading.subagents.find(({ id }) => id === subagentId)
@@ -294,11 +365,14 @@ class FeedReader {
       subagent?.state === 'completed' ||
       subagent?.state === 'failed' ||
       subagent?.state === 'interrupted'
-    if (finished && this.#subagentRefresh !== null) {
+    // A Subagent still running was delegated in the parent's newest rows; one missing from a cut
+    // parent is old.
+    const old = subagent === undefined && reading.hasOlder
+    if ((finished || old) && this.#subagentRefresh !== null) {
       clearInterval(this.#subagentRefresh)
       this.#subagentRefresh = null
     }
-    const completion = subagentCompletionRows(feedEntryRows(reading.entries), subagentId)
+    const completion = subagentCompletionRows(feedEntryRows(loaded), subagentId)
     if (JSON.stringify(completion) === JSON.stringify(this.#completion)) return
     this.#completion = completion
     // A read still in flight already reads the settled transcript.
@@ -310,6 +384,27 @@ class FeedReader {
     this.#state = state
     this.#error = error
     this.#publish()
+  }
+
+  #indexSubagents(sessionId: string, subagents: ReturnType<typeof feedSubagents>) {
+    const indexKey = JSON.stringify(subagents.map(({ id, label, state }) => [id, label, state]))
+    if (indexKey === this.#indexedSubagents) return
+    if (saveSessionSubagentFacts(this.#context.database, sessionId, subagents) > 0)
+      this.#context.changes.changed([sessionId])
+    this.#indexedSubagents = indexKey
+  }
+
+  // A read that holds the rows the page wanted fixes the row the page starts at; a page that starts
+  // at the Session's first row keeps every row a later read puts before the rest. Rows still owed
+  // stay owed for the read that follows.
+  #settlePage(entries: readonly FeedEntry[]): number {
+    const start = this.#pageStart(entries)
+    if (this.#state === 'ready' && !this.#inFlight && entries.length > 0 && this.#covers(entries)) {
+      const whole = start === 0 && this.#complete
+      this.#anchor = whole ? null : (entries[start]?.id ?? null)
+      this.#owed = whole ? Number.POSITIVE_INFINITY : 0
+    }
+    return start
   }
 
   // Publishing reads every retained event, so text still waiting goes out with it.
@@ -327,14 +422,8 @@ class FeedReader {
     const { sessionId, subagentId } = this.#chain
     const rows = feedEntryRows(entries)
     const subagents = subagentId === null ? feedSubagents(rows) : []
-    if (subagentId === null) {
-      const indexKey = JSON.stringify(subagents.map(({ id, label, state }) => [id, label, state]))
-      if (indexKey !== this.#indexedSubagents) {
-        if (saveSessionSubagentFacts(this.#context.database, sessionId, subagents) > 0)
-          this.#context.changes.changed([sessionId])
-        this.#indexedSubagents = indexKey
-      }
-    }
+    if (subagentId === null) this.#indexSubagents(sessionId, subagents)
+    const start = this.#settlePage(entries)
     const reading = feedReading({
       sessionId,
       chainId: subagentId ?? sessionId,
@@ -342,9 +431,11 @@ class FeedReader {
       error: this.#error,
       pendingPermissionId: pendingPermission(events),
       liveStatus: status?.type === 'status' ? status.status : null,
-      entries,
+      entries: entries.slice(start),
+      hasOlder: start > 0 || !this.#complete,
       subagents,
     })
+    this.#loaded = entries
     if (reading.revision === this.#reading?.revision) return
     this.#reading = reading
     // Keeps the activity and Plan progress for the Session List after this reader closes. A
@@ -355,7 +446,7 @@ class FeedReader {
         activity,
         ...(planProgress === null ? {} : { planProgress }),
       })
-    for (const observer of this.#observers) observer(reading)
+    for (const observer of this.#observers) observer(reading, entries)
   }
 }
 
@@ -373,7 +464,7 @@ export class SessionFeedReaders {
     const pending =
       chain.subagentId === null ? pendingFeedReading(this.#context.database, chain.sessionId) : null
     if (pending !== null) {
-      observer(pending)
+      observer(pending, pending.entries)
       return () => {}
     }
     const key = feedChainKey(chain)
@@ -398,6 +489,11 @@ export class SessionFeedReaders {
       this.#readers.delete(key)
       current.stop()
     }
+  }
+
+  // Whether an observed Feed has older rows to put before the page it published.
+  loadOlder(chain: FeedChain): boolean {
+    return this.#readers.get(feedChainKey(chain))?.loadOlder() ?? false
   }
 
   // Whether an observed Feed took the request; an unobserved one reads fresh when it opens.

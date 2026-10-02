@@ -16,6 +16,13 @@ import { proveCodexThreadName } from './cases/codex-thread-name.case'
 import { proveSessionCreatedByClick } from './cases/create.case'
 import { proveDelegationCards } from './cases/delegation-card.case'
 import { proveSessionDiagram } from './cases/diagram.case'
+import {
+  proveClaudeFeedPages,
+  proveCodexFeedPages,
+  writeLongClaudeSession,
+  writeLongCodexThread,
+} from './cases/feed-pages.case'
+import { growClaudeSession, growCodexThread, proveSmoothScroll } from './cases/feed-scroll.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
 import { proveNewSessionSkipsUninstalledHarness } from './cases/new-session-harness.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
@@ -31,6 +38,7 @@ import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
 import { proveLiveCodexModelChoices } from './cases/turn-configuration.case'
 import { ACTIVE_FEED } from './feed-selectors'
+import { listedSession, nativeIdOf } from './fixture-sessions'
 import { appendProse } from './fixtures/feed.fixture'
 import { writeWindowFillerSessions } from './fixtures/session-list-window.fixture'
 import { openSessionByClick } from './gestures'
@@ -143,6 +151,50 @@ test('session-list-window', async ({ session }) => {
   const { claudeTranscripts, project } = session.fixture
   await session.restart(() => writeWindowFillerSessions(claudeTranscripts, project))
   await proveSessionListWindow(session.page())
+})
+
+test.describe('with a long Session for each Harness', () => {
+  test.skip(
+    ({ sessionBackend }) => sessionBackend !== 'mock',
+    'The thread is written to the mock Codex store.',
+  )
+
+  // Both are written while the app is closed, so they are found as Sessions started outside Argo.
+  test('session-feed-pages', async ({ session }) => {
+    const { claudeTranscripts, project } = session.fixture
+    let claude: Awaited<ReturnType<typeof writeLongClaudeSession>> | undefined
+    await session.restart(async () => {
+      claude = await writeLongClaudeSession(claudeTranscripts, project)
+      await writeLongCodexThread(session.root)
+    })
+    if (claude === undefined) throw new Error('The long Claude Session was not written.')
+    await proveClaudeFeedPages(session.page(), { ...claude, project })
+    await proveCodexFeedPages(session.page())
+  })
+
+  test('session-feed-scroll', async ({ session, backend }, testInfo) => {
+    // Four long Feeds are wheeled through every page and back.
+    test.setTimeout(300_000)
+    const { claudeTranscripts, project } = session.fixture
+    const started: Record<'claude' | 'codex', string> = { claude: '', codex: '' }
+    for (const harness of ['claude', 'codex'] as const)
+      started[harness] = await proveSessionCreatedByClick(session.page(), backend, {
+        harness,
+        prompt: `Start the ${harness} Session the scroll proof grows.`,
+      })
+    const external: Record<'claude' | 'codex', string> = { claude: '', codex: '' }
+    await session.restart(async () => {
+      await growClaudeSession(claudeTranscripts, project, nativeIdOf(started.claude))
+      await growCodexThread(session.root, nativeIdOf(started.codex))
+      external.claude = (await writeLongClaudeSession(claudeTranscripts, project)).nativeId
+      external.codex = await writeLongCodexThread(session.root)
+    })
+    for (const harness of ['claude', 'codex'] as const) {
+      await proveSmoothScroll(session.page(), started[harness], `Argo ${harness}`, testInfo)
+      const outside = await listedSession(external[harness])
+      await proveSmoothScroll(session.page(), outside, `outside ${harness}`, testInfo)
+    }
+  })
 })
 
 test.describe('with the Claude ACP agent', () => {

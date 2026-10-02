@@ -14,6 +14,7 @@ import {
   harnessSignInExpiresAfterMs,
 } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
+import { readWholeHistory } from '@/domains/sessions/api/session-history'
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import {
   clearWorkingStatuses,
@@ -399,8 +400,8 @@ function startSessionServices(actors: WindowActors, database: Database, registry
     ...context,
     journal: currentSessionEventJournal(),
     hasLiveChannel,
-    readHistory: (harness, target, signal) =>
-      historyReads.run(() => registry[harness].readHistory(target), signal),
+    readHistory: (harness, target, { signal, extent }) =>
+      historyReads.run(() => registry[harness].readHistory(target, extent), signal),
   })
   const harnesses = harnessSchema.options.flatMap((harness) => {
     const external = registry[harness].externalSessions
@@ -576,7 +577,10 @@ async function ready(actor: AppActor): Promise<void> {
   const registry = harnessRegistry
   void reconcileUnknownSessionCommands(
     applicationDatabase,
-    (harness, target) => historyReads.run(() => registry[harness].readHistory(target)),
+    (harness, target) =>
+      historyReads.run(() =>
+        readWholeHistory((extent) => registry[harness].readHistory(target, extent)),
+      ),
     (harness, nativeId, turnId) =>
       historyReads.run(
         () => registry[harness].hasTurn?.(nativeId, turnId) ?? Promise.resolve(false),

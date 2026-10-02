@@ -11,6 +11,7 @@ import {
   type FeedReadingMessage,
 } from '@/domains/sessions/api/feed'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import type { SessionHistoryTail } from '@/domains/sessions/api/session-history'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import { SessionListChanges } from '@/domains/sessions/main/api'
 import { sessionFeedProcedures } from '@/domains/sessions/main/api/session-feed'
@@ -67,19 +68,25 @@ export function content(item: FeedContent): SessionLiveEventBody {
 
 export const identity = { commandId: null, turnId: null, vendorEventId: null }
 
-// Each read waits for the test to answer it, so a test can land events during a read.
+// Each read waits for the test to answer it, so a test can land events during a read. An answer
+// is the whole history unless the test says it was cut off.
 export function historyReads() {
-  const pending: { resolve: (content: FeedContent[]) => void; reject: (error: Error) => void }[] =
-    []
+  const pending: {
+    extent: number
+    resolve: (tail: SessionHistoryTail) => void
+    reject: (error: Error) => void
+  }[] = []
   return {
     pending,
-    readHistory: () =>
-      new Promise<FeedContent[]>((resolve, reject) => pending.push({ resolve, reject })),
-    async answer(value: FeedContent[] | Error) {
+    readHistory: (_harness?: unknown, _target?: unknown, read?: { extent: number }) =>
+      new Promise<SessionHistoryTail>((resolve, reject) =>
+        pending.push({ extent: read?.extent ?? 0, resolve, reject }),
+      ),
+    async answer(value: FeedContent[] | Error, complete = true) {
       const read = pending.shift()
       if (read === undefined) throw new Error('No history read is waiting.')
       if (value instanceof Error) read.reject(value)
-      else read.resolve(value)
+      else read.resolve({ content: value, complete })
       await new Promise((resolve) => setImmediate(resolve))
     },
   }

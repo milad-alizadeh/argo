@@ -87,6 +87,7 @@ test('registers Session procedures directly on the global router', () => {
     'sessionListChanged',
     'sessionFeed',
     'sessionFeedRefresh',
+    'sessionFeedOlder',
     'sessionUpdate',
     'sessionRefresh',
     'sessionSyncStatus',

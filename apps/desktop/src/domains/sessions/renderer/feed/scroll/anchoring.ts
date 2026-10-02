@@ -27,6 +27,7 @@ export function useAnchoredVirtualizer({
   following,
   initialMeasurementsCache,
   initialScrollPosition,
+  positioned,
   rows,
   viewport,
   paddingStart,
@@ -35,18 +36,34 @@ export function useAnchoredVirtualizer({
   following: boolean
   initialMeasurementsCache: VirtualItem[]
   initialScrollPosition: number | null
+  positioned: boolean
   rows: readonly SessionFeedRow[]
   viewport: HTMLElement | null
   paddingStart: number
   onChange: (instance: Virtualizer<HTMLElement, Element>, sync: boolean) => void
 }) {
+  // Rows put before the first one are held by the first visible row, as TanStack's chat guide
+  // does; otherwise end anchoring would pin the bottom while a row the reader opened grows.
+  const firstRowId = rows[0]?.id
+  const committedFirstRowId = useRef(firstRowId)
+  useLayoutEffect(() => {
+    committedFirstRowId.current = firstRowId
+  }, [firstRowId])
+  const prepending = firstRowId !== committedFirstRowId.current
+  // TanStack anchors from the offset of the last scroll event; a wheel step since then would be
+  // undone, so a prepend takes the viewport's own offset first.
+  const instance = useRef<ReactVirtualizer<HTMLElement, Element> | null>(null)
+  if (prepending && instance.current !== null && viewport !== null)
+    instance.current.scrollOffset = viewport.scrollTop
+  // A new key function makes the virtualizer measure every row again, so it changes with the rows.
+  const getItemKey = useCallback((index: number) => feedRowAt(rows, index).id, [rows])
   const virtualizer = useVirtualizer({
-    anchorTo: following ? 'end' : 'start',
+    anchorTo: following || prepending ? 'end' : 'start',
     count: rows.length,
     estimateSize: () => FEED_ROW_ESTIMATE_PX,
     // Smooth tail scrolling delays short-row measurement and leaves estimate-sized gaps (#2545).
     followOnAppend: following,
-    getItemKey: (index) => feedRowAt(rows, index).id,
+    getItemKey,
     getScrollElement: () => viewport,
     // Seeds the rendered range at construction, not after (#e2e-real-cheap-models): a fresh
     // mount's own scroll listener attaches too late to catch a post-mount scrollTop write, so
@@ -62,12 +79,14 @@ export function useAnchoredVirtualizer({
     scrollPaddingStart: paddingStart,
     scrollEndThreshold: TAIL_THRESHOLD_PX,
   })
+  instance.current = virtualizer
   // TanStack Virtual takes this only as an instance assignment. Insertion effects run after
-  // commit but before row refs measure, so restored heights cannot move the viewport first.
+  // commit but before row refs measure, so restored heights cannot move the viewport first; once
+  // positioned, rows measured above the reader move it again by their change.
   useInsertionEffect(() => {
     virtualizer.shouldAdjustScrollPositionOnItemSizeChange =
-      initialScrollPosition === null ? undefined : () => false
-  }, [initialScrollPosition, virtualizer])
+      initialScrollPosition === null || positioned ? undefined : () => false
+  }, [initialScrollPosition, positioned, virtualizer])
   return virtualizer
 }
 

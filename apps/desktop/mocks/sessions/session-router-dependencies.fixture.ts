@@ -19,7 +19,7 @@ export function sessionRouterDependencies(
     database,
     journal: new SessionEventJournal(),
     hasLiveChannel: () => false,
-    readHistory: async () => [],
+    readHistory: async () => ({ content: [], complete: true }),
     changes: new SessionListChanges(),
     ticketSource: async () => null,
     supervisor: {

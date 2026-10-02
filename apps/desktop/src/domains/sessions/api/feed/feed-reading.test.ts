@@ -9,10 +9,14 @@ import { projectFeedRowEntries } from './feed-row-entries'
 
 const sessionId = '00000000-0000-4000-8000-000000000001'
 
-function reading(texts: string[], state: FeedReading['state'] = 'ready'): FeedReading {
+function reading(
+  texts: string[],
+  state: FeedReading['state'] = 'ready',
+  { first = 0, hasOlder = false } = {},
+): FeedReading {
   const history = texts.map((text, index) => ({
     kind: 'message',
-    id: `m${index}`,
+    id: `m${first + index}`,
     role: 'assistant',
     text,
   }))
@@ -24,6 +28,7 @@ function reading(texts: string[], state: FeedReading['state'] = 'ready'): FeedRe
     pendingPermissionId: null,
     liveStatus: null,
     entries: projectFeedRowEntries({ history, live: [] }).entries,
+    hasOlder,
     subagents: [],
   })
 }
@@ -59,4 +64,14 @@ test('a change is refused by a reader that holds a different reading', () => {
   const change = feedReadingChange(before, reading(['One', 'Two']))
   expect(applyFeedReadingChange(undefined, change)).toBeNull()
   expect(applyFeedReadingChange(reading(['Other']), change)).toBeNull()
+})
+
+test('an older page sends only its own entries, put before the ones the reader holds', () => {
+  const before = reading(['Three', 'Four'], 'ready', { first: 2, hasOlder: true })
+  const after = reading(['One', 'Two', 'Three', 'Four', 'Five'], 'ready')
+  const change = feedReadingChange(before, after)
+  expect(change).toMatchObject({ kept: 2, hasOlder: false })
+  expect(change.head).toEqual(after.entries.slice(0, 2))
+  expect(change.tail).toEqual(after.entries.slice(4))
+  expect(applyFeedReadingChange(before, change)).toEqual(after)
 })

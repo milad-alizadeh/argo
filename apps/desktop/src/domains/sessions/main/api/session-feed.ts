@@ -16,9 +16,11 @@ const inputSchema = z.strictObject({
   subagentId: identifierSchema.nullable().default(null),
 })
 const refreshOutputSchema = z.strictObject({ accepted: z.boolean() })
+const olderOutputSchema = z.strictObject({ accepted: z.boolean() })
 
 // Observe publishes each changed reading of a root Session's or a Subagent's Feed, whole and then
-// as changes to the one it sent before; Refresh starts a real read of the same chain.
+// as changes to the one it sent before; Refresh starts a real read of the same chain, and Older
+// puts the page before the published one into the Feed.
 export function sessionFeedProcedures(readers: SessionFeedReaders) {
   return {
     sessionFeed: t.procedure.input(inputSchema).subscription(({ input }) =>
@@ -34,5 +36,9 @@ export function sessionFeedProcedures(readers: SessionFeedReaders) {
       .input(inputSchema)
       .output(refreshOutputSchema)
       .mutation(({ input }) => ({ accepted: readers.refresh(input) })),
+    sessionFeedOlder: t.procedure
+      .input(inputSchema)
+      .output(olderOutputSchema)
+      .mutation(({ input }) => ({ accepted: readers.loadOlder(input) })),
   }
 }

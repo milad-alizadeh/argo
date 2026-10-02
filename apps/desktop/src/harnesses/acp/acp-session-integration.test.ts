@@ -177,11 +177,10 @@ describe('the Claude ACP live channel', () => {
     await waitForMockAcpEvent(later, 'turn.completed')
     resumed?.close()
     await waitForMockAcpEvent(later, 'closed')
-    const history = await registration.readHistory({
-      nativeId: identity.nativeId,
-      cwd: root,
-      subagentId: null,
-    })
+    const { content: history } = await registration.readHistory(
+      { nativeId: identity.nativeId, cwd: root, subagentId: null },
+      0,
+    )
     expect(history.filter((row) => row.kind === 'message' && row.role === 'user')).toEqual([
       { id: 'acp-prompt-1', kind: 'message', role: 'user', text: 'before restart' },
       { id: 'acp-prompt-2', kind: 'message', role: 'user', text: 'after restart' },

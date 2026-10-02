@@ -12,7 +12,7 @@ import {
   createCodexSessionSummaryReader,
   hasCodexSessionTurn,
   openCodexSessionChannel,
-  readCodexSessionHistory,
+  readCodexSessionTail,
   readCodexSkillCommands,
 } from './session'
 
@@ -29,8 +29,8 @@ export function createCodexRegistration(
     checkReadiness: createSystemCodexReadiness(signInExecutable),
     signIn: createCodexSignInDriver(signInExecutable),
     readCatalog: () => readCodexHarnessInfo(request),
-    readHistory: ({ nativeId, subagentId }) =>
-      readCodexSessionHistory(request, subagentId ?? nativeId),
+    readHistory: ({ nativeId, subagentId }, extent) =>
+      readCodexSessionTail(request, subagentId ?? nativeId, extent),
     hasTurn: (nativeId, turnId) => hasCodexSessionTurn(request, nativeId, turnId),
     externalSessions: createCodexExternalSessions(request, codexHome),
     openLiveSession: (input, controls, emit) =>

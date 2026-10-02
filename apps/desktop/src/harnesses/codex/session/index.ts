@@ -4,5 +4,5 @@ export {
   createCodexSessionSummaryList,
   createCodexSessionSummaryReader,
 } from './codex-session-discovery'
-export { hasCodexSessionTurn, readCodexSessionHistory } from './codex-session-history'
+export { hasCodexSessionTurn, readCodexSessionTail } from './codex-session-history'
 export { readCodexSkillCommands } from './codex-skill-commands'

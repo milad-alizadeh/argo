@@ -276,6 +276,9 @@ async function chainEntries(
   }).entries
 }
 
+const latestLiveStatus = (live: readonly SessionLiveEvent[]) =>
+  live.findLast((event) => event.type === 'status')?.status ?? null
+
 // A chain's readings, as the main reader publishes them: loading, then each read's result,
 // keeping the rows a failed read already had.
 function sessionFeedSubscribe(
@@ -291,6 +294,7 @@ function sessionFeedSubscribe(
     let entries: FeedReading['entries'] = []
     let reads = 0
     let open = true
+    const liveStatus = subagentId === null ? latestLiveStatus(live) : null
     const send = (state: FeedReading['state'], error: FeedReading['error']) =>
       listener({
         id: request.id,
@@ -302,11 +306,9 @@ function sessionFeedSubscribe(
             state,
             error,
             pendingPermissionId: null,
-            liveStatus:
-              subagentId === null
-                ? (live.findLast((event) => event.type === 'status')?.status ?? null)
-                : null,
+            liveStatus,
             entries,
+            hasOlder: false,
             subagents: subagentId === null ? feedSubagents(feedEntryRows(entries)) : [],
           }),
         },

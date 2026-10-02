@@ -28,13 +28,32 @@ function argoIdOf(nativeId: string): string | undefined {
 }
 
 // Waits for the app to list the fixture, then answers with the id its Session List row carries.
-export async function fixtureSession(name: string): Promise<string> {
-  const nativeId = fixtureSessionId(name)
+export function fixtureSession(name: string): Promise<string> {
+  return listedSession(fixtureSessionId(name), name)
+}
+
+// Waits for the app to list the Harness's Session `nativeId`, then answers with its Argo id.
+export async function listedSession(nativeId: string, name = nativeId): Promise<string> {
   const deadline = Date.now() + LISTED_TIMEOUT_MS
   for (;;) {
     const argoId = argoIdOf(nativeId)
     if (argoId !== undefined) return argoId
     if (Date.now() > deadline) throw new Error(`The app never listed the ${name} fixture.`)
     await setTimeout(100)
+  }
+}
+
+// The Harness's id for the Session Argo lists as `argoId`.
+export function nativeIdOf(argoId: string): string {
+  if (store === null) throw new Error('No Session fixture is running.')
+  const database = new DatabaseSync(databasePath(store), { readOnly: true })
+  try {
+    const row = database.prepare('SELECT native_id FROM session WHERE argo_id = ?').get(argoId) as
+      | { native_id: string | null }
+      | undefined
+    if (typeof row?.native_id !== 'string') throw new Error(`Session ${argoId} has no native id.`)
+    return row.native_id
+  } finally {
+    database.close()
   }
 }

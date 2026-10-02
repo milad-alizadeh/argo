@@ -76,7 +76,8 @@ export async function sessionFeed(page: Page, sessionId: string): Promise<FeedRe
           ...reading,
           state: data.state,
           error: data.error,
-          entries: [...reading.entries.slice(0, data.kept), ...data.tail],
+          hasOlder: data.hasOlder,
+          entries: [...data.head, ...reading.entries.slice(0, data.kept), ...data.tail],
         }
       }
       const settle = () => {

@@ -46,17 +46,20 @@ test('keeps both Session List activities when the selected Feed changes', async 
   insertActivitySessions(ids)
   const caller = createAppRouter(
     routerDependencies({
-      readHistory: async (_harness, target) => [
-        { kind: 'message', id: 'prompt', role: 'user', text: 'Go' },
-        {
-          kind: 'command',
-          id: 'command',
-          command: target.nativeId,
-          status: 'completed',
-          output: null,
-          stderr: null,
-        },
-      ],
+      readHistory: async (_harness, target) => ({
+        complete: true,
+        content: [
+          { kind: 'message', id: 'prompt', role: 'user', text: 'Go' },
+          {
+            kind: 'command',
+            id: 'command',
+            command: target.nativeId,
+            status: 'completed',
+            output: null,
+            stderr: null,
+          },
+        ],
+      }),
     }),
   ).createCaller({})
   const changes: inferRouterOutputs<AppRouter>['sessionListChanged'][] = []

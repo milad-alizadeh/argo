@@ -263,6 +263,7 @@ function FeedDocument({
             reveals={reveals}
             streamingRowId={streamingRowId}
             historyLabel={historyLabel}
+            loadOlder={reading.loadOlder}
           />
         )}
         {noRows && !awaitingReply ? (

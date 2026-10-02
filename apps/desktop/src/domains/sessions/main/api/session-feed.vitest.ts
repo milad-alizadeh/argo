@@ -328,7 +328,7 @@ test('text still waiting when the last observer leaves publishes nothing', async
 
 test('a Session Argo does not know reads as missing', async () => {
   const feed = await observe(
-    { readHistory: async () => [] },
+    { readHistory: async () => ({ content: [], complete: true }) },
     '00000000-0000-4000-8000-000000000009',
   )
   await new Promise((resolve) => setTimeout(resolve, 0))

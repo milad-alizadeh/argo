@@ -53,17 +53,26 @@ test('registered Claude reads root and subagent history and renames through the 
   expect(claude.harness).toBe('claude')
   expect(claude.listSessionSummaries).toEqual(expect.any(Function))
   await expect(
-    claude.readHistory({
-      nativeId: 'root',
-      subagentId: null,
-      cwd: '/work/project',
-    }),
-  ).resolves.toEqual([{ kind: 'message', id: 'reply', role: 'assistant', text: 'Done' }])
-  await claude.readHistory({
-    nativeId: 'root',
-    subagentId: 'child',
-    cwd: '/work/project',
+    claude.readHistory(
+      {
+        nativeId: 'root',
+        subagentId: null,
+        cwd: '/work/project',
+      },
+      0,
+    ),
+  ).resolves.toEqual({
+    content: [{ kind: 'message', id: 'reply', role: 'assistant', text: 'Done' }],
+    complete: true,
   })
+  await claude.readHistory(
+    {
+      nativeId: 'root',
+      subagentId: 'child',
+      cwd: '/work/project',
+    },
+    0,
+  )
   expect(vendor.getSessionMessages).toHaveBeenCalledWith('root', { dir: '/work/project' })
   expect(vendor.getSubagentMessages).toHaveBeenCalledWith('root', 'child', {
     dir: '/work/project',
@@ -98,21 +107,27 @@ test('registered Codex reads the selected thread through its shared request and 
   expect(codex.listSessionSummaries).toEqual(expect.any(Function))
   expect(codex.rename).toBeUndefined()
   await expect(
-    codex.readHistory({
-      nativeId: 'root',
-      subagentId: 'child',
-      cwd: null,
-    }),
-  ).resolves.toEqual([{ kind: 'message', id: 'reply', role: 'assistant', text: 'Done' }])
+    codex.readHistory(
+      {
+        nativeId: 'root',
+        subagentId: 'child',
+        cwd: null,
+      },
+      0,
+    ),
+  ).resolves.toEqual({
+    content: [{ kind: 'message', id: 'reply', role: 'assistant', text: 'Done' }],
+    complete: true,
+  })
   expect(calls).toEqual([
     {
       method: 'thread/turns/list',
       params: {
         threadId: 'child',
-        limit: 50,
+        limit: 10,
         cursor: null,
         itemsView: 'full',
-        sortDirection: 'asc',
+        sortDirection: 'desc',
       },
     },
   ])

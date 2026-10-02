@@ -55,6 +55,8 @@ export type SessionFeed = {
   chainId: string
   revision: string
   rows: SessionFeedRow[]
+  // Present while older rows exist before the first; asks main for the page before it.
+  loadOlder?: () => void
 }
 
 export type { SessionError, SessionFeedRow }

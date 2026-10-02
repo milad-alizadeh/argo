@@ -5,7 +5,7 @@
 // Run with `bun run measure:feed-history [--sizes=1,5,10] [--json=<file>]`; every gesture is
 // in-page, so no real input device is used.
 import { randomUUID } from 'node:crypto'
-import { appendFile, mkdir, mkdtemp, realpath, rm, symlink, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -15,9 +15,6 @@ import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { applicationUnderTest, launchCommand } from '../../e2e/application-under-test'
 import { prepare } from '../../e2e/sessions/fixtures/feed.fixture'
-import { createMockSessionHarnessBackend } from '../../mocks/sessions/mock-session-harness-backend'
-import { proofCwd } from '../../mocks/sessions/mock-transcript-files'
-import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import {
   type AppendedTurn,
   buildHistory,
@@ -25,7 +22,11 @@ import {
   historyPath,
   refreshTurn,
   writeHistory,
-} from './feed-history-fixture'
+} from '../../mocks/cli/claude/long-claude-history'
+import { claudeConfigDirectory } from '../../mocks/cli/claude/mock-claude-transcripts'
+import { createMockSessionHarnessBackend } from '../../mocks/sessions/mock-session-harness-backend'
+import { proofCwd } from '../../mocks/sessions/mock-transcript-files'
+import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { type MemorySample, printSamples, processWorkingSetMb, sample } from './feed-memory-sample'
 import {
   armDriftProbe,
@@ -155,16 +156,12 @@ function printTable(label: string, rows: StepResult[]) {
 // pointed at the fixture tree.
 async function launchSession(root: string, fixture: Fixture) {
   const run = await createMockSessionHarnessBackend().start({ root, fixture })
-  // The app discovers Claude under CLAUDE_CONFIG_DIR/projects and Codex under CODEX_HOME, so both
-  // point into the root rather than at this machine's own Sessions.
-  const claudeConfig = path.join(root, 'claude-config')
-  const codexHome = path.join(root, 'codex-home')
-  await Promise.all([mkdir(claudeConfig, { recursive: true }), mkdir(codexHome)])
-  await symlink(fixture.claudeTranscripts, path.join(claudeConfig, 'projects'))
+  if (run.transcripts === null) throw new Error('The mock backend gave no transcript roots.')
   const environment = {
     ...process.env,
-    CLAUDE_CONFIG_DIR: claudeConfig,
-    CODEX_HOME: codexHome,
+    // Both transcript roots point at the fixture tree, not at this machine's own Sessions.
+    CLAUDE_CONFIG_DIR: claudeConfigDirectory(run.transcripts.claude),
+    CODEX_HOME: path.dirname(run.transcripts.codex),
     [SESSION_CLAUDE_EXECUTABLE_ENV]: run.executables.claude,
     [SESSION_CODEX_EXECUTABLE_ENV]: run.executables.codex,
     ...run.launchEnv({ slowReply: false }),

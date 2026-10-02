@@ -15,7 +15,11 @@ import { useFocusRefresh } from './use-focus-refresh'
 const NO_SUBAGENTS: FeedReading['subagents'] = []
 
 // A Feed with no rows has nothing to draw until a read settles it; its Standing says why.
-function drawnFeed(reading: FeedReading, running: boolean): SessionFeed | null {
+function drawnFeed(
+  reading: FeedReading,
+  running: boolean,
+  loadOlder: (() => void) | null,
+): SessionFeed | null {
   const rows = feedReadingRows(reading.entries, { running })
   if (reading.state !== 'ready' && rows.length === 0) return null
   return {
@@ -25,6 +29,7 @@ function drawnFeed(reading: FeedReading, running: boolean): SessionFeed | null {
     // different rows once its activity folds in, so a live draw needs its own revision.
     revision: running ? `${reading.revision}:live` : reading.revision,
     rows: [...rows],
+    ...(reading.hasOlder && loadOlder !== null ? { loadOlder } : {}),
   }
 }
 
@@ -114,10 +119,14 @@ export function useFeedReading(
   }, [lost, reconnect, sessionId, subagentId])
   // Focus reads vendor history again, for a Session with no live channel.
   useFocusRefresh(refresh)
+  const loadOlder = useMemo(() => {
+    if (sessionId === null) return null
+    return () => void trpcClient.sessionFeedOlder.mutate({ sessionId, subagentId }).catch(() => {})
+  }, [sessionId, subagentId])
   const reading = useObservedFeedReading(sessionId, subagentId)
   const feed = useMemo(
-    () => (reading === null ? null : drawnFeed(reading, running)),
-    [reading, running],
+    () => (reading === null ? null : drawnFeed(reading, running, loadOlder)),
+    [reading, running, loadOlder],
   )
   usePermissionRequest(subagentId === null ? sessionId : null, reading?.pendingPermissionId ?? null)
   const retryFeed = useCallback(() => refresh?.(), [refresh])

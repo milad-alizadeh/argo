@@ -53,8 +53,11 @@ function vendor() {
     running,
     started,
     peak: () => peak,
-    readHistory: (_harness: unknown, target: SessionHistoryTarget, signal: AbortSignal) =>
-      limit.run(() => read(target), signal),
+    readHistory: (
+      _harness: unknown,
+      target: SessionHistoryTarget,
+      { signal }: { signal: AbortSignal },
+    ) => limit.run(async () => ({ content: await read(target), complete: true }), signal),
     readRecovery: (_harness: unknown, target: Pick<SessionHistoryTarget, 'nativeId'>) =>
       limit.run(() => read(target)),
     async answer(nativeId: string, content: FeedContent[]) {

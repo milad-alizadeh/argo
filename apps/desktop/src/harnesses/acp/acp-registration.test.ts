@@ -208,7 +208,10 @@ describe('an ACP agent without optional capabilities', () => {
   test('opens a Session with no history instead of failing when it cannot load one', async () => {
     const registration = createAcpRegistration(mockAgent({ MOCK_ACP_NO_LOAD_SESSION: '1' }))
     const { nativeId } = await runTurn(registration)
-    expect(await registration.readHistory({ nativeId, subagentId: null, cwd: root })).toEqual([])
+    expect(await registration.readHistory({ nativeId, subagentId: null, cwd: root }, 0)).toEqual({
+      content: [],
+      complete: true,
+    })
   })
 })
 
@@ -223,7 +226,10 @@ describe('the ACP live channel', () => {
           : [],
       ),
     )
-    const history = await registration.readHistory({ nativeId, subagentId: null, cwd: root })
+    const { content: history } = await registration.readHistory(
+      { nativeId, subagentId: null, cwd: root },
+      0,
+    )
 
     expect([...live.values()]).toEqual(history)
     expect(history).toEqual([
@@ -247,21 +253,27 @@ describe('the ACP live channel', () => {
 describe('the ACP history targets', () => {
   test('refuses a Subagent history target, which ACP cannot address', async () => {
     await expect(
-      createAcpRegistration(mockAgent()).readHistory({
-        nativeId: 'root',
-        subagentId: 'child',
-        cwd: root,
-      }),
+      createAcpRegistration(mockAgent()).readHistory(
+        {
+          nativeId: 'root',
+          subagentId: 'child',
+          cwd: root,
+        },
+        0,
+      ),
     ).rejects.toThrow('Subagent')
   })
 
   test('refuses a history target with no working directory instead of guessing one', async () => {
     await expect(
-      createAcpRegistration(mockAgent()).readHistory({
-        nativeId: 'root',
-        subagentId: null,
-        cwd: null,
-      }),
+      createAcpRegistration(mockAgent()).readHistory(
+        {
+          nativeId: 'root',
+          subagentId: null,
+          cwd: null,
+        },
+        0,
+      ),
     ).rejects.toThrow('working directory')
   })
 })

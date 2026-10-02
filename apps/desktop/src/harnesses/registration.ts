@@ -11,7 +11,7 @@ import type {
   SessionSummaryList,
   SessionSummaryReader,
 } from '@/domains/sessions/api/session-discovery'
-import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
+import type { SessionHistoryRead } from '@/domains/sessions/api/session-history'
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import type { SessionLiveInput, SessionStartInput } from '@/domains/sessions/main/api'
 import type { HarnessInfo } from '@/harnesses/harness-catalog'
@@ -128,7 +128,8 @@ export type LiveSessionControls = {
 export type HarnessRegistration<Id extends Harness = Harness> = HarnessReadinessRegistration & {
   harness: Id
   readCatalog: () => Promise<HarnessInfo>
-  readHistory: (target: SessionHistoryTarget) => Promise<FeedContent[]>
+  // Reads from the newest end; a Harness that cannot tail answers complete at any extent.
+  readHistory: SessionHistoryRead
   hasTurn?: (nativeId: string, turnId: string) => Promise<boolean>
   // Absent for a Harness that runs only Sessions Argo starts.
   externalSessions?: ExternalSessions

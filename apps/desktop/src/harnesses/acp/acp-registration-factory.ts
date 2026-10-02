@@ -227,7 +227,10 @@ export function createAcpRegistration<Id extends Harness>(
     checkReadiness,
     signIn: acpSignInDriver(command, checkReadiness),
     readCatalog: () => readAcpCatalog(agent, command()),
-    readHistory: (target) => readAcpHistory(required(command(), harness), target),
+    readHistory: async (target) => ({
+      content: await readAcpHistory(required(command(), harness), target),
+      complete: true,
+    }),
     openLiveSession: (input, controls, emit) =>
       new AcpSessionChannel(input, emit, { command: required(command(), harness), controls }),
     listSessionSummaries: ({ knownNativeIds }) => listAcpSessions(command(), knownNativeIds),

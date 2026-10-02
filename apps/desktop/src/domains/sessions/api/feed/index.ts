@@ -3,6 +3,7 @@ export { type FeedChain, feedChainKey } from './feed-chain'
 export { fileImageUrl } from './feed-images'
 export {
   applyFeedReadingChange,
+  FEED_PAGE_ROWS,
   type FeedReading,
   type FeedReadingMessage,
   feedReading,
