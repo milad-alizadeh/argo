@@ -3,7 +3,6 @@
 import { appendFile, mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { claudeConfigDirectory } from '../../../mocks/cli/claude/mock-claude-transcripts'
-import { hookEvent, postHook } from '../../../mocks/cli/status-hooks'
 import { writeCodexThreads } from '../../../mocks/sessions/mock-codex-thread-files'
 import {
   fixturePath,
@@ -102,14 +101,6 @@ export async function streamProse(transcripts: string, text: string) {
     transcript,
     before.replace(/"text":\s*"(?:[^"\\]|\\.)*"/, `"text": ${JSON.stringify(text)}`),
   )
-}
-
-// A Claude running outside Argo posts its Stop hook once it has written the transcript; that is
-// what makes the open Feed read the file again.
-export async function reportProseStop(userData: string) {
-  const payload = hookEvent('claude', 'Stop', fixtureSessionId('prose')).payload
-  const status = await postHook(path.join(userData, 'hooks.sock'), 'claude', payload)
-  if (status !== 204) throw new Error(`The Stop hook was answered with ${status}.`)
 }
 
 // The Session List shows only for a selected Project (#2307), so only the empty-window case leaves it unset.
