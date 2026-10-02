@@ -203,14 +203,15 @@ test.describe('with a long Session for each Harness', () => {
     await proveCodexFeedPages(session.page())
   })
 
-  test('session-feed-older-prompt-holds-reader', async ({ session }) => {
-    const sessions = await writePromptlessTailSessions(session)
-    for (const harness of ['claude', 'codex'] as const)
+  for (const harness of ['claude', 'codex'] as const) {
+    test(`session-feed-older-prompt-holds-reader-${harness}`, async ({ session }) => {
+      const sessions = await writePromptlessTailSessions(session)
       await proveOlderPromptHoldsReader(session.page(), {
         sessionId: sessions[harness],
         label: harness,
       })
-  })
+    })
+  }
 
   // One test per Harness and origin, so each wheels through every page well inside its timeout.
   for (const harness of ['claude', 'codex'] as const) {

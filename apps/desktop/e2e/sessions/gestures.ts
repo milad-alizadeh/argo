@@ -56,10 +56,14 @@ async function waitForNewSessionRoute(page: Page) {
   )
 }
 
-// Opening a Session is a click on its Session List row, the way a person opens one.
+// Opening a Session is a click on its Session List row, the way a person opens one. The route
+// changes in a transition that keeps the last Session's screen live, so wait for the row to read
+// selected before reaching for the screen.
 export async function openSessionByClick(page: Page, sessionId: string) {
-  await page.locator(`${ROW}[data-session-id="${sessionId}"]`).click()
+  const row = page.locator(`${ROW}[data-session-id="${sessionId}"]`)
+  await row.click()
   await waitForRoute(page, sessionId)
+  await expect(row).toHaveAttribute('aria-current', 'page')
 }
 
 export function visibleArchiveMenuItem(page: Page) {
