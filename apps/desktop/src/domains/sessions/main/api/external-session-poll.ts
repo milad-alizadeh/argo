@@ -46,7 +46,7 @@ type TranscriptStamp = { inode: number; size: number; modifiedMs: number }
 
 type TrackedSession = {
   transcript: string | null
-  // The transcript's last stat; null until the first one, which only records it.
+  // The transcript's last stat; null until the first one.
   stamp: TranscriptStamp | null
   // The status the listing gave this tick; null when only an activity read can tell.
   listed: ExternalSessionStatus | null
@@ -310,10 +310,7 @@ export class ExternalSessionPoll {
       this.#update(session, { activityAt: tracked.changedAt })
     }
     const firstWithoutStatus =
-      stamp !== null &&
-      before === null &&
-      shownStatus(tracked, Date.now()) === null &&
-      !this.#hooked.has(harnessSessionKey(session))
+      stamp !== null && before === null && shownStatus(tracked, Date.now()) === null
     if (!changed && !tracked.retry && !firstWithoutStatus) return
     tracked.retry = false
     this.#read(session)

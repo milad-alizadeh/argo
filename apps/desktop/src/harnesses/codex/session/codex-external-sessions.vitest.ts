@@ -102,6 +102,21 @@ test('a status a hook settled before the first sight is not read over', async ()
   expect((await row(RUNNING)).status).toBe('permission')
 })
 
+test('a hook that gives no status still leaves the first read', async () => {
+  saved(RUNNING)
+  poll.hookEvent('codex', {
+    event: 'SessionStart',
+    nativeId: RUNNING,
+    status: null,
+    activity: null,
+  })
+  await threads.open(RUNNING)
+  threads.answer(RUNNING, 'completed')
+  await tickAndWrite()
+  expect(threads.turnsReads).toEqual([RUNNING])
+  expect((await row(RUNNING)).status).toBe('idle')
+})
+
 test('an open running thread shows running after the first tick', async () => {
   saved(RUNNING, { status: 'idle', activity: JSON.stringify(STORED_LINE) })
   await threads.open(RUNNING)
