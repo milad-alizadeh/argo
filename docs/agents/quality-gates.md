@@ -83,7 +83,8 @@ is exempt by name because it reaches across domains on purpose to build test fix
 `sessions/main/index/session-index/roster-fixtures.ts`.
 `*.test.ts`/`*.stories.tsx` files are exempt too, matching the same allowance the old
 `biome.jsonc` matrix made. Nothing reads the import graph for cycles.
-- **`tsconfig.web.json` sets `"types": []`**, and it is load-bearing. Without it the renderer
+- **`tsconfig.web.json` sets `"types": ["bun-types/test"]`**, and it is load-bearing. That entry
+  declares only the `bun:test` module its tests import. Without the list the renderer
   inherits every package in the root `@types`, `node` among them, and `process.env.SOME_TOKEN`
   type-checks clean in the one process that must never hold a token, with no import statement for
   a specifier rule to see.

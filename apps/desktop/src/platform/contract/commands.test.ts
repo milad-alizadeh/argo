@@ -6,6 +6,7 @@ import {
   matchesShortcut,
   menuAccelerators,
   navigateCommand,
+  type PressedKeys,
   REGISTER_PROJECT_COMMAND,
   SEND_MESSAGE_COMMAND,
   SESSION_LIST_MOVES,
@@ -13,7 +14,7 @@ import {
 } from '@/platform/contract/commands'
 import { menuTemplate } from '@/platform/main/menu-template'
 
-const pressed = (key, modifiers = {}) => ({
+const pressed = (key: string, modifiers: Partial<PressedKeys> = {}): PressedKeys => ({
   key,
   meta: false,
   ctrl: false,
