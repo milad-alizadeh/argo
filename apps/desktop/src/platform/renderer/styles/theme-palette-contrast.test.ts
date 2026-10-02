@@ -16,18 +16,23 @@ function toRgb(lightness: number, chroma: number, hue: number): Rgb {
   const l = lightness + 0.3963377774 * a + 0.2158037573 * b
   const m = lightness - 0.1055613458 * a - 0.0638541728 * b
   const s = lightness - 0.0894841775 * a - 1.291485548 * b
-  const linear = [l ** 3, m ** 3, s ** 3]
+  const [linearL, linearM, linearS] = [l ** 3, m ** 3, s ** 3]
+  const clamp = (channel: number) => Math.min(1, Math.max(0, channel))
   return [
-    4.0767416621 * linear[0]! - 3.3077115913 * linear[1]! + 0.2309699292 * linear[2]!,
-    -1.2684380046 * linear[0]! + 2.6097574011 * linear[1]! - 0.3413193965 * linear[2]!,
-    -0.0041960863 * linear[0]! - 0.7034186147 * linear[1]! + 1.707614701 * linear[2]!,
-  ].map((channel) => Math.min(1, Math.max(0, channel))) as unknown as Rgb
+    clamp(4.0767416621 * linearL - 3.3077115913 * linearM + 0.2309699292 * linearS),
+    clamp(-1.2684380046 * linearL + 2.6097574011 * linearM - 0.3413193965 * linearS),
+    clamp(-0.0041960863 * linearL - 0.7034186147 * linearM + 1.707614701 * linearS),
+  ]
 }
 
 function parseOklch(value: string): Rgb {
   const match = value.match(/^oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)$/)
   if (!match) throw new Error(`Expected explicit OKLCH color, got ${value}`)
-  return toRgb(Number(match[1]), Number(match[2]), Number(match[3]))
+  const [lightness, chroma, hue] = match.slice(1).map(Number)
+  if (lightness === undefined || chroma === undefined || hue === undefined) {
+    throw new Error(`Expected explicit OKLCH color, got ${value}`)
+  }
+  return toRgb(lightness, chroma, hue)
 }
 
 function luminance(rgb: Rgb) {
@@ -35,53 +40,88 @@ function luminance(rgb: Rgb) {
 }
 
 function contrast(first: Rgb, second: Rgb) {
-  const values = [luminance(first), luminance(second)].sort((a, b) => b - a)
-  return (values[0]! + 0.05) / (values[1]! + 0.05)
+  const high = Math.max(luminance(first), luminance(second))
+  const low = Math.min(luminance(first), luminance(second))
+  return (high + 0.05) / (low + 0.05)
 }
 
 function declarations(css: string) {
-  return postcss.parse(css).nodes.filter((node) => node.type === 'rule').map((node) => {
-    const values = new Map<string, string>()
-    node.walkDecls((declaration) => values.set(declaration.prop, declaration.value))
-    return values
-  })
+  return postcss
+    .parse(css)
+    .nodes.filter((node) => node.type === 'rule')
+    .map((node) => {
+      const values = new Map<string, string>()
+      node.walkDecls((declaration) => values.set(declaration.prop, declaration.value))
+      return values
+    })
 }
 
 const textPairs = [
-  ['--background', '--foreground'], ['--card', '--card-foreground'], ['--popover', '--popover-foreground'],
-  ['--primary', '--primary-foreground'], ['--secondary', '--secondary-foreground'], ['--muted', '--muted-foreground'],
-  ['--accent', '--accent-foreground'], ['--sidebar', '--sidebar-foreground'],
-  ['--sidebar-primary', '--sidebar-primary-foreground'], ['--sidebar-accent', '--sidebar-accent-foreground'],
+  ['--background', '--foreground'],
+  ['--card', '--card-foreground'],
+  ['--popover', '--popover-foreground'],
+  ['--primary', '--primary-foreground'],
+  ['--secondary', '--secondary-foreground'],
+  ['--muted', '--muted-foreground'],
+  ['--accent', '--accent-foreground'],
+  ['--sidebar', '--sidebar-foreground'],
+  ['--sidebar-primary', '--sidebar-primary-foreground'],
+  ['--sidebar-accent', '--sidebar-accent-foreground'],
 ] as const
 
-test('theme text pairs and status colors remain readable in both appearances', () => {
-  const statusRoles = ['--status-success', '--status-warning', '--status-danger', '--status-neutral']
+const statusRoles = [
+  '--status-success',
+  '--status-warning',
+  '--status-danger',
+  '--status-neutral',
+] as const
+
+function requiredColor(values: Map<string, string>, role: string) {
+  const value = values.get(role)
+  if (!value) throw new Error(`Missing theme color ${role}`)
+  return parseOklch(value)
+}
+
+function expectReadable(first: Rgb, second: Rgb, description: string) {
+  expect(contrast(first, second), description).toBeGreaterThanOrEqual(4.5)
+}
+
+function checkTextPairs(values: Map<string, string>, block: number) {
+  for (const [surfaceRole, foregroundRole] of textPairs) {
+    expectReadable(
+      requiredColor(values, surfaceRole),
+      requiredColor(values, foregroundRole),
+      `${surfaceRole}/${foregroundRole} block ${block}`,
+    )
+  }
+}
+
+function checkStatusPairs(values: Map<string, string>, block: number) {
+  for (const role of statusRoles) {
+    const color = requiredColor(values, role)
+    for (const surface of ['--background', '--card', '--popover']) {
+      const surfaceValue = values.get(surface)
+      if (!surfaceValue?.startsWith('oklch(')) continue
+      expectReadable(color, parseOklch(surfaceValue), `${role} on ${surface} block ${block}`)
+    }
+  }
+}
+
+test('default dark status colors remain readable', () => {
   const defaultDark = declarations(defaultSource)[1]
   if (!defaultDark) throw new Error('Missing default dark theme roles')
-  const defaultDarkSurface = 'oklch(0.141 0.005 285.823)'
+  const defaultDarkSurface = parseOklch('oklch(0.141 0.005 285.823)')
   for (const role of statusRoles) {
-    expect(
-      contrast(parseOklch(defaultDark.get(role)!), parseOklch(defaultDarkSurface)),
-      `default dark ${role}`,
-    ).toBeGreaterThanOrEqual(4.5)
+    expectReadable(requiredColor(defaultDark, role), defaultDarkSurface, `default dark ${role}`)
   }
+})
+
+test('alternate theme text pairs and status colors remain readable', () => {
   for (const source of themeSources) {
     for (const [index, values] of declarations(source).entries()) {
-      for (const [surfaceRole, foregroundRole] of textPairs) {
-        const ratio = contrast(parseOklch(values.get(surfaceRole)!), parseOklch(values.get(foregroundRole)!))
-        expect(ratio, `${surfaceRole}/${foregroundRole} block ${index + 1}`).toBeGreaterThanOrEqual(4.5)
-      }
-      for (const role of statusRoles) {
-        const color = parseOklch(values.get(role)!)
-        for (const surface of ['--background', '--card', '--popover']) {
-          const surfaceValue = values.get(surface)
-          if (!surfaceValue?.startsWith('oklch(')) continue
-          expect(
-            contrast(color, parseOklch(surfaceValue)),
-            `${role} ${values.get(role)} on ${surface} block ${index + 1}`,
-          ).toBeGreaterThanOrEqual(4.5)
-        }
-      }
+      const block = index + 1
+      checkTextPairs(values, block)
+      checkStatusPairs(values, block)
     }
   }
 })
