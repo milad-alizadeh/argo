@@ -35,14 +35,13 @@ import {
   readCodexInteraction,
 } from './codex-session-interactions'
 import { dispatchCodexNotification } from './codex-session-notifications'
+import { APPROVAL_TIMEOUT_MS, inputItems } from './codex-session-protocol'
 import {
-  APPROVAL_TIMEOUT_MS,
   abandonCompactions,
   type CodexActiveTurn,
   type CodexCompaction,
   type CodexQueuedWork,
-  inputItems,
-} from './codex-session-protocol'
+} from './codex-session-work'
 import { followCodexSkillCommands } from './codex-skill-commands'
 import { readCodexNickname } from './codex-subagent-nicknames'
 import { readCodexThreadStatus } from './codex-thread-status'
@@ -501,8 +500,9 @@ class CodexSessionChannel implements LiveSessionChannel {
         turnId: string
         item: ThreadItem
       }
-      // A compaction's Turn may name itself first in its items, not in a `turn/started`.
-      if (threadId === this.nativeId && this.active?.compaction && this.active.turnId === null)
+      // A compaction's Turn may name itself first in its compaction item, not in a `turn/started`.
+      const compactionItem = item.type === 'contextCompaction' && this.active?.compaction
+      if (threadId === this.nativeId && compactionItem && this.active?.turnId === null)
         this.startTurn(turnId)
       if (threadId !== this.nativeId || this.active?.turnId !== turnId) return
       if (item.type === 'commandExecution') return this.commandItem(item, turnId)

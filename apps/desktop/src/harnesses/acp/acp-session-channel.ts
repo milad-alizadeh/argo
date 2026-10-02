@@ -270,6 +270,11 @@ export class AcpSessionChannel implements LiveSessionChannel {
     await this.client.cancel(this.nativeId)
   }
 
+  // ACP has no compaction request; its presentation never offers Compact context.
+  async compact(): Promise<void> {
+    throw new Error('An ACP Session cannot compact its context.')
+  }
+
   async answerPermission(requestId: string, decision: PermissionDecision): Promise<boolean> {
     return this.nativeId !== null && this.host.controls !== undefined
       ? this.host.controls.decidePermission(this.nativeId, requestId, decision)

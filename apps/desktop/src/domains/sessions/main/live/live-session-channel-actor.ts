@@ -117,10 +117,6 @@ function receiveChannelCommand(
         .then(event.reply.resolve, (error) => event.reply.reject(errorOf(error)))
       return
     case 'Compact':
-      if (channel.compact === undefined) {
-        event.reply.reject(new Error('This Harness cannot compact a Session.'))
-        return
-      }
       void channel
         .compact()
         .then(event.reply.resolve, (error) => event.reply.reject(errorOf(error)))

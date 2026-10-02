@@ -41,7 +41,8 @@ async function compactByClick(page: Page) {
   await expect(compact).toBeEnabled()
   await compact.click()
   const history = page.getByRole('region', { name: 'Session history' })
-  await expect(history.getByText('Conversation compacted')).toBeVisible()
+  const marker = history.getByRole('article').filter({ hasText: /^Conversation compacted$/ })
+  await expect(marker).toBeVisible()
 }
 
 // A Session Argo started stays listed after a restart; its next Turn resumes it into a live

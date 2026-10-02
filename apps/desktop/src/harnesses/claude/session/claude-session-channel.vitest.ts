@@ -38,12 +38,14 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
         if (item.done) return { done: true as const, value: undefined }
         vendor.prompts.push(item.value)
         count += 1
+        const interruptsBefore = vendor.interrupts
         if (count === 2)
           await new Promise<void>((resolve) => {
             vendor.releaseSecond = resolve
           })
         if (count === 1) pending.push(...vendor.recordedEvents)
-        pending.push({ type: 'result', session_id: 'native-1', is_error: false })
+        const interrupted = vendor.interrupts > interruptsBefore
+        pending.push({ type: 'result', session_id: 'native-1', is_error: interrupted })
         return { done: false as const, value: pending.shift() }
       },
       [Symbol.asyncIterator]() {
@@ -494,5 +496,21 @@ test('compacts as a /compact Turn that draws no prompt and settles when its resu
       : [],
   )
   expect(prompts).not.toContain('/compact')
+  channel.close()
+})
+
+test('rejects an interrupted compaction, as the Codex channel does', async () => {
+  vendor.prompts = []
+  vendor.recordedEvents = []
+  vendor.releaseSecond = null
+  const events: unknown[] = []
+  const channel = claudeSessionChannelOpener(null)(first, undefined, (event) => events.push(event))
+  await until(() => events.some((event) => (event as { type: string }).type === 'turn.completed'))
+  const compacted = channel.compact?.()
+  await until(() => vendor.releaseSecond !== null)
+  await channel.interrupt()
+  const releaseCompaction = vendor.releaseSecond as (() => void) | null
+  releaseCompaction?.()
+  await expect(compacted).rejects.toThrow('Claude compaction was interrupted.')
   channel.close()
 })

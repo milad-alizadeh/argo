@@ -53,6 +53,7 @@ export const first: SessionStartInput = {
 export const claudeFirst = { ...first, harness: 'claude' as const }
 export const passiveChannelMethods = {
   interrupt: async () => {},
+  compact: async () => {},
   answerPermission: async () => false,
   answerQuestion: async () => false,
   close: () => {},

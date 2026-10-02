@@ -260,7 +260,9 @@ class ClaudeSessionChannel implements LiveSessionChannel {
       this.emit({ type: 'identity', nativeId: message.session_id })
     }
     this.emit({ type: 'turn.completed', commandId: this.activeCommandId })
-    this.activeCompaction?.resolve()
+    if (message.is_error)
+      this.activeCompaction?.reject(new Error('Claude compaction was interrupted.'))
+    else this.activeCompaction?.resolve()
     this.activeCompaction = null
   }
 

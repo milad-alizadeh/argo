@@ -5,7 +5,7 @@ import type { HarnessControl } from '../harness'
 import type { Session } from '../types'
 
 // A control resolves true once the live Session's Harness has done it.
-function settled(control: Promise<unknown>) {
+function succeeded(control: Promise<unknown>) {
   return control.then(
     () => true,
     () => false,
@@ -29,8 +29,8 @@ export function useSessionControls(input: {
     session?.posture === 'live' &&
     !isRunning
   return {
-    onInterrupt: () => settled(interrupt({ sessionId })),
-    onCompact: compacts ? () => settled(compaction.mutateAsync({ sessionId })) : undefined,
+    onInterrupt: () => succeeded(interrupt({ sessionId })),
+    onCompact: compacts ? () => succeeded(compaction.mutateAsync({ sessionId })) : undefined,
     isCompacting: compaction.isPending,
   }
 }

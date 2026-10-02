@@ -103,8 +103,8 @@ export type LiveSessionCommand = Pick<
 export type LiveSessionChannel = {
   submit: (command: LiveSessionCommand) => Promise<void>
   interrupt: () => Promise<void>
-  // Settles when the compaction's own Turn ends; absent for a Harness that cannot compact.
-  compact?: () => Promise<void>
+  // Settles when the compaction's own Turn ends; HarnessPresentation.compactsContext says who offers it.
+  compact: () => Promise<void>
   answerPermission: (requestId: string, decision: PermissionDecision) => Promise<boolean>
   answerQuestion: (requestId: string, answers: QuestionAnswer[]) => Promise<boolean>
   close: () => void

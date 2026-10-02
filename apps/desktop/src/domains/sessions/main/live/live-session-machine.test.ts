@@ -25,6 +25,7 @@ const first: SessionStartInput = {
 
 const passiveChannelMethods = {
   interrupt: async () => {},
+  compact: async () => {},
   answerPermission: async () => false,
   answerQuestion: async () => false,
   close: () => {},
