@@ -85,8 +85,11 @@ export function useTailThroughViewportResize(viewport: HTMLElement | null, follo
     // Read at each scroll, which runs before resize callbacks in a frame, so a reader who just
     // scrolled away is not pulled back by a stale `following`.
     let atEnd = true
+    let scrollTop = viewport.scrollTop
     const distanceFromEnd = () => viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop
     const onScroll = () => {
+      if (viewport.scrollTop === scrollTop) return
+      scrollTop = viewport.scrollTop
       atEnd = distanceFromEnd() <= 1
     }
     const resizes = new ResizeObserver(() => {
