@@ -6,9 +6,10 @@ import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
-import { USAGE_BUTTON, usageLabels, watchUsageLabels } from './cases/footer-harness.case'
+import { USAGE_BUTTON, USAGE_WATCH, usageLabels } from './cases/first-send-labels.case'
 import { prepare } from './fixtures/feed.fixture'
 import { chooseHarness, openNewSessionByClick, PERSISTED_ROW } from './gestures'
+import { watchLabels } from './label-watch'
 
 async function prepareCodexApp(root: string, applicationUnderTest: string) {
   const fixture = await prepare(root, applicationUnderTest, { projectSelected: true })
@@ -75,7 +76,7 @@ test('packaged Codex live feed resumes from app-server history', async ({
     )
     await row.waitFor()
     // Opened after a restart, the footer never shows another Harness's usage (#3172).
-    await second.page.evaluate(watchUsageLabels, USAGE_BUTTON)
+    await second.page.evaluate(watchLabels, USAGE_WATCH)
     await row.click()
     const feed = second.page.locator(`.feed__viewport[data-session="${sessionId}"]`)
     await expect(feed).toContainText('Codex replied to: First Codex turn')
@@ -84,7 +85,7 @@ test('packaged Codex live feed resumes from app-server history', async ({
     await expect(feed).toContainText('Codex replied to: Second Codex turn')
     await expect(feed.getByText('Codex replied to: First Codex turn')).toHaveCount(1)
     // A reload keeps the Session route with nothing loaded, as a deep link does (#3182).
-    await second.page.addInitScript(watchUsageLabels, USAGE_BUTTON)
+    await second.page.addInitScript(watchLabels, USAGE_WATCH)
     await second.page.reload()
     await expect(feed).toContainText('Codex replied to: Second Codex turn')
     await expect.poll(() => usageLabels(second.page)).toEqual([codexUsage])

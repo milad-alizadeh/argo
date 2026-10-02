@@ -19,7 +19,7 @@ import { workInspectorReveal } from '../inspector'
 import type { Session, SessionEvidence, SessionExtras } from '../types'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work'
 import { sessionLocation } from './session-screen-location'
-import { sessionHarness } from './session-screen-state'
+import { type SentConfiguration, sessionHarness } from './session-screen-state'
 import { pickedSubagent, sessionScreenSubagents } from './session-screen-subagents'
 import { useLeaveGoneWorktree } from './use-gone-worktree'
 import { useSessionDetails } from './use-session-details'
@@ -108,10 +108,11 @@ function useSessionFeed(selectedSessionId: string | null, running: boolean) {
     projectId: string | undefined
     pendingId: string
     sessionId: string
+    sent: SentConfiguration | null
   } | null>(null)
   const onStartingSession = useCallback(
-    (pendingId: string | null, named = 'new') =>
-      setStarting(pendingId === null ? null : { projectId, pendingId, sessionId: named }),
+    (pendingId: string | null, named = 'new', sent: SentConfiguration | null = null) =>
+      setStarting(pendingId === null ? null : { projectId, pendingId, sessionId: named, sent }),
     [projectId],
   )
   // A move to any route but the named Session drops the start, so New Session draws no old prompt.
@@ -132,6 +133,7 @@ function useSessionFeed(selectedSessionId: string | null, running: boolean) {
   return {
     ...(holdsPrompt ? startingFeed : namedFeed),
     feedSessionId: holdsPrompt ? startingSessionId : selectedSessionId,
+    sent: shown && starting.sessionId === selectedSessionId ? starting.sent : null,
     onStartingSession,
   }
 }
@@ -153,7 +155,8 @@ export function useSessionScreenModel() {
   const [pickedHarness, chooseHarness] = useState<Harness | null>(null)
   const availableHarnesses = useAvailableHarnesses()
   const lastHarness = pickedHarness ?? availableHarnesses?.[0] ?? DEFAULT_HARNESS
-  const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
+  const { sent } = sessionFeed
+  const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session, sent })
   const permission = useSessionPermission(selectedSessionId)
   const question = useSessionQuestion(selectedSessionId)
   const inspector = useWorkInspector({
