@@ -84,7 +84,7 @@ export function useAnchoredVirtualizer({
 
 // TanStack's own rule, without its skip while scrolling up: a row above the reader that sizes late,
 // such as a diagram drawn after mount, otherwise pushes the rows in view down by its growth.
-export function rowAboveReader(
+function rowAboveReader(
   item: VirtualItem,
   _delta: number,
   instance: Virtualizer<HTMLElement, Element>,
@@ -94,12 +94,12 @@ export function rowAboveReader(
   return item.start < fold || aboveMeasuredRowInView(item.index, instance)
 }
 
-// A wheel up can show rows shorter than the overscan held, above the first measured row in view;
-// their first height moves the scroll so that row holds still, and rows below it never do.
+// A wheel up can show rows shorter than the overscan held; their first height lands above the rows
+// the reader was already looking at, so those rows hold still and move only by the wheel.
 function aboveMeasuredRowInView(index: number, instance: Virtualizer<HTMLElement, Element>) {
-  const { startIndex = 0, endIndex = -1 } = instance.range ?? {}
-  for (let row = startIndex; row <= endIndex; row += 1)
-    if (instance.itemSizeCache.has(instance.options.getItemKey(row))) return index < row
+  const lastInView = instance.range?.endIndex ?? -1
+  for (let below = index + 1; below <= lastInView; below += 1)
+    if (instance.itemSizeCache.has(instance.options.getItemKey(below))) return true
   return false
 }
 
