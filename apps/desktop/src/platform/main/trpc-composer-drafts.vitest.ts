@@ -9,7 +9,7 @@ import { composerDraft } from '@/database/composer-draft/schema'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
-import { SessionListChanges } from '@/domains/sessions/main/api/session-list-changes'
+import { SessionListChanges } from '@/domains/sessions/main/api'
 import {
   type LiveSessionSupervisorActor,
   SessionSubmitRejectedError,
