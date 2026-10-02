@@ -200,7 +200,8 @@ class CodexSessionChannel implements LiveSessionChannel {
       status: 'running',
       commandId: this.active.commandId,
       turnId,
-      vendorEventId: turnId,
+      // A Turn boundary keys no row, so the closing status adds a row instead of replacing this one.
+      vendorEventId: null,
     })
   }
 
@@ -401,7 +402,7 @@ class CodexSessionChannel implements LiveSessionChannel {
       status,
       commandId,
       turnId,
-      vendorEventId: turnId,
+      vendorEventId: null,
     })
     this.emit({ type: 'turn.completed', commandId })
     for (const requestId of this.pending.keys()) this.clearApproval(requestId)

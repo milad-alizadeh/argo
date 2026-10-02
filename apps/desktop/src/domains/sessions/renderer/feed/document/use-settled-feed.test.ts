@@ -21,3 +21,8 @@ test('a later remote prompt enters context loading again after the first reply',
   expect(awaitingAssistantReply(firstReply)).toBe(false)
   expect(awaitingAssistantReply(secondPrompt)).toBe(true)
 })
+
+test('a Turn status row after the prompt still awaits the reply', () => {
+  const running = { shape: 'event', id: 'status:2', event: 'liveStatus', text: 'running' } as const
+  expect(awaitingAssistantReply([prompt('prompt-one'), running])).toBe(true)
+})
