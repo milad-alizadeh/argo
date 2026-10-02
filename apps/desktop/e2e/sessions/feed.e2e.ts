@@ -22,7 +22,6 @@ import { proveNoProjectWindow } from './cases/no-project.case'
 import { provePromptBeforeNaming } from './cases/pending-prompt.case'
 import { provePromptLatency } from './cases/prompt-latency.case'
 import { proveRefusedStart } from './cases/refused-start.case'
-import { proveRemovedWorkLocation } from './cases/removed-work-location.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveContract } from './cases/session-list-contract.case'
 import { provePackagedSessionListSelection } from './cases/session-list-interaction.case'
@@ -30,6 +29,7 @@ import { proveSessionListWindow } from './cases/session-list-window.case'
 import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
 import { proveLiveCodexModelChoices } from './cases/turn-configuration.case'
+import { proveSessionWorktree } from './cases/worktree.case'
 import { ACTIVE_FEED } from './feed-selectors'
 import { appendProse } from './fixtures/feed.fixture'
 import { writeWindowFillerSessions } from './fixtures/session-list-window.fixture'
@@ -59,8 +59,8 @@ test('session-shell', async ({ session }) => {
   await proveSessionShell(session.page())
 })
 
-test('session-removed-work-location', async ({ session }) => {
-  await proveRemovedWorkLocation(session.page(), session.fixture.project)
+test('session-worktree', async ({ session, backend }) => {
+  await proveSessionWorktree(session.page(), session.fixture.project, backend)
 })
 
 test('session-refused-start', async ({ session }) => {

@@ -19,7 +19,7 @@ export function sessionRow(
     name: 'session-one',
     status: 'idle',
     cwd: null,
-    workspaceId: null,
+    worktree: null,
     updatedAt: '2026-09-01T00:00:00.000Z',
     activity: null,
     subagents: [],

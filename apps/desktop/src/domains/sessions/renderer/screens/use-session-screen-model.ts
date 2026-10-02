@@ -6,17 +6,22 @@ import { useNavigate, useParams } from 'react-router'
 
 import { useProjects } from '@/domains/projects/renderer'
 import type { FeedSubagent } from '@/domains/sessions/api/feed'
-import { useWorkspaces } from '@/domains/workspaces/renderer'
 import { DEFAULT_HARNESS, type Harness } from '@/harnesses/harness'
-import { useSessionPermission, useSessionQuestion } from '../composer'
+import {
+  useDefaultBranch,
+  useSessionPermission,
+  useSessionQuestion,
+  useWorktreeOptions,
+} from '../composer'
 import { isFeedRowPrompt, useFeedReading } from '../feed'
 import { useAvailableHarnesses } from '../harness'
 import { workInspectorReveal } from '../inspector'
 import type { Session, SessionEvidence, SessionExtras } from '../types'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work'
+import { sessionLocation } from './session-screen-location'
 import { sessionHarness } from './session-screen-state'
 import { pickedSubagent, sessionScreenSubagents } from './session-screen-subagents'
-import { sessionWorkspaceIdentity } from './session-screen-workspace'
+import { useLeaveGoneWorktree } from './use-gone-worktree'
 import { useSessionDetails } from './use-session-details'
 import { useWorkPick, type WorkSelection } from './work-selection'
 
@@ -136,11 +141,13 @@ export function useSessionScreenModel() {
   const navigate = useNavigate()
   const { jumpToLatest, onJumpToLatestChange } = useFeedJumpToLatestAction()
   const [projectState, projectActions] = useProjects()
-  const [workspaceState, workspaceActions] = useWorkspaces(projectState.project?.id ?? null)
+  const [worktreeState, worktreeActions] = useWorktreeOptions(projectState.project?.id ?? null)
+  const defaultBranch = useDefaultBranch(projectState.project?.id ?? null)
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const { evidence, setEvidence } = useSessionEvidence(selectedSessionId)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
   const { session, loaded: sessionLoaded } = useSessionDetails(selectedSessionId)
+  useLeaveGoneWorktree(session)
   const feedRunning = sessionTurnRunning(session)
   const sessionFeed = useSessionFeed(selectedSessionId, feedRunning)
   const [pickedHarness, chooseHarness] = useState<Harness | null>(null)
@@ -166,14 +173,14 @@ export function useSessionScreenModel() {
     navigate,
     session,
     sessionLoaded,
-    workspaceIdentity: sessionWorkspaceIdentity(session, workspaceState.workspaces),
+    location: sessionLocation(session, defaultBranch),
     evidence,
     setEvidence,
     harness,
     projectState,
     projectActions,
-    workspaceState,
-    workspaceActions,
+    worktreeState,
+    worktreeActions,
     permission,
     question,
     work,

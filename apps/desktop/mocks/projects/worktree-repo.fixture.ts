@@ -6,7 +6,7 @@ import { promisify } from 'node:util'
 
 const run = promisify(execFile)
 
-// A git checkout with one empty commit on main, ready for worktrees or reconciliation.
+// A git checkout with one empty commit on main, ready for worktrees.
 export async function initFixtureRepo(root: string): Promise<{ project: string }> {
   const project = path.join(root, 'project')
   await run('git', ['init', '--quiet', '--initial-branch=main', project])
@@ -26,12 +26,12 @@ export async function initFixtureRepo(root: string): Promise<{ project: string }
   return { project }
 }
 
-// Reconciliation compares discovered roots by their real path (macOS's tmpdir is a symlink), so
-// every fixture path is resolved the same way its callers will see it back from git.
-export async function workspaceRepoFixture(context: {
+// Worktree discovery compares roots by their real path (macOS's tmpdir is a symlink), so every
+// fixture path is resolved the same way its callers will see it back from git.
+export async function worktreeRepoFixture(context: {
   after: (callback: () => Promise<void>) => void
 }): Promise<{ project: string }> {
-  const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'argo-workspace-repo-')))
+  const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'argo-worktree-repo-')))
   context.after(() => rm(root, { recursive: true, force: true }))
   return initFixtureRepo(root)
 }

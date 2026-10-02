@@ -65,6 +65,17 @@ function readList(router: ReturnType<typeof startSync>['router']) {
   return router.createCaller({}).sessionList({ projectId: 'project-1' })
 }
 
+// Matching a Session to its Project asks git for the Project's worktrees, which no fake timer covers.
+function listedOnce(
+  router: ReturnType<typeof startSync>['router'],
+): Promise<Awaited<ReturnType<typeof readList>>> {
+  return vi.waitFor(async () => {
+    const list = await readList(router)
+    expect(list).toMatchObject({ total: 1 })
+    return list
+  })
+}
+
 test.each(['claude', 'codex'] as const)(
   'lists a new %s Session the watcher saw, without a Refresh',
   async (harness) => {
@@ -82,7 +93,7 @@ test.each(['claude', 'codex'] as const)(
     try {
       actor.send({ type: 'Discover', harness, nativeId: 'new-session' })
       await vi.advanceTimersByTimeAsync(0)
-      expect(await readList(router)).toMatchObject({ total: 1 })
+      await listedOnce(router)
       expect(requested).toEqual(['new-session'])
       expect(listSessionSummaries).not.toHaveBeenCalled()
     } finally {
@@ -128,7 +139,7 @@ test('retries with a growing delay until the Harness lists the Session', async (
     const gaps = attemptTimes.slice(1).map((time, index) => time - (attemptTimes[index] ?? 0))
     expect(attemptTimes).toHaveLength(3)
     expect(gaps[1]).toBeGreaterThan(gaps[0] ?? Number.POSITIVE_INFINITY)
-    expect(await readList(router)).toMatchObject({ total: 1 })
+    await listedOnce(router)
   } finally {
     actor.stop()
   }
@@ -166,8 +177,7 @@ test('a full sync reads no history and stores no Subagents', async () => {
   try {
     actor.send({ type: 'Refresh' })
     await vi.advanceTimersByTimeAsync(1_000)
-    const list = await readList(router)
-    expect(list).toMatchObject({ total: 1 })
+    const list = await listedOnce(router)
     expect(readHistory).not.toHaveBeenCalled()
     expect(list.rows[0]?.subagents).toEqual([])
   } finally {

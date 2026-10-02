@@ -4,13 +4,12 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import type { ProjectsState } from '@/domains/projects/renderer'
 import { pendingSessionId } from '@/domains/sessions/api/pending-session'
-import type { WorkspaceActions, WorkspaceState } from '@/domains/workspaces/renderer'
 import type { Harness } from '@/harnesses/harness'
 import type { CatalogReadResult } from '@/harnesses/harness-catalog'
 import { harnessLabel } from '@/harnesses/presentation-registry'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
-import { trpc } from '@/platform/renderer/trpc-client'
-import type { CatalogFailure } from '../composer'
+import { type RouterInputs, trpc } from '@/platform/renderer/trpc-client'
+import type { CatalogFailure, WorktreeOptionsActions, WorktreeOptionsState } from '../composer'
 import {
   ComposerForm,
   type ComposerFormProps,
@@ -29,6 +28,7 @@ import { type HarnessControl, useAvailableHarnesses } from '../harness'
 import type { ComposerPlan, Session, SessionExtras } from '../types'
 import { draftTarget } from './session-draft-target'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
+import { useTellWorktreeGone } from './use-gone-worktree'
 import { useSessionDetails } from './use-session-details'
 
 type SessionScreenDetailsProps = {
@@ -41,8 +41,8 @@ type SessionScreenDetailsProps = {
   // Whether the selected Session's details have been read, so its composer can open on them.
   sessionLoaded: boolean
   projectState: ProjectsState
-  workspaceState: WorkspaceState
-  workspaceActions: WorkspaceActions
+  worktreeState: WorktreeOptionsState
+  worktreeActions: WorktreeOptionsActions
   // A new Session's pending id from its saved prompt, and the Session route that draws it.
   onStartingSession: (pendingId: string | null, sessionId?: string) => void
 }
@@ -97,33 +97,39 @@ function sessionComposerConfiguration(input: {
   return { catalogFailure, choices, initialTurnConfiguration, identity }
 }
 
-function workspaceControl(
-  identity: ReturnType<typeof composerIdentityOf>,
-  workspaces: WorkspaceState,
-  actions: WorkspaceActions,
-) {
-  if (identity.kind !== 'draft') return null
+// A draft has no Turn to ask about, so its tray holds the Worktree row instead of a permission.
+function composerTray(input: {
+  identity: ReturnType<typeof composerIdentityOf>
+  harness: HarnessControl
+  permission: SessionScreenDetailsProps['permission']
+  worktree: WorktreeOptionsState
+  actions: WorktreeOptionsActions
+}): Pick<ComposerFormProps, 'worktree' | 'permissionPrompt'> {
+  const { identity, harness, permission, worktree, actions } = input
+  if (identity.kind === 'draft')
+    return { worktree: { ...worktree, ...actions }, permissionPrompt: null }
   return {
-    workspaces: workspaces.workspaces,
-    workspace: workspaces.workspace,
-    choice: workspaces.choice,
-    saveFailed: workspaces.saveFailed,
-    onSelect: actions.selectWorkspace,
+    worktree: null,
+    permissionPrompt: (
+      <PermissionPrompt
+        harness={harness.harness}
+        headingLevel={2}
+        permission={permission.permission}
+        onDecide={permission.decide}
+      />
+    ),
   }
 }
 
-// False while choices load; a removed worktree is no longer listed, so the listed choice stands.
-function restoreListedChoice(
-  savedWorkspaceId: string | null,
-  workspaceState: Pick<WorkspaceState, 'choice' | 'workspaces'>,
-  select: (choice: string) => void,
+// Restores a saved draft's switch; its start is never restored. False while the options load.
+function restoreSwitch(
+  saved: Extract<RouterInputs['composerDraftCreate']['target'], { type: 'project' }>['worktree'],
+  worktree: Pick<WorktreeOptionsState, 'options' | 'newWorktree'>,
+  setNewWorktree: (newWorktree: boolean) => void,
 ): boolean {
-  const current = workspaceState.choice
-  if (current === null) return false
-  const saved = savedWorkspaceId ?? 'new'
-  const listed =
-    saved === 'new' || workspaceState.workspaces.some((candidate) => candidate.id === saved)
-  if (listed && saved !== current) select(saved)
+  if (worktree.options === null) return false
+  const newWorktree = saved.type === 'new'
+  if (newWorktree !== worktree.newWorktree) setNewWorktree(newWorktree)
   return true
 }
 
@@ -143,18 +149,18 @@ function useSessionComposerDraft(input: {
   identity: ComposerIdentity
   harness: HarnessControl
   projectState: ProjectsState
-  workspaceState: WorkspaceState
-  workspaceActions: WorkspaceActions
+  worktreeState: WorktreeOptionsState
+  worktreeActions: WorktreeOptionsActions
   choices: Parameters<typeof useDurableComposerDraft>[0]['choices']
   opening: TurnConfiguration | null
 }) {
-  const { identity, harness, projectState, workspaceState, workspaceActions, choices, opening } =
+  const { identity, harness, projectState, worktreeState, worktreeActions, choices, opening } =
     input
   const target = draftTarget({
     identity,
     harness,
     projectId: projectState.project?.id ?? null,
-    workspace: workspaceState,
+    worktree: worktreeState,
   })
   const [restoredProjectId, setRestoredProjectId] = useState<string | null>(null)
   const availableHarnesses = useAvailableHarnesses()
@@ -177,9 +183,7 @@ function useSessionComposerDraft(input: {
       harness.onChange?.(remembered)
       return
     }
-    const listed = { choice: workspaceState.choice, workspaces: workspaceState.workspaces }
-    if (!restoreListedChoice(loadedTarget.workspaceId, listed, workspaceActions.selectWorkspace))
-      return
+    if (!restoreSwitch(loadedTarget.worktree, worktreeState, worktreeActions.setNewWorktree)) return
     setRestoredProjectId(projectId)
   }, [
     availableHarnesses,
@@ -188,9 +192,8 @@ function useSessionComposerDraft(input: {
     loadedTarget,
     projectId,
     restoredProjectId,
-    workspaceActions,
-    workspaceState.choice,
-    workspaceState.workspaces,
+    worktreeActions,
+    worktreeState,
   ])
   return { draft, targetRestored }
 }
@@ -204,6 +207,7 @@ function useSessionComposerSend(input: {
 }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const tellWorktreeGone = useTellWorktreeGone()
   return async (
     prompt: string,
     turnConfiguration: TurnConfiguration | null,
@@ -226,9 +230,11 @@ function useSessionComposerSend(input: {
       input.onFailure(failure)
       return failure.outcome
     }
+    // The worktree folder went after the Session opened, so main moved it at Send.
+    if (result.worktreeGone !== null) tellWorktreeGone(result.worktreeGone)
     if (input.identity.kind === 'draft' && input.projectId !== null) {
       void queryClient.invalidateQueries({
-        queryKey: trpc.workspaceList.queryKey({ projectId: input.projectId }),
+        queryKey: trpc.worktreeOptions.queryKey({ projectId: input.projectId }),
       })
       // The named Session draws the prompt until its own Feed shows it, whatever the Harness.
       input.onStartingSession(pendingId, result.sessionId)
@@ -297,8 +303,8 @@ export function SessionComposerArea({
   selectedSessionId,
   sessionLoaded,
   projectState,
-  workspaceState,
-  workspaceActions,
+  worktreeState,
+  worktreeActions,
   onStartingSession,
 }: SessionScreenDetailsProps) {
   const { catalogQuery, refreshCatalog } = useCatalogRead(harness)
@@ -317,8 +323,8 @@ export function SessionComposerArea({
     identity,
     harness,
     projectState,
-    workspaceState,
-    workspaceActions,
+    worktreeState,
+    worktreeActions,
     choices,
     opening: initialTurnConfiguration,
   })
@@ -327,7 +333,7 @@ export function SessionComposerArea({
   const onInterrupt = useSessionInterrupt(selectedSessionId)
   return (
     <SessionComposer
-      {...{ permission, questionPending, session, harness, workspaceState, workspaceActions }}
+      {...{ permission, questionPending, session, harness, worktreeState, worktreeActions }}
       projectId={projectState.project?.id ?? null}
       isRunning={liveStatus === 'running' || liveStatus === 'permission' || liveStatus === 'asking'}
       onInterrupt={onInterrupt}
@@ -362,8 +368,8 @@ function SessionComposer({
   questionPending,
   session,
   harness,
-  workspaceState,
-  workspaceActions,
+  worktreeState,
+  worktreeActions,
   catalogFailure,
   choices,
   composerKey,
@@ -385,8 +391,8 @@ function SessionComposer({
   | 'questionPending'
   | 'session'
   | 'harness'
-  | 'workspaceState'
-  | 'workspaceActions'
+  | 'worktreeState'
+  | 'worktreeActions'
   | 'onStartingSession'
 > & {
   catalogFailure: CatalogFailure | null
@@ -433,26 +439,24 @@ function SessionComposer({
     turnConfigurationChoices: choices,
     catalogFailure,
     refreshCatalog: draft === null ? onRetryCatalog : onRefreshCatalog,
-    workspace: workspaceControl(identity, workspaceState, workspaceActions),
+    ...composerTray({
+      identity,
+      harness,
+      permission,
+      worktree: worktreeState,
+      actions: worktreeActions,
+    }),
     // #2968 fills context usage.
     contextTokens: session?.contextTokens,
     contextWindowTokens: session?.contextWindowTokens,
     disabled: questionPending || catalogBlocked || (draft?.loadFailed === true && !draft.hasDraft),
     harness,
-    permissionPrompt: (
-      <PermissionPrompt
-        harness={harness.harness}
-        headingLevel={2}
-        permission={permission.permission}
-        onDecide={permission.decide}
-      />
-    ),
     plan: composerPlan(session),
     projectId,
     commandCwd:
       identity.kind === 'session'
         ? (session?.cwd ?? null)
-        : (workspaceState.workspace?.path ?? null),
+        : (worktreeState.options?.checkout.path ?? null),
     liveSessionId: identity.kind === 'session' ? identity.sessionId : null,
     onSend,
     isRunning,

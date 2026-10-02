@@ -17,7 +17,11 @@ import { createSelectSchema } from 'drizzle-orm/zod'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
-import { sessionSelectSchema } from '@/database/session/validation'
+import {
+  sessionSelectSchema,
+  sessionWorktreeFromColumns,
+  sessionWorktreeSchema,
+} from '@/database/session/validation'
 import { sessionArchive } from '@/database/session-archive/schema'
 import { sessionSubagent } from '@/database/session-subagent/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
@@ -55,7 +59,7 @@ const sessionTicketSchema = z.strictObject({
 })
 
 // The stored columns a row carries unchanged.
-const passed = { harness: true, projectId: true, cwd: true, workspaceId: true } as const
+const passed = { harness: true, projectId: true, cwd: true } as const
 const storedSessionSchema = sessionSelectSchema.pick(passed)
 const sessionColumns = getTableColumns(sessionTable)
 const passedSessionColumns = Object.fromEntries(
@@ -64,6 +68,7 @@ const passedSessionColumns = Object.fromEntries(
 
 export const sessionListRowSchema = z.strictObject({
   ...storedSessionSchema.shape,
+  worktree: sessionWorktreeSchema.nullable(),
   id: z.string().uuid(),
   posture: z.literal('live').nullable(),
   name: z.string(),
@@ -149,6 +154,7 @@ function sessionListRow(
   const liveStatus = live?.status === 'unknown' ? null : live?.status
   return {
     ...row.passed,
+    worktree: sessionWorktreeFromColumns(row),
     id: row.id,
     posture: live === null ? null : ('live' as const),
     name: row.name,
@@ -190,6 +196,9 @@ const storedSessionColumns = {
   updatedAt: sessionTable.updatedAt,
   turnConfiguration: sessionTable.turnConfiguration,
   planProgress: sessionTable.planProgress,
+  worktreePath: sessionTable.worktreePath,
+  worktreeBranch: sessionTable.worktreeBranch,
+  worktreeBase: sessionTable.worktreeBase,
   ticket: {
     projectId: sessionTicketLink.projectId,
     key: sessionTicketLink.ticketKey,

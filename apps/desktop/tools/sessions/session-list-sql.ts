@@ -8,7 +8,8 @@ export function sqlMeasurements(userData: string, projectId: string, updatedSess
   const database = new DatabaseSync(databaseFile)
   const listColumns = `session.argo_id, session.harness, session.native_id,
     session.custom_title, session.preview, session.first_prompt, session.cwd,
-    session.workspace_id, session.activity_at, session.updated_at,
+    session.worktree_path, session.worktree_branch, session.worktree_base,
+    session.activity_at, session.updated_at,
     session_ticket_link.project_id, session_ticket_link.ticket_key,
     ticket_content.title, ticket_content.state, session_ticket_link.created_at`
   // The corpus has one Ticket scope, so the key alone finds the linked Ticket.

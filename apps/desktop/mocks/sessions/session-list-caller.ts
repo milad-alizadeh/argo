@@ -15,13 +15,13 @@ import {
   type SessionUpdateProcedureContext,
   sessionUpdateProcedure,
 } from '@/domains/sessions/main/api/session-update'
+import {
+  type SessionWorktreeContext,
+  sessionWorktreeProcedures,
+} from '@/domains/sessions/main/api/session-worktree'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live'
 import { saveReadTicket } from '@/domains/tickets/main/database/ticket-upsert'
-import {
-  insertProject,
-  insertWorkspace,
-  migratedDatabase,
-} from '@/mocks/database/migrated-database'
+import { insertProject, migratedDatabase } from '@/mocks/database/migrated-database'
 import type { AppRouter } from '@/platform/main/trpc-router'
 
 export const IDS = [
@@ -75,6 +75,7 @@ export function sessionListCaller({
   const mock = mockSupervisor(sessions)
   const changes = new SessionListChanges()
   const renames: RenameRequest[] = []
+  const removalRequests: Parameters<SessionWorktreeContext['removeSessionWorktrees']>[0][] = []
   const context = {
     database,
     supervisor: supervisor ?? (mock.supervisor as never),
@@ -84,7 +85,13 @@ export function sessionListCaller({
       renames.push(request)
       await rename(request)
     },
+    removeSessionWorktrees: async (input: (typeof removalRequests)[number]) => {
+      removalRequests.push(input)
+      return []
+    },
+    exclusive: <T>(work: () => Promise<T>) => work(),
   }
+  const worktrees = sessionWorktreeProcedures(context)
   const stopWatching = watchSessionList(context)
   const caller = initTRPC
     .create()
@@ -93,6 +100,8 @@ export function sessionListCaller({
       changed: sessionListChangedProcedure(context),
       update: sessionUpdateProcedure(context),
       details: sessionDetailsProcedure(context),
+      removeWorktrees: worktrees.sessionWorktreeRemove,
+      leaveGoneWorktree: worktrees.sessionLeaveGoneWorktree,
     })
     .createCaller({})
   const subscribeChanges = async () => {
@@ -106,11 +115,14 @@ export function sessionListCaller({
     list: caller.list,
     update: caller.update,
     details: caller.details,
+    removeWorktrees: caller.removeWorktrees,
+    leaveGoneWorktree: caller.leaveGoneWorktree,
     changes: subscribeChanges,
     sessionListChanges: changes,
     stopWatching,
     statusChanged: mock.statusChanged,
     renames,
+    removalRequests,
   }
 }
 
@@ -134,7 +146,7 @@ export function liveSession(
   }
 }
 
-// Saves one Session, and its Project and Workspace, with the stored columns a test names.
+// Saves one Session, and its Project, with the stored columns a test names.
 export function insertSession(
   database: Database,
   {
@@ -145,7 +157,6 @@ export function insertSession(
 ) {
   const projectId = values.projectId ?? 'project-1'
   insertProject(database, projectId)
-  if (values.workspaceId != null) insertWorkspace(database, values.workspaceId, projectId)
   database
     .insert(sessionTable)
     .values({

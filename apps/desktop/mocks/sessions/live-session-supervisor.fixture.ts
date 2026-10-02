@@ -17,7 +17,7 @@ import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { createHarnessRegistry } from '@/harnesses/registry'
 import { answeringSkillsList } from '@/mocks/cli/codex/mock-codex-channel'
-import { insertWorkspace, migratedDatabase } from '@/mocks/database/migrated-database'
+import { insertProject, migratedDatabase } from '@/mocks/database/migrated-database'
 import { codexModelCatalogFixture } from '@/mocks/recordings/codex-model-catalog'
 import { harnessCatalogMachine } from '@/platform/main/harness-catalog/harness-catalog-machine'
 
@@ -43,7 +43,7 @@ export const first: SessionStartInput = {
   commandId: 'first-command',
   harness: 'codex',
   projectId: 'project-1',
-  workspaceId: 'workspace-1',
+  worktree: null,
   cwd: '/repo',
   prompt: 'first',
   attachments: [],
@@ -110,7 +110,7 @@ export async function supervisorFor(
 ) {
   const database = migratedDatabase()
   const client = database.$client
-  insertWorkspace(database, first.workspaceId, first.projectId)
+  insertProject(database, first.projectId)
   const notifications = new Set<(message: WireMessage) => boolean | undefined>()
   const codexClient = codexClientFor(request, notifications)
   const registry = createHarnessRegistry(codexClient)
@@ -193,7 +193,6 @@ export function send(
           harness: input.harness,
           nativeId: 'native-1',
           projectId: input.projectId,
-          workspaceId: input.workspaceId,
           cwd: input.cwd,
         },
       },

@@ -5,6 +5,7 @@ import { composerDraftSelectSchema } from '@/database/composer-draft/validation'
 import type { Database } from '@/database/database'
 import { provider } from '@/domains/accounts/contract/contract'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
+import { worktreeRequestSchema } from '@/domains/sessions/api/worktree-request'
 import { harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
 
@@ -27,7 +28,7 @@ export const draftTurnConfigurationSchema = z.strictObject({
 const projectTargetSchema = z.strictObject({
   type: z.literal('project'),
   projectId: identifierSchema,
-  workspaceId: identifierSchema.nullable(),
+  worktree: worktreeRequestSchema,
   harness: harnessSchema,
 })
 const sessionTargetSchema = z.strictObject({
@@ -64,6 +65,27 @@ function parseJson<Value>(source: string, schema: z.ZodType<Value>): Value {
   return schema.parse(JSON.parse(source))
 }
 
+type WorktreeRequest = z.infer<typeof worktreeRequestSchema>
+type StoredDraft = z.infer<typeof composerDraftSelectSchema>
+
+function worktreeFromRow(row: StoredDraft): WorktreeRequest | null {
+  switch (row.worktree) {
+    case null:
+      return null
+    case 'main':
+      return { type: 'main' }
+    case 'new':
+      return worktreeRequestSchema.parse({ type: 'new', from: row.worktreeFromBranch })
+  }
+}
+
+function worktreeColumns(worktree: WorktreeRequest | null) {
+  return {
+    worktree: worktree?.type ?? null,
+    worktreeFromBranch: worktree?.type === 'new' ? worktree.from : null,
+  }
+}
+
 function valueFromRow(stored: unknown): ComposerDraftValue {
   const row = composerDraftSelectSchema.parse(stored)
   const target =
@@ -72,7 +94,7 @@ function valueFromRow(stored: unknown): ComposerDraftValue {
       : projectTargetSchema.parse({
           type: 'project',
           projectId: row.projectId,
-          workspaceId: row.workspaceId,
+          worktree: worktreeFromRow(row),
           harness: row.harness,
         })
   return composerDraftValueSchema.parse({
@@ -108,13 +130,13 @@ function storedTarget(target: ComposerDraftValue['target']) {
     ? {
         projectId: target.projectId,
         sessionId: null,
-        workspaceId: target.workspaceId,
+        ...worktreeColumns(target.worktree),
         harness: target.harness,
       }
     : {
         projectId: null,
         sessionId: target.sessionId,
-        workspaceId: null,
+        ...worktreeColumns(null),
         harness: null,
       }
 }
