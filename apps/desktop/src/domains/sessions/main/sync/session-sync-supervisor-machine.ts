@@ -84,12 +84,24 @@ type SyncActorEvent =
 // Saves Harness summaries under their matched Projects, and announces the Sessions they touched.
 async function saveSummaries(
   { database, changes, harness }: Pick<SessionSyncActorInput, 'database' | 'changes' | 'harness'>,
-  summaries: readonly SessionSummary[],
-  subagents: readonly SessionSubagentLink[] = [],
-  roots: Promise<SessionRoot[]> = sessionRoots(database),
+  {
+    summaries,
+    subagents = [],
+    roots = sessionRoots(database),
+  }: {
+    summaries: readonly SessionSummary[]
+    subagents?: readonly SessionSubagentLink[]
+    roots?: Promise<SessionRoot[]>
+  },
 ): Promise<void> {
   const records = await matchSessionsToProjects(await roots, summaries)
-  changes.changed(saveSessionBatch(database, { harness, records, subagents }))
+  changes.changed(
+    saveSessionBatch(database, {
+      harness,
+      records,
+      subagents,
+    }),
+  )
 }
 
 type DiscoverFinished = {
@@ -133,7 +145,11 @@ const sessionSyncActor = fromCallback<
       actors: {
         save: fromPromise(async ({ input: saveInput }) => {
           roots ??= sessionRoots(database)
-          await saveSummaries(input, saveInput.records, saveInput.subagents, roots)
+          await saveSummaries(input, {
+            summaries: saveInput.records,
+            subagents: saveInput.subagents,
+            roots,
+          })
         }),
       },
     }),
@@ -196,9 +212,11 @@ const sessionDiscoverActor = fromCallback<
       const summary = await getSessionSummary(nativeId)
       if (stopped) return
       if (summary !== null) {
-        await saveSummaries(input, [
-          summary,
-        ])
+        await saveSummaries(input, {
+          summaries: [
+            summary,
+          ],
+        })
         stored = true
       }
     } catch (error) {

@@ -13,8 +13,8 @@ import { sessionSyncMachine } from './session-sync-machine'
 import {
   knownSessionIds,
   matchSessionsToProjects,
-  saveSessionBatch as writeSessionBatch,
   sessionRoots,
+  saveSessionBatch as writeSessionBatch,
 } from './session-sync-records'
 
 function saveSessionBatch(
