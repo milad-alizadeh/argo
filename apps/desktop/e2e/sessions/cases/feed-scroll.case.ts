@@ -139,29 +139,32 @@ async function installRowSampler(page: Page, selector: string) {
     const viewport = document.querySelector<HTMLElement>(selector)
     if (viewport === null) throw new Error('No active Feed viewport.')
     const probe = window as unknown as FeedScrollWindow
-    // Rows wholly in view, and every row drawn, by their tops.
+    // Rows wholly in view by their tops, and the edges of every row drawn and of those in view.
     const rows = () => {
       const bounds = viewport.getBoundingClientRect()
       const tops = new Map<string, number>()
-      const drawn = new Map<string, number>()
+      const edges = new Map<string, number>()
       let covered = 0
       for (const row of viewport.querySelectorAll<HTMLElement>('[data-feed-row]')) {
         const { top, bottom } = row.getBoundingClientRect()
+        const id = row.dataset.feedRow ?? ''
         covered += Math.max(0, Math.min(bottom, bounds.bottom) - Math.max(top, bounds.top))
-        drawn.set(row.dataset.feedRow ?? '', top)
-        if (top >= bounds.top && bottom <= bounds.bottom) tops.set(row.dataset.feedRow ?? '', top)
+        edges.set(`${id} top`, top).set(`${id} bottom`, bottom)
+        if (top >= bounds.top && bottom <= bounds.bottom) tops.set(id, top)
       }
+      const seen = new Map([...edges].filter(([, at]) => at >= bounds.top && at <= bounds.bottom))
+      const blank = bounds.height - covered > bounds.height / 2
       const { scrollTop, scrollHeight, clientHeight } = viewport
       const room = { above: scrollTop, below: scrollHeight - clientHeight - scrollTop }
-      return { tops, drawn, blank: bounds.height - covered > bounds.height / 2, scrollTop, room }
+      return { tops, edges, seen, blank, scrollTop, room }
     }
-    const movesFrom = (was: Map<string, number>, after: ReturnType<typeof rows>) =>
-      [...after.tops].flatMap(([id, top]) => {
+    const movesFrom = (was: Map<string, number>, now: Map<string, number>) =>
+      [...now].flatMap(([id, top]) => {
         const before = was.get(id)
         return before === undefined ? [] : [{ id, move: top - before }]
       })
     const step = (before: ReturnType<typeof rows>, after: ReturnType<typeof rows>): Motion => {
-      const moves = movesFrom(before.tops, after)
+      const moves = movesFrom(before.tops, after.tops)
       const [first] = moves
       if (first !== undefined) {
         const apart = moves.find(({ move }) => Math.abs(move - first.move) > 1)
@@ -169,11 +172,12 @@ async function installRowSampler(page: Page, selector: string) {
           return { apart: `${apart.id} moved ${Math.round(apart.move - first.move)}px apart` }
         return { moved: first.move, label: first.id, room: before.room }
       }
-      // A scroll past every row in view is read by rows drawn out of view before it, if they agree.
-      const [drawn, ...others] = movesFrom(before.drawn, after)
-      if (drawn === undefined || others.some(({ move }) => Math.abs(move - drawn.move) > 1))
+      // A scroll past every row in view, or a row taller than the view, is read by the row edges in
+      // view that were drawn before, if they agree; a row out of view may change size meanwhile.
+      const [edge, ...others] = movesFrom(before.edges, after.seen)
+      if (edge === undefined || others.some(({ move }) => Math.abs(move - edge.move) > 1))
         return { lost: before.scrollTop - after.scrollTop, room: before.room }
-      return { moved: drawn.move, label: drawn.id, room: before.room }
+      return { moved: edge.move, label: edge.id, room: before.room }
     }
     let previous = rows()
     let earlier = previous.room
@@ -199,8 +203,8 @@ async function installRowSampler(page: Page, selector: string) {
 const WHEEL_LEAD_EVENTS = 3
 const WHEEL_SLACK_PX = 2
 
-// Rows in view move together, never against the wheel, and never run ahead of it for more than a
-// few wheel events. Rows falling short of the wheel, as at an end, are not jumps.
+// Rows in view move together, never against the wheel, and never run ahead of it or fall short of
+// it for more than a few wheel events. Rows stopping short at an end are not jumps.
 function wheelJumps(motion: readonly Motion[]): string[] {
   const jumps: string[] = []
   // Rows moved minus what the wheel asked, and the wheel events it stayed off 0 for.
@@ -211,9 +215,9 @@ function wheelJumps(motion: readonly Motion[]): string[] {
   const frame = (moved: number, room: Room) => {
     drift += moved
     const along = moved * direction
-    // The scroll used all the room to an end, short of the wheel.
+    // The scroll used all the room to an end, or had none, short of the wheel.
     const left = direction > 0 ? room.above : room.below
-    if (ahead() < 0 && along > 0 && along >= left - WHEEL_SLACK_PX) drift = 0
+    if (ahead() < 0 && along >= 0 && along >= left - WHEEL_SLACK_PX) drift = 0
     if (along < -WHEEL_SLACK_PX) jumps.push(`rows moved ${Math.round(moved)}px against the wheel`)
     if (Math.abs(drift) <= WHEEL_SLACK_PX) off = 0
   }
@@ -223,8 +227,8 @@ function wheelJumps(motion: readonly Motion[]): string[] {
     drift -= asked
     if (Math.abs(drift) > WHEEL_SLACK_PX) off += 1
     if (off <= WHEEL_LEAD_EVENTS) return
-    if (lead > WHEEL_SLACK_PX)
-      jumps.push(`rows ran ${Math.round(lead)}px ahead of the wheel for ${off} wheel events`)
+    if (Math.abs(lead) > WHEEL_SLACK_PX)
+      jumps.push(`rows ran ${Math.round(lead)}px off the wheel for ${off} wheel events`)
     drift = -asked
     off = 1
   }
@@ -238,7 +242,8 @@ function wheelJumps(motion: readonly Motion[]): string[] {
     else if ('lost' in step && step.lost * direction < 0) drift = 0
     else frame('lost' in step ? step.lost : step.moved, step.room)
   }
-  if (ahead() > WHEEL_SLACK_PX) jumps.push(`rows ended ${Math.round(ahead())}px ahead of the wheel`)
+  if (Math.abs(ahead()) > WHEEL_SLACK_PX)
+    jumps.push(`rows ended ${Math.round(ahead())}px off the wheel`)
   return jumps
 }
 

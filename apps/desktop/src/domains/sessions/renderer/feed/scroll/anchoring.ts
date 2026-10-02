@@ -90,7 +90,17 @@ function rowAboveReader(
   instance: Virtualizer<HTMLElement, Element>,
 ) {
   const fold = (instance.scrollOffset ?? 0) + instance.scrollAdjustments
-  return instance.itemSizeCache.has(item.key) ? item.end <= fold : item.start < fold
+  if (instance.itemSizeCache.has(item.key)) return item.end <= fold
+  return item.start < fold || aboveMeasuredRowInView(item.index, instance)
+}
+
+// A wheel up can show rows shorter than the overscan held; their first height lands above the rows
+// the reader was already looking at, so those rows hold still and move only by the wheel.
+function aboveMeasuredRowInView(index: number, instance: Virtualizer<HTMLElement, Element>) {
+  const lastInView = instance.range?.endIndex ?? -1
+  for (let below = index + 1; below <= lastInView; below += 1)
+    if (instance.itemSizeCache.has(instance.options.getItemKey(below))) return true
+  return false
 }
 
 // A composer growing under a Feed at its tail grows the viewport's end padding, which shrinks its
