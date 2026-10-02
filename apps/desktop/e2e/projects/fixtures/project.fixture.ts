@@ -10,6 +10,7 @@ import { databasePath, openDatabase } from '@/database/database'
 import { project as projectTable } from '@/database/project/schema'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { signedInHarnessEnvironment } from '../../../mocks/cli/signed-in-harness'
+import { isolatedLaunchEnvironment } from '../../../mocks/harness-home'
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mts'
 import { applicationUnderTest, launchCommand } from '../../application-under-test'
 import { makeProjectLocallyReady } from './locally-ready-project'
@@ -61,7 +62,7 @@ export async function launch(
   return electron.launch({
     ...launchCommand(fixture.application),
     env: {
-      ...process.env,
+      ...(await isolatedLaunchEnvironment(path.dirname(fixture.userData))),
       ...(await signedInHarnessEnvironment(path.dirname(fixture.userData))),
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
       ...environment,

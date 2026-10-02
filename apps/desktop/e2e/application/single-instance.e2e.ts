@@ -4,6 +4,7 @@ import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
+import { isolatedLaunchEnvironment } from '../../mocks/harness-home'
 import { closeApplication, launchCommand } from '../application-under-test'
 import { test } from '../packaged-proof'
 
@@ -11,7 +12,7 @@ async function launch(application: string, userData: string): Promise<ElectronAp
   return electron.launch({
     ...launchCommand(application),
     env: {
-      ...process.env,
+      ...(await isolatedLaunchEnvironment(path.dirname(userData))),
       [PROJECT_PROOF_STORE_ENV]: userData,
     },
     timeout: 30_000,
@@ -22,7 +23,7 @@ async function launchSecondProcess(application: string, userData: string): Promi
   const { executablePath, args } = launchCommand(application)
   const child = spawn(executablePath, args, {
     env: {
-      ...process.env,
+      ...(await isolatedLaunchEnvironment(path.dirname(userData))),
       [PROJECT_PROOF_STORE_ENV]: userData,
     },
     stdio: ['ignore', 'pipe', 'pipe'],

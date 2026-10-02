@@ -6,12 +6,13 @@ import { z } from 'zod'
 import { STATUS_HOOK_EVENTS } from '@/harnesses/host/status-hooks'
 import type { ExternalSessionHooks, HookTableChanges } from '@/harnesses/registration'
 import { writeDocument } from '@/platform/main/storage/portable-file'
+import { CLAUDE_HISTORY_HOME_ENV } from '../proof-protocol'
 
 export const ASK_USER_QUESTION_TOOL = 'AskUserQuestion'
 
 // The user settings Claude reads its hooks from (https://code.claude.com/docs/en/hooks).
 export const claudeSettingsFile = (env: NodeJS.ProcessEnv, home: string) =>
-  path.join(env.CLAUDE_CONFIG_DIR ?? path.join(home, '.claude'), 'settings.json')
+  path.join(env[CLAUDE_HISTORY_HOME_ENV] ?? path.join(home, '.claude'), 'settings.json')
 
 const settingsSchema = z.record(z.string(), z.unknown())
 

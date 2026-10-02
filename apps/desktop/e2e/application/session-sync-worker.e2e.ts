@@ -4,6 +4,7 @@ import { _electron as electron } from 'playwright-core'
 import type { SessionSyncStatus } from '@/domains/sessions/main/session-sync-status'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
+import { isolatedLaunchEnvironment } from '../../mocks/harness-home'
 import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 
@@ -18,7 +19,7 @@ test('starts and stops the packaged Session sync worker', async ({
   const application = await electron.launch({
     ...launchCommand(applicationUnderTest),
     env: {
-      ...process.env,
+      ...(await isolatedLaunchEnvironment(root)),
       [PROJECT_PROOF_STORE_ENV]: userData,
       CLAUDE_CONFIG_DIR: claudeConfig,
       CODEX_HOME: codexHome,

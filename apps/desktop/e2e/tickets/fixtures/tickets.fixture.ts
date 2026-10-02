@@ -16,6 +16,7 @@ import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { GITHUB_PROOF_ORIGIN_ENV, LINEAR_PROOF_ORIGIN_ENV } from '@/providers/proof-protocol'
 import { writeMockClaudeReadinessCli } from '../../../mocks/cli/claude/mock-claude-readiness-cli'
 import { signedInHarnessEnvironment } from '../../../mocks/cli/signed-in-harness'
+import { isolatedLaunchEnvironment } from '../../../mocks/harness-home'
 import { startMockGitHubLoopback } from '../../../mocks/providers/github/mock-github-loopback'
 import type { MockLinear } from '../../../mocks/providers/linear/mock-linear'
 import { HIDDEN, TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
@@ -82,7 +83,7 @@ export async function launch(fixture: TicketFixture): Promise<ElectronApplicatio
   const application = await electron.launch({
     ...launchCommand(fixture.application, ['--use-mock-keychain']),
     env: {
-      ...process.env,
+      ...(await isolatedLaunchEnvironment(path.dirname(fixture.userData))),
       ...(await signedInHarnessEnvironment(path.dirname(fixture.userData))),
       // The Accounts dialog lists every Harness, so none is read from the machine's own CLIs.
       [HARNESS_SIGNIN_CLAUDE_EXECUTABLE_ENV]: await writeMockClaudeReadinessCli(

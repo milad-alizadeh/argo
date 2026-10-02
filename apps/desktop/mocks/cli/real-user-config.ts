@@ -5,6 +5,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 import { claudeSettingsFile } from '@/harnesses/claude/session/claude-status-hooks'
+import { HARNESS_HISTORY_HOME_ENVS } from '../harness-home'
 
 const REAL_HOME = os.userInfo().homedir
 const REAL_CONFIG_FILES = [
@@ -47,7 +48,6 @@ export default function realConfigArgoHooksUnchanged(): () => void {
   return argoHooksUnchanged(REAL_CONFIG_FILES)
 }
 
-const HARNESS_FOLDERS = ['CLAUDE_CONFIG_DIR', 'CODEX_HOME'] as const
 const THROWAWAY = path.join(os.tmpdir(), 'argo-harness-folders-')
 
 // Points both Harness folders at throwaway ones, so a case cannot reach the person's own, even ones
@@ -56,7 +56,7 @@ const THROWAWAY = path.join(os.tmpdir(), 'argo-harness-folders-')
 export function isolateHarnessFolders(): () => void {
   if (process.env.CODEX_HOME?.startsWith(THROWAWAY)) return () => {}
   const base = mkdtempSync(THROWAWAY)
-  for (const name of HARNESS_FOLDERS) {
+  for (const name of HARNESS_HISTORY_HOME_ENVS) {
     const folder = path.join(base, name.toLowerCase())
     mkdirSync(folder, { recursive: true })
     process.env[name] = folder

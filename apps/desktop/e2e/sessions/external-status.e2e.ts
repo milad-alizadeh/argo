@@ -18,6 +18,7 @@ import { MOCK_CODEX_USER_HOOKS_FILE } from '../../mocks/cli/codex/fixtures/mock-
 import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { holdCodexWriterLock } from '../../mocks/cli/codex/mock-codex-external-threads'
 import { hookEvent, postHook } from '../../mocks/cli/status-hooks'
+import { isolatedLaunchEnvironment } from '../../mocks/harness-home'
 import { newFixturePath } from '../../mocks/sessions/mock-transcript-files'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { closeApplication, launchCommand } from '../application-under-test'
@@ -187,7 +188,7 @@ async function launch(root: string, applicationUnderTest: string, source: Status
   const application = await electron.launch({
     ...launchCommand(applicationUnderTest),
     env: {
-      ...process.env,
+      ...(await isolatedLaunchEnvironment(root)),
       [SESSION_CLAUDE_EXECUTABLE_ENV]: await writeMockClaude(root, fixture.claudeTranscripts),
       [SESSION_CODEX_EXECUTABLE_ENV]: await writeMockCodexLive(root),
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
