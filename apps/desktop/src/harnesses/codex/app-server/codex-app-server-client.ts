@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
+import { stat } from 'node:fs/promises'
 import { createInterface } from 'node:readline'
 import { executableVersion } from '@/harnesses/cli/executable-version'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
@@ -366,6 +367,8 @@ export function openCodexChannel(
 type CodexExecutable = {
   executable: string
   version: string
+  // A fingerprint taken before `--version`, so a change in between is seen on the next request.
+  file?: string | null
 }
 
 export type CodexAppServerClientOptions = {
@@ -413,11 +416,23 @@ async function resolveCodexExecutable(signal: AbortSignal): Promise<CodexExecuta
     process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('codex')
   // An empty override pins a machine with no Codex, as the sign-in override does.
   if (!executable) return null
+  const file = await fileFingerprint(executable)
   const version = await executableVersion(executable)
   if (signal.aborted) throw signal.reason
   return {
     executable,
     version,
+    file,
+  }
+}
+
+// A version change behind an unchanged shim (volta, asdf, mise) is not seen until reconnect.
+async function fileFingerprint(executable: string): Promise<string | null> {
+  try {
+    const { dev, ino, size, mtimeMs } = await stat(executable)
+    return `${dev}:${ino}:${size}:${mtimeMs}`
+  } catch {
+    return null
   }
 }
 
@@ -552,15 +567,30 @@ class CodexAppServerClientInstance implements CodexAppServerClient {
   }
 
   private async createConnection(currentGeneration: number): Promise<CodexChannel> {
+    const live = await this.unchangedChannel()
+    this.assertActive(currentGeneration)
+    if (live !== null) return live
     const resolved = await resolveBeforeAbort(this.resolveExecutable, this.abort.signal)
     this.assertActive(currentGeneration)
     if (resolved === null) {
       this.closeChannel()
       throw new CodexUnavailableError()
     }
-    if (this.matchesCurrent(resolved)) return this.channel as CodexChannel
+    // A rewritten file with the same version keeps the channel and its live turns.
+    if (this.matchesCurrent(resolved)) {
+      this.identity = resolved
+      return this.channel as CodexChannel
+    }
     this.closeChannel()
     return this.openResolved(resolved, currentGeneration)
+  }
+
+  // Skips the path lookup and `--version` while the live channel's executable file is unchanged (#3137).
+  private async unchangedChannel(): Promise<CodexChannel | null> {
+    const { channel, identity } = this
+    if (channel === null || identity?.file == null) return null
+    const file = await fileFingerprint(identity.executable)
+    return file === identity.file && this.channel === channel ? channel : null
   }
 
   private matchesCurrent(resolved: CodexExecutable) {
