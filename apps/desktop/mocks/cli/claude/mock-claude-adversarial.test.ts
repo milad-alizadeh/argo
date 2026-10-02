@@ -118,7 +118,8 @@ test('a seeded Claude stall leaves the Turn open', async () => {
   const run = await started('seed-6')
   try {
     send(run.child, 'Stall this Turn.')
-    await new Promise((resolve) => setTimeout(resolve, 150))
+    // The mock records the user Turn, then stalls; that record is the signal to check.
+    await waitFor(async () => (await sessionTexts(run)).some((text) => text.startsWith('user: ')))
     assert.equal(run.child.exitCode, null)
     assert.ok(!(await sessionTexts(run)).some((text) => text.includes('Mock Claude read:')))
   } finally {
