@@ -13,6 +13,7 @@ describe('sessionHarness', () => {
       lastHarness: own,
       chooseHarness,
       session: null,
+      sent: null,
     })
     expect(control).toBeNull()
   })
@@ -23,6 +24,21 @@ describe('sessionHarness', () => {
       lastHarness: DEFAULT_HARNESS,
       chooseHarness,
       session: { harness: own },
+      sent: null,
+    })
+    expect(control).toEqual({ harness: own })
+  })
+
+  test('a Session this window sent shows the sent Harness until its details load', () => {
+    const control = sessionHarness({
+      selectedSessionId: 'started',
+      lastHarness: DEFAULT_HARNESS,
+      chooseHarness,
+      session: null,
+      sent: {
+        harness: own,
+        turnConfiguration: { model: 'model', effort: 'medium', mode: 'default' },
+      },
     })
     expect(control).toEqual({ harness: own })
   })

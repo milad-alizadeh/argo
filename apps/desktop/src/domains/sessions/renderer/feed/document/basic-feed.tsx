@@ -142,6 +142,7 @@ export function BasicFeed({
           key={document.sessionId}
           reading={document}
           running={running}
+          questionLocked={posture !== 'live'}
           activeEvidenceId={activeEvidenceId}
           initialScrollPosition={initialPosition(document.sessionId)}
           onScrollPositionChange={savePosition}
@@ -169,6 +170,7 @@ export function BasicFeed({
 type FeedDocumentProps = {
   reading: SessionFeed
   running: boolean
+  questionLocked: boolean
   activeEvidenceId: string | null
   initialScrollPosition: FeedPosition | null
   onScrollPositionChange: (sessionId: string, position: FeedPosition) => void
@@ -194,6 +196,7 @@ function EmptyFeed({ title, description }: { title: string; description: string 
 function FeedDocument({
   reading,
   running,
+  questionLocked,
   activeEvidenceId,
   initialScrollPosition,
   onScrollPositionChange,
@@ -216,8 +219,7 @@ function FeedDocument({
     onAnswerQuestion,
     answeringQuestionId,
     questionFailure,
-    // Standing, not posture, is what refuses an answer; it lands with the lease (#2861 E2).
-    questionLocked: false,
+    questionLocked,
   })
   const { column, settled } = useSettledFeed({
     sessionId: reading.sessionId,

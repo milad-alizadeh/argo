@@ -37,12 +37,17 @@ import {
   proveStillWhileStreaming,
   writeOutsideSession,
 } from './cases/feed-scroll.case'
-import { proveFooterKeepsHarness } from './cases/footer-harness.case'
+import {
+  proveFirstSendKeepsLabel,
+  TURN_CHIP_WATCH,
+  USAGE_WATCH,
+} from './cases/first-send-labels.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
 import { proveNewSessionSkipsUninstalledHarness } from './cases/new-session-harness.case'
 import { proveNoProjectWindow } from './cases/no-project.case'
 import { provePromptBeforeNaming } from './cases/pending-prompt.case'
 import { provePromptLatency } from './cases/prompt-latency.case'
+import { proveSessionQuestion } from './cases/question.case'
 import { proveRefusedStart } from './cases/refused-start.case'
 import { proveDuplicateSend, proveReplyWait } from './cases/reply-delay.case'
 import { proveContract } from './cases/session-list-contract.case'
@@ -471,6 +476,10 @@ test.describe('with real Session transcript corpora', () => {
   })
 })
 
+test('session-question', async ({ session }) => {
+  await proveSessionQuestion(session.page())
+})
+
 test('session-codex-resume', async ({ session, backend }) => {
   await provePackagedCodexResume(session.page(), { backend, restart: session.restart })
 })
@@ -518,7 +527,13 @@ test.describe('with a Harness that holds its start', () => {
     })
 
     test(`session-${harness}-footer-keeps-harness`, async ({ session, backend }) => {
-      await proveFooterKeepsHarness(session.page(), backend, harness)
+      // After this window's Send, the footer names the sent Harness at once (#3179).
+      const watch = { ...USAGE_WATCH, missing: true }
+      await proveFirstSendKeepsLabel(session.page(), backend, { harness, watch })
+    })
+
+    test(`session-${harness}-turn-chip-keeps-configuration`, async ({ session, backend }) => {
+      await proveFirstSendKeepsLabel(session.page(), backend, { harness, watch: TURN_CHIP_WATCH })
     })
   }
 })
