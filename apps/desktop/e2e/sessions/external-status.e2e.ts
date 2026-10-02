@@ -25,14 +25,17 @@ import { expect, test } from '../packaged-proof'
 import { ACTIVE_FEED } from './feed-selectors'
 import { prepare } from './fixtures/feed.fixture'
 import { openSessionByClick, PERSISTED_ROW } from './gestures'
+import { sessionRows } from './page-trpc'
 
 const OLDER = 'Older terminal Session'
 const NEWER = 'Newer terminal Session'
 const TURN_PROMPT = 'Keep going'
+const UNTITLED_PROMPT = 'Started in a terminal and never named'
 const EARLIER = Date.parse('2026-09-01T09:00:00.000Z')
 const LATER = Date.parse('2026-09-02T09:00:00.000Z')
 
-type ExternalSession = { nativeId: string; title: string; activityAt: number }
+// A Session with a null title has only its first prompt to show.
+type ExternalSession = { nativeId: string; title: string | null; activityAt: number }
 // What the stubbed CLI or app-server reports about a Session another process runs.
 type StatusSource = {
   harness: 'claude' | 'codex'
@@ -84,8 +87,8 @@ function claudeSource(): StatusSource {
       cwd = project
       const records = sessions.map((session) => ({
         sessionId: session.nativeId,
-        summary: session.title,
-        firstPrompt: session.title,
+        summary: session.title ?? UNTITLED_PROMPT,
+        firstPrompt: session.title ?? UNTITLED_PROMPT,
         lastModified: session.activityAt,
         cwd: project,
       }))
@@ -106,6 +109,14 @@ function claudeSource(): StatusSource {
   }
 }
 
+const codexTurn = (prompt: string, status: string) => ({
+  id: 'terminal-turn',
+  status,
+  items: [
+    { id: 'terminal-prompt', type: 'userMessage', content: [{ type: 'text', text: prompt }] },
+  ],
+})
+
 const codexHome = (root: string) => path.join(root, 'codex-home')
 const codexState = (root: string) => path.join(root, 'codex-state.json')
 const codexRollout = (root: string, session: ExternalSession) =>
@@ -121,19 +132,7 @@ function codexSource(): StatusSource {
   async function writeTurn(root: string, session: ExternalSession, status: string) {
     const threads = JSON.parse(await readFile(codexState(root), 'utf8'))
     const thread = threads.find((candidate) => candidate.id === session.nativeId)
-    thread.turns = [
-      {
-        id: 'terminal-turn',
-        status,
-        items: [
-          {
-            id: 'terminal-prompt',
-            type: 'userMessage',
-            content: [{ type: 'text', text: TURN_PROMPT }],
-          },
-        ],
-      },
-    ]
+    thread.turns = [codexTurn(TURN_PROMPT, status)]
     await writeFile(codexState(root), JSON.stringify(threads))
     await appendFile(codexRollout(root, session), `${JSON.stringify({ type: 'event_msg' })}\n`)
   }
@@ -143,14 +142,16 @@ function codexSource(): StatusSource {
     async seed(root, project, sessions) {
       await mkdir(path.join(codexHome(root), 'sessions'), { recursive: true })
       for (const session of sessions) await writeFile(codexRollout(root, session), '')
+      // Codex types `preview` as a string and leaves it empty when it holds none.
       const threads = sessions.map((session) => ({
         id: session.nativeId,
         cwd: project,
         updatedAt: Math.floor(session.activityAt / 1000),
         parentThreadId: null,
         name: session.title,
+        preview: '',
         path: codexRollout(root, session),
-        turns: [],
+        turns: session.title === null ? [codexTurn(UNTITLED_PROMPT, 'completed')] : [],
       }))
       await writeFile(codexState(root), JSON.stringify(threads))
       return { CODEX_HOME: codexHome(root) }
@@ -268,6 +269,35 @@ for (const createSource of [claudeSource, codexSource]) {
       await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/)
     } finally {
       await application.close()
+      await source.stop()
+    }
+  })
+}
+
+// Claude and Codex rows draw the same title for a Session nobody named (#3077, #3148).
+for (const createSource of [claudeSource, codexSource]) {
+  test(`a ${createSource().harness} Session started elsewhere with no title shows its first prompt`, async ({
+    root,
+    applicationUnderTest,
+  }) => {
+    const titled = createSource()
+    const untitled = {
+      nativeId: '00000000-0000-4000-8000-00000000e003',
+      title: null,
+      activityAt: LATER,
+    }
+    const source: StatusSource = {
+      ...titled,
+      seed: (root, project) => titled.seed(root, project, [untitled]),
+    }
+    const { application, page } = await launch(root, applicationUnderTest, source)
+    try {
+      await expect
+        .poll(async () => (await sessionRows(page)).map(({ name }) => name), { timeout: 30_000 })
+        .toContain(UNTITLED_PROMPT)
+      await expect(rowTitled(page, UNTITLED_PROMPT)).toHaveCount(1)
+    } finally {
+      await closeApplication(application)
       await source.stop()
     }
   })
