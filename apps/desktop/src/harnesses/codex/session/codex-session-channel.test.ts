@@ -543,20 +543,48 @@ test('Codex thread status reaches the Session status without repeats (ADR-0024)'
   channel.close()
 })
 
-// A Codex Turn draws prompt, Running, reply, Idle, the order a Claude Turn draws (#3161).
-test('a completed Codex Turn draws Running before the reply and Idle after it', async () => {
-  const { channel, events, notify } = await openOneTurnChannel()
+const SAMPLE_TURN_ORDER = ['user', 'running', 'assistant', 'idle']
+
+// Finishes the sample Turn and closes the channel; returns its prompt, status and reply rows in Feed order.
+function finishSampleTurn({
+  channel,
+  events,
+  notify,
+}: Awaited<ReturnType<typeof openOneTurnChannel>>) {
   sampleMessages(notify)
   notify({
     method: 'turn/completed',
     params: { threadId: 'thread-1', turn: { id: 'turn-1', status: 'completed' } },
   })
   channel.close()
-  assert.deepEqual(
-    projectLiveFeedRows([], mockLiveEvents(events)).flatMap((row) => {
-      if (row.shape === 'event' && row.event === 'liveStatus') return [row.text]
-      return row.shape === 'prose' ? [row.role] : []
-    }),
-    ['user', 'running', 'assistant', 'idle'],
-  )
+  return projectLiveFeedRows([], mockLiveEvents(events)).flatMap((row) => {
+    if (row.shape === 'event' && row.event === 'liveStatus') return [row.text]
+    return row.shape === 'prose' ? [row.role] : []
+  })
+}
+
+// A Codex Turn draws prompt, Running, reply, Idle, the order a Claude Turn draws (#3161).
+test('a completed Codex Turn draws Running before the reply and Idle after it', async () => {
+  assert.deepEqual(finishSampleTurn(await openOneTurnChannel()), SAMPLE_TURN_ORDER)
+})
+
+// The app-server can report the thread active before it answers `turn/start` (#3161).
+test('a Codex Turn reported active before its turn/start response draws the same order', async () => {
+  let answerTurnStart = () => {}
+  const request = (async (method: string, _params: unknown, parse: (value: unknown) => unknown) => {
+    if (method === 'thread/start') return parse({ thread: { id: 'thread-1' } })
+    await new Promise<void>((resolve) => {
+      answerTurnStart = resolve
+    })
+    return parse({ turn: { id: 'turn-1' } })
+  }) as CodexRequest
+  const opened = mockCodexChannel(request)
+  await new Promise((resolve) => setImmediate(resolve))
+  opened.notify({
+    method: 'thread/status/changed',
+    params: { threadId: 'thread-1', status: { type: 'active', activeFlags: [] } },
+  })
+  answerTurnStart()
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.deepEqual(finishSampleTurn(opened), SAMPLE_TURN_ORDER)
 })

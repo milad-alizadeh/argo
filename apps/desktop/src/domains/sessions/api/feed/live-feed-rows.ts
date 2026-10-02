@@ -444,7 +444,7 @@ type LiveRow = {
   key: string
   row: SessionFeedRow
   sequence: number
-  turnId: string | null
+  commandId: string | null
 }
 type ProjectionState = {
   questionCalls: ReadonlySet<string>
@@ -516,10 +516,10 @@ function liveFeedRows(
       key,
       row,
       sequence: event.sequence,
-      turnId: event.turnId,
+      commandId: event.commandId,
     }))
   }
-  return promptsBeforeTurnStatus(rows)
+  return promptsBeforeTheirStatus(rows)
 }
 
 function isStatusRow({ row }: LiveRow): boolean {
@@ -530,18 +530,19 @@ function isPromptRow({ row }: LiveRow): boolean {
   return row.shape === 'prose' && row.role === 'user'
 }
 
-// A Turn's status rows follow its prompt, whichever its Harness reports first (#3161).
-function promptsBeforeTurnStatus(rows: readonly LiveRow[]): LiveRow[] {
+// A command's status rows follow its prompt, whichever its Harness reports first (#3161).
+function promptsBeforeTheirStatus(rows: readonly LiveRow[]): LiveRow[] {
   const ordered: LiveRow[] = []
   for (const live of rows) {
-    if (live.turnId === null || !isPromptRow(live)) {
+    if (live.commandId === null || !isPromptRow(live)) {
       ordered.push(live)
       continue
     }
     let start = ordered.length
     while (start > 0) {
       const previous = ordered[start - 1]
-      if (previous === undefined || previous.turnId !== live.turnId || isPromptRow(previous)) break
+      if (previous === undefined || previous.commandId !== live.commandId || isPromptRow(previous))
+        break
       start -= 1
     }
     const turn = ordered.splice(start)

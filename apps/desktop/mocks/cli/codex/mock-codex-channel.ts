@@ -8,6 +8,8 @@ import type {
 import { openCodexSessionChannel } from '@/harnesses/codex/session/codex-session-channel'
 import type { LiveSessionChannelEvent } from '@/harnesses/registration'
 
+const MOCK_SESSION_ID = '00000000-0000-4000-8000-000000000097'
+
 // A Codex channel over a mock app-server client; `notify` delivers what the app-server would.
 export const mockStartInput: SessionStartInput = {
   commandId: '00000000-0000-4000-8000-000000000001',
@@ -66,7 +68,7 @@ export function mockLiveEvents(events: readonly LiveSessionChannelEvent[]): Sess
       ? [
           {
             ...event.body,
-            sessionId: '00000000-0000-4000-8000-000000000001',
+            sessionId: MOCK_SESSION_ID,
             sequence: index + 1,
           } as SessionLiveEvent,
         ]

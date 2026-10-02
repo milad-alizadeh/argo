@@ -230,7 +230,7 @@ test('session-feed-hides-lifecycle-events', async ({ session, backend }) => {
 // After a reply, each Harness draws its prompt, status and reply rows in the same order (#3161).
 test('session-feed-status-parity', async ({ session, backend }) => {
   const page = session.page()
-  const drawn: Record<string, string[]> = {}
+  const drawn: Partial<Record<Harness, string[]>> = {}
   for (const harness of ['claude', 'codex'] as const) {
     await replyUntilIdle(page, backend, {
       harness,
@@ -242,12 +242,13 @@ test('session-feed-status-parity', async ({ session, backend }) => {
       rows.flatMap((row) => {
         const role = row.getAttribute('data-role')
         if (role !== null) return [role]
-        const text = row.textContent ?? ''
-        return text.startsWith('Session status') ? [text] : []
+        const parts = [...row.querySelectorAll('[data-slot="feed-event"] > span')]
+        const [label, status] = parts.map((part) => part.textContent)
+        return label === 'Session status' && status !== undefined ? [status] : []
       }),
     )
   }
-  expect(drawn.claude).toEqual(['user', 'Session statusRunning', 'assistant', 'Session statusIdle'])
+  expect(drawn.claude).toEqual(['user', 'Running', 'assistant', 'Idle'])
   expect(drawn.codex).toEqual(drawn.claude)
 })
 
