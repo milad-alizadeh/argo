@@ -93,7 +93,7 @@ function ComposerContextBar(
       <SessionContextBar
         contextTokens={props.contextTokens}
         contextWindowTokens={props.contextWindowTokens}
-        harness={props.harness?.harness}
+        harness={props.harness?.harness ?? null}
         isCompacting={props.isCompacting}
         isHandingOff={props.isHandingOff}
         onCompact={props.onCompact}

@@ -55,13 +55,10 @@ export function useSettledSearch(search: string): string {
   return settled
 }
 
-export const sessionListQueryKey = (input: SessionListInput) =>
-  [...trpc.sessionList.pathKey(), input] as const
-
 // Read page by page; `SessionChanges` reads the loaded pages again when main announces a change.
 export function useSessionListQuery(input: SessionListInput, enabled: boolean) {
   return useInfiniteQuery({
-    queryKey: sessionListQueryKey(input),
+    queryKey: [...trpc.sessionList.pathKey(), input],
     enabled,
     staleTime: Number.POSITIVE_INFINITY,
     // A new search or filter keeps the Project's rows on screen until its first page lands.

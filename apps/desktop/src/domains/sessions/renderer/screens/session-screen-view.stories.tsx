@@ -5,6 +5,7 @@ import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { pendingSessionId } from '@/domains/sessions/api/pending-session'
 import { FALLBACK_DEFAULT_BRANCH } from '@/domains/sessions/api/worktree-request'
+import { DEFAULT_HARNESS } from '@/harnesses/harness'
 import { sessionRow, sessionShellCommand, sessionSubagent } from '@/mocks/sessions/session-rows'
 import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fixture'
 import { installSessionHost } from '@/mocks/sessions/session-story-host'
@@ -318,6 +319,7 @@ function ReviewContent({
         activeEvidenceId={null}
         composer={
           <ComposerForm
+            harness={{ harness: DEFAULT_HARNESS }}
             isRunning={composerRunning}
             permissionPrompt={permissionPrompt}
             onInterrupt={async () => true}

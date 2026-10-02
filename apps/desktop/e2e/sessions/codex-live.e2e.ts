@@ -8,7 +8,7 @@ import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 import { USAGE_BUTTON, usageLabels, watchUsageLabels } from './cases/footer-harness.case'
 import { prepare } from './fixtures/feed.fixture'
-import { chooseHarness, PERSISTED_ROW } from './gestures'
+import { chooseHarness, openNewSessionByClick, PERSISTED_ROW } from './gestures'
 
 async function prepareCodexApp(root: string, applicationUnderTest: string) {
   const fixture = await prepare(root, applicationUnderTest, { projectSelected: true })
@@ -63,6 +63,8 @@ test('packaged Codex live feed resumes from app-server history', async ({
     await expect(first.page.locator(`.feed__viewport[data-session="${sessionId}"]`)).toContainText(
       'Codex replied to: First Codex turn',
     )
+    // The restart restores this route, so the row click below opens the Session with nothing loaded.
+    await openNewSessionByClick(first.page)
   } finally {
     await closeApplication(first.application)
   }
@@ -72,15 +74,20 @@ test('packaged Codex live feed resumes from app-server history', async ({
       `nav[aria-label="Sessions"] button[data-session-id="${sessionId}"]`,
     )
     await row.waitFor()
-    // Opened after a restart, before its details load, the footer still shows Codex usage (#3172).
+    // Opened after a restart, the footer never shows another Harness's usage (#3172).
     await second.page.evaluate(watchUsageLabels, USAGE_BUTTON)
     await row.click()
     const feed = second.page.locator(`.feed__viewport[data-session="${sessionId}"]`)
     await expect(feed).toContainText('Codex replied to: First Codex turn')
-    expect(await usageLabels(second.page)).toEqual([codexUsage])
+    await expect.poll(() => usageLabels(second.page)).toEqual([codexUsage])
     await send(second.page, 'Second Codex turn')
     await expect(feed).toContainText('Codex replied to: Second Codex turn')
     await expect(feed.getByText('Codex replied to: First Codex turn')).toHaveCount(1)
+    // A reload keeps the Session route with nothing loaded, as a deep link does (#3182).
+    await second.page.addInitScript(watchUsageLabels, USAGE_BUTTON)
+    await second.page.reload()
+    await expect(feed).toContainText('Codex replied to: Second Codex turn')
+    await expect.poll(() => usageLabels(second.page)).toEqual([codexUsage])
   } finally {
     await closeApplication(second.application)
   }

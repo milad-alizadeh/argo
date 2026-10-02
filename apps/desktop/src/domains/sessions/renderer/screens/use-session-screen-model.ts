@@ -16,7 +16,6 @@ import {
 import { isFeedRowPrompt, useFeedReading } from '../feed'
 import { useAvailableHarnesses } from '../harness'
 import { workInspectorReveal } from '../inspector'
-import { useListedSessionHarness } from '../session-list'
 import type { Session, SessionEvidence, SessionExtras } from '../types'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work'
 import { sessionLocation } from './session-screen-location'
@@ -103,18 +102,17 @@ function useSessionEvidence(sessionId: string | null) {
 // The Session's Feed. A new Session's pending id draws on New Session from Enter, then on the
 // Session it was named until that Session's own Feed shows a prompt, whatever the Harness. New
 // Session keeps it across the naming render only.
-function useSessionFeed(selectedSessionId: string | null, running: boolean, harness: Harness) {
+function useSessionFeed(selectedSessionId: string | null, running: boolean) {
   const { projectId, sessionId } = useParams()
   const [starting, setStarting] = useState<{
     projectId: string | undefined
     pendingId: string
     sessionId: string
-    harness: Harness
   } | null>(null)
   const onStartingSession = useCallback(
     (pendingId: string | null, named = 'new') =>
-      setStarting(pendingId === null ? null : { projectId, pendingId, sessionId: named, harness }),
-    [projectId, harness],
+      setStarting(pendingId === null ? null : { projectId, pendingId, sessionId: named }),
+    [projectId],
   )
   // A move to any route but the named Session drops the start, so New Session draws no old prompt.
   const route = `${projectId}/${sessionId}`
@@ -135,26 +133,7 @@ function useSessionFeed(selectedSessionId: string | null, running: boolean, harn
     ...(holdsPrompt ? startingFeed : namedFeed),
     feedSessionId: holdsPrompt ? startingSessionId : selectedSessionId,
     onStartingSession,
-    startedHarness: shown && starting.sessionId === selectedSessionId ? starting.harness : null,
   }
-}
-
-// The Harness a new Session starts on: the reader's pick, else the first one that can start.
-function usePickedHarness() {
-  const [pickedHarness, chooseHarness] = useState<Harness | null>(null)
-  const availableHarnesses = useAvailableHarnesses()
-  return { lastHarness: pickedHarness ?? availableHarnesses?.[0] ?? DEFAULT_HARNESS, chooseHarness }
-}
-
-// Before details load, a Session started here keeps its pick, else its Session list row names it.
-function useSessionHarness({
-  startedHarness,
-  ...input
-}: Omit<Parameters<typeof sessionHarness>[0], 'knownHarness'> & {
-  startedHarness: Harness | null
-}) {
-  const listedHarness = useListedSessionHarness(input.selectedSessionId)
-  return sessionHarness({ ...input, knownHarness: startedHarness ?? listedHarness })
 }
 
 export function useSessionScreenModel() {
@@ -170,13 +149,11 @@ export function useSessionScreenModel() {
   const { session, loaded: sessionLoaded } = useSessionDetails(selectedSessionId)
   useLeaveGoneWorktree(session)
   const feedRunning = sessionTurnRunning(session)
-  const picked = usePickedHarness()
-  const { startedHarness, ...sessionFeed } = useSessionFeed(
-    selectedSessionId,
-    feedRunning,
-    picked.lastHarness,
-  )
-  const harness = useSessionHarness({ selectedSessionId, session, startedHarness, ...picked })
+  const sessionFeed = useSessionFeed(selectedSessionId, feedRunning)
+  const [pickedHarness, chooseHarness] = useState<Harness | null>(null)
+  const availableHarnesses = useAvailableHarnesses()
+  const lastHarness = pickedHarness ?? availableHarnesses?.[0] ?? DEFAULT_HARNESS
+  const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const permission = useSessionPermission(selectedSessionId)
   const question = useSessionQuestion(selectedSessionId)
   const inspector = useWorkInspector({
