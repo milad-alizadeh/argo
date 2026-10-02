@@ -5,6 +5,7 @@ import { isFeedRowPrompt } from '../rows/feed-row-renderers'
 
 type Virtualizer = ReactVirtualizer<HTMLElement, Element>
 type Pin = { sessionId: string; id: string | null }
+type Seen = Pin & { lastRow: string | null }
 
 // Where the viewport sits with the prompt at its top, a scroll-padding gap above it.
 function promptTop(virtualizer: Virtualizer, index: number, gap: number) {
@@ -27,14 +28,18 @@ function usePromptAtTop({
 }) {
   // Keyed by id, so earlier history arriving above the prompt does not read as a new one.
   const latest = rows.findLast(isFeedRowPrompt)?.id ?? null
-  const [seen, setSeen] = useState<Pin>({ sessionId, id: latest })
+  const lastRow = rows.at(-1)?.id ?? null
+  const [seen, setSeen] = useState<Seen>({ sessionId, id: latest, lastRow })
   const [pin, setPin] = useState<(Pin & { index: number }) | null>(null)
   useLayoutEffect(() => {
     if (seen.sessionId === sessionId && seen.id === latest) return
-    setSeen({ sessionId, id: latest })
-    if (positioned && seen.sessionId === sessionId && latest !== null)
-      setPin({ sessionId, id: latest, index: rows.findLastIndex(isFeedRowPrompt) })
-  }, [latest, positioned, rows, seen, sessionId])
+    setSeen({ sessionId, id: latest, lastRow })
+    const index = rows.findLastIndex(isFeedRowPrompt)
+    // Only a prompt after the last row seen was sent; an older page can bring the first one.
+    const sent = index > rows.findIndex(({ id }) => id === seen.lastRow)
+    if (positioned && seen.sessionId === sessionId && latest !== null && sent)
+      setPin({ sessionId, id: latest, index })
+  }, [lastRow, latest, positioned, rows, seen, sessionId])
   const index = pin?.sessionId === sessionId ? rows.findLastIndex(isFeedRowPrompt) : -1
   // By index, not offset: the virtualizer re-aims each frame as the rows it draws on the way
   // measure, where an offset from estimated heights stops short. `scrollPaddingStart` is the gap.

@@ -48,6 +48,11 @@ function holdEnvironment(held: boolean | undefined, name: string, file: string) 
   return { [name]: file }
 }
 
+// While this file exists, a slow Harness holds its reply; a case releases it by deleting the file.
+export function mockReplyHoldFile(root: string) {
+  return path.join(root, 'mock-reply-hold')
+}
+
 export function createMockSessionHarnessBackend(): SessionHarnessBackend {
   // The proof root and each mock's transcript root, filled in by `start` before any case runs.
   let proofRoot = ''
@@ -75,7 +80,7 @@ export function createMockSessionHarnessBackend(): SessionHarnessBackend {
         executables[harness] = await MOCKS[harness].write(root, roots[harness])
       }
       const signedIn = await signedInHarnessEnvironment(root)
-      replyHold = path.join(root, 'mock-reply-hold')
+      replyHold = mockReplyHoldFile(root)
       startHold = path.join(root, 'mock-start-hold')
       return {
         executables,

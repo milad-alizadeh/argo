@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
-import { readFileSync, watch } from 'node:fs'
+import { existsSync, readFileSync, watch } from 'node:fs'
 import {
+  SESSION_MOCK_REPLY_HOLD_FILE_ENV,
   SESSION_MOCK_START_HOLD_FILE_ENV,
   waitWhileHoldFileExists,
 } from '@/harnesses/proof-protocol'
@@ -15,6 +16,11 @@ const INITIALIZATION_DELAY_MS = 50
 const STREAM_PROBE = 'FeedStreamProbe'
 const STREAM_DELTAS = 300
 const STREAM_DELTA_INTERVAL_MS = 10
+// A `FeedRoundsProbe` prompt adds a round of rows, a line of prose and a tool call, at the tail on
+// an interval, as a long agentic run does, and keeps adding them while the reply is held.
+const ROUNDS_PROBE = 'FeedRoundsProbe'
+const ROUNDS = 5
+const ROUND_INTERVAL_MS = 300
 // A `PLAN` prompt creates two tasks and completes one, as the real CLI's TaskCreate and TaskUpdate
 // calls do in fixtures/claude-task-plan-stream.jsonl, and as the Codex mock does.
 const PLAN_PROBE = 'PLAN'
@@ -141,7 +147,8 @@ export function startMockClaudeSdkStream(
     }
     writeCommandLifecycle(sessionId, ids.user)
     const streamed = text.includes(STREAM_PROBE) ? writeStream(sessionId, ids.reply) : null
-    void Promise.all([reply(text, waitForPermission, ids), streamed]).then(([response]) =>
+    const rounds = text.includes(ROUNDS_PROBE) ? writeRounds(sessionId) : null
+    void Promise.all([reply(text, waitForPermission, ids), streamed, rounds]).then(([response]) =>
       setTimeout(() => writeReply(sessionId, response, ids.reply), INITIALIZATION_DELAY_MS),
     )
   }
@@ -222,6 +229,34 @@ function writeStream(sessionId: string, messageId: string): Promise<void> {
       clearInterval(timer)
       resolve()
     }, STREAM_DELTA_INTERVAL_MS)
+  })
+}
+
+function replyHeld() {
+  const hold = process.env[SESSION_MOCK_REPLY_HOLD_FILE_ENV]
+  return hold !== undefined && existsSync(hold)
+}
+
+// Resolves once its last round is written, so the reply comes after every round.
+function writeRounds(sessionId: string): Promise<void> {
+  return new Promise((resolve) => {
+    let round = 0
+    const timer = setInterval(() => {
+      round += 1
+      writeAssistantContent(sessionId, { type: 'text', text: `Round ${round} is done.` })
+      const toolUseId = randomUUID()
+      const command = `echo round ${round}`
+      writeAssistantContent(sessionId, {
+        type: 'tool_use',
+        id: toolUseId,
+        name: 'Bash',
+        input: { command },
+      })
+      writeToolResult(sessionId, toolUseId, `round ${round}`)
+      if (round < ROUNDS || replyHeld()) return
+      clearInterval(timer)
+      resolve()
+    }, ROUND_INTERVAL_MS)
   })
 }
 

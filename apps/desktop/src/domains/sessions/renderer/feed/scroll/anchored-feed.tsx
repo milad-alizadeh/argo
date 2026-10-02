@@ -4,9 +4,12 @@ import type { SessionFeedRow } from '../../types'
 import type { Settled } from '../document/use-settled-feed'
 import { FeedLoading } from '../feed-loading'
 import {
+  type FeedPosition,
   feedScrollPaddingStart,
+  positionOffset,
   useAnchoredVirtualizer,
   useFeedViewport,
+  useHomeToFirstRow,
   useInitialFeedPosition,
   useScrollPositionSnapshot,
   useTailThroughViewportResize,
@@ -19,11 +22,9 @@ import { useFeedTailFollow, useJumpToLatest } from './tail-follow'
 type AnchoredFeedProps = {
   active: boolean
   FeedRow: FeedRowComponent
-  initialMeasurementsCache: VirtualItem[]
-  initialScrollPosition: number | null
+  initialScrollPosition: FeedPosition | null
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
-  onMeasurementsChange: (sessionId: string, measurements: VirtualItem[]) => void
-  onScrollPositionChange: (sessionId: string, position: number) => void
+  onScrollPositionChange: (sessionId: string, position: FeedPosition) => void
   rows: readonly SessionFeedRow[]
   settled: Settled
   reveals: ReadonlyMap<string, Reveal>
@@ -90,7 +91,13 @@ export function AnchoredFeed(props: AnchoredFeedProps) {
   const onMeasured = useCallback((next: VirtualItem[]) => setMeasurements(next), [])
   if (measurements === null)
     return <MeasureFeedRows FeedRow={props.FeedRow} onMeasured={onMeasured} rows={props.rows} />
-  return <VirtualFeed {...props} initialMeasurementsCache={measurements} />
+  return (
+    <VirtualFeed
+      {...props}
+      initialMeasurementsCache={measurements}
+      initialScrollOffset={positionOffset(props.initialScrollPosition, measurements)}
+    />
+  )
 }
 
 // Within a screen of the first row, the page before it is asked for once; the rows it adds come in
@@ -126,9 +133,8 @@ function VirtualFeed({
   active,
   FeedRow,
   initialMeasurementsCache,
-  initialScrollPosition,
+  initialScrollOffset,
   onJumpToLatestChange,
-  onMeasurementsChange,
   onScrollPositionChange,
   rows,
   settled,
@@ -136,14 +142,17 @@ function VirtualFeed({
   streamingRowId,
   historyLabel,
   loadOlder,
-}: AnchoredFeedProps) {
+}: Omit<AnchoredFeedProps, 'initialScrollPosition'> & {
+  initialMeasurementsCache: VirtualItem[]
+  initialScrollOffset: number | null
+}) {
   const { attachViewport, paddingStart, viewport } = useFeedViewport()
   const tailFollow = useFeedTailFollow(settled.reading.sessionId, { active, viewport })
   const { following, update: updatePromptHold } = usePromptHold(tailFollow.shouldFollow)
   const virtualizer = useAnchoredVirtualizer({
     following,
     initialMeasurementsCache,
-    initialScrollPosition,
+    initialScrollPosition: initialScrollOffset,
     positioned: !tailFollow.awaitingInitialPosition,
     rows,
     viewport,
@@ -151,6 +160,7 @@ function VirtualFeed({
     onChange: tailFollow.onChange,
   })
   useTailThroughViewportResize(viewport, following)
+  useHomeToFirstRow(viewport, virtualizer)
   useOlderPageNearStart({
     firstRowId: rows[0]?.id,
     loadOlder,
@@ -158,7 +168,7 @@ function VirtualFeed({
     viewport,
   })
   useInitialFeedPosition({
-    initialScrollPosition,
+    initialScrollPosition: initialScrollOffset,
     onPositioned: tailFollow.markInitiallyPositioned,
     sessionId: settled.reading.sessionId,
     viewport,
@@ -169,7 +179,6 @@ function VirtualFeed({
     viewport,
     virtualizer,
     onScrollPositionChange,
-    onMeasurementsChange,
   )
   const promptIndex = useFeedPrompt({
     positioned: !tailFollow.awaitingInitialPosition,

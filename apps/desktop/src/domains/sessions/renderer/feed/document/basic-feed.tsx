@@ -1,4 +1,3 @@
-import type { VirtualItem } from '@tanstack/virtual-core'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { pendingSessionDraft } from '@/domains/sessions/api/pending-session'
@@ -26,9 +25,9 @@ import { isFeedRowStreaming } from '../rows/feed-row-renderers'
 import type { RevealCache } from '../rows/streaming-text'
 import { ToolGroupState } from '../rows/tool-group-state'
 import { AnchoredFeed } from '../scroll/anchored-feed'
+import type { FeedPosition } from '../scroll/anchoring'
 import { useReveals } from '../scroll/reveal'
 import { Standing } from '../standing'
-import { useFeedMeasurementsCache } from '../use-feed-measurements-cache'
 import { useDrawnRow } from './drawn-row'
 import { useFeedRetry, useFeedScrollPositions } from './feed-document-state'
 import { awaitingAssistantReply, useSettledFeed } from './use-settled-feed'
@@ -44,7 +43,6 @@ type FeedQuestionHandlers = {
 }
 
 function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}
-function ignoreMeasurementsChange(_sessionId: string, _measurements: VirtualItem[]) {}
 
 function feedFailureNotice({
   failure,
@@ -109,7 +107,6 @@ export function BasicFeed({
 }: BasicFeedProps) {
   const { t } = useTranslation('sessions')
   const { initialPosition, savePosition } = useFeedScrollPositions()
-  const { initialMeasurementsCache, saveMeasurementsCache } = useFeedMeasurementsCache()
   const document = feed !== null && feed.sessionId === selectedSessionId ? feed : null
   // The selected Feed has no history row to settle its first read (#2102).
   const { retry, retryToken } = useFeedRetry(onRetryFeed)
@@ -146,9 +143,7 @@ export function BasicFeed({
           reading={document}
           running={running}
           activeEvidenceId={activeEvidenceId}
-          initialMeasurementsCache={initialMeasurementsCache(document.sessionId)}
           initialScrollPosition={initialPosition(document.sessionId)}
-          onMeasurementsChange={saveMeasurementsCache}
           onScrollPositionChange={savePosition}
           onJumpToLatestChange={onJumpToLatestChange}
           onOpenEvidence={onOpenEvidence}
@@ -175,10 +170,8 @@ type FeedDocumentProps = {
   reading: SessionFeed
   running: boolean
   activeEvidenceId: string | null
-  initialMeasurementsCache: VirtualItem[]
-  initialScrollPosition: number | null
-  onMeasurementsChange?: (sessionId: string, measurements: VirtualItem[]) => void
-  onScrollPositionChange: (sessionId: string, position: number) => void
+  initialScrollPosition: FeedPosition | null
+  onScrollPositionChange: (sessionId: string, position: FeedPosition) => void
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   historyLabel: string
 } & FeedQuestionHandlers
@@ -202,9 +195,7 @@ function FeedDocument({
   reading,
   running,
   activeEvidenceId,
-  initialMeasurementsCache,
   initialScrollPosition,
-  onMeasurementsChange = ignoreMeasurementsChange,
   onScrollPositionChange,
   onJumpToLatestChange,
   onOpenEvidence,
@@ -245,13 +236,11 @@ function FeedDocument({
         {noRows ? null : (
           <AnchoredFeed
             active
-            initialMeasurementsCache={initialMeasurementsCache}
             initialScrollPosition={initialScrollPosition}
             rows={settled.rows}
             settled={settled}
             FeedRow={DrawnRow}
             onJumpToLatestChange={onJumpToLatestChange}
-            onMeasurementsChange={onMeasurementsChange}
             onScrollPositionChange={onScrollPositionChange}
             reveals={reveals}
             streamingRowId={streamingRowId}

@@ -1533,16 +1533,27 @@ export const SessionSwitchRestoresPositionAfterWidthChange: Story = {
     history.scrollTop = history.scrollHeight / 2
     fireEvent.scroll(history)
     await waitForScrollToSettle(history)
-    const savedPosition = history.scrollTop
     const wideWidth = history.clientWidth
     const rowHeight = drawnRows(canvasElement)[0]?.getBoundingClientRect().height ?? 0
+    // Rows grow taller in the narrower column, so the reader's row and its offset are what return.
+    const historyTop = history.getBoundingClientRect().top
+    const anchor = [...history.querySelectorAll<HTMLElement>('[data-feed-row]')].find(
+      (row) => row.getBoundingClientRect().bottom > historyTop,
+    )
+    if (anchor === undefined) throw new Error('Expected a row at the top of the scrolled viewport.')
+    const anchorOffset = anchor.getBoundingClientRect().top - historyTop
 
     await userEvent.click(canvas.getByRole('button', { name: 'Open second Session' }))
     await userEvent.click(canvas.getByRole('button', { name: 'Open first Session' }))
     const restored = await canvas.findByLabelText('Session history')
     await waitFor(() => expect(restored.clientWidth).toBeLessThan(wideWidth))
     await waitForScrollToSettle(restored)
-    await waitFor(() => expect(restored.scrollTop).toBeCloseTo(savedPosition, 1))
+    await waitFor(() => {
+      const row = restored.querySelector<HTMLElement>(`[data-feed-row="${anchor.dataset.feedRow}"]`)
+      if (row === null) throw new Error('The row the reader left on no longer renders.')
+      const restoredOffset = row.getBoundingClientRect().top - restored.getBoundingClientRect().top
+      expect(restoredOffset).toBeCloseTo(anchorOffset, 0)
+    })
     await waitFor(() =>
       expect(drawnRows(canvasElement)[0]?.getBoundingClientRect().height).toBeGreaterThan(
         rowHeight,

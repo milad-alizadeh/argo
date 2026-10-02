@@ -142,6 +142,11 @@ function pendingPermission(events: readonly SessionLiveEvent[]): string | null {
   return [...decided].findLast(([, isDecided]) => !isDecided)?.[0] ?? null
 }
 
+// Where a published page starts: the row it starts at and how many rows before it the reader wants;
+// a null anchor stands after the newest row.
+type FeedPage = { anchor: string | null; owed: number }
+const NEWEST_PAGE: FeedPage = { anchor: null, owed: FEED_PAGE_ROWS }
+
 // A Subagent's Feed ends with the responses its parent's Feed recorded for it.
 type ParentFeed = { observe: (observer: Observer) => () => void }
 
@@ -160,10 +165,10 @@ class FeedReader {
   // How wide the last history read was, and whether it reached the Session's first message.
   #extent = 0
   #complete = true
-  // The first row of the page published, and how many rows the reader wants before it; a null
-  // anchor stands after the newest row.
-  #anchor: string | null = null
-  #owed = FEED_PAGE_ROWS
+  // The first row of the page published, and how many rows the reader wants before it.
+  readonly #opened: FeedPage
+  #anchor: string | null
+  #owed: number
   #loaded: FeedEntry[] = []
   #events: LiveEventBuffer = emptyLiveEventBuffer()
   #completion: SessionFeedRow[] = []
@@ -179,10 +184,26 @@ class FeedReader {
   #subagentRefresh: ReturnType<typeof setInterval> | null = null
   readonly #projector = new FeedRowProjector()
 
-  constructor(context: SessionFeedReaderContext, chain: FeedChain, parent: ParentFeed | null) {
+  constructor(
+    context: SessionFeedReaderContext,
+    chain: FeedChain,
+    { parent, page }: { parent: ParentFeed | null; page: FeedPage },
+  ) {
     this.#context = context
     this.#chain = chain
     this.#parent = parent
+    this.#opened = page
+    this.#anchor = page.anchor
+    this.#owed = page.owed
+  }
+
+  // The page last published, so the chain's next reader opens on the rows the renderer drew.
+  get page(): FeedPage {
+    const reading = this.#reading
+    if (reading?.state !== 'ready') return this.#opened
+    const first = reading.entries[0]
+    if (!reading.hasOlder) return { anchor: null, owed: Number.POSITIVE_INFINITY }
+    return first === undefined ? NEWEST_PAGE : { anchor: first.id, owed: 0 }
   }
 
   start(): void {
@@ -455,6 +476,8 @@ class FeedReader {
 export class SessionFeedReaders {
   readonly #context: SessionFeedReaderContext
   readonly #readers = new Map<string, FeedReader>()
+  // A closed chain's last page: a reader that stopped mid-history reopens on it, not the newest page.
+  readonly #pages = new Map<string, FeedPage>()
 
   constructor(context: SessionFeedReaderContext) {
     this.#context = context
@@ -477,7 +500,8 @@ export class SessionFeedReaders {
               observe: (parentObserver) =>
                 this.observe({ sessionId: chain.sessionId, subagentId: null }, parentObserver),
             }
-      reader = new FeedReader(this.#context, chain, parent)
+      const page = this.#pages.get(key) ?? NEWEST_PAGE
+      reader = new FeedReader(this.#context, chain, { parent, page })
       this.#readers.set(key, reader)
       reader.start()
     }
@@ -487,6 +511,7 @@ export class SessionFeedReaders {
       unobserve()
       if (current.observed || this.#readers.get(key) !== current) return
       this.#readers.delete(key)
+      this.#pages.set(key, current.page)
       current.stop()
     }
   }

@@ -8,6 +8,7 @@ import path from 'node:path'
 import type { Page } from 'playwright-core'
 import type { Harness } from '@/harnesses/harness'
 import { RECORDED_PROMPTS } from '../../mocks/cli/recorded-prompts'
+import { mockReplyHoldFile } from '../../mocks/sessions/mock-session-harness-backend'
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
 import { proveClaudeAcpHistory } from './cases/claude-acp-history.case'
@@ -22,10 +23,20 @@ import { proveSessionDiagram } from './cases/diagram.case'
 import {
   proveClaudeFeedPages,
   proveCodexFeedPages,
+  proveOlderPromptHoldsReader,
   writeLongClaudeSession,
   writeLongCodexThread,
+  writePromptlessTailSessions,
+  writeTwoPageSessions,
 } from './cases/feed-pages.case'
-import { growClaudeSession, growCodexThread, proveSmoothScroll } from './cases/feed-scroll.case'
+import {
+  growStartedSession,
+  proveHomeReachesFirstRow,
+  proveReturnKeepsPlace,
+  proveSmoothScroll,
+  proveStillWhileStreaming,
+  writeOutsideSession,
+} from './cases/feed-scroll.case'
 import { proveFooterKeepsHarness } from './cases/footer-harness.case'
 import { proveFormattedFeed } from './cases/formatted-feed.case'
 import { proveNewSessionSkipsUninstalledHarness } from './cases/new-session-harness.case'
@@ -192,32 +203,100 @@ test.describe('with a long Session for each Harness', () => {
     await proveCodexFeedPages(session.page())
   })
 
-  test('session-feed-scroll', async ({ session, backend }, testInfo) => {
-    // Four long Feeds are wheeled through every page and back.
-    test.setTimeout(300_000)
-    const { claudeTranscripts, project } = session.fixture
+  test('session-feed-older-prompt-holds-reader', async ({ session }) => {
+    const sessions = await writePromptlessTailSessions(session)
+    for (const harness of ['claude', 'codex'] as const)
+      await proveOlderPromptHoldsReader(session.page(), {
+        sessionId: sessions[harness],
+        label: harness,
+      })
+  })
+
+  // One test per Harness and origin, so each wheels through every page well inside its timeout.
+  for (const harness of ['claude', 'codex'] as const) {
+    test(`session-feed-scroll-argo-${harness}`, async ({ session, backend }, testInfo) => {
+      test.setTimeout(150_000)
+      const sessionId = await proveSessionCreatedByClick(session.page(), backend, {
+        harness,
+        prompt: `Start the ${harness} Session the scroll proof grows.`,
+      })
+      await session.restart(() => growStartedSession(session, harness, nativeIdOf(sessionId)))
+      await proveSmoothScroll(session.page(), { sessionId, label: `Argo ${harness}` }, testInfo)
+    })
+
+    test(`session-feed-scroll-outside-${harness}`, async ({ session }, testInfo) => {
+      test.setTimeout(150_000)
+      let nativeId = ''
+      await session.restart(async () => {
+        nativeId = await writeOutsideSession(session, harness)
+      })
+      const sessionId = await listedSession(nativeId)
+      await proveSmoothScroll(session.page(), { sessionId, label: `outside ${harness}` }, testInfo)
+    })
+  }
+})
+
+// Sessions of two pages each, the size the blind tester read.
+test.describe('with a two-page Session for each Harness', () => {
+  test.skip(
+    ({ sessionBackend }) => sessionBackend !== 'mock',
+    'The thread is written to the mock Codex store.',
+  )
+
+  for (const delay of [0, 100, 300])
+    test(`session-feed-return-${delay}ms`, async ({ session }) => {
+      test.setTimeout(120_000)
+      const sessions = await writeTwoPageSessions(session)
+      for (const [harness, other] of [
+        ['claude', 'codex'],
+        ['codex', 'claude'],
+      ] as const)
+        await proveReturnKeepsPlace(session.page(), {
+          sessionId: sessions[harness],
+          otherId: sessions[other],
+          delay,
+          label: `${harness}, away ${delay} ms after the scroll`,
+        })
+    })
+
+  test('session-feed-home', async ({ session }) => {
+    const sessions = await writeTwoPageSessions(session)
+    for (const harness of ['claude', 'codex'] as const)
+      await proveHomeReachesFirstRow(session.page(), {
+        sessionId: sessions[harness],
+        label: harness,
+      })
+  })
+})
+
+test.describe('with a long Session working on a held reply', () => {
+  test.skip(
+    ({ sessionBackend }) => sessionBackend !== 'mock',
+    'The mock Harnesses keep working while the reply is held.',
+  )
+  test.use({ slowReply: true })
+
+  test('session-feed-scroll-while-streaming', async ({ session, backend }, testInfo) => {
+    test.setTimeout(180_000)
     const started: Record<'claude' | 'codex', string> = { claude: '', codex: '' }
     for (const harness of ['claude', 'codex'] as const)
       started[harness] = await proveSessionCreatedByClick(session.page(), backend, {
         harness,
-        prompt: `Start the ${harness} Session the scroll proof grows.`,
+        prompt: `Start the ${harness} Session the streaming scroll proof grows.`,
       })
-    const external: Record<'claude' | 'codex', string> = { claude: '', codex: '' }
+    // Each reply keeps adding rows until its hold is released.
     await session.restart(async () => {
-      await growClaudeSession(claudeTranscripts, project, nativeIdOf(started.claude))
-      await growCodexThread(session.root, nativeIdOf(started.codex))
-      external.claude = (await writeLongClaudeSession(claudeTranscripts, project)).nativeId
-      external.codex = await writeLongCodexThread(session.root)
+      for (const harness of ['claude', 'codex'] as const)
+        await growStartedSession(session, harness, nativeIdOf(started[harness]))
     })
+    const hold = mockReplyHoldFile(session.root)
     for (const harness of ['claude', 'codex'] as const) {
-      const page = session.page()
-      await proveSmoothScroll(
-        page,
-        { sessionId: started[harness], label: `Argo ${harness}` },
+      await writeFile(hold, '')
+      await proveStillWhileStreaming(
+        session.page(),
+        { sessionId: started[harness], label: harness, release: () => rm(hold, { force: true }) },
         testInfo,
       )
-      const outside = await listedSession(external[harness])
-      await proveSmoothScroll(page, { sessionId: outside, label: `outside ${harness}` }, testInfo)
     }
   })
 })

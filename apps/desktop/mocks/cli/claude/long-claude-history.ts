@@ -132,6 +132,30 @@ export function buildHistory(cwd: string, targetBytes: number, firstIndex = 0) {
   return { text: lines.join(''), lastUuid, bytes, turns: index - firstIndex }
 }
 
+// One prompt answered by a long run of Bash calls, each followed by prose, so the rows after the
+// prompt fill a whole page with no prompt among them.
+export function longReplyTurn(cwd: string, parentUuid: string, steps: number) {
+  const context = (index: number, parent: string): QuadContext => ({
+    cwd,
+    timestamp: new Date(Date.UTC(2026, 1, 1) + index * 1_000).toISOString(),
+    parentUuid: parent,
+    index,
+  })
+  const promptUuid = 'long-reply-u'
+  const lines = [userPromptLine(context(0, parentUuid), promptUuid)]
+  let parent = promptUuid
+  for (let step = 1; step <= steps; step += 1) {
+    const base = `long-reply-${step}`
+    lines.push(
+      toolCallLine(context(step, parent), `${base}-tool`, parent),
+      toolResultLine(context(step, parent), `${base}-result`, `${base}-tool`),
+      prosedLine(context(step, parent), `${base}-prose`, `${base}-result`),
+    )
+    parent = `${base}-prose`
+  }
+  return { text: lines.join(''), lastUuid: parent }
+}
+
 export type AppendedTurn = ReturnType<typeof refreshTurn>
 
 export function refreshTurn(cwd: string, parentUuid: string) {

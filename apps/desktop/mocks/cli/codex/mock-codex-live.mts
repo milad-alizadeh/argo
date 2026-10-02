@@ -4,6 +4,7 @@ import { createInterface } from 'node:readline'
 import {
   readMockReplyDelayMs,
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
+  SESSION_MOCK_REPLY_HOLD_FILE_ENV,
   SESSION_MOCK_START_HOLD_FILE_ENV,
   waitWhileHoldFileExists,
 } from '@/harnesses/proof-protocol'
@@ -185,6 +186,49 @@ function notifyFeedActivity(active: ActiveTurn) {
   )
 }
 
+function replyHeld() {
+  const hold = process.env[SESSION_MOCK_REPLY_HOLD_FILE_ENV]
+  return hold !== undefined && existsSync(hold)
+}
+
+// A `FeedRoundsProbe` prompt adds a round of rows, a line of prose and a command, at the tail on an
+// interval, as a long agentic run does, and keeps adding them while the reply is held.
+const ROUNDS_PROBE = 'FeedRoundsProbe'
+const ROUNDS = 5
+const ROUND_INTERVAL_MS = 300
+
+function playRounds(active: ActiveTurn) {
+  const { thread, turn } = active
+  const complete = (item: Item & Record<string, unknown>) => {
+    turn.items.push(item)
+    send({ method: 'item/completed', params: { threadId: thread.id, turnId: turn.id, item } })
+  }
+  let round = 0
+  const timer = setInterval(() => {
+    round += 1
+    complete({
+      id: `${turn.id}-round-${round}`,
+      type: 'agentMessage',
+      text: `Round ${round} is done.`,
+    })
+    const command = {
+      id: `${turn.id}-round-${round}-command`,
+      type: 'commandExecution',
+      command: `echo round ${round}`,
+      commandActions: [],
+      cwd: thread.cwd,
+    }
+    send({
+      method: 'item/started',
+      params: { threadId: thread.id, turnId: turn.id, item: { ...command, status: 'inProgress' } },
+    })
+    complete({ ...command, status: 'completed', aggregatedOutput: `round ${round}`, exitCode: 0 })
+    if (round < ROUNDS || replyHeld()) return
+    clearInterval(timer)
+    finish(active, 'completed')
+  }, ROUND_INTERVAL_MS)
+}
+
 function notifyPlan({ thread, turn, prompt }: ActiveTurn) {
   sendPlanUpdate({
     text: prompt,
@@ -246,6 +290,7 @@ function notifyTurn(active: ActiveTurn) {
     return
   }
   if (prompt === 'Wait to interrupt') return
+  if (prompt.includes(ROUNDS_PROBE)) return playRounds(active)
   const plan = nextAdversarialTurn(adversarialSeed, turnIndex++)
   if (plan !== null) {
     if (plan.outcome !== 'stall')

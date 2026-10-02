@@ -64,9 +64,7 @@ export function useAnchoredVirtualizer({
     // mount's own scroll listener attaches too late to catch a post-mount scrollTop write, so
     // the range never followed it and the reader landed back at row zero.
     initialOffset: initialScrollPosition ?? 0,
-    // Without the prior mount's real row heights, a fresh instance settles its estimate sizes
-    // into place after seeding `initialOffset` and drifts the reader off the restored pixel
-    // (#e2e-real-cheap-models). TanStack's own scroll-restoration guide pairs both.
+    // Every row's Blink height, measured before the list opens, so `initialOffset` does not drift.
     initialMeasurementsCache,
     onChange,
     overscan: FEED_OVERSCAN,
@@ -126,6 +124,30 @@ export function useTailThroughViewportResize(viewport: HTMLElement | null, follo
   }, [viewport])
 }
 
+// Home goes to the first loaded row at once. Chromium's own Home animates toward a pixel and moves
+// that pixel by each scroll written for a row above the reader that sizes late, so it stopped short.
+export function useHomeToFirstRow(
+  viewport: HTMLElement | null,
+  virtualizer: ReactVirtualizer<HTMLElement, Element>,
+) {
+  useLayoutEffect(() => {
+    if (viewport === null) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      const modified = event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+      if (event.key !== 'Home' || modified || event.defaultPrevented || typing(event.target)) return
+      event.preventDefault()
+      virtualizer.scrollToOffset(0)
+    }
+    viewport.addEventListener('keydown', onKeyDown)
+    return () => viewport.removeEventListener('keydown', onKeyDown)
+  }, [viewport, virtualizer])
+}
+
+function typing(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false
+  return target.isContentEditable || target.closest('input, textarea, select') !== null
+}
+
 function feedRowAt(rows: readonly SessionFeedRow[], index: number) {
   const row = rows[index]
   if (row === undefined) throw new RangeError(`Feed row ${index} is outside the virtualizer range.`)
@@ -166,27 +188,39 @@ export function useInitialFeedPosition({
   }, [initialScrollPosition, onPositioned, sessionId, viewport, virtualizer])
 }
 
-// Remembers where the reader left a document's scroller, so reopening it (kept-document.tsx)
-// restores the same place rather than the tail.
+// Where the reader is: the row at the viewport's top and how far it is scrolled past. A pixel alone
+// lands on another row once rows above it, measured or estimated before, are measured again.
+export type FeedPosition = { rowId: string; offset: number }
+
+// The pixel `position` stands at in freshly measured rows; a row they no longer hold has none.
+export function positionOffset(position: FeedPosition | null, measurements: VirtualItem[]) {
+  if (position === null) return null
+  const row = measurements.find(({ key }) => key === position.rowId)
+  return row === undefined ? null : row.start + position.offset
+}
+
+// Remembers where the reader left a document's scroller, so reopening it restores the same place
+// rather than the tail.
 export function useScrollPositionSnapshot(
   sessionId: string,
   viewport: HTMLElement | null,
   virtualizer: ReactVirtualizer<HTMLElement, Element>,
-  onPositionChange: (sessionId: string, position: number) => void,
-  onMeasurementsChange: (sessionId: string, measurements: VirtualItem[]) => void,
+  onPositionChange: (sessionId: string, position: FeedPosition) => void,
 ) {
   useLayoutEffect(() => {
     if (viewport === null) return
-    const rememberPosition = () => onPositionChange(sessionId, viewport.scrollTop)
+    const rememberPosition = () => {
+      const row = virtualizer.getVirtualItemForOffset(viewport.scrollTop)
+      if (row === undefined) return
+      onPositionChange(sessionId, {
+        rowId: String(row.key),
+        offset: viewport.scrollTop - row.start,
+      })
+    }
     viewport.addEventListener('scroll', rememberPosition, { passive: true })
     return () => {
       viewport.removeEventListener('scroll', rememberPosition)
       rememberPosition()
-      // A fresh remount seeds only `scrollTop` (`initialOffset`); its own estimate-sized rows then
-      // measure for real and drift the reader off the saved pixel (#e2e-real-cheap-models). The
-      // TanStack docs pair `initialOffset` with `initialMeasurementsCache` from `takeSnapshot()`
-      // for exactly this: https://tanstack.com/router/latest/docs/guide/scroll-restoration.
-      onMeasurementsChange(sessionId, virtualizer.takeSnapshot())
     }
-  }, [onMeasurementsChange, onPositionChange, sessionId, viewport, virtualizer])
+  }, [onPositionChange, sessionId, viewport, virtualizer])
 }
