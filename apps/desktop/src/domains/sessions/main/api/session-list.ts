@@ -349,10 +349,7 @@ export function sessionListChangedProcedure(context: SessionListContext) {
   )
 }
 
-// Announces each live status change, so every Session List reads the changed row again, and saves
-// the live channel's Model, Effort and Mode, so the row keeps them once the channel is gone. A Turn
-// saves its time only when it ends, since the row hides its time while the Turn runs, and the
-// external poll leaves a live Session alone.
+// Announces each live status change and saves the channel's Turn configuration and Turn-end time.
 export function watchSessionList(
   context: Pick<SessionListContext, 'database' | 'supervisor' | 'changes'>,
 ): () => void {
