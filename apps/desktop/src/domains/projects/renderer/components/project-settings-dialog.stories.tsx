@@ -113,13 +113,15 @@ export const DisconnectPendingAndFailed: Story = {
     const trigger = canvas.getByRole('button', { name: 'Project settings' })
     await userEvent.click(trigger)
     const dialog = await within(document.body).findByRole('dialog', { name: 'Project settings' })
+    await waitFor(() => expect(dialog).toBeVisible())
     const disconnect = await within(dialog).findByRole('button', { name: 'Disconnect repository' })
     await userEvent.click(disconnect)
     await waitFor(() => expect(disconnect).toBeDisabled())
     releaseDisconnectFailure?.()
-    await expect(
-      await within(dialog).findByText('Argo could not save the connected Ticket source.'),
-    ).toBeVisible()
+    const failure = await within(dialog).findByText(
+      'Argo could not save the connected Ticket source.',
+    )
+    await waitFor(() => expect(failure).toBeVisible())
     await expect(dialog).toBeVisible()
     await expect(disconnect).toBeEnabled()
     await userEvent.keyboard('{Escape}')

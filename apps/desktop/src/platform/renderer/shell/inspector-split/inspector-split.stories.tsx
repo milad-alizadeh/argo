@@ -67,7 +67,7 @@ export const CollapseExpandRestore: Story = {
     )
 
     // When the inspector takes the whole width, its own header keeps the restore control reachable.
-    const expandControl = canvas.getByRole('button', { name: 'Expand Panel sidebar' })
+    const expandControl = await canvas.findByRole('button', { name: 'Expand Panel sidebar' })
     await userEvent.click(expandControl)
     await waitFor(() =>
       expect(canvas.getByRole('button', { name: 'Restore Panel sidebar' })).toBeInTheDocument(),

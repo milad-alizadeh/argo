@@ -147,12 +147,18 @@ export const Context: Story = {
       'true',
     )
     const open = page().getByRole('menuitem', { name: 'Open file' })
-    for (let step = 0; step < 3 && document.activeElement !== open; step++)
-      await userEvent.keyboard('{ArrowDown}')
-    await expect(open).toHaveFocus()
+    await waitFor(() => expect(page().getByRole('menu')).toHaveFocus())
+    await userEvent.keyboard('{ArrowDown}')
+    await waitFor(() =>
+      expect(page().getByRole('menuitem', { name: 'Restore' })).toHaveFocus(),
+    )
+    await userEvent.keyboard('{Enter}')
+    await expect(args.onAction).not.toHaveBeenCalled()
+    await userEvent.keyboard('{ArrowDown}')
+    await waitFor(() => expect(open).toHaveFocus())
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
-    await expect(trigger).toHaveFocus()
+    await waitFor(() => expect(trigger).toHaveFocus())
     await expect(args.onAction).not.toHaveBeenCalled()
     await userEvent.pointer({ target: trigger, keys: '[MouseRight]' })
     await userEvent.click(await page().findByRole('menuitem', { name: 'Delete file' }))
@@ -239,14 +245,14 @@ export const MenuBar: Story = {
       'aria-disabled',
       'true',
     )
-    await expect(page().getByRole('menuitem', { name: 'Copy' })).toHaveFocus()
+    await waitFor(() => expect(page().getByRole('menuitem', { name: 'Copy' })).toHaveFocus())
     await userEvent.keyboard('{ArrowRight}')
     const details = await page().findByRole('menuitemcheckbox', { name: 'Show details' })
     await userEvent.keyboard('{ArrowDown}')
     await waitFor(() => expect(details).toHaveFocus())
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
-    await expect(canvas.getByRole('menuitem', { name: 'View' })).toHaveFocus()
+    await waitFor(() => expect(canvas.getByRole('menuitem', { name: 'View' })).toHaveFocus())
     await expect(args.onAction).not.toHaveBeenCalled()
     await userEvent.keyboard('{ArrowDown}')
     await waitFor(() =>
