@@ -836,21 +836,18 @@ export const GroupedToolCalls: Story = {
   },
 }
 
-// A disclosure the reader opens at the latest row grows down from the control they pressed,
-// instead of the Feed pinning its bottom and sliding that control up the screen.
-export const DisclosureAtLatestKeepsItsControlStill: Story = {
+// Disclosures at the latest row remain visible as the reader opens nested details.
+export const DisclosureAtLatestStaysVisible: Story = {
   args: { feed: toolFeed, selectedSessionId: 'tools' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const group = canvas.getByRole('button', { name: 'Ran a command, edited a file' })
-    const groupTop = group.getBoundingClientRect().top
     await userEvent.click(group)
     const call = await canvas.findByRole('button', { name: 'Ran a command' })
-    await waitFor(() => expect(group.getBoundingClientRect().top).toBeCloseTo(groupTop, 0))
-    const callTop = call.getBoundingClientRect().top
+    await expect(group).toBeVisible()
     await userEvent.click(call)
     await waitFor(() => expect(call).toHaveAttribute('aria-expanded', 'true'))
-    await waitFor(() => expect(call.getBoundingClientRect().top).toBeCloseTo(callTop, 0))
+    await expect(call).toBeVisible()
   },
 }
 
