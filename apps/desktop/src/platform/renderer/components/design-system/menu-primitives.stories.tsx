@@ -149,9 +149,7 @@ export const Context: Story = {
     const open = page().getByRole('menuitem', { name: 'Open file' })
     await waitFor(() => expect(page().getByRole('menu')).toHaveFocus())
     await userEvent.keyboard('{ArrowDown}')
-    await waitFor(() =>
-      expect(page().getByRole('menuitem', { name: 'Restore' })).toHaveFocus(),
-    )
+    await waitFor(() => expect(page().getByRole('menuitem', { name: 'Restore' })).toHaveFocus())
     await userEvent.keyboard('{Enter}')
     await expect(args.onAction).not.toHaveBeenCalled()
     await userEvent.keyboard('{ArrowDown}')
