@@ -52,8 +52,8 @@ function EverythingComposerStory() {
         newWorktree,
         from,
         saveFailed: false,
-        onNewWorktreeChange: setNewWorktree,
-        onFromChange: setFrom,
+        setNewWorktree,
+        chooseFrom: setFrom,
       }}
     />
   )

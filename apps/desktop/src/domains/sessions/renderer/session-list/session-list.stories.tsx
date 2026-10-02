@@ -820,7 +820,9 @@ export const ArchiveFromContextMenu: Story = {
     await userEvent.pointer({ keys: '[MouseRight]', target: row })
     const archive = await within(document.body).findByRole('menuitem', { name: 'Archive' })
     await userEvent.click(archive)
-    await expect(host.updates).toEqual([{ sessionIds: ['prose'], archived: true }])
+    await expect(host.updates).toEqual([
+      { sessionIds: ['prose'], archived: true, worktrees: 'clean' },
+    ])
   },
 }
 
@@ -850,7 +852,9 @@ export const ArchiveAsksBeforeRemovingWork: Story = {
     await waitFor(() => expect(within(dialog).getByText('argo/prose')).toBeVisible())
     await expect(host.updates).toEqual([])
     await userEvent.click(within(dialog).getByRole('button', { name: 'Keep' }))
-    await waitFor(() => expect(host.updates).toEqual([{ sessionIds: ['prose'], archived: true }]))
+    await waitFor(() =>
+      expect(host.updates).toEqual([{ sessionIds: ['prose'], archived: true, worktrees: 'clean' }]),
+    )
   },
 }
 
@@ -902,7 +906,7 @@ export const BulkArchiveAndUndoUpdateEachSession: Story = {
     await userEvent.click(await within(document.body).findByRole('menuitem', { name: 'Archive' }))
     await expect(await canvas.findByText('No Sessions found')).toBeInTheDocument()
     await expect(host.updates).toEqual([
-      { sessionIds: ['prose', 'second-session'], archived: true },
+      { sessionIds: ['prose', 'second-session'], archived: true, worktrees: 'clean' },
     ])
     await userEvent.click(await within(document.body).findByRole('button', { name: 'Undo' }))
     await expect(

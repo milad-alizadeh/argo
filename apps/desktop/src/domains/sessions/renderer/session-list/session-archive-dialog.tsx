@@ -10,16 +10,13 @@ import {
   AlertDialogTitle,
 } from '@/platform/renderer/components/ui/alert-dialog'
 import type { RouterOutputs } from '@/platform/renderer/trpc-client'
+import { parseFilename } from '../attachment-chip'
 import type { SessionId } from '../types'
 
 export type HeldWorktree = RouterOutputs['sessionWorktreeWork']['worktrees'][number]
 
 // The archive waiting on the person: `worktrees` is null when Argo could not check them at all.
 export type ArchiveQuestion = { sessionIds: SessionId[]; worktrees: HeldWorktree[] | null }
-
-function worktreeName(worktree: HeldWorktree) {
-  return worktree.branch ?? worktree.path.split('/').at(-1) ?? worktree.path
-}
 
 function WorktreeWork({ worktree }: { worktree: HeldWorktree }) {
   const { t } = useTranslation('sessions')
@@ -33,7 +30,7 @@ function WorktreeWork({ worktree }: { worktree: HeldWorktree }) {
       : t('archiveWorktree.ownCommits', { count: worktree.ownCommits })
   return (
     <li className="min-w-0" title={worktree.path}>
-      <span className="font-medium">{worktreeName(worktree)}</span>
+      <span className="font-medium">{worktree.branch ?? parseFilename(worktree.path).name}</span>
       <span className="text-muted-foreground">
         {' · '}
         {changed}

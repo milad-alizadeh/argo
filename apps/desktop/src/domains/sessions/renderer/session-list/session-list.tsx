@@ -58,7 +58,7 @@ function sessionListState(
   return count === 0 ? 'empty' : 'ready'
 }
 
-type WorktreeRemoval = 'clean' | 'all'
+type WorktreeRemoval = NonNullable<RouterInputs['sessionUpdate']['worktrees']>
 
 // The ids main updated (#2194), or null when the update failed and its reason was shown.
 async function updateArchived(toasts: Toasts, update: RouterInputs['sessionUpdate']) {
@@ -90,12 +90,7 @@ async function archiveSessions(
   sessionIds: SessionId[],
   worktrees: WorktreeRemoval,
 ) {
-  const applied = await updateArchived(
-    toasts,
-    worktrees === 'all'
-      ? { sessionIds, archived: true, worktrees }
-      : { sessionIds, archived: true },
-  )
+  const applied = await updateArchived(toasts, { sessionIds, archived: true, worktrees })
   if (applied === null) return
   const { add, t } = toasts
   if (applied.length > 0)
@@ -125,19 +120,15 @@ async function heldWorktrees(sessionIds: SessionId[]): Promise<HeldWorktree[] | 
   }
 }
 
-// An archive removes clean Session worktrees at once and asks first about any that hold work, or
-// that Argo could not check, as Claude Code does: https://code.claude.com/docs/en/worktrees
+// Removes clean Session worktrees at once; asks about any holding work or left unchecked.
 function useSessionArchive(toasts: Toasts) {
   const [question, setQuestion] = useState<ArchiveQuestion | null>(null)
-  const archive = useCallback(
-    async (sessionIds: SessionId[]) => {
-      const worktrees = await heldWorktrees(sessionIds)
-      if (worktrees !== null && worktrees.length === 0)
-        return archiveSessions(toasts, sessionIds, 'clean')
-      setQuestion({ sessionIds, worktrees })
-    },
-    [toasts],
-  )
+  const archive = async (sessionIds: SessionId[]) => {
+    const worktrees = await heldWorktrees(sessionIds)
+    if (worktrees !== null && worktrees.length === 0)
+      return archiveSessions(toasts, sessionIds, 'clean')
+    setQuestion({ sessionIds, worktrees })
+  }
   const answer = (choice: 'keep' | 'remove' | 'cancel') => {
     const asked = question
     setQuestion(null)
@@ -188,8 +179,7 @@ export function SessionList() {
   const sidebar = useRef<HTMLElement>(null)
   const { filter, setFilter, search, setSearch, query, sessions } = useListedSessions(projectId)
   const { onNew, onOpenTicket, onSelect } = useSessionListNavigation(projectId)
-  const toasts = useMemo(() => ({ add, t }), [add, t])
-  const archive = useSessionArchive(toasts)
+  const archive = useSessionArchive({ add, t })
   const selection = useSessionListSelection(sessions, selectedSessionId, {
     onArchiveSelected: (sessionIds) => void archive.archive(sessionIds),
     onSelect,

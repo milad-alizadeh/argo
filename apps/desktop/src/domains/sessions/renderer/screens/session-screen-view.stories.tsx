@@ -9,6 +9,7 @@ import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fi
 import { installSessionHost } from '@/mocks/sessions/session-story-host'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
+import type { WorktreeCheckout } from '../composer'
 import { ComposerForm } from '../composer/layout/composer-form'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { SessionInspector } from '../inspector/session-inspector'
@@ -238,7 +239,7 @@ function ReviewScreen({
   permissionPrompt?: ReactNode
   titleText?: string
   worktree?: Session['worktree']
-  checkout?: { path: string; branch: string | null } | null
+  checkout?: WorktreeCheckout | null
 }) {
   const selectedSessionId = useParams().sessionId ?? 'composer-review'
   const [jumpToLatest, setJumpToLatest] = useState<{
@@ -698,7 +699,6 @@ function expectNoSessionIdInHeader(canvasElement: HTMLElement) {
   if (header === null) throw new Error('The Session header is absent.')
   const content = within(header)
   expect(content.queryByText('Session ID')).toBeNull()
-  expect(content.queryByText('Workspace')).toBeNull()
 }
 
 export const Open: Story = {
@@ -761,8 +761,7 @@ export const Open: Story = {
   },
 }
 
-// The Worktree row belongs to a new-Session draft only: a started Session waiting on a Permission
-// shows the Permission card alone, and its header names its folder.
+// A started Session waiting on a Permission shows the Permission card and no Worktree row.
 export const StartedSessionHasNoWorktreeRow: Story = {
   parameters: { route: PRODUCTION_ROUTE },
   beforeEach: () =>

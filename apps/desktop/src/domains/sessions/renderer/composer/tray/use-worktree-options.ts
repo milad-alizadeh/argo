@@ -6,8 +6,7 @@ type WorktreeOptionsOutput = RouterOutputs['worktreeOptions']
 type WorktreeOptions = Extract<WorktreeOptionsOutput, { type: 'worktree.options' }>
 export type WorktreeCheckout = WorktreeOptions['checkout']
 
-// `options` is null while loading. `from`, the branch a new worktree starts from, is null for the
-// main checkout's current branch.
+// `options` is null while loading; `from` is null for the main checkout's current branch.
 export type WorktreeOptionsState = {
   options: { checkout: WorktreeCheckout; branches: readonly string[] } | null
   newWorktree: boolean
@@ -26,7 +25,10 @@ function forProject<T>(held: ForProject<T> | null, projectId: string | null): T 
   return held !== null && held.projectId === projectId ? held.value : undefined
 }
 
-function useRememberedSwitch(projectId: string | null, options: WorktreeOptions | undefined) {
+function useRememberedSwitch(
+  projectId: string | null,
+  options: Pick<WorktreeOptions, 'newWorktree'> | undefined,
+) {
   const queryClient = useQueryClient()
   const [local, setLocal] = useState<ForProject<boolean> | null>(null)
   const [saveFailure, setSaveFailure] = useState<string | null>(null)
@@ -71,8 +73,13 @@ export function useWorktreeOptions(
     enabled: projectId !== null,
     staleTime: 30_000,
     refetchInterval: 30_000,
+    // Dropping each reply's new request id lets an unchanged poll keep its reference.
+    select: (data) =>
+      data.type === 'worktree.options'
+        ? { newWorktree: data.newWorktree, checkout: data.checkout, branches: data.branches }
+        : undefined,
   })
-  const options = query.data?.type === 'worktree.options' ? query.data : undefined
+  const options = query.data
   const remembered = useRememberedSwitch(projectId, options)
   // The start is never remembered: each Project, and each visit, begins on the current branch.
   const [from, setFrom] = useState<ForProject<string | null> | null>(null)

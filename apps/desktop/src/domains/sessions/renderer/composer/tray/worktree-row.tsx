@@ -12,12 +12,9 @@ import {
 import { SearchableDropdownTrigger } from '@/platform/renderer/components/ui/dropdown-trigger'
 import { Popover, PopoverContent, PopoverTitle } from '@/platform/renderer/components/ui/popover'
 import { Switch } from '@/platform/renderer/components/ui/switch'
-import type { WorktreeOptionsState } from './use-worktree-options'
+import type { WorktreeOptionsActions, WorktreeOptionsState } from './use-worktree-options'
 
-export type WorktreeRowProps = WorktreeOptionsState & {
-  onNewWorktreeChange: (newWorktree: boolean) => void
-  onFromChange: (from: string | null) => void
-}
+export type WorktreeRowProps = WorktreeOptionsState & WorktreeOptionsActions
 
 type Options = NonNullable<WorktreeOptionsState['options']>
 
@@ -84,11 +81,12 @@ function FromChoices({
 function FromMenu({
   options,
   from,
-  onFromChange,
-}: Pick<WorktreeRowProps, 'from' | 'onFromChange'> & { options: Options }) {
+  currentLabel,
+  chooseFrom,
+}: Pick<WorktreeRowProps, 'from' | 'chooseFrom'> & { options: Options; currentLabel: string }) {
   const { t } = useTranslation('sessions')
   const [open, setOpen] = useState(false)
-  const label = from ?? options.checkout.branch ?? t('composer.worktree.detached')
+  const label = from ?? currentLabel
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <SearchableDropdownTrigger
@@ -110,7 +108,7 @@ function FromMenu({
           options={options}
           from={from}
           onSelect={(selected) => {
-            onFromChange(selected)
+            chooseFrom(selected)
             setOpen(false)
           }}
         />
@@ -124,21 +122,21 @@ function WorktreeBranch({
   options,
   newWorktree,
   from,
-  onFromChange,
-}: Pick<WorktreeRowProps, 'newWorktree' | 'from' | 'onFromChange'> & {
-  options: Options
-}) {
+  chooseFrom,
+}: Pick<WorktreeRowProps, 'newWorktree' | 'from' | 'chooseFrom'> & { options: Options }) {
   const { t } = useTranslation('sessions')
-  if (newWorktree) return <FromMenu options={options} from={from} onFromChange={onFromChange} />
+  const currentLabel = options.checkout.branch ?? t('composer.worktree.detached')
+  if (newWorktree)
+    return (
+      <FromMenu options={options} from={from} currentLabel={currentLabel} chooseFrom={chooseFrom} />
+    )
   return (
     <span
       className="flex min-w-0 items-center gap-1 text-muted-foreground"
       title={options.checkout.path}
     >
       <Icon name="worktree" size="control" />
-      <span className="min-w-0 truncate type-control">
-        {options.checkout.branch ?? t('composer.worktree.detached')}
-      </span>
+      <span className="min-w-0 truncate type-control">{currentLabel}</span>
     </span>
   )
 }
@@ -149,8 +147,8 @@ export function WorktreeRow({
   newWorktree,
   from,
   saveFailed,
-  onNewWorktreeChange,
-  onFromChange,
+  setNewWorktree,
+  chooseFrom,
 }: WorktreeRowProps) {
   const { t } = useTranslation('sessions')
   const switchId = useId()
@@ -165,7 +163,7 @@ export function WorktreeRow({
             options={options}
             newWorktree={newWorktree}
             from={from}
-            onFromChange={onFromChange}
+            chooseFrom={chooseFrom}
           />
         )}
         <span className="flex shrink-0 items-center gap-2">
@@ -173,7 +171,7 @@ export function WorktreeRow({
             checked={newWorktree}
             disabled={options === null}
             id={switchId}
-            onCheckedChange={onNewWorktreeChange}
+            onCheckedChange={setNewWorktree}
             size="sm"
           />
           <label className="cursor-default type-control select-none" htmlFor={switchId}>

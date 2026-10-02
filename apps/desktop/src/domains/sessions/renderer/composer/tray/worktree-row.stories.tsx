@@ -32,8 +32,8 @@ function WorktreeRowStory({
             newWorktree={newWorktree}
             from={from}
             saveFailed={saveFailed}
-            onNewWorktreeChange={setNewWorktree}
-            onFromChange={setFrom}
+            setNewWorktree={setNewWorktree}
+            chooseFrom={setFrom}
           />
         </AttachmentTray>
         <div className="relative z-10 h-24 rounded-xl border border-border bg-card" />

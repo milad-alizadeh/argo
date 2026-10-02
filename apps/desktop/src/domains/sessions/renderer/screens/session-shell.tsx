@@ -36,7 +36,7 @@ function SessionLocationMetadata({ location }: { location: SessionLocation }) {
   return (
     <p
       data-component="SessionLocationMetadata"
-      className="flex w-full min-w-0 items-center gap-(--spacing-shell-tight)"
+      className="flex w-full min-w-0 items-center gap-(--spacing-shell-tight) type-meta text-muted-foreground"
     >
       <Icon name="branch" className="size-(--size-icon-inline) shrink-0" />
       <code className={`${REF_CHIP} min-w-24 text-left [direction:rtl]`} title={location.path}>
@@ -70,14 +70,7 @@ function SessionIdentity({
       <h1 className="w-full truncate type-heading">
         <SessionTitle session={session} text={session.name} />
       </h1>
-      {location !== null ? (
-        <div
-          data-component="SessionMetadata"
-          className="w-full min-w-0 type-meta text-muted-foreground"
-        >
-          <SessionLocationMetadata location={location} />
-        </div>
-      ) : null}
+      {location !== null ? <SessionLocationMetadata location={location} /> : null}
     </div>
   )
 }

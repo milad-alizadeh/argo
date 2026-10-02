@@ -9,7 +9,7 @@ import type { CatalogReadResult } from '@/harnesses/harness-catalog'
 import { harnessLabel } from '@/harnesses/presentation-registry'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
-import { trpc } from '@/platform/renderer/trpc-client'
+import { type RouterInputs, trpc } from '@/platform/renderer/trpc-client'
 import type { CatalogFailure, WorktreeOptionsActions, WorktreeOptionsState } from '../composer'
 import {
   ComposerForm,
@@ -102,17 +102,12 @@ function worktreeControl(
   worktree: WorktreeOptionsState,
   actions: WorktreeOptionsActions,
 ) {
-  if (identity.kind !== 'draft') return null
-  return {
-    ...worktree,
-    onNewWorktreeChange: actions.setNewWorktree,
-    onFromChange: actions.chooseFrom,
-  }
+  return identity.kind === 'draft' ? { ...worktree, ...actions } : null
 }
 
 // Restores a saved draft's switch; its start is never restored. False while the options load.
 function restoreSwitch(
-  saved: { type: 'main' | 'new' },
+  saved: Extract<RouterInputs['composerDraftCreate']['target'], { type: 'project' }>['worktree'],
   worktree: Pick<WorktreeOptionsState, 'options' | 'newWorktree'>,
   setNewWorktree: (newWorktree: boolean) => void,
 ): boolean {

@@ -12,7 +12,7 @@ test('a new Session draft runs in the main checkout, or in a new worktree from i
   expect(
     draftTarget({ ...input, worktree: { options, newWorktree: false, from: null } }),
   ).toMatchObject({ worktree: { type: 'main' } })
-  const from = { type: 'branch' as const, branch: 'base' }
+  const from = 'base'
   expect(draftTarget({ ...input, worktree: { options, newWorktree: true, from } })).toMatchObject({
     worktree: { type: 'new', from },
   })

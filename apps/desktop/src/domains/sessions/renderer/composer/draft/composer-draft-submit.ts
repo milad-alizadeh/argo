@@ -29,7 +29,6 @@ type DraftSubmission = {
   // Told the saved revision before main is asked to send it.
   onSaved?: (saved: PersistedDraft) => void
 }
-type SubmitOutput = RouterOutputs['sessionSubmit']
 type DraftSubmitResult =
   | { outcome: 'accepted'; sessionId: string; worktreeGone: string | null }
   | DraftSubmitFailure
@@ -46,7 +45,7 @@ type ComposerDraftSubmitInput = ComposerDraftActionInput & {
   setSendFailure: React.Dispatch<
     React.SetStateAction<{ owner: string; outcome: 'rejected' | 'uncertain' } | null>
   >
-  submit: (input: RouterInputs['sessionSubmit']) => Promise<SubmitOutput>
+  submit: (input: RouterInputs['sessionSubmit']) => Promise<RouterOutputs['sessionSubmit']>
   clearAcceptedDraft: (saved: PersistedDraft) => void
 }
 type PersistInput = {
