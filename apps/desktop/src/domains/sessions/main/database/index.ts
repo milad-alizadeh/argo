@@ -24,4 +24,4 @@ export {
   saveSessionSubagents,
   storedSessionSubagents,
 } from './session-subagents'
-export { createSessionUpsert } from './session-upsert'
+export { createSessionUpsert, laterActivityAt } from './session-upsert'

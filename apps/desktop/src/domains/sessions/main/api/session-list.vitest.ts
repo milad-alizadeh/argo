@@ -408,7 +408,7 @@ test('a live channel’s Model, Effort and Mode outrank the stored ones, and sta
 })
 
 test.each(['claude', 'codex'] as const)(
-  'a %s Session Argo drives shows when its Turn started and completed (#3165)',
+  'a %s Session Argo drives shows when its last Turn ended (#3165)',
   async (harness) => {
     let status: z.infer<typeof sessionLiveStatusSchema> = 'idle'
     let state = 'Ready'
@@ -424,14 +424,14 @@ test.each(['claude', 'codex'] as const)(
       vi.setSystemTime(5_000)
       status = 'running'
       statusChanged(IDS[0])
-      assert.equal(await shownAt(), 5_000)
+      assert.equal(await shownAt(), 1_000)
 
       vi.setSystemTime(9_000)
       status = 'idle'
       statusChanged(IDS[0])
       assert.equal(await shownAt(), 9_000)
 
-      // A change with no Turn starting or ending is not activity.
+      // A change with no Turn ending is not activity.
       vi.setSystemTime(20_000)
       statusChanged(IDS[0])
       assert.equal(await shownAt(), 9_000)

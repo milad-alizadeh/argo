@@ -351,22 +351,25 @@ export function sessionListChangedProcedure(context: SessionListContext) {
 
 // Announces each live status change, so every Session List reads the changed row again, and saves
 // the live channel's Model, Effort and Mode, so the row keeps them once the channel is gone. A Turn
-// that starts or ends saves its time, since the external poll leaves a live Session alone.
+// saves its time only when it ends, since the row hides its time while the Turn runs, and the
+// external poll leaves a live Session alone.
 export function watchSessionList(
   context: Pick<SessionListContext, 'database' | 'supervisor' | 'changes'>,
 ): () => void {
-  const sessionsWithTurnUnderWay = new Set<string>()
+  const sessionsWithTurnRunning = new Set<string>()
   const statusChanges = context.supervisor.on('Session status changed', ({ sessionId }) => {
     const live = liveProjection(context, sessionId)
-    const turnUnderWay = live !== null && isWorkingStatus(live.status)
-    const turnStartedOrEnded = turnUnderWay !== sessionsWithTurnUnderWay.has(sessionId)
-    if (turnUnderWay) sessionsWithTurnUnderWay.add(sessionId)
-    else sessionsWithTurnUnderWay.delete(sessionId)
-    // A channel that fails mid-Turn has no projection, but its Turn still ended now.
-    updateSession(context, sessionId, {
-      ...(live !== null && { turnConfiguration: live.turnConfiguration }),
-      ...(turnStartedOrEnded && { activityAt: Date.now() }),
-    })
+    // By reported status, since the move to Ready after a Turn is not announced. A channel that
+    // fails mid-Turn has no projection, which ends its Turn.
+    const turnRunning = live !== null && isWorkingStatus(live.status)
+    const turnEnded = !turnRunning && sessionsWithTurnRunning.has(sessionId)
+    if (turnRunning) sessionsWithTurnRunning.add(sessionId)
+    else sessionsWithTurnRunning.delete(sessionId)
+    if (live !== null || turnEnded)
+      updateSession(context, sessionId, {
+        ...(live !== null && { turnConfiguration: live.turnConfiguration }),
+        ...(turnEnded && { activityAt: Date.now() }),
+      })
     context.changes.changed([sessionId])
   })
   return () => statusChanges.unsubscribe()
