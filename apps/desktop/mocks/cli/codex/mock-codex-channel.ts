@@ -61,6 +61,17 @@ export function mockCodexChannel(
   }
 }
 
+// A channel over an app-server that starts `thread-1` and answers every Turn with `turn-1`.
+export async function openOneTurnCodexChannel() {
+  const request = (async (method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse(
+      method === 'thread/start' ? { thread: { id: 'thread-1' } } : { turn: { id: 'turn-1' } },
+    )) as CodexRequest
+  const opened = mockCodexChannel(request)
+  await new Promise((resolve) => setImmediate(resolve))
+  return opened
+}
+
 // The channel's Feed bodies as the live events a Session records, numbered in emit order.
 export function mockLiveEvents(events: readonly LiveSessionChannelEvent[]): SessionLiveEvent[] {
   return events.flatMap((event, index): SessionLiveEvent[] =>

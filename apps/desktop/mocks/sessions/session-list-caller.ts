@@ -4,8 +4,8 @@ import { sessionTable } from '@/database/session/schema'
 import { sessionArchive } from '@/database/session-archive/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import type { FeedActivityState } from '@/domains/sessions/api/feed-activity'
+import { sessionDetailsProcedure } from '@/domains/sessions/main/api/session-details'
 import {
-  sessionDetailsProcedure,
   sessionListChangedProcedure,
   sessionListProcedure,
   watchSessionList,

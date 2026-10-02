@@ -18,6 +18,7 @@ import { proveClaudeRename } from './cases/claude-rename.case'
 import { provePackagedCodexResume } from './cases/codex-resume.case'
 import { proveCodexThreadName } from './cases/codex-thread-name.case'
 import { proveComposerMemory } from './cases/composer-memory.case'
+import { proveContextUsage } from './cases/context-usage.case'
 import { proveSessionCreatedByClick } from './cases/create.case'
 import { proveDelegationCards } from './cases/delegation-card.case'
 import { proveSessionDiagram } from './cases/diagram.case'
@@ -81,6 +82,11 @@ for (const harness of ['claude', 'codex'] as const)
       { project: session.fixture.project, backend },
       harness,
     )
+  })
+
+for (const harness of ['claude', 'codex'] as const)
+  test(`session-${harness}-context-usage`, async ({ session, backend }) => {
+    await proveContextUsage(session.page(), backend, harness)
   })
 
 test('session-refused-start', async ({ session }) => {

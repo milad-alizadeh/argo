@@ -15,7 +15,7 @@ import type { SessionListChanges } from './session-list-changes'
 
 type StoredUpdate = Pick<
   typeof sessionTable.$inferInsert,
-  'customTitle' | 'status' | 'activityAt' | 'turnConfiguration' | 'planProgress'
+  'customTitle' | 'status' | 'activityAt' | 'turnConfiguration' | 'planProgress' | 'contextUsage'
 >
 export type SessionUpdate = {
   [Column in keyof StoredUpdate]?: NonNullable<StoredUpdate[Column]>
@@ -27,7 +27,7 @@ export type SessionUpdate = {
 export type SessionUpdateContext = { database: Database; changes: SessionListChanges }
 
 // Rebuilt in one key order, so the stored JSON compares equal to an unchanged report.
-function reportedColumns({ turnConfiguration, planProgress }: SessionUpdate) {
+function reportedColumns({ turnConfiguration, planProgress, contextUsage }: SessionUpdate) {
   return {
     ...(turnConfiguration && {
       turnConfiguration: {
@@ -38,6 +38,12 @@ function reportedColumns({ turnConfiguration, planProgress }: SessionUpdate) {
     }),
     ...(planProgress && {
       planProgress: { completed: planProgress.completed, total: planProgress.total },
+    }),
+    ...(contextUsage && {
+      contextUsage: {
+        usedTokens: contextUsage.usedTokens,
+        windowTokens: contextUsage.windowTokens,
+      },
     }),
   }
 }

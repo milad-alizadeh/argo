@@ -2,14 +2,11 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { sessionFeedRowSchema } from '@/domains/sessions/api/feed/feed-rows'
 import { sessionListRowSchema } from '@/domains/sessions/main/api/session-list'
-import { sessionRow } from '@/mocks/sessions/session-rows'
+import { listedSession, sessionRow } from '@/mocks/sessions/session-rows'
 
-const row = sessionRow({
-  id: '0f7c8a3e-5b1d-4c2a-9e64-2d1b7a8c9f10',
-  cwd: null,
-  posture: 'live',
-  status: 'idle',
-})
+const row = listedSession(
+  sessionRow({ id: '0f7c8a3e-5b1d-4c2a-9e64-2d1b7a8c9f10', status: 'idle' }),
+)
 
 test('accepts only complete Session List rows', () => {
   for (const [value, accepted] of [

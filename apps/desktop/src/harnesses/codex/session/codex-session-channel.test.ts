@@ -8,6 +8,7 @@ import {
   mockCodexChannel,
   mockLiveEvents,
   mockStartInput,
+  openOneTurnCodexChannel,
 } from '../../../../mocks/cli/codex/mock-codex-channel'
 import type { CodexRequest, WireMessage } from '../app-server/codex-app-server-client'
 import type { openCodexSessionChannel } from './codex-session-channel'
@@ -514,19 +515,8 @@ test('unknown Codex item shapes are reported and counted', async () => {
   ])
 })
 
-// A channel over an app-server that starts `thread-1` and answers every Turn with `turn-1`.
-async function openOneTurnChannel() {
-  const request = (async (method: string, _params: unknown, parse: (value: unknown) => unknown) =>
-    parse(
-      method === 'thread/start' ? { thread: { id: 'thread-1' } } : { turn: { id: 'turn-1' } },
-    )) as CodexRequest
-  const opened = mockCodexChannel(request)
-  await new Promise((resolve) => setImmediate(resolve))
-  return opened
-}
-
 test('Codex thread status reaches the Session status without repeats (ADR-0024)', async () => {
-  const { channel, events, notify } = await openOneTurnChannel()
+  const { channel, events, notify } = await openOneTurnCodexChannel()
   const thread = (status: Record<string, unknown>, threadId = 'thread-1') =>
     notify({ method: 'thread/status/changed', params: { threadId, status } })
   thread({ type: 'active', activeFlags: [] })
@@ -557,7 +547,7 @@ function finishSampleTurn({
   channel,
   events,
   notify,
-}: Awaited<ReturnType<typeof openOneTurnChannel>>) {
+}: Awaited<ReturnType<typeof openOneTurnCodexChannel>>) {
   sampleMessages(notify)
   notify({
     method: 'turn/completed',
@@ -569,7 +559,7 @@ function finishSampleTurn({
 
 // A Codex Turn draws prompt, Running, reply, Idle, the order every Harness draws (#3161).
 test('a completed Codex Turn draws Running before the reply and Idle after it', async () => {
-  assert.deepEqual(finishSampleTurn(await openOneTurnChannel()), SAMPLE_TURN_ORDER)
+  assert.deepEqual(finishSampleTurn(await openOneTurnCodexChannel()), SAMPLE_TURN_ORDER)
 })
 
 // The recorded Turn reports the thread active before its prompt, here before `turn/start` answers too.

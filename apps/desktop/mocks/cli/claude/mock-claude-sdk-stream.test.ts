@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { initializationRequestId, permissionResponseId, promptText } from './mock-claude-sdk-stream'
+import { controlRequestId, permissionResponseId, promptText } from './mock-claude-sdk-stream'
 
 test('reads the SDK user prompt from string content', () => {
   expect(
@@ -21,10 +21,13 @@ test('reads the SDK response that resolves a permission request', () => {
 
 test('reads the SDK initialization request', () => {
   expect(
-    initializationRequestId({
-      type: 'control_request',
-      request_id: 'init-1',
-      request: { subtype: 'initialize' },
-    }),
+    controlRequestId(
+      {
+        type: 'control_request',
+        request_id: 'init-1',
+        request: { subtype: 'initialize' },
+      },
+      'initialize',
+    ),
   ).toBe('init-1')
 })

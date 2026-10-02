@@ -23,7 +23,10 @@ export async function proveContract(page) {
     list.filter((session) => session.archived).map((session) => session.id),
     [],
   )
-  assert.ok(list.every((session) => session.posture === null || session.posture === 'live'))
+  for (const session of list) {
+    const posture = (await sessionDetails(page, session.id))?.posture
+    assert.ok(posture === null || posture === 'live')
+  }
   const [first, second] = list
   await proveArchiveRoundTrip(page, first.id)
   if (second !== undefined) await proveArchiveRoundTrip(page, second.id)

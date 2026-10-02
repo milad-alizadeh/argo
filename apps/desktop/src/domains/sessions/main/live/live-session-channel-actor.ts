@@ -1,5 +1,6 @@
 import { fromCallback } from 'xstate'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
+import type { ContextUsage } from '@/domains/sessions/api/context-usage'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import {
@@ -22,6 +23,7 @@ export type LiveChannelActorEvent =
     }
   | { type: 'Harness failed'; failure: string }
   | { type: 'Harness commands'; listing: ComposerCommandListing }
+  | { type: 'Harness context usage'; usage: ContextUsage }
 
 type ChannelCommand =
   | { type: 'Send'; command: Parameters<LiveSessionChannel['submit']>[0] }
@@ -90,6 +92,9 @@ function channelEvents(
           type: 'Harness commands',
           listing: { availability: event.availability, commands: event.commands },
         })
+        return
+      case 'context.usage':
+        sendBack({ type: 'Harness context usage', usage: event.usage })
         return
     }
   }

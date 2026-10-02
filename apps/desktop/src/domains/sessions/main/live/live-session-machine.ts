@@ -1,5 +1,6 @@
 import { assign, emit, fromPromise, sendTo, setup as xstateSetup } from 'xstate'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
+import type { ContextUsage } from '@/domains/sessions/api/context-usage'
 import {
   advanceFeedActivity,
   EMPTY_FEED_ACTIVITY,
@@ -51,6 +52,8 @@ export const liveSessionMachine = xstateSetup({
       status: LiveSessionStatus | null
       activity: FeedActivityState
       commands: ComposerCommandListing | null
+      // The newest context window use the Harness reported; null until it reports one.
+      contextUsage: ContextUsage | null
     },
     events: {} as
       | {
@@ -105,6 +108,10 @@ export const liveSessionMachine = xstateSetup({
       | {
           type: 'Harness commands'
           listing: ComposerCommandListing
+        }
+      | {
+          type: 'Harness context usage'
+          usage: ContextUsage
         }
       | {
           type: 'xstate.done.actor.persist'
@@ -174,6 +181,10 @@ export const liveSessionMachine = xstateSetup({
       commands: ({ context, event }) =>
         event.type === 'Harness commands' ? event.listing : context.commands,
     }),
+    rememberContextUsage: assign({
+      contextUsage: ({ context, event }) =>
+        event.type === 'Harness context usage' ? event.usage : context.contextUsage,
+    }),
     rememberActivity: assign({
       activity: ({ context, event }) => {
         if (event.type !== 'Harness feed') return context.activity
@@ -234,6 +245,7 @@ export const liveSessionMachine = xstateSetup({
     status: null,
     activity: EMPTY_FEED_ACTIVITY,
     commands: null,
+    contextUsage: null,
   }),
   invoke: {
     id: 'harness',
@@ -390,6 +402,9 @@ export const liveSessionMachine = xstateSetup({
   on: {
     'Harness commands': {
       actions: 'rememberCommands',
+    },
+    'Harness context usage': {
+      actions: 'rememberContextUsage',
     },
     'Harness feed': {
       actions: [

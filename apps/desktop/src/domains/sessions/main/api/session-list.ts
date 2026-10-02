@@ -1,18 +1,6 @@
 import { initTRPC } from '@trpc/server'
 import { observable } from '@trpc/server/observable'
-import {
-  and,
-  asc,
-  count,
-  desc,
-  eq,
-  getTableColumns,
-  isNotNull,
-  isNull,
-  notExists,
-  type SQL,
-  sql,
-} from 'drizzle-orm'
+import { and, asc, count, desc, eq, isNotNull, isNull, notExists, type SQL, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/sqlite-core'
 import { createSelectSchema } from 'drizzle-orm/zod'
 import { z } from 'zod'
@@ -32,7 +20,6 @@ import { ticketContent } from '@/database/ticket-content/schema'
 import { ticketContentSelectSchema } from '@/database/ticket-content/validation'
 import { type LiveActivity, liveActivitySchema } from '@/domains/sessions/api/feed'
 import { planProgressSchema } from '@/domains/sessions/api/feed-content'
-import { reportedTurnConfigurationSchema } from '@/domains/sessions/api/reported-turn-configuration'
 import { sessionListInputSchema } from '@/domains/sessions/api/session-list-input'
 import { isWorkingStatus } from '@/domains/sessions/api/session-live-event'
 import { identifierSchema } from '@/shared/validation'
@@ -60,19 +47,12 @@ const sessionTicketSchema = z.strictObject({
   createdAt: z.iso.datetime(),
 })
 
-// The stored columns a row carries unchanged.
-const passed = { harness: true, projectId: true, cwd: true } as const
-const storedSessionSchema = sessionSelectSchema.pick(passed)
-const sessionColumns = getTableColumns(sessionTable)
-const passedSessionColumns = Object.fromEntries(
-  Object.keys(passed).map((column) => [column, sessionColumns[column as keyof typeof passed]]),
-) as Pick<typeof sessionColumns, keyof typeof passed>
-
+// A roster row carries only what the roster draws; the selected Session's facts are its details.
 export const sessionListRowSchema = z.strictObject({
-  ...storedSessionSchema.shape,
+  harness: sessionSelectSchema.shape.harness,
+  // Archiving from the list names each Session's worktree when main cannot check its work.
   worktree: sessionWorktreeSchema.nullable(),
   id: z.string().uuid(),
-  posture: z.literal('live').nullable(),
   name: z.string().nullable(),
   status: sessionSelectSchema.shape.status,
   updatedAt: z.iso.datetime(),
@@ -80,9 +60,10 @@ export const sessionListRowSchema = z.strictObject({
   subagents: z.array(sessionSubagentSchema),
   ticket: sessionTicketSchema.nullable(),
   archived: z.boolean(),
-  turnConfiguration: reportedTurnConfigurationSchema,
   planProgress: planProgressSchema.nullable(),
 })
+
+type SessionListRow = z.infer<typeof sessionListRowSchema>
 
 const sessionListSchema = z.strictObject({
   total: z.number().int().nonnegative(),
@@ -108,7 +89,7 @@ async function linkedTicketSource(
 }
 
 // A stored value of an unknown shape reads as null, so one bad row leaves the list readable.
-function storedValue<Schema extends z.ZodType>(
+export function storedValue<Schema extends z.ZodType>(
   schema: Schema,
   stored: unknown,
   name: string,
@@ -123,6 +104,8 @@ function storedValue<Schema extends z.ZodType>(
 function storedActivity(stored: string | null): LiveActivity | null {
   return stored === null ? null : storedValue(liveActivitySchema, JSON.parse(stored), 'activity')
 }
+
+type LiveProjection = NonNullable<ReturnType<typeof liveProjection>>
 
 function liveProjection(context: Pick<SessionListContext, 'supervisor'>, sessionId: string) {
   const actor = liveSessionActorFor(context.supervisor, sessionId)
@@ -144,21 +127,20 @@ function liveProjection(context: Pick<SessionListContext, 'supervisor'>, session
     status: snapshot.context.status ?? status,
     activity: snapshot.context.activity?.activity ?? null,
     turnConfiguration: snapshot.context.turnConfiguration,
+    contextUsage: snapshot.context.contextUsage,
   }
 }
 
 function sessionListRow(
-  context: SessionListContext,
   row: StoredSessionRow,
   subagents: StoredSubagent[],
-) {
-  const live = liveProjection(context, row.id)
+  live: LiveProjection | null,
+): SessionListRow {
   const liveStatus = live?.status === 'unknown' ? null : live?.status
   return {
-    ...row.passed,
+    harness: row.harness,
     worktree: sessionWorktreeFromColumns(row),
     id: row.id,
-    posture: live === null ? null : ('live' as const),
     name: row.name,
     status: liveStatus ?? row.status,
     updatedAt: new Date(row.activityAt ?? row.updatedAt).toISOString(),
@@ -167,13 +149,6 @@ function sessionListRow(
     subagents,
     ticket: linkedTicket(row.ticket),
     archived: row.archived,
-    // A live channel's own configuration outranks the stored one, as its status does.
-    turnConfiguration: live?.turnConfiguration ??
-      storedValue(reportedTurnConfigurationSchema, row.turnConfiguration, 'turn configuration') ?? {
-        model: null,
-        effort: null,
-        mode: null,
-      },
     planProgress: storedValue(planProgressSchema, row.planProgress, 'Plan progress'),
   }
 }
@@ -191,14 +166,13 @@ const shownName = sql<
 >`coalesce(${sessionTable.customTitle}, ${ticketContent.title}, ${transcriptName})`
 
 const storedSessionColumns = {
-  passed: passedSessionColumns,
+  harness: sessionTable.harness,
   id: sessionTable.argoId,
   name: shownName,
   activityAt: sessionTable.activityAt,
   activity: sessionTable.activity,
   status: sessionTable.status,
   updatedAt: sessionTable.updatedAt,
-  turnConfiguration: sessionTable.turnConfiguration,
   planProgress: sessionTable.planProgress,
   worktreePath: sessionTable.worktreePath,
   worktreeBranch: sessionTable.worktreeBranch,
@@ -274,18 +248,21 @@ type StoredSessionRow = ReturnType<ReturnType<typeof storedSessionQuery>['all']>
 function sessionListRows(
   context: SessionListContext,
   stored: readonly StoredSessionRow[],
-): z.infer<typeof sessionListRowSchema>[] {
+): SessionListRow[] {
   const subagents = storedSessionSubagents(
     context.database,
     stored.map((row) => row.id),
   )
-  return stored.map((row) => sessionListRow(context, row, subagents.get(row.id) ?? []))
+  return stored.map((row) =>
+    sessionListRow(row, subagents.get(row.id) ?? [], liveProjection(context, row.id)),
+  )
 }
 
-async function readSessionRow(
+// One Session's roster row and the live projection it was drawn from; null when no row lists it.
+export async function readSessionListRow(
   context: SessionListContext,
   sessionId: string,
-): Promise<z.infer<typeof sessionListRowSchema> | null> {
+): Promise<{ row: SessionListRow; live: LiveProjection | null } | null> {
   const link = context.database
     .select({ projectId: sessionTicketLink.projectId })
     .from(sessionTicketLink)
@@ -293,9 +270,11 @@ async function readSessionRow(
     .get()
   const source = link === undefined ? null : await linkedTicketSource(context, link.projectId)
   const where = eq(sessionTable.argoId, sessionId)
-  return (
-    sessionListRows(context, storedSessionQuery(context.database, where, source).all())[0] ?? null
-  )
+  const stored = storedSessionQuery(context.database, where, source).get()
+  if (stored === undefined) return null
+  const subagents = storedSessionSubagents(context.database, [sessionId]).get(sessionId) ?? []
+  const live = liveProjection(context, sessionId)
+  return { row: sessionListRow(stored, subagents, live), live }
 }
 
 async function readSessionList(
@@ -350,14 +329,6 @@ export function sessionListProcedure(context: SessionListContext) {
     .query(({ input }) => readSessionList(context, input))
 }
 
-// Stored facts come from SQLite and connection facts from the live supervisor; no history is read.
-export function sessionDetailsProcedure(context: SessionListContext) {
-  return t.procedure
-    .input(z.strictObject({ sessionId: identifierSchema }))
-    .output(sessionListRowSchema.nullable())
-    .query(({ input }) => readSessionRow(context, input.sessionId))
-}
-
 // Announces the saved Sessions a write or a live status changed; each Session List reads them again.
 export function sessionListChangedProcedure(context: SessionListContext) {
   return t.procedure.subscription(() =>
@@ -367,7 +338,8 @@ export function sessionListChangedProcedure(context: SessionListContext) {
   )
 }
 
-// Announces each live status change and saves the channel's Turn configuration and Turn-end time.
+// Announces each live status change and saves the channel's Turn configuration, newest context
+// usage and Turn-end time.
 export function watchSessionList(
   context: Pick<SessionListContext, 'database' | 'supervisor' | 'changes'>,
 ): () => void {
@@ -383,6 +355,7 @@ export function watchSessionList(
     if (live !== null || turnEnded)
       updateSession(context, sessionId, {
         ...(live !== null && { turnConfiguration: live.turnConfiguration }),
+        ...(live?.contextUsage && { contextUsage: live.contextUsage }),
         ...(turnEnded && { activityAt: Date.now() }),
       })
     context.changes.changed([sessionId])

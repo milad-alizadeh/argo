@@ -16,7 +16,7 @@ import {
 import { isFeedRowPrompt, useFeedReading } from '../feed'
 import { useAvailableHarnesses } from '../harness'
 import { workInspectorReveal } from '../inspector'
-import type { Session, SessionEvidence, SessionExtras } from '../types'
+import type { Session, SessionDetails, SessionEvidence, SessionExtras } from '../types'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work'
 import { sessionLocation } from './session-screen-location'
 import { type SentConfiguration, sessionHarness } from './session-screen-state'
@@ -33,7 +33,7 @@ function useWorkInspector({
   workReveal,
   feedSubagents,
 }: {
-  session: (Session & SessionExtras) | null
+  session: (SessionDetails & SessionExtras) | null
   selectedSessionId: string | null
   work: WorkSelection
   workReveal: ReturnType<typeof useWorkPick>['workReveal']

@@ -11,7 +11,7 @@ import {
 } from '@/mocks/sessions/session-selection-host.fixture'
 import { heldDetails } from '@/mocks/sessions/session-story-host'
 import { appRoutes } from '@/renderer/app-router'
-import type { Session } from '../types'
+import type { SessionDetails } from '../types'
 
 const SESSION_ROWS = [
   sessionRow({
@@ -39,7 +39,7 @@ const SESSION_ROWS = [
     name: 'Third Claude Session',
     updatedAt: '2026-09-13T15:30:00Z',
   }),
-] satisfies Session[]
+] satisfies SessionDetails[]
 
 const CARD_LABEL = 'Message composer'
 const MESSAGE_LABEL = 'Message'
@@ -383,7 +383,7 @@ const LONG_SESSION_ROWS = [
     }),
   ),
   BEYOND_THE_WINDOW,
-] satisfies Session[]
+] satisfies SessionDetails[]
 
 export const OpensASessionBeyondTheLoadedPage: Story = {
   args: { sessionId: BEYOND_THE_WINDOW.id },

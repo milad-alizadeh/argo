@@ -10,7 +10,7 @@ import {
 } from '@/mocks/sessions/session-story-host'
 import { replaceComposerCommands } from '../composer/references/composer-command-registry'
 import { useFeedReading } from '../feed/use-feed-reading'
-import type { Session, SessionError, SessionListResult } from '../types'
+import type { SessionDetails, SessionError, SessionListResult } from '../types'
 import { SessionList } from './session-list'
 
 const session = sessionRow({
@@ -22,13 +22,13 @@ const session = sessionRow({
   subagents: [sessionSubagent({ id: 'interface-review', label: 'Interface review' })],
 })
 
-const secondSession: Session = {
+const secondSession: SessionDetails = {
   ...session,
   id: 'second-session',
   name: 'A second Session',
 }
 
-const listed: Session[] = [session, secondSession]
+const listed: SessionDetails[] = [session, secondSession]
 
 const readFailure = {
   version: 1,
@@ -665,12 +665,12 @@ export const CompletedRefreshFeedbackDisappears: Story = {
   },
 }
 
-const alpha: Session = {
+const alpha: SessionDetails = {
   ...session,
   id: 'alpha',
   name: 'Alpha session',
 }
-const beta: Session = {
+const beta: SessionDetails = {
   ...session,
   id: 'beta',
   name: 'Beta session',
@@ -765,7 +765,7 @@ async function chooseStatus(canvasElement: HTMLElement, name: string) {
   await userEvent.click(await within(document.body).findByRole('menuitemradio', { name }))
 }
 
-const archivedSession: Session = {
+const archivedSession: SessionDetails = {
   ...session,
   id: 'archived-session',
   archived: true,
@@ -991,7 +991,7 @@ export const Failure: Story = {
 
 // The list reads its next offset page when the reader sees its last loaded row, and at no other
 // time. The virtualizer mounts 30 rows of overscan, so a mounted last row is not a seen one (#2277).
-const manySessions: Session[] = Array.from({ length: 80 }, (_unused, row) => ({
+const manySessions: SessionDetails[] = Array.from({ length: 80 }, (_unused, row) => ({
   ...session,
   id: `session-${String(row).padStart(2, '0')}`,
   name: `Session number ${row}`,
@@ -1122,7 +1122,7 @@ function OpenSecondProject() {
   )
 }
 
-function projectSessions(projectId: string): Session[] {
+function projectSessions(projectId: string): SessionDetails[] {
   return [false, true].map((archived) => {
     const name = `${archived ? 'Archived' : 'Active'} in ${projectId}`
     return {

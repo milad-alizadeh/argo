@@ -59,11 +59,14 @@ function sessionIsUnavailable(actor: LiveSessionActor): boolean {
   return snapshot.matches('Failed') || snapshot.matches('Closed')
 }
 
-// Whether the channel is open and how its next Turn runs; a change here refreshes selected details.
+// Whether the channel is open, how its next Turn runs and how full its context is; a change here
+// refreshes selected details.
 function liveDetailsOf(actor: LiveSessionActor): string {
+  const { turnConfiguration, contextUsage } = actor.getSnapshot().context
   return JSON.stringify([
     sessionIsUnavailable(actor),
-    actor.getSnapshot().context.turnConfiguration,
+    turnConfiguration,
+    contextUsage,
   ])
 }
 

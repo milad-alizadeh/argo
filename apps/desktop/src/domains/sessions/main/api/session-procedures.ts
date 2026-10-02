@@ -9,6 +9,7 @@ import {
   composerCommandsProcedure,
   sessionComposerCommandsProcedure,
 } from './session-composer-commands'
+import { sessionDetailsProcedure } from './session-details'
 import { sessionFeedProcedures } from './session-feed'
 import { sessionFileReadProcedures } from './session-file-reads'
 import {
@@ -17,7 +18,6 @@ import {
 } from './session-interactions'
 import {
   type SessionListContext,
-  sessionDetailsProcedure,
   sessionListChangedProcedure,
   sessionListProcedure,
 } from './session-list'
