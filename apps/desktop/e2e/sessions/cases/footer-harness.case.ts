@@ -44,5 +44,5 @@ export async function proveFooterKeepsHarness(
   await sendFromComposer(page, prompt)
   await backend.waitForReply(page, { harness, prompt })
   await expect(page).not.toHaveURL(/\/sessions\/new$/)
-  expect(await usageLabels(page)).toEqual([picked])
+  await expect.poll(() => usageLabels(page)).toEqual([picked])
 }

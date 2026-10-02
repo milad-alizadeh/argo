@@ -171,26 +171,29 @@ function useSessionComposerDraft(input: {
   const targetRestored = identity.kind === 'session' || restoredProjectId === projectId
   const draft = useDurableComposerDraft({ target, choices, opening, targetRestored })
   const loadedTarget = draft?.loadedTarget
+  const pickedHarness = harness?.harness
+  const changeHarness = harness?.onChange
   useEffect(() => {
     const nothingToRestore = restoredProjectId === projectId || loadedTarget === undefined
-    if (projectId === null || harness === null || nothingToRestore) return
+    if (projectId === null || pickedHarness === undefined || nothingToRestore) return
     if (loadedTarget === null) {
       setRestoredProjectId(projectId)
       return
     }
     if (loadedTarget.type !== 'project' || loadedTarget.projectId !== projectId) return
-    const remembered = rememberedHarness(harness.harness, loadedTarget.harness, availableHarnesses)
+    const remembered = rememberedHarness(pickedHarness, loadedTarget.harness, availableHarnesses)
     if (remembered === 'unknown') return
     if (remembered !== null) {
-      harness.onChange?.(remembered)
+      changeHarness?.(remembered)
       return
     }
     if (!restoreSwitch(loadedTarget.worktree, worktreeState, worktreeActions.setNewWorktree)) return
     setRestoredProjectId(projectId)
   }, [
     availableHarnesses,
-    harness,
+    changeHarness,
     loadedTarget,
+    pickedHarness,
     projectId,
     restoredProjectId,
     worktreeActions,
@@ -484,7 +487,7 @@ function useComposerFailures(input: {
 }) {
   const { t } = useTranslation('sessions')
   const owner = input.composerKey
-  const catalog = `catalog:${input.harness?.harness}`
+  const catalog = `catalog:${input.harness?.harness ?? 'none'}`
   const failures: ComposerFailure[] = []
   if (input.permissionFailure) failures.push({ scope: owner, title: input.permissionFailure })
   if (input.catalogFailure && input.harness)
