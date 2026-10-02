@@ -1,3 +1,6 @@
+// The folder the Claude SDK and CLI read their config and history from; unset means `~/.claude`.
+export const CLAUDE_HOME_ENV = 'CLAUDE_CONFIG_DIR'
+
 // The `claude` a Session proof drives: a mock that writes transcripts, set only by e2e.
 export const SESSION_CLAUDE_EXECUTABLE_ENV = 'ARGO_CLAUDE_EXECUTABLE'
 

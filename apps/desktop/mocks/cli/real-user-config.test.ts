@@ -1,8 +1,8 @@
 import { afterEach, expect, test } from 'bun:test'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { argoHooksUnchanged } from './real-user-config'
+import { argoHooksUnchanged, HARNESS_HOME_ENVS, isolateHarnessFolders } from './real-user-config'
 
 const command = (harness: string, socket: string) =>
   `curl -s -m 1 --unix-socket '${socket}' --data-binary @- http://localhost/h/${harness} || true`
@@ -64,4 +64,26 @@ test('a config file missing before and after passes', () => {
   const { folder } = configs()
   const teardown = argoHooksUnchanged([path.join(folder, 'missing', 'settings.json')])
   expect(teardown).not.toThrow()
+})
+
+// A launch spreads the runner's environment, so this is what keeps the app off the real homes (#2974).
+test('a shell that names the real Harness homes still gives the run empty throwaway ones', () => {
+  const realHome = os.userInfo().homedir
+  const shell = HARNESS_HOME_ENVS.map((name) => [name, process.env[name]] as const)
+  for (const name of HARNESS_HOME_ENVS) process.env[name] = path.join(realHome, `.${name}`)
+  const removeFolders = isolateHarnessFolders()
+  try {
+    for (const name of HARNESS_HOME_ENVS) {
+      const home = process.env[name] ?? ''
+      expect(home.startsWith(os.tmpdir())).toBe(true)
+      expect(home.startsWith(realHome)).toBe(false)
+      expect(readdirSync(home)).toEqual([])
+    }
+  } finally {
+    removeFolders()
+    for (const [name, value] of shell) {
+      if (value === undefined) delete process.env[name]
+      else process.env[name] = value
+    }
+  }
 })
