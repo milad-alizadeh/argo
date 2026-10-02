@@ -1,6 +1,7 @@
 // The live Session supervisor under a real catalog and an in-memory database, for its unit tests.
 import type { DatabaseSync } from 'node:sqlite'
 import { type ActorRefFrom, createActor, fromPromise, waitFor, setup as xstateSetup } from 'xstate'
+import { SessionListChanges } from '@/domains/sessions/main/api/session-list-changes'
 import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
 import {
   createLiveSessionSupervisorMachine,
@@ -114,6 +115,9 @@ export async function supervisorFor(
   const notifications = new Set<(message: WireMessage) => boolean | undefined>()
   const codexClient = codexClientFor(request, notifications)
   const registry = createHarnessRegistry(codexClient)
+  const changes = new SessionListChanges()
+  const changedSessionIds: string[] = []
+  changes.subscribe((sessionIds) => changedSessionIds.push(...sessionIds))
   if (openClaude !== undefined) registry.claude.openLiveSession = openClaude
   const rootMachine = xstateSetup({
     types: {
@@ -128,6 +132,7 @@ export async function supervisorFor(
       sessions: createLiveSessionSupervisorMachine({
         database,
         registry,
+        changes,
       }),
     },
   }).createMachine({
@@ -159,6 +164,7 @@ export async function supervisorFor(
     registry,
     database,
     client,
+    changedSessionIds,
     notify(message: WireMessage) {
       for (const listener of notifications) listener(message)
     },

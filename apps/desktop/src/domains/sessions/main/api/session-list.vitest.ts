@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
-import { test } from 'vitest'
+import { test, vi } from 'vitest'
+import type { z } from 'zod'
 import type { Database } from '@/database/database'
+import type { sessionLiveStatusSchema } from '@/domains/sessions/api/session-live-event'
 import {
   IDS,
   insertSession,
@@ -322,7 +324,7 @@ test('names a Session saved with an empty preview by its first prompt (#3077)', 
   }
 })
 
-test('names a Session by its title, else its ID', async () => {
+test('names a Session by its title, else by nothing, never its ID (#3167)', async () => {
   const { database, list } = sessionListCaller()
   try {
     insertSession(database, {
@@ -332,12 +334,13 @@ test('names a Session by its title, else its ID', async () => {
       createdAt: 30,
     })
     insertSession(database, { id: IDS[1], nativeId: 'native-2', createdAt: 20 })
+    insertSession(database, { id: IDS[2], nativeId: 'native-3', firstPrompt: '', createdAt: 10 })
 
     const result = await list({ projectId: 'project-1' })
 
     assert.deepEqual(
       result.rows.map(({ name }) => name),
-      ['Prompt', IDS[1]],
+      ['Prompt', null, null],
     )
   } finally {
     database.$client.close()
@@ -404,6 +407,50 @@ test('a live channel’s Model, Effort and Mode outrank the stored ones, and sta
     database.$client.close()
   }
 })
+
+test.each(['claude', 'codex'] as const)(
+  'a %s Session Argo drives shows when its last Turn ended (#3165)',
+  async (harness) => {
+    let status: z.infer<typeof sessionLiveStatusSchema> = 'idle'
+    let state = 'Ready'
+    const session = { getSnapshot: () => liveSession(state, status).getSnapshot() }
+    const { database, details, statusChanged, stopWatching } = sessionListCaller({
+      sessions: { [IDS[0]]: session },
+    })
+    const shownAt = async () => Date.parse((await details({ sessionId: IDS[0] }))?.updatedAt ?? '')
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      insertSession(database, { id: IDS[0], harness, nativeId: 'native-1', activityAt: 1_000 })
+
+      vi.setSystemTime(5_000)
+      status = 'running'
+      statusChanged(IDS[0])
+      assert.equal(await shownAt(), 1_000)
+
+      vi.setSystemTime(9_000)
+      status = 'idle'
+      statusChanged(IDS[0])
+      assert.equal(await shownAt(), 9_000)
+
+      // A change with no Turn ending is not activity.
+      vi.setSystemTime(20_000)
+      statusChanged(IDS[0])
+      assert.equal(await shownAt(), 9_000)
+
+      // A channel that fails mid-Turn ends that Turn too.
+      status = 'running'
+      statusChanged(IDS[0])
+      vi.setSystemTime(30_000)
+      state = 'Failed'
+      statusChanged(IDS[0])
+      assert.equal(await shownAt(), 30_000)
+    } finally {
+      vi.useRealTimers()
+      stopWatching()
+      database.$client.close()
+    }
+  },
+)
 
 test('draws the activity the Session’s Feed published under its title', async () => {
   const { database, list, sessionListChanges } = sessionListCaller()

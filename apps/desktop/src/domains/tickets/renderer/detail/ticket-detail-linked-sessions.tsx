@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import type { Session } from '@/domains/sessions/renderer'
+import { type Session, SessionTitle } from '@/domains/sessions/renderer'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { linkRow, stateIcon } from './ticket-detail-links'
 import { TicketDetailSection } from './ticket-detail-section'
@@ -26,7 +26,9 @@ export function LinkedSessions({
               onClick={() => onOpenSession(session.id)}
               type="button"
             >
-              <span className="min-w-0 flex-1 truncate type-body">{session.name}</span>
+              <span className="min-w-0 flex-1 truncate type-body">
+                <SessionTitle session={session} />
+              </span>
             </button>
           </li>
         ))}
