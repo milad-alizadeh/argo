@@ -502,10 +502,14 @@ function composerCard(canvasElement: HTMLElement) {
 
 // The composer's highest ink: the first stacked prompt above the card, or the card itself.
 function composerInkTop(canvasElement: HTMLElement) {
-  const prompts = within(canvasElement).queryAllByRole('region', { name: /^Permission needed/ })
-  return Math.min(
-    composerCard(canvasElement).getBoundingClientRect().top,
-    ...prompts.map((prompt) => prompt.getBoundingClientRect().top),
+  const canvas = within(canvasElement)
+  const prompts = canvas.queryAllByRole('region', { name: /^Permission needed/ })
+  return Math.max(
+    canvas.getByLabelText('Session composer').getBoundingClientRect().top,
+    Math.min(
+      composerCard(canvasElement).getBoundingClientRect().top,
+      ...prompts.map((prompt) => prompt.getBoundingClientRect().top),
+    ),
   )
 }
 
@@ -537,6 +541,7 @@ async function expectFeedEndsOneSnugAboveComposer(
 async function expectEveryAllowReachable(canvasElement: HTMLElement) {
   await waitFor(() => {
     for (const allow of within(canvasElement).getAllByRole('button', { name: 'Allow' })) {
+      allow.scrollIntoView({ block: 'nearest' })
       const bounds = allow.getBoundingClientRect()
       const hit = document.elementFromPoint(
         bounds.left + bounds.width / 2,
@@ -1037,9 +1042,11 @@ export const FeedEndsAboveStackedPrompts: Story = {
     )
     // The Feed opens at its end and stays there while the prompts enter and grow the composer.
     await expectFeedEndsOneSnugAboveComposer(canvasElement, { scrollToEnd: false })
-    // Every stacked prompt and the context bar stay whole: the composer grows rather than clips.
+    // Tall stacks scroll within the composer; every prompt and the context bar remain reachable.
     await expectEveryAllowReachable(canvasElement)
-    const usage = canvas.getByText('Usage').getBoundingClientRect()
+    const usageLabel = canvas.getByText('Usage')
+    usageLabel.scrollIntoView({ block: 'nearest' })
+    const usage = usageLabel.getBoundingClientRect()
     expect(document.elementFromPoint(usage.left + 1, usage.top + usage.height / 2)).not.toBeNull()
     expect(usage.bottom).toBeLessThanOrEqual(
       canvas.getByLabelText('Session composer').getBoundingClientRect().bottom,

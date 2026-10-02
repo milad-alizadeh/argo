@@ -86,7 +86,9 @@ function InspectorPanel({
       collapsible
       collapsedSize={0}
       defaultSize={defaultCollapsed ? 0 : inspectorDefaultSize(sizes, defaultInspectorSize)}
-      groupResizeBehavior="preserve-pixel-size"
+      groupResizeBehavior={
+        panels.state === 'expanded' ? 'preserve-relative-size' : 'preserve-pixel-size'
+      }
       minSize={readCssSize(sizes.inspectorMin)}
       panelRef={panels.inspectorPanel}
       style={{ overflow: 'visible' }}
