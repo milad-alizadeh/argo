@@ -20,28 +20,21 @@ export function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-function boundsKeyframe(bounds: ImageBounds) {
-  return {
-    height: `${bounds.height}px`,
-    left: `${bounds.left}px`,
-    top: `${bounds.top}px`,
-    width: `${bounds.width}px`,
-  }
+function sourceTransform(source: ImageBounds, destination: ImageBounds) {
+  const horizontalOffset = source.left + source.width / 2 - destination.left - destination.width / 2
+  const verticalOffset = source.top + source.height / 2 - destination.top - destination.height / 2
+  return `translate(${horizontalOffset}px, ${verticalOffset}px) scale(${source.width / destination.width}, ${source.height / destination.height})`
 }
 
 export function openFromSource(elements: TransitionElements, source: ImageBounds) {
   const destination = elements.preview.getBoundingClientRect()
   const options = { duration: TRANSITION_DURATION_MS, easing: TRANSITION_EASING }
-  Object.assign(elements.preview.style, {
-    ...boundsKeyframe(destination),
-    maxHeight: 'none',
-    maxWidth: 'none',
-    position: 'fixed',
-  })
-  elements.preview.animate([boundsKeyframe(source), boundsKeyframe(destination)], options)
+  elements.preview.animate(
+    [{ transform: sourceTransform(source, destination) }, { transform: 'none' }],
+    options,
+  )
   elements.backdrop.animate([{ opacity: 0 }, { opacity: 1 }], options)
   elements.controls?.animate([{ opacity: 0 }, { opacity: 1 }], options)
-  return destination
 }
 
 export async function closeToSource(elements: TransitionElements, source: ImageBounds) {
@@ -50,18 +43,12 @@ export async function closeToSource(elements: TransitionElements, source: ImageB
     easing: TRANSITION_EASING,
     fill: 'forwards',
   }
-  const previewStyle = window.getComputedStyle(elements.preview)
+  const transform = window.getComputedStyle(elements.preview).transform
+  for (const animation of elements.preview.getAnimations()) animation.cancel()
+  const destination = elements.preview.getBoundingClientRect()
   const animations = [
     elements.preview.animate(
-      [
-        {
-          height: previewStyle.height,
-          left: previewStyle.left,
-          top: previewStyle.top,
-          width: previewStyle.width,
-        },
-        boundsKeyframe(source),
-      ],
+      [{ transform }, { transform: sourceTransform(source, destination) }],
       options,
     ),
     elements.backdrop.animate(
