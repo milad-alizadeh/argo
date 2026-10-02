@@ -40,10 +40,14 @@ test.describe('session-adversarial', () => {
 test.describe('session-adversarial-stall', () => {
   test.use({ adversarialSeed: 'seed-17' })
 
-  test('shows the stalled reading for a Codex Turn with no Feed row', async ({ session }) => {
+  // A Turn that never replies keeps the running loader past the stall bound, with no Retry (#3170).
+  test('keeps the running loader for a Codex Turn that never replies', async ({ session }) => {
     const page = session.page()
     await createSessionByClick(page, { harness: 'codex', prompt: 'Stall this Turn.' })
-    await expect(page.locator('[data-state="stalled"]')).toBeVisible({ timeout: 12_000 })
+    // Past the Feed's 8 s stall bound (FEED_STALL_TIMEOUT_MS).
+    await page.waitForTimeout(10_000)
+    await expect(page.getByRole('status', { name: 'Loading this Session' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Retry' })).toHaveCount(0)
   })
 })
 

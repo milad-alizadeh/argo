@@ -16,18 +16,13 @@ import type { SessionPosture } from '../types'
 export function StalledFeed({
   posture,
   onRetry,
-  compact = false,
 }: {
   posture: SessionPosture | null
   onRetry: () => void
-  compact?: boolean
 }) {
   const { t } = useTranslation('sessions')
   return (
-    <Empty
-      className={compact ? 'mx-auto mt-(--spacing-snug) max-w-sm' : 'h-full'}
-      data-state="stalled"
-    >
+    <Empty className="h-full" data-state="stalled">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <Icon name="retry" />
