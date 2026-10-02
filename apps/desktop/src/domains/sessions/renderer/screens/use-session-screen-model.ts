@@ -102,17 +102,18 @@ function useSessionEvidence(sessionId: string | null) {
 // The Session's Feed. A new Session's pending id draws on New Session from Enter, then on the
 // Session it was named until that Session's own Feed shows a prompt, whatever the Harness. New
 // Session keeps it across the naming render only.
-function useSessionFeed(selectedSessionId: string | null, running: boolean) {
+function useSessionFeed(selectedSessionId: string | null, running: boolean, harness: Harness) {
   const { projectId, sessionId } = useParams()
   const [starting, setStarting] = useState<{
     projectId: string | undefined
     pendingId: string
     sessionId: string
+    harness: Harness
   } | null>(null)
   const onStartingSession = useCallback(
     (pendingId: string | null, named = 'new') =>
-      setStarting(pendingId === null ? null : { projectId, pendingId, sessionId: named }),
-    [projectId],
+      setStarting(pendingId === null ? null : { projectId, pendingId, sessionId: named, harness }),
+    [projectId, harness],
   )
   // A move to any route but the named Session drops the start, so New Session draws no old prompt.
   const route = `${projectId}/${sessionId}`
@@ -133,7 +134,15 @@ function useSessionFeed(selectedSessionId: string | null, running: boolean) {
     ...(holdsPrompt ? startingFeed : namedFeed),
     feedSessionId: holdsPrompt ? startingSessionId : selectedSessionId,
     onStartingSession,
+    startedHarness: shown && starting.sessionId === selectedSessionId ? starting.harness : null,
   }
+}
+
+// The Harness a new Session starts on: the reader's pick, else the first one that can start.
+function usePickedHarness() {
+  const [pickedHarness, chooseHarness] = useState<Harness | null>(null)
+  const availableHarnesses = useAvailableHarnesses()
+  return { lastHarness: pickedHarness ?? availableHarnesses?.[0] ?? DEFAULT_HARNESS, chooseHarness }
 }
 
 export function useSessionScreenModel() {
@@ -149,11 +158,13 @@ export function useSessionScreenModel() {
   const { session, loaded: sessionLoaded } = useSessionDetails(selectedSessionId)
   useLeaveGoneWorktree(session)
   const feedRunning = sessionTurnRunning(session)
-  const sessionFeed = useSessionFeed(selectedSessionId, feedRunning)
-  const [pickedHarness, chooseHarness] = useState<Harness | null>(null)
-  const availableHarnesses = useAvailableHarnesses()
-  const lastHarness = pickedHarness ?? availableHarnesses?.[0] ?? DEFAULT_HARNESS
-  const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
+  const picked = usePickedHarness()
+  const { startedHarness, ...sessionFeed } = useSessionFeed(
+    selectedSessionId,
+    feedRunning,
+    picked.lastHarness,
+  )
+  const harness = sessionHarness({ selectedSessionId, session, startedHarness, ...picked })
   const permission = useSessionPermission(selectedSessionId)
   const question = useSessionQuestion(selectedSessionId)
   const inspector = useWorkInspector({
