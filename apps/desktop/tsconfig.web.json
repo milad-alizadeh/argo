@@ -5,7 +5,7 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    // Only the `bun:test` module for the renderer tests: no Node or Bun globals reach the renderer.
+    // Only the `bun:test` module for the renderer tests: no Bun globals reach the renderer.
     "types": ["bun-types/test"],
     "jsx": "react-jsx",
     "strict": true,
