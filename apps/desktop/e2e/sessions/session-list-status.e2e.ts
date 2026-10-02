@@ -12,7 +12,6 @@ import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { writeMockClaude } from '../../mocks/cli/claude/mock-claude-cli'
 import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { signedInHarnessEnvironment } from '../../mocks/cli/signed-in-harness'
-import { isolatedLaunchEnvironment } from '../../mocks/harness-home'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
@@ -45,7 +44,7 @@ async function open(root: string, fixture: Fixture, environment: Record<string, 
   const application = await electron.launch({
     ...launchCommand(fixture.application),
     env: {
-      ...(await isolatedLaunchEnvironment(root)),
+      ...process.env,
       ...(await signedInHarnessEnvironment(root)),
       [SESSION_CLAUDE_EXECUTABLE_ENV]: await writeMockClaude(root, fixture.claudeTranscripts),
       CLAUDE_CONFIG_DIR: path.dirname(fixture.claudeTranscripts),

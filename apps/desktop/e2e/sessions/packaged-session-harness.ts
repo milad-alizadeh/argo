@@ -8,7 +8,6 @@ import {
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { claudeConfigDirectory } from '../../mocks/cli/claude/mock-claude-transcripts'
-import { isolatedLaunchEnvironment } from '../../mocks/harness-home'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { closeApplication, launchCommand } from '../application-under-test'
 import type {
@@ -49,7 +48,7 @@ export function sessionSyncHoldFile(root: string) {
   return path.join(root, 'session-sync-hold')
 }
 
-async function launchEnvironment(
+function launchEnvironment(
   run: SessionHarnessRun,
   launch: SessionHarnessLaunch,
   fixture: { root: string; project: string },
@@ -73,7 +72,7 @@ async function launchEnvironment(
           }),
         }
   const environment = {
-    ...(await isolatedLaunchEnvironment(root)),
+    ...process.env,
     ...transcriptEnv(run.transcripts),
     [SESSION_CLAUDE_EXECUTABLE_ENV]: run.executables.claude,
     [SESSION_CODEX_EXECUTABLE_ENV]: run.executables.codex,
@@ -119,7 +118,7 @@ export async function createPackagedSessionHarness(request: {
     application = await electron.launch({
       ...launchCommand(fixture.application),
       env: {
-        ...(await launchEnvironment(run, launch, { root, project: fixture.project })),
+        ...launchEnvironment(run, launch, { root, project: fixture.project }),
         [PROJECT_PROOF_STORE_ENV]: fixture.userData,
         [ACCEPTANCE_ENV]: '0',
       },

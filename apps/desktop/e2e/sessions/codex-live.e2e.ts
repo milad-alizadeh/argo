@@ -3,7 +3,6 @@ import { _electron as electron } from 'playwright-core'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
-import { isolatedLaunchEnvironment } from '../../mocks/harness-home'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { closeApplication, launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
@@ -14,7 +13,7 @@ import { chooseHarness, openNewSessionByClick, PERSISTED_ROW } from './gestures'
 async function prepareCodexApp(root: string, applicationUnderTest: string) {
   const fixture = await prepare(root, applicationUnderTest, { projectSelected: true })
   const environment = {
-    ...(await isolatedLaunchEnvironment(root)),
+    ...process.env,
     [SESSION_CODEX_EXECUTABLE_ENV]: await writeMockCodexLive(root),
     [PROJECT_PROOF_STORE_ENV]: fixture.userData,
     [ACCEPTANCE_ENV]: '0',
