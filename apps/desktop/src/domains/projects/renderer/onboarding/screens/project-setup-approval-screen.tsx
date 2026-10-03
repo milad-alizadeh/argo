@@ -4,6 +4,7 @@ import { Button } from '@/platform/renderer/components/ui/button'
 import type { ProjectSetupCommand, ProjectSetupSnapshot } from '../onboarding-presentation'
 
 import '../plan/project-setup-plan-review-parts.css'
+
 type ApprovalScreenProps = {
   command: (command: ProjectSetupCommand) => Promise<void>
   snapshot: ProjectSetupSnapshot
