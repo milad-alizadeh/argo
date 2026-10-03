@@ -49,6 +49,7 @@ export const ThresholdBoundsAndInvalidInput: Story = {
     await expect(slider).toHaveAttribute('aria-valuenow', expect.stringMatching(/^\d+$/))
     await expect(input).not.toHaveValue(null)
     await expect(slider).toHaveAccessibleDescription(/At \d+% of total/)
+    await waitFor(() => expect(slider).toHaveFocus())
 
     await userEvent.click(input)
     await expect(input).toHaveFocus()
