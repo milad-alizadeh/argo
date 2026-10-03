@@ -1,8 +1,20 @@
 import { expect, waitFor } from 'storybook/test'
 
-export async function expectReachableIn(viewport: HTMLElement, target: HTMLElement) {
+type ReachabilityObserverConstructor = new (
+  callback: (entries: { target: EventTarget; isIntersecting: boolean }[]) => void,
+  options: { root: HTMLElement },
+) => {
+  observe(target: HTMLElement): void
+  disconnect(): void
+}
+
+export async function expectReachableIn(
+  viewport: HTMLElement,
+  target: HTMLElement,
+  ObserverConstructor: ReachabilityObserverConstructor,
+) {
   let reachable = false
-  const observer = new IntersectionObserver(
+  const observer = new ObserverConstructor(
     (entries) => {
       reachable = entries.some((entry) => entry.target === target && entry.isIntersecting)
     },
