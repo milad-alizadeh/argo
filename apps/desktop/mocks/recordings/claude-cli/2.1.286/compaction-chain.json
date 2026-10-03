@@ -1,0 +1,572 @@
+{
+  "producer": "claude-cli",
+  "version": "2.1.286",
+  "recordedAt": "2026-10-02T16:37:38.335Z",
+  "payload": [
+    {
+      "type": "user",
+      "uuid": "9f641634-697d-47a7-bcde-7747a6969115",
+      "parentUuid": null,
+      "isSidechain": false,
+      "message": {
+        "role": "user",
+        "content": "Reply with exactly the word ALPHA-ONE-OK and nothing else."
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "731f5349-e080-490b-a3be-1281e2f688c1",
+      "parentUuid": "9f641634-697d-47a7-bcde-7747a6969115",
+      "isSidechain": false,
+      "attachment": {
+        "type": "environment"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "d3f7cb31-564a-45f4-ae22-7553de0893e0",
+      "parentUuid": "731f5349-e080-490b-a3be-1281e2f688c1",
+      "isSidechain": false,
+      "attachment": {
+        "type": "model"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "8c497f1e-c8ca-4b80-87bc-dceb6928570b",
+      "parentUuid": "d3f7cb31-564a-45f4-ae22-7553de0893e0",
+      "isSidechain": false,
+      "attachment": {
+        "type": "deferred_tools_delta"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "98d64904-bcdc-43f2-a32c-8ff49f3bc459",
+      "parentUuid": "8c497f1e-c8ca-4b80-87bc-dceb6928570b",
+      "isSidechain": false,
+      "attachment": {
+        "type": "agent_listing_delta"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "dddcfbb9-aca8-4837-a0a1-0b9c77e7fe5c",
+      "parentUuid": "98d64904-bcdc-43f2-a32c-8ff49f3bc459",
+      "isSidechain": false,
+      "attachment": {
+        "type": "mcp_instructions_delta"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "b1cb8ba0-b58e-4b27-99fd-5be9e6bfbe61",
+      "parentUuid": "dddcfbb9-aca8-4837-a0a1-0b9c77e7fe5c",
+      "isSidechain": false,
+      "attachment": {
+        "type": "skill_listing"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "449f1a47-7e3e-4b17-a6c8-0ad674b5f915",
+      "parentUuid": "b1cb8ba0-b58e-4b27-99fd-5be9e6bfbe61",
+      "isSidechain": false,
+      "attachment": {
+        "type": "total_tokens_reminder"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "621767ca-681f-4369-8103-1ef7ea160ac0",
+      "parentUuid": "449f1a47-7e3e-4b17-a6c8-0ad674b5f915",
+      "isSidechain": false,
+      "attachment": {
+        "type": "session_context"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "5833e4ee-25af-4569-8da3-d9c54d6b8c6a",
+      "parentUuid": "621767ca-681f-4369-8103-1ef7ea160ac0",
+      "isSidechain": false,
+      "attachment": {
+        "type": "date"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "2165ad9d-b321-4caa-9f66-ed3238b834cf",
+      "parentUuid": "5833e4ee-25af-4569-8da3-d9c54d6b8c6a",
+      "isSidechain": false,
+      "attachment": {
+        "type": "credential_org"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "92cfa2bf-63b6-479c-a047-d66e3ef80cff",
+      "parentUuid": "2165ad9d-b321-4caa-9f66-ed3238b834cf",
+      "isSidechain": false,
+      "attachment": {
+        "type": "remote_session_change"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "bb78e644-f4e0-48d0-a3ce-0efcd1033b73",
+      "parentUuid": "92cfa2bf-63b6-479c-a047-d66e3ef80cff",
+      "isSidechain": false,
+      "attachment": {
+        "type": "prompt_snapshot"
+      }
+    },
+    {
+      "type": "assistant",
+      "uuid": "3eef58a6-8dff-4630-aaa9-b4c3d834ed8d",
+      "parentUuid": "bb78e644-f4e0-48d0-a3ce-0efcd1033b73",
+      "isSidechain": false,
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "thinking"
+          }
+        ]
+      }
+    },
+    {
+      "type": "assistant",
+      "uuid": "8adcb3d8-a313-4dfd-887e-ed572d8f4af8",
+      "parentUuid": "3eef58a6-8dff-4630-aaa9-b4c3d834ed8d",
+      "isSidechain": false,
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "ALPHA-ONE-OK"
+          }
+        ]
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "0656b66f-490f-48a5-818c-ae469b140a74",
+      "parentUuid": "8adcb3d8-a313-4dfd-887e-ed572d8f4af8",
+      "isSidechain": false,
+      "attachment": {
+        "type": "prompt_snapshot"
+      }
+    },
+    {
+      "type": "system",
+      "subtype": "turn_duration",
+      "uuid": "c9a4b9b7-8215-41d4-a4b5-1b2891f1e19e",
+      "parentUuid": "0656b66f-490f-48a5-818c-ae469b140a74",
+      "isSidechain": false,
+      "isMeta": false
+    },
+    {
+      "type": "user",
+      "uuid": "5c16be1f-a016-42b4-a12d-67b8098a0fd1",
+      "parentUuid": "c9a4b9b7-8215-41d4-a4b5-1b2891f1e19e",
+      "isSidechain": false,
+      "message": {
+        "role": "user",
+        "content": "/compact"
+      }
+    },
+    {
+      "parentUuid": null,
+      "logicalParentUuid": "c9a4b9b7-8215-41d4-a4b5-1b2891f1e19e",
+      "isSidechain": false,
+      "type": "system",
+      "subtype": "compact_boundary",
+      "content": "Conversation compacted",
+      "level": "info",
+      "compactMetadata": {
+        "trigger": "manual",
+        "preTokens": 32947,
+        "postTokens": 3245,
+        "cumulativeDroppedTokens": 29702,
+        "durationMs": 11553
+      },
+      "uuid": "cb4b8220-702e-481d-8418-4f599a650758",
+      "timestamp": "2026-10-02T16:37:38.335Z",
+      "userType": "external",
+      "entrypoint": "cli",
+      "cwd": "/Users/x/compact",
+      "sessionId": "9c80a9dc-d132-4554-bb4d-316a4e93d0f5",
+      "version": "2.1.286",
+      "gitBranch": "main",
+      "slug": "eager-scribbling-toucan"
+    },
+    {
+      "parentUuid": "cb4b8220-702e-481d-8418-4f599a650758",
+      "isSidechain": false,
+      "promptId": "8829818c-5a09-479e-8e73-43ebf0d89938",
+      "type": "user",
+      "message": {
+        "role": "user",
+        "content": "This session is being continued from a previous conversation that ran out of context."
+      },
+      "isVisibleInTranscriptOnly": true,
+      "isCompactSummary": true,
+      "uuid": "120e54ee-b1ee-4011-8a61-b31cd5b46112",
+      "timestamp": "2026-10-02T16:37:38.262Z",
+      "turnPosition": {
+        "promptIndex": 1,
+        "turnIndex": 1
+      },
+      "session_id": "9c80a9dc-d132-4554-bb4d-316a4e93d0f5",
+      "userType": "external",
+      "entrypoint": "cli",
+      "cwd": "/Users/x/compact",
+      "sessionId": "9c80a9dc-d132-4554-bb4d-316a4e93d0f5",
+      "version": "2.1.286",
+      "gitBranch": "main",
+      "slug": "eager-scribbling-toucan"
+    },
+    {
+      "type": "user",
+      "uuid": "8be2d9ca-8bc1-4da9-a95b-b4141f61f8ca",
+      "parentUuid": "120e54ee-b1ee-4011-8a61-b31cd5b46112",
+      "isSidechain": false,
+      "isMeta": true,
+      "message": {
+        "role": "user"
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "0399c1d1-8061-43bb-9950-2e83b99ef480",
+      "parentUuid": "8be2d9ca-8bc1-4da9-a95b-b4141f61f8ca",
+      "isSidechain": false,
+      "message": {
+        "role": "user"
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "abea2681-df8c-4e3b-b5ee-a3819ee30777",
+      "parentUuid": "0399c1d1-8061-43bb-9950-2e83b99ef480",
+      "isSidechain": false,
+      "message": {
+        "role": "user"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "22996e91-8415-4850-8598-1f55ef4c8880",
+      "parentUuid": "abea2681-df8c-4e3b-b5ee-a3819ee30777",
+      "isSidechain": false,
+      "attachment": {
+        "type": "deferred_tools_delta"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "af6325a3-9a22-485d-902f-36d6ad5afef2",
+      "parentUuid": "22996e91-8415-4850-8598-1f55ef4c8880",
+      "isSidechain": false,
+      "attachment": {
+        "type": "agent_listing_delta"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "f0b73387-850c-491c-90ee-7c9b36a4d238",
+      "parentUuid": "af6325a3-9a22-485d-902f-36d6ad5afef2",
+      "isSidechain": false,
+      "attachment": {
+        "type": "mcp_instructions_delta"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "b1079765-f97c-47e8-9018-81bdd04fcb7a",
+      "parentUuid": "f0b73387-850c-491c-90ee-7c9b36a4d238",
+      "isSidechain": false,
+      "attachment": {
+        "type": "environment"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "c5cfedbd-677d-4708-bc86-8a3cdf46358e",
+      "parentUuid": "b1079765-f97c-47e8-9018-81bdd04fcb7a",
+      "isSidechain": false,
+      "attachment": {
+        "type": "model"
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "857b4bb4-d38d-49fe-9737-8f422874c1f9",
+      "parentUuid": "c5cfedbd-677d-4708-bc86-8a3cdf46358e",
+      "isSidechain": false,
+      "message": {
+        "role": "user",
+        "content": "Reply with exactly the word BRAVO-TWO-OK and nothing else."
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "8352d324-382d-4caf-92aa-ea34e0c40b4b",
+      "parentUuid": "857b4bb4-d38d-49fe-9737-8f422874c1f9",
+      "isSidechain": false,
+      "attachment": {
+        "type": "skill_listing"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "230a8c5b-e201-4b8e-9769-439a1afee5ff",
+      "parentUuid": "8352d324-382d-4caf-92aa-ea34e0c40b4b",
+      "isSidechain": false,
+      "attachment": {
+        "type": "total_tokens_reminder"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "15cdfd33-bb23-455b-b688-54c3e50f8ed4",
+      "parentUuid": "230a8c5b-e201-4b8e-9769-439a1afee5ff",
+      "isSidechain": false,
+      "attachment": {
+        "type": "session_context"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "bf4e3608-f5c6-41d2-87a5-af0215db096d",
+      "parentUuid": "15cdfd33-bb23-455b-b688-54c3e50f8ed4",
+      "isSidechain": false,
+      "attachment": {
+        "type": "date"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "f6b666b8-6afe-45a5-bb3f-f446daec2ef0",
+      "parentUuid": "bf4e3608-f5c6-41d2-87a5-af0215db096d",
+      "isSidechain": false,
+      "attachment": {
+        "type": "credential_org"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "36f20f88-b2a3-4bae-b86c-18872360984e",
+      "parentUuid": "f6b666b8-6afe-45a5-bb3f-f446daec2ef0",
+      "isSidechain": false,
+      "attachment": {
+        "type": "remote_session_change"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "ce3691bc-b86a-4fd9-8044-33a1f0ed6c09",
+      "parentUuid": "36f20f88-b2a3-4bae-b86c-18872360984e",
+      "isSidechain": false,
+      "attachment": {
+        "type": "prompt_snapshot"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "2c58d5fb-e886-4f3a-bf04-425730c41c3c",
+      "parentUuid": "ce3691bc-b86a-4fd9-8044-33a1f0ed6c09",
+      "isSidechain": false,
+      "attachment": {
+        "type": "deferred_tools_record"
+      }
+    },
+    {
+      "type": "assistant",
+      "uuid": "7e25ac09-13ed-4f2c-a867-00cca7e1bba5",
+      "parentUuid": "2c58d5fb-e886-4f3a-bf04-425730c41c3c",
+      "isSidechain": false,
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "thinking"
+          }
+        ]
+      }
+    },
+    {
+      "type": "assistant",
+      "uuid": "14ae218e-a235-47c4-bdb6-a5dcfa71c65e",
+      "parentUuid": "7e25ac09-13ed-4f2c-a867-00cca7e1bba5",
+      "isSidechain": false,
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "BRAVO-TWO-OK"
+          }
+        ]
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "90b684af-9146-4b56-a1fb-ff5076940b0d",
+      "parentUuid": "14ae218e-a235-47c4-bdb6-a5dcfa71c65e",
+      "isSidechain": false,
+      "attachment": {
+        "type": "prompt_snapshot"
+      }
+    },
+    {
+      "type": "system",
+      "subtype": "turn_duration",
+      "uuid": "7d501743-6470-42cc-b187-284de7d0135a",
+      "parentUuid": "90b684af-9146-4b56-a1fb-ff5076940b0d",
+      "isSidechain": false,
+      "isMeta": false
+    },
+    {
+      "type": "user",
+      "uuid": "72c39f69-1d68-4adf-b51e-beb4d1d71998",
+      "parentUuid": "7d501743-6470-42cc-b187-284de7d0135a",
+      "isSidechain": false,
+      "isMeta": true,
+      "message": {
+        "role": "user"
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "0bd082ba-0160-4813-89a6-e79d18df985b",
+      "parentUuid": "72c39f69-1d68-4adf-b51e-beb4d1d71998",
+      "isSidechain": false,
+      "message": {
+        "role": "user"
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "74a37dbb-be0e-4167-954a-565c71b8bab0",
+      "parentUuid": "0bd082ba-0160-4813-89a6-e79d18df985b",
+      "isSidechain": false,
+      "message": {
+        "role": "user"
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "37682e39-045a-47d3-bf8a-48adcef6e6cd",
+      "parentUuid": "74a37dbb-be0e-4167-954a-565c71b8bab0",
+      "isSidechain": false,
+      "message": {
+        "role": "user",
+        "content": "Reply with exactly the word CHARLIE-THREE-OK and nothing else."
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "2334b59a-50a9-4a35-96b8-83c322806fa7",
+      "parentUuid": "37682e39-045a-47d3-bf8a-48adcef6e6cd",
+      "isSidechain": false,
+      "attachment": {
+        "type": "deferred_tools_delta"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "2d9d59ef-58c7-4f09-86ee-a3547bbb0a9f",
+      "parentUuid": "2334b59a-50a9-4a35-96b8-83c322806fa7",
+      "isSidechain": false,
+      "attachment": {
+        "type": "mcp_instructions_delta"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "2c9f1519-ba13-44cc-81b4-e398c875d696",
+      "parentUuid": "2d9d59ef-58c7-4f09-86ee-a3547bbb0a9f",
+      "isSidechain": false,
+      "attachment": {
+        "type": "skill_listing"
+      }
+    },
+    {
+      "type": "attachment",
+      "uuid": "bab1a31b-56b4-42f2-9e58-72c9c27d3cf8",
+      "parentUuid": "2c9f1519-ba13-44cc-81b4-e398c875d696",
+      "isSidechain": false,
+      "attachment": {
+        "type": "total_tokens_reminder"
+      }
+    },
+    {
+      "type": "assistant",
+      "uuid": "0f03c51d-9af4-4644-bf6c-de7598e1a85d",
+      "parentUuid": "bab1a31b-56b4-42f2-9e58-72c9c27d3cf8",
+      "isSidechain": false,
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "thinking"
+          }
+        ]
+      }
+    },
+    {
+      "type": "assistant",
+      "uuid": "0d1ab82d-40b7-4f23-b31f-daf226b54ce1",
+      "parentUuid": "0f03c51d-9af4-4644-bf6c-de7598e1a85d",
+      "isSidechain": false,
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "CHARLIE-THREE-OK"
+          }
+        ]
+      }
+    },
+    {
+      "type": "system",
+      "subtype": "turn_duration",
+      "uuid": "f06d028e-0540-4bd6-b4aa-246df97151d6",
+      "parentUuid": "0d1ab82d-40b7-4f23-b31f-daf226b54ce1",
+      "isSidechain": false,
+      "isMeta": false
+    },
+    {
+      "type": "user",
+      "uuid": "0b59b6ba-2d6c-49bc-b2a1-d049476e387b",
+      "parentUuid": "f06d028e-0540-4bd6-b4aa-246df97151d6",
+      "isSidechain": false,
+      "isMeta": true,
+      "message": {
+        "role": "user"
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "84db5cc5-979d-48aa-bf99-2cfb8cc5aa75",
+      "parentUuid": "0b59b6ba-2d6c-49bc-b2a1-d049476e387b",
+      "isSidechain": false,
+      "message": {
+        "role": "user"
+      }
+    },
+    {
+      "type": "user",
+      "uuid": "06c24a83-12d1-483c-b517-d64798468437",
+      "parentUuid": "84db5cc5-979d-48aa-bf99-2cfb8cc5aa75",
+      "isSidechain": false,
+      "message": {
+        "role": "user"
+      }
+    }
+  ]
+}
