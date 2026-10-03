@@ -347,6 +347,8 @@ export const FailedAndInterruptedWork: Story = {
         )
       }
       await userEvent.keyboard('{Escape}')
+      await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
+      await waitFor(() => expect(canvas.getByRole('button', { name: trigger })).toHaveFocus())
     }
   },
 }

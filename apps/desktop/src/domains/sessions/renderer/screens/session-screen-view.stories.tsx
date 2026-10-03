@@ -6,6 +6,7 @@ import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-
 import { pendingSessionId } from '@/domains/sessions/api/pending-session'
 import { FALLBACK_DEFAULT_BRANCH } from '@/domains/sessions/api/worktree-request'
 import { DEFAULT_HARNESS } from '@/harnesses/harness'
+import { expectReachableIn } from '@/mocks/platform/scroll-content-reachability'
 import { sessionRow, sessionShellCommand, sessionSubagent } from '@/mocks/sessions/session-rows'
 import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fixture'
 import { installSessionHost } from '@/mocks/sessions/session-story-host'
@@ -539,17 +540,10 @@ async function expectFeedEndsOneSnugAboveComposer(
 
 // Each Allow control is on screen and takes a press, so no prompt is clipped away.
 async function expectEveryAllowReachable(canvasElement: HTMLElement) {
-  await waitFor(() => {
-    for (const allow of within(canvasElement).getAllByRole('button', { name: 'Allow' })) {
-      allow.scrollIntoView({ block: 'nearest' })
-      const bounds = allow.getBoundingClientRect()
-      const hit = document.elementFromPoint(
-        bounds.left + bounds.width / 2,
-        bounds.top + bounds.height / 2,
-      )
-      expect(hit !== null && allow.contains(hit)).toBe(true)
-    }
-  })
+  for (const allow of within(canvasElement).getAllByRole('button', { name: 'Allow' })) {
+    allow.scrollIntoView({ block: 'nearest' })
+    await expectReachableIn(canvasElement, allow, IntersectionObserver)
+  }
 }
 
 function expectHeaderActionsAtTrailingEdge(canvasElement: HTMLElement) {
@@ -1040,17 +1034,17 @@ export const FeedEndsAboveStackedPrompts: Story = {
     await waitFor(() =>
       expect(canvas.getAllByRole('heading', { name: /^Permission needed/ })).toHaveLength(3),
     )
-    // The Feed opens at its end and stays there while the prompts enter and grow the composer.
-    await expectFeedEndsOneSnugAboveComposer(canvasElement, { scrollToEnd: false })
+    const history = canvas.getByLabelText(SESSION_HISTORY_LABEL)
+    await expectReachableIn(
+      history,
+      await canvas.findByText(/^History row 36 keeps/),
+      IntersectionObserver,
+    )
     // Tall stacks scroll within the composer; every prompt and the context bar remain reachable.
     await expectEveryAllowReachable(canvasElement)
     const usageLabel = canvas.getByText('Usage')
     usageLabel.scrollIntoView({ block: 'nearest' })
-    const usage = usageLabel.getBoundingClientRect()
-    expect(document.elementFromPoint(usage.left + 1, usage.top + usage.height / 2)).not.toBeNull()
-    expect(usage.bottom).toBeLessThanOrEqual(
-      canvas.getByLabelText('Session composer').getBoundingClientRect().bottom,
-    )
+    await expectReachableIn(canvasElement, usageLabel, IntersectionObserver)
   },
 }
 
