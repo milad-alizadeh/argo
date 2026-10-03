@@ -3,18 +3,16 @@ import { useTranslation } from 'react-i18next'
 import { isWorkingStatus } from '@/domains/sessions/api/session-live-event'
 import { harnessSchema } from '@/harnesses/harness'
 import { StatusBadge } from '@/platform/renderer/components/design-system/status-badge'
-import { indicatorToneRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { LiveActivityWords, useLiveActivityText } from '../feed'
 import { HarnessLogo } from '../harness'
 import { SessionTitle } from '../prompt'
+import { type SessionStatusVariant, sessionStatusMarkRecipe } from '../session-state-recipes'
 import type { Session, SessionExtras, SessionId, SessionPlan } from '../types'
 import type { SelectionModifier } from './hooks/session-list-selection'
 
 // One row of the list, for the virtualizer's estimate and for the spinner and skeleton rows.
 export const SESSION_LIST_ROW_HEIGHT = 56
-
-type SessionStatusVariant = 'active' | 'attention' | 'failed' | 'idle' | 'unknown'
 
 // `starting` keeps its idle mark until a Turn works.
 const STATUS_VARIANTS = {
@@ -28,13 +26,10 @@ const STATUS_VARIANTS = {
   idle: 'idle',
 } as const satisfies Record<Session['status'], SessionStatusVariant>
 
-const STATUS_MARK = {
-  active: `${indicatorToneRecipe.success} bg-current shadow-state-glow animate-[status-light-blink_1.6s_ease-in-out_infinite]`,
-  attention: `${indicatorToneRecipe.warning} bg-current shadow-[0_0_5px_color-mix(in_srgb,currentColor_35%,transparent)] animate-[status-light-blink_1.6s_ease-in-out_infinite]`,
-  failed: `${indicatorToneRecipe.danger} bg-current`,
-  idle: `${indicatorToneRecipe.neutral} bg-current`,
-  unknown: 'bg-transparent shadow-state-outline',
-} satisfies Record<SessionStatusVariant, string>
+const sessionFactRecipe = {
+  badge: 'shrink-0',
+  archivedIcon: 'size-3',
+} as const
 
 function selectionModifierOf(event: {
   shiftKey: boolean
@@ -64,7 +59,7 @@ function ActivityLine({ session }: { session: Session }) {
 function rowHighlightOf(checked: boolean, selected: boolean, archived: boolean): string {
   if (checked || selected)
     return 'bg-sidebar-accent text-sidebar-accent-foreground [&_.type-meta]:text-inherit'
-  if (archived) return 'border border-border/70 bg-muted/50 text-muted-foreground hover:bg-muted'
+  if (archived) return 'border border-border bg-muted/50 text-muted-foreground hover:bg-muted'
   return 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:[&_.type-meta]:text-inherit'
 }
 
@@ -146,7 +141,7 @@ function SessionRowMark({ session, unavailable }: { session: RowSession; unavail
         </span>
       </span>
       <span
-        className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full transition-[background-color,box-shadow,opacity] duration-(--duration-attention) ease-(--ease-emphasized) motion-reduce:animate-none motion-reduce:transition-none ${STATUS_MARK[statusVariant]}`}
+        className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full transition-[background-color,box-shadow,opacity] duration-(--duration-attention) ease-(--ease-emphasized) motion-reduce:animate-none motion-reduce:transition-none ${sessionStatusMarkRecipe[statusVariant]}`}
         data-variant={statusVariant}
         data-slot="session-status"
       />
@@ -261,18 +256,19 @@ export const SessionRow = memo(function SessionRow({
             <SessionTitle session={session} />
           </span>
           {archived ? (
-            <span
-              className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/70 bg-background/70 px-1.5 py-0.5 type-meta font-medium text-muted-foreground"
+            <StatusBadge
+              className={sessionFactRecipe.badge}
               data-slot="archived-session"
+              tone="neutral"
             >
-              <Icon name="archive-session" className="size-3" />
+              <Icon name="archive-session" className={sessionFactRecipe.archivedIcon} />
               {t('sessionListStatusArchived')}
-            </span>
+            </StatusBadge>
           ) : null}
           {unavailable ? (
-            <span className="inline-flex shrink-0 rounded-full border border-status-danger/50 px-1.5 py-0.5 type-meta text-status-danger">
+            <StatusBadge className={sessionFactRecipe.badge} tone="danger">
               {t('standing.missingHistoryBadge')}
-            </span>
+            </StatusBadge>
           ) : null}
           {statusVariant === 'attention' ? (
             <StatusBadge tone="warning">{t('needsInput')}</StatusBadge>

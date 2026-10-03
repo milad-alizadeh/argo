@@ -41,13 +41,7 @@ function WorkMenuTrigger({
 }) {
   return (
     <span className="relative isolate inline-flex shrink-0 overflow-visible">
-      <MenuDropdownTrigger
-        aria-label={`${label} · ${count}`}
-        className="text-muted-foreground hover:bg-accent hover:text-accent-foreground data-[popup-open]:bg-accent data-[popup-open]:text-accent-foreground"
-        icon={icon}
-        iconOnly
-        label={label}
-      />
+      <MenuDropdownTrigger aria-label={`${label} · ${count}`} icon={icon} iconOnly label={label} />
       <Badge count={count} running={running} />
     </span>
   )
@@ -99,7 +93,7 @@ function Group({
   if (entries.length === 0) return null
   return (
     <DropdownMenuGroup>
-      <DropdownMenuLabel className="type-meta text-muted-foreground">{label}</DropdownMenuLabel>
+      <DropdownMenuLabel className="text-muted-foreground">{label}</DropdownMenuLabel>
       {entries.map((entry) => (
         <Row
           key={entry.id}

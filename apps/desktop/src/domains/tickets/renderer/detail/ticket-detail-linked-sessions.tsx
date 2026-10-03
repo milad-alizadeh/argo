@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { type Session, SessionTitle } from '@/domains/sessions/renderer'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import { linkRow, stateIcon } from './ticket-detail-links'
+import { interactiveLinkRow, stateIcon } from './ticket-detail-links'
 import { TicketDetailSection } from './ticket-detail-section'
 
 export function LinkedSessions({
@@ -22,7 +22,7 @@ export function LinkedSessions({
         {sessions.map((session) => (
           <li key={session.id}>
             <button
-              className={`${linkRow} hover:bg-muted`}
+              className={interactiveLinkRow}
               onClick={() => onOpenSession(session.id)}
               type="button"
             >

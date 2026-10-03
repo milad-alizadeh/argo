@@ -2,7 +2,6 @@
 // and what it spent (#1582). A running row is measured against now, so the caller passes the
 // clock rather than this module reading one.
 import type { TFunction } from 'i18next'
-import { indicatorToneRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
 import type { SessionShellCommand, SessionSubagent, ShellState } from '../../types'
 import type { SubagentUsageFacts } from '../types'
 
@@ -17,16 +16,6 @@ export type SessionWork =
 
 // A Subagent settles as `done`; a shell command keeps its own end state.
 export type WorkState = ShellState | 'done' | 'unknown'
-
-// The semantic ground a state mark takes, the same set the Roster draws a Session's status in.
-export const WORK_STATE_MARKS: Record<WorkState, string> = {
-  running: `${indicatorToneRecipe.success} bg-current shadow-state-glow`,
-  done: 'bg-muted-foreground',
-  completed: 'bg-muted-foreground',
-  failed: 'bg-status-danger',
-  interrupted: 'bg-status-warning',
-  unknown: 'bg-muted-foreground',
-}
 
 export function subagentWorkState(subagent: SessionSubagent): WorkState {
   return subagent.state === 'completed' ? 'done' : subagent.state

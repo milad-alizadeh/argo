@@ -164,7 +164,9 @@ export const ChangePriority: Story = {
   },
   play: async ({ args, canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket ENG-12' })
-    await userEvent.click(within(article).getByRole('button', { name: 'Priority: High' }))
+    const trigger = within(article).getByRole('button', { name: 'Priority: High' })
+    trigger.focus()
+    await userEvent.keyboard('{Enter}')
     const menu = await within(canvasElement.ownerDocument.body).findByRole('menu')
     await expect(within(menu).getByRole('menuitemradio', { name: 'High' })).toBeChecked()
     await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Urgent' }))
@@ -173,6 +175,51 @@ export const ChangePriority: Story = {
     await waitFor(() =>
       expect(within(canvasElement.ownerDocument.body).queryByRole('menu')).toBeNull(),
     )
+    await waitFor(() => expect(trigger).toHaveFocus())
+    await userEvent.keyboard('{Enter}')
+    const reopened = await within(canvasElement.ownerDocument.body).findByRole('menu')
+    await userEvent.click(within(reopened).getByRole('menuitemradio', { name: 'No priority' }))
+    await expect(args.onChangePriority).toHaveBeenLastCalledWith(null)
+    await waitFor(() => expect(trigger).toHaveFocus())
+    await userEvent.keyboard('{Enter}')
+    await within(canvasElement.ownerDocument.body).findByRole('menu')
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() =>
+      expect(within(canvasElement.ownerDocument.body).queryByRole('menu')).toBeNull(),
+    )
+    await expect(trigger).toHaveFocus()
+  },
+}
+
+export const ReadOnlyMetadata: Story = {
+  args: {
+    ticket: engine(),
+    provider: 'linear',
+    statuses: ticketStatuses('linear'),
+    priorityChoices: linearPriorities(),
+    writable: false,
+  },
+  parameters: { detailWidth: '40rem' },
+  play: async ({ canvasElement }) => {
+    const article = within(canvasElement).getByRole('article', { name: 'Ticket ENG-12' })
+    const metadata = within(article).getByRole('complementary', { name: 'Ticket metadata' })
+    await expect(metadata).toHaveTextContent('StatusIn Review')
+    await expect(metadata).toHaveTextContent('StateOpen')
+    await expect(metadata).toHaveTextContent('PriorityHigh')
+    await expect(within(metadata).queryByRole('button', { name: 'Status: In Review' })).toBeNull()
+    await expect(within(metadata).queryByRole('button', { name: 'Priority: High' })).toBeNull()
+  },
+}
+
+export const NoSelection: Story = {
+  args: { ticket: null },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('heading', { name: 'Select a Ticket' })).toBeVisible()
+    await expect(
+      canvas.getByText('Its description, children and blockers show here.'),
+    ).toBeVisible()
+    await expect(canvas.queryByRole('article')).toBeNull()
   },
 }
 

@@ -2,7 +2,10 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import type { Ticket, TicketLink, TicketState } from '@/domains/tickets/api/ticket'
-import { statusToneRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
+import {
+  indicatorToneRecipe,
+  statusToneRecipe,
+} from '@/platform/renderer/components/design-system/tone-recipes'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 import { SectionTitle } from '@/platform/renderer/components/section-title'
 import { Badge } from '@/platform/renderer/components/ui/badge'
@@ -16,8 +19,8 @@ import { providerPresentation } from '@/providers/presentation-registry'
 import { closedChildren } from '../lib'
 
 const STATE_ICONS: Record<TicketState, { icon: IconName; tone: string }> = {
-  open: { icon: 'ticket-link-open', tone: 'text-status-success' },
-  closed: { icon: 'ticket-link-closed', tone: 'text-muted-foreground' },
+  open: { icon: 'ticket-link-open', tone: indicatorToneRecipe.success },
+  closed: { icon: 'ticket-link-closed', tone: indicatorToneRecipe.neutral },
 }
 
 export const stateIcon = 'size-(--size-icon-meta) shrink-0'
@@ -27,6 +30,8 @@ export type Navigation = { listed: ReadonlySet<string>; onSelect: (key: string) 
 
 export const linkRow =
   'flex w-full items-center gap-(--spacing-shell-item) rounded-row px-(--spacing-shell-item) py-(--spacing-shell-icon) text-left'
+
+export const interactiveLinkRow = `${linkRow} hover:bg-accent hover:text-accent-foreground`
 
 function LinkContent({ link }: { link: TicketLink }) {
   const { t } = useTranslation('tickets')
@@ -48,11 +53,7 @@ function Links({ links, listed, onSelect }: { links: readonly TicketLink[] } & N
       {links.map((link) => (
         <li key={link.key}>
           {listed.has(link.key) ? (
-            <button
-              className={`${linkRow} hover:bg-muted`}
-              onClick={() => onSelect(link.key)}
-              type="button"
-            >
+            <button className={interactiveLinkRow} onClick={() => onSelect(link.key)} type="button">
               <LinkContent link={link} />
             </button>
           ) : (

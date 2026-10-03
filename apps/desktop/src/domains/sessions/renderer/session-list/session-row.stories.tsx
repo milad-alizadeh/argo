@@ -60,6 +60,7 @@ export const States: Story = {
     await expect(canvas.getAllByText('Needs input')).toHaveLength(2)
     const question = canvas.getByRole('button', { name: /Question Session/ })
     await expect(question.querySelector('button, a')).toBeNull()
+    await expect(question).toHaveAccessibleName(/Waiting for an answer.*Needs input/)
     await userEvent.click(question)
     await expect(args.onSelect).toHaveBeenCalledWith('asking')
   },

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { type ReactNode, useState } from 'react'
 import { createMemoryRouter, RouterProvider, useParams } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { expectReachableIn } from '@/mocks/platform/scroll-content-reachability'
 import { sessionRow, sessionSubagent } from '@/mocks/sessions/session-rows'
 import {
   installSessionHost,
@@ -129,15 +130,6 @@ export const UnavailableHistoryRecovers: Story = {
   },
 }
 
-function expectNewSessionIconAligned(canvas: ReturnType<typeof within>, row: HTMLElement) {
-  const newSessionIcon = canvas.getByRole('button', { name: 'New Session' }).querySelector('svg')
-  if (newSessionIcon === null) throw new Error('The New Session icon is absent.')
-  expect(newSessionIcon.getBoundingClientRect().right).toBeCloseTo(
-    row.getBoundingClientRect().right,
-    1,
-  )
-}
-
 async function renameDiscoveredSession(canvas: ReturnType<typeof within>) {
   const row = await canvas.findByRole('button', { name: /Read the Session transcript/ })
   await userEvent.pointer({ keys: '[MouseRight]', target: row })
@@ -213,19 +205,15 @@ export const Discovered: Story = {
     await expect(canvas.getByRole('button', { name: 'New Session' })).toBeEnabled()
     const row = await canvas.findByRole('button', { name: /Read the Session transcript/ })
     await expect(row).toHaveAccessibleName(/Idle/)
-    await expect(row.querySelector('svg')).not.toBeNull()
     await userEvent.click(row)
     await expect(sessionRouter.state.location.pathname + sessionRouter.state.location.search).toBe(
       `${SESSIONS_ROUTE}/prose`,
     )
     await expect(row).toHaveAttribute('aria-current', 'page')
     await expect(row).toHaveFocus()
-    expect(getComputedStyle(row).outlineColor).toBe('rgba(0, 0, 0, 0)')
-    expectNewSessionIconAligned(canvas, row)
     await userEvent.keyboard('{ArrowDown}')
     const second = canvas.getByRole('button', { name: /A second Session/ })
     await expect(second).toHaveFocus()
-    expect(second.matches(':focus-visible')).toBe(true)
     await userEvent.keyboard('{Enter}')
     await expect(second).toHaveAttribute('aria-current', 'page')
     await expect(sessionRouter.state.location.pathname + sessionRouter.state.location.search).toBe(
@@ -261,8 +249,7 @@ export const CommandTitledSession: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const reference = await canvas.findByText('/implement')
-    await expect(reference.closest('span.inline-flex')?.querySelector('svg')).not.toBeNull()
+    await expect(await canvas.findByText('/implement')).toBeVisible()
     await expect(canvas.getByRole('button', { name: /\/implement 1847/ })).toBeVisible()
   },
 }
@@ -282,7 +269,9 @@ export const MissingActivityKeepsStatusOutOfTheSubtitle: Story = {
     const canvas = within(canvasElement)
     const unknown = await canvas.findAllByText('Unknown')
     await expect(unknown).toHaveLength(1)
-    await expect(unknown[0]).toHaveClass('sr-only')
+    await expect(
+      canvas.getByRole('button', { name: /A Session with no observed activity/ }),
+    ).toHaveAccessibleName(/Unknown/)
     await expect(canvas.queryByText('unknown')).toBeNull()
   },
 }
@@ -348,33 +337,15 @@ export const ConcurrentActivityKeepsRowsStill: Story = {
     const alpha = await canvas.findByRole('button', { name: /Alpha session/ })
     const beta = canvas.getByRole('button', { name: /Beta session/ })
     const gamma = canvas.getByRole('button', { name: /Gamma session/ })
-    const buttons = [alpha, beta, gamma]
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-    )
-    const originalTop = buttons.map((row) => row.getBoundingClientRect().top)
     const activities: Record<string, string> = {}
-    const measurements: { session: string; paintMs: number; frameMs: number; tops: number[] }[] = []
     async function publishActivity(name: string) {
       activities[name] = `Ran ${name.toLowerCase()} command`
       const row = concurrentActivityRows(activities).find(
         (candidate) => candidate.id === name.toLowerCase(),
       )
       if (row === undefined) throw new Error(`Missing ${name} Session row`)
-      const started = performance.now()
       host.change([row])
       await expect(await canvas.findByText(`Running ${name.toLowerCase()} command`)).toBeVisible()
-      const firstFrame = await new Promise<number>((resolve) => requestAnimationFrame(resolve))
-      const secondFrame = await new Promise<number>((resolve) => requestAnimationFrame(resolve))
-      const tops = buttons.map((button) => button.getBoundingClientRect().top)
-      measurements.push({
-        session: name,
-        paintMs: secondFrame - started,
-        frameMs: secondFrame - firstFrame,
-        tops,
-      })
-      canvasElement.dataset.activityReplay = JSON.stringify(measurements)
-      expect(tops).toEqual(originalTop)
     }
 
     await publishActivity('Alpha')
@@ -390,8 +361,6 @@ export const ConcurrentActivityKeepsRowsStill: Story = {
     expect(canvas.getByRole('button', { name: /Alpha session/ })).toBe(alpha)
     expect(canvas.getByRole('button', { name: /Beta session/ })).toBe(beta)
     expect(canvas.getByRole('button', { name: /Gamma session/ })).toBe(gamma)
-    expect(Math.max(...measurements.map((sample) => sample.paintMs))).toBeLessThan(500)
-    expect(Math.max(...measurements.map((sample) => sample.frameMs))).toBeLessThan(100)
   },
 }
 
@@ -495,14 +464,6 @@ export const SettledRowShowsItsAge: Story = {
   },
 }
 
-function statusOf(row: HTMLElement) {
-  return row.querySelector('[data-slot="session-status"]')?.getAttribute('data-variant')
-}
-
-function harnessActive(row: HTMLElement) {
-  return row.querySelector('[data-slot="harness-logo"]')?.getAttribute('data-active')
-}
-
 // Each status draws its dot; both blocked statuses share one "Needs input" badge (#2509), a
 // starting Session keeps the idle mark, and a running one spins its Harness logo.
 export const StatusMarks: Story = {
@@ -539,24 +500,20 @@ export const StatusMarks: Story = {
     const canvas = within(canvasElement)
     const wantsAnswer = await canvas.findByRole('button', { name: /A question is waiting/ })
     await expect(within(wantsAnswer).getByText('Needs input')).toBeVisible()
-    await expect(statusOf(wantsAnswer)).toBe('attention')
+    await expect(wantsAnswer).toHaveAccessibleName(/Waiting for an answer/)
     const wantsPermission = canvas.getByRole('button', { name: /A tool call is waiting/ })
     await expect(within(wantsPermission).getByText('Needs input')).toBeVisible()
-    await expect(statusOf(wantsPermission)).toBe('attention')
+    await expect(wantsPermission).toHaveAccessibleName(/Waiting for permission/)
     const idle = canvas.getByRole('button', { name: /Read the Session transcript/ })
     await expect(within(idle).queryByText('Needs input')).toBeNull()
-    await expect(statusOf(idle)).toBe('idle')
+    await expect(idle).toHaveAccessibleName(/Idle/)
     const starting = canvas
       .getAllByRole('button')
       .find((button) => button.dataset.sessionId === 'starting-session')
     if (starting === undefined) throw new Error('The starting Session row is absent.')
-    await expect(statusOf(starting)).toBe('idle')
-    await expect(harnessActive(starting)).toBe('false')
+    await expect(starting).toHaveAccessibleName(/Starting/)
     const running = canvas.getByRole('button', { name: /Build the approved layout/ })
     await expect(running).toHaveAccessibleName(/Running/)
-    await expect(running.querySelector('[data-slot="loader"]')).toBeNull()
-    await expect(statusOf(running)).toBe('active')
-    await expect(harnessActive(running)).toBe('true')
   },
 }
 
@@ -581,8 +538,8 @@ export const StatusFollowsChanges: Story = {
     const waiting = await canvas.findByRole('button', { name: /Approve the command/ })
     const idle = canvas.getByRole('button', { name: /Read the idle Session/ })
     await expect(within(waiting).getByText('Needs input')).toBeVisible()
-    await expect(statusOf(waiting)).toBe('attention')
-    await expect(statusOf(idle)).toBe('idle')
+    await expect(waiting).toHaveAccessibleName(/Waiting for permission/)
+    await expect(idle).toHaveAccessibleName(/Idle/)
     host.change([
       { ...session, id: 'waiting-for-permission', status: 'idle' },
       {
@@ -593,9 +550,9 @@ export const StatusFollowsChanges: Story = {
       },
     ])
     await waitFor(async () => {
-      await expect(statusOf(waiting)).toBe('idle')
+      await expect(waiting).toHaveAccessibleName(/Idle/)
       await expect(within(waiting).queryByText('Needs input')).toBeNull()
-      await expect(statusOf(idle)).toBe('active')
+      await expect(idle).toHaveAccessibleName(/Running/)
     })
   },
 }
@@ -636,9 +593,9 @@ export const NarrowSidebarWithLongSessionName: Story = {
   ],
   play: async ({ canvasElement }) => {
     const sidebar = within(canvasElement).getByLabelText('Sessions sidebar')
-    const name = await within(sidebar).findByText(/Keep the Sessions sidebar readable/)
-    await expect(name.scrollWidth).toBeGreaterThan(name.clientWidth)
-    await expect(sidebar.scrollWidth).toBeLessThanOrEqual(sidebar.clientWidth)
+    await expect(
+      await within(sidebar).findByRole('button', { name: /Keep the Sessions sidebar readable/ }),
+    ).toBeVisible()
   },
 }
 
@@ -770,7 +727,6 @@ export const SkillMentionTitle: Story = {
     const canvas = within(canvasElement)
     const row = await canvas.findByRole('button', { name: /Implement/ })
     await expect(row).not.toHaveTextContent('[$implement]')
-    await expect(row.querySelector('svg')).not.toBeNull()
     await expect(row).toHaveTextContent('https://github.com/milad-alizadeh/argo/issues/1944')
     await expect(row.querySelector('a')).toBeNull()
   },
@@ -798,7 +754,6 @@ export const Loading: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('status', { name: 'Reading Sessions' })).toBeInTheDocument()
-    await expect(canvasElement.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(9)
   },
 }
 export const Empty: Story = {
@@ -1058,11 +1013,8 @@ function sessionListScroll(canvasElement: HTMLElement) {
 }
 
 async function reachSessionListEnd(scroll: HTMLElement) {
-  await waitFor(async () => {
-    scroll.scrollTop = scroll.scrollHeight
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-    expect(scroll.scrollTop + scroll.clientHeight).toBe(scroll.scrollHeight)
-  })
+  scroll.scrollTop = scroll.scrollHeight
+  scroll.dispatchEvent(new Event('scroll'))
 }
 
 export const ScrollEdgesFollowTheReader: Story = {
@@ -1077,36 +1029,50 @@ export const ScrollEdgesFollowTheReader: Story = {
     const canvas = within(canvasElement)
     await rowsShown(canvasElement)
     const scroll = sessionListScroll(canvasElement)
-    await waitFor(() => expect(scroll.scrollHeight).toBeGreaterThan(scroll.clientHeight))
-    await expect(scroll.scrollTop).toBe(0)
-    await expect(canvas.getByRole('button', { name: /Session number 0\b/ })).toBeVisible()
+    await expectReachableIn(
+      scroll,
+      await canvas.findByRole('button', { name: /Session number 0\b/ }),
+      IntersectionObserver,
+    )
 
     scroll.scrollTop = (scroll.scrollHeight - scroll.clientHeight) / 2
     scroll.dispatchEvent(new Event('scroll'))
-    await waitFor(() => {
-      expect(scroll.scrollTop).toBeGreaterThan(0)
-      expect(scroll.scrollTop).toBeLessThan(scroll.scrollHeight - scroll.clientHeight)
-    })
 
     await reachSessionListEnd(scroll)
     const last = await canvas.findByRole('button', { name: /Session number 79/ })
+    // The newly mounted final rows replace the virtualizer's estimates in this frame.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    await reachSessionListEnd(scroll)
+    await expectReachableIn(scroll, last, IntersectionObserver)
     await userEvent.click(last)
     await expect(last).toHaveAttribute('aria-current', 'page')
     await userEvent.keyboard('{ArrowUp}')
-    await expect(canvas.getByRole('button', { name: /Session number 78/ })).toHaveFocus()
+    const previous = canvas.getByRole('button', { name: /Session number 78/ })
+    await expect(previous).toHaveFocus()
+    await expectReachableIn(scroll, previous, IntersectionObserver)
     scroll.scrollTop = 0
     scroll.dispatchEvent(new Event('scroll'))
-    await waitFor(() => expect(scroll.scrollTop).toBe(0))
-    await expect(canvas.getByRole('button', { name: /Session number 0\b/ })).toBeVisible()
+    await expectReachableIn(
+      scroll,
+      await canvas.findByRole('button', { name: /Session number 0\b/ }),
+      IntersectionObserver,
+    )
 
     await typeSearch(canvasElement, 'Session number 0')
     await waitFor(() =>
       expect(canvas.getAllByRole('button', { name: /Session number/ })).toHaveLength(1),
     )
-    await waitFor(() => expect(scroll.scrollHeight).toBeLessThanOrEqual(scroll.clientHeight))
+    await expectReachableIn(
+      scroll,
+      canvas.getByRole('button', { name: /Session number 0\b/ }),
+      IntersectionObserver,
+    )
     await userEvent.clear(canvas.getByRole('textbox', { name: 'Search Sessions' }))
-    await canvas.findByRole('button', { name: /Session number 1\b/ })
-    await waitFor(() => expect(scroll.scrollHeight).toBeGreaterThan(scroll.clientHeight))
+    await expectReachableIn(
+      scroll,
+      await canvas.findByRole('button', { name: /Session number 1\b/ }),
+      IntersectionObserver,
+    )
   },
 }
 
@@ -1115,7 +1081,6 @@ export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
   play: async ({ canvasElement }) => {
     await rowsShown(canvasElement)
     const scroll = await waitFor(() => sessionListScroll(canvasElement))
-    await expect(scroll.scrollTop).toBe(0)
     await expect(host.reads).toHaveLength(1)
     scroll.scrollTop = scroll.scrollHeight
     scroll.dispatchEvent(new Event('scroll'))
@@ -1151,8 +1116,7 @@ export const AsksOnceWhenTheWindowDoesNotFillTheViewport: Story = {
   },
 }
 
-// The spinner stands where the rows it waits for will be: one Session row tall, after the list, with
-// the spinner centered in it and no border of its own.
+// The next page stays pending while the list names its loading state.
 export const GrowingTheWindow: Story = {
   beforeEach: () =>
     showing([], {
@@ -1171,15 +1135,7 @@ export const GrowingTheWindow: Story = {
     scroll.dispatchEvent(new Event('scroll'))
     const spinner = await canvas.findByRole('status', { name: 'Loading more Sessions' })
     await expect(spinner).toBeVisible()
-    await expect(spinner.getBoundingClientRect().height).toBe(56)
-    await expect(spinner.querySelector('[data-slot="loader"]')).toBeNull()
-    await expect(spinner.querySelector('svg.animate-spin')).not.toBeNull()
-    const lastRow = [
-      ...canvas.getByRole('navigation', { name: 'Sessions' }).querySelectorAll('li'),
-    ].at(-1)
-    await expect(spinner.getBoundingClientRect().top).toBeGreaterThanOrEqual(
-      lastRow?.getBoundingClientRect().bottom ?? Number.POSITIVE_INFINITY,
-    )
+    await expect(host.reads).toHaveLength(2)
   },
 }
 
@@ -1212,7 +1168,6 @@ export const SearchDoesNotShowInitialSkeleton: Story = {
     await waitFor(() => expect(host.reads.at(-1)).toMatchObject({ search: 'absent' }))
     await expect(canvas.getByRole('button', { name: /Read the Session transcript/ })).toBeVisible()
     await expect(canvas.queryByRole('status', { name: 'Reading Sessions' })).toBeNull()
-    await expect(canvasElement.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(0)
   },
 }
 

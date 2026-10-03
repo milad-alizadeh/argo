@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/api/ticket'
+import { indicatorToneRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
@@ -48,7 +49,7 @@ function BlockedMark({ ticket }: { ticket: Ticket }) {
   const blockers = openBlockers(ticket)
   if (blockers === 0) return null
   return (
-    <span className="inline-flex shrink-0 items-center text-destructive">
+    <span className={`inline-flex shrink-0 items-center ${indicatorToneRecipe.danger}`}>
       <Icon aria-hidden name="blocked" className={markIcon} />
       <span className="sr-only">{t('row.blockedBy', { count: blockers })}</span>
     </span>

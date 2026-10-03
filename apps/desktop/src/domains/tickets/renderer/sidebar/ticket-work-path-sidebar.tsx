@@ -23,8 +23,8 @@ function TicketLink({ ticket, onSelect, prominent = false, showKey = true }: Tic
       <span
         className={
           prominent
-            ? 'mt-(--spacing-shell-tight) block type-body font-medium text-foreground'
-            : 'ml-(--spacing-shell-tight) text-foreground'
+            ? 'mt-(--spacing-shell-tight) block type-body font-medium'
+            : 'ml-(--spacing-shell-tight)'
         }
       >
         {ticket.title}
@@ -44,11 +44,11 @@ export function TicketWorkPathSidebar({
   return (
     <section
       aria-labelledby="ticket-work-path-heading"
-      className="min-w-0 px-(--spacing-shell-inset)"
+      className="min-w-0 px-(--spacing-shell-inset) text-sidebar-foreground"
     >
       <SectionTitle
         id="ticket-work-path-heading"
-        className="text-foreground"
+        className="text-sidebar-foreground"
         metadata={t('sidebar.currentPlan')}
       >
         {t('sidebar.workPath')}
@@ -62,13 +62,13 @@ export function TicketWorkPathSidebar({
           aria-hidden="true"
           className="ticket-work-path__rail absolute top-(--spacing-shell-item) bottom-(--spacing-shell-item) w-px bg-border"
         />
-        <div className="relative min-w-0 rounded-row bg-muted/70 p-(--spacing-shell-item) [--ticket-work-path-marker-inset:var(--spacing-shell-item)]">
+        <div className="relative min-w-0 rounded-row bg-sidebar-accent text-sidebar-accent-foreground p-(--spacing-shell-item) [--ticket-work-path-marker-inset:var(--spacing-shell-item)]">
           <span aria-hidden="true" className="ticket-work-path__marker bg-primary" />
-          <p className="min-w-0 type-meta text-muted-foreground wrap-anywhere">
+          <p className="min-w-0 type-meta wrap-anywhere">
             {t('sidebar.startHere')} · {path.start.key}
           </p>
           <TicketLink onSelect={onSelect} prominent showKey={false} ticket={path.start} />
-          <p className="mt-(--spacing-shell-tight) min-w-0 type-meta text-muted-foreground wrap-anywhere">
+          <p className="mt-(--spacing-shell-tight) min-w-0 type-meta wrap-anywhere">
             {t('sidebar.startReason', { count: path.unlocks.length })}
           </p>
         </div>

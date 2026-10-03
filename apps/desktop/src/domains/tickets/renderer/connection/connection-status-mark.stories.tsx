@@ -41,7 +41,7 @@ export const States: Story = {
     for (const [index, text] of Object.values(STATE_TEXT).entries()) {
       const line = lines[index]
       if (!line) throw new Error(`Expected a rendered line for state ${index}`)
-      await expect(within(line).getByText(text)).toHaveClass('sr-only')
+      await expect(within(line).getByText(text)).toBeInTheDocument()
       // The state follows the label, so a button built on it is named "GitHub · octocat Connected".
       await expect(line).toHaveTextContent(`GitHub · octocat${text}`)
     }

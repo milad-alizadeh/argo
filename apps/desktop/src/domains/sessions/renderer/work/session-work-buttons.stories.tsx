@@ -77,7 +77,7 @@ function Header(props: Partial<React.ComponentProps<typeof SessionWorkButtons>>)
   const [subagentId, setDelegationId] = useState<string | null>(null)
   const [shellId, setShellId] = useState<string | null>(null)
   return (
-    <div className="flex h-(--size-chrome-bar) items-center gap-2 border-b border-border/60 px-3">
+    <div className="flex h-(--size-chrome-bar) items-center gap-2 border-b border-border px-3">
       <SessionWorkButtons
         subagents={DELEGATIONS}
         subagentUsage={{
@@ -306,5 +306,47 @@ export const LongDetailsNarrow: Story = {
         name: /Review the configuration and permission menus/,
       }),
     ).toHaveAccessibleName(/checking keyboard navigation and accessibility/)
+  },
+}
+
+export const FailedAndInterruptedWork: Story = {
+  render: () => (
+    <Header
+      subagents={[
+        sessionSubagent({ id: 'failed-review', label: 'Failed review', state: 'failed' }),
+        sessionSubagent({ id: 'stopped-review', label: 'Stopped review', state: 'interrupted' }),
+      ]}
+      shell={[
+        sessionShellCommand({ id: 'failed-shell', command: 'bun run failed', state: 'failed' }),
+        sessionShellCommand({
+          id: 'stopped-shell',
+          command: 'bun run stopped',
+          state: 'interrupted',
+        }),
+      ]}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    for (const [trigger, names] of [
+      ['Subagents · 2', [/Failed review Failed/, /Stopped review Interrupted/]],
+      ['Shell · 2', [/bun run failed Failed/, /bun run stopped Interrupted/]],
+    ] as const) {
+      await userEvent.click(canvas.getByRole('button', { name: trigger }))
+      await screen.findByRole('group', { name: 'Finished' })
+      await expect(screen.queryByRole('group', { name: 'Running' })).toBeNull()
+      for (const name of names) {
+        const finished = screen.getByRole('group', { name: 'Finished' })
+        await userEvent.click(within(finished).getByRole('menuitem', { name }))
+        await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
+        await waitFor(() => expect(canvas.getByRole('button', { name: trigger })).toHaveFocus())
+        await userEvent.click(canvas.getByRole('button', { name: trigger }))
+        await expect(await screen.findByRole('menuitem', { name })).toHaveAttribute(
+          'aria-current',
+          'true',
+        )
+      }
+      await userEvent.keyboard('{Escape}')
+    }
   },
 }

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { AccountsDialog, useAccountsDialog } from '@/domains/accounts/renderer'
-import { AppPageSurface } from '@/platform/renderer/app/components/app-shell'
+import { AppPageHeader, AppPageSurface } from '@/platform/renderer/app/components/app-shell'
 import { EmptyState } from '@/platform/renderer/components/design-system/empty-state'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Skeleton } from '@/platform/renderer/components/ui/skeleton'
@@ -13,18 +13,23 @@ import { TicketProblem } from '../status'
 function Loading({ label }: { label: string }) {
   return (
     <div aria-label={label} className="flex h-full min-h-0 flex-col" role="status">
-      <span className="sr-only">{label}</span>
-      <div className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border px-(--spacing-shell-inset)">
-        <Skeleton className="h-4 w-40" />
-      </div>
-      <div className="grid max-w-md gap-(--spacing-shell-gutter) p-(--spacing-shell-inset)">
-        {[0, 1, 2, 3].map((index) => (
-          <div className="flex items-center gap-(--spacing-shell-item)" key={index}>
-            <Skeleton className="h-3 w-(--size-ticket-key)" />
-            <Skeleton className="h-4 flex-1" />
-          </div>
-        ))}
-      </div>
+      <AppPageSurface
+        header={
+          <AppPageHeader>
+            <Skeleton className="h-4 w-40" />
+          </AppPageHeader>
+        }
+      >
+        <span className="sr-only">{label}</span>
+        <div className="grid max-w-md gap-(--spacing-shell-gutter) p-(--spacing-shell-inset)">
+          {[0, 1, 2, 3].map((index) => (
+            <div className="flex items-center gap-(--spacing-shell-item)" key={index}>
+              <Skeleton className="h-3 w-(--size-ticket-key)" />
+              <Skeleton className="h-4 flex-1" />
+            </div>
+          ))}
+        </div>
+      </AppPageSurface>
     </div>
   )
 }
@@ -51,11 +56,7 @@ function Body({ view }: { view: TicketsView }) {
         </AppPageSurface>
       )
     case 'loading':
-      return (
-        <AppPageSurface>
-          <Loading label={view.label} />
-        </AppPageSurface>
-      )
+      return <Loading label={view.label} />
     case 'problem':
       return (
         <AppPageSurface>

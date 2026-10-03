@@ -1,27 +1,35 @@
 import { useTranslation } from 'react-i18next'
 import { EmptyState } from '@/platform/renderer/components/design-system/empty-state'
+import { Notice } from '@/platform/renderer/components/design-system/notice'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import { Skeleton } from '@/platform/renderer/components/ui/skeleton'
 import { SESSION_LIST_ROW_HEIGHT } from './session-row'
 
 export type SessionListState = 'error' | 'loading' | 'empty' | 'ready'
 
-// Three skeleton rows in the Session row's shape and height, so nothing reflows when rows arrive.
+const sessionLoadingRecipe = {
+  row: 'flex items-start gap-2 px-2 py-2',
+  mark: 'mt-0.5 size-4 shrink-0 rounded-full',
+  content: 'min-w-0 flex-1',
+  title: 'h-4 w-3/4',
+  detail: 'mt-1.5 h-3 w-1/3',
+} as const
+
+// The existing placeholder shape uses the virtualizer's estimate.
 function SessionListLoading() {
   const { t } = useTranslation('sessions')
   return (
     <div aria-label={t('readingSessions')} role="status">
       {[0, 1, 2].map((index) => (
         <div
-          className="flex items-start gap-2 px-2 py-2"
+          className={sessionLoadingRecipe.row}
           key={index}
           style={{ height: SESSION_LIST_ROW_HEIGHT }}
         >
-          <Skeleton className="mt-0.5 size-4 shrink-0 rounded-full" />
-          <div className="min-w-0 flex-1">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="mt-1.5 h-3 w-1/3" />
+          <Skeleton className={sessionLoadingRecipe.mark} />
+          <div className={sessionLoadingRecipe.content}>
+            <Skeleton className={sessionLoadingRecipe.title} />
+            <Skeleton className={sessionLoadingRecipe.detail} />
           </div>
         </div>
       ))}
@@ -35,14 +43,14 @@ export function SessionListOutcome({ state }: { state: SessionListState }) {
   switch (state) {
     case 'error':
       return (
-        <Alert
-          className="mx-3 mt-3 w-auto border-destructive/50 bg-destructive/10"
-          variant="destructive"
+        <Notice
+          className="mx-3 mt-3 w-auto"
+          heading={t('unableToLoadSessions')}
+          icon="triangle-alert"
+          tone="danger"
         >
-          <Icon name="triangle-alert" />
-          <AlertTitle>{t('unableToLoadSessions')}</AlertTitle>
-          <AlertDescription>{t('sessionListReadFailure')}</AlertDescription>
-        </Alert>
+          {t('sessionListReadFailure')}
+        </Notice>
       )
     case 'loading':
       return <SessionListLoading />

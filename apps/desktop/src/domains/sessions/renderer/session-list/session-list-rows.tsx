@@ -155,7 +155,10 @@ function LoadingMoreRow() {
       role="status"
       style={{ height: SESSION_LIST_ROW_HEIGHT }}
     >
-      <Icon name="loading" className="size-4 animate-spin text-muted-foreground" />
+      <Icon
+        name="loading"
+        className="size-4 animate-spin text-muted-foreground motion-reduce:animate-none"
+      />
     </div>
   )
 }

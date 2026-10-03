@@ -25,10 +25,7 @@ function SessionSyncFeedback({ status }: { status: SessionSyncStatus | null }) {
   if (status.phase === 'saving' && status.total !== null)
     progress = status.total === 0 ? 100 : (status.processed / status.total) * 100
   return (
-    <div
-      className="border-b border-border/60 px-4 py-2 type-meta text-muted-foreground"
-      role="status"
-    >
+    <div className="border-b border-border px-4 py-2 type-meta text-muted-foreground" role="status">
       <div className="flex items-center gap-2">
         <Progress aria-label={t('sync.progress')} className="min-w-0 flex-1" value={progress} />
         <span>
@@ -73,7 +70,7 @@ function SessionListFilterMenu({
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          className="whitespace-nowrap type-control"
+          className="whitespace-nowrap"
           disabled={sync.refreshing}
           onClick={sync.refresh}
         >

@@ -87,6 +87,57 @@ export const NestedLongTitle: Story = {
   },
 }
 
+const selectSidebarTicket = fn()
+
+export const SelectedSidebarRow: Story = {
+  beforeEach: () => {
+    selectSidebarTicket.mockClear()
+  },
+  args: {
+    backlog: backlog({ tickets: [longTicket, prototype()] }),
+    placement: 'sidebar',
+    selectedKey: '#607',
+    onSelect: selectSidebarTicket,
+  },
+  decorators: [
+    (Story) => (
+      <div className="panel-sidebar panel-sidebar-start h-dvh w-64">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const selected = await canvas.findByRole('button', { name: /^#607/ })
+    await expect(selected).toHaveAttribute('aria-current', 'true')
+    selected.focus()
+    await expect(selected).toHaveFocus()
+    await userEvent.keyboard('{Enter}')
+    await expect(args.onSelect).toHaveBeenCalledWith('#607')
+    selectSidebarTicket.mockClear()
+    const fold = canvas.getByRole('button', { name: 'Collapse #607' })
+    fold.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(canvas.queryByRole('button', { name: /^#609/ })).toBeNull()
+    await expect(args.onSelect).not.toHaveBeenCalled()
+    const expand = canvas.getByRole('button', { name: 'Expand #607' })
+    expand.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(await canvas.findByRole('button', { name: /^#609/ })).toHaveAccessibleName(
+      /child of #607$/,
+    )
+    const row = selected.closest('li')
+    if (row === null) throw new Error('The selected Ticket needs a list row.')
+    const status = within(row).getByRole('button', { name: 'State: Open' })
+    status.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(await within(canvasElement.ownerDocument.body).findByRole('menu')).toBeVisible()
+    await expect(args.onSelect).not.toHaveBeenCalled()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(status).toHaveFocus())
+  },
+}
+
 export const NestedExpandableTags: Story = {
   args: { backlog: backlog({ tickets: [tagRailParent, manyLabels] }) },
   play: async ({ args, canvasElement }) => {
