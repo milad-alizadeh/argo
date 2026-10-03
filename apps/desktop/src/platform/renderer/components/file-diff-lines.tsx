@@ -44,10 +44,10 @@ export function diffLineDecoration(line: DiffLine): { className?: string; prefix
   let className: string | undefined
   switch (line.kind) {
     case 'added':
-      className = 'bg-emerald-500/15 [&_span:last-child]:bg-emerald-500/10'
+      className = 'bg-emerald-500/15'
       break
     case 'removed':
-      className = 'bg-rose-500/15 [&_span:last-child]:bg-rose-500/10'
+      className = 'bg-rose-500/15'
       break
     case 'context':
     case 'title':

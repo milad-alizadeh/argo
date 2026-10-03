@@ -16,7 +16,7 @@ const SKILL_FILE = [
 ].join('\n')
 
 // A story has no preload, so the one read the inspector makes is answered here.
-function answerSkillReads(content: string | null) {
+function answerSkillReads(content: string | null | Promise<string | null>) {
   const before = window.argo
   window.argo = {
     ...before,
@@ -25,7 +25,7 @@ function answerSkillReads(content: string | null) {
       const requested = (request.input as { path: string }).path
       return {
         id: request.id,
-        result: { data: { content: requested === SKILL_PATH ? content : null } },
+        result: { data: { content: requested === SKILL_PATH ? await content : null } },
       }
     }) as typeof window.argo.trpc,
   }
@@ -37,9 +37,12 @@ const meta = {
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
-      <div className="flex h-dvh min-h-0 w-full">
+      <aside
+        role="presentation"
+        className="panel-sidebar panel-outer-start panel-outer-end h-dvh border border-border"
+      >
         <Story />
-      </div>
+      </aside>
     ),
   ],
 } satisfies Meta<typeof SessionEvidenceInspector>
@@ -72,5 +75,15 @@ export const UnreadableSkill: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText("This skill's file could not be read.")).toBeVisible()
+  },
+}
+
+export const ReadingSkill: Story = {
+  args: { evidence: skill, sessionId: null },
+  beforeEach: () => answerSkillReads(new Promise(() => {})),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(SKILL_PATH)).toBeVisible()
+    await expect(canvas.getByText('Reading skill…')).toBeVisible()
   },
 }

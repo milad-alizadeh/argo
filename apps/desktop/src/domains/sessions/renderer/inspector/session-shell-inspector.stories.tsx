@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { sessionShellCommand } from '@/mocks/sessions/session-rows'
+import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import { SessionShellInspector } from './session-shell-inspector'
 
@@ -21,7 +22,7 @@ const meta = {
   args: { now: NOW },
   decorators: [
     (Story) => (
-      <div className="flex h-dvh w-(--size-session-inspector) flex-col bg-sidebar">
+      <div className="panel-stack h-dvh w-(--size-session-inspector)">
         <Story />
       </div>
     ),
@@ -34,13 +35,18 @@ type Story = StoryObj<typeof SessionShellInspector>
 function InspectorStory({ args }: { args: React.ComponentProps<typeof SessionShellInspector> }) {
   return (
     <>
-      <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-(--spacing-shell-item)">
+      <AppPageHeader>
         <SessionWorkInspectorHeader
           work={{ kind: 'shell', command: args.command }}
           now={args.now}
         />
-      </header>
-      <SessionShellInspector {...args} />
+      </AppPageHeader>
+      <aside
+        role="presentation"
+        className="panel-sidebar panel-outer-start panel-outer-end border border-border"
+      >
+        <SessionShellInspector {...args} />
+      </aside>
     </>
   )
 }
@@ -108,5 +114,28 @@ export const WithLabel: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Package the Electron app')).toBeVisible()
     await expect(canvas.queryByText(/RTK_DISABLED=1/)).not.toBeInTheDocument()
+  },
+}
+
+export const EmptyOutput: Story = {
+  args: { command: { ...WATCH, state: 'completed' }, output: '' },
+  render: (args) => <InspectorStory args={args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('npm run watch')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Copy terminal output' })).toBeEnabled()
+  },
+}
+
+export const AnsiOutput: Story = {
+  args: {
+    command: { ...WATCH, state: 'completed' },
+    output: '\u001b[31mpackage build failed\u001b[0m\nretry the command\n',
+  },
+  render: (args) => <InspectorStory args={args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('package build failed')).toBeVisible()
+    await expect(canvas.getByText(/retry the command/)).toBeVisible()
   },
 }

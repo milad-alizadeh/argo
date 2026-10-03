@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FileHeader } from '@/platform/renderer/components/file-header'
+import { FileHeader, FileHeaderPath } from '@/platform/renderer/components/file-header'
 import { CodeBlock } from '../ai-elements'
 import { detectCodeLanguageFromPath, FeedMermaid } from '../feed/content'
 import { patchFiles } from '../model'
 import type { SessionEvidence } from '../types'
+import { inspectorBodyRecipe, inspectorHeaderPlacement } from './inspector-recipes'
 import { InspectorTerminal } from './inspector-terminal'
 import { SessionDiffViewer } from './session-diff-viewer'
 import { SessionFileInspector } from './session-file-inspector'
@@ -12,12 +13,12 @@ import { SessionPatchViewer } from './session-patch-viewer'
 import { SessionSkillInspector } from './skill'
 
 // A long path truncates at its start, so the filename at the end stays visible.
-function InspectorTitle({ title }: { title: string }) {
+function InspectorTitle({ title, path = false }: { title: string; path?: boolean }) {
   return (
     <FileHeader
-      className="border-0 bg-transparent px-0 py-0"
-      heading={title}
-      titleClassName="truncate text-left [direction:rtl]"
+      heading={path ? <FileHeaderPath path={title} /> : title}
+      titleClassName={path ? 'type-code' : undefined}
+      variant="inspector"
     />
   )
 }
@@ -36,10 +37,10 @@ export function SessionEvidenceInspector({
   if (evidence.shape === 'diagram')
     return (
       <section className="flex min-h-0 flex-1 flex-col" aria-label={t('inspector.diagramLabel')}>
-        <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar px-4 py-3">
+        <header className={inspectorHeaderPlacement}>
           <InspectorTitle title={evidence.title} />
         </header>
-        <div className="min-h-0 flex-1 overflow-auto p-4">
+        <div className={inspectorBodyRecipe}>
           <FeedMermaid source={evidence.source} />
         </div>
       </section>
@@ -63,8 +64,8 @@ export function SessionEvidenceInspector({
   } else {
     const language = detectCodeLanguageFromPath(title)?.grammar ?? null
     content = (
-      <div className="min-h-0 overflow-auto p-4">
-        <CodeBlock code={source} language={language} className="type-code-content bg-card" />
+      <div className={inspectorBodyRecipe}>
+        <CodeBlock code={source} contentClassName="p-0" language={language} variant="embedded" />
       </div>
     )
   }
@@ -73,8 +74,8 @@ export function SessionEvidenceInspector({
       className="flex min-h-0 flex-1 flex-col"
       aria-label={t('inspector.commandAndFileLabel')}
     >
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar px-4 py-3">
-        <InspectorTitle title={title} />
+      <header className={inspectorHeaderPlacement}>
+        <InspectorTitle path={kind === 'document'} title={title} />
       </header>
       {content}
     </section>

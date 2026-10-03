@@ -44,10 +44,12 @@ type CodeLine = { className?: string; prefix?: React.ReactNode }
 
 function HighlightedCode({
   code,
+  contentClassName,
   language,
   line,
 }: {
   code: string
+  contentClassName?: string
   language: BundledLanguage | null
   line?: (index: number) => CodeLine | undefined
 }) {
@@ -72,7 +74,7 @@ function HighlightedCode({
   }, [text, language])
   let lineOffset = 0
   return (
-    <pre className="type-code m-0 overflow-x-hidden overflow-y-auto p-4">
+    <pre className={cn('type-code m-0 overflow-x-hidden overflow-y-auto p-4', contentClassName)}>
       <code className="type-code" data-highlighted={tokens !== null}>
         {lines.map((lineText, index) => {
           const lineKey = lineOffset
@@ -114,24 +116,46 @@ function HighlightedCode({
 
 export type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
   code: string
+  contentClassName?: string
   // `null` is a language Argo does not know, drawn as plain code.
   language: BundledLanguage | null
   line?: (index: number) => CodeLine | undefined
+  variant?: 'default' | 'embedded'
 }
 
-export function CodeBlock({ children, className, code, language, line, ...props }: CodeBlockProps) {
+const codeBlockFrameRecipes = {
+  default: 'rounded-md border bg-background text-foreground',
+  embedded: 'rounded-none border-0 bg-transparent text-inherit',
+} as const
+
+export function CodeBlock({
+  children,
+  className,
+  code,
+  contentClassName,
+  language,
+  line,
+  variant = 'default',
+  ...props
+}: CodeBlockProps) {
   return (
     <CodeBlockContext.Provider value={code}>
       <div
         className={cn(
-          'group relative w-full overflow-hidden rounded-md border bg-background text-foreground',
+          'group relative w-full overflow-hidden',
+          codeBlockFrameRecipes[variant],
           className,
         )}
         data-language={language ?? 'plain'}
         {...props}
       >
         {children}
-        <HighlightedCode code={code} language={language} line={line} />
+        <HighlightedCode
+          code={code}
+          contentClassName={contentClassName}
+          language={language}
+          line={line}
+        />
       </div>
     </CodeBlockContext.Provider>
   )

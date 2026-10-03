@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, waitFor, within } from 'storybook/test'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import { sessionSubagent } from '@/mocks/sessions/session-rows'
+import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
 import type { SessionFeed } from '../types'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import { SessionDelegationInspector } from './session-delegation-inspector'
@@ -70,7 +71,7 @@ const meta = {
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
-      <div className="flex h-dvh w-(--size-session-popover) flex-col bg-sidebar">
+      <div className="panel-stack h-dvh w-(--size-session-popover)">
         <Story />
       </div>
     ),
@@ -89,7 +90,7 @@ function InspectorStory({
 }) {
   return (
     <>
-      <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-(--spacing-shell-item)">
+      <AppPageHeader>
         <SessionWorkInspectorHeader
           now={args.now}
           work={{
@@ -98,8 +99,13 @@ function InspectorStory({
             usage: { tokens: tokens ?? null, model: null },
           }}
         />
-      </header>
-      <SessionDelegationInspector {...args} />
+      </AppPageHeader>
+      <aside
+        role="presentation"
+        className="panel-sidebar panel-outer-start panel-outer-end border border-border"
+      >
+        <SessionDelegationInspector {...args} />
+      </aside>
     </>
   )
 }
@@ -129,9 +135,6 @@ export const RunningSubagent: Story = {
         ),
       { timeout: 3000 },
     )
-    const inspector = canvas.getByLabelText('Subagent')
-    const history = canvas.getByLabelText('Subagent history')
-    expect(history.getBoundingClientRect().bottom).toBe(inspector.getBoundingClientRect().bottom)
   },
 }
 

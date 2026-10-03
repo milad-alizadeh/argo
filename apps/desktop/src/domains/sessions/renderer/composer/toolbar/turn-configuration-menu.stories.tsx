@@ -192,17 +192,15 @@ export const ChoosesModelAndEffort: Story = {
 
     await userEvent.click(trigger)
     const models = await page().findByRole('radiogroup', { name: 'Model' })
-    const offered = within(models)
-      .getAllByRole('radio')
-      .map((option) => option.closest('label')?.textContent)
-    await expect(offered).toEqual([
-      'Fable 5.1Deepest reasoning for long, open-ended work',
-      'Opus 5Most capable for architecture and hard problems',
-      'Sonnet 5Balanced for daily coding and review',
-      'Haiku 4.5Fast for small changes and quick answers',
-    ])
-    await userEvent.click(within(models).getByRole('radio', { name: /Sonnet 5/ }))
-    await expect(within(models).getByRole('radio', { name: /Sonnet 5/ })).toBeChecked()
+    await expectModelNamesAndDetails(models, canvasElement.ownerDocument)
+    await expect(
+      within(models).getByRole('radio', { name: 'Sonnet 5' }),
+    ).toHaveAccessibleDescription('Balanced for daily coding and review')
+    const sonnet = within(models).getByRole('radio', { name: 'Sonnet 5' })
+    const sonnetRowLabel = sonnet.parentElement?.querySelector<HTMLLabelElement>('label')
+    if (!sonnetRowLabel) throw new Error('Sonnet choice label is missing')
+    await clickRowPadding(sonnetRowLabel)
+    await expect(sonnet).toBeChecked()
 
     const effort = page().getByRole('slider', { name: /^Effort/ })
     await expect(effort).toHaveAccessibleName('Effort Medium')
@@ -230,6 +228,38 @@ export const ChoosesModelAndEffort: Story = {
     await expect(trigger).toHaveFocus()
     await expect(trigger).toHaveTextContent('Sonnet 5·Extra high')
   },
+}
+
+async function clickRowPadding(label: HTMLLabelElement) {
+  const bounds = label.getBoundingClientRect()
+  await userEvent.pointer({
+    keys: '[MouseLeft]',
+    target: label,
+    coords: { clientX: bounds.left + 4, clientY: bounds.top + bounds.height / 2 },
+  })
+}
+
+async function expectModelNamesAndDetails(models: HTMLElement, ownerDocument: Document) {
+  const modelOptions = within(models).getAllByRole('radio')
+  const referencedText = (
+    option: HTMLElement,
+    attribute: 'aria-labelledby' | 'aria-describedby',
+  ) => {
+    const id = option.getAttribute(attribute)
+    return id ? ownerDocument.getElementById(id)?.textContent : null
+  }
+  await expect(modelOptions.map((option) => referencedText(option, 'aria-labelledby'))).toEqual([
+    'Fable 5.1',
+    'Opus 5',
+    'Sonnet 5',
+    'Haiku 4.5',
+  ])
+  await expect(modelOptions.map((option) => referencedText(option, 'aria-describedby'))).toEqual([
+    'Deepest reasoning for long, open-ended work',
+    'Most capable for architecture and hard problems',
+    'Balanced for daily coding and review',
+    'Fast for small changes and quick answers',
+  ])
 }
 
 export const UsesLiveCodexCatalog: Story = {
@@ -433,9 +463,8 @@ export const NarrowModelDetails: Story = {
   play: async ({ canvasElement }) => {
     const trigger = within(canvasElement).getByRole('button', { name: TRIGGER })
     await userEvent.click(trigger)
-    const model = await page().findByRole('radio', {
-      name: /Fable 5.1.*Deepest reasoning for long, open-ended work/,
-    })
+    const model = await page().findByRole('radio', { name: 'Fable 5.1' })
+    await expect(model).toHaveAccessibleDescription('Deepest reasoning for long, open-ended work')
     await userEvent.click(model)
     await expect(model).toBeChecked()
     await userEvent.tab()

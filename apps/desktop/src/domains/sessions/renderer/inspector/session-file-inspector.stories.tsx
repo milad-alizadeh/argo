@@ -6,16 +6,17 @@ import { SessionEvidenceInspector } from './session-evidence-inspector'
 const REPORT_PATH = '/storybook/argo/docs/research/app-name-research.md'
 const REPORT_FILE = ['# App name research', '', 'Every name was **screened** twice.'].join('\n')
 const SCRIPT_PATH = '/storybook/argo/scripts/measure.ts'
+const MIXED_PATH = '/storybook/argo/שלום/مراجعة/測定/long-workspace-name/scripts/measure.ts'
 
 // A story has no preload, so the one read the inspector makes is answered here.
-function answerWorkspaceReads(files: Record<string, string>) {
+function answerWorkspaceReads(files: Record<string, string | Promise<string | null>>) {
   const before = window.argo
   window.argo = {
     ...before,
     trpc: (async (request) => {
       if (request.path !== 'sessionWorkspaceFileRead') return before.trpc(request)
       const requested = (request.input as { path: string }).path
-      return { id: request.id, result: { data: { content: files[requested] ?? null } } }
+      return { id: request.id, result: { data: { content: (await files[requested]) ?? null } } }
     }) as typeof window.argo.trpc,
   }
 }
@@ -26,9 +27,12 @@ const meta = {
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
-      <div className="flex h-dvh min-h-0 w-full">
+      <aside
+        role="presentation"
+        className="panel-sidebar panel-outer-start panel-outer-end h-dvh border border-border"
+      >
         <Story />
-      </div>
+      </aside>
     ),
   ],
 } satisfies Meta<typeof SessionEvidenceInspector>
@@ -67,5 +71,26 @@ export const UnreadableFile: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('This file could not be read.')).toBeVisible()
+  },
+}
+
+export const ReadingFile: Story = {
+  args: { evidence: file(REPORT_PATH), sessionId: 'session-1' },
+  beforeEach: () => answerWorkspaceReads({ [REPORT_PATH]: new Promise(() => {}) }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(REPORT_PATH)).toBeVisible()
+    await expect(canvas.getByText('Reading file…')).toBeVisible()
+  },
+}
+
+export const MixedDirectionPath: Story = {
+  args: { evidence: file(MIXED_PATH), sessionId: 'session-1' },
+  globals: { viewport: { value: 'compact', isRotated: false } },
+  beforeEach: () => answerWorkspaceReads({ [MIXED_PATH]: 'export const answer = 42\n' }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(MIXED_PATH)).toBeVisible()
+    await expect(await canvas.findByText(/answer/)).toBeVisible()
   },
 }

@@ -10,14 +10,15 @@ export function InspectorTerminal({
 }) {
   return (
     <Terminal
-      className="relative min-h-0 flex-1 rounded-none border-0 bg-transparent"
+      className="relative min-h-0 flex-1"
       isStreaming={streaming}
       output={output}
+      variant="embedded"
     >
       <div className="absolute top-2 right-2">
         <TerminalCopyButton />
       </div>
-      <TerminalContent className="max-h-none min-h-0 flex-1 type-code" />
+      <TerminalContent />
     </Terminal>
   )
 }

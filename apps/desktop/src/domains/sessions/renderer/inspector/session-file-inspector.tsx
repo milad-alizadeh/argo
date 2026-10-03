@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FileHeader } from '@/platform/renderer/components/file-header'
+import { FileHeader, FileHeaderPath } from '@/platform/renderer/components/file-header'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { CodeBlock } from '../ai-elements'
 import { detectCodeLanguageFromPath, FeedMarkdown } from '../feed/content'
 import type { SessionFileEvidence } from '../types'
+import { inspectorBodyRecipe, inspectorHeaderPlacement } from './inspector-recipes'
 
 const MARKDOWN_FILE = /\.(md|markdown)$/i
 
@@ -41,7 +42,8 @@ function FileBody({ path, sessionId }: { path: string; sessionId: string | null 
     <CodeBlock
       code={content.text}
       language={detectCodeLanguageFromPath(path)?.grammar ?? null}
-      className="type-code-content bg-card"
+      contentClassName="p-0"
+      variant="embedded"
     />
   )
 }
@@ -56,14 +58,14 @@ export function SessionFileInspector({
   const { t } = useTranslation('sessions')
   return (
     <section className="flex min-h-0 flex-1 flex-col" aria-label={t('file.inspector')}>
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar px-4 py-3">
+      <header className={inspectorHeaderPlacement}>
         <FileHeader
-          className="border-0 bg-transparent px-0 py-0"
-          heading={evidence.path}
-          titleClassName="truncate text-left [direction:rtl]"
+          heading={<FileHeaderPath path={evidence.path} />}
+          titleClassName="type-code"
+          variant="inspector"
         />
       </header>
-      <div className="min-h-0 flex-1 overflow-auto p-4">
+      <div className={inspectorBodyRecipe}>
         <FileBody path={evidence.path} sessionId={sessionId} />
       </div>
     </section>

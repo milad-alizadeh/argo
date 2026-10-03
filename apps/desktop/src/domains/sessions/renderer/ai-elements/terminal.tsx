@@ -11,12 +11,14 @@ type TerminalContextValue = {
   autoScroll: boolean
   isStreaming: boolean
   output: string
+  variant: 'default' | 'embedded'
 }
 
 const TerminalContext = React.createContext<TerminalContextValue>({
   autoScroll: true,
   isStreaming: false,
   output: '',
+  variant: 'default',
 })
 
 function TerminalHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
@@ -69,10 +71,14 @@ export function TerminalCopyButton() {
 }
 
 export function TerminalContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  const { isStreaming, output } = useContext(TerminalContext)
+  const { isStreaming, output, variant } = useContext(TerminalContext)
   return (
     <div
-      className={cn('terminal-output type-code max-h-96 overflow-auto p-4', className)}
+      className={cn(
+        'terminal-output type-code overflow-auto p-4',
+        variant === 'embedded' ? 'min-h-0 flex-1' : 'max-h-96',
+        className,
+      )}
       {...props}
     >
       <pre className="whitespace-pre-wrap break-words">
@@ -89,7 +95,13 @@ export type TerminalProps = HTMLAttributes<HTMLDivElement> & {
   autoScroll?: boolean
   isStreaming?: boolean
   output: string
+  variant?: 'default' | 'embedded'
 }
+
+const terminalFrameRecipes = {
+  default: 'rounded-lg border bg-card text-foreground',
+  embedded: 'rounded-none border-0 bg-transparent text-inherit',
+} as const
 
 export function Terminal({
   autoScroll = true,
@@ -97,19 +109,17 @@ export function Terminal({
   className,
   isStreaming = false,
   output,
+  variant = 'default',
   ...props
 }: TerminalProps) {
   const context = useMemo(
-    () => ({ autoScroll, isStreaming, output }),
-    [autoScroll, isStreaming, output],
+    () => ({ autoScroll, isStreaming, output, variant }),
+    [autoScroll, isStreaming, output, variant],
   )
   return (
     <TerminalContext.Provider value={context}>
       <div
-        className={cn(
-          'flex flex-col overflow-hidden rounded-lg border bg-card text-foreground',
-          className,
-        )}
+        className={cn('flex flex-col overflow-hidden', terminalFrameRecipes[variant], className)}
         {...props}
       >
         {children ?? (

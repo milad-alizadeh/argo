@@ -381,9 +381,41 @@ export const Ready = story({ screen: 'ready' }, VIEW_ONLY)
 
 ChoosingSetupMethod.play = async ({ args, canvasElement }) => {
   const canvas = within(canvasElement)
-  await expect(canvas.getByRole('radio', { name: 'Set up with an agent' })).toBeChecked()
+  const agent = canvas.getByRole('radio', { name: 'Set up with an agent' })
+  const manual = canvas.getByRole('radio', { name: 'Manual setup' })
+  await expect(agent).toBeChecked()
+  const manualLabel = canvasElement.querySelector<HTMLLabelElement>(
+    'label[for="project-setup-method-manual"]',
+  )
+  if (!manualLabel) throw new Error('Manual setup label is missing')
+  await clickLabelAt(manualLabel, 4, 4)
+  await expect(manual).toBeChecked()
+
+  const harness = canvas.getByRole('combobox', { name: 'Harness' })
+  await userEvent.click(harness)
+  await expect(manual).toBeChecked()
+  await userEvent.click(
+    await within(canvasElement.ownerDocument.body).findByRole('option', { name: 'Claude Code' }),
+  )
+  await expect(manual).toBeChecked()
+
+  const agentLabel = canvasElement.querySelector<HTMLLabelElement>(
+    'label[for="project-setup-method-agent"]',
+  )
+  if (!agentLabel) throw new Error('Agent setup label is missing')
+  await clickLabelAt(agentLabel, 32, agentLabel.getBoundingClientRect().height / 2)
+  await expect(agent).toBeChecked()
   await userEvent.click(canvas.getByRole('button', { name: 'Continue' }))
   await expect(args.command).toHaveBeenCalledWith({ type: 'choose-agent', harness: 'claude' })
+}
+
+async function clickLabelAt(label: HTMLLabelElement, x: number, y: number) {
+  const bounds = label.getBoundingClientRect()
+  await userEvent.pointer({
+    keys: '[MouseLeft]',
+    target: label,
+    coords: { clientX: bounds.left + x, clientY: bounds.top + y },
+  })
 }
 
 TargetsAndTools.play = async ({ args, canvasElement }) => {

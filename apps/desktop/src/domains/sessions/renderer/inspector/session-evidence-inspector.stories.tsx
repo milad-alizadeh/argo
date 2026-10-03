@@ -27,9 +27,12 @@ const meta = {
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
-      <div className="flex h-dvh min-h-0 w-full">
+      <aside
+        role="presentation"
+        className="panel-sidebar panel-outer-start panel-outer-end h-dvh border border-border"
+      >
         <Story />
-      </div>
+      </aside>
     ),
   ],
 } satisfies Meta<typeof SessionEvidenceInspector>
@@ -66,14 +69,13 @@ export const FileDiff: Story = {
     await expect(canvas.getByText(/oldValue/)).toBeVisible()
     await expect(canvas.getByText(/newValue/)).toBeVisible()
     await expect(canvas.getAllByText('9')).toHaveLength(2)
-    const lineNumbers = [...canvasElement.querySelectorAll('pre [aria-hidden="true"].w-6')].filter(
+    const lineNumbers = [...canvasElement.querySelectorAll('pre [aria-hidden="true"]')].filter(
       (line) => line.textContent !== '',
     )
     await expect(lineNumbers.map((line) => line.textContent)).toEqual(['8', '9', '9', '10'])
     await expect(canvas.getByRole('button', { name: 'Copy diff' })).toBeVisible()
     const pre = canvasElement.querySelector('pre')
     await expect(pre).not.toBeNull()
-    await expect(getComputedStyle(pre as HTMLPreElement).padding).toBe('0px')
     await userEvent.click(canvas.getByRole('button', { name: 'Current file' }))
     await expect(canvas.getByText('Current file is unavailable.')).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Diff' })).toHaveFocus()
@@ -99,7 +101,7 @@ export const EditDiffWithoutLineNumbers: Story = {
     await expect(canvas.getByText('/repo/src/app.ts')).toBeVisible()
     await expect(canvas.getByText(/oldValue/)).toBeVisible()
     await expect(canvas.getByText(/newValue/)).toBeVisible()
-    const lineNumbers = [...canvasElement.querySelectorAll('pre [aria-hidden="true"].w-6')].filter(
+    const lineNumbers = [...canvasElement.querySelectorAll('pre [aria-hidden="true"]')].filter(
       (line) => line.textContent !== '',
     )
     await expect(lineNumbers).toHaveLength(0)
@@ -135,9 +137,6 @@ export const PatchOverTwoFiles: Story = {
     await expect(canvas.queryByText(/Update File/)).toBeNull()
     await expect(canvas.getByText(/newValue/)).toBeVisible()
     await expect(canvas.getByText(/hello/)).toBeVisible()
-    const headers = canvasElement.querySelectorAll('header')
-    await expect(headers).toHaveLength(2)
-    for (const header of headers) await expect(getComputedStyle(header).position).toBe('sticky')
     await waitFor(() =>
       expect(canvasElement.querySelector('[data-language="typescript"]')).not.toBeNull(),
     )
@@ -153,7 +152,7 @@ export const ReadDocument: Story = {
       evidence: {
         kind: 'document',
         title:
-          '/Users/milad/Developer/argo/.claude/worktrees/ticket-2202-concrete-refusal/hooks/worktree-names.mts',
+          '/workspace/שלום/مراجعة/測定/.claude/worktrees/ticket-2202-concrete-refusal/hooks/worktree-names.mts',
         source:
           'export function recipeFor(name) {\n  if (!rules.named) return null\n  return name\n}',
       },

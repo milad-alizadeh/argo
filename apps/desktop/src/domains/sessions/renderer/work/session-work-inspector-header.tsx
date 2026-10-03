@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { FileHeader } from '@/platform/renderer/components/file-header'
 import { elapsedDuration, type SessionWork, subagentWorkState } from './presentation/session-work'
 import { workPresentation } from './presentation/work-presentation'
 
@@ -54,19 +55,12 @@ function InspectorHeader({
   title: string
 }) {
   return (
-    <div className="min-w-0 flex-1 pr-(--inset-session-inspector-toggle)">
-      <p
-        className={
-          monospace
-            ? 'truncate font-mono type-meta text-foreground'
-            : 'truncate type-meta text-foreground'
-        }
-      >
-        {title}
-      </p>
-      <p className="truncate type-meta text-muted-foreground">
-        {facts.filter((fact) => fact !== null).join(' · ')}
-      </p>
-    </div>
+    <FileHeader
+      className="min-w-0 flex-1 p-0"
+      detail={facts.filter((fact) => fact !== null).join(' · ')}
+      heading={title}
+      titleClassName={monospace ? 'font-mono' : undefined}
+      variant="inspector"
+    />
   )
 }

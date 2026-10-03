@@ -5,18 +5,18 @@ import { CodeBlock } from '../ai-elements'
 import { detectCodeLanguageFromPath } from '../feed/content'
 import type { PatchFile } from '../model'
 
-// One patch over several files: each file is its own section, its name pinned to the top of
-// the panel while its hunks scroll under it, and its code coloured by its own language.
+// Each patch file keeps its name and hunks together in the inspector's single scrolling list.
 export function SessionPatchViewer({ files }: { files: PatchFile[] }) {
   const { t } = useTranslation('sessions')
   return (
     <FileDiffList
       accessibleName={t('diff.label')}
-      className="min-h-0 flex-1 rounded-none border-0"
+      className="min-h-0 flex-1"
       files={files}
       markViewedLabel={(path) => t('diff.markViewed', { path })}
       renderDiff={(file) => <HighlightedFileDiff file={file} />}
       viewedLabel={t('diff.viewed')}
+      variant="embedded"
     />
   )
 }
@@ -25,9 +25,10 @@ function HighlightedFileDiff({ file }: { file: FileDiff }) {
   const lines = diffLines(file.diff)
   return (
     <CodeBlock
-      className="rounded-none border-0 border-b border-border/60 type-code-content [&_pre]:p-0"
+      contentClassName="p-0"
       code={file.diff}
       language={detectCodeLanguageFromPath(file.path)?.grammar ?? null}
+      variant="embedded"
       line={(index) =>
         diffLineDecoration(
           lines[index] ?? { kind: 'title', newLine: null, oldLine: null, source: '' },
