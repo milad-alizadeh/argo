@@ -1,9 +1,20 @@
+import { cn } from 'cn'
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { AccountState, AccountSummary } from '@/domains/accounts/contract/contract'
+import {
+  readinessBodyRecipe,
+  readinessDetailRecipe,
+  readinessHeaderRecipe,
+  readinessRowRecipe,
+  readinessTitleRecipe,
+} from '@/platform/renderer/components/design-system/readiness-row-recipes'
 import { StatusBadge } from '@/platform/renderer/components/design-system/status-badge'
-import { dangerActionRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
+import {
+  dangerActionRecipe,
+  indicatorToneRecipe,
+} from '@/platform/renderer/components/design-system/tone-recipes'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
@@ -29,7 +40,7 @@ export type AccountRowProps = {
 function Connections({ account }: { account: AccountSummary }) {
   const { t } = useTranslation('accounts')
   if (account.connections.length === 0) {
-    return <p className="type-meta text-muted-foreground">{t('row.noConnections')}</p>
+    return <p className={readinessDetailRecipe}>{t('row.noConnections')}</p>
   }
   return (
     <ul
@@ -39,7 +50,7 @@ function Connections({ account }: { account: AccountSummary }) {
       className="grid gap-(--spacing-shell-tight)"
     >
       {account.connections.map((connection) => (
-        <li className="type-meta text-muted-foreground" key={connection.projectId}>
+        <li className={readinessDetailRecipe} key={connection.projectId}>
           {connection.projectName} · <span className="font-mono">{connection.label}</span>
         </li>
       ))}
@@ -101,14 +112,12 @@ export function AccountRow({ account, busy, onDisconnect, onReconnect }: Account
     <li
       aria-label={t('row.label', { provider: name, login: account.login })}
       ref={row}
-      className="grid gap-(--spacing-shell-item) p-(--spacing-shell-gutter)"
+      className={readinessRowRecipe}
     >
-      <div className="flex min-h-7 items-center gap-(--spacing-shell-item)">
-        <span className="type-heading min-w-0 truncate">{account.login}</span>
+      <div className={readinessHeaderRecipe}>
+        <span className={readinessTitleRecipe}>{account.login}</span>
         {account.workspace ? (
-          <span className="type-meta min-w-0 truncate text-muted-foreground">
-            {account.workspace}
-          </span>
+          <span className={cn(readinessDetailRecipe, 'min-w-0 truncate')}>{account.workspace}</span>
         ) : null}
         {tone === null ? (
           <Badge variant="secondary">{stateLabel}</Badge>
@@ -117,15 +126,21 @@ export function AccountRow({ account, busy, onDisconnect, onReconnect }: Account
         )}
         <span className="flex-1" />
         {confirming ? null : (
-          <Button data-focus-rescue onClick={() => setConfirming(true)} size="sm" variant="ghost">
+          <Button
+            className="ml-auto"
+            data-focus-rescue
+            onClick={() => setConfirming(true)}
+            size="sm"
+            variant="ghost"
+          >
             {t('row.disconnect')}
           </Button>
         )}
       </div>
       <Connections account={account} />
       {reason ? (
-        <div className="grid justify-items-start gap-(--spacing-shell-item)">
-          <p className="type-meta text-destructive">{reason}</p>
+        <div className={readinessBodyRecipe}>
+          <p className={cn(readinessDetailRecipe, indicatorToneRecipe.danger)}>{reason}</p>
           {confirming ? null : (
             <Button onClick={onReconnect} size="sm" variant="outline">
               {t('row.reconnect')}

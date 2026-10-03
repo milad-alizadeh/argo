@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { ticket } from '@/domains/tickets/api/ticket'
 import { github, githubWithRepository, octocatUser, signIn } from '@/providers/github/harness'
 import { readTicket, readTicketPage } from '@/providers/github/issues'
 import { checkRepository, isRepositoryScope } from '@/providers/github/repository'
+import { isRecord } from '@/shared/validation'
 import type { MockIssue } from '../../../mocks/providers/github/mock-github'
 
 test('a repository check names the repository by its canonical name', async (context) => {
@@ -183,5 +185,85 @@ test('one issue reads by its key, open or closed, and a pull request is not a Ti
       ok: false,
       failure: id === '#9' ? 'not-found' : 'ticket-not-found',
     })
+  }
+})
+
+function replaceLabels(body: unknown, rawLabels: unknown) {
+  for (const issue of Array.isArray(body) ? body : [body]) {
+    assert.ok(isRecord(issue))
+    issue.labels = rawLabels
+  }
+}
+
+test('GitHub label reads normalize colors and report aggregate rejections without private payloads', async (context) => {
+  const { endpoints, token } = await githubWithRepository(context, {
+    fullName: 'octo/hello',
+    issues: [{ number: 1, title: 'Labels', labels: [{ name: 'valid', color: '000000' }] }],
+  })
+  let rawLabels: unknown = [
+    'legacy',
+    { name: 'black', color: '000000' },
+    { name: 'white', color: '#FFFFFF' },
+    { name: 'missing' },
+    { name: 'nullable', color: null },
+    { name: 'private-label', color: 'rgb(0 0 0)' },
+    { name: 'number-color', color: 7 },
+    { name: 8, color: 'ffffff' },
+    null,
+  ]
+  const expected = [
+    { name: 'legacy', color: null },
+    { name: 'black', color: '000000' },
+    { name: 'white', color: 'FFFFFF' },
+    { name: 'missing', color: null },
+    { name: 'nullable', color: null },
+    { name: 'private-label', color: null },
+    { name: 'number-color', color: null },
+  ]
+  const originalFetch = globalThis.fetch
+  const originalWarning = console.warn
+  const warnings: string[] = []
+  console.warn = (...values: unknown[]) => warnings.push(values.join(' '))
+  globalThis.fetch = Object.assign(
+    async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
+      const response = await originalFetch(input, init)
+      if (!String(input).startsWith(`${endpoints.api}/repos/octo/hello/issues`)) return response
+      const body: unknown = await response.json()
+      replaceLabels(body, rawLabels)
+      return new Response(JSON.stringify(body), {
+        status: response.status,
+        headers: response.headers,
+      })
+    },
+    { preconnect: originalFetch.preconnect },
+  )
+  try {
+    const page = await readTicketPage(endpoints, token, { scope: 'octo/hello', ...FIRST })
+    assert.ok(page.ok)
+    assert.deepEqual(page.value.tickets[0]?.labels, expected)
+    assert.ok(ticket.safeParse(page.value.tickets[0]).success)
+    const single = await readTicket(endpoints, token, { scope: 'octo/hello', id: '#1' })
+    assert.ok(single.ok)
+    assert.deepEqual(single.value.labels, expected)
+    assert.ok(ticket.safeParse(single.value).success)
+    const rejection =
+      'GitHub Ticket labels: rejected 2 labels[] record(s), 2 labels[].color value(s).'
+    assert.deepEqual(warnings, [rejection, rejection])
+    rawLabels = { private: 'invalid collection' }
+    const malformed = await readTicketPage(endpoints, token, { scope: 'octo/hello', ...FIRST })
+    assert.ok(malformed.ok)
+    assert.deepEqual(malformed.value.tickets[0]?.labels, [])
+    assert.equal(
+      warnings[2],
+      'GitHub Ticket labels: rejected 1 labels[] record(s), 0 labels[].color value(s).',
+    )
+    rawLabels = undefined
+    const missing = await readTicket(endpoints, token, { scope: 'octo/hello', id: '#1' })
+    assert.ok(missing.ok)
+    assert.deepEqual(missing.value.labels, [])
+    assert.equal(warnings.length, 3)
+  } finally {
+    globalThis.fetch = originalFetch
+    console.warn = originalWarning
   }
 })

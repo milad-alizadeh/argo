@@ -63,10 +63,11 @@ export const Accounts: Story = {
     const connections = within(row).getByRole('list', { name: 'Repositories for octocat' })
     await expect(connections).toHaveTextContent('argo · octocat/hello-world')
     const disconnect = within(row).getByRole('button', { name: 'Disconnect…' })
-    await userEvent.click(disconnect)
+    disconnect.focus()
+    await userEvent.keyboard('{Enter}')
     // Asking lands on the harmless answer, and answering puts focus back on the row.
     await expect(within(row).getByRole('button', { name: 'Keep' })).toHaveFocus()
-    await userEvent.click(within(row).getByRole('button', { name: 'Keep' }))
+    await userEvent.keyboard('{Enter}')
     await expect(within(row).getByRole('button', { name: 'Disconnect…' })).toHaveFocus()
     await expect(args.onDisconnect).not.toHaveBeenCalled()
     await userEvent.click(within(row).getByRole('button', { name: 'Disconnect…' }))
@@ -79,6 +80,30 @@ export const Accounts: Story = {
     await expect(args.signIn.start).toHaveBeenCalledWith('github')
     // One button per provider this build can sign in to.
     await expect(canvas.getByRole('button', { name: 'Connect a Linear Account' })).toBeEnabled()
+  },
+}
+
+const LONG_LOGIN = 'ada-lovelace@analytical-engine-research.example'
+const LONG_WORKSPACE = 'Analytical Engine Research and Development'
+
+export const LongAccountIdentity: Story = {
+  globals: { viewport: { value: 'compact', isRotated: false } },
+  args: {
+    listing: listing([
+      { ...ada(), login: LONG_LOGIN, workspace: LONG_WORKSPACE, state: 'expired' },
+    ]),
+  },
+  play: async ({ args, canvasElement }) => {
+    const row = within(canvasElement).getByRole('listitem', {
+      name: `Linear Account ${LONG_LOGIN}`,
+    })
+    await expect(row).toHaveTextContent(LONG_LOGIN)
+    await expect(row).toHaveTextContent(LONG_WORKSPACE)
+    await expect(within(row).getByText('Sign-in expired')).toBeVisible()
+    const reconnect = within(row).getByRole('button', { name: 'Reconnect' })
+    reconnect.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(args.signIn.start).toHaveBeenCalledWith('linear')
   },
 }
 

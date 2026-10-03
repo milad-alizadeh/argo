@@ -159,7 +159,7 @@ Every retained custom color family has a current product consumer:
 | `language-typescript`, `language-go`, `language-ruby` | Language identity in `code-language-icon.tsx`. The TypeScript mark requires white text on its brand-colored tile. |
 | `terminal-red`, `terminal-green`, `terminal-yellow`, `terminal-blue`, `terminal-magenta`, `terminal-cyan` | ANSI output in `ai-elements/terminal.css`. |
 | Seven `code-xcode-*` syntax inks | Comments, definitions, keywords, names, strings, types, and variables in Shiki. Code backgrounds and ordinary text use `card` and `card-foreground`. |
-| `ticket-label` and its mix percentages | Provider-supplied label colors and readable label tints in `ticket-label.tsx`. |
+| `ticket-label` and its fill percentage | Provider-supplied label colors tint the opaque background in `ticket-label.tsx`. Label text uses native `foreground`. |
 | `feed-work-glint` | The running-text shimmer, mixed from native `muted-foreground` and `card`. |
 
 Unused surface, selected, ink, quiet, faint, icon, Plan, PR, Ticket-done, traffic-light, scrollbar, and Xcode adapter color declarations are removed.

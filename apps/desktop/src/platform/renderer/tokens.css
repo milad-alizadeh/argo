@@ -231,14 +231,6 @@
   --color-terminal-blue: var(--color-blue-400);
   --color-terminal-magenta: var(--color-purple-400);
   --color-terminal-cyan: var(--color-cyan-400);
-  /* Matches the light appearance's 40% (line ~456): 55% left a saturated label colour (GitHub's
-     #5319e7) short of 4.5:1 against its own tinted fill. */
-  --ticket-label-lean: 40%;
-}
-
-:root:not(.dark) {
-  /* How far label text leans to its colour: GitHub's pale a2eeef measured 6.8:1 on its tint here. */
-  --ticket-label-lean: 40%;
 }
 
 :root {

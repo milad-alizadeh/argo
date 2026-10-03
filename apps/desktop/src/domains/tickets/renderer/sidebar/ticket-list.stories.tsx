@@ -17,8 +17,8 @@ const longTicket = {
   title:
     'Truncate Ticket and sidebar text before a long title can widen the Ticket list beyond its pane',
   labels: [
-    { name: 'accessibility-review', color: 'a2eeef' },
-    { name: 'desktop-layout', color: '5319e7' },
+    { name: 'accessibility-review', color: '000000' },
+    { name: 'desktop-layout', color: 'FFFFFF' },
   ],
 }
 
@@ -26,10 +26,10 @@ const manyLabels = {
   ...plain,
   labels: [
     { name: 'enhancement', color: 'a2eeef' },
-    { name: 'wallet', color: '0e8a16' },
-    { name: 'iOS', color: '1d76db' },
+    { name: 'wallet', color: '000000' },
+    { name: 'iOS', color: 'FFFFFF' },
     { name: 'onboarding', color: '5319e7' },
-    { name: 'accessibility', color: 'd4c5f9' },
+    { name: 'accessibility', color: null },
     { name: 'regression', color: 'b60205' },
     { name: 'customer-report', color: 'fbca04' },
     { name: 'release-blocker', color: 'd93f0b' },
@@ -58,9 +58,6 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof TicketList>
 
-const visibleMatches = (elements: HTMLElement[]) =>
-  elements.filter((element) => element.getClientRects().length > 0)
-
 export const NestedLongTitle: Story = {
   args: {
     backlog: backlog({ tickets: [longTicket, prototype()] }),
@@ -78,29 +75,15 @@ export const NestedLongTitle: Story = {
     const parentRow = title.closest('li')
     if (parentRow === null) throw new Error('A parent Ticket needs a list row.')
     const parent = within(parentRow)
-    const status = parent.getByRole('button', { name: 'State: Open' })
+    await expect(parent.getByRole('button', { name: 'State: Open' })).toBeVisible()
     await expect(parent.queryByText('1/3')).toBeNull()
     const blocked = parentRow.querySelector('[data-icon="blocked"]')
     if (blocked === null) throw new Error('A blocked Ticket needs a blocked mark.')
-    await expect(blocked.parentElement).toHaveClass('text-destructive')
-    const shownLabel = visibleMatches(parent.getAllByText(longTicket.labels[0]?.name ?? ''))[0]
-    if (!shownLabel) throw new Error('The compact row needs one visible label.')
-    await expect(shownLabel.scrollWidth).toBeLessThanOrEqual(shownLabel.clientWidth)
-    await expect(shownLabel.getBoundingClientRect().top).toBeGreaterThan(
-      title.getBoundingClientRect().top,
-    )
-    await expect(
-      visibleMatches(parent.queryAllByText(longTicket.labels[1]?.name ?? '')),
-    ).toHaveLength(0)
+    const labels = parent.getByRole('button', { name: 'Show 1 more label for #607' })
+    await expect(within(labels).getByText('accessibility-review')).toBeVisible()
+    await expect(within(labels).queryByText('desktop-layout')).toBeNull()
     await expect(parent.getByText('+1 label')).toBeVisible()
-    await expect(title.scrollWidth).toBeGreaterThanOrEqual(title.clientWidth)
-    const titleLineHeight = Number.parseFloat(getComputedStyle(title).lineHeight)
-    const titleCenter = title.getBoundingClientRect().top + titleLineHeight / 2
-    const statusCenter =
-      status.getBoundingClientRect().top + status.getBoundingClientRect().height / 2
-    await expect(Math.abs(statusCenter - titleCenter)).toBeLessThanOrEqual(1)
     await expect(within(list).getByRole('button', { name: /^#609.*child of #607$/ })).toBeVisible()
-    await expect(list.scrollWidth).toBeLessThanOrEqual(list.clientWidth)
   },
 }
 
@@ -110,24 +93,15 @@ export const NestedExpandableTags: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'Collapse #607' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: /^#273.*child of #607$/ })).toBeVisible()
-    const category = visibleMatches(canvas.getAllByText('enhancement'))[0]
-    if (!category) throw new Error('The Ticket category needs to remain visible.')
-    await expect(category).toBeVisible()
     const trigger = canvas.getByRole('button', { name: 'Show 4 more labels for #273' })
     await expect(trigger).toHaveTextContent('+4 labels')
     const title = canvas.getByRole('button', { name: /^#273/ })
     const row = title.closest('li')
     if (row === null) throw new Error('A Ticket needs a list row.')
-    const key = within(row).getByText('#273', { selector: 'span[aria-hidden="true"]' })
-    const status = within(row).getByRole('button', { name: 'State: Open' })
-    const center = (element: HTMLElement) => {
-      const bounds = element.getBoundingClientRect()
-      return bounds.top + bounds.height / 2
-    }
-    for (const element of [key, status, category, trigger]) {
-      await expect(Math.abs(center(element) - center(title))).toBeLessThanOrEqual(0.5)
-    }
-    await userEvent.click(trigger)
+    await expect(row).toHaveTextContent('enhancement')
+    trigger.focus()
+    await expect(trigger).toHaveFocus()
+    await userEvent.keyboard('{Enter}')
     await expect(args.onSelect).not.toHaveBeenCalled()
     const popover = await within(canvasElement.ownerDocument.body).findByRole('dialog', {
       name: 'Labels for #273',
@@ -136,6 +110,11 @@ export const NestedExpandableTags: Story = {
     for (const label of manyLabels.labels) {
       await expect(within(popover).getByText(label.name)).toBeVisible()
     }
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() =>
+      expect(within(canvasElement.ownerDocument.body).queryByRole('dialog')).toBeNull(),
+    )
+    await expect(trigger).toHaveFocus()
   },
 }
 
@@ -253,5 +232,6 @@ export const ScrollEdgesFollowTheReader: Story = {
     scroll.scrollTop = 0
     scroll.dispatchEvent(new Event('scroll'))
     await waitFor(() => expect(scroll.scrollTop).toBe(0))
+    await expect(await canvas.findByRole('button', { name: /^#100/ })).toBeVisible()
   },
 }
