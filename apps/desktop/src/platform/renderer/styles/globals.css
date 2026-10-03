@@ -1,5 +1,11 @@
 @import "tailwindcss";
 @import "../tokens.css";
+@import "./theme-bindings.css";
+@import "./themes/default.css";
+@import "./themes/supabase.css";
+@import "./themes/linear.css";
+@import "./themes/amber-minimal.css";
+@import "./status-colors.css";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "./typography.css";
@@ -13,31 +19,4 @@
   50% {
     opacity: 0.45;
   }
-}
-
-/* Shared icons keep the same geometry and ink across their surrounding controls. */
-[data-slot="icon"] {
-  width: var(--icon-size, var(--size-icon-control));
-  height: var(--icon-size, var(--size-icon-control));
-  flex-shrink: 0;
-  color: currentColor;
-}
-
-/* Inputs retain their focus border without the outer halo. */
-:is([data-slot="input"], [data-slot="textarea"], [data-slot="input-group-control"]):focus-visible,
-[data-slot="input-group"]:has([data-slot="input-group-control"]:focus-visible) {
-  --tw-ring-shadow: 0 0 transparent;
-}
-
-:is(
-  button,
-  select,
-  [role="button"],
-  [role="combobox"],
-  [role="menuitem"],
-  [role="menuitemcheckbox"],
-  [role="menuitemradio"],
-  [role="option"]
-) {
-  font-weight: var(--text-control-weight);
 }

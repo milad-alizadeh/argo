@@ -39,7 +39,7 @@ function TicketResult({
       <span className="flex min-w-0 flex-1 items-center gap-(--spacing-shell-tight) type-control">
         <span className="shrink-0 font-mono text-muted-foreground">{ticket.key}</span>
         <span
-          className={`flex shrink-0 ${ticket.terminal ? 'text-danger' : 'text-muted-foreground'}`}
+          className={`flex shrink-0 ${ticket.terminal ? 'text-status-danger' : 'text-muted-foreground'}`}
         >
           <Icon name={statusIconName} className="size-3.5" />
           <span className="sr-only">
@@ -50,7 +50,7 @@ function TicketResult({
         </span>
         <span className="min-w-0 truncate">{ticket.title}</span>
         {ticket.blocked ? (
-          <span className="flex shrink-0 items-center text-danger">
+          <span className="flex shrink-0 items-center text-status-danger">
             <Icon name="blocked" size="control" />
             <span className="sr-only">{t('composer.contextPicker.blocked')}</span>
           </span>

@@ -1,9 +1,16 @@
 import assert from 'node:assert/strict'
 import { type TestContext, test } from 'node:test'
+import { ticket } from '@/domains/tickets/api/ticket'
 import { ADA, HIDDEN, linear, signIn, TEAM } from '@/providers/linear/harness'
 import { readTicket, readTicketPage } from '@/providers/linear/issues'
 import { checkTeam, listTeams } from '@/providers/linear/teams'
+import { isRecord } from '@/shared/validation'
 import type { MockLinearTeam } from '../../../mocks/providers/linear/mock-linear'
+import {
+  interceptLabelReadResponses,
+  normalizedLabelColors,
+  providerLabelColors,
+} from '../../../mocks/providers/mock-ticket-label-read'
 import { assertUnstubbedRequestFails } from '../../../mocks/providers/msw-node-bridge'
 
 const BACKLOG = { scope: TEAM.id, query: '', cursor: null }
@@ -162,4 +169,54 @@ test('one issue reads by key or id, closed included, only within the connected t
     ok: false,
     failure: 'ticket-absent',
   })
+})
+
+function replaceLabels(body: unknown, labelConnection: unknown) {
+  assert.ok(isRecord(body) && isRecord(body.data))
+  const connection = body.data.issues
+  const issues =
+    isRecord(connection) && Array.isArray(connection.nodes) ? connection.nodes : [body.data.issue]
+  for (const issue of issues) {
+    assert.ok(isRecord(issue))
+    if (issue.identifier === 'ENG-1') issue.labels = labelConnection
+  }
+}
+
+test('Linear label reads retain valid names and report per-response rejection counts', async (context) => {
+  const { endpoints, accessToken } = await signedIn(context, [TEAM])
+  let labelConnection: unknown = {
+    nodes: [...providerLabelColors('var(--private)'), 'unsupported record', { name: 8 }],
+  }
+  const { warnings, restore } = interceptLabelReadResponses(
+    (address) => address === `${endpoints.api}/graphql`,
+    (body) => replaceLabels(body, labelConnection),
+  )
+  try {
+    const page = await readTicketPage(endpoints, accessToken, BACKLOG)
+    assert.ok(page.ok)
+    assert.deepEqual(page.value.tickets[0]?.labels, normalizedLabelColors)
+    assert.ok(ticket.safeParse(page.value.tickets[0]).success)
+    const single = await readTicket(endpoints, accessToken, { scope: TEAM.id, id: 'ENG-1' })
+    assert.ok(single.ok)
+    assert.deepEqual(single.value.labels, normalizedLabelColors)
+    assert.ok(ticket.safeParse(single.value).success)
+    const rejection =
+      'Linear Ticket labels: rejected 2 labels.nodes[] record(s), 2 labels.nodes[].color value(s).'
+    assert.deepEqual(warnings, [rejection, rejection])
+    labelConnection = { nodes: 'private malformed collection' }
+    const malformed = await readTicketPage(endpoints, accessToken, BACKLOG)
+    assert.ok(malformed.ok)
+    assert.deepEqual(malformed.value.tickets[0]?.labels, [])
+    assert.equal(
+      warnings[2],
+      'Linear Ticket labels: rejected 1 labels.nodes[] record(s), 0 labels.nodes[].color value(s).',
+    )
+    labelConnection = undefined
+    const missing = await readTicket(endpoints, accessToken, { scope: TEAM.id, id: 'ENG-1' })
+    assert.ok(missing.ok)
+    assert.deepEqual(missing.value.labels, [])
+    assert.equal(warnings.length, 3)
+  } finally {
+    restore()
+  }
 })

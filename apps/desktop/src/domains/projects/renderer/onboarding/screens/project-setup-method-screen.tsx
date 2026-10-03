@@ -62,9 +62,8 @@ export function ProjectSetupMethodScreen({
             value="agent"
           >
             <label
-              className="relative z-10 grid w-full max-w-64 gap-1.5 type-control font-medium"
+              className="grid w-full max-w-64 gap-1.5 type-control font-medium"
               htmlFor="project-setup-harness"
-              onFocusCapture={() => setMethod('agent')}
             >
               {t('setup.actor.choosing-method.harnessLabel')}
               <Select
@@ -120,26 +119,41 @@ function MethodChoice({
   title: string
   value: SetupMethod
 }) {
+  const controlId = `project-setup-method-${value}`
+  const titleId = `${controlId}-title`
+  const descriptionId = `${controlId}-description`
   return (
     <section
-      className="group/choice relative flex cursor-pointer items-center gap-5 rounded-xl border border-border px-4 py-4 transition-colors hover:border-foreground/30 hover:bg-muted/20 group-has-[:focus-visible]/choice:border-ring group-has-[:focus-visible]/choice:ring-3 group-has-[:focus-visible]/choice:ring-ring/50 data-[selected=true]:border-foreground data-[selected=true]:bg-muted/40 data-[selected=true]:ring-1 data-[selected=true]:ring-foreground data-[selected=true]:ring-inset max-sm:flex-col max-sm:items-stretch"
+      className="group/choice relative flex cursor-pointer items-center gap-5 rounded-xl border px-4 py-4 transition-colors hover:bg-muted/20 group-has-[:focus-visible]/choice:border-ring group-has-[:focus-visible]/choice:ring-3 group-has-[:focus-visible]/choice:ring-ring/50 data-[selected=true]:border-foreground data-[selected=true]:bg-muted/40 data-[selected=true]:ring-1 data-[selected=true]:ring-foreground data-[selected=true]:ring-inset max-sm:flex-col max-sm:items-stretch"
       data-selected={selected}
     >
+      <label className="absolute inset-0 z-0 cursor-pointer rounded-xl" htmlFor={controlId}>
+        <span aria-hidden="true" className="sr-only">
+          {title}
+        </span>
+      </label>
       <div className="pointer-events-none flex min-w-0 flex-1 items-start gap-3">
         <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted transition-colors group-data-[selected=true]/choice:bg-foreground group-data-[selected=true]/choice:text-background [&_svg]:size-4">
           {icon}
         </span>
         <div className="min-w-0">
-          <h2 className="type-heading">{title}</h2>
-          <p className="mt-1 max-w-xl type-control leading-relaxed text-muted-foreground">
+          <h2 className="type-heading" id={titleId}>
+            {title}
+          </h2>
+          <p
+            className="mt-1 max-w-xl type-control leading-relaxed text-muted-foreground"
+            id={descriptionId}
+          >
             {description}
           </p>
         </div>
       </div>
       <div className="relative z-10 w-64 max-w-full shrink-0 max-sm:w-full">{children}</div>
       <RadioGroupItem
-        aria-label={title}
-        className="absolute inset-0 size-auto cursor-pointer rounded-xl opacity-0"
+        aria-describedby={descriptionId}
+        aria-labelledby={titleId}
+        className="relative z-10"
+        id={controlId}
         value={value}
       />
     </section>

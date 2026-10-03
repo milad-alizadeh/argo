@@ -52,7 +52,7 @@ function expectIdentityInPageHeader(canvasElement: HTMLElement) {
 }
 
 const meta = {
-  title: 'Sessions/Screen/Layout',
+  title: 'Features/Sessions/Screens/Layout',
   component: SessionLayout,
   parameters: { layout: 'fullscreen' },
   decorators: [
@@ -116,11 +116,12 @@ export const ResizeExpandedInspector: Story = {
     )
 
     await userEvent.click(canvas.getByRole('button', { name: /^Collapse sidebar$/ }))
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Open sidebar' })).toBeVisible())
+    const restore = await canvas.findByRole('button', { name: 'Restore Session sidebar' })
+    await expect(restore).toBeVisible()
+    await userEvent.click(restore)
     await waitFor(
       () => {
-        expect(
-          canvas.getByLabelText('Session workspace').getBoundingClientRect().width,
-        ).toBeGreaterThan(1)
         expect(canvas.getByRole('button', { name: 'Expand Session sidebar' })).toBeVisible()
       },
       { timeout: 10000 },

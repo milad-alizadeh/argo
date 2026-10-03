@@ -156,7 +156,7 @@ export function ComposerCard(props: ComposerCardProps) {
       <fieldset
         aria-label={t('composer.cardLabel')}
         data-component="ComposerCard"
-        className={`@container relative z-10 flex min-w-0 flex-col overflow-visible rounded-xl border border-border bg-card shadow-(--shadow-surface) has-[[data-keyboard-focus=true]]:ring-2 has-[[data-keyboard-focus=true]]:ring-ring${props.disabled ? ' opacity-60' : ''}`}
+        className={`@container relative z-10 flex min-w-0 flex-col overflow-visible rounded-xl border border-border bg-card text-card-foreground shadow-(--shadow-inset-pane) has-[[data-keyboard-focus=true]]:ring-2 has-[[data-keyboard-focus=true]]:ring-ring has-[[data-keyboard-focus=true]]:ring-inset${props.disabled ? ' opacity-60' : ''}`}
         onDragOver={(event: DragEvent<HTMLFieldSetElement>) => event.preventDefault()}
         onDrop={(event) => dropFiles(event, dropAttachedFiles)}
       >

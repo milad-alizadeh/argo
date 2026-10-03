@@ -1,3 +1,4 @@
+import { realpathSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
@@ -38,6 +39,14 @@ const nodeProject = {
 }
 
 export default defineConfig({
+  server: {
+    fs: {
+      allow: [
+        path.resolve(directory, '..', '..'),
+        realpathSync(path.resolve(directory, '..', '..', 'node_modules')),
+      ],
+    },
+  },
   optimizeDeps: {
     include: ['@storybook/react-dom-shim', 'react/jsx-dev-runtime'],
   },

@@ -9,6 +9,7 @@ import {
   DropdownMenuRadioItem,
 } from '@/platform/renderer/components/ui/dropdown-menu'
 import { modeChoices } from '../turn-configuration/turn-configuration'
+import { composerMenuPopupRecipe, composerRichOptionRecipe } from './composer-menu-recipes'
 import { ComposerMenuTrigger, ComposerMenuValue } from './composer-menu-trigger'
 import type { TurnConfigurationControlProps } from './turn-configuration-menu'
 
@@ -25,11 +26,20 @@ export function ModeMenu({ choices, value, onChange }: TurnConfigurationControlP
         })}
       >
         <ComposerMenuValue
-          icon={current === undefined ? null : <Icon name={current.icon} />}
+          icon={
+            current === undefined ? null : (
+              <Icon className="text-muted-foreground" name={current.icon} />
+            )
+          }
           label={current?.label}
         />
       </ComposerMenuTrigger>
-      <DropdownMenuContent align="start" side="top" className="w-(--size-session-menu) p-1.5">
+      <DropdownMenuContent
+        align="start"
+        side="top"
+        tabIndex={0}
+        className={composerMenuPopupRecipe('p-1.5')}
+      >
         <DropdownMenuGroup>
           <DropdownMenuLabel className="px-2 py-1.5 type-control text-muted-foreground">
             {t('composer.turnConfiguration.permissions', { harness: choices.label })}
@@ -43,12 +53,14 @@ export function ModeMenu({ choices, value, onChange }: TurnConfigurationControlP
                 key={mode.value}
                 value={mode.value}
                 closeOnClick
-                className="items-start rounded-md py-1.5 pr-8 pl-2"
+                className={composerRichOptionRecipe.row}
               >
-                <Icon name={mode.icon} className="mt-0.5 size-3.5" />
-                <span className="grid gap-0.5">
-                  <span className="type-heading">{mode.label}</span>
-                  <span className="type-meta text-muted-foreground">{mode.detail}</span>
+                <Icon name={mode.icon} className={composerRichOptionRecipe.icon} />
+                <span className={composerRichOptionRecipe.content}>
+                  <span className={composerRichOptionRecipe.label}>{mode.label}</span>
+                  <span className={`${composerRichOptionRecipe.detail} text-muted-foreground`}>
+                    {mode.detail}
+                  </span>
                 </span>
               </DropdownMenuRadioItem>
             ))}

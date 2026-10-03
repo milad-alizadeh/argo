@@ -3,7 +3,7 @@ import { expect, within } from 'storybook/test'
 import { Loader } from './loader'
 
 const meta = {
-  title: 'Components/Loader',
+  title: 'Design System/Primitives/Loader',
   component: Loader,
   parameters: { layout: 'centered' },
   args: { 'aria-label': 'Loading' },
@@ -38,5 +38,26 @@ export const Decorative: Story = {
   args: { 'aria-hidden': true },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).queryByRole('status')).toBeNull()
+  },
+}
+
+export const ColorOverride: Story = {
+  args: { 'aria-label': 'Loading with an override', className: 'text-destructive' },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByRole('status', { name: 'Loading with an override' }),
+    ).toBeVisible()
+  },
+}
+
+export const ReducedMotion: Story = {
+  args: { 'aria-label': 'Loading with reduced motion' },
+  parameters: {
+    docs: { description: { story: 'Review with the system reduced-motion setting enabled.' } },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByRole('status', { name: 'Loading with reduced motion' }),
+    ).toBeVisible()
   },
 }

@@ -31,10 +31,33 @@ type Issue = {
 const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isInteger(value) && value > 0
 
-function label(value: unknown): TicketLabel | null {
+type LabelRejections = { records: number; colors: number }
+
+function reportLabels(rejected: LabelRejections) {
+  if (rejected.records === 0 && rejected.colors === 0) return
+  console.warn(
+    `GitHub Ticket labels: rejected ${rejected.records} labels[] record(s), ${rejected.colors} labels[].color value(s).`,
+  )
+}
+
+function label(value: unknown, rejected: LabelRejections): TicketLabel | null {
   if (typeof value === 'string') return { name: value, color: null }
-  if (!isRecord(value) || typeof value.name !== 'string') return null
-  return { name: value.name, color: labelColor(value.color) }
+  if (!isRecord(value) || typeof value.name !== 'string') {
+    rejected.records += 1
+    return null
+  }
+  const color = labelColor(value.color)
+  if (value.color !== undefined && value.color !== null && color === null) rejected.colors += 1
+  return { name: value.name, color }
+}
+
+function labels(value: unknown, rejected: LabelRejections): TicketLabel[] {
+  if (value === undefined) return []
+  if (!Array.isArray(value)) {
+    rejected.records += 1
+    return []
+  }
+  return value.map((entry) => label(entry, rejected)).filter((entry) => entry !== null)
 }
 
 function count(summary: unknown, key: string): number {
@@ -44,14 +67,13 @@ function count(summary: unknown, key: string): number {
 const keyOf = (number: number) => `#${number}`
 
 // GitHub serves pull requests from `/issues` too, and a Delivery is not a Ticket (CONTEXT.md L1).
-function issue(value: unknown, page: string): Issue | null {
+function issue(value: unknown, page: string, rejected: LabelRejections): Issue | null {
   if (!isRecord(value) || Object.hasOwn(value, 'pull_request')) return null
   const { number, title, body, state, created_at: createdAt } = value
   if (!isNumber(number) || typeof title !== 'string') return null
   if (typeof createdAt !== 'string' || Number.isNaN(Date.parse(createdAt))) return null
   if (state !== 'open' && state !== 'closed') return null
   const prose = typeof body === 'string' ? body.trim() : ''
-  const labels = Array.isArray(value.labels) ? value.labels.map(label) : []
   return {
     number,
     ticket: {
@@ -64,7 +86,7 @@ function issue(value: unknown, page: string): Issue | null {
       // GitHub keeps no priority.
       priority: null,
       createdAt,
-      labels: labels.filter((entry) => entry !== null),
+      labels: labels(value.labels, rejected),
       type: isRecord(value.type) && typeof value.type.name === 'string' ? value.type.name : null,
     },
     hasChildren: count(value.sub_issues_summary, 'total') > 0,
@@ -168,7 +190,11 @@ export async function readTicketPage(
   const served = listing(read.value.body)
   if (!served) return failed('unreachable')
   const page = `${endpoints.web}/${request.scope}/issues`
-  const issues = served.items.map((item) => issue(item, page)).filter((entry) => entry !== null)
+  const rejected = { records: 0, colors: 0 }
+  const issues = served.items
+    .map((item) => issue(item, page, rejected))
+    .filter((entry) => entry !== null)
+  reportLabels(rejected)
   const tickets = await inBatches(
     { base: `${endpoints.api}/repos/${request.scope}`, token },
     issues,
@@ -196,7 +222,9 @@ export async function readTicket(
   if (other || (isRecord(read.value) && read.value.number !== Number(number))) {
     return { ok: false, failure: 'ticket-not-found' }
   }
-  const served = issue(read.value, `${endpoints.web}/${scope}/issues`)
+  const rejected = { records: 0, colors: 0 }
+  const served = issue(read.value, `${endpoints.web}/${scope}/issues`, rejected)
+  reportLabels(rejected)
   if (served === null) return failed('unreachable')
   return withEdges({ base, token }, served)
 }

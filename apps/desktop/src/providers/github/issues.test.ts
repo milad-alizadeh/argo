@@ -1,9 +1,16 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { ticket } from '@/domains/tickets/api/ticket'
 import { github, githubWithRepository, octocatUser, signIn } from '@/providers/github/harness'
 import { readTicket, readTicketPage } from '@/providers/github/issues'
 import { checkRepository, isRepositoryScope } from '@/providers/github/repository'
+import { isRecord } from '@/shared/validation'
 import type { MockIssue } from '../../../mocks/providers/github/mock-github'
+import {
+  interceptLabelReadResponses,
+  normalizedLabelColors,
+  providerLabelColors,
+} from '../../../mocks/providers/mock-ticket-label-read'
 
 test('a repository check names the repository by its canonical name', async (context) => {
   const [mock, endpoints] = await github(context)
@@ -183,5 +190,58 @@ test('one issue reads by its key, open or closed, and a pull request is not a Ti
       ok: false,
       failure: id === '#9' ? 'not-found' : 'ticket-not-found',
     })
+  }
+})
+
+function replaceLabels(body: unknown, rawLabels: unknown) {
+  for (const issue of Array.isArray(body) ? body : [body]) {
+    assert.ok(isRecord(issue))
+    issue.labels = rawLabels
+  }
+}
+
+test('GitHub label reads normalize colors and report aggregate rejections without private payloads', async (context) => {
+  const { endpoints, token } = await githubWithRepository(context, {
+    fullName: 'octo/hello',
+    issues: [{ number: 1, title: 'Labels', labels: [{ name: 'valid', color: '000000' }] }],
+  })
+  let rawLabels: unknown = [
+    'legacy',
+    ...providerLabelColors('rgb(0 0 0)'),
+    { name: 8, color: 'ffffff' },
+    null,
+  ]
+  const expected = [{ name: 'legacy', color: null }, ...normalizedLabelColors]
+  const { warnings, restore } = interceptLabelReadResponses(
+    (address) => address.startsWith(`${endpoints.api}/repos/octo/hello/issues`),
+    (body) => replaceLabels(body, rawLabels),
+  )
+  try {
+    const page = await readTicketPage(endpoints, token, { scope: 'octo/hello', ...FIRST })
+    assert.ok(page.ok)
+    assert.deepEqual(page.value.tickets[0]?.labels, expected)
+    assert.ok(ticket.safeParse(page.value.tickets[0]).success)
+    const single = await readTicket(endpoints, token, { scope: 'octo/hello', id: '#1' })
+    assert.ok(single.ok)
+    assert.deepEqual(single.value.labels, expected)
+    assert.ok(ticket.safeParse(single.value).success)
+    const rejection =
+      'GitHub Ticket labels: rejected 2 labels[] record(s), 2 labels[].color value(s).'
+    assert.deepEqual(warnings, [rejection, rejection])
+    rawLabels = { private: 'invalid collection' }
+    const malformed = await readTicketPage(endpoints, token, { scope: 'octo/hello', ...FIRST })
+    assert.ok(malformed.ok)
+    assert.deepEqual(malformed.value.tickets[0]?.labels, [])
+    assert.equal(
+      warnings[2],
+      'GitHub Ticket labels: rejected 1 labels[] record(s), 0 labels[].color value(s).',
+    )
+    rawLabels = undefined
+    const missing = await readTicket(endpoints, token, { scope: 'octo/hello', id: '#1' })
+    assert.ok(missing.ok)
+    assert.deepEqual(missing.value.labels, [])
+    assert.equal(warnings.length, 3)
+  } finally {
+    restore()
   }
 })

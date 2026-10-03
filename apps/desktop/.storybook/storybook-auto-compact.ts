@@ -2,7 +2,7 @@
 // second control) reads back whatever the popover last wrote, the way the real file would.
 const DEFAULT_STORYBOOK_AUTO_COMPACT_LIMIT = 180_000
 
-let limit = DEFAULT_STORYBOOK_AUTO_COMPACT_LIMIT
+let limit: number | null = DEFAULT_STORYBOOK_AUTO_COMPACT_LIMIT
 let unreadable = false
 export const writtenAutoCompactLimits: number[] = []
 
@@ -16,6 +16,11 @@ export function resetStorybookAutoCompactLimit(): void {
 export function makeStorybookAutoCompactLimitUnreadable(): void {
   resetStorybookAutoCompactLimit()
   unreadable = true
+}
+
+export function makeStorybookAutoCompactLimitAbsent(): void {
+  resetStorybookAutoCompactLimit()
+  limit = null
 }
 
 export const storybookAutoCompactProcedures = {

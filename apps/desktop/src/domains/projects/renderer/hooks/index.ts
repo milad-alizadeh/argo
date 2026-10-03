@@ -1,4 +1,5 @@
 export {
+  type ProjectActions,
   type ProjectSummary,
   type ProjectsState,
   useProjects,

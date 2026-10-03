@@ -1,7 +1,20 @@
+import { cn } from 'cn'
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { AccountState, AccountSummary } from '@/domains/accounts/contract/contract'
+import {
+  readinessBodyRecipe,
+  readinessDetailRecipe,
+  readinessHeaderRecipe,
+  readinessRowRecipe,
+  readinessTitleRecipe,
+} from '@/platform/renderer/components/design-system/readiness-row-recipes'
+import { StatusBadge } from '@/platform/renderer/components/design-system/status-badge'
+import {
+  dangerActionRecipe,
+  indicatorToneRecipe,
+} from '@/platform/renderer/components/design-system/tone-recipes'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
@@ -10,11 +23,11 @@ import { providerPresentation } from '@/providers/presentation-registry'
 // How each Account state draws: its badge, and the note saying why, which a connected Account has
 // no need of.
 const STATE_PRESENTATION = {
-  connected: { variant: 'secondary', note: null },
-  expired: { variant: 'destructive', note: 'note.expired' },
-  revoked: { variant: 'destructive', note: 'note.revoked' },
-  unreadable: { variant: 'destructive', note: 'note.unreadable' },
-} as const satisfies Record<AccountState, { variant: string; note: string | null }>
+  connected: { tone: null, note: null },
+  expired: { tone: 'danger', note: 'note.expired' },
+  revoked: { tone: 'danger', note: 'note.revoked' },
+  unreadable: { tone: 'danger', note: 'note.unreadable' },
+} as const satisfies Record<AccountState, { tone: 'danger' | null; note: string | null }>
 
 export type AccountRowProps = {
   account: AccountSummary
@@ -27,7 +40,7 @@ export type AccountRowProps = {
 function Connections({ account }: { account: AccountSummary }) {
   const { t } = useTranslation('accounts')
   if (account.connections.length === 0) {
-    return <p className="type-meta text-muted-foreground">{t('row.noConnections')}</p>
+    return <p className={readinessDetailRecipe}>{t('row.noConnections')}</p>
   }
   return (
     <ul
@@ -37,7 +50,7 @@ function Connections({ account }: { account: AccountSummary }) {
       className="grid gap-(--spacing-shell-tight)"
     >
       {account.connections.map((connection) => (
-        <li className="type-meta text-muted-foreground" key={connection.projectId}>
+        <li className={readinessDetailRecipe} key={connection.projectId}>
           {connection.projectName} · <span className="font-mono">{connection.label}</span>
         </li>
       ))}
@@ -61,7 +74,13 @@ function ConfirmDisconnect({ account, onDisconnect, onKeep, busy }: ConfirmProps
           : t(`confirm.${provider}`, { login, count: connections.length })}
       </p>
       <div className="flex gap-(--spacing-shell-item)">
-        <Button disabled={busy} onClick={onDisconnect} size="sm" variant="destructive">
+        <Button
+          className={dangerActionRecipe}
+          disabled={busy}
+          onClick={onDisconnect}
+          size="sm"
+          variant="ghost"
+        >
           {t('confirm.disconnect')}
         </Button>
         <Button data-focus-rescue disabled={busy} onClick={onKeep} size="sm" variant="ghost">
@@ -86,35 +105,42 @@ export function AccountRow({ account, busy, onDisconnect, onReconnect }: Account
   // Asking lands on Keep, the harmless answer, and answering lands back on Disconnect….
   useFocusRescue(row, confirming)
   const { name } = providerPresentation(account.provider)
-  const { variant, note } = STATE_PRESENTATION[account.state]
+  const { tone, note } = STATE_PRESENTATION[account.state]
+  const stateLabel = t(`state.${account.state}`)
   const reason = note ? t(note, { provider: name }) : null
   return (
     <li
       aria-label={t('row.label', { provider: name, login: account.login })}
       ref={row}
-      className="grid gap-(--spacing-shell-item) p-(--spacing-shell-gutter)"
+      className={readinessRowRecipe}
     >
-      <div className="flex min-h-7 items-center gap-(--spacing-shell-item)">
-        <span className="type-heading min-w-0 truncate">{account.login}</span>
+      <div className={readinessHeaderRecipe}>
+        <span className={readinessTitleRecipe}>{account.login}</span>
         {account.workspace ? (
-          <span className="type-meta min-w-0 truncate text-muted-foreground">
-            {account.workspace}
-          </span>
+          <span className={cn(readinessDetailRecipe, 'min-w-0 truncate')}>{account.workspace}</span>
         ) : null}
-        <Badge size="compact" variant={variant}>
-          {t(`state.${account.state}`)}
-        </Badge>
+        {tone === null ? (
+          <Badge variant="secondary">{stateLabel}</Badge>
+        ) : (
+          <StatusBadge tone={tone}>{stateLabel}</StatusBadge>
+        )}
         <span className="flex-1" />
         {confirming ? null : (
-          <Button data-focus-rescue onClick={() => setConfirming(true)} size="sm" variant="ghost">
+          <Button
+            className="ml-auto"
+            data-focus-rescue
+            onClick={() => setConfirming(true)}
+            size="sm"
+            variant="ghost"
+          >
             {t('row.disconnect')}
           </Button>
         )}
       </div>
       <Connections account={account} />
       {reason ? (
-        <div className="grid justify-items-start gap-(--spacing-shell-item)">
-          <p className="type-meta text-destructive">{reason}</p>
+        <div className={readinessBodyRecipe}>
+          <p className={cn(readinessDetailRecipe, indicatorToneRecipe.danger)}>{reason}</p>
           {confirming ? null : (
             <Button onClick={onReconnect} size="sm" variant="outline">
               {t('row.reconnect')}

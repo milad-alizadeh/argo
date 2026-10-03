@@ -46,8 +46,7 @@
   ],
   "exclude": [
     "src/platform/contract/**/*.test.ts",
-    // These read source files through the Bun global, so tsconfig.node.json checks them.
-    "src/platform/renderer/styles/typography-contract.test.ts",
+    // This reads source files through the Bun global, so tsconfig.node.json checks it.
     "src/renderer/catalogs.test.ts"
   ]
 }

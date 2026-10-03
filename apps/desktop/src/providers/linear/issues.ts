@@ -83,9 +83,30 @@ export function priorityOf(value: unknown, label: unknown): TicketPriority | nul
   return level && typeof label === 'string' && label !== '' ? { level, label } : null
 }
 
-function label(value: unknown): TicketLabel | null {
-  if (!isRecord(value) || typeof value.name !== 'string') return null
-  return { name: value.name, color: labelColor(value.color) }
+type LabelRejections = { records: number; colors: number }
+
+function reportLabels(rejected: LabelRejections) {
+  if (rejected.records === 0 && rejected.colors === 0) return
+  console.warn(
+    `Linear Ticket labels: rejected ${rejected.records} labels.nodes[] record(s), ${rejected.colors} labels.nodes[].color value(s).`,
+  )
+}
+
+function labels(connection: unknown, rejected: LabelRejections): TicketLabel[] {
+  if (connection === undefined) return []
+  if (!isRecord(connection) || !Array.isArray(connection.nodes)) {
+    rejected.records += 1
+    return []
+  }
+  return connection.nodes.flatMap((value) => {
+    if (!isRecord(value) || typeof value.name !== 'string') {
+      rejected.records += 1
+      return []
+    }
+    const color = labelColor(value.color)
+    if (value.color !== undefined && value.color !== null && color === null) rejected.colors += 1
+    return [{ name: value.name, color }]
+  })
 }
 
 // A relation of type `blocks` on the inverse side names the issue that blocks this one.
@@ -102,7 +123,11 @@ function pageURL(endpoints: LinearEndpoints, value: unknown): string | null {
   return new URL(value).origin === endpoints.web ? value : null
 }
 
-function ticket(endpoints: LinearEndpoints, value: unknown): Ticket | null {
+function ticket(
+  endpoints: LinearEndpoints,
+  value: unknown,
+  rejected: LabelRejections,
+): Ticket | null {
   const own = link(value)
   const status = isRecord(value) ? statusOf(value.state) : null
   if (!(own && status) || !isRecord(value)) return null
@@ -117,9 +142,7 @@ function ticket(endpoints: LinearEndpoints, value: unknown): Ticket | null {
     status,
     priority: priorityOf(priority, priorityLabel),
     createdAt,
-    labels: nodes(value.labels)
-      .map(label)
-      .filter((entry) => entry !== null),
+    labels: labels(value.labels, rejected),
     type: null,
     children: nodes(value.children)
       .map(link)
@@ -161,12 +184,15 @@ export async function readTicketPage(
   const more = isRecord(info) && info.hasNextPage === true
   const nextCursor = more && typeof info.endCursor === 'string' ? info.endCursor : null
   const total = connection.totalCount
+  const rejected = { records: 0, colors: 0 }
+  const tickets = connection.nodes
+    .map((node) => ticket(endpoints, node, rejected))
+    .filter((entry) => entry !== null)
+  reportLabels(rejected)
   return {
     ok: true,
     value: {
-      tickets: connection.nodes
-        .map((node) => ticket(endpoints, node))
-        .filter((entry) => entry !== null),
+      tickets,
       statuses: teamStatuses(reply.value.team),
       nextCursor,
       total: typeof total === 'number' && Number.isInteger(total) && total >= 0 ? total : null,
@@ -190,6 +216,8 @@ export async function readTicket(
   if (!isRecord(issue) || !isRecord(issue.team) || issue.team.id !== scope) {
     return { ok: false, failure: 'ticket-not-found' }
   }
-  const read = ticket(endpoints, issue)
+  const rejected = { records: 0, colors: 0 }
+  const read = ticket(endpoints, issue, rejected)
+  reportLabels(rejected)
   return read ? { ok: true, value: read } : failed('unreachable')
 }

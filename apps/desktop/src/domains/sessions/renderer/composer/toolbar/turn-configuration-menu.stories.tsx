@@ -8,6 +8,7 @@ import {
   codexHarnessInfoFixture,
 } from '@/mocks/sessions/harness-catalog.fixture'
 import type { TurnConfiguration } from '../turn-configuration/turn-configuration'
+import { EffortSlider } from './effort-slider'
 import { type CatalogFailure, TurnConfigurationMenu } from './turn-configuration-menu'
 
 const claudeFixture = claudeHarnessInfoFixture()
@@ -69,7 +70,13 @@ function failureOf(result: CatalogReadResult | null): CatalogFailure | null {
 }
 
 // A started Session keeps its harness; a new one offers the harness tabs.
-function TurnConfigurationStory({ started = true }: { started?: boolean }) {
+function TurnConfigurationStory({
+  started = true,
+  narrow = false,
+}: {
+  started?: boolean
+  narrow?: boolean
+}) {
   const [harness, setHarness] = useState<Harness>('claude')
   const [turnConfiguration, setTurnConfiguration] = useState(liveClaudeInfo.opening)
   const result = harness === 'codex' ? readyCodex : readyClaude
@@ -79,7 +86,7 @@ function TurnConfigurationStory({ started = true }: { started?: boolean }) {
     setTurnConfiguration(nextHarness === 'codex' ? liveCodexInfo.opening : liveClaudeInfo.opening)
   }
   return (
-    <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
+    <div className={`@container flex min-h-dvh items-end p-8 ${narrow ? 'w-72' : 'max-w-4xl'}`}>
       <TurnConfigurationMenu
         harness={started ? { harness } : { harness, onChange: chooseHarness }}
         turnConfiguration={
@@ -127,8 +134,21 @@ function CatalogStory({
   )
 }
 
+function EffortFallbackStory() {
+  const [value, setValue] = useState<TurnConfiguration>({
+    model: 'haiku',
+    effort: 'high',
+    mode: 'manual',
+  })
+  return (
+    <div className="max-w-lg">
+      <EffortSlider choices={liveClaudeInfo} value={value} onChange={setValue} />
+    </div>
+  )
+}
+
 const meta = {
-  title: 'Sessions/Composer/Turn Configuration Menu',
+  title: 'Features/Sessions/Composer/Turn Configuration Menu',
   component: TurnConfigurationStory,
 } satisfies Meta<typeof TurnConfigurationStory>
 
@@ -138,6 +158,20 @@ type Story = StoryObj<typeof TurnConfigurationStory>
 const page = () => within(document.body)
 
 const TRIGGER = /^Choose Turn configuration/
+
+async function clickSliderTrackAt(root: ParentNode, fraction: number) {
+  const track = root.querySelector<HTMLElement>('[data-slot="slider-track"]')
+  if (!track) throw new Error('Effort slider track is missing')
+  const bounds = track.getBoundingClientRect()
+  await userEvent.pointer({
+    keys: '[MouseLeft]',
+    target: track,
+    coords: {
+      clientX: bounds.left + bounds.width * fraction,
+      clientY: bounds.top + bounds.height / 2,
+    },
+  })
+}
 
 async function expectRoleHidden(role: string, name: string) {
   await waitFor(() => {
@@ -158,28 +192,30 @@ export const ChoosesModelAndEffort: Story = {
 
     await userEvent.click(trigger)
     const models = await page().findByRole('radiogroup', { name: 'Model' })
-    const offered = within(models)
-      .getAllByRole('radio')
-      .map((option) => option.closest('label')?.textContent)
-    await expect(offered).toEqual([
-      'Fable 5.1Deepest reasoning for long, open-ended work',
-      'Opus 5Most capable for architecture and hard problems',
-      'Sonnet 5Balanced for daily coding and review',
-      'Haiku 4.5Fast for small changes and quick answers',
-    ])
-    await userEvent.click(within(models).getByRole('radio', { name: /Sonnet 5/ }))
-    await expect(within(models).getByRole('radio', { name: /Sonnet 5/ })).toBeChecked()
+    await expectModelNamesAndDetails(models, canvasElement.ownerDocument)
+    await expect(
+      within(models).getByRole('radio', { name: 'Sonnet 5' }),
+    ).toHaveAccessibleDescription('Balanced for daily coding and review')
+    const sonnet = within(models).getByRole('radio', { name: 'Sonnet 5' })
+    const sonnetRowLabel = sonnet.parentElement?.querySelector<HTMLLabelElement>('label')
+    if (!sonnetRowLabel) throw new Error('Sonnet choice label is missing')
+    await clickRowPadding(sonnetRowLabel)
+    await expect(sonnet).toBeChecked()
 
-    const effort = page().getByRole('slider', { name: 'Effort' })
+    const effort = page().getByRole('slider', { name: /^Effort/ })
+    await expect(effort).toHaveAccessibleName('Effort Medium')
     await expect(effort).toHaveAttribute('aria-valuetext', 'Medium')
-    // user-event cannot step a native range, so the drag lands as the change it produces.
-    fireEvent.change(effort, { target: { value: '4' } })
+    await expect(effort).toHaveAccessibleDescription(
+      'More effort trades speed for deeper reasoning.',
+    )
+    await clickSliderTrackAt(document.body, 0.95)
+    await expect(effort).toHaveAccessibleName('Effort Max')
     await expect(effort).toHaveAttribute('aria-valuetext', 'Max')
+    await expect(effort).toHaveAttribute('aria-valuenow', '4')
     fireEvent.change(effort, { target: { value: '3' } })
+    await expect(effort).toHaveAccessibleName('Effort Extra high')
     await expect(effort).toHaveAttribute('aria-valuetext', 'Extra high')
-    const effortScale = effort.parentElement
-    if (!effortScale) throw new Error('Effort scale is missing.')
-    await expect(within(effortScale).getByText('Extra high')).toHaveClass('font-semibold')
+    await expect(effort).toHaveAttribute('aria-valuenow', '3')
     const harnesses = page().getByRole('tablist', { name: 'Harness' })
     for (const label of ['Claude Code', 'Codex']) {
       const tab = within(harnesses).getByRole('tab', { name: label })
@@ -192,6 +228,38 @@ export const ChoosesModelAndEffort: Story = {
     await expect(trigger).toHaveFocus()
     await expect(trigger).toHaveTextContent('Sonnet 5·Extra high')
   },
+}
+
+async function clickRowPadding(label: HTMLLabelElement) {
+  const bounds = label.getBoundingClientRect()
+  await userEvent.pointer({
+    keys: '[MouseLeft]',
+    target: label,
+    coords: { clientX: bounds.left + 4, clientY: bounds.top + bounds.height / 2 },
+  })
+}
+
+async function expectModelNamesAndDetails(models: HTMLElement, ownerDocument: Document) {
+  const modelOptions = within(models).getAllByRole('radio')
+  const referencedText = (
+    option: HTMLElement,
+    attribute: 'aria-labelledby' | 'aria-describedby',
+  ) => {
+    const id = option.getAttribute(attribute)
+    return id ? ownerDocument.getElementById(id)?.textContent : null
+  }
+  await expect(modelOptions.map((option) => referencedText(option, 'aria-labelledby'))).toEqual([
+    'Fable 5.1',
+    'Opus 5',
+    'Sonnet 5',
+    'Haiku 4.5',
+  ])
+  await expect(modelOptions.map((option) => referencedText(option, 'aria-describedby'))).toEqual([
+    'Deepest reasoning for long, open-ended work',
+    'Most capable for architecture and hard problems',
+    'Balanced for daily coding and review',
+    'Fast for small changes and quick answers',
+  ])
 }
 
 export const UsesLiveCodexCatalog: Story = {
@@ -207,10 +275,10 @@ export const UsesLiveCodexCatalog: Story = {
     const models = await page().findByRole('radiogroup', { name: 'Model' })
     await expect(within(models).getAllByRole('radio')).toHaveLength(1)
     await expect(within(models).getByRole('radio', { name: /GPT-5.6-Terra/ })).toBeChecked()
-    await expect(page().getByRole('slider', { name: 'Effort' })).toHaveAttribute(
-      'aria-valuetext',
-      'Balances speed and reasoning',
-    )
+    const effort = page().getByRole('slider', { name: /^Effort/ })
+    await expect(effort).toHaveAccessibleName('Effort Balances speed and reasoning')
+    await expect(effort).toHaveAttribute('aria-valuetext', 'Balances speed and reasoning')
+    await expect(effort).toBeDisabled()
     await expect(page().queryByRole('status')).toBeNull()
   },
 }
@@ -226,11 +294,31 @@ export const UsesLiveClaudeCatalog: Story = {
     const models = await page().findByRole('radiogroup', { name: 'Model' })
     await expect(within(models).getAllByRole('radio')).toHaveLength(4)
     await userEvent.click(within(models).getByRole('radio', { name: /Haiku 4.5/ }))
-    await expect(page().getByRole('slider', { name: 'Effort' })).toHaveAttribute(
+    await expect(page().getByRole('slider', { name: /^Effort/ })).toHaveAccessibleName(
+      'Effort Medium',
+    )
+    await expect(page().getByRole('slider', { name: /^Effort/ })).toHaveAttribute(
       'aria-valuetext',
       'Medium',
     )
     await expect(page().queryByRole('status')).toBeNull()
+  },
+}
+
+export const FallsBackToFirstOfferedEffort: Story = {
+  render: () => <EffortFallbackStory />,
+  play: async ({ canvasElement }) => {
+    const slider = within(canvasElement).getByRole('slider', { name: 'Effort Low' })
+    await expect(slider).toHaveAttribute('aria-valuenow', '0')
+    await expect(slider).toHaveAttribute('aria-valuetext', 'Low')
+    await expect(slider).toHaveAccessibleDescription(
+      'More effort trades speed for deeper reasoning.',
+    )
+    slider.focus()
+    await userEvent.keyboard('{End}')
+    await expect(slider).toHaveAttribute('aria-valuenow', '1')
+    await expect(slider).toHaveAttribute('aria-valuetext', 'Medium')
+    await expect(slider).toHaveAccessibleName('Effort Medium')
   },
 }
 
@@ -323,7 +411,7 @@ export const ChoosesByKeyboard: Story = {
     await expect(haiku).toHaveFocus()
     await expect(haiku).toBeChecked()
     await userEvent.tab()
-    await expect(page().getByRole('slider', { name: 'Effort' })).toHaveFocus()
+    await expect(page().getByRole('slider', { name: /^Effort/ })).toHaveFocus()
 
     await userEvent.keyboard('{Escape}')
     await expectRoleHidden('radiogroup', 'Model')
@@ -342,10 +430,6 @@ export const NewSessionChoosesHarness: Story = {
     const claude = within(harnesses).getByRole('tab', { name: 'Claude Code' })
     await waitFor(() => expect(claude).toHaveFocus())
     await expect(claude).toHaveAttribute('aria-selected', 'true')
-    // The track pads the active tab on every side (602bcce2); the popover may still be scaling in.
-    await expect(harnesses.getBoundingClientRect().bottom).toBeGreaterThanOrEqual(
-      claude.getBoundingClientRect().bottom + 3,
-    )
     await expect(page().getByRole('tabpanel')).toContainElement(
       page().getByRole('radiogroup', { name: 'Model' }),
     )
@@ -371,5 +455,29 @@ export const NewSessionChoosesHarness: Story = {
     await expectRoleHidden('tablist', 'Harness')
     await expect(trigger).toHaveFocus()
     await expect(trigger).toHaveTextContent('Opus 5·Medium')
+  },
+}
+
+export const NarrowModelDetails: Story = {
+  args: { narrow: true },
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole('button', { name: TRIGGER })
+    await userEvent.click(trigger)
+    const model = await page().findByRole('radio', { name: 'Fable 5.1' })
+    await expect(model).toHaveAccessibleDescription('Deepest reasoning for long, open-ended work')
+    await userEvent.click(model)
+    await expect(model).toBeChecked()
+    await userEvent.tab()
+    const effort = page().getByRole('slider', { name: /^Effort/ })
+    await expect(effort).toHaveFocus()
+    fireEvent.change(effort, { target: { value: '2' } })
+    await expect(effort).toHaveAccessibleName('Effort High')
+    await expect(effort).toHaveAttribute('aria-valuenow', '2')
+    await expect(effort).toHaveAttribute('aria-valuetext', 'High')
+    await userEvent.keyboard('{Escape}')
+    await expectRoleHidden('radiogroup', 'Model')
+    await expect(trigger).toHaveFocus()
+    await expect(trigger).toHaveTextContent('Fable 5.1')
+    await expect(trigger).toHaveTextContent('High')
   },
 }

@@ -1,9 +1,10 @@
 import type { HarnessPresentation } from '@/harnesses/harness-presentation'
+import { harnessLogoRecipe } from '@/harnesses/presentation-logo-recipe'
 import { ClaudeContextComposition } from './claude-context-composition'
 import claudeSpark from './claude-spark.svg?url'
 
 function ClaudeLogo() {
-  return <img aria-hidden="true" alt="" className="size-3.5 shrink-0" src={claudeSpark} />
+  return <img aria-hidden="true" alt="" className={harnessLogoRecipe} src={claudeSpark} />
 }
 
 export const claudePresentation: HarnessPresentation = {

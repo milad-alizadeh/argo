@@ -8,9 +8,6 @@ import { providerPresentation } from '@/providers/presentation-registry'
 import { PriorityMenu, StatusMenu, TicketLabel } from '../status'
 import { type Navigation, TicketRelations } from './ticket-detail-links'
 
-const COMPACT_VALUE =
-  'inline-flex h-5 items-center rounded-full bg-secondary px-(--spacing-shell-item) text-foreground shadow-xs @3xl:h-auto @3xl:rounded-none @3xl:bg-transparent @3xl:p-0 @3xl:shadow-none'
-
 function Property({ name, children }: { name: string; children: ReactNode }) {
   return (
     <div className="contents">
@@ -88,7 +85,7 @@ export function Properties({
           </Property>
           {noun === stateNoun ? null : (
             <Property name={stateNoun}>
-              <span className={COMPACT_VALUE}>{t(`detail.state.${ticket.state}`)}</span>
+              <Badge variant="outline">{t(`detail.state.${ticket.state}`)}</Badge>
             </Property>
           )}
           {presentation.hasPriority ? (
@@ -105,7 +102,7 @@ export function Properties({
           ) : null}
           {ticket.type ? (
             <Property name={t('detail.type')}>
-              <Badge variant="secondary">{ticket.type}</Badge>
+              <Badge variant="outline">{ticket.type}</Badge>
             </Property>
           ) : null}
         </dl>

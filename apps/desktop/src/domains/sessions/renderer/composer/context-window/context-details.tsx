@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import type { Harness } from '@/harnesses/harness'
 import { HARNESS_PRESENTATIONS } from '@/harnesses/presentation-registry'
 import { contextZone } from './context-zone'
@@ -22,9 +22,9 @@ export function ContextDetails({
     <>
       <div className="grid gap-2.5">
         <div className="flex items-baseline justify-between gap-3">
-          <div className="type-title tabular-nums">
+          <div className="text-lg font-semibold tabular-nums">
             {t('composer.contextWindow.tokenCount', { count: Math.round(usedTokens / 1000) })}{' '}
-            <span className="type-body font-normal text-muted-foreground">
+            <span className="text-sm font-normal text-muted-foreground">
               {capacityReported
                 ? t('composer.contextWindow.capacity', {
                     count: Math.round(capacityTokens / 1000),
@@ -33,59 +33,57 @@ export function ContextDetails({
             </span>
           </div>
           {capacityReported ? (
-            <span className={`type-heading ${zone.text}`}>
+            <span className={`text-sm font-medium ${zone.text}`}>
               {t('composer.contextWindow.used', { percentage, zone: zone.label })}
             </span>
           ) : null}
         </div>
         {capacityReported ? (
-          <>
-            <div className="relative h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className="absolute inset-y-0 left-0 bg-foreground/70"
-                style={{ width: `${percentage}%` }}
-              />
-              <div className="absolute inset-y-0 w-px bg-card" style={{ left: '20%' }} />
-            </div>
-            <div className="flex justify-between type-body text-muted-foreground">
-              <span>
-                {t('composer.contextWindow.workingTarget', {
-                  count: Math.round(capacityTokens / 5_000) * 1000,
-                })}
-              </span>
-              <span>
-                {t('composer.contextWindow.current', { count: Math.round(usedTokens / 1000) })}
-              </span>
-            </div>
-          </>
+          <div className="relative h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className={`absolute inset-y-0 left-0 ${percentage < 20 ? 'bg-status-success' : 'bg-destructive'}`}
+              style={{ width: `${percentage}%` }}
+            />
+            <div className="absolute inset-y-0 w-px bg-card" style={{ left: '20%' }} />
+          </div>
         ) : (
-          <p className="type-prose text-muted-foreground">
-            {t('composer.contextWindow.unreported')}
-          </p>
+          <p className="text-muted-foreground">{t('composer.contextWindow.unreported')}</p>
         )}
-        <div className="grid grid-cols-2 gap-3 rounded-lg bg-muted p-3 type-prose">
-          <div>
-            <div className="font-semibold text-foreground">
-              {t('composer.contextWindow.smartZoneRange')}
+        <div className="grid gap-3 border-t pt-3">
+          <dl className="grid gap-2">
+            <div>
+              <dt className="font-medium">{t('composer.contextWindow.smartZoneRange')}</dt>
+              <dd className="text-muted-foreground">
+                {t('composer.contextWindow.smartZoneDescription')}
+              </dd>
             </div>
-            <p className="mt-1 text-muted-foreground">
-              {t('composer.contextWindow.smartZoneDescription')}
-            </p>
-          </div>
-          <div>
-            <div className="font-semibold text-foreground">
-              {t('composer.contextWindow.dumbZoneRange')}
+            <div>
+              <dt className="font-medium">{t('composer.contextWindow.dumbZoneRange')}</dt>
+              <dd className="text-muted-foreground">
+                {t('composer.contextWindow.dumbZoneDescription')}
+              </dd>
             </div>
-            <p className="mt-1 text-muted-foreground">
-              {t('composer.contextWindow.dumbZoneDescription')}
-            </p>
-          </div>
-        </div>
-        {capacityReported ? (
-          <p className="type-prose text-muted-foreground">
-            {t('composer.contextWindow.description')}
+          </dl>
+          <p className="text-muted-foreground">
+            <Trans
+              ns="sessions"
+              i18nKey="composer.contextWindow.description"
+              values={{ dex: t('composer.contextWindow.dexHorthy') }}
+              components={{
+                dex: (
+                  <a
+                    className="underline underline-offset-2"
+                    href="https://www.youtube.com/watch?v=rmvDxxNubIg&t=355s"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t('composer.contextWindow.dexHorthy')}
+                  </a>
+                ),
+              }}
+            />
           </p>
-        ) : null}
+        </div>
       </div>
       {HarnessDetails ? <HarnessDetails capacityTokens={capacityTokens} /> : null}
     </>

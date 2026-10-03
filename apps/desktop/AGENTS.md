@@ -50,9 +50,8 @@ runs both. Everything else stays `*.test.ts`.
 
 - Production visual values use shared tokens or named component-local tokens beside their owner.
   Resolve exploratory values into tokens before review.
-- Name a token for its role, not its value: `--text-body`, not `--text-13`. One small role set per
-  family.
-- Every reader-visible string takes a typography role.
+- Registry controls keep their default typography. Custom content recipes follow
+  `docs/design-stack.md`; `type-control` is not a blanket control override.
 - A screen is a thin container: it resolves state and hands a pure render surface the result.
 - Read every color through a token. The app offers System (default), Light and Dark, and a value
   right in one appearance and wrong in the other is caught by no gate.
@@ -76,7 +75,7 @@ Anything else follows the mark rule.
 ## Focus
 
 The ring is `--ring` in both appearances, via `:focus-visible`; shadcn components draw it
-themselves, and the root rule in `globals.css` covers the rest. Write `outline: none` only in a
+themselves, and the root rule in `styles/app-base.css` covers the rest. Write `outline: none` only in a
 block that draws a replacement ring.
 
 ## Shortcuts
@@ -101,13 +100,18 @@ decisions and their reasons in the implementation ticket.
 A component is reviewed in Storybook; a screen is reviewed by a render command
 (`docs/design-stack.md`, `README.md`).
 
-A story's `title:` nests under its owning parent component's group, one level per parent,
-matching folder placement (`Sessions/Composer/*`); a shared cross-domain primitive stays under
-`Components/`.
+Use readable title case and group stories by product ownership: `Design System/Primitives/<Name>`
+for base or registry controls, `Design System/Patterns/<Name>` for app-owned compositions,
+`Design System/Foundations/<Showcase>` for token or theme showcases,
+`Features/<Domain>/<Component>` for feature UI, and `App/<Area>/<Component>` for shell UI.
 
-For rendered UI work, a `play` function is the TDD seam: operate the story through visible
-controls and assert reader-visible behaviour and accessible semantics, never CSS classes or
-computed styles.
+Mode and Theme are global Storybook toolbar controls. Keep one canonical story per component
+state or behavior, inheriting the selected globals.
+
+Render realistic product or component UI. In `play`, operate visible controls and assert
+product-owned outcomes or accessible semantics; use explicit callback spies for presentational
+interactions. Keep simulation controls and test observations in private fixtures.
+Inspect appearance changes directly in live Storybook with temporary captures when needed.
 
 Every story runs a required axe scan. A story only for looking at takes the `view-only` tag
 instead of an empty `play`. Fix a finding, usually with a shared token; disable an axe rule only for

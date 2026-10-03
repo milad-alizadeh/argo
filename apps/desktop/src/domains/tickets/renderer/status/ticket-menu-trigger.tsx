@@ -11,13 +11,12 @@ export function ticketMenuTrigger(named: boolean, metadata: boolean) {
       <Badge
         className="relative z-10 @3xl:bg-transparent @3xl:text-muted-foreground"
         render={<button type="button" />}
-        size="default"
-        variant="secondary"
+        variant="outline"
       />
     )
   return (
     <Button
-      className={`relative z-10 shrink-0 type-meta text-muted-foreground ${named ? NAMED_INSET : ''}`}
+      className={`relative z-10 shrink-0 text-muted-foreground ${named ? NAMED_INSET : ''}`}
       size={named ? 'xs' : 'icon-xs'}
       variant="ghost"
     />

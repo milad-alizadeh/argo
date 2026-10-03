@@ -3,16 +3,10 @@ import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { pendingSessionDraft } from '@/domains/sessions/api/pending-session'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
+import { EmptyState } from '@/platform/renderer/components/design-system/empty-state'
+import { Notice } from '@/platform/renderer/components/design-system/notice'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/platform/renderer/components/ui/empty'
 import type {
   SessionError,
   SessionEvidence,
@@ -61,13 +55,17 @@ function feedFailureNotice({
 }) {
   if (failure === null || !hasCurrent) return null
   return (
-    <Alert className="mx-auto mt-(--spacing-snug) max-w-sm" variant="destructive">
-      <AlertTitle>{title}</AlertTitle>
-      <AlertDescription>{failure.message}</AlertDescription>
+    <Notice
+      className="mx-auto mt-(--spacing-snug) max-w-sm"
+      heading={title}
+      icon="triangle-alert"
+      tone="danger"
+    >
+      {failure.message}
       <Button onClick={onRetry} type="button" variant="outline">
         {retryLabel}
       </Button>
-    </Alert>
+    </Notice>
   )
 }
 
@@ -186,17 +184,7 @@ type FeedDocumentProps = {
 } & FeedQuestionHandlers
 
 function EmptyFeed({ title, description }: { title: string; description: string }) {
-  return (
-    <Empty className="h-full">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <Icon name="empty-feed" />
-        </EmptyMedia>
-        <EmptyTitle>{title}</EmptyTitle>
-        <EmptyDescription>{description}</EmptyDescription>
-      </EmptyHeader>
-    </Empty>
-  )
+  return <EmptyState description={description} media={<Icon name="empty-feed" />} title={title} />
 }
 
 // The selected document owns its virtualized history and scroll state.

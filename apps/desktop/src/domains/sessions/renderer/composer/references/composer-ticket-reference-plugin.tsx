@@ -61,13 +61,14 @@ export function ComposerTicketReferencePlugin({ tickets }: { tickets: ComposerTi
     () =>
       editor.registerCommand(
         KEY_BACKSPACE_COMMAND,
-        () => {
+        (event) => {
           const selection = $getSelection()
           if ($isNodeSelection(selection)) {
             const ticket = selection
               .getNodes()
               .find((node) => node instanceof ComposerTicketReferenceNode)
             if (ticket !== undefined) {
+              event.preventDefault()
               ticket.remove()
               return true
             }
@@ -76,6 +77,7 @@ export function ComposerTicketReferencePlugin({ tickets }: { tickets: ComposerTi
           const node = selection.anchor.getNode()
           const ticket = ticketBeforeCursor(node, selection.anchor.offset)
           if (ticket === null) return false
+          event.preventDefault()
           ticket.remove()
           return true
         },

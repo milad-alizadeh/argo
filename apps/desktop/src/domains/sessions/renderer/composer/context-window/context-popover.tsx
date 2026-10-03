@@ -35,7 +35,7 @@ function CompactContextTrigger({ capacityTokens, percentage, usedTokens }: Conte
       render={
         <Button
           aria-label={accessibleName}
-          className="gap-1.5 px-2 type-label font-medium text-foreground"
+          className="gap-1.5 px-2 text-foreground"
           size="sm"
           variant="ghost"
         />
@@ -83,13 +83,13 @@ function LabelledContextTrigger({ percentage }: ContextTriggerProps) {
       render={
         <Button
           aria-label={accessibleName}
-          className={`shrink-0 gap-1.5 px-2 type-label font-medium ${percentage !== null && percentage >= 40 ? 'text-destructive' : 'text-foreground'}`}
+          className={`shrink-0 gap-1.5 px-2 ${percentage !== null && percentage >= 20 ? 'text-destructive' : 'text-foreground'}`}
           size="sm"
           variant="ghost"
         />
       }
     >
-      <Icon name="context-stack" />
+      <Icon className="text-muted-foreground" name="context-stack" />
       <span>{t('composer.context')}</span>
     </PopoverTrigger>
   )
@@ -109,7 +109,7 @@ function ContextPopoverTrigger({
         <Button aria-label={t('composer.contextWindow.details')} size="icon-sm" variant="ghost" />
       }
     >
-      <Icon name="info" />
+      <Icon className="text-muted-foreground" name="info" />
     </PopoverTrigger>
   )
 }
@@ -141,9 +141,7 @@ export function ContextPopover({
       <PopoverContent align="end" side="top" className="w-(--size-session-popover) gap-3 p-4">
         <PopoverHeader className="gap-1">
           <PopoverTitle>{t('composer.contextWindow.title')}</PopoverTitle>
-          <PopoverDescription className="type-prose">
-            {t('composer.contextWindow.explanation')}
-          </PopoverDescription>
+          <PopoverDescription>{t('composer.contextWindow.explanation')}</PopoverDescription>
         </PopoverHeader>
         <ContextDetails
           capacityTokens={capacityTokens}

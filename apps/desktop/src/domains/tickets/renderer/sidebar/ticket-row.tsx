@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/api/ticket'
+import { indicatorToneRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
@@ -14,15 +15,33 @@ const markIcon = 'size-(--size-icon-meta) shrink-0'
 type TreeAnchorStyle = CSSProperties & Record<'--ticket-tree-anchor', string>
 const treeAnchor: TreeAnchorStyle = {
   '--ticket-tree-anchor':
-    'calc(var(--spacing-shell-icon) + var(--text-body--line-height) / 2 + 1px)',
+    'calc(var(--spacing-shell-icon) + var(--typography-body-line-height) / 2 + 1px)',
 }
 const sidebarTreeAnchor: TreeAnchorStyle = {
-  '--ticket-tree-anchor': 'calc(var(--spacing-shell-item) + var(--text-body--line-height) / 2)',
+  '--ticket-tree-anchor':
+    'calc(var(--spacing-shell-item) + var(--typography-body-line-height) / 2)',
 }
 // Past this many, the rest of a row's labels are counted rather than drawn.
 const SHOWN_LABELS = 2
 const SHOWN_RAIL_LABELS = 3
 const CATEGORY_LABELS = new Set(['bug', 'implementation', 'enhancement'])
+
+function TicketAge({
+  createdAt,
+  age,
+  className,
+}: {
+  createdAt: string
+  age: ReturnType<typeof ticketAge>
+  className: string
+}) {
+  return (
+    <time className={className} dateTime={createdAt}>
+      <span aria-hidden="true">{age.short}</span>
+      <span className="sr-only">{age.long}</span>
+    </time>
+  )
+}
 
 // Blocking is workflow state, not taxonomy: it sits beside the title instead of among labels.
 function BlockedMark({ ticket }: { ticket: Ticket }) {
@@ -30,7 +49,7 @@ function BlockedMark({ ticket }: { ticket: Ticket }) {
   const blockers = openBlockers(ticket)
   if (blockers === 0) return null
   return (
-    <span className="inline-flex shrink-0 items-center text-destructive">
+    <span className={`inline-flex shrink-0 items-center ${indicatorToneRecipe.danger}`}>
       <Icon aria-hidden name="blocked" className={markIcon} />
       <span className="sr-only">{t('row.blockedBy', { count: blockers })}</span>
     </span>
@@ -53,7 +72,7 @@ function Labels({ labels, stacked = false }: { labels: Ticket['labels']; stacked
         <TicketLabel key={label.name} label={label} />
       ))}
       {hidden > 0 ? (
-        <span className="type-meta text-faint">
+        <span className="type-meta text-muted-foreground">
           <span aria-hidden="true">+{hidden}</span>
           <span className="sr-only">{t('row.moreLabels', { count: hidden })}</span>
         </span>
@@ -117,7 +136,7 @@ function TagRail({ all, category, className, labels, limit, ticket }: TagRailPro
               <TicketLabel key={label.name} label={label} />
             ))}
           </span>
-          <Badge variant="secondary">{t('row.hiddenLabels', { count: hidden })}</Badge>
+          <Badge variant="outline">{t('row.hiddenLabels', { count: hidden })}</Badge>
         </PopoverTrigger>
         <PopoverContent
           align="end"
@@ -179,13 +198,13 @@ function Fold({ row, folded, onToggle }: Pick<TicketRowProps, 'row' | 'folded' |
     <button
       aria-expanded={!folded}
       aria-label={folded ? t('row.expand', { key }) : t('row.collapse', { key })}
-      className="relative z-10 flex w-(--size-icon-control) shrink-0 items-start justify-center self-stretch rounded-row pt-[calc(var(--ticket-tree-anchor)-var(--size-icon-meta)/2)] text-faint hover:text-foreground"
+      className="relative z-10 flex w-(--size-icon-control) shrink-0 items-start justify-center self-stretch rounded-row pt-[calc(var(--ticket-tree-anchor)-var(--size-icon-meta)/2)] text-muted-foreground hover:text-foreground"
       onClick={onToggle}
       type="button"
     >
       <Icon
         name="chevron-right"
-        className={`${markIcon} transition-transform ${folded ? '' : 'rotate-90'}`}
+        className={`${markIcon} text-muted-foreground transition-transform ${folded ? '' : 'rotate-90'}`}
       />
       {folded ? null : <TreeStem />}
     </button>
@@ -227,13 +246,14 @@ function SidebarMetadata(props: TicketRowProps) {
             />
           </span>
         ) : null}
-        <span aria-hidden="true" className="shrink-0 type-meta text-faint">
+        <span aria-hidden="true" className="shrink-0 type-meta text-muted-foreground">
           {ticket.key}
         </span>
-        <time className="shrink-0 type-meta text-faint tabular-nums" dateTime={ticket.createdAt}>
-          <span aria-hidden="true">{age.short}</span>
-          <span className="sr-only">{age.long}</span>
-        </time>
+        <TicketAge
+          className="shrink-0 type-meta text-muted-foreground tabular-nums"
+          createdAt={ticket.createdAt}
+          age={age}
+        />
       </div>
       <div className="col-start-2 mt-(--spacing-shell-tight) min-w-0">
         <Labels labels={ticket.labels} stacked />
@@ -248,14 +268,14 @@ function SidebarTicketRow(props: TicketRowProps) {
   const { onSelect, onToggle, onChangeStatus, writable } = props
   const { ticket, parent } = row
   return (
-    <div className="relative flex min-w-0 items-stretch gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-selected">
+    <div className="relative flex min-w-0 items-stretch gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-sidebar-accent hover:text-sidebar-accent-foreground has-[[aria-current]]:bg-sidebar-accent has-[[aria-current]]:text-sidebar-accent-foreground has-[[aria-current]]:[&_.type-meta]:text-inherit">
       <span className="flex shrink-0 self-stretch" style={sidebarTreeAnchor}>
         <TreeRails rails={rails} />
         <Fold folded={folded} onToggle={onToggle} row={row} />
       </span>
       <div className="min-w-0 flex-1 py-(--spacing-shell-item)">
         <div className="grid min-w-0 grid-cols-[var(--size-icon-meta)_minmax(0,1fr)] items-start gap-x-(--spacing-shell-tight)">
-          <span className="relative z-10 flex h-(--text-body--line-height) shrink-0 items-center justify-center">
+          <span className="relative z-10 flex h-(--typography-body-line-height) shrink-0 items-center justify-center">
             <StatusMenu
               current={ticket.children.length > 0 ? closedChildren(ticket) : undefined}
               named={false}
@@ -299,7 +319,7 @@ function WorkspaceTicketRow(props: TicketRowProps) {
   const { ticket, parent } = row
   const age = ticketAge(ticket.createdAt, now)
   return (
-    <div className="relative flex min-w-0 items-start gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-selected">
+    <div className="relative flex min-w-0 items-start gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-accent hover:text-accent-foreground has-[[aria-current]]:bg-accent has-[[aria-current]]:text-accent-foreground has-[[aria-current]]:[&_.type-meta]:text-inherit has-[[aria-current]]:[&_.type-body]:text-inherit">
       {presentation.hasPriority ? (
         <span className="mt-1 flex w-6 shrink-0 items-center justify-center">
           <PriorityMenu
@@ -313,11 +333,11 @@ function WorkspaceTicketRow(props: TicketRowProps) {
       ) : null}
       <span
         aria-hidden="true"
-        className={`${presentation.keyColumn} mt-(--spacing-shell-icon) shrink-0 translate-y-px type-body text-faint`}
+        className={`${presentation.keyColumn} mt-(--spacing-shell-icon) shrink-0 translate-y-px type-body text-muted-foreground`}
       >
         {ticket.key}
       </span>
-      <span className="relative z-10 mt-(--spacing-shell-icon) flex h-(--text-body--line-height) shrink-0 translate-y-px items-center gap-(--spacing-shell-tight) type-meta text-muted-foreground tabular-nums">
+      <span className="relative z-10 mt-(--spacing-shell-icon) flex h-(--typography-body-line-height) shrink-0 translate-y-px items-center gap-(--spacing-shell-tight) type-meta text-muted-foreground tabular-nums">
         <StatusMenu
           current={ticket.children.length > 0 ? closedChildren(ticket) : undefined}
           named={false}
@@ -357,13 +377,11 @@ function WorkspaceTicketRow(props: TicketRowProps) {
         <span className="relative z-10 order-3 flex min-w-0 basis-full @[44rem]:order-2 @[44rem]:basis-auto">
           <CategoryTagRail ticket={ticket} />
         </span>
-        <time
-          className="relative z-10 order-4 hidden w-(--size-ticket-age) shrink-0 text-right type-meta text-faint tabular-nums @[var(--size-ticket-age-visible)]:block"
-          dateTime={ticket.createdAt}
-        >
-          <span aria-hidden="true">{age.short}</span>
-          <span className="sr-only">{age.long}</span>
-        </time>
+        <TicketAge
+          className="relative z-10 order-4 hidden w-(--size-ticket-age) shrink-0 text-right type-meta text-muted-foreground tabular-nums @[var(--size-ticket-age-visible)]:block"
+          createdAt={ticket.createdAt}
+          age={age}
+        />
       </div>
     </div>
   )

@@ -50,7 +50,7 @@ function withBridge(sessionId: string, reply: SessionTurnConfiguration) {
 }
 
 const meta = {
-  title: 'Sessions/Screen/Turn Configuration',
+  title: 'Features/Sessions/Screens/Turn Configuration',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
   decorators: [
@@ -78,7 +78,7 @@ async function sendWithMaxEffort(canvasElement: HTMLElement) {
   const trigger = await canvas.findByRole('button', { name: /^Choose Turn configuration/ })
   await waitFor(() => expect(trigger).toHaveTextContent('Opus 5·Medium'))
   await userEvent.click(trigger)
-  fireEvent.change(await within(document.body).findByRole('slider', { name: 'Effort' }), {
+  fireEvent.change(await within(document.body).findByRole('slider', { name: 'Effort Medium' }), {
     target: { value: '4' },
   })
   await userEvent.keyboard('{Escape}')

@@ -1,0 +1,120 @@
+{
+  "registry": "https://www.shadcnblocks.com/r/base-nova/theme",
+  "installedRoles": [
+    "background",
+    "foreground",
+    "card",
+    "card-foreground",
+    "popover",
+    "popover-foreground",
+    "primary",
+    "primary-foreground",
+    "secondary",
+    "secondary-foreground",
+    "muted",
+    "muted-foreground",
+    "accent",
+    "accent-foreground",
+    "destructive",
+    "border",
+    "input",
+    "ring",
+    "chart-1",
+    "chart-2",
+    "chart-3",
+    "chart-4",
+    "chart-5",
+    "sidebar",
+    "sidebar-foreground",
+    "sidebar-primary",
+    "sidebar-primary-foreground",
+    "sidebar-accent",
+    "sidebar-accent-foreground",
+    "sidebar-border",
+    "sidebar-ring"
+  ],
+  "omittedSections": {
+    "cssVars.theme": true,
+    "css": true
+  },
+  "themes": [
+    {
+      "name": "supabase",
+      "url": "https://www.shadcnblocks.com/r/base-nova/theme/supabase",
+      "sha256": "5ab76f545b3dc7b8f40cb85067827b30f3755e1a1bfab927de52866fbd56ac97",
+      "license": "https://www.shadcnblocks.com/license",
+      "filtered": {
+        "light": [
+          "font-display",
+          "font-handwriting",
+          "font-mono",
+          "font-sans",
+          "font-serif",
+          "font-text",
+          "radius",
+          "shadow",
+          "shadow-2xl",
+          "shadow-2xs",
+          "shadow-lg",
+          "shadow-md",
+          "shadow-sm",
+          "shadow-xl",
+          "shadow-xs"
+        ],
+        "dark": []
+      }
+    },
+    {
+      "name": "linear",
+      "url": "https://www.shadcnblocks.com/r/base-nova/theme/linear",
+      "sha256": "4fb4f4ec786454235ba32ae7425d48faa447e61475b61e5558ab7340508b4d25",
+      "license": "https://www.shadcnblocks.com/license",
+      "filtered": {
+        "light": [
+          "font-display",
+          "font-handwriting",
+          "font-mono",
+          "font-sans",
+          "font-serif",
+          "font-text",
+          "radius",
+          "shadow",
+          "shadow-2xl",
+          "shadow-2xs",
+          "shadow-lg",
+          "shadow-md",
+          "shadow-sm",
+          "shadow-xl",
+          "shadow-xs"
+        ],
+        "dark": []
+      }
+    },
+    {
+      "name": "amber-minimal",
+      "url": "https://www.shadcnblocks.com/r/base-nova/theme/amber-minimal",
+      "sha256": "be59adb3ac907e058fb27b401b42f485d75d730dae073a3e2ef92b1b04821bdd",
+      "license": "https://www.shadcnblocks.com/license",
+      "filtered": {
+        "light": [
+          "font-display",
+          "font-handwriting",
+          "font-mono",
+          "font-sans",
+          "font-serif",
+          "font-text",
+          "radius",
+          "shadow",
+          "shadow-2xl",
+          "shadow-2xs",
+          "shadow-lg",
+          "shadow-md",
+          "shadow-sm",
+          "shadow-xl",
+          "shadow-xs"
+        ],
+        "dark": []
+      }
+    }
+  ]
+}

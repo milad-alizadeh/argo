@@ -67,7 +67,7 @@ const document = parseSetupDocument({
 })
 
 const meta = {
-  title: 'Projects/Onboarding/Document Form',
+  title: 'Features/Projects/Onboarding/Document Form',
   component: SetupDocumentForm,
   parameters: { layout: 'padded' },
 } satisfies Meta<typeof SetupDocumentForm>
@@ -98,7 +98,32 @@ export const RecommendedPlan: Story = {
       await within(canvasElement.ownerDocument.body).findByRole('option', { name: 'Vitest' }),
     )
     await expect(testRunner).toHaveTextContent('Vitest')
-    await expect(canvas.getByRole('checkbox', { name: 'Add a Component explorer' })).toBeChecked()
+    const explorer = canvas.getByRole('checkbox', { name: 'Add a Component explorer' })
+    await expect(explorer).toBeChecked()
+    const explorerCard = explorer.parentElement
+    const explorerLabel = explorerCard?.querySelector<HTMLLabelElement>('label')
+    if (!explorerCard || !explorerLabel)
+      throw new Error('Component explorer choice label is missing')
+    const cardBounds = explorerCard.getBoundingClientRect()
+    await userEvent.pointer({
+      keys: '[MouseLeft]',
+      target: explorerLabel,
+      coords: { clientX: cardBounds.left + 4, clientY: cardBounds.top + 4 },
+    })
+    await expect(explorer).not.toBeChecked()
+    const checkboxBounds = explorer.getBoundingClientRect()
+    await userEvent.pointer({
+      keys: '[MouseLeft]',
+      target: explorer,
+      coords: {
+        clientX: checkboxBounds.left + checkboxBounds.width / 2,
+        clientY: checkboxBounds.top + checkboxBounds.height / 2,
+      },
+    })
+    await expect(explorer).toBeChecked()
+    explorer.focus()
+    await userEvent.keyboard(' ')
+    await expect(explorer).not.toBeChecked()
   },
 }
 

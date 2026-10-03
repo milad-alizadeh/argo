@@ -1,68 +1,80 @@
-@layer utilities {
-  /* Repeating the role class gives Argo composition precedence over generated shadcn defaults. */
-  .type-title.type-title {
-    font-size: var(--text-title);
-    line-height: var(--text-title--line-height);
-    font-weight: var(--text-title-weight);
-    letter-spacing: var(--text-title-tracking);
-  }
+@utility type-title {
+  font-size: var(--typography-title-size);
+  line-height: var(--typography-title-line-height);
+  font-weight: var(--typography-title-weight);
+  letter-spacing: var(--typography-title-tracking);
+}
 
-  .type-heading.type-heading {
-    font-size: var(--text-heading);
-    line-height: var(--text-heading--line-height);
-    font-weight: var(--text-heading-weight);
-    letter-spacing: var(--text-heading-tracking);
-  }
+@utility type-heading {
+  font-size: var(--typography-heading-size);
+  line-height: var(--typography-heading-line-height);
+  font-weight: var(--typography-heading-weight);
+  letter-spacing: var(--typography-heading-tracking);
+}
 
-  .type-body.type-body {
-    font-size: var(--text-body);
-    line-height: var(--text-body--line-height);
-    font-weight: var(--text-body-weight);
-    letter-spacing: var(--text-body-tracking);
-  }
+@utility type-body {
+  font-size: var(--typography-body-size);
+  line-height: var(--typography-body-line-height);
+  font-weight: var(--typography-body-weight);
+  letter-spacing: var(--typography-body-tracking);
+}
 
-  .type-prose.type-prose {
-    font-size: var(--text-prose);
-    line-height: var(--text-prose--line-height);
-    font-weight: var(--text-prose-weight);
-    letter-spacing: var(--text-prose-tracking);
-  }
+@utility type-prose {
+  font-size: var(--typography-prose-size);
+  line-height: var(--typography-prose-line-height);
+  font-weight: var(--typography-prose-weight);
+  letter-spacing: var(--typography-prose-tracking);
+}
 
-  .type-control.type-control,
-  .type-label.type-label {
-    font-size: var(--text-control);
-    line-height: var(--text-control--line-height);
-    font-weight: var(--text-control-weight);
-    letter-spacing: var(--text-control-tracking);
-  }
+@utility type-control {
+  font-size: var(--typography-control-size);
+  line-height: var(--typography-control-line-height);
+  font-weight: var(--typography-control-weight);
+  letter-spacing: var(--typography-control-tracking);
+}
 
-  .type-meta.type-meta {
-    font-size: var(--text-meta);
-    line-height: var(--text-meta--line-height);
-    font-weight: var(--text-meta-weight);
-    letter-spacing: var(--text-meta-tracking);
-  }
+@utility type-label {
+  font-size: var(--typography-control-size);
+  line-height: var(--typography-control-line-height);
+  font-weight: var(--typography-control-weight);
+  letter-spacing: var(--typography-control-tracking);
+}
 
-  .type-navigation.type-navigation {
-    font-size: var(--text-navigation);
-    line-height: var(--text-navigation--line-height);
-    font-weight: var(--text-navigation-weight);
-    letter-spacing: var(--text-navigation-tracking);
-  }
+@utility type-meta {
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
+  font-weight: var(--typography-meta-weight);
+  letter-spacing: var(--typography-meta-tracking);
+}
 
-  .type-meta-heading.type-meta-heading {
-    font-size: var(--text-meta);
-    line-height: var(--text-meta--line-height);
-    font-weight: var(--text-heading-weight);
-    letter-spacing: var(--text-meta-tracking);
-  }
+@utility type-navigation {
+  font-size: var(--typography-navigation-size);
+  line-height: var(--typography-navigation-line-height);
+  font-weight: var(--typography-navigation-weight);
+  letter-spacing: var(--typography-navigation-tracking);
+}
 
-  .type-code.type-code,
-  .type-code-content :is(code, pre) {
+@utility type-meta-heading {
+  font-size: var(--typography-meta-size);
+  line-height: var(--typography-meta-line-height);
+  font-weight: var(--typography-heading-weight);
+  letter-spacing: var(--typography-meta-tracking);
+}
+
+@utility type-code {
+  font-family: var(--font-mono);
+  font-size: var(--typography-code-size);
+  line-height: var(--typography-code-line-height);
+  font-weight: var(--typography-code-weight);
+  letter-spacing: var(--typography-code-tracking);
+}
+
+@utility type-code-content {
+  :is(code, pre) {
     font-family: var(--font-mono);
-    font-size: var(--text-code);
-    line-height: var(--text-code--line-height);
-    font-weight: var(--text-code-weight);
-    letter-spacing: var(--text-code-tracking);
+    font-size: var(--typography-code-size);
+    line-height: var(--typography-code-line-height);
+    font-weight: var(--typography-code-weight);
+    letter-spacing: var(--typography-code-tracking);
   }
 }

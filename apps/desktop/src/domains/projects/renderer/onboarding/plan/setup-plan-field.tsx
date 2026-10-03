@@ -1,6 +1,7 @@
+import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
+import { Checkbox } from '@/platform/renderer/components/ui/checkbox'
 import { Input } from '@/platform/renderer/components/ui/input'
 import {
   Select,
@@ -35,6 +36,7 @@ export function SetupPlanField({
         description={text.description}
         label={text.label}
         onChange={onChange}
+        required={field.required}
         recommended={field.recommendation === true}
       />
     )
@@ -127,43 +129,52 @@ function BooleanChoice({
   description,
   label,
   onChange,
+  required,
   recommended,
 }: {
   checked: boolean
   description: string | undefined
   label: string
   onChange: (value: boolean) => void
+  required?: boolean
   recommended: boolean
 }) {
   const { t } = useTranslation('projects')
+  const controlId = useId()
+  const titleId = useId()
+  const descriptionIdentifier = useId()
+  const descriptionId = description ? descriptionIdentifier : undefined
   return (
-    <label
-      className={`flex w-full cursor-pointer items-start gap-3 rounded-lg border p-4 text-left transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring ${checked ? 'border-primary/60 bg-primary/5' : 'border-border/70 hover:bg-muted/35'}`}
+    <div
+      className={`relative flex w-full items-start gap-3 rounded-lg border p-4 text-left transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring ${checked ? 'border-primary bg-primary/5' : 'border hover:bg-muted/35'}`}
     >
-      <input
-        aria-label={label}
-        checked={checked}
-        className="sr-only"
-        onChange={(event) => onChange(event.target.checked)}
-        type="checkbox"
-      />
-      <span
-        aria-hidden="true"
-        className={`mt-0.5 grid size-4 shrink-0 place-items-center rounded-sm border ${checked ? 'border-foreground bg-foreground text-background' : 'border-input bg-background'}`}
-      >
-        {checked ? <Icon name="confirmed" className="size-3" /> : null}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2 type-body font-medium">
+      <label className="absolute inset-0 z-0 cursor-pointer rounded-lg" htmlFor={controlId}>
+        <span aria-hidden="true" className="sr-only">
           {label}
+        </span>
+      </label>
+      <Checkbox
+        aria-describedby={descriptionId}
+        aria-labelledby={titleId}
+        checked={checked}
+        className="relative z-10 mt-0.5"
+        id={controlId}
+        onCheckedChange={(nextChecked) => onChange(nextChecked === true)}
+        required={required}
+      />
+      <div className="pointer-events-none relative z-10 min-w-0 flex-1">
+        <div className="flex items-center gap-2 type-body font-medium">
+          <span id={titleId}>{label}</span>
           {recommended ? (
             <Badge variant="secondary">{t('setup.document.recommended')}</Badge>
           ) : null}
-        </span>
+        </div>
         {description ? (
-          <span className="mt-1 block type-label text-muted-foreground">{description}</span>
+          <p className="mt-1 type-label text-muted-foreground" id={descriptionId}>
+            {description}
+          </p>
         ) : null}
-      </span>
-    </label>
+      </div>
+    </div>
   )
 }

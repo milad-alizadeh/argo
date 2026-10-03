@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '@/mocks/sessions/harness-catalog.fixture'
@@ -11,9 +11,14 @@ const choices = claudeChoices(claudeComposerModelCatalogFixture())
 if (choices === null) throw new Error('The Claude story catalog has no usable model.')
 const availableChoices = choices as TurnConfigurationChoices
 
+let failCatalogRead: () => void
+
 function ComposerCatalogRecovery() {
   const [state, setState] = useState<'loading' | 'failed' | 'ready'>('loading')
   const [focusOnReady, setFocusOnReady] = useState(false)
+  useEffect(() => {
+    failCatalogRead = () => setState('failed')
+  }, [])
   const clearRecoveryFocus = useCallback(() => setFocusOnReady(false), [])
   useComposerFailureToasts(
     state === 'failed'
@@ -43,9 +48,6 @@ function ComposerCatalogRecovery() {
     )
   return (
     <div className="flex h-[320px] flex-col">
-      <button onClick={() => setState('failed')} type="button">
-        Fail catalog read
-      </button>
       <ComposerForm
         sessionId="catalog-recovery:loading"
         catalogFailure={state === 'failed' ? { reason: 'load-failed' } : null}
@@ -61,7 +63,7 @@ function ComposerCatalogRecovery() {
 }
 
 const meta = {
-  title: 'Sessions/Composer/Load Recovery',
+  title: 'Features/Sessions/Composer/Load Recovery',
   component: ComposerCatalogRecovery,
 } satisfies Meta<typeof ComposerCatalogRecovery>
 
@@ -72,7 +74,7 @@ export const CatalogFailureRetriesIntoReadyComposer: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const page = within(canvasElement.ownerDocument.body)
-    await userEvent.click(canvas.getByRole('button', { name: 'Fail catalog read' }))
+    failCatalogRead()
     await expect(
       await page.findByText('Argo could not load Claude Code models. Try again.'),
     ).toBeVisible()

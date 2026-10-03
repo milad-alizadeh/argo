@@ -7,7 +7,7 @@ import type { SessionFeed } from '../../types'
 import { BasicFeed } from './basic-feed'
 
 const meta = {
-  title: 'Sessions/Feed/Content catalog',
+  title: 'Features/Sessions/Feed/Content Catalog',
   component: BasicFeed,
   parameters: { layout: 'fullscreen' },
   decorators: [

@@ -3,6 +3,7 @@ import { $createTextNode, TextNode } from 'lexical'
 import { provider as providerSchema } from '@/domains/accounts/contract/contract'
 import { PROVIDER_PRESENTATIONS } from '@/providers/presentation-registry'
 import type { ComposerTicketContext } from '../editing/composer-editing'
+import { inlineContextSlots } from './inline-context-recipe'
 
 type SerializedTicketReferenceNode = SerializedTextNode & { provider?: unknown }
 
@@ -48,21 +49,23 @@ export class ComposerTicketReferenceNode extends TextNode {
 
   createDOM(config: EditorConfig) {
     const element = super.createDOM(config)
+    const ticketKey = this.getTextContent()
     const icon = element.ownerDocument.createElement('img')
     icon.alt = ''
-    icon.className = 'size-3.5 shrink-0 dark:invert'
+    icon.className = `${inlineContextSlots.icon} size-3.5 shrink-0 dark:invert`
     icon.contentEditable = 'false'
     icon.src = PROVIDER_PRESENTATIONS[this.__provider].icon
-    element.className =
-      'mx-0.5 inline-flex items-center gap-1 align-middle !font-semibold text-foreground type-body'
-    element.dataset.ticketKey = this.getTextContent()
+    element.className = `${inlineContextSlots.root} mx-0.5 inline-flex items-center gap-1 align-middle text-foreground`
+    element.dataset.ticketKey = ticketKey
+    element.dataset.contextLabel = ticketKey
     element.setAttribute('role', 'link')
+    element.setAttribute('aria-label', ticketKey)
     element.tabIndex = 0
     element.prepend(icon)
     element.addEventListener('click', (event) => {
       event.preventDefault()
       event.stopPropagation()
-      openTicket(this.getTextContent())
+      openTicket(ticketKey)
     })
     element.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter' && event.key !== ' ') {
@@ -71,7 +74,7 @@ export class ComposerTicketReferenceNode extends TextNode {
 
       event.preventDefault()
       event.stopPropagation()
-      openTicket(this.getTextContent())
+      openTicket(ticketKey)
     })
     return element
   }

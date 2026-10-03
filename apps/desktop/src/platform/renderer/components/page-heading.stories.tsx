@@ -3,7 +3,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { PageHeading } from './page-heading'
 
 const meta = {
-  title: 'Components/Page Heading',
+  title: 'Design System/Patterns/Page Heading',
   component: PageHeading,
   parameters: { layout: 'padded' },
   args: { children: 'Backlog' },

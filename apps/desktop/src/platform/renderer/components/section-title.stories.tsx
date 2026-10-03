@@ -3,7 +3,7 @@ import { expect, within } from 'storybook/test'
 import { SectionTitle } from './section-title'
 
 const meta = {
-  title: 'Components/Section Title',
+  title: 'Design System/Patterns/Section Title',
   component: SectionTitle,
   parameters: { layout: 'padded' },
   args: { children: 'Ready outside this path' },

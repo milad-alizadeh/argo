@@ -5,6 +5,7 @@ import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
+import { RadioGroup, RadioGroupItem } from '@/platform/renderer/components/ui/radio-group'
 import type { HarnessControl } from '../../harness'
 import { HarnessLogo, HarnessTabs } from '../../harness'
 import {
@@ -14,6 +15,12 @@ import {
   type TurnConfiguration,
   type TurnConfigurationChoices,
 } from '../turn-configuration/turn-configuration'
+import { ChoiceRow } from './choice-row'
+import {
+  composerMenuPopupRecipe,
+  composerMenuTriggerRecipe,
+  composerRichOptionRecipe,
+} from './composer-menu-recipes'
 import { EffortSlider } from './effort-slider'
 
 export type TurnConfigurationControlProps = {
@@ -64,7 +71,7 @@ export function TurnConfigurationMenu({
         render={
           <InputGroupButton
             variant="ghost"
-            className="max-w-80 min-w-0 type-control text-foreground"
+            className={composerMenuTriggerRecipe('max-w-80 min-w-0')}
             aria-label={`Choose Turn configuration: ${[label, ...facts].join(', ')}`}
           />
         }
@@ -87,7 +94,9 @@ export function TurnConfigurationMenu({
         align="start"
         side="top"
         tabIndex={0}
-        className="max-h-(--size-session-menu-max-height) w-(--size-session-menu) gap-0 overflow-y-auto p-0"
+        className={composerMenuPopupRecipe(
+          'max-h-[min(var(--size-session-menu-max-height),var(--available-height))] gap-0 overflow-hidden p-0 **:data-[slot=tabs]:min-h-0 **:data-[slot=tabs-content]:flex **:data-[slot=tabs-content]:min-h-0 **:data-[slot=tabs-content]:flex-col',
+        )}
       >
         <HarnessTabs harness={harness.harness} onChange={harness.onChange}>
           {body}
@@ -139,8 +148,12 @@ function ConfigurationBody({
     )
   return (
     <>
-      <ModelOptions {...turnConfiguration} />
-      <EffortSlider {...turnConfiguration} />
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <ModelOptions {...turnConfiguration} />
+      </div>
+      <div className="shrink-0">
+        <EffortSlider {...turnConfiguration} />
+      </div>
     </>
   )
 }
@@ -153,56 +166,66 @@ function ModelOptions({ choices, value, onChange }: TurnConfigurationControlProp
       <div className="px-1 pb-1.5 type-meta font-medium text-muted-foreground">
         {t('composer.turnConfiguration.model')}
       </div>
-      <div
-        className="space-y-0.5"
-        role="radiogroup"
+      <RadioGroup
+        className="space-y-0.5 gap-0"
         aria-label={t('composer.turnConfiguration.model')}
+        name={name}
+        onValueChange={(nextValue) => {
+          const model = choices.models.find((choice) => choice.value === nextValue)
+          if (!model) return
+          const efforts = effortChoices(choices, model.value)
+          const modes = modeChoices(choices, model.value)
+          const currentEffort = efforts.find((effort) => effort.value === value.effort)
+          const currentMode = modes.find((mode) => mode.value === value.mode)
+          const nextEffort = currentEffort ?? closestEffort(value.effort, choices, model)
+          onChange({
+            ...value,
+            model: model.value,
+            effort: nextEffort?.value ?? value.effort,
+            mode: currentMode?.value ?? modes[0]?.value ?? value.mode,
+          })
+        }}
+        value={value.model}
       >
         {choices.models.map((model) => {
           const active = value.model === model.value
+          const inputId = `${name}-${model.value}`
+          const titleId = `${inputId}-title`
+          const detailId = model.detail ? `${inputId}-detail` : undefined
           return (
-            // A native radio group: arrows move both focus and the choice, and only the checked one is a Tab stop.
-            <label
-              key={model.value}
-              className={`flex min-h-12 w-full items-center rounded-md px-2.5 py-1.5 text-left transition-colors has-focus-visible:ring-3 has-focus-visible:ring-ring/50 ${
-                active ? 'bg-foreground text-background' : 'hover:bg-muted'
-              }`}
-            >
-              <input
-                type="radio"
-                name={name}
-                value={model.value}
-                checked={active}
-                onChange={() => {
-                  const efforts = effortChoices(choices, model.value)
-                  const modes = modeChoices(choices, model.value)
-                  const currentEffort = efforts.find((effort) => effort.value === value.effort)
-                  const currentMode = modes.find((mode) => mode.value === value.mode)
-                  const nextEffort = currentEffort ?? closestEffort(value.effort, choices, model)
-                  onChange({
-                    ...value,
-                    model: model.value,
-                    effort: nextEffort?.value ?? value.effort,
-                    mode: currentMode?.value ?? modes[0]?.value ?? value.mode,
-                  })
-                }}
-                className="sr-only"
-              />
-              <span className="min-w-0">
-                <span className="block type-heading">{model.label}</span>
-                {model.detail ? (
-                  <span
-                    className={`mt-0.5 block type-meta ${active ? 'text-background/80' : 'text-muted-foreground'}`}
-                  >
-                    {model.detail}
+            <ChoiceRow key={model.value} selected={active}>
+              <label className="absolute inset-0 z-0 cursor-pointer rounded-md" htmlFor={inputId}>
+                <span aria-hidden="true" className="sr-only">
+                  {model.label}
+                </span>
+              </label>
+              <span className="pointer-events-none relative z-10 min-w-0 flex-1">
+                <span className={composerRichOptionRecipe.content}>
+                  <span className={composerRichOptionRecipe.label} id={titleId}>
+                    {model.label}
                   </span>
-                ) : null}
+                  {model.detail ? (
+                    <span
+                      className={`${composerRichOptionRecipe.detail} ${active ? 'text-accent-foreground' : 'text-muted-foreground'}`}
+                      id={detailId}
+                    >
+                      {model.detail}
+                    </span>
+                  ) : null}
+                </span>
               </span>
-              {active ? <Icon name="confirmed" className="ml-auto size-4" /> : null}
-            </label>
+              <RadioGroupItem
+                aria-describedby={detailId}
+                aria-labelledby={titleId}
+                className="relative z-10 ml-auto"
+                id={inputId}
+                onFocus={(event) => event.currentTarget.scrollIntoView({ block: 'nearest' })}
+                value={model.value}
+              />
+            </ChoiceRow>
           )
         })}
-      </div>
+      </RadioGroup>
     </div>
   )
 }

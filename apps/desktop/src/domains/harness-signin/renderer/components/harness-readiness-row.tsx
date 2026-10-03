@@ -1,8 +1,17 @@
+import { cn } from 'cn'
 import { useTranslation } from 'react-i18next'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
 import { HarnessLogo } from '@/domains/sessions/renderer'
 import { harnessShortLabel } from '@/harnesses/presentation-registry'
 import { ContractFailureAlert } from '@/platform/renderer/components/contract-failure-alert'
+import {
+  readinessBodyRecipe,
+  readinessDetailRecipe,
+  readinessHeaderRecipe,
+  readinessRowRecipe,
+  readinessTitleRecipe,
+} from '@/platform/renderer/components/design-system/readiness-row-recipes'
+import { indicatorToneRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { type HarnessSignIn, useHarnessSignIn } from '../hooks'
@@ -28,11 +37,11 @@ function SignInArea({ name, signIn }: { name: string; signIn: HarnessSignIn }) {
   const outcome =
     signIn.resolved && isOutcome(signIn.resolved.status) ? signIn.resolved.status : null
   return (
-    <div className="grid justify-items-start gap-(--spacing-shell-item)">
+    <div className={readinessBodyRecipe}>
       {signIn.error ? <ContractFailureAlert error={signIn.error} /> : null}
       {signIn.isPending ? (
         <div className="flex flex-wrap items-center gap-(--spacing-shell-item)">
-          <p className="type-meta text-muted-foreground" role="status">
+          <p className={readinessDetailRecipe} role="status">
             {t('row.waiting', { harness: name })}
           </p>
           <Button onClick={signIn.cancel} size="sm" variant="ghost">
@@ -45,7 +54,7 @@ function SignInArea({ name, signIn }: { name: string; signIn: HarnessSignIn }) {
         </Button>
       )}
       {outcome ? (
-        <p className="type-meta text-destructive" role="status">
+        <p className={cn(readinessDetailRecipe, indicatorToneRecipe.danger)} role="status">
           {t(`row.outcome.${outcome}`)}
         </p>
       ) : null}
@@ -73,12 +82,10 @@ export function HarnessStateBody({
   const { harness, state, detail } = readiness
   const name = harnessShortLabel(harness)
   if (state === 'missing') {
-    return <p className="type-meta text-muted-foreground">{t('row.install', { harness: name })}</p>
+    return <p className={readinessDetailRecipe}>{t('row.install', { harness: name })}</p>
   }
   if (state === 'policy-blocked') {
-    return (
-      <p className="type-meta text-muted-foreground">{detail ?? t('row.state.policy-blocked')}</p>
-    )
+    return <p className={readinessDetailRecipe}>{detail ?? t('row.state.policy-blocked')}</p>
   }
   if (state === 'signed-out') {
     return <SignInArea name={name} signIn={signIn} />
@@ -93,11 +100,11 @@ function HarnessReadinessRow({ readiness, signIn }: HarnessReadinessRowProps) {
   return (
     <li
       aria-label={t('row.label', { harness: name, state: t(`row.state.${state}`) })}
-      className="grid gap-(--spacing-shell-item) p-(--spacing-shell-gutter)"
+      className={readinessRowRecipe}
     >
-      <div className="flex min-h-7 items-center gap-(--spacing-shell-item)">
+      <div className={readinessHeaderRecipe}>
         <HarnessLogo harness={harness} />
-        <span className="type-heading min-w-0 truncate">{name}</span>
+        <span className={readinessTitleRecipe}>{name}</span>
         <Badge variant={STATE_BADGE_VARIANT[state]}>{t(`row.state.${state}`)}</Badge>
       </div>
       <HarnessStateBody readiness={readiness} signIn={signIn} />
@@ -119,7 +126,7 @@ export function HarnessReadinessList({ harnesses }: { harnesses: HarnessReadines
   return (
     <ul
       aria-label={t('list.label')}
-      className="grid w-full divide-y divide-border/60 rounded-lg border border-border/60"
+      className="grid w-full divide-y divide-border rounded-lg border border-border"
     >
       {harnesses.map((readiness) => (
         <HarnessSignInRow key={readiness.harness} readiness={readiness} />

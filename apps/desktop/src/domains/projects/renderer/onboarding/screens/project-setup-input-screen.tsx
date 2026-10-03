@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { indicatorToneRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
@@ -20,6 +21,15 @@ import {
 } from '@/platform/renderer/components/ui/questionnaire'
 import { ProjectSetupEditor } from '../editor/project-setup-editor'
 import type { ProjectSetupCommand, ProjectSetupSnapshot } from '../onboarding-presentation'
+
+import '../plan/project-setup-plan-review-parts.css'
+
+const SETUP_QUESTIONNAIRE_SLOTS = {
+  root: 'mt-7 rounded-xl border bg-card p-5',
+  title: 'font-heading onboarding-title',
+  description: 'onboarding-detail text-muted-foreground',
+  error: indicatorToneRecipe.danger,
+}
 
 type InputScreenProps = {
   command: (command: ProjectSetupCommand) => Promise<void>
@@ -53,7 +63,7 @@ function Questions({ command, snapshot }: InputScreenProps) {
   const items = questionItems(snapshot)
   return (
     <Questionnaire
-      className="mt-7 rounded-xl border bg-card p-5"
+      className={SETUP_QUESTIONNAIRE_SLOTS.root}
       items={items}
       onSubmit={submitAnswers}
       shortcuts="letters"
@@ -66,9 +76,13 @@ function Questions({ command, snapshot }: InputScreenProps) {
       />
       {snapshot.questions.map((question) => (
         <QuestionnaireItem key={question.id} multiple name={question.id} required>
-          <QuestionnaireTitle>{question.prompt}</QuestionnaireTitle>
+          <QuestionnaireTitle className={SETUP_QUESTIONNAIRE_SLOTS.title}>
+            {question.prompt}
+          </QuestionnaireTitle>
           {question.context ? (
-            <QuestionnaireDescription>{question.context}</QuestionnaireDescription>
+            <QuestionnaireDescription className={SETUP_QUESTIONNAIRE_SLOTS.description}>
+              {question.context}
+            </QuestionnaireDescription>
           ) : null}
           <QuestionnaireChoices>
             {question.suggestions.map((suggestion) => (
@@ -86,9 +100,7 @@ function Questions({ command, snapshot }: InputScreenProps) {
                 <span className="flex items-center justify-between gap-3 font-medium">
                   {suggestion}
                   {suggestion === question.recommended ? (
-                    <Badge size="compact" variant="secondary">
-                      {t('setup.actor.questions.recommended')}
-                    </Badge>
+                    <Badge variant="secondary">{t('setup.actor.questions.recommended')}</Badge>
                   ) : null}
                 </span>
               </QuestionnaireChoice>
@@ -105,7 +117,9 @@ function Questions({ command, snapshot }: InputScreenProps) {
               value={customAnswers[question.id] ?? ''}
             />
           </QuestionnaireChoices>
-          <QuestionnaireError>{t('setup.actor.questions.chooseAnswer')}</QuestionnaireError>
+          <QuestionnaireError className={SETUP_QUESTIONNAIRE_SLOTS.error}>
+            {t('setup.actor.questions.chooseAnswer')}
+          </QuestionnaireError>
         </QuestionnaireItem>
       ))}
       <QuestionActions />
@@ -162,7 +176,7 @@ function Manual({ command, snapshot }: InputScreenProps) {
           <ProjectSetupEditor onChange={setSource} source={source} />
         </div>
       </section>
-      <div className="mt-6 flex flex-wrap justify-end gap-2">
+      <div className="mt-6 onboarding-action-row">
         <Button onClick={() => void command({ type: 'back' })} variant="outline">
           {t('setup.document.back')}
         </Button>

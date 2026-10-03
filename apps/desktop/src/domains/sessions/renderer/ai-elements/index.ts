@@ -1,9 +1,6 @@
 export {
   CodeBlock,
-  CodeBlockActions,
-  CodeBlockFilename,
-  CodeBlockHeader,
-  CodeBlockTitle,
+  CodeBlockContext,
   loadCodeLanguage,
 } from './code-block'
 export { CodeBlockCopyButton } from './code-block-copy-button'

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { inlineContextSlots } from './inline-context-recipe'
 
 type InlineContextProps = {
   icon: ReactNode
@@ -10,9 +11,11 @@ type InlineContextProps = {
 // files use attachment cards instead.
 export function InlineContext({ icon, text }: InlineContextProps) {
   return (
-    <span className="mx-0.5 inline-flex max-w-full items-center gap-1 align-middle text-foreground">
-      <span className="shrink-0 text-muted-foreground">{icon}</span>
-      <span className="truncate">{text}</span>
+    <span
+      className={`${inlineContextSlots.root} mx-0.5 inline-flex max-w-full items-center gap-1 align-middle text-foreground`}
+    >
+      <span className={`${inlineContextSlots.icon} shrink-0 text-muted-foreground`}>{icon}</span>
+      <span className={`${inlineContextSlots.label} truncate`}>{text}</span>
     </span>
   )
 }

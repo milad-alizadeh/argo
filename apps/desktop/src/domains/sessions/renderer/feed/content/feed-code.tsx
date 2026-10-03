@@ -1,11 +1,5 @@
-import {
-  CodeBlock,
-  CodeBlockActions,
-  CodeBlockCopyButton,
-  CodeBlockFilename,
-  CodeBlockHeader,
-  CodeBlockTitle,
-} from '../../ai-elements'
+import { FileHeader } from '@/platform/renderer/components/file-header'
+import { CodeBlock, CodeBlockCopyButton } from '../../ai-elements'
 import { codeLanguageLabel, detectCodeLanguage } from './code-language'
 import { CodeLanguageIcon } from './code-language-icon'
 import { FEED_CARD_RADIUS_CLASS } from './feed-surface'
@@ -19,20 +13,20 @@ export function FeedCode({ source, language }: { source: string; language?: stri
       language={detectedLanguage?.grammar ?? null}
       className={`type-code-content min-w-0 bg-card ${FEED_CARD_RADIUS_CLASS}`}
     >
-      <CodeBlockHeader className="bg-muted type-meta">
-        <CodeBlockTitle>
+      <FileHeader
+        className="bg-muted type-meta"
+        leadingIcon={
           <span role="img" aria-label={`${languageLabel} file`}>
             <CodeLanguageIcon language={detectedLanguage} />
           </span>
-          <CodeBlockFilename>{languageLabel}</CodeBlockFilename>
-        </CodeBlockTitle>
-        <CodeBlockActions>
+        }
+        heading={languageLabel}
+        rightSlot={
           <CodeBlockCopyButton
             aria-label={detectedLanguage ? `Copy ${detectedLanguage.label} code` : 'Copy code'}
-            className="size-7"
           />
-        </CodeBlockActions>
-      </CodeBlockHeader>
+        }
+      />
     </CodeBlock>
   )
 }

@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router'
 import { DESTINATION_PATHS, DESTINATIONS, type Destination } from '@/platform/contract/commands'
@@ -9,6 +9,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../../components/ui/tooltip'
+import { applyAppearance, useTheme } from '../../use-appearance'
+import { AppearanceDialog } from './appearance-dialog'
+
+const navigationControl =
+  'no-drag-region grid size-(--size-navigation-control) place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground'
 
 const navigationIcons: Record<Destination, IconName> = {
   Sessions: 'messages-square',
@@ -31,19 +36,33 @@ function destinationFromPathname(pathname: string, projectPath: string): Destina
   )
 }
 
-export const AppNavigationRail = memo(function AppNavigationRail() {
-  const { t } = useTranslation('app')
+export function AppNavigationRail() {
   const location = useLocation()
   const navigate = useNavigate()
   const projectPath = location.pathname.match(/^\/projects\/[^/]+(?=\/|$)/)?.[0] ?? ''
   const destination = destinationFromPathname(location.pathname, projectPath)
+  return <NavigationRail destination={destination} navigate={navigate} projectPath={projectPath} />
+}
+
+const NavigationRail = memo(function NavigationRail({
+  destination,
+  navigate,
+  projectPath,
+}: {
+  destination: Destination
+  navigate: ReturnType<typeof useNavigate>
+  projectPath: string
+}) {
+  const { t } = useTranslation('app')
   const settingsLabel = t('rail.settings')
+  const [appearanceOpen, setAppearanceOpen] = useState(false)
+  const appearanceState = useTheme()
 
   return (
     <TooltipProvider>
       <nav
         aria-label={t('rail.label')}
-        className="no-drag-region flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center [--icon-size:var(--size-navigation-icon)] [&_*]:no-drag-region"
+        className="no-drag-region flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center [&_*]:no-drag-region"
       >
         <div className="flex flex-col items-center gap-2 pt-(--inset-navigation-rail-item-top)">
           {DESTINATIONS.map((itemDestination) => {
@@ -56,12 +75,16 @@ export const AppNavigationRail = memo(function AppNavigationRail() {
                   type="button"
                   aria-current={active ? 'page' : undefined}
                   aria-label={label}
-                  className={`no-drag-region grid size-(--size-navigation-control) place-items-center rounded-lg transition-colors ${active ? 'bg-selected text-foreground' : 'text-muted-foreground hover:bg-selected hover:text-foreground'}`}
+                  className={navigationControl}
                   onClick={() => {
                     navigate(`${projectPath}${DESTINATION_PATHS[itemDestination]}`)
                   }}
                 >
-                  <Icon name={iconName} weight={active ? 'fill' : 'regular'} />
+                  <Icon
+                    className={`size-(--size-navigation-icon) ${active ? 'text-accent-foreground' : 'text-muted-foreground'}`}
+                    name={iconName}
+                    weight={active ? 'fill' : 'regular'}
+                  />
                 </TooltipTrigger>
                 <TooltipContent side="right" className="type-meta">
                   {label}
@@ -75,9 +98,13 @@ export const AppNavigationRail = memo(function AppNavigationRail() {
             <TooltipTrigger
               type="button"
               aria-label={settingsLabel}
-              className="no-drag-region grid size-(--size-navigation-control) place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-selected hover:text-foreground"
+              onClick={() => setAppearanceOpen(true)}
+              className={navigationControl}
             >
-              <Icon name="settings" />
+              <Icon
+                className="size-(--size-navigation-icon) text-muted-foreground"
+                name="settings"
+              />
             </TooltipTrigger>
             <TooltipContent side="right" className="type-meta">
               {settingsLabel}
@@ -85,6 +112,16 @@ export const AppNavigationRail = memo(function AppNavigationRail() {
           </Tooltip>
         </div>
       </nav>
+      <AppearanceDialog
+        state={appearanceState}
+        open={appearanceOpen}
+        onOpenChange={setAppearanceOpen}
+        onChoose={async (preference) => {
+          const result = await window.argo.setAppearance(preference)
+          applyAppearance(result.state)
+          return result.ok
+        }}
+      />
     </TooltipProvider>
   )
 })

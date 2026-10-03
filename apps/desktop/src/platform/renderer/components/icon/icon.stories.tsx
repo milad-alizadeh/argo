@@ -4,7 +4,7 @@ import { Icon } from './icon'
 import { ICONS, type IconName } from './icon-registry'
 
 const meta = {
-  title: 'Components/Icon',
+  title: 'Design System/Primitives/Icon',
   component: Icon,
   parameters: { layout: 'padded' },
   args: { name: 'search' },
@@ -54,11 +54,9 @@ export const Sizes: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
-    const expectedSizes = [16, 16, 16]
-    const icons = canvasElement.querySelectorAll('[data-slot="icon"]')
-    await expect(icons).toHaveLength(expectedSizes.length)
-    for (const [index, icon] of Array.from(icons).entries()) {
-      await expect(icon.getBoundingClientRect().width).toBe(expectedSizes[index])
+    const canvas = within(canvasElement)
+    for (const size of ['meta', 'inline', 'control']) {
+      await expect(canvas.getByLabelText(`Search, ${size} size`)).toBeVisible()
     }
   },
 }

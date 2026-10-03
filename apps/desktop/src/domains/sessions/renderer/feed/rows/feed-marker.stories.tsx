@@ -3,7 +3,7 @@ import { expect, userEvent, within } from 'storybook/test'
 import { FeedMarker } from './feed-marker'
 
 const meta = {
-  title: 'Sessions/Feed/Marker',
+  title: 'Features/Sessions/Feed/Marker',
   component: FeedMarker,
   args: { row: { shape: 'marker', id: 'marker-1', marker: 'compacted', summary: null } },
 } satisfies Meta<typeof FeedMarker>

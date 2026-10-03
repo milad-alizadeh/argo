@@ -187,6 +187,17 @@
   //   RATCHET — real code over a cap today. Debt. This list may only ever shrink;
   //             never add an entry to make a build pass.
   "overrides": [
+    // KIND: formatted Terminal output is a named scroll region, not an editable control.
+    {
+      "includes": ["apps/desktop/src/domains/sessions/renderer/ai-elements/terminal.tsx"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noNoninteractiveTabindex": "off"
+          }
+        }
+      }
+    },
     {
       // #3174: package types in the renderer program load `node`, so only this rule bans Node globals
       // there. The list covers every source file the renderer bundle imports; tests may read files.

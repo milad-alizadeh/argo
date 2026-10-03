@@ -81,8 +81,11 @@ export async function proveLinearBacklog(run: Run) {
     await detail.getByText('The mill turns the cards.').waitFor()
     await detail.getByText('In Progress').waitFor()
     await detail.getByText('High').waitFor()
-    await detail.getByRole('heading', { name: 'Children · 0 of 1 closed' }).waitFor()
-    await detail.getByRole('heading', { name: 'Blocked by · 1' }).waitFor()
+    await detail.getByRole('heading', { name: 'Children', exact: true }).waitFor()
+    await detail.getByText('0 of 1 closed', { exact: true }).waitFor()
+    const blockers = detail.getByRole('heading', { name: 'Blocked by', exact: true })
+    await blockers.waitFor()
+    await blockers.locator('..').getByText('1', { exact: true }).waitFor()
     // Linear has no new-issue page Argo links to, so New Ticket stays unavailable.
     await expect(run.page.getByRole('button', { name: 'New Ticket' })).toBeDisabled()
   })

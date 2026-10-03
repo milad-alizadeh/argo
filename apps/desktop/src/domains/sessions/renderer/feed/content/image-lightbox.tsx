@@ -1,16 +1,9 @@
 import type { ReactEventHandler } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Icon } from '@/platform/renderer/components/icon/icon'
-import { Button } from '@/platform/renderer/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-  DialogTrigger,
-} from '@/platform/renderer/components/ui/dialog'
+import { Dialog, DialogTrigger } from '@/platform/renderer/components/ui/dialog'
 import { FEED_CARD_RADIUS_CLASS } from './feed-surface'
 import { useImageLightboxTransition } from './image-lightbox-transition'
+import { MediaDialog } from './media-dialog'
 
 export type ImageSize = { width: number; height: number }
 
@@ -24,64 +17,6 @@ export type FeedImageSource = {
   // height is what reserves its box (ADR-0035 rule 3).
   size?: ImageSize
   previewSize?: ImageSize
-}
-
-function LightboxContent({
-  image,
-  transition,
-}: {
-  image: FeedImageSource
-  transition: ReturnType<typeof useImageLightboxTransition>
-}) {
-  const { t } = useTranslation('sessions')
-  return (
-    <DialogContent
-      showCloseButton={false}
-      overlayClassName="bg-transparent backdrop-blur-none supports-backdrop-filter:backdrop-blur-none! data-open:animate-none data-closed:animate-none"
-      className="!inset-0 !h-dvh !w-dvw !max-w-none !translate-x-0 !translate-y-0 place-items-center rounded-none bg-transparent p-6 ring-0 duration-0 data-open:animate-none data-closed:animate-none sm:!max-w-none"
-    >
-      <DialogTitle className="sr-only">{image.title}</DialogTitle>
-      <DialogDescription className="sr-only">{t('image.preview')}</DialogDescription>
-      <button
-        ref={transition.backdropRef}
-        type="button"
-        tabIndex={-1}
-        aria-label={t('image.closeBackdrop')}
-        className="absolute inset-0 border-0 bg-black/60 p-0 will-change-[opacity]"
-        onClick={transition.close}
-      />
-      <div
-        ref={transition.controlsRef}
-        className="absolute top-4 right-4 z-20 flex items-center gap-2"
-      >
-        <Button
-          variant="secondary"
-          size="icon-sm"
-          aria-label={t('image.download', { title: image.title })}
-          nativeButton={false}
-          render={<a href={image.source} download={image.title} />}
-        >
-          <Icon name="download" />
-        </Button>
-        <Button
-          variant="secondary"
-          size="icon-sm"
-          aria-label={t('image.close')}
-          onClick={transition.close}
-        >
-          <Icon name="close" />
-        </Button>
-      </div>
-      <img
-        ref={transition.previewRef}
-        src={image.source}
-        width={image.previewSize?.width}
-        height={image.previewSize?.height}
-        alt={image.alt}
-        className="relative z-10 max-h-[calc(100dvh-var(--inset-lightbox-margin-y))] max-w-[calc(100dvw-var(--inset-lightbox-margin-x))] rounded-lg object-cover"
-      />
-    </DialogContent>
-  )
 }
 
 function triggerClass(compact: boolean, loading: boolean) {
@@ -136,7 +71,7 @@ export function ImageLightbox({
           className={`${compact ? '!size-full' : '!h-full !w-auto max-w-none'} object-cover ${loading ? 'invisible' : ''}`}
         />
       </DialogTrigger>
-      <LightboxContent image={image} transition={transition} />
+      <MediaDialog image={image} transition={transition} />
     </Dialog>
   )
 }

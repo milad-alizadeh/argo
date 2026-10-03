@@ -3,6 +3,8 @@ import { PermissionPrompt } from '@/platform/renderer/components/permission/perm
 import { Button } from '@/platform/renderer/components/ui/button'
 import type { ProjectSetupCommand, ProjectSetupSnapshot } from '../onboarding-presentation'
 
+import '../plan/project-setup-plan-review-parts.css'
+
 type ApprovalScreenProps = {
   command: (command: ProjectSetupCommand) => Promise<void>
   snapshot: ProjectSetupSnapshot
@@ -31,7 +33,7 @@ export function CancelFailed({ command }: ApprovalScreenProps) {
   const { t } = useTranslation('projects')
   return (
     <section className="mt-6" aria-label={t('setup.actor.cancel-failed.label')}>
-      <div className="flex justify-end">
+      <div className="onboarding-action-row">
         <Button onClick={() => void command({ type: 'retry-cancel' })}>
           {t('setup.actor.cancel-failed.action')}
         </Button>

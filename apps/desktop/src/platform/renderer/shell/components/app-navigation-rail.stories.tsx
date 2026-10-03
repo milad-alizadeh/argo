@@ -5,7 +5,7 @@ import { expect, userEvent, within } from 'storybook/test'
 import { AppNavigationRail } from './app-navigation-rail'
 
 const meta = {
-  title: 'App/Navigation Rail',
+  title: 'App/Navigation/Navigation Rail',
   component: AppNavigationRail,
   parameters: {
     layout: 'fullscreen',

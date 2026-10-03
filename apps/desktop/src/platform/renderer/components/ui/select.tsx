@@ -47,7 +47,7 @@ function SelectTrigger({
     >
       {children}
       <SelectPrimitive.Icon
-        render={<CaretDownIcon strokeWidth={2} className="pointer-events-none size-4 text-muted-foreground" />}
+        render={<CaretDownIcon className="pointer-events-none size-4 text-muted-foreground" />}
       />
     </SelectPrimitive.Trigger>
   )
@@ -123,7 +123,7 @@ function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Prop
           <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />
         }
       >
-        <CheckIcon strokeWidth={2} className="pointer-events-none" />
+        <CheckIcon className="pointer-events-none" />
       </SelectPrimitive.ItemIndicator>
     </SelectPrimitive.Item>
   )
@@ -152,7 +152,7 @@ function SelectScrollUpButton({
       )}
       {...props}
     >
-      <CaretUpIcon strokeWidth={2} />
+      <CaretUpIcon />
     </SelectPrimitive.ScrollUpArrow>
   )
 }
@@ -170,7 +170,7 @@ function SelectScrollDownButton({
       )}
       {...props}
     >
-      <CaretDownIcon strokeWidth={2} />
+      <CaretDownIcon />
     </SelectPrimitive.ScrollDownArrow>
   )
 }

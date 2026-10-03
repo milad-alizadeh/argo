@@ -3,7 +3,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { EmptyProjectWindow } from './empty-project-window'
 
 const meta = {
-  title: 'Projects/Empty Project Window',
+  title: 'Features/Projects/Empty Project Window',
   component: EmptyProjectWindow,
   args: { busy: false, onAdd: fn() },
 } satisfies Meta<typeof EmptyProjectWindow>

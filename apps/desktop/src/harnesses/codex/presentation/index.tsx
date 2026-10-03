@@ -1,4 +1,6 @@
+import { cn } from 'cn'
 import type { HarnessPresentation } from '@/harnesses/harness-presentation'
+import { harnessLogoRecipe } from '@/harnesses/presentation-logo-recipe'
 import { CodexAutoCompact } from './codex-auto-compact'
 import codexBlack from './codex-black.svg?url'
 import codexWhite from './codex-white.svg?url'
@@ -10,13 +12,13 @@ function CodexLogo() {
       <img
         aria-hidden="true"
         alt=""
-        className="size-3.5 shrink-0 scale-[1.49] dark:hidden"
+        className={cn(harnessLogoRecipe, 'scale-[1.49] dark:hidden')}
         src={codexBlack}
       />
       <img
         aria-hidden="true"
         alt=""
-        className="hidden size-3.5 shrink-0 scale-[1.49] dark:block"
+        className={cn(harnessLogoRecipe, 'hidden scale-[1.49] dark:block')}
         src={codexWhite}
       />
     </>

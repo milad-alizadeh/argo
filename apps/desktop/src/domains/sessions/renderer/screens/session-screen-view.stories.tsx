@@ -6,6 +6,7 @@ import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-
 import { pendingSessionId } from '@/domains/sessions/api/pending-session'
 import { FALLBACK_DEFAULT_BRANCH } from '@/domains/sessions/api/worktree-request'
 import { DEFAULT_HARNESS } from '@/harnesses/harness'
+import { expectReachableIn } from '@/mocks/platform/scroll-content-reachability'
 import { sessionRow, sessionShellCommand, sessionSubagent } from '@/mocks/sessions/session-rows'
 import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fixture'
 import { installSessionHost } from '@/mocks/sessions/session-story-host'
@@ -435,7 +436,7 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
 
   expect(history.scrollHeight).toBeGreaterThan(history.clientHeight)
   expect(history.scrollTop).toBeGreaterThan(0)
-  expectFeedDoesNotOverlapComposer(canvasElement)
+  expectWorkspaceAndComposerVisible(canvasElement)
   history.scrollTo({ top: 0 })
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
 
@@ -443,22 +444,18 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
   expect(composer.getBoundingClientRect()).toEqual(before)
 }
 
-function expectFeedDoesNotOverlapComposer(canvasElement: HTMLElement) {
-  const composer = within(canvasElement).getByLabelText('Session composer')
-  const history = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
-  expect(history.getBoundingClientRect().bottom).toBeCloseTo(
-    composer.getBoundingClientRect().bottom,
-    1,
-  )
+function expectWorkspaceAndComposerVisible(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  expect(canvas.getByLabelText('Session composer')).toBeVisible()
+  expect(canvas.getByRole('combobox', { name: 'Message' })).toBeVisible()
+  expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toBeVisible()
 }
 
 function expectContextBarInset(canvasElement: HTMLElement) {
   const composer = within(canvasElement).getByLabelText('Session composer')
-  const workspace = within(canvasElement).getByLabelText('Session workspace')
   const card = composer.querySelector<HTMLElement>('[data-component="ComposerCard"]')
   const contextBar = composer.querySelector<HTMLElement>('[data-component="SessionContextBar"]')
-  const fade = workspace.querySelector<HTMLElement>('[data-component="SessionComposerFade"]')
-  if (card === null || contextBar === null || fade === null)
+  if (card === null || contextBar === null)
     throw new Error('The attached composer surfaces are absent.')
 
   const gutter = Number.parseFloat(
@@ -473,16 +470,9 @@ function expectContextBarInset(canvasElement: HTMLElement) {
     1,
   )
   expect(getComputedStyle(contextBar).boxShadow).toBe(getComputedStyle(card).boxShadow)
-  const composerBounds = composer.getBoundingClientRect()
-  const workspaceBounds = workspace.getBoundingClientRect()
-  const fadeBounds = fade.getBoundingClientRect()
-  expect(fadeBounds.top).toBeCloseTo(composerBounds.top + composerBounds.height / 2, 1)
-  expect(fadeBounds.bottom).toBeCloseTo(workspaceBounds.bottom, 1)
-  expect(fadeBounds.height).toBeCloseTo(composerBounds.height / 2, 1)
-  expect(getComputedStyle(fade).pointerEvents).toBe('none')
 }
 
-async function expectJumpToLatestInComposerFade(canvasElement: HTMLElement) {
+async function expectJumpToLatestAboveComposer(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
   const history = await canvas.findByLabelText(SESSION_HISTORY_LABEL)
   await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
@@ -513,10 +503,14 @@ function composerCard(canvasElement: HTMLElement) {
 
 // The composer's highest ink: the first stacked prompt above the card, or the card itself.
 function composerInkTop(canvasElement: HTMLElement) {
-  const prompts = within(canvasElement).queryAllByRole('region', { name: /^Permission needed/ })
-  return Math.min(
-    composerCard(canvasElement).getBoundingClientRect().top,
-    ...prompts.map((prompt) => prompt.getBoundingClientRect().top),
+  const canvas = within(canvasElement)
+  const prompts = canvas.queryAllByRole('region', { name: /^Permission needed/ })
+  return Math.max(
+    canvas.getByLabelText('Session composer').getBoundingClientRect().top,
+    Math.min(
+      composerCard(canvasElement).getBoundingClientRect().top,
+      ...prompts.map((prompt) => prompt.getBoundingClientRect().top),
+    ),
   )
 }
 
@@ -546,16 +540,10 @@ async function expectFeedEndsOneSnugAboveComposer(
 
 // Each Allow control is on screen and takes a press, so no prompt is clipped away.
 async function expectEveryAllowReachable(canvasElement: HTMLElement) {
-  await waitFor(() => {
-    for (const allow of within(canvasElement).getAllByRole('button', { name: 'Allow' })) {
-      const bounds = allow.getBoundingClientRect()
-      const hit = document.elementFromPoint(
-        bounds.left + bounds.width / 2,
-        bounds.top + bounds.height / 2,
-      )
-      expect(hit !== null && allow.contains(hit)).toBe(true)
-    }
-  })
+  for (const allow of within(canvasElement).getAllByRole('button', { name: 'Allow' })) {
+    allow.scrollIntoView({ block: 'nearest' })
+    await expectReachableIn(canvasElement, allow, IntersectionObserver)
+  }
 }
 
 function expectHeaderActionsAtTrailingEdge(canvasElement: HTMLElement) {
@@ -606,6 +594,7 @@ async function expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement: HT
   const canvas = within(canvasElement)
   await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
   const opener = await canvas.findByRole('button', { name: 'Open sidebar' })
+  await expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeVisible()
   const title = canvas.getByRole('heading', { name: 'Finish Session composer review' })
   await waitFor(() =>
     expect(title.getBoundingClientRect().left).toBeGreaterThanOrEqual(
@@ -632,7 +621,7 @@ async function expectShellReopensWithOutput(canvasElement: HTMLElement) {
 }
 
 const meta = {
-  title: 'Sessions/Screen',
+  title: 'Features/Sessions/Screens/Session Screen',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen', route: reviewRoute() },
   decorators: [
@@ -756,6 +745,12 @@ export const Open: Story = {
       expect(canvas.getByRole('button', { name: 'Collapse Session inspector' })).toBeVisible(),
     )
 
+    await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Open sidebar' })).toBeVisible())
+    await expect(canvas.getByRole('region', { name: 'Subagent' })).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Open sidebar' }))
+    await waitFor(() => expectSessionsSidebarIsOpen(canvasElement), { timeout: 5000 })
+
     await expectDelegatedFeedSurvivesCollapse(canvas)
 
     await expectShellReopensWithOutput(canvasElement)
@@ -797,15 +792,15 @@ export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
         'composer-review',
       ),
     )
+    const firstComposer = canvas.getByRole('combobox', { name: 'Message' })
+    await waitFor(() => expect(firstComposer.closest('[inert]')).toBeNull())
+    await userEvent.type(firstComposer, 'Draft for the first Session')
+    await expect(firstComposer).toHaveTextContent('Draft for the first Session')
     await userEvent.click(canvas.getByRole('button', { name: /^Shell/ }))
     await userEvent.click(await screen.findByRole('menuitem', { name: /bun run quality/ }))
     await waitFor(() =>
       expect(canvas.getByRole('region', { name: 'Background Shell' })).toBeVisible(),
     )
-    const firstComposer = canvas.getByRole('combobox', { name: 'Message' })
-    await userEvent.type(firstComposer, 'Draft for the first Session')
-    await expect(firstComposer).toHaveTextContent('Draft for the first Session')
-
     const nextSession = canvas.getByRole('button', { name: /Add Markdown typing shortcuts/ })
     await userEvent.click(nextSession)
     await expect(
@@ -820,7 +815,9 @@ export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
         'shortcut-review',
       ),
     )
-    await expect(canvas.getByLabelText('Session composer')).toBeVisible()
+    const closeInspector = canvas.queryByRole('button', { name: 'Collapse Session inspector' })
+    if (closeInspector) await userEvent.click(closeInspector)
+    await waitFor(() => expect(canvas.getByLabelText('Session composer')).toBeVisible())
     await expect(canvas.getByRole('combobox', { name: 'Message' })).toHaveTextContent('')
     await expect(canvas.queryByRole('region', { name: 'Background Shell' })).toBeNull()
   },
@@ -866,9 +863,9 @@ export const SwitchingBackDoesNotReopenADismissedInspector: Story = {
         'composer-review',
       ),
     )
-    await expect(
-      canvas.getByRole('button', { name: 'Collapse Session inspector' }),
-    ).not.toBeVisible()
+    await waitFor(() =>
+      expect(canvas.queryByRole('button', { name: 'Collapse Session inspector' })).toBeNull(),
+    )
     await expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeVisible()
   },
 }
@@ -902,9 +899,7 @@ export const CodexShellWithoutOutputDoesNotRevealInspector: Story = {
     await userEvent.click(canvas.getByRole('button', { name: /^Shell/ }))
     await userEvent.click(await screen.findByRole('menuitem'))
     await expect(canvas.queryByRole('region', { name: 'Background Shell' })).toBeNull()
-    await expect(
-      canvas.getByRole('button', { name: 'Collapse Session inspector' }),
-    ).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeInTheDocument()
   },
 }
 
@@ -949,18 +944,18 @@ export const WideSharedReadingColumn: Story = {
   },
 }
 
-export const JumpToLatestInExpandedComposerFade: Story = {
+export const JumpToLatestAboveExpandedComposer: Story = {
   render: () => <ReviewScreen rows={JUMP_TO_LATEST_ROWS} />,
   play: async ({ canvasElement }) => {
-    await expectJumpToLatestInComposerFade(canvasElement)
+    await expectJumpToLatestAboveComposer(canvasElement)
   },
 }
 
-export const JumpToLatestInNormalComposerFade: Story = {
+export const JumpToLatestAboveNormalComposer: Story = {
   parameters: { route: reviewRoute('shortcut-review') },
   render: () => <ReviewScreen rows={JUMP_TO_LATEST_ROWS} />,
   play: async ({ canvasElement }) => {
-    await expectJumpToLatestInComposerFade(canvasElement)
+    await expectJumpToLatestAboveComposer(canvasElement)
   },
 }
 
@@ -1039,15 +1034,17 @@ export const FeedEndsAboveStackedPrompts: Story = {
     await waitFor(() =>
       expect(canvas.getAllByRole('heading', { name: /^Permission needed/ })).toHaveLength(3),
     )
-    // The Feed opens at its end and stays there while the prompts enter and grow the composer.
-    await expectFeedEndsOneSnugAboveComposer(canvasElement, { scrollToEnd: false })
-    // Every stacked prompt and the context bar stay whole: the composer grows rather than clips.
-    await expectEveryAllowReachable(canvasElement)
-    const usage = canvas.getByText('Usage').getBoundingClientRect()
-    expect(document.elementFromPoint(usage.left + 1, usage.top + usage.height / 2)).not.toBeNull()
-    expect(usage.bottom).toBeLessThanOrEqual(
-      canvas.getByLabelText('Session composer').getBoundingClientRect().bottom,
+    const history = canvas.getByLabelText(SESSION_HISTORY_LABEL)
+    await expectReachableIn(
+      history,
+      await canvas.findByText(/^History row 36 keeps/),
+      IntersectionObserver,
     )
+    // Tall stacks scroll within the composer; every prompt and the context bar remain reachable.
+    await expectEveryAllowReachable(canvasElement)
+    const usageLabel = canvas.getByText('Usage')
+    usageLabel.scrollIntoView({ block: 'nearest' })
+    await expectReachableIn(canvasElement, usageLabel, IntersectionObserver)
   },
 }
 
@@ -1089,8 +1086,22 @@ export const NarrowHeader: Story = {
         'composer-review',
       ),
     )
-    expectFeedDoesNotOverlapComposer(canvasElement)
+    expectWorkspaceAndComposerVisible(canvasElement)
     expectHeaderActionsAtTrailingEdge(canvasElement)
+  },
+}
+
+export const NarrowComposer: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  render: () => <ReviewScreen />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Open sidebar' })).toHaveFocus())
+    const editor = canvas.getByRole('combobox', { name: 'Message' })
+    await waitFor(() => expect(editor.closest('[inert]')).toBeNull())
+    await userEvent.type(editor, 'Check the Session controls before finishing the review.')
+    await waitFor(() => expect(editor).toHaveTextContent('Check the Session controls'))
   },
 }
 

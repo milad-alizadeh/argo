@@ -21,13 +21,13 @@ function autoCompactLimitOf(lookup: AutoCompactLimitLookup, harness: Harness) {
 export function autoCompactLimitReadProcedure(lookup: AutoCompactLimitLookup) {
   return t.procedure
     .input(z.strictObject({ harness: harnessSchema }))
-    .output(limitSchema)
+    .output(limitSchema.nullable())
     .query(({ input }) => autoCompactLimitOf(lookup, input.harness).read())
 }
 
 export function autoCompactLimitWriteProcedure(lookup: AutoCompactLimitLookup) {
   return t.procedure
     .input(z.strictObject({ harness: harnessSchema, limit: limitSchema }))
-    .output(limitSchema)
+    .output(limitSchema.nullable())
     .mutation(({ input }) => autoCompactLimitOf(lookup, input.harness).write(input.limit))
 }

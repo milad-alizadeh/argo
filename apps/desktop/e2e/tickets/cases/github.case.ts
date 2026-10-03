@@ -109,8 +109,11 @@ export async function proveBacklog(run: Run) {
     await detailTitle(detail, 'Wayfinder: the Tickets room, end to end').waitFor()
     await detail.getByText('The backlog in the deck and the Ticket beside it.').waitFor()
     await detail.getByText('wayfinder', { exact: true }).waitFor()
-    await detail.getByRole('heading', { name: 'Children · 1 of 2 closed' }).waitFor()
-    await detail.getByRole('heading', { name: 'Blocked by · 1' }).waitFor()
+    await detail.getByRole('heading', { name: 'Children', exact: true }).waitFor()
+    await detail.getByText('1 of 2 closed', { exact: true }).waitFor()
+    const blockers = detail.getByRole('heading', { name: 'Blocked by', exact: true })
+    await blockers.waitFor()
+    await blockers.locator('..').getByText('1', { exact: true }).waitFor()
   })
 }
 

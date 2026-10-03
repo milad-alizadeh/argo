@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { DropdownMenuTrigger } from '@/platform/renderer/components/ui/dropdown-menu'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
+import { composerMenuTriggerRecipe } from './composer-menu-recipes'
 
 export function ComposerMenuTrigger({
   ariaLabel,
@@ -18,7 +19,7 @@ export function ComposerMenuTrigger({
       render={
         <InputGroupButton
           variant="ghost"
-          className={className ?? 'shrink-0 type-control text-foreground'}
+          className={composerMenuTriggerRecipe(className)}
           aria-label={ariaLabel}
         />
       }

@@ -48,7 +48,7 @@ function CompactingComposerStory() {
 }
 
 const meta = {
-  title: 'Sessions/Composer/Compaction',
+  title: 'Features/Sessions/Composer/Compaction',
   component: CompactingComposerStory,
   decorators: [
     (Story, { parameters }) => (

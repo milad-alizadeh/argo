@@ -1,7 +1,13 @@
+import { cn } from 'cn'
 import { useTranslation } from 'react-i18next'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
 import { HarnessLogo } from '@/domains/sessions/renderer'
 import { harnessShortLabel } from '@/harnesses/presentation-registry'
+import {
+  readinessBodyRecipe,
+  readinessHeaderRecipe,
+  readinessTitleRecipe,
+} from '@/platform/renderer/components/design-system/readiness-row-recipes'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Card, CardContent } from '@/platform/renderer/components/ui/card'
 import { useHarnessSignIn } from '../hooks'
@@ -16,10 +22,10 @@ function HarnessSignInCard({ readiness }: { readiness: HarnessReadiness }) {
   return (
     <li className="w-60 min-w-0 list-none">
       <Card className="h-full">
-        <CardContent className="grid justify-items-start gap-(--spacing-shell-item) text-left">
-          <div className="flex w-full items-center gap-(--spacing-shell-icon)">
+        <CardContent className={cn(readinessBodyRecipe, 'text-left')}>
+          <div className={cn(readinessHeaderRecipe, 'w-full')}>
             <HarnessLogo harness={readiness.harness} />
-            <span className="type-heading min-w-0 truncate">{name}</span>
+            <span className={readinessTitleRecipe}>{name}</span>
             <Badge className="ml-auto" variant={STATE_BADGE_VARIANT[readiness.state]}>
               {t(`row.state.${readiness.state}`)}
             </Badge>

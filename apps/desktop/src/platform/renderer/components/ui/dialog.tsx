@@ -1,7 +1,5 @@
-'use client'
-
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog'
-import { XIcon } from "@phosphor-icons/react";
+import { XIcon } from '@phosphor-icons/react'
 import { cn } from 'cn'
 import type * as React from 'react'
 import { Button } from './button'
@@ -38,16 +36,14 @@ function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) 
 function DialogContent({
   className,
   children,
-  overlayClassName,
   showCloseButton = true,
   ...props
 }: DialogPrimitive.Popup.Props & {
-  overlayClassName?: string
   showCloseButton?: boolean
 }) {
   return (
     <DialogPortal>
-      <DialogOverlay className={overlayClassName} />
+      <DialogOverlay />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
@@ -62,7 +58,7 @@ function DialogContent({
             data-slot="dialog-close"
             render={<Button variant="ghost" className="absolute top-2 right-2" size="icon-sm" />}
           >
-            <XIcon strokeWidth={2} />
+            <XIcon />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}
@@ -106,7 +102,7 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn('font-heading text-base leading-none font-medium', className)}
+      className={cn('text-base leading-none font-medium', className)}
       {...props}
     />
   )

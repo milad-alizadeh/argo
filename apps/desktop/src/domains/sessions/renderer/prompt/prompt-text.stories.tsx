@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { PromptText } from './prompt-text'
 
 const meta = {
-  title: 'Sessions/Prompt/Prompt Text',
+  title: 'Features/Sessions/Prompt/Prompt Text',
   component: PromptText,
   decorators: [
     (Story) => (
@@ -30,6 +30,25 @@ export const SkillMentionAndLink: Story = {
       name: 'https://github.com/milad-alizadeh/argo/issues/1944',
     })
     await expect(link).toHaveAttribute('target', '_blank')
+  },
+}
+
+export const InteractiveSkillButtonOpensSkill: Story = {
+  args: {
+    text: '[$implement](/skills/implement/SKILL.md)',
+    onOpenSkill: fn(),
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const button = canvas.getByRole('button', { name: 'Open the Implement skill' })
+
+    await userEvent.click(button)
+
+    await expect(args.onOpenSkill).toHaveBeenCalledWith({
+      kind: 'skill',
+      name: 'implement',
+      path: '/skills/implement/SKILL.md',
+    })
   },
 }
 

@@ -20,6 +20,47 @@
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+  :root[data-focus-modality="pointer"] :focus-visible {
+    outline: none;
+  }
+}
+
+/* Text fields keep keyboard focus inside their existing control perimeter. */
+:where(
+  input:not([type="checkbox"], [type="radio"], [type="range"]),
+  textarea,
+  select,
+  [data-slot="select-trigger"]
+),
+[data-slot="input-group"],
+[data-slot="combobox-chips"] {
+  box-shadow: none;
+}
+
+:where(
+  input:not([type="checkbox"], [type="radio"], [type="range"]),
+  textarea,
+  select,
+  [data-slot="select-trigger"]
+):focus-visible,
+[data-slot="input-group"]:has([data-slot="input-group-control"]:focus-visible),
+[data-slot="combobox-chips"]:has(input:focus-visible) {
+  border-color: var(--ring);
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+  box-shadow: none;
+}
+
+:where(input, textarea, select, [data-slot="select-trigger"])[aria-invalid="true"]:focus-visible,
+[data-slot="input-group"]:has([aria-invalid="true"]:focus-visible) {
+  border-color: var(--destructive);
+  outline-color: var(--destructive);
+}
+
+[data-slot="input-group-control"]:focus-visible,
+[data-slot="combobox-chips"] input:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 @layer components {

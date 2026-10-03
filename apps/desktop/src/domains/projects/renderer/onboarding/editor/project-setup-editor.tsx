@@ -6,7 +6,7 @@ import CodeMirror, { EditorView } from '@uiw/react-codemirror'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { lastInputWasKeyboard } from '@/platform/renderer/lib/input-modality'
-import { useDarkAppearance } from '@/platform/renderer/use-appearance'
+import { useTheme } from '@/platform/renderer/use-appearance'
 import { xcodeEditorTheme } from './project-setup-editor-theme'
 
 const jsonLanguage = StreamLanguage.define({ ...json, tokenTable: { property: tags.propertyName } })
@@ -20,16 +20,17 @@ export function ProjectSetupEditor({
   source: string
 }) {
   const { t } = useTranslation('projects')
-  const dark = useDarkAppearance()
+  const appearance = useTheme()
   const [showsKeyboardFocus, setShowsKeyboardFocus] = useState(false)
   const invalidSource = !isJson(source)
-  const theme = useMemo(() => xcodeEditorTheme(dark), [dark])
+  const theme = useMemo(() => xcodeEditorTheme(appearance.dark), [appearance])
   const extensions = useMemo(
     () => [
       jsonLanguage,
       linter(jsonDiagnostics(t('setup.invalidJson')), { delay: 0 }),
       EditorView.contentAttributes.of({
         'aria-label': t('setup.configurationLabel'),
+        tabindex: '0',
         ...(invalidSource
           ? { 'aria-describedby': CONFIGURATION_ERROR_ID, 'aria-invalid': 'true' }
           : {}),

@@ -28,7 +28,12 @@ function restartedHost(row = resumable) {
   const live: SessionLiveEvent[] = []
   const host = sessionSelectionHost([row], {
     feed: async () => [
-      { kind: 'message', id: 'storybook-row', role: 'assistant', text: 'Storybook Session Feed.' },
+      {
+        kind: 'message',
+        id: 'storybook-row',
+        role: 'assistant',
+        text: 'The session is ready. I can continue reviewing the change.',
+      },
     ],
     live,
   })
@@ -55,7 +60,7 @@ function restartedHost(row = resumable) {
 }
 
 const meta = {
-  title: 'Sessions/Screen/Resume',
+  title: 'Features/Sessions/Screens/Resume',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
   decorators: [
@@ -80,9 +85,11 @@ type Story = StoryObj<typeof SessionScreenView>
 
 async function sendDraft(canvasElement: HTMLElement, draft: string) {
   const canvas = within(canvasElement)
-  await waitFor(() =>
-    expect(canvas.getAllByText('Storybook Session Feed.').length).toBeGreaterThan(0),
-  )
+  await waitFor(() => {
+    const row = canvasElement.querySelector('[data-feed-row="storybook-row"]')
+    expect(row).toBeVisible()
+    expect(row).toHaveTextContent('The session is ready. I can continue reviewing the change.')
+  })
   const composer = canvas.getByLabelText('Message')
   await userEvent.click(composer)
   await userEvent.type(composer, draft)

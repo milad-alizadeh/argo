@@ -2,7 +2,9 @@
 // opening its own list (#1582). The button is the whole permanent footprint: nothing is parked in
 // the inspector, so the Feed keeps its width until the reader asks for something.
 
-import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
+import { statusToneRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
+import { MenuDropdownTrigger } from '@/platform/renderer/components/dropdown-trigger'
+import type { IconName } from '@/platform/renderer/components/icon/icon'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,10 +12,40 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
 import { cn } from '@/platform/renderer/lib/utils'
 import type { WorkEntry } from './session-work-entries'
+import './session-work-menu.css'
+
+const workRichOptionRecipe = {
+  row: 'items-start gap-2 py-1.5',
+  mark: 'mt-(--spacing-dot-inset) size-(--size-state-dot) shrink-0 rounded-full',
+  content: 'min-w-0 flex-1',
+  label: 'block whitespace-normal wrap-anywhere text-inherit',
+  detail: 'block whitespace-normal wrap-anywhere type-meta text-muted-foreground',
+} as const
+
+const workCountIndicatorRecipe =
+  'session-work-count pointer-events-none absolute -top-0.5 -right-0.5 z-20 flex items-center justify-center rounded-full px-0.5 leading-none font-semibold tabular-nums ring-1 ring-background'
+
+function WorkMenuTrigger({
+  icon,
+  label,
+  count,
+  running,
+}: {
+  icon: IconName
+  label: string
+  count: number
+  running: boolean
+}) {
+  return (
+    <span className="relative isolate inline-flex shrink-0 overflow-visible">
+      <MenuDropdownTrigger aria-label={`${label} · ${count}`} icon={icon} iconOnly label={label} />
+      <Badge count={count} running={running} />
+    </span>
+  )
+}
 
 function Row({
   entry,
@@ -27,25 +59,20 @@ function Row({
   return (
     <DropdownMenuItem
       aria-current={selected}
-      className={cn('items-start gap-2 py-1.5', selected ? 'bg-accent' : null)}
+      className={cn(
+        workRichOptionRecipe.row,
+        selected ? 'bg-accent text-accent-foreground [&_.type-meta]:text-inherit' : null,
+      )}
       onClick={onSelect}
     >
-      <span
-        aria-hidden="true"
-        className={cn(
-          'mt-(--spacing-dot-inset) size-(--size-state-dot) shrink-0 rounded-full',
-          entry.mark,
-        )}
-      />
-      <span className="min-w-0 flex-1">
-        <span
-          className={cn('block truncate text-foreground', entry.monospace ? 'font-mono' : null)}
-        >
+      <span aria-hidden="true" className={cn(workRichOptionRecipe.mark, entry.mark)} />
+      <span className={workRichOptionRecipe.content}>
+        <span className={cn(workRichOptionRecipe.label, entry.monospace ? 'font-mono' : null)}>
           {entry.title}
         </span>
         <span className="sr-only">{entry.state}</span>
         {entry.facts === '' ? null : (
-          <span className="block truncate type-meta text-muted-foreground">{entry.facts}</span>
+          <span className={workRichOptionRecipe.detail}>{entry.facts}</span>
         )}
       </span>
     </DropdownMenuItem>
@@ -66,7 +93,7 @@ function Group({
   if (entries.length === 0) return null
   return (
     <DropdownMenuGroup>
-      <DropdownMenuLabel className="type-meta text-muted-foreground">{label}</DropdownMenuLabel>
+      <DropdownMenuLabel className="text-muted-foreground">{label}</DropdownMenuLabel>
       {entries.map((entry) => (
         <Row
           key={entry.id}
@@ -85,10 +112,7 @@ function Badge({ count, running }: { count: number; running: boolean }) {
   return (
     <span
       aria-hidden="true"
-      className={cn(
-        'absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 text-badge leading-none font-semibold tabular-nums ring-2 ring-background',
-        running ? 'bg-active text-background' : 'bg-muted-foreground text-background',
-      )}
+      className={cn(workCountIndicatorRecipe, statusToneRecipe[running ? 'success' : 'neutral'])}
     >
       {count}
     </span>
@@ -118,13 +142,12 @@ export function SessionWorkMenu({
   )
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label={`${label} · ${entries.length}`}
-        className="relative flex size-(--size-control) shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[popup-open]:bg-accent data-[popup-open]:text-foreground"
-      >
-        <Icon name={icon} className="size-(--size-icon-control)" />
-        <Badge count={entries.length} running={running.length > 0} />
-      </DropdownMenuTrigger>
+      <WorkMenuTrigger
+        icon={icon}
+        label={label}
+        count={entries.length}
+        running={running.length > 0}
+      />
       <DropdownMenuContent align="start" className="w-(--size-session-popover)">
         <Group entries={running} label="Running" onSelect={onSelect} selectedId={selectedId} />
         {running.length > 0 && unknown.length > 0 ? <DropdownMenuSeparator /> : null}

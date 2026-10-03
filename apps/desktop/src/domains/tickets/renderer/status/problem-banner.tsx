@@ -6,10 +6,10 @@ import type { TicketProblemProps } from '../lib'
 export function ProblemBanner({ icon, title, description, alert, actions }: TicketProblemProps) {
   return (
     <div
-      className="flex shrink-0 items-center gap-(--spacing-shell-item) border-b border-border/60 px-(--spacing-shell-inset) py-(--spacing-shell-item)"
+      className="flex shrink-0 items-center gap-(--spacing-shell-item) border-b border-border px-(--spacing-shell-inset) py-(--spacing-shell-item)"
       role={alert ? 'alert' : undefined}
     >
-      <span className="text-danger">
+      <span className="text-status-danger">
         <Icon name={icon} />
       </span>
       <div className="min-w-0 flex-1">

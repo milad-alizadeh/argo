@@ -8,6 +8,21 @@
       "atlas": "Atlas"
     }
   },
+  "appearance": {
+    "title": "Appearance",
+    "description": "Theme and mode",
+    "close": "Close Appearance",
+    "theme": "Theme",
+    "mode": "Mode",
+    "themes": {
+      "default": "Default",
+      "supabase": "Supabase",
+      "linear": "Linear",
+      "amber-minimal": "Amber Minimal"
+    },
+    "modes": { "system": "System", "light": "Light", "dark": "Dark" },
+    "rejected": "Your change could not be saved. Your previous choice is still active."
+  },
   "shell": {
     "collapseSidebar": "Collapse sidebar",
     "openSidebar": "Open sidebar"

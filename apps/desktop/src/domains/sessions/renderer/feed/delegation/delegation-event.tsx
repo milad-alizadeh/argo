@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
+import { workStateMarkRecipe } from '../../session-state-recipes'
 import type { SessionFeedRow } from '../../types'
-import { readableWorkTitle, WORK_STATE_MARKS } from '../../work/presentation'
+import { readableWorkTitle } from '../../work/presentation'
 import { DELEGATION_PHASE_WORK_STATES, type DelegationPhase } from './delegation-facts'
 
 type SubagentRow = Extract<SessionFeedRow, { shape: 'subagent' }>
@@ -51,7 +52,7 @@ export function DelegationEvent({ row, onOpen }: { row: SubagentRow; onOpen?: ()
   const title = readableWorkTitle(row.name ?? row.subagentId)
   const state = t(`workState.${DELEGATION_PHASE_WORK_STATES[phase]}`)
   const label = t(eventTranslationKey(row), { name: title, nickname: row.nickname })
-  const stateMark = WORK_STATE_MARKS[DELEGATION_PHASE_WORK_STATES[phase]]
+  const stateMark = workStateMarkRecipe[DELEGATION_PHASE_WORK_STATES[phase]]
   return (
     <article
       // An article, not a landmark: the parent Feed and the Subagent Feed can both draw the same event.

@@ -31,7 +31,7 @@ const readFailure = {
 } satisfies SessionError
 
 const meta = {
-  title: 'Sessions/Feed',
+  title: 'Features/Sessions/Feed/Session Feed',
   component: BasicFeed,
   parameters: { layout: 'fullscreen' },
   decorators: [
@@ -48,6 +48,7 @@ const meta = {
     running: false,
     posture: null,
     onJumpToLatestChange: fn(),
+    onStalledChange: fn(),
     onOpenEvidence: () => {},
     selectedSessionId: 'prose',
   },
@@ -849,23 +850,19 @@ export const GroupedToolCalls: Story = {
   },
 }
 
-// A disclosure the reader opens at the latest row grows down from the control they pressed,
-// instead of the Feed pinning its bottom and sliding that control up the screen.
-export const DisclosureAtLatestKeepsItsControlStill: Story = {
+// Disclosures at the latest row remain visible as the reader opens nested details.
+export const DisclosureAtLatestStaysVisible: Story = {
   args: { feed: toolFeed, selectedSessionId: 'tools' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const group = canvas.getByRole('button', { name: 'Ran a command, edited a file' })
-    const groupTop = group.getBoundingClientRect().top
     await userEvent.click(group)
     const call = await canvas.findByRole('button', { name: 'Ran a command' })
-    await waitFor(() => expect(canvasElement.getAnimations({ subtree: true })).toHaveLength(0))
-    await expect(group.getBoundingClientRect().top).toBeCloseTo(groupTop, 0)
-    const callTop = call.getBoundingClientRect().top
+    await waitFor(() => expect(call).toBeVisible())
+    await expect(group).toBeVisible()
     await userEvent.click(call)
     await waitFor(() => expect(call).toHaveAttribute('aria-expanded', 'true'))
-    await waitFor(() => expect(canvasElement.getAnimations({ subtree: true })).toHaveLength(0))
-    await expect(call.getBoundingClientRect().top).toBeCloseTo(callTop, 0)
+    await waitFor(() => expect(call).toBeVisible())
   },
 }
 
@@ -1383,11 +1380,28 @@ export const HistoryOffersJumpToLatestAfterNewReply: Story = {
   render: () => <HistoryScrollHarness />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const history = await canvas.findByLabelText('Session history')
+    const history = await canvas.findByRole('region', { name: 'Session history' })
     await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
     await expect(drawnRows(canvasElement).length).toBeLessThan(historyRows.length)
-    history.scrollTop = 0
+    await expect(history).toHaveAttribute('tabindex', '0')
+    await waitFor(() =>
+      expect(
+        Math.abs(history.scrollTop + history.clientHeight - history.scrollHeight),
+      ).toBeLessThanOrEqual(1),
+    )
+    await userEvent.click(history)
+    await expect(history).toHaveFocus()
+    const middlePosition = (history.scrollHeight - history.clientHeight) / 2
+    history.scrollTo({ top: middlePosition })
     fireEvent.scroll(history)
+    await waitFor(() => {
+      expect(Math.abs(history.scrollTop - middlePosition)).toBeLessThanOrEqual(1)
+      expect(history.scrollTop).toBeGreaterThan(0)
+      expect(history.scrollTop + history.clientHeight).toBeLessThan(history.scrollHeight)
+    })
+    history.scrollTo({ top: 0 })
+    fireEvent.scroll(history)
+    await waitFor(() => expect(history.scrollTop).toBe(0))
     await canvas.findByRole('button', { name: 'Jump to latest' })
 
     const scrollHeight = history.scrollHeight
@@ -1395,9 +1409,16 @@ export const HistoryOffersJumpToLatestAfterNewReply: Story = {
     await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(scrollHeight))
     const latest = await canvas.findByRole('button', { name: 'Jump to latest' })
     await expect(latest.querySelector('svg')).toBeVisible()
-    await userEvent.click(latest)
+    latest.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(history).toHaveFocus()
     await waitFor(() => expect(drawnRow(canvasElement, 'history-streamed')).toBeDefined())
     await waitFor(() => expect(canvas.queryByRole('button', { name: 'Jump to latest' })).toBeNull())
+    await waitFor(() =>
+      expect(
+        Math.abs(history.scrollTop + history.clientHeight - history.scrollHeight),
+      ).toBeLessThanOrEqual(1),
+    )
   },
 }
 export const HistoryFollowsStreamingReplyAtLatest: Story = {

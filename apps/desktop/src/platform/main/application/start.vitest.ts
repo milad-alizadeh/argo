@@ -18,8 +18,7 @@ const electron = vi.hoisted(() => ({
 
 vi.mock('electron', () => electron)
 vi.mock('../appearance', () => ({
-  applyStoredAppearance: vi.fn(),
-  readAppearance: vi.fn(async () => 'system'),
+  initializeAppearance: vi.fn(async () => {}),
 }))
 vi.mock('../i18n', () => ({ setPlatformLanguage: vi.fn(), platformText: (key: string) => key }))
 

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '@/mocks/sessions/harness-catalog.fixture'
+import { Button } from '@/platform/renderer/components/ui/button'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 import { ModeMenu } from './mode-menu'
 
@@ -12,15 +13,22 @@ const CLAUDE_TURN_CONFIGURATION = (() => {
   return choices
 })() satisfies TurnConfigurationChoices
 
-function ModeStory() {
+function ModeStory({
+  narrow = false,
+  nextControl = false,
+}: {
+  narrow?: boolean
+  nextControl?: boolean
+}) {
   const [turnConfiguration, setTurnConfiguration] = useState(CLAUDE_TURN_CONFIGURATION.opening)
   return (
-    <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
+    <div className={`@container flex min-h-dvh items-end p-8 ${narrow ? 'w-72' : 'max-w-4xl'}`}>
       <ModeMenu
         choices={CLAUDE_TURN_CONFIGURATION}
         value={turnConfiguration}
         onChange={setTurnConfiguration}
       />
+      {nextControl ? <Button>Send message</Button> : null}
     </div>
   )
 }
@@ -41,7 +49,7 @@ function AutoRestrictedModeStory() {
 }
 
 const meta = {
-  title: 'Sessions/Composer/Mode Menu',
+  title: 'Features/Sessions/Composer/Mode Menu',
   component: ModeStory,
 } satisfies Meta<typeof ModeStory>
 
@@ -77,6 +85,7 @@ export const OffersEveryMode: Story = {
     await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
     await expect(trigger).toHaveTextContent('Bypass')
     await expect(trigger).toHaveAccessibleName('Choose permission mode: Bypass')
+    await expect(trigger).toHaveFocus()
   },
 }
 
@@ -111,5 +120,44 @@ export const ChoosesByKeyboard: Story = {
     await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
     await expect(trigger).toHaveFocus()
     await expect(trigger).toHaveTextContent('Plan')
+  },
+}
+
+export const NarrowMenu: Story = {
+  args: { narrow: true },
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole('button', {
+      name: 'Choose permission mode: Manual',
+    })
+    await userEvent.click(trigger)
+    await waitFor(() =>
+      expect(
+        page().getByRole('menuitemradio', {
+          name: /Don't ask.*Deny anything not approved in advance/,
+        }),
+      ).toBeVisible(),
+    )
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
+    await expect(trigger).toHaveFocus()
+  },
+}
+
+export const KeyboardDismissal: Story = {
+  args: { nextControl: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: 'Choose permission mode: Manual' })
+    await userEvent.tab()
+    await userEvent.keyboard('{ArrowDown}')
+    await waitFor(() => expect(page().getByRole('menuitemradio', { name: /Manual/ })).toHaveFocus())
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
+    await expect(trigger).toHaveFocus()
+    await userEvent.keyboard('{ArrowDown}')
+    await waitFor(() => expect(page().getByRole('menuitemradio', { name: /Manual/ })).toHaveFocus())
+    await userEvent.tab()
+    await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
+    await expect(canvas.getByRole('button', { name: 'Send message' })).toHaveFocus()
   },
 }

@@ -14,7 +14,7 @@ function NewTicket({ connection }: { connection: ConnectionSummary | null }) {
   if (!connection) {
     return (
       <Button aria-label={t('sidebarHeader.newTicket')} disabled size="icon-sm" variant="ghost">
-        <Icon name="add" />
+        <Icon className="text-muted-foreground" name="add" />
       </Button>
     )
   }
@@ -27,7 +27,7 @@ function NewTicket({ connection }: { connection: ConnectionSummary | null }) {
       size="icon-sm"
       variant="ghost"
     >
-      <Icon name="add" />
+      <Icon className="text-muted-foreground" name="add" />
     </Button>
   )
 }
@@ -37,7 +37,7 @@ export function TicketsSidebarHeader({ connection }: { connection: ConnectionSum
   const { t } = useTranslation('tickets')
   const { query, setQuery } = useTicketSearch()
   return (
-    <header className="flex h-(--size-chrome-bar) sidebar-gutter shrink-0 items-center">
+    <header className="sidebar-header">
       <SidebarSearch
         label={t('sidebarHeader.search')}
         maxLength={TICKET_QUERY_LIMIT}

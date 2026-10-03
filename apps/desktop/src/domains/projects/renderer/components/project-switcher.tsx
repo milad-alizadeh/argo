@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { REGISTER_PROJECT_COMMAND } from '@/platform/contract/commands'
+import { MenuDropdownTrigger } from '@/platform/renderer/components/dropdown-trigger'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   DropdownMenu,
@@ -11,15 +12,28 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/platform/renderer/components/ui/dropdown-menu'
-import { MenuDropdownTrigger } from '@/platform/renderer/components/ui/dropdown-trigger'
 import { useCommands } from '@/platform/renderer/shell/hooks/use-commands'
-import { useProjects } from '../hooks'
+import { type ProjectActions, type ProjectsState, useProjects } from '../hooks'
 import { ProjectSettingsDialog } from './project-settings-dialog'
 
 export function ProjectSwitcher() {
-  const { t } = useTranslation('projects')
   const [projectState, actions] = useProjects()
   const navigate = useNavigate()
+  return (
+    <ProjectSwitcherControls projectState={projectState} actions={actions} navigate={navigate} />
+  )
+}
+
+const ProjectSwitcherControls = memo(function ProjectSwitcherControls({
+  projectState,
+  actions,
+  navigate,
+}: {
+  projectState: ProjectsState
+  actions: ProjectActions
+  navigate: ReturnType<typeof useNavigate>
+}) {
+  const { t } = useTranslation('projects')
   useCommands((command) => {
     if (command === REGISTER_PROJECT_COMMAND) actions.open()
   })
@@ -30,12 +44,12 @@ export function ProjectSwitcher() {
     <>
       <DropdownMenu>
         <MenuDropdownTrigger
+          appearance="project"
           aria-label={t('switcher.current', { name: projectName })}
-          className="max-w-48 gap-(--spacing-shell-tight) border-0 pl-2 pr-(--spacing-shell-icon) type-body"
+          className="max-w-48"
           disabled={projectState.busy}
           icon="folder"
           label={projectName}
-          variant="ghost"
         />
         <DropdownMenuContent align="end" className="w-64">
           <DropdownMenuGroup>
@@ -44,6 +58,7 @@ export function ProjectSwitcher() {
               <DropdownMenuItem
                 key={project.id}
                 aria-label={t('switcher.switchTo', { name: project.name })}
+                aria-current={project.id === projectState.project?.id ? 'page' : undefined}
                 onClick={() => navigate(`/projects/${project.id}/sessions`)}
               >
                 <Icon name="folder" />
@@ -74,4 +89,4 @@ export function ProjectSwitcher() {
       ) : null}
     </>
   )
-}
+})

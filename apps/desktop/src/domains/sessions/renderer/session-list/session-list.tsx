@@ -256,7 +256,7 @@ export function SessionList() {
   return (
     <aside
       aria-label={t('sidebarLabel')}
-      className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-sidebar"
+      className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden"
       data-page-count={query.data?.pages.length ?? 0}
       data-state={state}
       data-total={query.data?.pages[0]?.total}

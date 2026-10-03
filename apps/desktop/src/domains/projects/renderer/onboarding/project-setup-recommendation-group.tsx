@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Switch } from '@/platform/renderer/components/ui/switch'
 import { PackageNames, PlanSection, ToolIcon } from './plan/project-setup-plan-review-parts'
+import './plan/project-setup-plan-review-parts.css'
 
 export function RecommendationGroup({
   fallbackIcon,
@@ -35,10 +36,10 @@ export function RecommendationGroup({
         {items.map((item) => (
           <li className="border-b px-3.5 py-3 last:border-b-0" key={item.id}>
             <span className="flex min-w-0 items-center gap-3">
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted [&>svg]:size-4">
+              <span className="onboarding-media-tile size-8 [&>svg]:size-4">
                 <ToolIcon fallback={fallbackIcon} iconUrl={item.iconUrl} />
               </span>
-              <strong className="min-w-0 flex-1 type-body font-semibold">{item.title}</strong>
+              <strong className="min-w-0 flex-1 onboarding-title">{item.title}</strong>
               <Switch
                 aria-label={t('setup.actor.customizing-project-setup.toggleAction', {
                   name: item.title,
@@ -48,7 +49,7 @@ export function RecommendationGroup({
               />
             </span>
             <span className="ml-11 block min-w-0">
-              <small className="mt-0.5 block type-control text-muted-foreground">
+              <small className="mt-0.5 block onboarding-detail text-muted-foreground">
                 {item.detail}
               </small>
               <PackageNames names={item.packages} />

@@ -5,7 +5,6 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { MOCK_CODEX_AUTO_COMPACT_LIMIT_ENV } from '@/mocks/cli/codex/fixtures/mock-codex-skills-config'
 import { clientBackedByMock, writeMockCodex } from '@/mocks/cli/codex/mock-codex-driver'
-import { DEFAULT_AUTO_COMPACT_LIMIT } from '../auto-compact-limit'
 import { createCodexRegistration } from '../registration'
 
 async function autoCompactLimit(env: Record<string, string> = {}) {
@@ -22,10 +21,10 @@ async function autoCompactLimit(env: Record<string, string> = {}) {
   }
 }
 
-test('a Codex config with no limit reads the default', async () => {
+test('a Codex config with no limit reports no threshold', async () => {
   const codex = await autoCompactLimit()
   try {
-    assert.equal(await codex.limit.read(), DEFAULT_AUTO_COMPACT_LIMIT)
+    assert.equal(await codex.limit.read(), null)
   } finally {
     await codex.stop()
   }

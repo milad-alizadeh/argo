@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, waitFor, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { sessionRow } from '@/mocks/sessions/session-rows'
 import { installSessionHost, type SessionHost } from '@/mocks/sessions/session-story-host'
 import { useLinkedSessions } from '../hooks/use-linked-sessions'
@@ -32,7 +32,7 @@ function TicketSessions({ onOpenSession }: { onOpenSession: (id: string) => void
 }
 
 const meta = {
-  title: 'Tickets/Ticket Detail/Linked Sessions',
+  title: 'Features/Tickets/Ticket Detail/Linked Sessions',
   component: TicketSessions,
   args: { onOpenSession: fn() },
 } satisfies Meta<typeof TicketSessions>
@@ -48,7 +48,7 @@ export const EveryPageOfLinkedSessions: Story = {
     host = installSessionHost(LINKED)
     return host
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await waitFor(() => expect(canvas.getAllByRole('button')).toHaveLength(LINKED.length))
     await expect(canvas.getByText('Linked Session 44')).toBeVisible()
@@ -56,5 +56,10 @@ export const EveryPageOfLinkedSessions: Story = {
     await expect(canvas.getByText(`Linked Sessions · ${LINKED.length}`)).toBeVisible()
     for (const read of host.reads)
       await expect(read).toMatchObject({ ticketKey: TICKET_KEY, filter: 'all' })
+    const session = canvas.getByRole('button', { name: 'Linked Session 44' })
+    session.focus()
+    await expect(session).toHaveFocus()
+    await userEvent.keyboard('{Enter}')
+    await expect(args.onOpenSession).toHaveBeenCalledWith('linked-44')
   },
 }

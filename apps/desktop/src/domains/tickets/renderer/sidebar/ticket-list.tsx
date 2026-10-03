@@ -1,16 +1,10 @@
 import type { TFunction } from 'i18next'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
+import { AppPageHeader, AppPageSurface } from '@/platform/renderer/app/components/app-shell'
+import { EmptyState } from '@/platform/renderer/components/design-system/empty-state'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { PageHeading } from '@/platform/renderer/components/page-heading'
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/platform/renderer/components/ui/empty'
 import { providerPresentation } from '@/providers/presentation-registry'
 import { type Backlog, backlogRows, unfoldedRows } from '../lib'
 import { ProblemBanner } from '../status'
@@ -41,21 +35,16 @@ function NoTickets({ query, provider }: Pick<Backlog, 'query' | 'provider'>) {
   const { t } = useTranslation('tickets')
   const { name, scope } = providerPresentation(provider)
   return (
-    <Empty className="flex-none">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          {query === '' ? <Icon name="ticket" /> : <Icon name="no-search-results" />}
-        </EmptyMedia>
-        <EmptyTitle>
-          {query === '' ? t('backlog.empty.title') : t('backlog.empty.titleFiltered')}
-        </EmptyTitle>
-        <EmptyDescription>
-          {query === ''
-            ? t('backlog.empty.description', { scope: scope.one })
-            : t('backlog.empty.descriptionFiltered', { provider: name, query })}
-        </EmptyDescription>
-      </EmptyHeader>
-    </Empty>
+    <EmptyState
+      description={
+        query === ''
+          ? t('backlog.empty.description', { scope: scope.one })
+          : t('backlog.empty.descriptionFiltered', { provider: name, query })
+      }
+      media={query === '' ? <Icon name="ticket" /> : <Icon name="no-search-results" />}
+      size="compact"
+      title={query === '' ? t('backlog.empty.title') : t('backlog.empty.titleFiltered')}
+    />
   )
 }
 
@@ -83,41 +72,48 @@ export function TicketList({
   const { t } = useTranslation('tickets')
   const { folded, toggle } = useFolds()
   const rows = unfoldedRows(backlogRows(backlog.tickets), folded)
+  const header = (
+    <AppPageHeader>
+      <PageHeading>{t('backlog.label')}</PageHeading>
+      <div className="ml-auto flex items-center gap-(--spacing-shell-item)">
+        {backlog.sync.refreshing ? (
+          <p className="type-meta text-muted-foreground">
+            {t('backlog.refreshing', { provider: providerPresentation(backlog.provider).name })}
+          </p>
+        ) : null}
+        <p aria-live="polite" className="type-meta text-muted-foreground">
+          {tally(t, backlog)}
+        </p>
+      </div>
+    </AppPageHeader>
+  )
+  const content = (
+    <>
+      {backlog.sync.problem ? <ProblemBanner {...backlog.sync.problem} /> : null}
+      {backlog.tickets.length === 0 ? (
+        <NoTickets provider={backlog.provider} query={backlog.query} />
+      ) : null}
+      {backlog.tickets.length > 0 ? (
+        <TicketVirtualList
+          backlog={backlog}
+          folded={folded}
+          now={now}
+          onSelect={onSelect}
+          onToggle={toggle}
+          placement={placement}
+          rows={rows}
+          selectedKey={selectedKey}
+        />
+      ) : null}
+    </>
+  )
   return (
     <section aria-label={t('backlog.label')} className="flex h-full min-h-0 min-w-0 flex-col">
       {placement === 'workspace' ? (
-        <AppPageHeader>
-          <PageHeading>{t('backlog.label')}</PageHeading>
-          <div className="ml-auto flex items-center gap-(--spacing-shell-item)">
-            {backlog.sync.refreshing ? (
-              <p className="type-meta text-faint">
-                {t('backlog.refreshing', { provider: providerPresentation(backlog.provider).name })}
-              </p>
-            ) : null}
-            <p aria-live="polite" className="type-meta text-muted-foreground">
-              {tally(t, backlog)}
-            </p>
-          </div>
-        </AppPageHeader>
-      ) : null}
-      <div className={placement === 'workspace' ? 'panel-content' : 'flex min-h-0 flex-1 flex-col'}>
-        {backlog.sync.problem ? <ProblemBanner {...backlog.sync.problem} /> : null}
-        {backlog.tickets.length === 0 ? (
-          <NoTickets provider={backlog.provider} query={backlog.query} />
-        ) : null}
-        {backlog.tickets.length > 0 ? (
-          <TicketVirtualList
-            backlog={backlog}
-            folded={folded}
-            now={now}
-            onSelect={onSelect}
-            onToggle={toggle}
-            placement={placement}
-            rows={rows}
-            selectedKey={selectedKey}
-          />
-        ) : null}
-      </div>
+        <AppPageSurface header={header}>{content}</AppPageSurface>
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col">{content}</div>
+      )}
     </section>
   )
 }

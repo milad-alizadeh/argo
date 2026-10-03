@@ -70,7 +70,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   color: var(--muted-foreground);
-  font-size: var(--text-control);
+  font-size: var(--typography-control-size);
 }
 
 .session-page__attachment b {
@@ -92,22 +92,49 @@
 }
 
 .composer-inline-context {
-  display: inline;
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.25rem;
   margin-inline: 0.125rem;
+  vertical-align: middle;
+}
+.composer-inline-context[data-context-label] {
   font-size: 0;
   line-height: 0;
-  vertical-align: baseline;
 }
-.composer-inline-context svg {
+.composer-inline-context__icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  font-size: inherit;
+  transform: translateY(-0.125em);
+}
+.composer-inline-context__icon svg,
+.composer-inline-context__icon img,
+.composer-inline-context > svg {
   display: inline-block;
   width: 0.875rem;
   height: 0.875rem;
-  margin-right: 0.25rem;
-  /* The chip's font size is 0 so the source stays hidden. An em offset would be 0 too. */
-  vertical-align: -3px;
+  flex: none;
+  vertical-align: middle;
 }
-.composer-inline-context::after {
+.composer-inline-context__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: inherit;
+}
+.composer-inline-context[data-context-label]::after {
   content: attr(data-context-label);
-  font-size: var(--text-prose);
-  line-height: var(--text-prose--line-height);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--typography-prose-size);
+  line-height: var(--typography-prose-line-height);
+}
+.composer-inline-context[data-context-label] .composer-inline-context__icon {
+  font-size: var(--typography-prose-size);
 }

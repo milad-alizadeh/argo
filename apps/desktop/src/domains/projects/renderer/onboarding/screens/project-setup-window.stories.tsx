@@ -134,9 +134,9 @@ const plan = planFixture({
     {
       id: 'target-site',
       name: 'website',
-      path: 'apps/site',
+      path: 'apps/sites/customer-facing-web-platform/packages/marketing-website',
       isDefault: false,
-      evidence: 'apps/site/package.json workspace entry',
+      evidence: 'apps/sites/customer-facing-web-platform/packages/marketing-website/package.json',
       packageManager: 'bun',
       framework: 'Vite + React',
       commands: {
@@ -145,7 +145,7 @@ const plan = planFixture({
         build: 'bun run build',
         test: 'bun test',
       },
-      dependencies: ['vite', 'react'],
+      dependencies: ['vite', 'react', '@argo/workspace-conventions-for-generated-projects'],
       risks: [],
     },
   ],
@@ -182,7 +182,11 @@ const plan = planFixture({
       targetIds: ['target-desktop'],
       recommendedChoice: 'Storybook',
       iconUrl: 'https://storybook.js.org/icon.svg',
-      packageNames: ['storybook', '@storybook/react-vite'],
+      packageNames: [
+        'storybook',
+        '@storybook/react-vite',
+        '@argo/workspace-conventions-for-generated-projects',
+      ],
       links: ['https://storybook.js.org'],
       alternatives: [],
       reason: 'Review every onboarding state before it reaches the desktop app.',
@@ -233,9 +237,7 @@ const snapshot = (change: Partial<ProjectSetupSnapshot>): ProjectSetupSnapshot =
   ...base,
   ...change,
 })
-// A story with no `play` renders one flow state for visual review only; it carries no
-// interaction assertion because the assertions already live on the handful of stories below
-// that exercise this screen's real interactive paths.
+// Stories without interaction assertions keep the required accessibility scan.
 const VIEW_ONLY = ['view-only']
 
 const story = (change: Partial<ProjectSetupSnapshot>, tags?: string[]): Story => ({
@@ -244,7 +246,7 @@ const story = (change: Partial<ProjectSetupSnapshot>, tags?: string[]): Story =>
 })
 
 const meta = {
-  title: 'Projects/Onboarding/Window',
+  title: 'Features/Projects/Onboarding/Window',
   component: ProjectSetupView,
   decorators: [(Story) => <div className="h-screen">{Story()}</div>],
   parameters: { layout: 'fullscreen' },
@@ -257,34 +259,35 @@ export const ManualSetup = story(
   { screen: 'manual', manualSource: '{\n  "targets": {}\n}' },
   VIEW_ONLY,
 )
-export const Planning = story(
-  {
-    screen: 'planning',
-    attempt,
-    activeEffect: 'planning',
-    progress: [
-      { stepId: 'inspect-folder', status: 'passed', message: 'Project structure inspected.' },
-      { stepId: 'identify-targets', status: 'running', message: 'Finding runnable Targets.' },
-    ],
-  },
-  VIEW_ONLY,
-)
-export const Questions = story(
-  {
-    screen: 'questions',
-    attempt,
-    questions: [
-      {
-        id: 'workspace-shape',
-        prompt: 'Which workspaces should be independent Targets?',
-        context: 'Argo found two runnable workspaces.',
-        suggestions: ['Desktop app', 'Website', 'Shared packages'],
-        recommended: 'Desktop app',
-      },
-    ],
-  },
-  VIEW_ONLY,
-)
+export const Planning = story({
+  screen: 'planning',
+  attempt,
+  activeEffect: 'planning',
+  progress: [
+    { stepId: 'inspect-folder', status: 'passed', message: 'Project structure inspected.' },
+    { stepId: 'identify-targets', status: 'running', message: 'Finding runnable Targets.' },
+  ],
+})
+export const Questions = story({
+  screen: 'questions',
+  attempt,
+  questions: [
+    {
+      id: 'workspace-shape',
+      prompt: 'Which workspaces should be independent Targets?',
+      context: 'Argo found two runnable workspaces.',
+      suggestions: ['Desktop app', 'Website', 'Shared packages'],
+      recommended: 'Desktop app',
+    },
+    {
+      id: 'verification-command',
+      prompt: 'Which command should verify this Project?',
+      context: 'The agent needs a repeatable verification command.',
+      suggestions: ['bun test', 'bun run quality'],
+      recommended: 'bun test',
+    },
+  ],
+})
 export const TargetsAndTools = story({ screen: 'reviewing-plan', attempt, plan, acceptedPlan })
 export const ProjectSetup = story({
   screen: 'customizing-project-setup',
@@ -307,25 +310,19 @@ export const Applying = story(
   },
   VIEW_ONLY,
 )
-export const ReviewRequired = story(
-  {
-    screen: 'review-required',
-    attempt,
-    plan,
-    recoveryMessage: 'application-drift',
-    finalDiff:
-      'diff --git a/package.json b/package.json\nindex 4ac..0e2 100644\n--- a/package.json\n+++ b/package.json\n@@ -8,3 +8,4 @@\n   "scripts": {\n+    "storybook": "storybook dev -p 6006",\n     "test": "bun test"\n   }\ndiff --git a/apps/desktop/vite.config.ts b/apps/desktop/vite.config.ts\nindex 21a..7cc 100644\n--- a/apps/desktop/vite.config.ts\n+++ b/apps/desktop/vite.config.ts\n@@ -3,2 +3,3 @@\n export default defineConfig({\n+  plugins: [react()],\n })',
-  },
-  VIEW_ONLY,
-)
-export const Interrupted = story(
-  {
-    screen: 'interrupted',
-    attempt,
-    recoveryMessage: 'restart-interrupted',
-  },
-  VIEW_ONLY,
-)
+export const ReviewRequired = story({
+  screen: 'review-required',
+  attempt,
+  plan,
+  recoveryMessage: 'application-drift',
+  finalDiff:
+    'diff --git a/package.json b/package.json\nindex 4ac..0e2 100644\n--- a/package.json\n+++ b/package.json\n@@ -8,3 +8,4 @@\n   "scripts": {\n+    "storybook": "storybook dev -p 6006",\n     "test": "bun test"\n   }\ndiff --git a/apps/desktop/vite.config.ts b/apps/desktop/vite.config.ts\nindex 21a..7cc 100644\n--- a/apps/desktop/vite.config.ts\n+++ b/apps/desktop/vite.config.ts\n@@ -3,2 +3,3 @@\n export default defineConfig({\n+  plugins: [react()],\n })',
+})
+export const Interrupted = story({
+  screen: 'interrupted',
+  attempt,
+  recoveryMessage: 'restart-interrupted',
+})
 export const ReviewingChanges = story(
   {
     screen: 'reviewing-diff',
@@ -353,14 +350,11 @@ export const RestartAttemptFailed = story(
   },
   VIEW_ONLY,
 )
-export const CancelFailed = story(
-  {
-    screen: 'cancel-failed',
-    attempt,
-    recoveryMessage: 'cancel-failed',
-  },
-  VIEW_ONLY,
-)
+export const CancelFailed = story({
+  screen: 'cancel-failed',
+  attempt,
+  recoveryMessage: 'cancel-failed',
+})
 export const AwaitingApproval = story({
   screen: 'awaiting-approval',
   attempt,
@@ -377,19 +371,53 @@ export const Ready = story({ screen: 'ready' }, VIEW_ONLY)
 
 ChoosingSetupMethod.play = async ({ args, canvasElement }) => {
   const canvas = within(canvasElement)
-  await expect(canvas.getByRole('radio', { name: 'Set up with an agent' })).toBeChecked()
+  const agent = canvas.getByRole('radio', { name: 'Set up with an agent' })
+  const manual = canvas.getByRole('radio', { name: 'Manual setup' })
+  await expect(agent).toBeChecked()
+  const manualLabel = canvasElement.querySelector<HTMLLabelElement>(
+    'label[for="project-setup-method-manual"]',
+  )
+  if (!manualLabel) throw new Error('Manual setup label is missing')
+  await clickLabelAt(manualLabel, 4, 4)
+  await expect(manual).toBeChecked()
+
+  const harness = canvas.getByRole('combobox', { name: 'Harness' })
+  await userEvent.click(harness)
+  await expect(manual).toBeChecked()
+  await userEvent.click(
+    await within(canvasElement.ownerDocument.body).findByRole('option', { name: 'Claude Code' }),
+  )
+  await expect(manual).toBeChecked()
+
+  const agentLabel = canvasElement.querySelector<HTMLLabelElement>(
+    'label[for="project-setup-method-agent"]',
+  )
+  if (!agentLabel) throw new Error('Agent setup label is missing')
+  await clickLabelAt(agentLabel, 32, agentLabel.getBoundingClientRect().height / 2)
+  await expect(agent).toBeChecked()
   await userEvent.click(canvas.getByRole('button', { name: 'Continue' }))
   await expect(args.command).toHaveBeenCalledWith({ type: 'choose-agent', harness: 'claude' })
 }
 
+async function clickLabelAt(label: HTMLLabelElement, x: number, y: number) {
+  const bounds = label.getBoundingClientRect()
+  await userEvent.pointer({
+    keys: '[MouseLeft]',
+    target: label,
+    coords: { clientX: bounds.left + x, clientY: bounds.top + y },
+  })
+}
+
 TargetsAndTools.play = async ({ args, canvasElement }) => {
   const canvas = within(canvasElement)
+  const target = canvas.getByRole('button', { name: /desktop/ })
   await expect(canvas.getByText('Storybook')).toBeVisible()
   await expect(canvas.getByText('Electron + React')).toBeVisible()
-  await expect(canvas.getByRole('button', { name: /desktop/ })).toHaveAttribute(
-    'aria-expanded',
-    'true',
-  )
+  await expect(target).toHaveAttribute('aria-expanded', 'true')
+  await userEvent.click(target)
+  await expect(target).toHaveAttribute('aria-expanded', 'false')
+  await userEvent.click(target)
+  await expect(target).toHaveAttribute('aria-expanded', 'true')
   await userEvent.click(canvas.getByRole('button', { name: 'Continue to Project setup' }))
   await expect(args.command).toHaveBeenCalledWith({ type: 'continue-plan-review' })
 }
@@ -402,7 +430,12 @@ ProjectSetup.play = async ({ args, canvasElement }) => {
     'aria-expanded',
     'true',
   )
-  await expect(canvas.getByRole('switch', { name: 'Include Argo agent skills' })).toBeChecked()
+  const skillsSwitch = canvas.getByRole('switch', { name: 'Include Argo agent skills' })
+  await expect(skillsSwitch).toBeChecked()
+  await userEvent.click(skillsSwitch)
+  await expect(skillsSwitch).not.toBeChecked()
+  await userEvent.click(skillsSwitch)
+  await expect(skillsSwitch).toBeChecked()
   await userEvent.click(canvas.getByRole('button', { name: 'Preview apply and verify' }))
   await expect(args.command).toHaveBeenCalledWith(expect.objectContaining({ type: 'accept-plan' }))
 }
@@ -413,3 +446,99 @@ AwaitingApproval.play = async ({ canvasElement }) => {
   await expect(canvas.getByRole('button', { name: 'Deny' })).toBeVisible()
   await expect(canvas.getByRole('button', { name: 'Allow' })).toBeVisible()
 }
+
+Questions.play = async ({ args, canvasElement }) => {
+  const canvas = within(canvasElement)
+  await userEvent.click(canvas.getByRole('button', { name: 'Next' }))
+  await expect(canvas.getByRole('alert')).toHaveTextContent('Choose an answer or type your own.')
+  const desktop = canvas.getByRole('checkbox', { name: /Desktop app/ })
+  await expect(desktop).toHaveFocus()
+  await userEvent.keyboard('a')
+  await expect(desktop).toBeChecked()
+  await userEvent.keyboard('{Enter}')
+  await expect(
+    canvas.getByRole('progressbar', { name: 'Setup question progress' }),
+  ).toHaveAttribute('aria-valuenow', '2')
+  await userEvent.click(canvas.getByRole('button', { name: 'Previous' }))
+  await expect(canvas.getByRole('checkbox', { name: /Desktop app/ })).toBeChecked()
+  await userEvent.click(canvas.getByRole('button', { name: 'Next' }))
+  await userEvent.click(canvas.getByRole('button', { name: 'Continue planning' }))
+  await expect(args.command).not.toHaveBeenCalled()
+  await expect(canvas.getByRole('alert')).toHaveTextContent('Choose an answer or type your own.')
+  const question = within(
+    canvas.getByRole('group', { name: 'Which command should verify this Project?' }),
+  )
+  await userEvent.type(question.getByRole('textbox', { name: 'Other answer' }), 'bun run check')
+  await userEvent.keyboard('{Enter}')
+  await expect(args.command).toHaveBeenCalledWith({
+    type: 'answer-questions',
+    answers: [
+      { id: 'workspace-shape', selections: ['Desktop app'], custom: '' },
+      { id: 'verification-command', selections: [], custom: 'bun run check' },
+    ],
+  })
+}
+
+Planning.play = async ({ args, canvasElement }) => {
+  const canvas = within(canvasElement)
+  await expect(canvas.getByRole('status')).toHaveTextContent('Finding runnable Targets.')
+  await expect(canvas.getByRole('list', { name: 'Setup progress' })).toBeVisible()
+  await userEvent.click(canvas.getByRole('button', { name: 'Cancel setup' }))
+  await expect(args.command).toHaveBeenCalledWith({ type: 'cancel-setup' })
+}
+
+Interrupted.play = async ({ args, canvasElement }) => {
+  const canvas = within(canvasElement)
+  await userEvent.click(canvas.getByRole('button', { name: 'Resume setup' }))
+  await expect(args.command).toHaveBeenCalledWith({ type: 'resume-planning' })
+  await userEvent.click(canvas.getByRole('button', { name: 'Start a new Attempt' }))
+  await expect(args.command).toHaveBeenCalledWith({ type: 'restart-attempt' })
+}
+
+ReviewRequired.play = async ({ args, canvasElement }) => {
+  const canvas = within(canvasElement)
+  await expect(
+    canvas.getByText('The Project changed after the setup plan was accepted.'),
+  ).toBeVisible()
+  await userEvent.click(canvas.getByRole('button', { name: 'Return to plan review' }))
+  await expect(args.command).toHaveBeenCalledWith({
+    type: 'request-plan-change',
+    feedback: 'Revise the setup plan for these Project changes.',
+  })
+}
+
+CancelFailed.play = async ({ args, canvasElement }) => {
+  await userEvent.click(
+    within(canvasElement).getByRole('button', { name: 'Try stopping setup again' }),
+  )
+  await expect(args.command).toHaveBeenCalledWith({ type: 'retry-cancel' })
+}
+
+export const InterruptedApplication = story({
+  screen: 'interrupted',
+  attempt: {
+    ...attempt,
+    applicationHarness: 'claude',
+    applicationSessionId: 'application-session',
+  },
+  recoveryMessage: 'interrupted',
+})
+InterruptedApplication.play = async ({ args, canvasElement }) => {
+  await userEvent.click(within(canvasElement).getByRole('button', { name: 'Resume setup' }))
+  await expect(args.command).toHaveBeenCalledWith({ type: 'resume-application' })
+}
+
+export const ProgressOutcomes = story(
+  {
+    screen: 'applying',
+    attempt,
+    progress: [
+      { stepId: 'inspect', status: 'passed', message: 'Project inspected.' },
+      { stepId: 'configure', status: 'running', message: 'Writing configuration.' },
+      { stepId: 'approve', status: 'waiting-for-user', message: 'Waiting for approval.' },
+      { stepId: 'verify', status: 'failed', message: 'Verification failed.' },
+      { stepId: 'handoff', status: 'pending', message: 'Waiting to hand off.' },
+    ],
+  },
+  VIEW_ONLY,
+)

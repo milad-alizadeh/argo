@@ -17,7 +17,7 @@ export function TicketsSidebarAccountFoot({
   return (
     <footer className="sidebar-gutter shrink-0 py-(--spacing-shell-item)">
       <button
-        className="flex w-full items-center gap-(--spacing-shell-item) rounded-row px-(--spacing-shell-item) py-(--spacing-shell-icon) text-left type-meta text-muted-foreground hover:bg-muted"
+        className="flex w-full items-center gap-(--spacing-shell-item) rounded-row px-(--spacing-shell-item) py-(--spacing-shell-icon) text-left type-meta text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         onClick={onManageAccounts}
         type="button"
       >

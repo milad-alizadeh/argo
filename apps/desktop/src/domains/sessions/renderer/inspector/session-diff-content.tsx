@@ -1,16 +1,11 @@
 import type { RefObject } from 'react'
 import type { BundledLanguage } from 'shiki/langs'
 import { diffLineDecoration, diffLines } from '@/platform/renderer/components/file-diff-lines'
+import { FileHeader, FileHeaderPath } from '@/platform/renderer/components/file-header'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
-import {
-  CodeBlock,
-  CodeBlockActions,
-  CodeBlockCopyButton,
-  CodeBlockFilename,
-  CodeBlockHeader,
-  CodeBlockTitle,
-} from '../ai-elements'
+import { CodeBlock, CodeBlockContext, CodeBlockCopyButton } from '../ai-elements'
+import { inspectorBodyRecipe } from './inspector-recipes'
 
 type ViewButtonReference = RefObject<HTMLButtonElement | null>
 type Text = { copy: string; toggle: string }
@@ -30,34 +25,29 @@ export function CurrentFileContent({
   text: Text & { unavailable: string; reading: string }
   viewButtonReference: ViewButtonReference
 }) {
-  if (content === undefined || content === null)
-    return (
-      <>
-        <DiffHeader
-          label={text.toggle}
-          onClick={onShowDiff}
-          path={path}
-          viewButtonReference={viewButtonReference}
-        />
-        <p className="min-h-0 flex-1 overflow-auto p-4 type-meta text-muted-foreground">
-          {content === undefined ? text.reading : text.unavailable}
-        </p>
-      </>
-    )
   return (
-    <CodeBlock
-      code={content}
-      language={language}
-      className="flex min-h-0 flex-1 flex-col rounded-none border-0 type-code-content [&_pre]:min-h-0 [&_pre]:flex-1"
-    >
+    <CodeBlockContext.Provider value={content ?? ''}>
       <DiffHeader
-        copyLabel={text.copy}
+        copyLabel={typeof content === 'string' ? text.copy : undefined}
         label={text.toggle}
         onClick={onShowDiff}
         path={path}
         viewButtonReference={viewButtonReference}
       />
-    </CodeBlock>
+      {content === undefined || content === null ? (
+        <p className={`${inspectorBodyRecipe} type-meta text-muted-foreground`}>
+          {content === undefined ? text.reading : text.unavailable}
+        </p>
+      ) : (
+        <CodeBlock
+          code={content}
+          language={language}
+          className="flex min-h-0 flex-1 flex-col"
+          contentClassName="min-h-0 flex-1"
+          variant="embedded"
+        />
+      )}
+    </CodeBlockContext.Provider>
   )
 }
 
@@ -81,7 +71,9 @@ export function DiffContent({
     <CodeBlock
       code={source}
       language={language}
-      className="flex min-h-0 flex-1 flex-col rounded-none border-0 type-code-content [&_pre]:min-h-0 [&_pre]:flex-1 [&_pre]:p-0"
+      className="flex min-h-0 flex-1 flex-col"
+      contentClassName="min-h-0 flex-1 p-0"
+      variant="embedded"
       line={(index) => {
         const line = lines[index] ?? {
           kind: 'title',
@@ -117,28 +109,27 @@ function DiffHeader({
   viewButtonReference: ViewButtonReference
 }) {
   const iconName = copyLabel === undefined ? 'diff-view' : 'file-text'
+  // Isolated so a path's leading slash stays at its start while the start truncates.
   return (
-    <CodeBlockHeader className="shrink-0 bg-sidebar px-4 py-3">
-      <CodeBlockTitle className="min-w-0">
-        <CodeBlockFilename className="block truncate text-left [direction:rtl] type-body font-semibold">
-          {/* Isolated so a path's leading slash stays at its start while the start truncates. */}
-          <bdi dir="ltr">{path}</bdi>
-        </CodeBlockFilename>
-      </CodeBlockTitle>
-      <CodeBlockActions>
-        <Button
-          size="icon"
-          variant="ghost"
-          aria-label={label}
-          onClick={onClick}
-          ref={viewButtonReference}
-        >
-          <Icon name={iconName} size="control" />
-        </Button>
-        {copyLabel === undefined ? null : (
-          <CodeBlockCopyButton aria-label={copyLabel} className="size-7" />
-        )}
-      </CodeBlockActions>
-    </CodeBlockHeader>
+    <FileHeader
+      className="shrink-0"
+      titleClassName="type-code"
+      heading={<FileHeaderPath path={path} />}
+      variant="inspector"
+      rightSlot={
+        <>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            aria-label={label}
+            onClick={onClick}
+            ref={viewButtonReference}
+          >
+            <Icon name={iconName} size="control" />
+          </Button>
+          {copyLabel === undefined ? null : <CodeBlockCopyButton aria-label={copyLabel} />}
+        </>
+      }
+    />
   )
 }

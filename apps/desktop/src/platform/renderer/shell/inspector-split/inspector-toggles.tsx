@@ -20,11 +20,13 @@ export function InspectorToggles({
       {state === 'collapsed' ? (
         <Button
           aria-label={`Open ${noun} inspector`}
+          data-inspector-toggle
+          className="bg-accent text-accent-foreground hover:bg-accent aria-expanded:bg-accent aria-expanded:text-accent-foreground"
           variant="secondary"
           size="icon-sm"
           onClick={onToggle}
         >
-          <Icon name="panel-right" />
+          <Icon className="text-muted-foreground" name="panel-right" />
         </Button>
       ) : (
         <>
@@ -34,15 +36,21 @@ export function InspectorToggles({
             size="icon-sm"
             onClick={onToggleExpanded}
           >
-            {expanded ? <Icon name="restore" /> : <Icon name="expand" />}
+            {expanded ? (
+              <Icon className="text-muted-foreground" name="restore" />
+            ) : (
+              <Icon className="text-muted-foreground" name="expand" />
+            )}
           </Button>
           <Button
             aria-label={`Collapse ${noun} inspector`}
+            data-inspector-toggle
+            className="bg-accent text-accent-foreground hover:bg-accent aria-expanded:bg-accent aria-expanded:text-accent-foreground"
             variant="secondary"
             size="icon-sm"
             onClick={onToggle}
           >
-            <Icon name="panel-right" />
+            <Icon className="text-muted-foreground" name="panel-right" />
           </Button>
         </>
       )}

@@ -149,8 +149,8 @@ export type HarnessRegistration<Id extends Harness = Harness> = HarnessReadiness
   acceptsAttachments: boolean
   // The token count at which the Harness compacts a Session's context on its own.
   autoCompactLimit?: {
-    read: () => Promise<number>
-    write: (limit: number) => Promise<number>
+    read: () => Promise<number | null>
+    write: (limit: number) => Promise<number | null>
   }
   shutdown?: () => void
 }

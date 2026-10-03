@@ -2,13 +2,9 @@
 // between them in the same shape: a name, a state, and the two facts (#1582). Flattening both into
 // one entry here keeps the menu from branching on which kind it is drawing.
 import type { TFunction } from 'i18next'
+import { workStateMarkRecipe } from '../session-state-recipes'
 import type { SessionShellCommand, SessionSubagent } from '../types'
-import {
-  elapsedDuration,
-  subagentWorkState,
-  WORK_STATE_MARKS,
-  workPresentation,
-} from './presentation'
+import { elapsedDuration, subagentWorkState, workPresentation } from './presentation'
 import type { SubagentUsageFacts } from './types'
 
 export type WorkEntry = {
@@ -46,7 +42,7 @@ export function delegationEntries(
       ...presentation,
       monospace: false,
       status: delegation.state,
-      mark: WORK_STATE_MARKS[state],
+      mark: workStateMarkRecipe[state],
     }
   })
 }
@@ -61,6 +57,6 @@ export function shellEntries(
     ...workPresentation({ kind: 'shell', ...command, now }, t),
     monospace: command.label === null,
     status: command.state,
-    mark: WORK_STATE_MARKS[command.state],
+    mark: workStateMarkRecipe[command.state],
   }))
 }

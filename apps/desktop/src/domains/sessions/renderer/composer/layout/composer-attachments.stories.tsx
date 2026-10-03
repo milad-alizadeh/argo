@@ -56,7 +56,7 @@ function fileDataTransfer(names: string[]) {
 }
 
 const meta = {
-  title: 'Sessions/Composer/Attachments',
+  title: 'Features/Sessions/Composer/Attachments',
   component: ComposerStory,
   decorators: [
     (Story, { parameters }) => (
@@ -110,7 +110,7 @@ export const ImageAttachmentShowsAPreview: Story = {
 
     await attachViaMenu(canvas)
     await canvas.findByText('notes')
-    await expect(canvas.getByAltText('')).toHaveAttribute(
+    await expect(canvas.getByRole('img', { name: 'screenshot.png' })).toHaveAttribute(
       'src',
       'argo-attachment://local/repo/screenshot.png',
     )
@@ -137,6 +137,48 @@ export const RemovingAnAttachmentKeepsTheDraft: Story = {
 
     await expect(canvas.queryByText('notes')).toBeNull()
     await expect(composer).toHaveTextContent('Half a thought.')
+  },
+}
+
+export const KeyboardRemovesAnAttachment: Story = {
+  beforeEach: () => mockAttachmentsHost({ chosenPaths: ['/repo/notes.md'] }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+    await attachViaMenu(canvas)
+    await canvas.findByText('notes')
+
+    const remove = canvas.getByRole('button', { name: 'Remove notes' })
+    await userEvent.click(composer)
+    await userEvent.tab({ shift: true })
+    await expect(remove).toHaveFocus()
+    await userEvent.keyboard('{Enter}')
+
+    await expect(canvas.queryByText('notes')).toBeNull()
+  },
+}
+
+export const NarrowComposerWithAttachments: Story = {
+  parameters: { frame: 'w-(--size-session-feed-min) p-4' },
+  beforeEach: () =>
+    mockAttachmentsHost({
+      chosenPaths: [
+        '/repo/a-very-long-attachment-filename-that-needs-truncation.md',
+        '/repo/screenshot.png',
+      ],
+    }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+    await attachViaMenu(canvas)
+    await canvas.findByText('a-very-long-attachment-filename-that-needs-truncation')
+    await expect(
+      canvas.getByRole('button', { name: /Remove a-very-long-attachment-filename/ }),
+    ).toBeVisible()
+
+    const form = composer.closest('form')
+    if (!form) throw new Error('Composer form is missing.')
+    await expect(form.scrollWidth).toBeLessThanOrEqual(form.clientWidth)
   },
 }
 
@@ -174,8 +216,7 @@ export const DragAndDropAttaches: Story = {
       }),
     )
 
-    await expect(await canvas.findByText('diagram')).toBeVisible()
-    await expect(canvas.getByAltText('')).toHaveAttribute(
+    await expect(await canvas.findByRole('img', { name: 'diagram.jpg' })).toHaveAttribute(
       'src',
       'argo-attachment://local/dropped/diagram.jpg',
     )

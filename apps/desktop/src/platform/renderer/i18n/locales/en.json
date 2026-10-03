@@ -1,6 +1,11 @@
 {
+  "copy": {
+    "copied": "Copied to clipboard",
+    "failed": "Could not copy to clipboard"
+  },
   "terminal": {
-    "copy": "Copy terminal output"
+    "copy": "Copy terminal output",
+    "output": "Terminal output"
   },
   "shortcut": {
     "project": {

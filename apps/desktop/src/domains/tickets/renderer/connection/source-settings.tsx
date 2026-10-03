@@ -1,8 +1,8 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ContractFailureAlert } from '@/platform/renderer/components/contract-failure-alert'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Loader } from '@/platform/renderer/components/loader/loader'
-import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Item,
@@ -12,9 +12,9 @@ import {
   ItemMedia,
   ItemTitle,
 } from '@/platform/renderer/components/ui/item'
-import { useContractText } from '@/platform/renderer/i18n/contract-text'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
+import { cn } from '@/platform/renderer/lib/utils'
 import { providerPresentation } from '@/providers/presentation-registry'
 import type { ConnectionSummary } from '../hooks'
 import { ConnectionStatusMark } from './connection-status-mark'
@@ -28,18 +28,29 @@ export type SourceSettingsProps = {
   onConnect: () => void
 }
 
-const mediaTile = 'size-8 rounded-md bg-muted text-muted-foreground'
+const SOURCE_CONNECTION_ITEM_SLOTS = {
+  media: 'size-8 rounded-md bg-muted text-muted-foreground',
+  title: 'type-control',
+  description: 'type-meta',
+}
 
-function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSettingsProps) {
+function SourceConnectionItem({
+  connection,
+  disconnecting,
+  onDisconnect,
+  onConnect,
+}: SourceSettingsProps) {
   const { t } = useTranslation('tickets')
   if (connection === undefined) {
     return (
       <Item role="status" variant="outline">
-        <ItemMedia className={mediaTile} variant="icon">
+        <ItemMedia className={SOURCE_CONNECTION_ITEM_SLOTS.media} variant="icon">
           <Loader aria-hidden={true} />
         </ItemMedia>
         <ItemContent>
-          <ItemDescription className="type-meta">{t('settings.loading')}</ItemDescription>
+          <ItemDescription className={SOURCE_CONNECTION_ITEM_SLOTS.description}>
+            {t('settings.loading')}
+          </ItemDescription>
         </ItemContent>
       </Item>
     )
@@ -47,20 +58,19 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
   if (connection === null) {
     return (
       <Item className="border-dashed" variant="outline">
-        <ItemMedia className={mediaTile} variant="icon">
+        <ItemMedia className={SOURCE_CONNECTION_ITEM_SLOTS.media} variant="icon">
           <Icon name="ticket-source" />
         </ItemMedia>
         <ItemContent>
-          <ItemTitle className="type-control">{t('settings.none.title')}</ItemTitle>
-          <ItemDescription className="type-meta">{t('settings.none.description')}</ItemDescription>
+          <ItemTitle className={SOURCE_CONNECTION_ITEM_SLOTS.title}>
+            {t('settings.none.title')}
+          </ItemTitle>
+          <ItemDescription className={SOURCE_CONNECTION_ITEM_SLOTS.description}>
+            {t('settings.none.description')}
+          </ItemDescription>
         </ItemContent>
         <ItemActions>
-          <Button
-            aria-label={t('settings.none.connectLabel')}
-            className="type-control"
-            onClick={onConnect}
-            size="sm"
-          >
+          <Button aria-label={t('settings.none.connectLabel')} onClick={onConnect} size="sm">
             {t('settings.none.connect')}
           </Button>
         </ItemActions>
@@ -70,12 +80,19 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
   const { name, scope } = providerPresentation(connection.provider)
   return (
     <Item variant="outline">
-      <ItemMedia className={mediaTile} variant="icon">
+      <ItemMedia className={SOURCE_CONNECTION_ITEM_SLOTS.media} variant="icon">
         <Icon name="ticket-source" />
       </ItemMedia>
       <ItemContent className="min-w-0">
-        <ItemTitle className="type-control max-w-full truncate">{connection.label}</ItemTitle>
-        <ItemDescription className="type-meta flex items-center gap-(--spacing-shell-icon)">
+        <ItemTitle className={cn(SOURCE_CONNECTION_ITEM_SLOTS.title, 'max-w-full truncate')}>
+          {connection.label}
+        </ItemTitle>
+        <ItemDescription
+          className={cn(
+            SOURCE_CONNECTION_ITEM_SLOTS.description,
+            'flex items-center gap-(--spacing-shell-icon)',
+          )}
+        >
           <ConnectionStatusMark state={connection.state}>
             {t('settings.readThrough', {
               name,
@@ -87,7 +104,6 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
       <ItemActions>
         <Button
           aria-label={t('settings.disconnect', { scope: scope.one })}
-          className="type-control"
           disabled={disconnecting}
           onClick={onDisconnect}
           size="sm"
@@ -103,7 +119,6 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
 // The one GitHub repository or Linear team a Project reads its Tickets from (CONTEXT.md · Connection).
 export function SourceSettings(props: SourceSettingsProps) {
   const { t } = useTranslation('tickets')
-  const contractText = useContractText()
   const section = useRef<HTMLElement>(null)
   // Disconnecting removes the control that did it.
   useFocusRescue(section, props.connection === null)
@@ -117,13 +132,8 @@ export function SourceSettings(props: SourceSettingsProps) {
         <h3 className="type-control">{t('settings.heading')}</h3>
         <p className="type-meta text-muted-foreground">{t('settings.description')}</p>
       </div>
-      <Source {...props} />
-      {props.error ? (
-        <Alert className="border-destructive/50 bg-destructive/10" variant="destructive">
-          <Icon name="triangle-alert" />
-          <AlertDescription>{contractText(props.error)}</AlertDescription>
-        </Alert>
-      ) : null}
+      <SourceConnectionItem {...props} />
+      {props.error ? <ContractFailureAlert error={props.error} /> : null}
     </section>
   )
 }

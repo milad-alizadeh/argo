@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from '
 import { useTranslation } from 'react-i18next'
 
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
+import { AppPageSurface } from '@/platform/renderer/app/components/app-shell'
 import { BasicFeed, FeedJumpToLatest } from '../feed'
 import type { SessionError, SessionEvidence, SessionFeed, SessionPosture } from '../types'
 
@@ -26,23 +27,15 @@ export type SessionWorkspaceProps = {
   onFeedStalledChange?: (sessionId: string | null) => void
 }
 
-function ComposerFade({ onJumpToLatest }: { onJumpToLatest: (() => void) | null }) {
+function ComposerJumpToLatest({ onJumpToLatest }: { onJumpToLatest: (() => void) | null }) {
   const { t } = useTranslation('sessions')
+  if (onJumpToLatest === null) return null
   return (
-    <>
-      <div
-        aria-hidden="true"
-        data-component="SessionComposerFade"
-        className="pointer-events-none absolute inset-x-0 top-(--session-composer-fade-start) bottom-0 -z-10 bg-[image:var(--gradient-session-composer-fade)]"
-      />
-      {onJumpToLatest === null ? null : (
-        <FeedJumpToLatest
-          className="absolute bottom-[calc(100%+var(--spacing-shell-item))] left-1/2 -translate-x-1/2"
-          label={t('jumpToLatest')}
-          onClick={onJumpToLatest}
-        />
-      )}
-    </>
+    <FeedJumpToLatest
+      className="absolute bottom-[calc(100%+var(--spacing-shell-item))] left-1/2 -translate-x-1/2"
+      label={t('jumpToLatest')}
+      onClick={onJumpToLatest}
+    />
   )
 }
 
@@ -79,8 +72,6 @@ function ComposerSection({
       const inkTop = composerInkTop(scroll.firstElementChild) ?? sectionBounds.top
       const reach = sectionBounds.bottom - Math.max(inkTop, sectionBounds.top)
       body.style.setProperty('--session-composer-reach', `${reach}px`)
-      section.style.setProperty('--session-composer-fade-start', `${sectionBounds.height / 2}px`)
-      section.style.setProperty('--session-composer-fade-length', `${sectionBounds.height / 2}px`)
     }
     const resizes = new ResizeObserver(measure)
     resizes.observe(section)
@@ -109,9 +100,9 @@ function ComposerSection({
     <section
       aria-label={t('composerRegionLabel')}
       ref={sectionRef}
-      className="session-screen__composer absolute inset-x-0 bottom-0 z-20 isolate flex flex-col px-(--spacing-session-gutter)"
+      className="session-screen__composer absolute inset-x-0 bottom-0 z-20 isolate flex flex-col"
     >
-      <ComposerFade onJumpToLatest={onJumpToLatest} />
+      <ComposerJumpToLatest onJumpToLatest={onJumpToLatest} />
       <div
         ref={scrollRef}
         className="session-screen__composer-scroll flex min-h-0 flex-col"
@@ -156,9 +147,11 @@ export function SessionWorkspace({
   const { t } = useTranslation('sessions')
 
   return (
-    <section aria-label={t('workspaceLabel')} className="panel-frame @container relative">
-      {header ?? null}
-      <div className="panel-content relative">
+    <section
+      aria-label={t('workspaceLabel')}
+      className="session-screen__workspace panel-stack relative"
+    >
+      <AppPageSurface header={header ?? null}>
         {/* A layout wrapper only: `BasicFeed` is its own labelled landmark, so this stays a plain `div` to
           avoid a second "Session Feed" region with the same name. */}
         <div className="session-screen__feed min-h-0 flex-1 overflow-hidden">
@@ -183,7 +176,7 @@ export function SessionWorkspace({
           composer={composer}
           onJumpToLatest={externalJumpToLatest ?? jumpToLatest?.action ?? null}
         />
-      </div>
+      </AppPageSurface>
     </section>
   )
 }

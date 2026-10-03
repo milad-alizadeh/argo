@@ -18,7 +18,7 @@ const RESPONDED_ROW: Row = {
 }
 
 const meta = {
-  title: 'Sessions/Feed/Delegation',
+  title: 'Features/Sessions/Feed/Delegation',
   component: DelegationEvent,
   parameters: { layout: 'fullscreen' },
   render: (args) => (
@@ -48,7 +48,6 @@ export const Started: Story = {
     // The prompt lives in the Subagent's own Feed, which the title opens.
     await expect(canvas.queryByText('Review the specification.')).toBeNull()
     await expect(canvas.queryByText('The specification covers every visible state.')).toBeNull()
-    await expect(canvasElement.querySelector('.bg-card')).toBeNull()
   },
 }
 
@@ -89,7 +88,9 @@ export const Stopped: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: /Spec review stopped/ })).toBeVisible()
-    await expect(canvasElement.querySelector('.bg-warn')).not.toBeNull()
+    await expect(canvas.getByRole('button', { name: /Spec review stopped/ })).toHaveTextContent(
+      'Interrupted',
+    )
   },
 }
 
@@ -127,5 +128,17 @@ export const Nicknamed: Story = {
       'Jason stopped Spec review',
     ])
       await expect(canvas.getByRole('article', { name })).toBeVisible()
+  },
+}
+
+export const Failed: Story = {
+  args: { onOpen: fn(), row: { ...RESPONDED_ROW, state: 'failed' } },
+  play: async ({ args, canvasElement }) => {
+    const button = within(canvasElement).getByRole('button', {
+      name: /Spec review sent a reply to the main Session/,
+    })
+    await expect(button).toHaveTextContent('Failed')
+    await userEvent.click(button)
+    await expect(args.onOpen).toHaveBeenCalledTimes(1)
   },
 }

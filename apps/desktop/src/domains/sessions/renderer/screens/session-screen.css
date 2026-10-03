@@ -1,24 +1,4 @@
-.session-screen__feed {
-  --size-session-feed-top-fade: 40px;
-  position: relative;
-}
-
-.session-screen__feed::after {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: var(--size-session-feed-top-fade);
-  z-index: 10;
-  pointer-events: none;
-  background: linear-gradient(to bottom, var(--color-session-surface), transparent);
-}
-
 .session-screen__composer {
-  --gradient-session-composer-fade: linear-gradient(
-    to bottom,
-    transparent,
-    var(--color-session-surface) var(--session-composer-fade-length, 100%)
-  );
   /* The composer takes its content's height; the Feed keeps at least half the pane. */
   max-height: 50%;
 }
@@ -29,6 +9,7 @@
   flex: 1 1 auto;
   overflow-y: auto;
   overscroll-behavior: contain;
+  padding-inline: var(--spacing-session-gutter);
 }
 
 .session-screen__composer-scroll > * {
@@ -36,22 +17,10 @@
   flex: none;
 }
 
-.session-screen__feed:has(+ .session-screen__composer) .feed__viewport {
-  --session-feed-composer-clearance: calc(var(--session-composer-reach, 0px) + var(--spacing-snug));
-  padding-bottom: var(--session-feed-composer-clearance);
-  scroll-padding-bottom: var(--session-feed-composer-clearance);
+.session-screen__feed:has(+ .session-screen__composer) {
+  padding-bottom: var(--session-composer-reach, 0px);
 }
-
-.session-screen__composer
-  :is([data-component="ComposerCard"], [data-component="SessionContextBar"]) {
-  background-color: var(--color-session-composer);
-  backdrop-filter: blur(var(--blur-session-composer));
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .session-screen__composer
-    :is([data-component="ComposerCard"], [data-component="SessionContextBar"]) {
-    background-color: var(--card);
-    backdrop-filter: none;
-  }
+.session-screen__workspace {
+  --size-content-minimum: var(--size-session-workspace-min);
+  --spacing-session-gutter: var(--spacing-shell-section);
 }

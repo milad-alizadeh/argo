@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { indicatorToneRecipe } from '@/platform/renderer/components/design-system/tone-recipes'
 
 import type { ConnectionSummary } from '../hooks'
 
 const STATE_MARK: Record<ConnectionSummary['state'], string> = {
-  ready: 'bg-active',
-  'account-expired': 'bg-danger',
-  'account-revoked': 'bg-danger',
-  'account-unreadable': 'bg-danger',
+  ready: `${indicatorToneRecipe.success} bg-current`,
+  'account-expired': `${indicatorToneRecipe.danger} bg-current`,
+  'account-revoked': `${indicatorToneRecipe.danger} bg-current`,
+  'account-unreadable': `${indicatorToneRecipe.danger} bg-current`,
   'account-missing': 'bg-transparent shadow-state-outline',
 }
 

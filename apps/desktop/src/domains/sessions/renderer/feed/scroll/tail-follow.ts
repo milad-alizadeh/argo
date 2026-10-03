@@ -73,6 +73,14 @@ export function resolveInitialAtLatest(
   return positionedAtEnd || measuredAtEnd === true
 }
 
+export function resolveAtLatest(
+  current: boolean,
+  measuredAtEnd: boolean,
+  scrollDirection: 'forward' | 'backward' | null,
+): boolean {
+  return measuredAtEnd || (current && scrollDirection === null)
+}
+
 // Whether the Feed should track new rows as they arrive, and the state that decision rests on:
 // whether the document has taken its opening position yet, and whether the reader is currently
 // at the tail (unless a disclosure's own motion is holding the anchor still).
@@ -101,14 +109,20 @@ export function useFeedTailFollow(
       // An inactive document measures 0x0, which reads as "at the end" and would lose the reader.
       if (awaitingInitialPosition || !active) return
       setAtLatest((current) => {
-        const next = instance.isAtEnd(TAIL_THRESHOLD_PX)
+        // Remeasurement can temporarily move the tail beyond the threshold without reader input.
+        const next = resolveAtLatest(
+          current,
+          instance.isAtEnd(TAIL_THRESHOLD_PX),
+          instance.scrollDirection,
+        )
         return current === next ? current : next
       })
     },
     [active, awaitingInitialPosition],
   )
   const holding = useDisclosureHold(viewport, () => {
-    if (latest.current !== null) onChange(latest.current)
+    if (latest.current !== null && active && !awaitingInitialPosition)
+      setAtLatest(latest.current.isAtEnd(TAIL_THRESHOLD_PX))
   })
   return {
     atLatest,

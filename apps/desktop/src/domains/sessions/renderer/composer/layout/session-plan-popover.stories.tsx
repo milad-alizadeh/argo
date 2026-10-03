@@ -4,7 +4,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { SessionPlanPopover } from './session-plan-popover'
 
 const meta = {
-  title: 'Sessions/Composer/Plan',
+  title: 'Features/Sessions/Composer/Plan Popover',
   component: SessionPlanPopover,
 } satisfies Meta<typeof SessionPlanPopover>
 

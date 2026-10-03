@@ -1,0 +1,84 @@
+{
+  "fetchedAt": "2026-10-02",
+  "cliVersion": "4.21.0",
+  "configuration": "apps/desktop/components.json",
+  "style": "base-nova",
+  "iconLibrary": "phosphor",
+  "generationTransforms": [
+    "Read-only shadcn add NAME --view NAME.tsx -c apps/desktop.",
+    "Remove CLI preview framing only for transformed-source identity.",
+    "Resolve ui aliases and transform registry icon placeholders to Phosphor default props.",
+    "Normalize same-folder imports to relative paths, remove use-client for rsc=false, and apply repository Biome formatting and import/export organization without changing declarations or classes."
+  ],
+  "items": [
+    {
+      "name": "command",
+      "url": "https://ui.shadcn.com/r/styles/base-nova/command.json",
+      "payloadSha256": "626b25da7b65ae2e800e5c7bc516f2223c2a144fb745ddaf0dcbf746d879f3d1",
+      "cliSourceSha256": "e6210d33b3d6033f392d07f322bd79803e37d6f4fb416bada63bcee9a806f3cf",
+      "dependencies": [
+        "cn",
+        "cmdk"
+      ],
+      "registryDependencies": [
+        "dialog",
+        "input-group"
+      ],
+      "files": [
+        {
+          "path": "registry/base-nova/ui/command.tsx",
+          "type": "registry:ui"
+        }
+      ],
+      "target": "apps/desktop/src/platform/renderer/components/ui/command.tsx",
+      "reviewedCandidateSha256": "caf83d360238983d6811d1835ecf20fbad27a827259aa54fe6490b8bffd3c671",
+      "sourceSha256": "4340e1342fabfe7de8a87f59ccbe07190f0427016df6c971a0e6c981cf11d322"
+    },
+    {
+      "name": "input-group",
+      "url": "https://ui.shadcn.com/r/styles/base-nova/input-group.json",
+      "payloadSha256": "acf9c5497a6c844dee87fbd4afefb6cd8be9ce50d050d14d58a340d955e517a1",
+      "cliSourceSha256": "2587497bf88779dd3b9cd767ff590798e15fd6a61df76df8c0b0b74b3bae8acf",
+      "dependencies": [
+        "cn"
+      ],
+      "registryDependencies": [
+        "button",
+        "input",
+        "textarea"
+      ],
+      "files": [
+        {
+          "path": "registry/base-nova/ui/input-group.tsx",
+          "type": "registry:ui"
+        }
+      ],
+      "target": "apps/desktop/src/platform/renderer/components/ui/input-group.tsx",
+      "reviewedCandidateSha256": "96c19e3c2e2c0ea08d3c7baa3a555eb14558648531d61778c9da2c1076b59198",
+      "sourceSha256": "b8b4a727c2f500e3ae513198174f1ea0c021ddf36057700c0595a09ab074abf5"
+    },
+    {
+      "name": "combobox",
+      "url": "https://ui.shadcn.com/r/styles/base-nova/combobox.json",
+      "payloadSha256": "d4b9231b00428269f6fa42bf3e26714f15c69245f35b62d1bbae6d1a4853d314",
+      "cliSourceSha256": "cae0af4943617efb8870eb1e368b22f748f6fa33e1b90c2dec553a2fab7256bd",
+      "dependencies": [
+        "cn",
+        "@base-ui/react"
+      ],
+      "registryDependencies": [
+        "button",
+        "input-group"
+      ],
+      "files": [
+        {
+          "path": "registry/base-nova/ui/combobox.tsx",
+          "type": "registry:ui"
+        }
+      ],
+      "target": "apps/desktop/src/platform/renderer/components/ui/combobox.tsx",
+      "reviewedCandidateSha256": "8cd708b1c58681351c2335b39e176a60ab44ad6510757acc2ac233d74efad499",
+      "sourceSha256": "68e1286543d81b9af306169f8c394e982ee2e960fc8af14865a0937ef68d5e4e"
+    }
+  ]
+}

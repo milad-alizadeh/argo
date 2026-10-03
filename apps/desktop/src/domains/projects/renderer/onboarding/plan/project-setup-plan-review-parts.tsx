@@ -6,6 +6,7 @@ import {
   CollapsibleTrigger,
 } from '@/platform/renderer/components/ui/collapsible'
 import type { SetupPlan } from '../model/setup-plan'
+import './project-setup-plan-review-parts.css'
 
 export function PackageNames({ names }: { names: string[] }) {
   return names.length ? (
@@ -33,13 +34,13 @@ export function PlanSection({
   return (
     <Collapsible className="group overflow-hidden rounded-xl border bg-card" defaultOpen>
       <CollapsibleTrigger className="flex w-full items-center gap-3 px-3.5 py-3 text-left hover:bg-muted/30 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring">
-        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted [&>svg]:size-4">
-          {icon}
-        </span>
+        <span className="onboarding-media-tile size-8 [&>svg]:size-4">{icon}</span>
         <span className="min-w-0">
-          <strong className="block type-body font-semibold">{title}</strong>
+          <strong className="block onboarding-title">{title}</strong>
           {subtitle ? (
-            <small className="mt-0.5 block type-control text-muted-foreground">{subtitle}</small>
+            <small className="mt-0.5 block onboarding-detail text-muted-foreground">
+              {subtitle}
+            </small>
           ) : null}
         </span>
         <Icon
@@ -86,8 +87,8 @@ export function SummaryRow({
     <div className="flex items-start gap-3 border-b px-4 py-3 last:border-b-0">
       <span className="mt-0.5 text-muted-foreground [&>svg]:size-4">{icon}</span>
       <span className="min-w-0">
-        <strong className="block type-label font-semibold">{label}</strong>
-        <small className="mt-0.5 block type-control text-muted-foreground">{value}</small>
+        <strong className="block onboarding-emphasis">{label}</strong>
+        <small className="mt-0.5 block onboarding-detail text-muted-foreground">{value}</small>
       </span>
     </div>
   )
@@ -96,8 +97,8 @@ export function SummaryRow({
 export function Fact({ label, value }: { label: string; value: string }) {
   return (
     <span className="min-w-0 rounded-lg border bg-card px-2.5 py-2">
-      <small className="block type-caption text-muted-foreground">{label}</small>
-      <strong className="mt-1 block type-label font-medium">{value}</strong>
+      <small className="block onboarding-fact-label text-muted-foreground">{label}</small>
+      <strong className="mt-1 block onboarding-emphasis">{value}</strong>
     </span>
   )
 }

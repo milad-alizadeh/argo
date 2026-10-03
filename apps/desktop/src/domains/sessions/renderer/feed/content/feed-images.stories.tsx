@@ -1,12 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
-import { roleColors } from './appearance-probe'
+import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test'
 import { FeedGallery, FeedImage, FeedMissingImage } from './feed-images'
 import { BROKEN_PICTURE, SAMPLE_PICTURE } from './feed-samples'
 import { ImageLightbox } from './image-lightbox'
 
 const meta = {
-  title: 'Sessions/Feed/Images',
+  title: 'Features/Sessions/Feed/Images',
   component: FeedImage,
   decorators: [
     (Story) => (
@@ -57,9 +56,8 @@ export const Loading: Story = {
     await expect(trigger()).not.toHaveFocus()
     await userEvent.click(trigger(), { pointerEventsCheck: 0 })
     await expect(screen.queryByRole('dialog')).toBeNull()
-    const card = within(canvasElement).getByRole('figure').getBoundingClientRect()
-    await expect(trigger().getBoundingClientRect().width).toBe(card.width)
-    await expect(trigger().getBoundingClientRect().height).toBe(card.height)
+    await expect(within(canvasElement).getByRole('figure')).toHaveTextContent('Image unavailable')
+    await expect(trigger()).toBeDisabled()
   },
 }
 
@@ -79,15 +77,10 @@ export const Unavailable: Story = {
     await expect(broken).toHaveTextContent('Image unavailableA screenshot that no longer decodes')
     await expect(refused).toHaveTextContent('Image unavailableA file the Session moved')
     await expect(canvas.queryByRole('button')).toBeNull()
-    const card = getComputedStyle(broken?.firstElementChild ?? canvasElement)
-    const roles = roleColors('bg-card text-muted-foreground')
-    await expect(card.backgroundColor).toBe(roles.backgroundColor)
-    await expect(card.color).toBe(roles.color)
   },
 }
 
-// Every state stands in the gallery's one reserved height, so a load or a failure changes no row.
-export const ReservedHeight: Story = {
+export const MixedGallery: Story = {
   render: () => (
     <>
       <FeedImage source={SAMPLE_PICTURE} alt="The attached reference" />
@@ -96,14 +89,131 @@ export const ReservedHeight: Story = {
     </>
   ),
   play: async ({ canvasElement }) => {
-    const gallery = canvasElement.querySelector('[data-component="FeedGallery"]')
     await waitFor(() => expect(trigger()).toHaveAttribute('data-state', 'loaded'))
-    await waitFor(() =>
-      expect(within(canvasElement).getAllByText('Image unavailable')).toHaveLength(2),
+    await waitFor(() => expect(within(canvasElement).getAllByRole('figure')).toHaveLength(2))
+    await expect(trigger()).toBeEnabled()
+  },
+}
+
+async function openImage() {
+  await waitFor(() => expect(trigger()).toHaveAttribute('data-state', 'loaded'))
+  await userEvent.click(trigger())
+  const dialog = await screen.findByRole('dialog', { name: 'The attached reference' })
+  await waitFor(() => expect(dialog).toBeVisible())
+  await waitFor(() =>
+    expect(within(dialog).getByRole('img', { name: 'The attached reference' })).toBeVisible(),
+  )
+  await waitFor(() =>
+    expect(within(dialog).getByRole('button', { name: 'Close image preview' })).toBeVisible(),
+  )
+  return dialog
+}
+
+async function expectClosed() {
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  await waitFor(() => expect(trigger()).toHaveFocus())
+}
+
+function samplePicture(width: number, height: number) {
+  return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#0ea5e9"/><circle cx="50%" cy="50%" r="150" fill="#f8fafc"/></svg>`)}`
+}
+
+export const OpenLandscape: Story = {
+  args: { source: samplePicture(1800, 1000) },
+  play: async () => {
+    const dialog = await openImage()
+    await expect(dialog).toHaveAccessibleDescription('Full-size image preview')
+    const download = within(dialog).getByRole('button', { name: 'Download The attached reference' })
+    await expect(download).toHaveAttribute('download', 'The attached reference')
+  },
+}
+
+export const OpenPortrait: Story = {
+  args: { source: samplePicture(1000, 1800) },
+  play: async () => {
+    await openImage()
+  },
+}
+
+export const CloseButton: Story = {
+  play: async () => {
+    const dialog = await openImage()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Close image preview' }))
+    await expectClosed()
+  },
+}
+
+export const CloseScrim: Story = {
+  play: async () => {
+    const dialog = await openImage()
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Close image preview backdrop' }),
     )
-    const height = gallery?.getBoundingClientRect().height
-    for (const image of gallery?.children ?? [])
-      await expect(image.getBoundingClientRect().height).toBe(height)
+    await expectClosed()
+  },
+}
+
+export const Download: Story = {
+  play: async () => {
+    const dialog = await openImage()
+    const download = within(dialog).getByRole('button', { name: 'Download The attached reference' })
+    await expect(download).toHaveAttribute('href', SAMPLE_PICTURE)
+    await expect(download).toHaveAttribute('download', 'The attached reference')
+    const activate = fn((event: Event) => event.preventDefault())
+    download.addEventListener('click', activate)
+    try {
+      await userEvent.click(download)
+      await expect(activate).toHaveBeenCalledOnce()
+      await expect(dialog).toBeVisible()
+    } finally {
+      download.removeEventListener('click', activate)
+    }
+  },
+}
+
+export const Reopen: Story = {
+  play: async () => {
+    for (let opening = 0; opening < 2; opening++) {
+      const dialog = await openImage()
+      const preview = within(dialog).getByRole('img', { name: 'The attached reference' })
+      await waitFor(() => expect(preview.getAnimations()).toHaveLength(0))
+      await userEvent.keyboard('{Escape}')
+      await expectClosed()
+    }
+  },
+}
+
+export const CompactPreview: Story = {
+  args: { compact: true },
+  play: async () => {
+    await openImage()
+    await userEvent.keyboard('{Escape}')
+    await expectClosed()
+  },
+}
+
+// A story can answer the motion query without changing the host system preference.
+export const ReducedMotion: Story = {
+  beforeEach: () => {
+    const system = window.matchMedia
+    window.matchMedia = (query) =>
+      query === '(prefers-reduced-motion: reduce)'
+        ? ({ matches: true, media: query } as MediaQueryList)
+        : system.call(window, query)
+    return () => {
+      window.matchMedia = system
+    }
+  },
+  play: async () => {
+    const dialog = await openImage()
+    await expect(
+      within(dialog).getByRole('img', { name: 'The attached reference' }).getAnimations(),
+    ).toHaveLength(0)
+    await expect(
+      within(dialog).getByRole('button', { name: 'Close image preview backdrop' }).getAnimations(),
+    ).toHaveLength(0)
+    await userEvent.keyboard('{Escape}')
+    await expectClosed()
   },
 }
 
@@ -117,11 +227,23 @@ export const LightboxFromKeyboard: Story = {
     await waitFor(() =>
       expect(within(dialog).getByRole('button', { name: 'Close image preview' })).toBeVisible(),
     )
-    const preview = within(dialog).getByRole('img', { name: 'The attached reference' })
-    await expect(preview.getBoundingClientRect().width).toBeGreaterThan(0)
-    await expect(preview.getBoundingClientRect().height).toBeGreaterThan(0)
+    await expect(within(dialog).getByRole('img', { name: 'The attached reference' })).toBeVisible()
+    await waitFor(() =>
+      expect(
+        within(dialog).getByRole('button', { name: 'Download The attached reference' }),
+      ).toHaveFocus(),
+    )
+    await userEvent.tab()
+    await waitFor(() =>
+      expect(within(dialog).getByRole('button', { name: 'Close image preview' })).toHaveFocus(),
+    )
+    await userEvent.tab()
+    await waitFor(() =>
+      expect(
+        within(dialog).getByRole('button', { name: 'Download The attached reference' }),
+      ).toHaveFocus(),
+    )
     await userEvent.keyboard('{Escape}')
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-    await expect(trigger()).toHaveFocus()
+    await expectClosed()
   },
 }

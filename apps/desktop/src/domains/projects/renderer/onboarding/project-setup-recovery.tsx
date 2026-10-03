@@ -6,6 +6,7 @@ import { projectSetupDiffFiles } from './editor/project-setup-diff-files'
 import type { ProjectSetupCommand, ProjectSetupSnapshot } from './onboarding-presentation'
 import { projectSetupRecoveryText } from './project-setup-recovery-text'
 
+import './plan/project-setup-plan-review-parts.css'
 export function Recovery({
   command,
   review,
@@ -26,7 +27,7 @@ export function Recovery({
   return (
     <section className="mt-6 grid gap-3" aria-label={t('setup.actor.interrupted.label')}>
       {recoveryText ? <p className="type-body">{recoveryText}</p> : null}
-      <div className="flex flex-wrap justify-end gap-2">
+      <div className="onboarding-action-row">
         <SetupCommandButton command={command} value={action}>
           {t('setup.actor.interrupted.resume')}
         </SetupCommandButton>
@@ -50,7 +51,7 @@ function ReviewRequired({ command, snapshot }: Omit<Parameters<typeof Recovery>[
         markViewedLabel={(path) => t('setup.actor.reviewing-diff.markViewed', { path })}
         viewedLabel={t('setup.actor.reviewing-diff.viewed')}
       />
-      <div className="flex justify-end">
+      <div className="onboarding-action-row">
         <SetupCommandButton
           command={command}
           value={{

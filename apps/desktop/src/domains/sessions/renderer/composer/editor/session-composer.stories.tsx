@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, within } from 'storybook/test'
+import { expect, fn, within } from 'storybook/test'
 import type { Harness } from '@/harnesses/harness'
 import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '@/mocks/sessions/harness-catalog.fixture'
+import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import type { SessionPlan } from '../../types'
 import { ComposerForm } from '../layout/composer-form'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
@@ -61,7 +62,7 @@ function EverythingComposerStory() {
 }
 
 const meta = {
-  title: 'Sessions/Composer',
+  title: 'Features/Sessions/Composer/Composer',
   component: EverythingComposerStory,
   decorators: [
     (Story, { parameters }) => (
@@ -85,7 +86,16 @@ export const PermissionHidesWorktreeRow: Story = {
   render: () => (
     <ComposerForm
       onSend={async () => true}
-      permissionPrompt={<p>Permission card</p>}
+      permissionPrompt={
+        <PermissionPrompt
+          harness="claude"
+          permission={{
+            id: 'permission-one',
+            description: 'Bash {"command":"bun test"}',
+          }}
+          onDecide={fn(async () => true)}
+        />
+      }
       sessionId="session-one"
       worktree={{
         options: WORKTREE_OPTIONS,
@@ -99,7 +109,7 @@ export const PermissionHidesWorktreeRow: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Permission card')).toBeVisible()
+    await expect(canvas.getByRole('heading', { name: 'Permission needed' })).toBeVisible()
     await expect(canvas.queryByRole('switch', { name: 'Worktree' })).toBeNull()
   },
 }

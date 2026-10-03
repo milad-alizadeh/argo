@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { MenuDropdownTrigger } from '@/platform/renderer/components/dropdown-trigger'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { SidebarSearch } from '@/platform/renderer/components/sidebar-search'
 import { Button } from '@/platform/renderer/components/ui/button'
@@ -10,7 +11,6 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
 } from '@/platform/renderer/components/ui/dropdown-menu'
-import { MenuDropdownTrigger } from '@/platform/renderer/components/ui/dropdown-trigger'
 import { Progress } from '@/platform/renderer/components/ui/progress'
 import { FILTER_LABELS, type SessionListFilter } from './session-list-query'
 import { type SessionSyncStatus, useSessionSync } from './use-session-sync'
@@ -25,10 +25,7 @@ function SessionSyncFeedback({ status }: { status: SessionSyncStatus | null }) {
   if (status.phase === 'saving' && status.total !== null)
     progress = status.total === 0 ? 100 : (status.processed / status.total) * 100
   return (
-    <div
-      className="border-b border-border/60 px-4 py-2 type-meta text-muted-foreground"
-      role="status"
-    >
+    <div className="border-b border-border px-4 py-2 type-meta text-muted-foreground" role="status">
       <div className="flex items-center gap-2">
         <Progress aria-label={t('sync.progress')} className="min-w-0 flex-1" value={progress} />
         <span>
@@ -54,11 +51,11 @@ function SessionListFilterMenu({
   return (
     <DropdownMenu>
       <MenuDropdownTrigger
+        appearance="menu"
         aria-label={t('filterSessions')}
         icon="session-list-filter"
         iconOnly
         label={t('filterSessions')}
-        variant="ghost"
       />
       <DropdownMenuContent align="end" className="w-max">
         <DropdownMenuRadioGroup
@@ -73,11 +70,11 @@ function SessionListFilterMenu({
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          className="whitespace-nowrap type-control"
+          className="whitespace-nowrap"
           disabled={sync.refreshing}
           onClick={sync.refresh}
         >
-          <Icon name="retry" />
+          <Icon className="text-muted-foreground" name="retry" />
           {t('refreshSessions')}
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -103,7 +100,7 @@ export function SessionListHeader({
   const sync = useSessionSync()
   return (
     <>
-      <header className="flex h-(--size-chrome-bar) sidebar-gutter shrink-0 items-center">
+      <header className="sidebar-header">
         <SidebarSearch
           label={t('searchSessions')}
           onChange={setSearch}
@@ -120,7 +117,7 @@ export function SessionListHeader({
             size="icon-sm"
             variant="ghost"
           >
-            <Icon name="add" />
+            <Icon className="text-muted-foreground" name="add" />
           </Button>
         </div>
       </header>

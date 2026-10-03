@@ -5,6 +5,7 @@ import { SetupPlanCustomization } from '../plan/setup-plan-customization'
 import type { SetupSectionModel } from '../plan/setup-plan-sections'
 import type { SetupAnswer } from '../use-setup-answers'
 import { BackButton, isJson, SetupPage } from './setup-page'
+import '../plan/project-setup-plan-review-parts.css'
 
 export function CustomizeSetup({
   answers,
@@ -57,7 +58,7 @@ export function CustomizeSetup({
         }
       >
         <BackButton onClick={onBack} />
-        <h2 className="mt-4 type-title">{t('setup.document.customizeTitle')}</h2>
+        <h2 className="mt-4 onboarding-stage-heading">{t('setup.document.customizeTitle')}</h2>
         <div className="mt-8 space-y-5">
           <SetupPlanCustomization
             answers={answers}

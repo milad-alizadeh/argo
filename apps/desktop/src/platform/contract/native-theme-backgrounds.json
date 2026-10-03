@@ -1,0 +1,18 @@
+{
+  "default": {
+    "light": "#ffffff",
+    "dark": "#0a0a0a"
+  },
+  "supabase": {
+    "light": "#fcfcfc",
+    "dark": "#121212"
+  },
+  "linear": {
+    "light": "#fbfbfb",
+    "dark": "#101011"
+  },
+  "amber-minimal": {
+    "light": "#ffffff",
+    "dark": "#161616"
+  }
+}

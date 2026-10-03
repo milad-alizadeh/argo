@@ -32,7 +32,7 @@ const connected = {
 const revoked = { ...octocat(), id: 'github:1', login: 'hubot', state: 'revoked' as const }
 
 const meta = {
-  title: 'Accounts/Accounts Panel',
+  title: 'Features/Accounts/Accounts Panel',
   component: AccountsPanel,
   // The panel lives in a `sm:max-w-md` dialog, so the story draws it at that width.
   decorators: [
@@ -63,22 +63,47 @@ export const Accounts: Story = {
     const connections = within(row).getByRole('list', { name: 'Repositories for octocat' })
     await expect(connections).toHaveTextContent('argo · octocat/hello-world')
     const disconnect = within(row).getByRole('button', { name: 'Disconnect…' })
-    await userEvent.click(disconnect)
+    disconnect.focus()
+    await userEvent.keyboard('{Enter}')
     // Asking lands on the harmless answer, and answering puts focus back on the row.
     await expect(within(row).getByRole('button', { name: 'Keep' })).toHaveFocus()
-    await userEvent.click(within(row).getByRole('button', { name: 'Keep' }))
+    await userEvent.keyboard('{Enter}')
     await expect(within(row).getByRole('button', { name: 'Disconnect…' })).toHaveFocus()
     await expect(args.onDisconnect).not.toHaveBeenCalled()
     await userEvent.click(within(row).getByRole('button', { name: 'Disconnect…' }))
     await userEvent.click(within(row).getByRole('button', { name: 'Disconnect' }))
     await expect(args.onDisconnect).toHaveBeenCalledWith('github:583231')
     const revokedRow = canvas.getByRole('listitem', { name: 'GitHub Account hubot' })
-    await expect(revokedRow).toHaveTextContent('Access revoked')
+    await expect(within(revokedRow).getByText('Access revoked')).toBeVisible()
     await expect(revokedRow).toHaveTextContent('No Project reads Tickets through this Account.')
     await userEvent.click(within(revokedRow).getByRole('button', { name: 'Reconnect' }))
     await expect(args.signIn.start).toHaveBeenCalledWith('github')
     // One button per provider this build can sign in to.
     await expect(canvas.getByRole('button', { name: 'Connect a Linear Account' })).toBeEnabled()
+  },
+}
+
+const LONG_LOGIN = 'ada-lovelace@analytical-engine-research.example'
+const LONG_WORKSPACE = 'Analytical Engine Research and Development'
+
+export const LongAccountIdentity: Story = {
+  globals: { viewport: { value: 'compact', isRotated: false } },
+  args: {
+    listing: listing([
+      { ...ada(), login: LONG_LOGIN, workspace: LONG_WORKSPACE, state: 'expired' },
+    ]),
+  },
+  play: async ({ args, canvasElement }) => {
+    const row = within(canvasElement).getByRole('listitem', {
+      name: `Linear Account ${LONG_LOGIN}`,
+    })
+    await expect(row).toHaveTextContent(LONG_LOGIN)
+    await expect(row).toHaveTextContent(LONG_WORKSPACE)
+    await expect(within(row).getByText('Sign-in expired')).toBeVisible()
+    const reconnect = within(row).getByRole('button', { name: 'Reconnect' })
+    reconnect.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(args.signIn.start).toHaveBeenCalledWith('linear')
   },
 }
 
@@ -300,7 +325,7 @@ export const DisconnectManyConnections: Story = {
 // A language with no catalog of its own falls back to English, so the stub proves the switch: the
 // one key it holds is drawn from the stub and the rest stay English (#2130).
 const STUB_LANGUAGE = 'zz'
-const STUB_EMPTY = 'STUB no Account'
+const STUB_EMPTY = 'Aucun compte connecté.'
 
 export const StubLanguage: Story = {
   args: { listing: listing([]) },

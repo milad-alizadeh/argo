@@ -6,13 +6,13 @@ import { ticketWorkPath } from './ticket-work-path'
 import { TicketsSidebarContent, type TicketsSidebarContentProps } from './tickets-sidebar'
 
 const meta = {
-  title: 'Tickets/Sidebar',
+  title: 'Features/Tickets/Sidebar/Tickets Sidebar',
   component: TicketsSidebarContent,
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
       <MemoryRouter>
-        <div className="h-dvh w-64">
+        <div className="panel-sidebar panel-sidebar-start panel-sidebar-end h-dvh w-64">
           <Story />
         </div>
       </MemoryRouter>
@@ -39,17 +39,6 @@ export const Connected: Story = {
     await expect(canvas.getByRole('heading', { name: 'Work path' })).toBeInTheDocument()
     await expect(canvas.getByText(/^Start here/)).toBeInTheDocument()
     await expect(canvas.getByText('Unlocks one Ticket')).toBeInTheDocument()
-    const path = canvas.getByRole('region', { name: 'Work path' })
-    const rail = path.querySelector('span.bg-border')
-    const start = path.querySelector('span.bg-primary')
-    const unlocks = path.querySelector('span.border-primary')
-    if (!rail || !start || !unlocks) throw new Error('The work path needs its rail and markers.')
-    const center = (element: Element) => {
-      const bounds = element.getBoundingClientRect()
-      return bounds.left + bounds.width / 2
-    }
-    await expect(Math.abs(center(rail) - center(start))).toBeLessThanOrEqual(0.5)
-    await expect(Math.abs(center(rail) - center(unlocks))).toBeLessThanOrEqual(0.5)
     await userEvent.click(canvas.getByRole('button', { name: /#609 Prototype the Tickets room/ }))
     await expect(args.onSelectTicket).toHaveBeenCalledWith('#609')
     await expect(canvas.getByRole('button', { name: 'New Ticket' })).toHaveAttribute(

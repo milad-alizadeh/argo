@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { FeedMarkdown } from '../../feed/content'
 import type { SessionSkillEvidence } from '../../types'
+import { InspectorPathHeader } from '../inspector-path-header'
+import { inspectorBodyRecipe } from '../inspector-recipes'
 
 // A skill file opens with YAML frontmatter for the Harness; the reader wants the instructions below.
 const FRONTMATTER = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/
@@ -36,7 +38,8 @@ export function SessionSkillInspector({ evidence }: { evidence: SessionSkillEvid
   const { t } = useTranslation('sessions')
   return (
     <section className="flex min-h-0 flex-1 flex-col" aria-label={t('skill.inspector')}>
-      <div className="min-h-0 flex-1 overflow-auto p-4">
+      <InspectorPathHeader path={evidence.path} />
+      <div className={inspectorBodyRecipe}>
         <SessionSkillBody path={evidence.path} />
       </div>
     </section>

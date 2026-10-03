@@ -2,18 +2,17 @@ import { type MouseEvent, memo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isWorkingStatus } from '@/domains/sessions/api/session-live-event'
 import { harnessSchema } from '@/harnesses/harness'
+import { StatusBadge } from '@/platform/renderer/components/design-system/status-badge'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import { Badge } from '@/platform/renderer/components/ui/badge'
 import { LiveActivityWords, useLiveActivityText } from '../feed'
 import { HarnessLogo } from '../harness'
 import { SessionTitle } from '../prompt'
+import { type SessionStatusVariant, sessionStatusMarkRecipe } from '../session-state-recipes'
 import type { Session, SessionExtras, SessionId, SessionPlan } from '../types'
 import type { SelectionModifier } from './hooks/session-list-selection'
 
 // One row of the list, for the virtualizer's estimate and for the spinner and skeleton rows.
 export const SESSION_LIST_ROW_HEIGHT = 56
-
-type SessionStatusVariant = 'active' | 'attention' | 'failed' | 'idle' | 'unknown'
 
 // `starting` keeps its idle mark until a Turn works.
 const STATUS_VARIANTS = {
@@ -27,14 +26,10 @@ const STATUS_VARIANTS = {
   idle: 'idle',
 } as const satisfies Record<Session['status'], SessionStatusVariant>
 
-const STATUS_MARK = {
-  active: 'bg-active shadow-state-glow animate-[status-light-blink_1.6s_ease-in-out_infinite]',
-  attention:
-    'bg-warn shadow-[0_0_5px_color-mix(in_srgb,var(--color-warn)_35%,transparent)] animate-[status-light-blink_1.6s_ease-in-out_infinite]',
-  failed: 'bg-danger',
-  idle: 'bg-idle',
-  unknown: 'bg-transparent shadow-state-outline',
-} satisfies Record<SessionStatusVariant, string>
+const sessionFactRecipe = {
+  badge: 'shrink-0',
+  archivedIcon: 'size-3',
+} as const
 
 function selectionModifierOf(event: {
   shiftKey: boolean
@@ -53,7 +48,7 @@ function ActivityLine({ session }: { session: Session }) {
     running: session.status === 'running',
   })
   return (
-    <span className="mt-0.5 block min-h-lh truncate type-meta text-faint">
+    <span className="mt-0.5 block min-h-lh truncate type-meta text-muted-foreground">
       {line === null ? null : <LiveActivityWords line={line} />}
     </span>
   )
@@ -62,9 +57,10 @@ function ActivityLine({ session }: { session: Session }) {
 // A row that already carries a ground keeps it under the pointer: hover answers "this one is
 // reachable", and a selected row has nothing left to say (#2273).
 function rowHighlightOf(checked: boolean, selected: boolean, archived: boolean): string {
-  if (checked || selected) return 'bg-selected text-foreground'
-  if (archived) return 'border border-border/70 bg-muted/50 text-muted-foreground hover:bg-muted'
-  return 'hover:bg-muted'
+  if (checked || selected)
+    return 'bg-sidebar-accent text-sidebar-accent-foreground [&_.type-meta]:text-inherit'
+  if (archived) return 'border border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+  return 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:[&_.type-meta]:text-inherit'
 }
 
 // How long ago a settled Session last changed; a working one shows no time.
@@ -145,7 +141,7 @@ function SessionRowMark({ session, unavailable }: { session: RowSession; unavail
         </span>
       </span>
       <span
-        className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full transition-[background-color,box-shadow,opacity] duration-(--duration-attention) ease-(--ease-emphasized) motion-reduce:animate-none motion-reduce:transition-none ${STATUS_MARK[statusVariant]}`}
+        className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full transition-[background-color,box-shadow,opacity] duration-(--duration-attention) ease-(--ease-emphasized) motion-reduce:animate-none motion-reduce:transition-none ${sessionStatusMarkRecipe[statusVariant]}`}
         data-variant={statusVariant}
         data-slot="session-status"
       />
@@ -161,7 +157,7 @@ function SessionMetadata({ now, session }: { now: number; session: RowSession })
   const plan = session.plan ?? null
   // The line keeps its height when empty, so a row does not shrink as its age hides.
   return (
-    <span className="mt-1 flex min-h-lh items-center gap-2 type-meta text-faint [&_svg]:size-(--size-icon-metadata)">
+    <span className="mt-1 flex min-h-lh items-center gap-2 type-meta text-muted-foreground [&_svg]:size-(--size-icon-metadata)">
       {minutes === null || session.updatedAt === null ? null : (
         <SessionAge minutes={minutes} updatedAt={session.updatedAt} />
       )}
@@ -256,27 +252,26 @@ export const SessionRow = memo(function SessionRow({
       {checked ? <span className="sr-only">{t('bulkSelect.selected')}</span> : null}
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
-          <span className="block min-w-0 truncate type-body font-medium text-foreground">
+          <span className="block min-w-0 truncate type-body font-medium">
             <SessionTitle session={session} />
           </span>
           {archived ? (
-            <span
-              className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/70 bg-background/70 px-1.5 py-0.5 type-meta font-medium text-muted-foreground"
+            <StatusBadge
+              className={sessionFactRecipe.badge}
               data-slot="archived-session"
+              tone="neutral"
             >
-              <Icon name="archive-session" className="size-3" />
+              <Icon name="archive-session" className={sessionFactRecipe.archivedIcon} />
               {t('sessionListStatusArchived')}
-            </span>
+            </StatusBadge>
           ) : null}
           {unavailable ? (
-            <span className="inline-flex shrink-0 rounded-full border border-danger/50 px-1.5 py-0.5 type-meta text-danger">
+            <StatusBadge className={sessionFactRecipe.badge} tone="danger">
               {t('standing.missingHistoryBadge')}
-            </span>
+            </StatusBadge>
           ) : null}
           {statusVariant === 'attention' ? (
-            <Badge size="compact" variant="warning">
-              {t('needsInput')}
-            </Badge>
+            <StatusBadge tone="warning">{t('needsInput')}</StatusBadge>
           ) : null}
         </span>
         <ActivityLine session={session} />

@@ -1,25 +1,32 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { RangeField, RangeSlider } from '@/platform/renderer/components/design-system/range-field'
+import { Input } from '@/platform/renderer/components/ui/input'
 import { AUTO_COMPACT_LIMIT_MAX, AUTO_COMPACT_LIMIT_MIN } from '../auto-compact-limit'
 import { useCodexAutoCompactLimit } from './use-codex-auto-compact-limit'
 
+function shouldNormalizeThresholdInput(
+  enteredThreshold: number,
+  nextThreshold: number,
+  thresholdInput: string,
+): boolean {
+  return (
+    Number.isFinite(enteredThreshold) &&
+    enteredThreshold !== 0 &&
+    String(nextThreshold) !== thresholdInput
+  )
+}
+
 // The threshold lives in the person's own `config.toml`, custom per machine and never committed (#1904).
 export function CodexAutoCompact({ capacityTokens }: { capacityTokens: number | null }) {
-  const { t } = useTranslation('sessions')
-  const { limit, unreadable, write } = useCodexAutoCompactLimit()
-  if (unreadable) {
-    return (
-      <p className="border-t pt-3 type-body text-muted-foreground">
-        {t('composer.contextWindow.autoCompactUnreadable')}
-      </p>
-    )
-  }
+  const { limit, write } = useCodexAutoCompactLimit()
+  if (limit === null) return null
   return (
     <AutoCompactControl capacityTokens={capacityTokens} threshold={limit} setThreshold={write} />
   )
 }
 
-function AutoCompactControl({
+export function AutoCompactControl({
   capacityTokens,
   threshold,
   setThreshold,
@@ -29,6 +36,8 @@ function AutoCompactControl({
   setThreshold: (limit: number) => void
 }) {
   const { t } = useTranslation('sessions')
+  const labelId = useId()
+  const descriptionId = useId()
   const [thresholdInput, setThresholdInput] = useState(String(threshold))
 
   useEffect(() => {
@@ -36,42 +45,56 @@ function AutoCompactControl({
   }, [threshold])
 
   return (
-    <div className="grid gap-2.5 border-t pt-3">
-      <div className="flex items-center justify-between gap-3 type-body">
-        <span className="font-semibold">{t('composer.contextWindow.autoCompact')}</span>
-        <span className="text-muted-foreground">
+    <RangeField
+      labelId={labelId}
+      descriptionId={descriptionId}
+      className="grid gap-2.5 border-t pt-3"
+      label={
+        <span className="type-body font-semibold">
+          {t('composer.contextWindow.thresholdLabel')}
+        </span>
+      }
+      description={
+        <span className="type-body text-muted-foreground">
           {capacityTokens === null
             ? `${Math.round(threshold / 1000)}k tokens`
             : `At ${Math.round((threshold / capacityTokens) * 100)}% of total`}
         </span>
+      }
+    >
+      <div>
+        <RangeSlider
+          aria-labelledby={labelId}
+          aria-describedby={descriptionId}
+          format={{ style: 'unit', unit: 'percent' }}
+          max={95}
+          min={40}
+          onValueChange={(percent) => {
+            if (capacityTokens === null) return
+            const nextThreshold = Math.round((capacityTokens * percent) / 100)
+            setThreshold(nextThreshold)
+          }}
+          step={5}
+          value={capacityTokens === null ? 40 : Math.round((threshold / capacityTokens) * 100)}
+        />
       </div>
-      <input
-        aria-label={t('composer.contextWindow.thresholdLabel')}
-        className="h-1.5 w-full cursor-pointer accent-foreground"
-        max="95"
-        min="40"
-        onChange={(event) => {
-          if (capacityTokens === null) return
-          const nextThreshold = Math.round((capacityTokens * Number(event.target.value)) / 100)
-          setThreshold(nextThreshold)
-        }}
-        step="5"
-        type="range"
-        value={capacityTokens === null ? 40 : Math.round((threshold / capacityTokens) * 100)}
-      />
-      <label className="flex items-center justify-between gap-3 type-body text-muted-foreground">
+      <div className="flex items-center justify-between gap-3 type-body text-muted-foreground">
         <span>{t('composer.contextWindow.threshold')}</span>
-        <span className="flex w-40 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-foreground">
-          <input
+        <span className="flex w-40 items-center gap-2 text-foreground">
+          <Input
             aria-label={t('composer.contextWindow.thresholdTokens')}
-            className="min-w-0 flex-1 bg-transparent tabular-nums outline-none"
+            className="min-w-0 flex-1 tabular-nums"
             max={AUTO_COMPACT_LIMIT_MAX}
             min={AUTO_COMPACT_LIMIT_MIN}
             onBlur={() => {
+              const enteredThreshold = Number(thresholdInput)
               const nextThreshold = Math.min(
                 AUTO_COMPACT_LIMIT_MAX,
-                Math.max(AUTO_COMPACT_LIMIT_MIN, Number(thresholdInput) || threshold),
+                Math.max(AUTO_COMPACT_LIMIT_MIN, enteredThreshold || threshold),
               )
+              if (shouldNormalizeThresholdInput(enteredThreshold, nextThreshold, thresholdInput)) {
+                setThresholdInput(String(nextThreshold))
+              }
               setThreshold(nextThreshold)
             }}
             onChange={(event) => setThresholdInput(event.target.value)}
@@ -83,7 +106,7 @@ function AutoCompactControl({
             {t('composer.contextWindow.tokens')}
           </span>
         </span>
-      </label>
-    </div>
+      </div>
+    </RangeField>
   )
 }

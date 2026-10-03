@@ -2,7 +2,7 @@
   --loader-size-meta: 12px;
   --loader-size: var(--size-icon-control);
   --loader-cell-size: 45.4545%;
-  --loader-square: linear-gradient(var(--foreground), var(--foreground));
+  --loader-square: linear-gradient(currentColor, currentColor);
 
   display: inline-block;
   flex: none;

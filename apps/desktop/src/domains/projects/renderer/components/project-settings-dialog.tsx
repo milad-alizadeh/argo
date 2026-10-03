@@ -16,6 +16,17 @@ type ProjectSettingsDialogProps = {
   onOpenChange: (open: boolean) => void
 }
 
+function ProjectSettingsDescription({ name, path }: { name: string; path: string }) {
+  return (
+    <DialogDescription className="grid">
+      <span className="type-body font-medium text-foreground">{name}</span>
+      <span className="truncate font-mono type-meta" title={path}>
+        {path}
+      </span>
+    </DialogDescription>
+  )
+}
+
 // The Connection's form lives on the Tickets screen, so connecting goes there.
 export function ProjectSettingsDialog({ project, open, onOpenChange }: ProjectSettingsDialogProps) {
   const { t } = useTranslation('projects')
@@ -24,15 +35,10 @@ export function ProjectSettingsDialog({ project, open, onOpenChange }: ProjectSe
   const disconnectSource = useDisconnectSource()
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-(--size-dialog-max-height) overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t('settings.title')}</DialogTitle>
-          <DialogDescription className="grid">
-            <span className="type-body font-medium text-foreground">{project.name}</span>
-            <span className="truncate font-mono type-meta" title={project.path}>
-              {project.path}
-            </span>
-          </DialogDescription>
+          <ProjectSettingsDescription name={project.name} path={project.path} />
         </DialogHeader>
         <SourceSettings
           connection={connection.isPending ? undefined : (connection.data ?? null)}

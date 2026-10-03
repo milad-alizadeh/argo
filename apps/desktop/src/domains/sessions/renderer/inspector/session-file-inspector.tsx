@@ -4,6 +4,8 @@ import { trpcClient } from '@/platform/renderer/trpc-client'
 import { CodeBlock } from '../ai-elements'
 import { detectCodeLanguageFromPath, FeedMarkdown } from '../feed/content'
 import type { SessionFileEvidence } from '../types'
+import { InspectorPathHeader } from './inspector-path-header'
+import { inspectorBodyRecipe } from './inspector-recipes'
 
 const MARKDOWN_FILE = /\.(md|markdown)$/i
 
@@ -40,7 +42,8 @@ function FileBody({ path, sessionId }: { path: string; sessionId: string | null 
     <CodeBlock
       code={content.text}
       language={detectCodeLanguageFromPath(path)?.grammar ?? null}
-      className="type-code-content bg-card"
+      contentClassName="p-0"
+      variant="embedded"
     />
   )
 }
@@ -55,12 +58,8 @@ export function SessionFileInspector({
   const { t } = useTranslation('sessions')
   return (
     <section className="flex min-h-0 flex-1 flex-col" aria-label={t('file.inspector')}>
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-sidebar px-4 py-3">
-        <span className="block truncate text-left [direction:rtl] type-body font-semibold">
-          {evidence.path}
-        </span>
-      </header>
-      <div className="min-h-0 flex-1 overflow-auto p-4">
+      <InspectorPathHeader path={evidence.path} />
+      <div className={inspectorBodyRecipe}>
         <FileBody path={evidence.path} sessionId={sessionId} />
       </div>
     </section>

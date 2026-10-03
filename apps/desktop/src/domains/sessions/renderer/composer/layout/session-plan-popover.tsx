@@ -91,7 +91,7 @@ function PlanContent({ steps }: { steps: PlanSteps }) {
     return (
       <PopoverHeader>
         <PopoverTitle>{t('composer.taskPlan.emptyTitle')}</PopoverTitle>
-        <p className="text-meta text-muted-foreground">{t('composer.taskPlan.emptyDescription')}</p>
+        <p className="type-meta text-muted-foreground">{t('composer.taskPlan.emptyDescription')}</p>
       </PopoverHeader>
     )
   }
@@ -129,7 +129,7 @@ export function SessionPlanPopover({ plan }: { plan: ComposerPlan | null }) {
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8 w-(--size-composer-plan-trigger) gap-1.5 px-2.5 type-control text-muted-foreground"
+            className="h-8 w-(--size-composer-plan-trigger) gap-1.5 px-2.5 text-muted-foreground"
             aria-label={t('composer.taskPlan.open')}
           />
         }

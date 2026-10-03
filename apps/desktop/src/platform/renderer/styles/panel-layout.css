@@ -1,23 +1,73 @@
-@utility panel-frame {
+@utility panel-stack {
   display: flex;
   height: 100%;
   min-width: 0;
   min-height: 0;
   flex-direction: column;
-  background-color: var(--background);
 }
 
-@utility panel-header {
+@utility panel-frame {
+  @apply panel-stack;
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+@utility panel-shell-backing {
+  position: absolute;
+  z-index: -1;
+  inset: var(--size-chrome-bar) 0 0;
+  pointer-events: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  background-color: var(--sidebar);
+  color: var(--sidebar-foreground);
+}
+
+@utility panel-shell-layout {
+  isolation: isolate;
+
+  &:has([data-component="AppContent"][data-sidebar-state="open"]) [data-sidebar-joined="true"] {
+    border-inline-start: 1px solid var(--border);
+  }
+}
+
+@utility panel-header-layout {
   display: flex;
   height: var(--size-chrome-bar);
   flex-shrink: 0;
+  min-width: 0;
+  overflow: hidden;
   align-items: center;
-  background-color: var(--background);
 }
 
-/* The one horizontal inset of a sidebar's search bar and rows, so nothing shifts between tabs. */
-@utility sidebar-gutter {
+@utility panel-header {
+  @apply panel-header-layout;
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+@utility screen-layout {
+  @apply panel-frame;
+  position: relative;
+}
+
+@utility sidebar-header {
+  @apply panel-header-layout panel-gutter;
+  color: var(--sidebar-foreground);
+  -webkit-app-region: no-drag;
+}
+
+@utility panel-gutter {
   padding-inline: var(--spacing-shell-gutter);
+}
+
+@utility sidebar-gutter {
+  @apply panel-gutter;
+}
+
+@utility panel-window-chrome {
+  @apply panel-header;
+  -webkit-app-region: drag;
 }
 
 /* Animate the library's outer flex items, leaving direct resizing immediate. */
@@ -35,6 +85,21 @@
     & > [data-panel] {
       transition: none;
     }
+  }
+}
+
+/* Keep the shrinking bezel painted until its pane has finished collapsing. */
+@utility panel-visibility {
+  visibility: visible;
+  transition: none;
+
+  &[data-hidden="true"] {
+    visibility: hidden;
+    transition: visibility 0s var(--duration-layout);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
   }
 }
 
@@ -62,7 +127,7 @@
   }
 }
 
-/* Outer edges inherit through nested splits; each split squares its interior edges. */
+/* Sidebar slabs round their exposed outer edges and square their joined edges. */
 @utility panel-body {
   display: flex;
   min-width: 0;
@@ -75,12 +140,29 @@
   border-start-end-radius: var(--panel-end-radius, 0px);
   border-end-end-radius: var(--panel-end-radius, 0px);
   background-color: var(--card);
+  color: var(--card-foreground);
 }
 
-/* The main content surface of a page: the panel body on the session surface, whatever the tab. */
+@utility panel-sidebar {
+  @apply panel-body;
+  background-color: var(--sidebar);
+  color: var(--sidebar-foreground);
+}
+
+/* Session and Ticket workspaces share one elevated, opaque content plane. */
 @utility panel-content {
   @apply panel-body;
-  background-color: var(--color-session-surface);
+  position: relative;
+  z-index: 3;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  background-color: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--shadow-inset-pane);
+}
+
+@utility panel-content-layout {
+  min-width: var(--size-content-minimum, var(--size-shell-content-min));
 }
 
 @utility panel-outer-start {
@@ -99,27 +181,38 @@
   --panel-end-radius: 0px;
 }
 
-@utility panel-elevation {
-  position: relative;
-  isolation: isolate;
+/* Joined panes keep the registry's four-pixel target without reserving a visible gutter. */
+@utility panel-divider {
+  width: 0;
+  z-index: 10;
+}
 
-  &::after {
-    position: absolute;
-    z-index: 30;
-    inset: var(--size-chrome-bar) 0 0;
-    border-radius: var(--radius-2xl);
-    box-shadow: var(--shadow-panel-body);
-    pointer-events: none;
-    content: "";
+/* Sidebar bodies own their fill, border box, and outside-corner clip. */
+@utility panel-sidebar-start {
+  border-block: 1px solid var(--border);
+  border-inline-start: 1px solid var(--border);
+  --panel-end-radius: 0px;
+  border-start-start-radius: var(--radius-2xl);
+  border-end-start-radius: var(--radius-2xl);
+}
+
+@utility panel-sidebar-end {
+  border-block: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
+  --panel-start-radius: 0px;
+  border-start-end-radius: var(--radius-2xl);
+  border-end-end-radius: var(--radius-2xl);
+}
+
+@container (width < 1px) {
+  .panel-sidebar-start,
+  .panel-sidebar-end,
+  .panel-content {
+    border-width: 0;
   }
 }
 
-/* Keep the full-height resize target while drawing the seam below the chrome. */
-@utility panel-divider {
-  &::before {
-    position: absolute;
-    inset: var(--size-chrome-bar) 0 0;
-    content: "";
-    background-color: color-mix(in oklab, var(--border) 60%, transparent);
-  }
+/* The registry keeps its target and focus ring; raw and inset seams share semantic paint. */
+:where([data-slot="resizable-handle"]):not(.panel-divider) {
+  background-color: var(--border);
 }
