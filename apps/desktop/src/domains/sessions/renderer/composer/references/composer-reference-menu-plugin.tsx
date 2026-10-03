@@ -69,7 +69,8 @@ function selectAfterReference(reference: ComposerReferenceNode) {
       return
     }
   }
-  const separator = reference.insertAfter($createTextNode(' '))
+  const separator = $createTextNode(' ')
+  reference.insertAfter(separator)
   separator.select(1, 1)
 }
 
