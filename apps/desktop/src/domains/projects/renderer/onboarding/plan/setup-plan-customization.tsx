@@ -2,6 +2,7 @@ import { type SetupDocument, setupPlanText } from '../model/setup-document'
 import type { SetupAnswer } from '../use-setup-answers'
 import { SetupPlanField } from './setup-plan-field'
 import { fieldsForSection, SectionIcon, type SetupSectionModel } from './setup-plan-sections'
+import './project-setup-plan-review-parts.css'
 
 export function SetupPlanCustomization({
   answers,
@@ -43,13 +44,13 @@ function SetupSection({
 }) {
   const text = setupPlanText(document, language, section.id)
   return (
-    <section className="overflow-hidden rounded-xl border border-border/70">
-      <header className="flex items-start gap-4 border-b border-border/70 px-5 py-4">
+    <section className="overflow-hidden rounded-xl border">
+      <header className="flex items-start gap-4 border-b px-5 py-4">
         <SectionIcon icon={section.icon} />
         <div>
-          <h3 className="type-body font-medium">{text.label}</h3>
+          <h3 className="onboarding-title">{text.label}</h3>
           {text.description ? (
-            <p className="mt-1 type-label text-muted-foreground">{text.description}</p>
+            <p className="mt-1 onboarding-detail text-muted-foreground">{text.description}</p>
           ) : null}
         </div>
       </header>

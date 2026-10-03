@@ -8,7 +8,7 @@
   --scrollbar-visibility: 1;
 }
 
-/* Native scrolling panes and ScrollArea share the same quiet thumb. */
+/* Native scrolling panes share the same quiet thumb. */
 ::-webkit-scrollbar {
   width: var(--size-scrollbar);
   height: var(--size-scrollbar);
@@ -49,32 +49,4 @@
       )
       transparent;
   }
-}
-
-[data-slot="scroll-area-scrollbar"] {
-  border: 0;
-  padding: var(--spacing-scrollbar-inset);
-  background: transparent;
-}
-
-[data-slot="scroll-area-scrollbar"][data-orientation="vertical"] {
-  width: var(--size-scrollbar);
-}
-
-[data-slot="scroll-area-scrollbar"][data-orientation="horizontal"] {
-  height: var(--size-scrollbar);
-}
-
-[data-slot="scroll-area-thumb"] {
-  background-color: color-mix(
-    in srgb,
-    var(--border) calc(var(--scrollbar-visibility) * 100%),
-    transparent
-  );
-}
-
-[data-slot="scroll-area"]
-  [data-slot="scroll-area-scrollbar"]:is(:hover, :active)
-  [data-slot="scroll-area-thumb"] {
-  background-color: var(--muted-foreground);
 }

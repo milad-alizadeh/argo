@@ -136,15 +136,21 @@ export const Answering: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'Send answer' })).toBeDisabled()
     await expect(canvas.getByRole('radio', { name: /Black/ })).toBeDisabled()
+    await expect(canvas.getByRole('textbox', { name: 'Write another answer' })).toBeDisabled()
   },
 }
 
 export const Failed: Story = {
   args: { failure: 'Argo could not send this answer.' },
-  play: async ({ canvasElement }) => {
-    await expect(
-      within(canvasElement).getByText('Argo could not send this answer.'),
-    ).toBeInTheDocument()
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Argo could not send this answer.')).toBeInTheDocument()
+    await expect(canvas.getByRole('alert')).toHaveTextContent('Argo could not send this answer.')
+    await userEvent.click(canvas.getByRole('radio', { name: /Sepia/ }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Send answer' }))
+    await expect(args.onAnswer).toHaveBeenCalledWith('ask-single', [
+      { kind: 'options', indices: [2] },
+    ])
   },
 }
 
@@ -167,11 +173,14 @@ export const Unsupported: Story = {
 
 export const Locked: Story = {
   args: { locked: true },
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('This session is open in another app')).toBeInTheDocument()
     await expect(canvas.queryByRole('button', { name: 'Send answer' })).not.toBeInTheDocument()
     await expect(canvas.queryByRole('radio')).not.toBeInTheDocument()
+    await expect(canvas.queryByRole('checkbox')).not.toBeInTheDocument()
+    await expect(canvas.queryByRole('textbox')).not.toBeInTheDocument()
+    await expect(args.onAnswer).not.toHaveBeenCalled()
   },
 }
 

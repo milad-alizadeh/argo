@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Question, QuestionAnswer } from '@/domains/sessions/api/questions'
+import { Notice } from '@/platform/renderer/components/design-system/notice'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import {
@@ -16,6 +17,16 @@ import {
 } from '@/platform/renderer/components/ui/questionnaire'
 import type { SessionFeedRow } from '../../types'
 import { FEED_CARD_RADIUS_CLASS } from '../content/feed-surface'
+
+const FEED_QUESTIONNAIRE_SLOTS = {
+  root: `${FEED_CARD_RADIUS_CLASS} border bg-card p-4`,
+  title: 'font-heading type-heading',
+  description: 'type-body',
+  choice: 'min-h-10 py-2 type-body',
+  choiceLabel: 'type-heading',
+  input: 'min-h-10 type-body',
+  submit: 'bg-foreground text-background hover:bg-foreground/80',
+}
 
 type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>
 
@@ -55,24 +66,28 @@ function QuestionField({
   return (
     <QuestionnaireItem name={`question-${index}`} multiple={question.multiSelect}>
       {question.header ? (
-        <QuestionnaireTitle className="type-heading">{question.header}</QuestionnaireTitle>
+        <QuestionnaireTitle className={FEED_QUESTIONNAIRE_SLOTS.title}>
+          {question.header}
+        </QuestionnaireTitle>
       ) : null}
-      <QuestionnaireDescription className="type-body">{question.question}</QuestionnaireDescription>
+      <QuestionnaireDescription className={FEED_QUESTIONNAIRE_SLOTS.description}>
+        {question.question}
+      </QuestionnaireDescription>
       <QuestionnaireChoices>
         {question.options.map((option) => (
           <QuestionnaireChoice
             key={option.label}
             value={option.label}
-            className="min-h-10 py-2 type-body"
+            className={FEED_QUESTIONNAIRE_SLOTS.choice}
             disabled={disabled}
             checked={selected.includes(option.label)}
             onChange={() =>
               onSelect(question.multiSelect ? toggle(selected, option.label) : [option.label])
             }
           >
-            <span className="type-heading">{option.label}</span>
+            <span className={FEED_QUESTIONNAIRE_SLOTS.choiceLabel}>{option.label}</span>
             {option.description === null ? null : (
-              <QuestionnaireChoiceDescription className="type-body">
+              <QuestionnaireChoiceDescription className={FEED_QUESTIONNAIRE_SLOTS.description}>
                 {option.description}
               </QuestionnaireChoiceDescription>
             )}
@@ -83,7 +98,7 @@ function QuestionField({
           placeholder={t('question.writeAnotherPlaceholder')}
           value={text}
           disabled={disabled}
-          className="min-h-10 type-body"
+          className={FEED_QUESTIONNAIRE_SLOTS.input}
           onChange={(event) => onText(event.target.value)}
         />
       </QuestionnaireChoices>
@@ -147,10 +162,7 @@ export function FeedQuestion({
 
   if (row.unsupported !== null) {
     return (
-      <Alert
-        className={`${FEED_CARD_RADIUS_CLASS} border bg-card p-4`}
-        data-component="FeedQuestion"
-      >
+      <Alert className={FEED_QUESTIONNAIRE_SLOTS.root} data-component="FeedQuestion">
         <AlertDescription>{row.unsupported}</AlertDescription>
       </Alert>
     )
@@ -163,7 +175,7 @@ export function FeedQuestion({
 
   return (
     <Questionnaire
-      className={`${FEED_CARD_RADIUS_CLASS} border bg-card p-4`}
+      className={FEED_QUESTIONNAIRE_SLOTS.root}
       data-component="FeedQuestion"
       onSubmit={(event) => {
         event.preventDefault()
@@ -188,14 +200,14 @@ export function FeedQuestion({
         />
       ))}
       {failure === null ? null : (
-        <Alert variant="destructive">
-          <AlertDescription>{failure}</AlertDescription>
-        </Alert>
+        <Notice icon="octagon-alert" tone="danger">
+          {failure}
+        </Notice>
       )}
       <div className="flex justify-end">
         <QuestionnaireSubmit
           disabled={!canSubmit || answering}
-          className="bg-foreground text-background hover:bg-foreground/80"
+          className={FEED_QUESTIONNAIRE_SLOTS.submit}
         >
           {t('question.send')}
         </QuestionnaireSubmit>

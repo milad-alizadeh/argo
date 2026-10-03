@@ -1,8 +1,30 @@
 import { useTranslation } from 'react-i18next'
+import {
+  indicatorToneRecipe,
+  statusToneRecipe,
+} from '@/platform/renderer/components/design-system/tone-recipes'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { RunningText } from '@/platform/renderer/components/running-text'
 import { Button } from '@/platform/renderer/components/ui/button'
+import { cn } from '@/platform/renderer/lib/utils'
 import type { ProjectSetupCommand, ProjectSetupSnapshot } from './onboarding-presentation'
+
+import './plan/project-setup-plan-review-parts.css'
+
+const PROGRESS_SLOTS = {
+  row: 'group/step flex min-h-14 items-center gap-3 border-b px-3.5 py-2.5 text-muted-foreground last:border-b-0 data-[status=running]:bg-muted/20 data-[status=waiting]:bg-muted/30',
+  mark: 'grid size-8 shrink-0 place-items-center rounded-md transition-colors',
+  title: 'block onboarding-title',
+  detail: 'mt-0.5 block onboarding-detail text-muted-foreground',
+}
+
+const PROGRESS_TONE = {
+  pending: 'neutral',
+  running: 'success',
+  'waiting-for-user': 'warning',
+  passed: 'success',
+  failed: 'danger',
+} as const satisfies Record<ProgressRow['status'], keyof typeof statusToneRecipe>
 
 const PLANNING_TASKS = [
   'inspect-folder',
@@ -37,7 +59,7 @@ export function Progress({
   const active = progress.find((step) => step.status === 'running')
   return (
     <div className="mt-8 max-w-2xl">
-      <p className="type-heading text-muted-foreground" role="status">
+      <p className="onboarding-title text-muted-foreground" role="status">
         <RunningText running>{active?.message ?? t('setup.actor.busy')}</RunningText>
       </p>
       <ol
@@ -46,23 +68,34 @@ export function Progress({
       >
         {progress.map((step) => (
           <li
-            className="group/step flex min-h-14 items-center gap-3 border-b px-3.5 py-2.5 text-muted-foreground last:border-b-0 data-[status=failed]:bg-destructive/5 data-[status=failed]:text-destructive data-[status=running]:bg-muted/20 data-[status=running]:text-foreground data-[status=waiting]:bg-muted/30 data-[status=waiting]:text-foreground"
+            className={PROGRESS_SLOTS.row}
             data-status={taskListStatus(step.status)}
             key={step.id}
           >
-            <span className="grid size-8 shrink-0 place-items-center rounded-md bg-muted transition-colors group-data-[status=passed]/step:bg-status-success/10 group-data-[status=passed]/step:text-status-success">
+            <span
+              className={cn(
+                PROGRESS_SLOTS.mark,
+                statusToneRecipe[PROGRESS_TONE[step.status]],
+                PROGRESS_TONE[step.status] === 'neutral' && indicatorToneRecipe.neutral,
+              )}
+            >
               <ProgressIcon status={step.status} />
             </span>
             <span className="min-w-0 flex-1">
-              <strong className="block type-body font-semibold">{step.title}</strong>
-              <small className="mt-0.5 block type-control text-muted-foreground">
-                {step.message}
-              </small>
+              <strong
+                className={cn(
+                  PROGRESS_SLOTS.title,
+                  indicatorToneRecipe[PROGRESS_TONE[step.status]],
+                )}
+              >
+                {step.title}
+              </strong>
+              <small className={PROGRESS_SLOTS.detail}>{step.message}</small>
             </span>
           </li>
         ))}
       </ol>
-      <div className="mt-6 flex justify-end">
+      <div className="mt-6 onboarding-action-row">
         <Button onClick={() => void command({ type: 'cancel-setup' })} variant="outline">
           {t('setup.actor.cancelAction')}
         </Button>
