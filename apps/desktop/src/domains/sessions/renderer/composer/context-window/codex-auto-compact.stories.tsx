@@ -42,6 +42,8 @@ export const ThresholdBoundsAndInvalidInput: Story = {
 
     fireEvent.change(slider, { target: { value: '40' } })
     await expect(input).toHaveValue(80_000)
+    fireEvent.change(slider, { target: { value: '95' } })
+    await expect(input).toHaveValue(190_000)
 
     await userEvent.click(input)
     await userEvent.clear(input)

@@ -175,6 +175,12 @@ function TicketReferenceStory({ onSend }: { onSend: ComposerFormProps['onSend'] 
   )
 }
 
+function TicketReferenceInsertionStory({ onSend }: { onSend: ComposerFormProps['onSend'] }) {
+  return (
+    <ComposerForm onSend={onSend} sessionId="ticket-reference-insertion" tickets={STORY_TICKETS} />
+  )
+}
+
 const MARKDOWN_SHORTCUTS: Array<{
   sessionId: string
   type: (composer: HTMLElement) => Promise<unknown>
@@ -431,8 +437,18 @@ export const EnterPicksASlashReferenceWhileTheMenuIsOpen: Story = {
     await expect(menu.getBoundingClientRect().width).toBeCloseTo(card.getBoundingClientRect().width)
     await userEvent.keyboard('{Enter}')
     await waitFor(() => expect(canvas.queryByRole('option')).toBeNull())
+    await expect(args.onSend).not.toHaveBeenCalled()
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-reference="/implement"]')).not.toBeNull(),
+    )
+    await expect(composer).toHaveFocus()
+    await userEvent.keyboard('carefully')
+    await expect(composer).toHaveTextContent('Read /implement carefully')
+    await userEvent.keyboard('{Control>}a{/Control}{ArrowLeft}')
+    await userEvent.keyboard('Please ')
+    await expect(composer).toHaveTextContent('Please Read /implement carefully')
     await userEvent.keyboard('{Enter}')
-    await expect(args.onSend).toHaveBeenCalledWith('Read /implement', null, [])
+    await expect(args.onSend).toHaveBeenCalledWith('Please Read /implement carefully', null, [])
   },
 }
 
@@ -519,7 +535,7 @@ export const TicketReferenceUsesKeyboardLinkNavigation: Story = {
       await userEvent.click(composer)
       await userEvent.type(composer, 'ENG-42')
       const ticket = await canvas.findByRole('link', { name: 'ENG-42' })
-      ticket.focus()
+      await userEvent.keyboard('{Tab}')
       await expect(ticket).toHaveFocus()
 
       window.history.replaceState(null, '', '#/projects/story-project/sessions/current')
@@ -530,6 +546,40 @@ export const TicketReferenceUsesKeyboardLinkNavigation: Story = {
     } finally {
       window.history.replaceState(null, '', originalUrl)
     }
+  },
+}
+
+export const TicketReferenceInsertionEditingAndSend: Story = {
+  render: (args) => <TicketReferenceInsertionStory onSend={args.onSend} />,
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = canvas.getByLabelText('Message')
+
+    await userEvent.click(composer)
+    await userEvent.type(composer, 'See ')
+    await userEvent.click(canvas.getByRole('button', { name: 'Add context' }))
+    const picker = await within(document.body).findByRole('dialog', { name: 'Context picker' })
+    await userEvent.click(within(picker).getByRole('button', { name: /ENG-42.*Keep the Composer/ }))
+
+    const ticket = await canvas.findByRole('link', { name: 'ENG-42' })
+    await expect(composer).toHaveFocus()
+    await userEvent.keyboard('details')
+    await expect(composer).toHaveTextContent('See ENG-42 details')
+
+    await userEvent.keyboard('{Backspace}'.repeat('details'.length))
+    await expect(composer).toHaveTextContent('See ENG-42')
+    await expect(ticket).toBeVisible()
+    await userEvent.keyboard('{Backspace}')
+    await expect(ticket).toBeVisible()
+    await userEvent.keyboard('{Backspace}')
+    await expect(canvas.queryByRole('link', { name: 'ENG-42' })).toBeNull()
+    await expect(composer.textContent).toBe('See ')
+
+    await userEvent.keyboard('ENG-42')
+    const reinsertedTicket = await canvas.findByRole('link', { name: 'ENG-42' })
+    await expect(reinsertedTicket).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await expect(args.onSend).toHaveBeenCalledWith('See ENG-42', null, [])
   },
 }
 

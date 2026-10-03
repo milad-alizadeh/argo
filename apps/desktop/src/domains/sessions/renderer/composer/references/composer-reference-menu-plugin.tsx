@@ -1,11 +1,14 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import {
+  $createTextNode,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_HIGH,
   KEY_DOWN_COMMAND,
   type LexicalEditor,
+  type LexicalNode,
 } from 'lexical'
 import { useEffect, useRef, useState } from 'react'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
@@ -17,12 +20,18 @@ import {
   referenceMenu,
   referenceMenuKey,
 } from './composer-reference-menu'
+import { ComposerReferenceNode } from './composer-reference-node'
 
 function replaceActiveReference(editor: LexicalEditor, source: string) {
   editor.update(() => {
     const selection = $getSelection()
     if (!$isRangeSelection(selection)) return
     const node = selection.anchor.getNode()
+    const activeNode = adjacentActiveReference(node, selection.anchor.offset, source)
+    if (activeNode !== null) {
+      selectAfterReference(activeNode)
+      return
+    }
     if (!$isTextNode(node)) return
     const cursor = selection.anchor.offset
     const text = node.getTextContent()
@@ -32,6 +41,36 @@ function replaceActiveReference(editor: LexicalEditor, source: string) {
     node.setTextContent(`${before}${text.slice(cursor)}`)
     node.select(before.length, before.length)
   })
+}
+
+function adjacentActiveReference(node: LexicalNode, offset: number, source: string) {
+  if (node instanceof ComposerReferenceNode && node.getTextContent() === source) return node
+  if (offset !== 0) return null
+  const parent = node.getParent()
+  if (!$isElementNode(parent)) return null
+  const siblings = parent.getChildren()
+  const index = siblings.findIndex((sibling) => sibling.getKey() === node.getKey())
+  const nextSibling = siblings[index + 1]
+  return nextSibling instanceof ComposerReferenceNode && nextSibling.getTextContent() === source
+    ? nextSibling
+    : null
+}
+
+function selectAfterReference(reference: ComposerReferenceNode) {
+  const following = reference.getNextSibling()
+  if ($isTextNode(following)) {
+    const text = following.getTextContent()
+    if (text.length === 0) {
+      following.select(0, 0)
+      return
+    }
+    if (text.startsWith(' ')) {
+      following.select(1, 1)
+      return
+    }
+  }
+  const separator = reference.insertAfter($createTextNode(' '))
+  separator.select(1, 1)
 }
 
 function useReferenceChoices(

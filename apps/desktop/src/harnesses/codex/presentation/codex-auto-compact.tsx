@@ -5,6 +5,18 @@ import { Input } from '@/platform/renderer/components/ui/input'
 import { AUTO_COMPACT_LIMIT_MAX, AUTO_COMPACT_LIMIT_MIN } from '../auto-compact-limit'
 import { useCodexAutoCompactLimit } from './use-codex-auto-compact-limit'
 
+function shouldNormalizeThresholdInput(
+  enteredThreshold: number,
+  nextThreshold: number,
+  thresholdInput: string,
+): boolean {
+  return (
+    Number.isFinite(enteredThreshold) &&
+    enteredThreshold !== 0 &&
+    String(nextThreshold) !== thresholdInput
+  )
+}
+
 // The threshold lives in the person's own `config.toml`, custom per machine and never committed (#1904).
 export function CodexAutoCompact({ capacityTokens }: { capacityTokens: number | null }) {
   const { limit, write } = useCodexAutoCompactLimit()
@@ -75,10 +87,14 @@ export function AutoCompactControl({
             max={AUTO_COMPACT_LIMIT_MAX}
             min={AUTO_COMPACT_LIMIT_MIN}
             onBlur={() => {
+              const enteredThreshold = Number(thresholdInput)
               const nextThreshold = Math.min(
                 AUTO_COMPACT_LIMIT_MAX,
-                Math.max(AUTO_COMPACT_LIMIT_MIN, Number(thresholdInput) || threshold),
+                Math.max(AUTO_COMPACT_LIMIT_MIN, enteredThreshold || threshold),
               )
+              if (shouldNormalizeThresholdInput(enteredThreshold, nextThreshold, thresholdInput)) {
+                setThresholdInput(String(nextThreshold))
+              }
               setThreshold(nextThreshold)
             }}
             onChange={(event) => setThresholdInput(event.target.value)}
