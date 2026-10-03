@@ -6,6 +6,11 @@ import { readTicket, readTicketPage } from '@/providers/linear/issues'
 import { checkTeam, listTeams } from '@/providers/linear/teams'
 import { isRecord } from '@/shared/validation'
 import type { MockLinearTeam } from '../../../mocks/providers/linear/mock-linear'
+import {
+  interceptLabelReadResponses,
+  normalizedLabelColors,
+  providerLabelColors,
+} from '../../../mocks/providers/mock-ticket-label-read'
 import { assertUnstubbedRequestFails } from '../../../mocks/providers/msw-node-bridge'
 
 const BACKLOG = { scope: TEAM.id, query: '', cursor: null }
@@ -177,54 +182,23 @@ function replaceLabels(body: unknown, labelConnection: unknown) {
   }
 }
 
-const normalizedDiagnosticLabels = [
-  { name: 'black', color: '000000' },
-  { name: 'white', color: 'FFFFFF' },
-  { name: 'missing', color: null },
-  { name: 'nullable', color: null },
-  { name: 'private-label', color: null },
-  { name: 'number-color', color: null },
-]
-
 test('Linear label reads retain valid names and report per-response rejection counts', async (context) => {
   const { endpoints, accessToken } = await signedIn(context, [TEAM])
   let labelConnection: unknown = {
-    nodes: [
-      { name: 'black', color: '000000' },
-      { name: 'white', color: '#FFFFFF' },
-      { name: 'missing' },
-      { name: 'nullable', color: null },
-      { name: 'private-label', color: 'var(--private)' },
-      { name: 'number-color', color: 7 },
-      'unsupported record',
-      { name: 8 },
-    ],
+    nodes: [...providerLabelColors('var(--private)'), 'unsupported record', { name: 8 }],
   }
-  const originalFetch = globalThis.fetch
-  const originalWarning = console.warn
-  const warnings: string[] = []
-  console.warn = (...values: unknown[]) => warnings.push(values.join(' '))
-  globalThis.fetch = Object.assign(
-    async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
-      const response = await originalFetch(input, init)
-      if (String(input) !== `${endpoints.api}/graphql`) return response
-      const body: unknown = await response.json()
-      replaceLabels(body, labelConnection)
-      return new Response(JSON.stringify(body), {
-        status: response.status,
-        headers: response.headers,
-      })
-    },
-    { preconnect: originalFetch.preconnect },
+  const { warnings, restore } = interceptLabelReadResponses(
+    (address) => address === `${endpoints.api}/graphql`,
+    (body) => replaceLabels(body, labelConnection),
   )
   try {
     const page = await readTicketPage(endpoints, accessToken, BACKLOG)
     assert.ok(page.ok)
-    assert.deepEqual(page.value.tickets[0]?.labels, normalizedDiagnosticLabels)
+    assert.deepEqual(page.value.tickets[0]?.labels, normalizedLabelColors)
     assert.ok(ticket.safeParse(page.value.tickets[0]).success)
     const single = await readTicket(endpoints, accessToken, { scope: TEAM.id, id: 'ENG-1' })
     assert.ok(single.ok)
-    assert.deepEqual(single.value.labels, normalizedDiagnosticLabels)
+    assert.deepEqual(single.value.labels, normalizedLabelColors)
     assert.ok(ticket.safeParse(single.value).success)
     const rejection =
       'Linear Ticket labels: rejected 2 labels.nodes[] record(s), 2 labels.nodes[].color value(s).'
@@ -243,7 +217,6 @@ test('Linear label reads retain valid names and report per-response rejection co
     assert.deepEqual(missing.value.labels, [])
     assert.equal(warnings.length, 3)
   } finally {
-    globalThis.fetch = originalFetch
-    console.warn = originalWarning
+    restore()
   }
 })

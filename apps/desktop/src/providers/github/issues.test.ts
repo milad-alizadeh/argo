@@ -6,6 +6,11 @@ import { readTicket, readTicketPage } from '@/providers/github/issues'
 import { checkRepository, isRepositoryScope } from '@/providers/github/repository'
 import { isRecord } from '@/shared/validation'
 import type { MockIssue } from '../../../mocks/providers/github/mock-github'
+import {
+  interceptLabelReadResponses,
+  normalizedLabelColors,
+  providerLabelColors,
+} from '../../../mocks/providers/mock-ticket-label-read'
 
 test('a repository check names the repository by its canonical name', async (context) => {
   const [mock, endpoints] = await github(context)
@@ -202,40 +207,14 @@ test('GitHub label reads normalize colors and report aggregate rejections withou
   })
   let rawLabels: unknown = [
     'legacy',
-    { name: 'black', color: '000000' },
-    { name: 'white', color: '#FFFFFF' },
-    { name: 'missing' },
-    { name: 'nullable', color: null },
-    { name: 'private-label', color: 'rgb(0 0 0)' },
-    { name: 'number-color', color: 7 },
+    ...providerLabelColors('rgb(0 0 0)'),
     { name: 8, color: 'ffffff' },
     null,
   ]
-  const expected = [
-    { name: 'legacy', color: null },
-    { name: 'black', color: '000000' },
-    { name: 'white', color: 'FFFFFF' },
-    { name: 'missing', color: null },
-    { name: 'nullable', color: null },
-    { name: 'private-label', color: null },
-    { name: 'number-color', color: null },
-  ]
-  const originalFetch = globalThis.fetch
-  const originalWarning = console.warn
-  const warnings: string[] = []
-  console.warn = (...values: unknown[]) => warnings.push(values.join(' '))
-  globalThis.fetch = Object.assign(
-    async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
-      const response = await originalFetch(input, init)
-      if (!String(input).startsWith(`${endpoints.api}/repos/octo/hello/issues`)) return response
-      const body: unknown = await response.json()
-      replaceLabels(body, rawLabels)
-      return new Response(JSON.stringify(body), {
-        status: response.status,
-        headers: response.headers,
-      })
-    },
-    { preconnect: originalFetch.preconnect },
+  const expected = [{ name: 'legacy', color: null }, ...normalizedLabelColors]
+  const { warnings, restore } = interceptLabelReadResponses(
+    (address) => address.startsWith(`${endpoints.api}/repos/octo/hello/issues`),
+    (body) => replaceLabels(body, rawLabels),
   )
   try {
     const page = await readTicketPage(endpoints, token, { scope: 'octo/hello', ...FIRST })
@@ -263,7 +242,6 @@ test('GitHub label reads normalize colors and report aggregate rejections withou
     assert.deepEqual(missing.value.labels, [])
     assert.equal(warnings.length, 3)
   } finally {
-    globalThis.fetch = originalFetch
-    console.warn = originalWarning
+    restore()
   }
 })
