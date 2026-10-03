@@ -4,8 +4,7 @@ import { diffLineDecoration, diffLines } from '@/platform/renderer/components/fi
 import { FileHeader, FileHeaderPath } from '@/platform/renderer/components/file-header'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
-import { CodeBlock, CodeBlockCopyButton } from '../ai-elements'
-import { CodeBlockContext } from '../ai-elements/code-block'
+import { CodeBlock, CodeBlockContext, CodeBlockCopyButton } from '../ai-elements'
 import { inspectorBodyRecipe } from './inspector-recipes'
 
 type ViewButtonReference = RefObject<HTMLButtonElement | null>
