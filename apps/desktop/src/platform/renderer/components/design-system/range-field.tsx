@@ -31,7 +31,7 @@ export function RangeField({
 }
 
 type RangeSliderProps = Omit<
-  SliderPrimitive.Root.Props<readonly [number]>,
+  SliderPrimitive.Root.Props<number>,
   'children' | 'defaultValue' | 'onValueChange' | 'value'
 > & {
   value: number
@@ -53,11 +53,11 @@ export function RangeSlider({
     <SliderPrimitive.Root
       className={cn('data-horizontal:w-full data-vertical:h-full', className)}
       data-slot="slider"
-      value={[value] as const}
+      value={value}
       min={min}
       max={max}
       thumbAlignment="edge"
-      onValueChange={(nextValue, eventDetails) => onValueChange?.(nextValue[0], eventDetails)}
+      onValueChange={(nextValue, eventDetails) => onValueChange?.(nextValue, eventDetails)}
       {...props}
     >
       <SliderPrimitive.Control className="relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col">

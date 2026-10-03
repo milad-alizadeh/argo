@@ -159,6 +159,20 @@ const page = () => within(document.body)
 
 const TRIGGER = /^Choose Turn configuration/
 
+async function clickSliderTrackAt(root: ParentNode, fraction: number) {
+  const track = root.querySelector<HTMLElement>('[data-slot="slider-track"]')
+  if (!track) throw new Error('Effort slider track is missing')
+  const bounds = track.getBoundingClientRect()
+  await userEvent.pointer({
+    keys: '[MouseLeft]',
+    target: track,
+    coords: {
+      clientX: bounds.left + bounds.width * fraction,
+      clientY: bounds.top + bounds.height / 2,
+    },
+  })
+}
+
 async function expectRoleHidden(role: string, name: string) {
   await waitFor(() => {
     const element = page().queryByRole(role as never, { name })
@@ -196,8 +210,7 @@ export const ChoosesModelAndEffort: Story = {
     await expect(effort).toHaveAccessibleDescription(
       'More effort trades speed for deeper reasoning.',
     )
-    // user-event cannot step a native range, so the drag lands as the change it produces.
-    fireEvent.change(effort, { target: { value: '4' } })
+    await clickSliderTrackAt(document.body, 0.95)
     await expect(effort).toHaveAccessibleName('Effort Max')
     await expect(effort).toHaveAttribute('aria-valuetext', 'Max')
     await expect(effort).toHaveAttribute('aria-valuenow', '4')

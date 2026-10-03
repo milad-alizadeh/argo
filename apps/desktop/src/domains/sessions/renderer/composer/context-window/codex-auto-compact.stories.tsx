@@ -34,6 +34,22 @@ export const ThresholdBoundsAndInvalidInput: Story = {
     await expect(slider).toHaveAccessibleDescription('At 50% of total')
     await expect(input).toHaveValue(100_000)
 
+    const track = canvasElement.querySelector<HTMLElement>('[data-slot="slider-track"]')
+    if (!track) throw new Error('Auto-compact slider track is missing')
+    const trackBounds = track.getBoundingClientRect()
+    await userEvent.pointer({
+      keys: '[MouseLeft]',
+      target: track,
+      coords: {
+        clientX: trackBounds.left + trackBounds.width * 0.7,
+        clientY: trackBounds.top + trackBounds.height / 2,
+      },
+    })
+    await expect(slider).not.toHaveAttribute('aria-valuenow', '50')
+    await expect(slider).toHaveAttribute('aria-valuenow', expect.stringMatching(/^\d+$/))
+    await expect(input).not.toHaveValue(null)
+    await expect(slider).toHaveAccessibleDescription(/At \d+% of total/)
+
     await userEvent.click(input)
     await expect(input).toHaveFocus()
     await userEvent.clear(input)
