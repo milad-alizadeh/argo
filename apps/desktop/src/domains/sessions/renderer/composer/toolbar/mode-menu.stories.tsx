@@ -150,7 +150,7 @@ export const KeyboardDismissal: Story = {
     const trigger = canvas.getByRole('button', { name: 'Choose permission mode: Manual' })
     await userEvent.tab()
     await userEvent.keyboard('{ArrowDown}')
-    await expect(await page().findByRole('menuitemradio', { name: /Manual/ })).toHaveFocus()
+    await waitFor(() => expect(page().getByRole('menuitemradio', { name: /Manual/ })).toHaveFocus())
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
     await expect(trigger).toHaveFocus()
