@@ -28,7 +28,7 @@ const blockedIcon = `${stateIcon} text-status-danger`
 
 export type Navigation = { listed: ReadonlySet<string>; onSelect: (key: string) => void }
 
-export const linkRow =
+const linkRow =
   'flex w-full items-center gap-(--spacing-shell-item) rounded-row px-(--spacing-shell-item) py-(--spacing-shell-icon) text-left'
 
 export const interactiveLinkRow = `${linkRow} hover:bg-accent hover:text-accent-foreground`
