@@ -41,6 +41,9 @@ export const AutoCompactWritesToTheHarnessConfig: Story = {
     // 78% is the true value; the range input's own step sanitization snaps its displayed
     // position to the nearest multiple of 5, same as a person dragging it would see.
     await expect(slider).toHaveValue('80')
+    await waitFor(() =>
+      expect(body.queryByRole('slider', { name: 'Auto-compact threshold' })).toBeNull(),
+    )
   },
 }
 
@@ -89,6 +92,7 @@ export const ExplainsContextZones: Story = {
     await expect(link).toHaveAttribute('target', '_blank')
     await expect(link).toHaveAttribute('rel', 'noopener noreferrer')
     await expect(body.queryByRole('link', { name: 'Matt Pocock' })).toBeNull()
+    await waitFor(() => expect(link).toHaveFocus())
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(body.queryByText('Smart Zone · Below 20%')).toBeNull())
     await expect(trigger).toHaveFocus()
