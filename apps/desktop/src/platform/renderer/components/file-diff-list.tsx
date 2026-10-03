@@ -144,8 +144,8 @@ function PlainFileDiff({
             <span
               className={cn(
                 'flex min-w-max px-3',
-                line.kind === 'added' && 'bg-emerald-500/15',
-                line.kind === 'removed' && 'bg-rose-500/15',
+                line.kind === 'added' && 'bg-diff-added/15',
+                line.kind === 'removed' && 'bg-diff-removed/15',
               )}
               key={`${line.kind}-${line.oldLine ?? 'x'}-${line.newLine ?? 'x'}-${line.source}`}
             >

@@ -155,10 +155,10 @@ Every retained custom color family has a current product consumer:
 | Family | Product need and consumer |
 | --- | --- |
 | `status-success`, `status-warning`, `status-danger`, `warning-subtle`, `warning-foreground` | Running, attention, failure, and notice facts in shared tone recipes, Session marks, and Ticket blockers. Shared `status-colors.css` owns both Modes. |
-| `diff-added` | Added code and paths in Feed tools and project setup review. |
+| `diff-added`, `diff-removed` | Added and removed code in diff viewers, and added paths in project setup review. |
 | `language-typescript`, `language-go`, `language-ruby` | Language identity in `code-language-icon.tsx`. The TypeScript mark requires white text on its brand-colored tile. |
-| `terminal-red`, `terminal-green`, `terminal-yellow`, `terminal-blue`, `terminal-magenta`, `terminal-cyan` | ANSI output in `ai-elements/terminal.css`. |
-| Seven `code-xcode-*` syntax inks | Comments, definitions, keywords, names, strings, types, and variables in Shiki. Code backgrounds and ordinary text use `card` and `card-foreground`. |
+| Sixteen `terminal-*` protocol colors | Normal and bright ANSI foregrounds and backgrounds in `ai-elements/terminal.css`. Black and white foregrounds keep native readable ink. Indexed and true-color values remain protocol data. |
+| Seven `code-xcode-*` syntax inks | Comments, definitions, keywords, names, strings, types, and variables shared by CodeMirror and Shiki. Code backgrounds and ordinary text use `card` and `card-foreground`. |
 | `ticket-label` and its fill percentage | Provider-supplied label colors tint the opaque background in `ticket-label.tsx`. Label text uses native `foreground`. |
 | `feed-work-glint` | The running-text shimmer, mixed from native `muted-foreground` and `card`. |
 

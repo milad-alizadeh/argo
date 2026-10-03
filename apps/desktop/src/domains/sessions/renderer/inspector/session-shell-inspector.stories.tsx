@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { sessionShellCommand } from '@/mocks/sessions/session-rows'
+import { terminalProtocolOutput } from '@/mocks/sessions/terminal-output'
 import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import { SessionShellInspector } from './session-shell-inspector'
@@ -130,12 +131,14 @@ export const EmptyOutput: Story = {
 export const AnsiOutput: Story = {
   args: {
     command: { ...WATCH, state: 'completed' },
-    output: '\u001b[31mpackage build failed\u001b[0m\nretry the command\n',
+    output: `\u001b[31mpackage build failed\u001b[0m\nretry the command\n${terminalProtocolOutput}`,
   },
   render: (args) => <InspectorStory args={args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('package build failed')).toBeVisible()
     await expect(canvas.getByText(/retry the command/)).toBeVisible()
+    await expect(canvas.getByText('true color')).toBeVisible()
+    await expect(canvas.getByText('indexed yellow output')).toBeVisible()
   },
 }

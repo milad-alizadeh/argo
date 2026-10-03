@@ -12,7 +12,7 @@ type CodePalette = {
   variable: string
 }
 
-const XCODE_PALETTE: CodePalette = {
+export const codeSyntaxPalette: CodePalette = {
   background: 'var(--card)',
   foreground: 'var(--card-foreground)',
   comment: 'var(--code-xcode-comment)',
@@ -25,8 +25,8 @@ const XCODE_PALETTE: CodePalette = {
 }
 
 export const xcodeCodeThemes: ThemeRegistration[] = [
-  xcodeTheme('xcode-light', 'light', XCODE_PALETTE),
-  xcodeTheme('xcode-dark', 'dark', XCODE_PALETTE),
+  xcodeTheme('xcode-light', 'light', codeSyntaxPalette),
+  xcodeTheme('xcode-dark', 'dark', codeSyntaxPalette),
 ]
 
 function xcodeTheme(name: string, type: 'dark' | 'light', palette: CodePalette): ThemeRegistration {

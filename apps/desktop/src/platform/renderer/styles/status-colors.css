@@ -6,6 +6,7 @@
   --status-warning: oklch(0.42 0.12 78);
   --status-danger: oklch(0.52 0.19 27);
   --diff-added: var(--color-emerald-700);
+  --diff-removed: var(--color-rose-700);
 }
 
 :root.dark {
@@ -15,4 +16,5 @@
   --status-warning: oklch(0.82 0.15 80);
   --status-danger: oklch(0.72 0.18 27);
   --diff-added: var(--color-emerald-400);
+  --diff-removed: var(--color-rose-400);
 }
