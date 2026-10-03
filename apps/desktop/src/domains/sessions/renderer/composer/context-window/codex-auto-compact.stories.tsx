@@ -30,6 +30,8 @@ export const ThresholdBoundsAndInvalidInput: Story = {
     const slider = canvas.getByRole('slider', { name: 'Auto-compact threshold' })
     const input = canvas.getByRole('spinbutton', { name: 'Auto-compact threshold tokens' })
     await expect(slider).toHaveAttribute('aria-valuenow', '50')
+    await expect(slider).toHaveAttribute('aria-valuetext', '50%')
+    await expect(slider).toHaveAccessibleDescription('At 50% of total')
     await expect(input).toHaveValue(100_000)
 
     await userEvent.click(input)
@@ -47,6 +49,8 @@ export const ThresholdBoundsAndInvalidInput: Story = {
     await userEvent.tab()
     await waitFor(() => expect(input).toHaveValue(190_000))
     await expect(slider).toHaveAttribute('aria-valuenow', '95')
+    await expect(slider).toHaveAttribute('aria-valuetext', '95%')
+    await expect(slider).toHaveAccessibleDescription('At 95% of total')
   },
 }
 
@@ -57,6 +61,7 @@ export const KeepsThresholdWhenCapacityIsUnavailable: Story = {
     const slider = canvas.getByRole('slider', { name: 'Auto-compact threshold' })
     const input = canvas.getByRole('spinbutton', { name: 'Auto-compact threshold tokens' })
     await expect(slider).toHaveAttribute('aria-valuenow', '40')
+    await expect(slider).toHaveAccessibleDescription('100k tokens')
     await expect(input).toHaveValue(100_000)
     fireEvent.change(slider, { target: { value: '95' } })
     await expect(slider).toHaveAttribute('aria-valuenow', '40')

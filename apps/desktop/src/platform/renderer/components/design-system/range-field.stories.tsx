@@ -3,28 +3,32 @@ import { useEffect, useId, useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { Input } from '../ui/input'
 import { Slider } from '../ui/slider'
-import { RangeField } from './range-field'
+import { RangeField, RangeSlider } from './range-field'
 
 function EffortField() {
   const labelId = useId()
+  const descriptionId = useId()
   const selectedEffortId = useId()
   const [index, setIndex] = useState(1)
   const efforts = ['Low', 'Medium', 'High']
   return (
     <RangeField
       labelId={labelId}
+      descriptionId={descriptionId}
       className="grid gap-2 border-t p-2.5"
       label={<span>Effort</span>}
-      description={<span>{efforts[index]}</span>}
+      description={<span>Choose one effort level.</span>}
     >
       <div>
-        <Slider
+        <RangeSlider
           aria-labelledby={`${labelId} ${selectedEffortId}`}
+          aria-describedby={descriptionId}
           min={0}
           max={efforts.length - 1}
           step={1}
-          value={[index]}
-          onValueChange={(value) => setIndex(Array.isArray(value) ? value[0] : value)}
+          value={index}
+          getAriaValueText={(_formattedValue, value) => efforts[value] ?? 'Effort'}
+          onValueChange={setIndex}
         />
       </div>
       <div>
@@ -105,11 +109,15 @@ export const EffortSelection: Story = {
     const canvas = within(canvasElement)
     const slider = canvas.getByRole('slider', { name: 'Effort Medium' })
     await expect(slider).toHaveAttribute('aria-valuenow', '1')
+    await expect(slider).toHaveAttribute('aria-valuetext', 'Medium')
+    await expect(slider).toHaveAccessibleDescription('Choose one effort level.')
     slider.focus()
     await userEvent.keyboard('{End}')
     await expect(slider).toHaveAttribute('aria-valuenow', '2')
+    await expect(slider).toHaveAttribute('aria-valuetext', 'High')
     await userEvent.keyboard('{Home}')
     await expect(slider).toHaveAttribute('aria-valuenow', '0')
+    await expect(slider).toHaveAttribute('aria-valuetext', 'Low')
     await userEvent.keyboard('{PageUp}')
     await expect(slider).toHaveAttribute('aria-valuenow', '2')
     await userEvent.keyboard('{PageDown}')

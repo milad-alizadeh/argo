@@ -1,7 +1,6 @@
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RangeField } from '@/platform/renderer/components/design-system/range-field'
-import { Slider } from '@/platform/renderer/components/ui/slider'
+import { RangeField, RangeSlider } from '@/platform/renderer/components/design-system/range-field'
 import { effortChoices } from '../turn-configuration/turn-configuration'
 import type { TurnConfigurationControlProps } from './turn-configuration-menu'
 
@@ -15,6 +14,7 @@ function labelShift(index: number, last: number) {
 export function EffortSlider({ choices, value, onChange }: TurnConfigurationControlProps) {
   const { t } = useTranslation('sessions')
   const labelId = useId()
+  const descriptionId = useId()
   const selectedEffortId = useId()
   const efforts = effortChoices(choices, value.model)
   const effortIndex = Math.max(
@@ -24,6 +24,7 @@ export function EffortSlider({ choices, value, onChange }: TurnConfigurationCont
   return (
     <RangeField
       labelId={labelId}
+      descriptionId={descriptionId}
       className="border-t p-2.5"
       label={
         <span className="type-label font-medium text-muted-foreground">
@@ -37,15 +38,19 @@ export function EffortSlider({ choices, value, onChange }: TurnConfigurationCont
       }
     >
       <div className="mt-3">
-        <Slider
+        <RangeSlider
           aria-labelledby={`${labelId} ${selectedEffortId}`}
-          value={[effortIndex]}
+          aria-describedby={descriptionId}
+          value={effortIndex}
           min={0}
           max={Math.max(1, efforts.length - 1)}
           disabled={efforts.length < 2}
           step={1}
-          onValueChange={(nextValue) => {
-            const effort = efforts[Array.isArray(nextValue) ? nextValue[0] : nextValue]
+          getAriaValueText={(_formattedValue, index) =>
+            efforts[index]?.label ?? t('composer.turnConfiguration.effort')
+          }
+          onValueChange={(index) => {
+            const effort = efforts[index]
             if (effort) onChange({ ...value, effort: effort.value })
           }}
         />

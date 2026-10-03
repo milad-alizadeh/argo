@@ -1,8 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RangeField } from '@/platform/renderer/components/design-system/range-field'
+import { RangeField, RangeSlider } from '@/platform/renderer/components/design-system/range-field'
 import { Input } from '@/platform/renderer/components/ui/input'
-import { Slider } from '@/platform/renderer/components/ui/slider'
 import { AUTO_COMPACT_LIMIT_MAX, AUTO_COMPACT_LIMIT_MIN } from '../auto-compact-limit'
 import { useCodexAutoCompactLimit } from './use-codex-auto-compact-limit'
 
@@ -26,7 +25,7 @@ export function AutoCompactControl({
 }) {
   const { t } = useTranslation('sessions')
   const labelId = useId()
-  const thresholdLabelId = useId()
+  const descriptionId = useId()
   const [thresholdInput, setThresholdInput] = useState(String(threshold))
 
   useEffect(() => {
@@ -36,9 +35,12 @@ export function AutoCompactControl({
   return (
     <RangeField
       labelId={labelId}
+      descriptionId={descriptionId}
       className="grid gap-2.5 border-t pt-3"
       label={
-        <span className="type-body font-semibold">{t('composer.contextWindow.autoCompact')}</span>
+        <span className="type-body font-semibold">
+          {t('composer.contextWindow.thresholdLabel')}
+        </span>
       }
       description={
         <span className="type-body text-muted-foreground">
@@ -49,21 +51,19 @@ export function AutoCompactControl({
       }
     >
       <div>
-        <span className="sr-only" id={thresholdLabelId}>
-          {t('composer.contextWindow.thresholdLabel')}
-        </span>
-        <Slider
-          aria-labelledby={thresholdLabelId}
+        <RangeSlider
+          aria-labelledby={labelId}
+          aria-describedby={descriptionId}
+          format={{ style: 'unit', unit: 'percent' }}
           max={95}
           min={40}
-          onValueChange={(nextValue) => {
+          onValueChange={(percent) => {
             if (capacityTokens === null) return
-            const percent = Array.isArray(nextValue) ? nextValue[0] : nextValue
             const nextThreshold = Math.round((capacityTokens * percent) / 100)
             setThreshold(nextThreshold)
           }}
           step={5}
-          value={[capacityTokens === null ? 40 : Math.round((threshold / capacityTokens) * 100)]}
+          value={capacityTokens === null ? 40 : Math.round((threshold / capacityTokens) * 100)}
         />
       </div>
       <div className="flex items-center justify-between gap-3 type-body text-muted-foreground">

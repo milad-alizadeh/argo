@@ -8,6 +8,7 @@ import {
   codexHarnessInfoFixture,
 } from '@/mocks/sessions/harness-catalog.fixture'
 import type { TurnConfiguration } from '../turn-configuration/turn-configuration'
+import { EffortSlider } from './effort-slider'
 import { type CatalogFailure, TurnConfigurationMenu } from './turn-configuration-menu'
 
 const claudeFixture = claudeHarnessInfoFixture()
@@ -133,6 +134,19 @@ function CatalogStory({
   )
 }
 
+function EffortFallbackStory() {
+  const [value, setValue] = useState<TurnConfiguration>({
+    model: 'haiku',
+    effort: 'high',
+    mode: 'manual',
+  })
+  return (
+    <div className="max-w-lg">
+      <EffortSlider choices={liveClaudeInfo} value={value} onChange={setValue} />
+    </div>
+  )
+}
+
 const meta = {
   title: 'Features/Sessions/Composer/Turn Configuration Menu',
   component: TurnConfigurationStory,
@@ -178,12 +192,18 @@ export const ChoosesModelAndEffort: Story = {
 
     const effort = page().getByRole('slider', { name: /^Effort/ })
     await expect(effort).toHaveAccessibleName('Effort Medium')
+    await expect(effort).toHaveAttribute('aria-valuetext', 'Medium')
+    await expect(effort).toHaveAccessibleDescription(
+      'More effort trades speed for deeper reasoning.',
+    )
     // user-event cannot step a native range, so the drag lands as the change it produces.
     fireEvent.change(effort, { target: { value: '4' } })
     await expect(effort).toHaveAccessibleName('Effort Max')
+    await expect(effort).toHaveAttribute('aria-valuetext', 'Max')
     await expect(effort).toHaveAttribute('aria-valuenow', '4')
     fireEvent.change(effort, { target: { value: '3' } })
     await expect(effort).toHaveAccessibleName('Effort Extra high')
+    await expect(effort).toHaveAttribute('aria-valuetext', 'Extra high')
     await expect(effort).toHaveAttribute('aria-valuenow', '3')
     const harnesses = page().getByRole('tablist', { name: 'Harness' })
     for (const label of ['Claude Code', 'Codex']) {
@@ -214,6 +234,7 @@ export const UsesLiveCodexCatalog: Story = {
     await expect(within(models).getByRole('radio', { name: /GPT-5.6-Terra/ })).toBeChecked()
     const effort = page().getByRole('slider', { name: /^Effort/ })
     await expect(effort).toHaveAccessibleName('Effort Balances speed and reasoning')
+    await expect(effort).toHaveAttribute('aria-valuetext', 'Balances speed and reasoning')
     await expect(effort).toBeDisabled()
     await expect(page().queryByRole('status')).toBeNull()
   },
@@ -233,7 +254,28 @@ export const UsesLiveClaudeCatalog: Story = {
     await expect(page().getByRole('slider', { name: /^Effort/ })).toHaveAccessibleName(
       'Effort Medium',
     )
+    await expect(page().getByRole('slider', { name: /^Effort/ })).toHaveAttribute(
+      'aria-valuetext',
+      'Medium',
+    )
     await expect(page().queryByRole('status')).toBeNull()
+  },
+}
+
+export const FallsBackToFirstOfferedEffort: Story = {
+  render: () => <EffortFallbackStory />,
+  play: async ({ canvasElement }) => {
+    const slider = within(canvasElement).getByRole('slider', { name: 'Effort Low' })
+    await expect(slider).toHaveAttribute('aria-valuenow', '0')
+    await expect(slider).toHaveAttribute('aria-valuetext', 'Low')
+    await expect(slider).toHaveAccessibleDescription(
+      'More effort trades speed for deeper reasoning.',
+    )
+    slider.focus()
+    await userEvent.keyboard('{End}')
+    await expect(slider).toHaveAttribute('aria-valuenow', '1')
+    await expect(slider).toHaveAttribute('aria-valuetext', 'Medium')
+    await expect(slider).toHaveAccessibleName('Effort Medium')
   },
 }
 
@@ -389,6 +431,7 @@ export const NarrowModelDetails: Story = {
     fireEvent.change(effort, { target: { value: '2' } })
     await expect(effort).toHaveAccessibleName('Effort High')
     await expect(effort).toHaveAttribute('aria-valuenow', '2')
+    await expect(effort).toHaveAttribute('aria-valuetext', 'High')
     await userEvent.keyboard('{Escape}')
     await expectRoleHidden('radiogroup', 'Model')
     await expect(trigger).toHaveFocus()
