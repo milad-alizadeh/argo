@@ -12,6 +12,7 @@ import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { MOCK_CLAUDE_AGENTS_ENV } from './mock-claude-agents.ts'
 import { newestChainUuid } from './mock-claude-chain.ts'
 import { MOCK_CLAUDE_HELP, MOCK_CLAUDE_VERSION } from './mock-claude-cli.ts'
+import { compactionRecords } from './mock-claude-compaction.ts'
 import { createMockClaudeHooks } from './mock-claude-hooks.ts'
 import { replyToSdkPrompt } from './mock-claude-sdk-reply.ts'
 import { startMockClaudeSdkStream } from './mock-claude-sdk-stream.ts'
@@ -106,10 +107,13 @@ function record(
 const write = (type: 'user' | 'assistant', message: Record<string, unknown>, uuid?: string) =>
   appendTranscript(record(type, message, uuid))
 const compact = () => {
-  const uuid = randomUUID()
-  appendTranscript(
-    `${JSON.stringify({ type: 'system', subtype: 'compact_boundary', uuid, timestamp: new Date().toISOString() })}\n`,
-  )
+  const { boundary, summary } = compactionRecords({
+    sessionId,
+    cwd: process.cwd(),
+    logicalParentUuid: parentUuid,
+  })
+  appendTranscript(`${JSON.stringify(boundary)}\n${JSON.stringify(summary)}\n`)
+  parentUuid = summary.uuid
 }
 function writeReply(text: string, plan: AdversarialTurn | null, messageId?: string) {
   const response = `Mock Claude read: ${text}${plan ? ' 🦜' : ''}`
